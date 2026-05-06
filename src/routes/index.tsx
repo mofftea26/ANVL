@@ -3,7 +3,7 @@ import { lazy, Suspense } from 'react'
 import { toast } from 'sonner'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { runtimeClients } from '@/app/config/runtime'
-import { AnvlCrest } from '@/shared/assets/brand'
+import { HeroSpinningMark } from '@/shared/components/brand/HeroSpinningMark'
 import { JsonLd } from '@/shared/components/seo/JsonLd'
 import { organizationJsonLd } from '@/shared/components/seo/structuredData'
 import {
@@ -65,28 +65,32 @@ function HomePage() {
       <JsonLd data={organizationJsonLd()} />
       <section className="relative min-h-[88vh] overflow-hidden border-b border-[var(--color-line)]">
         <GrainOverlay />
-        <Container className="relative z-10 flex min-h-[88vh] flex-col justify-center py-16">
-          <Badge>{homepage.hero.subtitle}</Badge>
-          <AnimatedText>
-            <h1 className="anvl-heading mt-6 max-w-4xl text-7xl leading-[0.9] md:text-9xl">
-              {homepage.hero.title}
-            </h1>
-          </AnimatedText>
-          <p className="mt-6 max-w-2xl text-base text-[var(--color-text-muted)] md:text-lg">
-            {homepage.hero.subtitle}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/drop/the-oath" className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-bg)] no-underline">
-              {homepage.hero.primaryCta.label}
-            </Link>
-            <a
-              href="#waitlist"
-              className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-4 text-sm font-semibold no-underline"
-            >
-              {homepage.hero.secondaryCta.label}
-            </a>
+        <Container className="relative z-10 grid min-h-[88vh] w-full grid-cols-1 items-center gap-10 py-16 lg:grid-cols-2 lg:gap-12">
+          <div className="flex flex-col justify-center">
+            <Badge>{homepage.hero.subtitle}</Badge>
+            <AnimatedText>
+              <h1 className="anvl-heading mt-6 max-w-4xl text-7xl leading-[0.9] md:text-9xl">
+                {homepage.hero.title}
+              </h1>
+            </AnimatedText>
+            <p className="mt-6 max-w-2xl text-base text-[var(--color-text-muted)] md:text-lg">
+              {homepage.hero.subtitle}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to="/drop/the-oath" className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-bg)] no-underline">
+                {homepage.hero.primaryCta.label}
+              </Link>
+              <a
+                href="#waitlist"
+                className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-4 text-sm font-semibold no-underline"
+              >
+                {homepage.hero.secondaryCta.label}
+              </a>
+            </div>
           </div>
-          <AnvlCrest className="mt-12 h-20 w-20 text-[var(--color-accent)] opacity-70" />
+          <div className="flex w-full min-w-0 justify-center px-1 py-6 sm:px-2 lg:justify-start lg:py-8 lg:pl-0 lg:pr-6">
+            <HeroSpinningMark />
+          </div>
         </Container>
       </section>
 

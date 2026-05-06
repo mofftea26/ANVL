@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { buildSeoMeta } from '@/app/seo/meta'
-import { AnvlCrest } from '@/shared/assets/brand'
+import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Container, Section } from '@/shared/components/ui'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { IndustrialDivider } from '@/shared/components/layout/IndustrialDivider'
@@ -49,7 +49,9 @@ function AboutPage() {
             ANVL Athletics builds premium bodybuilding gymwear in Lebanon for disciplined lifters—from Beirut to the
             platform abroad. Training comes first; the silhouette stays premium when the session ends.
           </p>
-          <AnvlCrest className="mt-10 h-16 w-16 text-[var(--color-accent)] opacity-80 md:h-20 md:w-20" aria-hidden />
+          <div className="mt-10 flex h-[220px] w-full max-w-xs items-center justify-center">
+            <AnvlLogoImage variant="mark" decorative className="h-16 w-auto opacity-80 md:h-20" />
+          </div>
         </Container>
       </section>
 

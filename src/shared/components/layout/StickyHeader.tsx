@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { Menu, ShoppingBag, X } from 'lucide-react'
 import { useState } from 'react'
-import { AnvlWordmark } from '@/shared/assets/brand'
+import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { useStickyHeader } from '@/shared/hooks/useStickyHeader'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { cn } from '@/shared/lib/cn'
@@ -24,8 +24,12 @@ export function StickyHeader({ navigation }: { navigation: Array<{ label: string
       )}
     >
       <Container className="flex h-16 items-center gap-3">
-        <Link to="/" className="text-[var(--color-heading)]">
-          <AnvlWordmark className="h-6 w-auto" />
+        <Link to="/" className="inline-flex shrink-0 items-center text-[var(--color-heading)]">
+          <AnvlLogoImage
+            variant="wordmark"
+            className="h-8 w-auto md:h-9"
+            fetchPriority="high"
+          />
         </Link>
         <nav className="ml-8 hidden items-center gap-6 md:flex">
           {navigation.map((item) => (
@@ -52,7 +56,7 @@ export function StickyHeader({ navigation }: { navigation: Array<{ label: string
       </Container>
       <Drawer open={open} onClose={() => setOpen(false)}>
         <div className="flex items-center justify-between">
-          <AnvlWordmark className="h-6 w-auto text-[var(--color-heading)]" />
+          <AnvlLogoImage variant="wordmark" className="h-8 w-auto md:h-9" />
           <IconButton onClick={() => setOpen(false)} aria-label="Close mobile navigation">
             <X size={16} />
           </IconButton>

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { AnvlFullLockup } from '@/shared/assets/brand'
+import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Container } from '@/shared/components/ui/Container'
 import { Input } from '@/shared/components/ui/Input'
 import { Button } from '@/shared/components/ui/Button'
@@ -11,7 +11,10 @@ export function SiteFooter() {
     <footer className="mt-16 border-t border-[var(--color-line)] py-12">
       <Container className="grid gap-8 md:grid-cols-[1.5fr_1fr_1fr]">
         <div>
-          <AnvlFullLockup className="text-[var(--color-heading)]" />
+          <AnvlLogoImage
+            variant="stacked"
+            className="h-14 w-auto max-w-[min(100%,280px)] md:h-16"
+          />
           <p className="mt-3 max-w-sm text-sm text-[var(--color-text-muted)]">
             Premium bodybuilding gymwear for serious lifters.
           </p>
