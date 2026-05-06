@@ -1,0 +1,35 @@
+import type { Product } from '@/features/products/types/product.types'
+import type { HomePageContent, SeoContent } from '@/features/cms/types/cms.types'
+import type { CartLine } from '@/features/cart/types/cart.types'
+import type {
+  CheckoutInput,
+  CheckoutOrderResult,
+} from '@/features/checkout/types/checkout.types'
+
+export interface CommerceClient {
+  getProducts(): Promise<Product[]>
+  getProductBySlug(slug: string): Promise<Product | null>
+  getRelatedProducts(slug: string): Promise<Product[]>
+}
+
+export interface CmsClient {
+  getHomepageContent(): Promise<HomePageContent>
+  getAnnouncementBar(): Promise<{ message: string; ctaLabel: string; ctaHref: string }>
+  getNavigation(): Promise<Array<{ label: string; href: string }>>
+  getCampaigns(): Promise<Array<{ id: string; title: string; description: string }>>
+  getLookbook(): Promise<Array<{ id: string; alt: string; src: string }>>
+  getSeoByPath(path: string): Promise<SeoContent | null>
+}
+
+export interface AnalyticsClient {
+  trackPageView(payload: { path: string; title?: string }): void
+  trackProductView(payload: { slug: string; name: string }): void
+  trackAddToCart(payload: { productId: string; quantity: number; price: number }): void
+  trackBeginCheckout(payload: { lineCount: number; subtotal: number }): void
+  trackOrderPlaced(payload: { orderId: string; total: number }): void
+  trackWaitlistSignup(payload: { email: string; preferredProduct?: string }): void
+}
+
+export interface PaymentClient {
+  placeOrder(input: CheckoutInput, lines: CartLine[]): Promise<CheckoutOrderResult>
+}

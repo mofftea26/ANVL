@@ -1,0 +1,119 @@
+@import "@fontsource/bebas-neue/400.css";
+@import "@fontsource/manrope/400.css";
+@import "@fontsource/manrope/500.css";
+@import "@fontsource/manrope/600.css";
+@import "@fontsource/manrope/700.css";
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Bebas Neue", "Anton", "Oswald", "Impact", sans-serif;
+}
+
+:root {
+  --anvl-black: #0b0b0c;
+  --anvl-dark-steel-grey: #1d1f21;
+  --anvl-washed-charcoal: #34373a;
+  --anvl-graphite: #5b5e61;
+  --anvl-bone: #e7e4df;
+}
+
+:root,
+:root[data-theme="oath-dark"] {
+  --color-bg: var(--anvl-black);
+  --color-surface: #121315;
+  --color-surface-elevated: #1a1c1f;
+  --color-line: rgba(231, 228, 223, 0.14);
+  --color-text: #f5f4f2;
+  --color-text-muted: #bab8b3;
+  --color-heading: var(--anvl-bone);
+  --color-accent: #c7c2b8;
+  --color-chip: rgba(52, 55, 58, 0.9);
+  --color-hero-glow: rgba(231, 228, 223, 0.08);
+}
+
+:root[data-theme="bone-light"] {
+  --color-bg: #f5f2ec;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #f0ece6;
+  --color-line: rgba(11, 11, 12, 0.2);
+  --color-text: #151618;
+  --color-text-muted: #474a4e;
+  --color-heading: #111214;
+  --color-accent: #2f3135;
+  --color-chip: rgba(29, 31, 33, 0.08);
+  --color-hero-glow: rgba(29, 31, 33, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: radial-gradient(circle at 20% -10%, #282b30 0%, transparent 35%),
+    linear-gradient(180deg, #111214 0%, var(--color-bg) 75%);
+  color: var(--color-text);
+  line-height: 1.45;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+}
+
+.anvl-heading {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-heading);
+}
+
+.anvl-micro {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.anvl-grid-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.focus-ring:focus-visible {
+  outline-color: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
