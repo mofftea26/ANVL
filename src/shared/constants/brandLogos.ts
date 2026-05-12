@@ -4,22 +4,18 @@ export type BrandLogoVariant = 'wordmark' | 'stacked' | 'mark'
 
 export type BrandLogoInk = 'theme' | 'light' | 'dark'
 
-/** Theme-driven paths by default: dark UI uses light ink; light UI uses dark ink. Override with `ink`. */
+/**
+ * Returns a public URL for the brand SVG. The active visual ink is driven
+ * by CSS `currentColor` on the consuming surface (the SVGs render their
+ * paths with `fill="currentColor"`), so the `theme` and `ink` parameters
+ * are kept only for backwards-compatible call sites.
+ */
 export function getBrandLogoSrc(
   variant: BrandLogoVariant,
-  theme: SiteTheme,
-  ink: BrandLogoInk = 'theme',
+  _theme: SiteTheme,
+  _ink: BrandLogoInk = 'theme',
 ): string {
-  let useLightInk: boolean
-  if (ink === 'light') useLightInk = true
-  else if (ink === 'dark') useLightInk = false
-  else useLightInk = theme === 'oath-dark'
-
-  if (variant === 'wordmark') {
-    return useLightInk ? '/brand/logo-wordmark-light.png' : '/brand/logo-wordmark-dark.png'
-  }
-  if (variant === 'stacked') {
-    return useLightInk ? '/brand/logo-stacked-light.png' : '/brand/logo-stacked-dark.png'
-  }
-  return useLightInk ? '/brand/mark-light.png' : '/brand/mark-dark.png'
+  if (variant === 'wordmark') return '/brand/wordmark.svg'
+  if (variant === 'stacked') return '/brand/stacked.svg'
+  return '/brand/mark.svg'
 }

@@ -1,56 +1,55 @@
-import { useEffect, useState } from 'react'
 import {
-  type BrandLogoInk,
-  type BrandLogoVariant,
-  type SiteTheme,
-  getBrandLogoSrc,
+  AnvlCrest,
+  AnvlStacked,
+  AnvlWordmark,
+} from '@/shared/assets/brand'
+import type {
+  BrandLogoInk,
+  BrandLogoVariant,
 } from '@/shared/constants/brandLogos'
-import { cn } from '@/shared/lib/cn'
 
+/**
+ * Theme-aware brand mark. The underlying SVGs use `currentColor`, so the
+ * mark inherits its color from the surrounding CSS — no per-theme image
+ * files are needed. `ink` and `fetchPriority` remain on the prop signature
+ * for call-site compatibility but no longer drive a separate asset URL.
+ */
 export function AnvlLogoImage({
   variant,
   className,
   alt,
-  fetchPriority,
   decorative,
-  ink = 'theme',
 }: {
   variant: BrandLogoVariant
   className?: string
   alt?: string
+  /** Kept for API compatibility; inline SVGs are not network-loaded. */
   fetchPriority?: 'high' | 'low' | 'auto'
   decorative?: boolean
-  /** Override asset ink; nav can force `dark` on dark chrome to try marble wordmark. */
+  /** Kept for API compatibility; ink now follows `currentColor`. */
   ink?: BrandLogoInk
 }) {
-  const [theme, setTheme] = useState<SiteTheme>('oath-dark')
+  const Component =
+    variant === 'wordmark'
+      ? AnvlWordmark
+      : variant === 'stacked'
+        ? AnvlStacked
+        : AnvlCrest
 
-  useEffect(() => {
-    const el = document.documentElement
-    const read = () => setTheme((el.dataset.theme as SiteTheme) || 'oath-dark')
-    read()
-    const observer = new MutationObserver(read)
-    observer.observe(el, { attributes: true, attributeFilter: ['data-theme'] })
-    return () => observer.disconnect()
-  }, [])
+  if (decorative) {
+    return (
+      <span aria-hidden="true" className="contents">
+        <Component className={className} />
+      </span>
+    )
+  }
 
-  const src = getBrandLogoSrc(variant, theme, ink)
-  const resolvedAlt =
-    decorative
-      ? ''
-      : (alt ?? (variant === 'mark' ? 'ANVL crest mark' : 'ANVL Athletics'))
+  const label =
+    alt ?? (variant === 'mark' ? 'ANVL crest mark' : 'ANVL Athletics')
 
   return (
-    <img
-      src={src}
-      alt={resolvedAlt}
-      className={cn(
-        'block max-w-none shrink-0 object-contain object-left',
-        className,
-      )}
-      decoding="async"
-      fetchPriority={fetchPriority}
-      aria-hidden={decorative ? true : undefined}
-    />
+    <span role="img" aria-label={label} className="contents">
+      <Component className={className} />
+    </span>
   )
 }

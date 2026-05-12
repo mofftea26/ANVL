@@ -16,6 +16,12 @@
   --anvl-washed-charcoal: #34373a;
   --anvl-graphite: #5b5e61;
   --anvl-bone: #e7e4df;
+
+  /* Sticky header is h-16 (4rem) on all breakpoints. Centralizing it
+     here lets every full-viewport section subtract the header height
+     and pinned ScrollTrigger sequences offset by the same amount. */
+  --anvl-header-h: 4rem;
+  --anvl-section-h: calc(100svh - var(--anvl-header-h));
 }
 
 :root,
@@ -57,12 +63,19 @@ body,
 
 html {
   scroll-behavior: smooth;
+  /* Prevent any horizontal scroll from off-canvas brand shapes,
+     pinned scroll tracks, or 3D crest transforms. `clip` clips
+     without spawning a scroll container, so ScrollTrigger pinning
+     and `position: sticky` keep working. */
+  overflow-x: clip;
 }
 
 body {
   margin: 0;
+  overflow-x: clip;
   font-family: var(--font-sans);
-  background: radial-gradient(circle at 20% -10%, #282b30 0%, transparent 35%),
+  background:
+    radial-gradient(circle at 20% -10%, #282b30 0%, transparent 35%),
     linear-gradient(180deg, #111214 0%, var(--color-bg) 75%);
   color: var(--color-text);
   line-height: 1.45;
@@ -85,6 +98,21 @@ a {
   letter-spacing: 0.2em;
   font-size: 0.72rem;
   color: var(--color-text-muted);
+}
+
+/* Section sizing utilities. `anvl-screen-section` is the default —
+   a min-height of one screen under the sticky header. Content flows
+   naturally and can grow taller on small viewports without clipping.
+   `anvl-screen-section-fixed` locks to that height with a small
+   minimum and is used only where the content is guaranteed to fit
+   (currently just the hero). */
+.anvl-screen-section {
+  min-height: var(--anvl-section-h);
+}
+
+.anvl-screen-section-fixed {
+  height: var(--anvl-section-h);
+  min-height: 36rem;
 }
 
 .anvl-grid-overlay::before {
