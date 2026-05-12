@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { AnvlOathShape } from '@/shared/assets/brand'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Container } from '@/shared/components/ui/Container'
 import { Input } from '@/shared/components/ui/Input'
@@ -8,8 +9,12 @@ export function SiteFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="mt-16 border-t border-[var(--color-line)] py-12">
-      <Container className="grid gap-8 md:grid-cols-[1.5fr_1fr_1fr]">
+    <footer className="relative mt-16 overflow-hidden border-t border-[var(--color-line)] py-12">
+      <AnvlOathShape
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-32 top-1/2 z-0 h-[140%] w-auto -translate-y-1/2 text-[var(--color-heading)] opacity-[0.04] md:-right-20 md:opacity-[0.05]"
+      />
+      <Container className="relative z-10 grid gap-8 md:grid-cols-[1.5fr_1fr_1fr]">
         <div>
           <AnvlLogoImage
             variant="stacked"
@@ -38,7 +43,7 @@ export function SiteFooter() {
           <p className="mt-3 text-xs text-[var(--color-text-muted)]">Instagram / TikTok placeholders</p>
         </div>
       </Container>
-      <Container className="mt-8 border-t border-[var(--color-line)] pt-6 text-xs text-[var(--color-text-muted)]">
+      <Container className="relative z-10 mt-8 border-t border-[var(--color-line)] pt-6 text-xs text-[var(--color-text-muted)]">
         <p>© {year} ANVL Athletics. All rights reserved.</p>
       </Container>
     </footer>

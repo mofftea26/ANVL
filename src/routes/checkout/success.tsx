@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { buildSeoMeta } from '@/app/seo/meta'
+import { AnvlFullLockup } from '@/shared/assets/brand'
 import { Button, Container, Section } from '@/shared/components/ui'
 
 export const Route = createFileRoute('/checkout/success')({
@@ -20,7 +21,8 @@ function CheckoutSuccessPage() {
   return (
     <Section>
       <Container className="max-w-2xl text-center">
-        <p className="anvl-micro">Order confirmed</p>
+        <AnvlFullLockup className="mx-auto h-20 w-auto text-[var(--color-heading)] md:h-24" />
+        <p className="anvl-micro mt-8">Order confirmed</p>
         <h1 className="anvl-heading mt-4 text-7xl">The Oath Is Locked</h1>
         <p className="mt-4 text-sm text-[var(--color-text-muted)]">
           Your order has been placed successfully.

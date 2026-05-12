@@ -10,7 +10,7 @@ export function ProductGallery({ product }: { product: Product }) {
     <div className="space-y-3">
       <div className="overflow-hidden rounded-xl border border-[var(--color-line)]">
         <img
-          src={activeImage?.src ?? '/brand/placeholder-product.webp'}
+          src={activeImage?.src ?? '/brand/placeholder-product.svg'}
           alt={activeImage?.alt ?? `${product.name} product image`}
           className="aspect-[4/5] w-full object-cover"
         />

@@ -8,7 +8,12 @@ export function organizationJsonLd() {
     name: BRAND.name,
     url: BRAND.canonicalBaseUrl,
     slogan: BRAND.tagline,
-    logo: `${BRAND.canonicalBaseUrl}/brand/logo-stacked-dark.png`,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${BRAND.canonicalBaseUrl}/brand/logo-stacked-dark.png`,
+      contentUrl: `${BRAND.canonicalBaseUrl}/brand/stacked.svg`,
+    },
+    image: `${BRAND.canonicalBaseUrl}/brand/og-default.svg`,
   }
 }
 

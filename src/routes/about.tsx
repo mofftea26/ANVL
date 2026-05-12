@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { buildSeoMeta } from '@/app/seo/meta'
-import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
+import { AnvlCrest } from '@/shared/assets/brand'
 import { Container, Section } from '@/shared/components/ui'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { IndustrialDivider } from '@/shared/components/layout/IndustrialDivider'
@@ -40,6 +40,9 @@ function AboutPage() {
     <>
       <section className="relative overflow-hidden border-b border-[var(--color-line)]">
         <GrainOverlay />
+        <AnvlCrest
+          className="pointer-events-none absolute -right-12 top-1/2 z-0 h-[110%] w-auto -translate-y-1/2 text-[var(--color-heading)] opacity-[0.06] md:-right-24 md:opacity-[0.08]"
+        />
         <Container className="relative z-10 py-16 md:py-24">
           <p className="anvl-micro">About</p>
           <h1 className="anvl-heading mt-4 max-w-4xl text-6xl leading-[0.95] md:text-8xl">
@@ -49,9 +52,6 @@ function AboutPage() {
             ANVL Athletics builds premium bodybuilding gymwear in Lebanon for disciplined lifters—from Beirut to the
             platform abroad. Training comes first; the silhouette stays premium when the session ends.
           </p>
-          <div className="mt-10 flex h-[220px] w-full max-w-xs items-center justify-center">
-            <AnvlLogoImage variant="mark" decorative className="h-16 w-auto opacity-80 md:h-20" />
-          </div>
         </Container>
       </section>
 

@@ -1,18 +1,23 @@
 import { Link } from '@tanstack/react-router'
 import { memo } from 'react'
 import type { Product } from '@/features/products/types/product.types'
+import { AnvlCompactMark } from '@/shared/assets/brand'
 import { Badge } from './Badge'
 
 export const ProductCard = memo(function ProductCard({ product }: { product: Product }) {
   return (
     <article className="group overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] transition hover:scale-[1.01]">
       <Link to="/shop/$slug" params={{ slug: product.slug }} className="block no-underline">
-        <div className="aspect-[4/5] overflow-hidden border-b border-[var(--color-line)]">
+        <div className="relative aspect-[4/5] overflow-hidden border-b border-[var(--color-line)]">
           <img
-            src={product.images[0]?.src ?? '/brand/placeholder-product.webp'}
+            src={product.images[0]?.src ?? '/brand/placeholder-product.svg'}
             alt={product.images[0]?.alt ?? `${product.name} editorial placeholder`}
             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
             loading="lazy"
+          />
+          <AnvlCompactMark
+            aria-hidden="true"
+            className="pointer-events-none absolute right-3 top-3 h-6 w-auto text-[var(--color-heading)] opacity-30 mix-blend-overlay"
           />
         </div>
         <div className="space-y-3 p-4">

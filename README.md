@@ -117,19 +117,22 @@ Core ANVL palette is modeled as CSS variables and reusable constants:
 
 ## Logo / Brand Assets
 
-Custom SVG logo approximations (replaceable later):
+Themeable inline SVG components (driven by `currentColor`):
 - `src/shared/assets/brand/AnvlWordmark.tsx`
 - `src/shared/assets/brand/AnvlFullLockup.tsx`
 - `src/shared/assets/brand/AnvlCrest.tsx`
 - `src/shared/assets/brand/AnvlCompactMark.tsx`
+- `src/shared/assets/brand/AnvlOathShape.tsx`
 
-Public asset path for final real exports:
+Public asset path for raster + downloadable exports:
 - `public/brand/`
 
-Current placeholder files include:
-- `public/brand/logo-wordmark.svg`
-- `public/brand/placeholder-product.svg`
-- `public/brand/og-default.svg`
+Designer SVG/PNG exports in `public/brand/`:
+- Marks: `mark.svg`, `mark-light.png`, `mark-dark.png`, `favicon.png`
+- Wordmarks: `wordmark.svg`, `wordmark-athletics.svg`, `logo-wordmark-light.png`, `logo-wordmark-dark.png`
+- Stacked lockup: `stacked.svg`, `logo-stacked-light.png`, `logo-stacked-dark.png`
+- Drop graphic: `the-oath-shape.svg`
+- Open Graph + placeholder: `og-default.svg`, `placeholder-product.svg`
 
 ## SEO
 
@@ -219,4 +222,4 @@ NETCOMMERCE_API_KEY=
 ## Notes
 
 - The route `/admin-preview` is intentionally gated with `VITE_ADMIN_PREVIEW_ENABLED=true`.
-- Product media currently uses placeholders with descriptive alt text and can be replaced with AVIF/WebP files in `public/brand/`.
+- Product media currently uses placeholders (`public/brand/placeholder-product.svg`) with descriptive alt text; replace with AVIF/WebP files in `public/brand/` per product.

@@ -1,3 +1,4 @@
+import { AnvlCompactMark } from '@/shared/assets/brand'
 import { Container } from '@/shared/components/ui/Container'
 
 export function AnnouncementBar({
@@ -12,7 +13,13 @@ export function AnnouncementBar({
   return (
     <div className="border-b border-[var(--color-line)] bg-[var(--color-surface)] py-2">
       <Container className="flex items-center justify-between gap-4">
-        <p className="anvl-micro text-[10px] sm:text-xs">{message}</p>
+        <div className="flex min-w-0 items-center gap-2">
+          <AnvlCompactMark
+            aria-hidden="true"
+            className="h-4 w-auto shrink-0 text-[var(--color-heading)] opacity-70"
+          />
+          <p className="anvl-micro truncate text-[10px] sm:text-xs">{message}</p>
+        </div>
         <a className="anvl-micro text-[10px] underline sm:text-xs" href={ctaHref}>
           {ctaLabel}
         </a>
