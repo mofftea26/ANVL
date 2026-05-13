@@ -18,12 +18,24 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as CareGuideRouteImport } from './routes/care-guide'
 import { Route as AdminPreviewRouteImport } from './routes/admin-preview'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop/index'
 import { Route as CheckoutIndexRouteImport } from './routes/checkout/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ShopSlugRouteImport } from './routes/shop/$slug'
-import { Route as DropTheOathRouteImport } from './routes/drop/the-oath'
+import { Route as DropSlugRouteImport } from './routes/drop/$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout/success'
+import { Route as AdminWebsiteLayoutRouteImport } from './routes/admin/website-layout'
+import { Route as AdminThemeRouteImport } from './routes/admin/theme'
+import { Route as AdminSeoRouteImport } from './routes/admin/seo'
+import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminProductsIndexRouteImport } from './routes/admin/products/index'
+import { Route as AdminDropsIndexRouteImport } from './routes/admin/drops/index'
+import { Route as AdminProductsNewRouteImport } from './routes/admin/products/new'
+import { Route as AdminProductsProductIdRouteImport } from './routes/admin/products/$productId'
+import { Route as AdminDropsNewRouteImport } from './routes/admin/drops/new'
+import { Route as AdminDropsDropIdRouteImport } from './routes/admin/drops/$dropId'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -70,6 +82,11 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -85,14 +102,19 @@ const CheckoutIndexRoute = CheckoutIndexRouteImport.update({
   path: '/checkout/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const ShopSlugRoute = ShopSlugRouteImport.update({
   id: '/shop/$slug',
   path: '/shop/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DropTheOathRoute = DropTheOathRouteImport.update({
-  id: '/drop/the-oath',
-  path: '/drop/the-oath',
+const DropSlugRoute = DropSlugRouteImport.update({
+  id: '/drop/$slug',
+  path: '/drop/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
@@ -100,9 +122,60 @@ const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
   path: '/checkout/success',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminWebsiteLayoutRoute = AdminWebsiteLayoutRouteImport.update({
+  id: '/website-layout',
+  path: '/website-layout',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminThemeRoute = AdminThemeRouteImport.update({
+  id: '/theme',
+  path: '/theme',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminSeoRoute = AdminSeoRouteImport.update({
+  id: '/seo',
+  path: '/seo',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminProductsIndexRoute = AdminProductsIndexRouteImport.update({
+  id: '/products/',
+  path: '/products/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminDropsIndexRoute = AdminDropsIndexRouteImport.update({
+  id: '/drops/',
+  path: '/drops/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminProductsNewRoute = AdminProductsNewRouteImport.update({
+  id: '/products/new',
+  path: '/products/new',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminProductsProductIdRoute = AdminProductsProductIdRouteImport.update({
+  id: '/products/$productId',
+  path: '/products/$productId',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminDropsNewRoute = AdminDropsNewRouteImport.update({
+  id: '/drops/new',
+  path: '/drops/new',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminDropsDropIdRoute = AdminDropsDropIdRouteImport.update({
+  id: '/drops/$dropId',
+  path: '/drops/$dropId',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/admin-preview': typeof AdminPreviewRoute
   '/care-guide': typeof CareGuideRoute
@@ -112,11 +185,22 @@ export interface FileRoutesByFullPath {
   '/returns': typeof ReturnsRoute
   '/size-guide': typeof SizeGuideRoute
   '/terms': typeof TermsRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/seo': typeof AdminSeoRoute
+  '/admin/theme': typeof AdminThemeRoute
+  '/admin/website-layout': typeof AdminWebsiteLayoutRoute
   '/checkout/success': typeof CheckoutSuccessRoute
-  '/drop/the-oath': typeof DropTheOathRoute
+  '/drop/$slug': typeof DropSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/checkout/': typeof CheckoutIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/admin/drops/$dropId': typeof AdminDropsDropIdRoute
+  '/admin/drops/new': typeof AdminDropsNewRoute
+  '/admin/products/$productId': typeof AdminProductsProductIdRoute
+  '/admin/products/new': typeof AdminProductsNewRoute
+  '/admin/drops/': typeof AdminDropsIndexRoute
+  '/admin/products/': typeof AdminProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -129,15 +213,27 @@ export interface FileRoutesByTo {
   '/returns': typeof ReturnsRoute
   '/size-guide': typeof SizeGuideRoute
   '/terms': typeof TermsRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/seo': typeof AdminSeoRoute
+  '/admin/theme': typeof AdminThemeRoute
+  '/admin/website-layout': typeof AdminWebsiteLayoutRoute
   '/checkout/success': typeof CheckoutSuccessRoute
-  '/drop/the-oath': typeof DropTheOathRoute
+  '/drop/$slug': typeof DropSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/checkout': typeof CheckoutIndexRoute
   '/shop': typeof ShopIndexRoute
+  '/admin/drops/$dropId': typeof AdminDropsDropIdRoute
+  '/admin/drops/new': typeof AdminDropsNewRoute
+  '/admin/products/$productId': typeof AdminProductsProductIdRoute
+  '/admin/products/new': typeof AdminProductsNewRoute
+  '/admin/drops': typeof AdminDropsIndexRoute
+  '/admin/products': typeof AdminProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/admin-preview': typeof AdminPreviewRoute
   '/care-guide': typeof CareGuideRoute
@@ -147,16 +243,28 @@ export interface FileRoutesById {
   '/returns': typeof ReturnsRoute
   '/size-guide': typeof SizeGuideRoute
   '/terms': typeof TermsRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/seo': typeof AdminSeoRoute
+  '/admin/theme': typeof AdminThemeRoute
+  '/admin/website-layout': typeof AdminWebsiteLayoutRoute
   '/checkout/success': typeof CheckoutSuccessRoute
-  '/drop/the-oath': typeof DropTheOathRoute
+  '/drop/$slug': typeof DropSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/checkout/': typeof CheckoutIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/admin/drops/$dropId': typeof AdminDropsDropIdRoute
+  '/admin/drops/new': typeof AdminDropsNewRoute
+  '/admin/products/$productId': typeof AdminProductsProductIdRoute
+  '/admin/products/new': typeof AdminProductsNewRoute
+  '/admin/drops/': typeof AdminDropsIndexRoute
+  '/admin/products/': typeof AdminProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/about'
     | '/admin-preview'
     | '/care-guide'
@@ -166,11 +274,22 @@ export interface FileRouteTypes {
     | '/returns'
     | '/size-guide'
     | '/terms'
+    | '/admin/login'
+    | '/admin/seo'
+    | '/admin/theme'
+    | '/admin/website-layout'
     | '/checkout/success'
-    | '/drop/the-oath'
+    | '/drop/$slug'
     | '/shop/$slug'
+    | '/admin/'
     | '/checkout/'
     | '/shop/'
+    | '/admin/drops/$dropId'
+    | '/admin/drops/new'
+    | '/admin/products/$productId'
+    | '/admin/products/new'
+    | '/admin/drops/'
+    | '/admin/products/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -183,14 +302,26 @@ export interface FileRouteTypes {
     | '/returns'
     | '/size-guide'
     | '/terms'
+    | '/admin/login'
+    | '/admin/seo'
+    | '/admin/theme'
+    | '/admin/website-layout'
     | '/checkout/success'
-    | '/drop/the-oath'
+    | '/drop/$slug'
     | '/shop/$slug'
+    | '/admin'
     | '/checkout'
     | '/shop'
+    | '/admin/drops/$dropId'
+    | '/admin/drops/new'
+    | '/admin/products/$productId'
+    | '/admin/products/new'
+    | '/admin/drops'
+    | '/admin/products'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/about'
     | '/admin-preview'
     | '/care-guide'
@@ -200,15 +331,27 @@ export interface FileRouteTypes {
     | '/returns'
     | '/size-guide'
     | '/terms'
+    | '/admin/login'
+    | '/admin/seo'
+    | '/admin/theme'
+    | '/admin/website-layout'
     | '/checkout/success'
-    | '/drop/the-oath'
+    | '/drop/$slug'
     | '/shop/$slug'
+    | '/admin/'
     | '/checkout/'
     | '/shop/'
+    | '/admin/drops/$dropId'
+    | '/admin/drops/new'
+    | '/admin/products/$productId'
+    | '/admin/products/new'
+    | '/admin/drops/'
+    | '/admin/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AdminPreviewRoute: typeof AdminPreviewRoute
   CareGuideRoute: typeof CareGuideRoute
@@ -219,7 +362,7 @@ export interface RootRouteChildren {
   SizeGuideRoute: typeof SizeGuideRoute
   TermsRoute: typeof TermsRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
-  DropTheOathRoute: typeof DropTheOathRoute
+  DropSlugRoute: typeof DropSlugRoute
   ShopSlugRoute: typeof ShopSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
@@ -290,6 +433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -311,6 +461,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/shop/$slug': {
       id: '/shop/$slug'
       path: '/shop/$slug'
@@ -318,11 +475,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/drop/the-oath': {
-      id: '/drop/the-oath'
-      path: '/drop/the-oath'
-      fullPath: '/drop/the-oath'
-      preLoaderRoute: typeof DropTheOathRouteImport
+    '/drop/$slug': {
+      id: '/drop/$slug'
+      path: '/drop/$slug'
+      fullPath: '/drop/$slug'
+      preLoaderRoute: typeof DropSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout/success': {
@@ -332,11 +489,114 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/website-layout': {
+      id: '/admin/website-layout'
+      path: '/website-layout'
+      fullPath: '/admin/website-layout'
+      preLoaderRoute: typeof AdminWebsiteLayoutRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/theme': {
+      id: '/admin/theme'
+      path: '/theme'
+      fullPath: '/admin/theme'
+      preLoaderRoute: typeof AdminThemeRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/seo': {
+      id: '/admin/seo'
+      path: '/seo'
+      fullPath: '/admin/seo'
+      preLoaderRoute: typeof AdminSeoRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/products/': {
+      id: '/admin/products/'
+      path: '/products'
+      fullPath: '/admin/products/'
+      preLoaderRoute: typeof AdminProductsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/drops/': {
+      id: '/admin/drops/'
+      path: '/drops'
+      fullPath: '/admin/drops/'
+      preLoaderRoute: typeof AdminDropsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/products/new': {
+      id: '/admin/products/new'
+      path: '/products/new'
+      fullPath: '/admin/products/new'
+      preLoaderRoute: typeof AdminProductsNewRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/products/$productId': {
+      id: '/admin/products/$productId'
+      path: '/products/$productId'
+      fullPath: '/admin/products/$productId'
+      preLoaderRoute: typeof AdminProductsProductIdRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/drops/new': {
+      id: '/admin/drops/new'
+      path: '/drops/new'
+      fullPath: '/admin/drops/new'
+      preLoaderRoute: typeof AdminDropsNewRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/drops/$dropId': {
+      id: '/admin/drops/$dropId'
+      path: '/drops/$dropId'
+      fullPath: '/admin/drops/$dropId'
+      preLoaderRoute: typeof AdminDropsDropIdRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminSeoRoute: typeof AdminSeoRoute
+  AdminThemeRoute: typeof AdminThemeRoute
+  AdminWebsiteLayoutRoute: typeof AdminWebsiteLayoutRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminDropsDropIdRoute: typeof AdminDropsDropIdRoute
+  AdminDropsNewRoute: typeof AdminDropsNewRoute
+  AdminProductsProductIdRoute: typeof AdminProductsProductIdRoute
+  AdminProductsNewRoute: typeof AdminProductsNewRoute
+  AdminDropsIndexRoute: typeof AdminDropsIndexRoute
+  AdminProductsIndexRoute: typeof AdminProductsIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminLoginRoute: AdminLoginRoute,
+  AdminSeoRoute: AdminSeoRoute,
+  AdminThemeRoute: AdminThemeRoute,
+  AdminWebsiteLayoutRoute: AdminWebsiteLayoutRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminDropsDropIdRoute: AdminDropsDropIdRoute,
+  AdminDropsNewRoute: AdminDropsNewRoute,
+  AdminProductsProductIdRoute: AdminProductsProductIdRoute,
+  AdminProductsNewRoute: AdminProductsNewRoute,
+  AdminDropsIndexRoute: AdminDropsIndexRoute,
+  AdminProductsIndexRoute: AdminProductsIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AdminPreviewRoute: AdminPreviewRoute,
   CareGuideRoute: CareGuideRoute,
@@ -347,7 +607,7 @@ const rootRouteChildren: RootRouteChildren = {
   SizeGuideRoute: SizeGuideRoute,
   TermsRoute: TermsRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
-  DropTheOathRoute: DropTheOathRoute,
+  DropSlugRoute: DropSlugRoute,
   ShopSlugRoute: ShopSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
   ShopIndexRoute: ShopIndexRoute,

@@ -1,17 +1,23 @@
 import type { CommerceClient } from '@/app/config/clients'
-import { productsSchema } from '../schemas/product.schema'
-import { productsMock } from '../data/products.mock'
-
-const parsed = productsSchema.parse(productsMock)
+import {
+  getStorefrontProductBySlug,
+  getStorefrontProductsForHome,
+  getStorefrontProductsForShop,
+} from '@/features/admin/products/products.commerce'
 
 export const mockCommerceClient: CommerceClient = {
   async getProducts() {
-    return parsed
+    return getStorefrontProductsForShop()
+  },
+  async getHomeProducts() {
+    return getStorefrontProductsForHome()
   },
   async getProductBySlug(slug) {
-    return parsed.find((item) => item.slug === slug) ?? null
+    return getStorefrontProductBySlug(slug)
   },
   async getRelatedProducts(slug) {
-    return parsed.filter((item) => item.slug !== slug).slice(0, 2)
+    return getStorefrontProductsForShop()
+      .filter((item) => item.slug !== slug)
+      .slice(0, 2)
   },
 }

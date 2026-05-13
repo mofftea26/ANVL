@@ -4,15 +4,15 @@
   "description": "Premium bodybuilding gymwear forged under pressure.",
   "icons": [
     {
-      "src": "/brand/favicon.png",
-      "type": "image/png",
-      "sizes": "256x256",
+      "src": "/brand/mark.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
       "purpose": "any"
     },
     {
-      "src": "/brand/favicon.png",
-      "type": "image/png",
-      "sizes": "256x256",
+      "src": "/brand/mark.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
       "purpose": "maskable"
     }
   ],

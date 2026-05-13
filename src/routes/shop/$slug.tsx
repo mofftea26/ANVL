@@ -2,6 +2,11 @@ import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { useState } from 'react'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { runtimeClients } from '@/app/config/runtime'
+import {
+  effectivePrice,
+  variantIsPurchasable,
+} from '@/features/admin/products/products.mapper'
+import { getAdminProductBySlug } from '@/features/admin/products/products.service'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useProductAnalytics } from '@/features/analytics/hooks/useProductAnalytics'
 import { useTrackProductView } from '@/features/products/hooks/useTrackProductView'
@@ -21,21 +26,28 @@ import {
 export const Route = createFileRoute('/shop/$slug')({
   loader: async ({ params }) => {
     const product = await runtimeClients.commerce.getProductBySlug(params.slug)
-    if (!product) throw notFound()
+    const adminProduct = getAdminProductBySlug(params.slug)
+    if (!product || !adminProduct) throw notFound()
     const related = await runtimeClients.commerce.getRelatedProducts(params.slug)
-    return { product, related }
+    return { product, adminProduct, related }
   },
   head: ({ loaderData }) =>
     buildSeoMeta({
-      title: `${loaderData?.product.name ?? 'Product'} | ANVL Athletics`,
-      description: loaderData?.product.storytelling ?? 'ANVL Athletics product details',
+      title:
+        loaderData?.adminProduct.seo.title ??
+        `${loaderData?.product.name ?? 'Product'} | ANVL Athletics`,
+      description:
+        loaderData?.adminProduct.seo.description ??
+        loaderData?.product.storytelling ??
+        'ANVL Athletics product details',
       path: `/shop/${loaderData?.product.slug ?? ''}`,
+      image: loaderData?.adminProduct.seo.ogImage,
     }),
   component: ProductPage,
 })
 
 function ProductPage() {
-  const { product, related } = Route.useLoaderData()
+  const { product, adminProduct, related } = Route.useLoaderData()
   const [size, setSize] = useState(product.sizes[0] ?? 'M')
   const [colorwayIndex, setColorwayIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
@@ -45,6 +57,20 @@ function ProductPage() {
   useTrackProductView(product)
 
   const colorway = product.colorways[colorwayIndex] ?? product.colorways[0]
+  const displayPrice = effectivePrice(adminProduct)
+  const canPurchase = variantIsPurchasable(adminProduct, colorwayIndex, size)
+
+  const statusNote =
+    adminProduct.status === 'comingSoon'
+      ? 'Coming soon — not available for purchase yet.'
+      : adminProduct.status === 'outOfStock'
+        ? 'Currently out of stock online.'
+        : null
+
+  const saleActive =
+    adminProduct.isOnSale &&
+    typeof adminProduct.compareAtPrice === 'number' &&
+    adminProduct.compareAtPrice > displayPrice
 
   return (
     <Section>
@@ -65,7 +91,33 @@ function ProductPage() {
           <article className="space-y-6">
             <h1 className="anvl-heading text-6xl">{product.name}</h1>
             <p className="text-sm text-[var(--color-text-muted)]">{product.dropName}</p>
-            <p className="text-2xl font-semibold">${product.price}</p>
+            <div className="flex flex-wrap items-baseline gap-3">
+              {saleActive ? (
+                <>
+                  <p className="text-2xl font-semibold text-[var(--color-accent)]">
+                    ${displayPrice}
+                  </p>
+                  <p className="text-lg text-[var(--color-text-muted)] line-through">
+                    ${adminProduct.compareAtPrice}
+                  </p>
+                  {adminProduct.saleLabel ? (
+                    <span className="rounded-full border border-[var(--color-line)] px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-[var(--color-heading)]">
+                      {adminProduct.saleLabel}
+                    </span>
+                  ) : null}
+                </>
+              ) : (
+                <p className="text-2xl font-semibold">${displayPrice}</p>
+              )}
+            </div>
+            {adminProduct.status === 'sale' && !saleActive ? (
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                Sale
+              </p>
+            ) : null}
+            {statusNote ? (
+              <p className="text-sm text-[var(--color-text-muted)]">{statusNote}</p>
+            ) : null}
 
             <div>
               <p className="anvl-micro mb-2">Colorway</p>
@@ -95,12 +147,13 @@ function ProductPage() {
 
             <Button
               className="w-full"
+              disabled={!canPurchase}
               onClick={() => {
                 addLine({
                   productId: product.id,
                   slug: product.slug,
                   name: product.name,
-                  price: product.price,
+                  price: displayPrice,
                   colorway: colorway.name,
                   size,
                   quantity,
@@ -109,7 +162,7 @@ function ProductPage() {
                 trackAddToCart(product, quantity)
               }}
             >
-              Add to Cart
+              {canPurchase ? 'Add to Cart' : 'Unavailable'}
             </Button>
 
             <div className="grid gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4 text-sm">
@@ -138,12 +191,13 @@ function ProductPage() {
         <Container className="flex items-center justify-between">
           <p className="anvl-heading text-3xl">{product.name}</p>
           <Button
+            disabled={!canPurchase}
             onClick={() => {
               addLine({
                 productId: product.id,
                 slug: product.slug,
                 name: product.name,
-                price: product.price,
+                price: displayPrice,
                 colorway: colorway.name,
                 size,
                 quantity: 1,
@@ -152,7 +206,7 @@ function ProductPage() {
               trackAddToCart(product, 1)
             }}
           >
-            Add
+            {canPurchase ? 'Add' : '—'}
           </Button>
         </Container>
       </div>

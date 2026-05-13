@@ -135,7 +135,8 @@ function AboutPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
-              to="/drop/the-oath"
+              to="/drop/$slug"
+              params={{ slug: 'the-oath' }}
               className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-bg)] no-underline hover:opacity-90"
             >
               Explore Drop 01

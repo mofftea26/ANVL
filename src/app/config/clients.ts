@@ -1,5 +1,6 @@
 import type { Product } from '@/features/products/types/product.types'
 import type { HomePageContent, SeoContent } from '@/features/cms/types/cms.types'
+import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landingCms.types'
 import type { CartLine } from '@/features/cart/types/cart.types'
 import type {
   CheckoutInput,
@@ -7,12 +8,16 @@ import type {
 } from '@/features/checkout/types/checkout.types'
 
 export interface CommerceClient {
+  /** Full shop listing — publicly visible catalog items. */
   getProducts(): Promise<Product[]>
+  /** Homepage Act III–IV — limited to active drop assignment order. */
+  getHomeProducts(): Promise<Product[]>
   getProductBySlug(slug: string): Promise<Product | null>
   getRelatedProducts(slug: string): Promise<Product[]>
 }
 
 export interface CmsClient {
+  getLandingCmsContent(): Promise<LandingPageCmsContent>
   getHomepageContent(): Promise<HomePageContent>
   getAnnouncementBar(): Promise<{ message: string; ctaLabel: string; ctaHref: string }>
   getNavigation(): Promise<Array<{ label: string; href: string }>>

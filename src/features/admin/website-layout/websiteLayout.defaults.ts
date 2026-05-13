@@ -1,0 +1,42 @@
+import { landingCmsDefaults } from '@/features/admin/landing-cms/landingCms.defaults'
+import type { WebsiteLayoutContent } from './websiteLayout.types'
+
+export const WEBSITE_LAYOUT_VERSION = 1
+
+export function createDefaultWebsiteLayout(
+  nowIso = new Date().toISOString(),
+): WebsiteLayoutContent {
+  const nav = landingCmsDefaults.navigation
+  return {
+    version: WEBSITE_LAYOUT_VERSION,
+    updatedAt: nowIso,
+    header: {
+      logoStackedSrc: '/brand/stacked.svg',
+      cartVisible: true,
+      announcement: { enabled: false, message: '', href: '' },
+      headerLinks: nav.headerLinks.map((l) => ({ ...l })),
+      mobileExtraLinks: [],
+    },
+    footer: {
+      logoStackedSrc: '/brand/stacked.svg',
+      decorativeEmblemFallbackSrc: '/brand/the-oath-shape.svg',
+      tagline: nav.footerTagline,
+      microCaption: nav.footerMicroCaption,
+      linkGroups: [
+        {
+          id: 'footer-main',
+          title: undefined,
+          links: nav.footerLinks.map((l) => ({ ...l })),
+        },
+      ],
+      newsletterTitle: nav.newsletterTitle,
+      newsletterPlaceholder: nav.newsletterPlaceholder,
+      newsletterButtonText: nav.newsletterButtonText,
+      socialLinks: [
+        { id: 'soc-ig', label: 'Instagram', href: '#' },
+        { id: 'soc-tt', label: 'TikTok', href: '#' },
+      ],
+      copyrightText: 'ANVL Athletics. All rights reserved.',
+    },
+  }
+}

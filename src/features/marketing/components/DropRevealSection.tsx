@@ -1,21 +1,63 @@
 import { useRef } from 'react'
 import { Link } from '@tanstack/react-router'
+import type {
+  CmsCta,
+  CmsStatItem,
+  LandingDropIcon,
+} from '@/features/admin/landing-cms/landingCms.types'
 import { AnvlWordmark } from '@/shared/assets/brand'
 import { Container } from '@/shared/components/ui/Container'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 import type { Product } from '@/features/products/types/product.types'
 
+interface DropRevealSectionProps {
+  products: Product[]
+  actLabel: string
+  counterLabel: string
+  words: string[]
+  tagline: string
+  stats: CmsStatItem[]
+  primaryCta: CmsCta
+  secondaryCta: CmsCta
+  dropIcon: LandingDropIcon
+}
+
 /**
  * Act III — Drop 01: The Oath.
  *
  * Typographic monolith that names the drop. Eyebrow, mask-reveal
- * heading ("DROP / 01 / THE / OATH"), tagline, stats strip, and CTAs.
+ * heading ("DROP / 01 / THE / OATH"), optional CMS drop icon, tagline,
+ * stats strip, and CTAs.
  * A faded crest sits silently behind the type; an Oath shape
  * parallaxes very slightly through the viewport for depth without
  * fighting the scroll.
  */
-export function DropRevealSection({ products }: { products: Product[] }) {
+export function DropRevealSection({
+  products,
+  actLabel,
+  counterLabel,
+  words,
+  tagline,
+  stats,
+  primaryCta,
+  secondaryCta,
+  dropIcon,
+}: DropRevealSectionProps) {
   const root = useRef<HTMLElement | null>(null)
+  const showDropIcon = Boolean(dropIcon.src.trim())
+  const resolvedStats: CmsStatItem[] =
+    stats.length > 0
+      ? stats
+      : [
+          {
+            id: 'drop-stat-pieces',
+            label: 'Pieces',
+            value: String(products.length).padStart(2, '0'),
+          },
+          { id: 'drop-stat-edition', label: 'Edition', value: 'Numbered' },
+          { id: 'drop-stat-run', label: 'Run', value: 'Limited' },
+        ]
+  const resolvedWords = words.length > 0 ? words : ['DROP', '01', 'THE', 'OATH']
 
   useGSAP(
     () => {
@@ -39,12 +81,20 @@ export function DropRevealSection({ products }: { products: Product[] }) {
           const tagline = host.querySelector('[data-drop-tagline]')
           const stats = gsap.utils.toArray<HTMLElement>('[data-drop-stat]', host)
           const cta = host.querySelector('[data-drop-cta]')
+          const dropIconWrap = host.querySelector('[data-drop-icon]')
 
           if (reduced) {
-            gsap.set(
-              [eyebrow, counter, monolith, tagline, cta, ...words, ...stats],
-              { opacity: 1, y: 0, x: 0, scale: 1 },
-            )
+            const reducedTargets = [
+              eyebrow,
+              counter,
+              monolith,
+              tagline,
+              cta,
+              dropIconWrap,
+              ...words,
+              ...stats,
+            ].filter((el): el is Element => Boolean(el))
+            gsap.set(reducedTargets, { opacity: 1, y: 0, x: 0, scale: 1 })
             return
           }
 
@@ -52,23 +102,31 @@ export function DropRevealSection({ products }: { products: Product[] }) {
           gsap.set(counter, { opacity: 0, y: 14 })
           gsap.set(monolith, { opacity: 0, scale: 0.9 })
           gsap.set(words, { yPercent: 100, opacity: 0 })
+          if (dropIconWrap) gsap.set(dropIconWrap, { opacity: 0, y: 14 })
           gsap.set(tagline, { opacity: 0, y: 14 })
           gsap.set(stats, { opacity: 0, y: 18 })
           gsap.set(cta, { opacity: 0, y: 14 })
 
-          gsap
-            .timeline({
-              scrollTrigger: {
-                trigger: host,
-                start: 'top bottom-=160',
-                toggleActions: 'play none none reverse',
-              },
-              defaults: { ease: 'expo.out' },
-            })
-            .to(eyebrow, { opacity: 1, y: 0, duration: 0.6 }, 0)
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: host,
+              start: 'top bottom-=160',
+              toggleActions: 'play none none reverse',
+            },
+            defaults: { ease: 'expo.out' },
+          })
+
+          tl.to(eyebrow, { opacity: 1, y: 0, duration: 0.6 }, 0)
             .to(counter, { opacity: 1, y: 0, duration: 0.6 }, 0.05)
             .to(monolith, { opacity: 1, scale: 1, duration: 1.3 }, 0.1)
-            .to(
+          if (dropIconWrap) {
+            tl.to(
+              dropIconWrap,
+              { opacity: 1, y: 0, duration: 0.65 },
+              0.12,
+            )
+          }
+          tl.to(
               words,
               {
                 yPercent: 0,
@@ -114,14 +172,8 @@ export function DropRevealSection({ products }: { products: Product[] }) {
 
       return () => ctx.revert()
     },
-    { scope: root },
+    { scope: root, dependencies: [showDropIcon, dropIcon.src] },
   )
-
-  const stats = [
-    { label: 'Pieces', value: String(products.length).padStart(2, '0') },
-    { label: 'Edition', value: 'Numbered' },
-    { label: 'Run', value: 'Limited' },
-  ]
 
   return (
     <section
@@ -145,20 +197,35 @@ export function DropRevealSection({ products }: { products: Product[] }) {
             data-drop-eyebrow="true"
             className="anvl-micro will-change-transform"
           >
-            Act III — The Drop
+            {actLabel}
           </p>
           <p
             data-drop-counter="true"
             className="anvl-micro text-[var(--color-text-muted)] will-change-transform"
           >
-            01 / 01
+            {counterLabel}
           </p>
         </div>
 
+        {showDropIcon ? (
+          <div
+            data-drop-icon="true"
+            className="mt-6 flex justify-start will-change-transform sm:mt-8"
+          >
+            <img
+              src={dropIcon.src}
+              alt={dropIcon.alt.trim() ? dropIcon.alt : 'Drop mark'}
+              className="h-14 w-auto max-h-[4.5rem] max-w-[min(100%,14rem)] object-contain opacity-[0.95]"
+              decoding="async"
+              loading="lazy"
+            />
+          </div>
+        ) : null}
+
         <h2 className="anvl-heading mt-6 font-normal leading-[0.84] tracking-[-0.01em] text-[clamp(2.5rem,11vw,8.5rem)] sm:mt-8">
-          {['DROP', '01', 'THE', 'OATH'].map((word) => (
+          {resolvedWords.map((word, index) => (
             <span
-              key={word}
+              key={`${word}-${index}`}
               className="mr-3 inline-block overflow-hidden pb-[0.06em] align-baseline"
             >
               <span
@@ -175,15 +242,18 @@ export function DropRevealSection({ products }: { products: Product[] }) {
           data-drop-tagline="true"
           className="mt-6 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)] will-change-transform sm:mt-8 sm:text-[15px] md:text-base"
         >
-          The first ANVL release. Three forged pieces — built for serious
-          lifters, finished for streetwear hours. Numbered, limited, and
-          made to be worn through pressure.
+          {tagline}
         </p>
 
-        <dl className="mt-8 grid grid-cols-3 gap-3 border-y border-[var(--color-line)] py-5 sm:mt-10 sm:gap-6">
-          {stats.map((stat) => (
+        <dl
+          className="mt-8 grid gap-3 border-y border-[var(--color-line)] py-5 sm:mt-10 sm:gap-6"
+          style={{
+            gridTemplateColumns: `repeat(${Math.max(resolvedStats.length, 1)}, minmax(0, 1fr))`,
+          }}
+        >
+          {resolvedStats.map((stat) => (
             <div
-              key={stat.label}
+              key={stat.id}
               data-drop-stat="true"
               className="will-change-transform"
             >
@@ -202,16 +272,16 @@ export function DropRevealSection({ products }: { products: Product[] }) {
           className="mt-6 flex flex-wrap items-center gap-3 will-change-transform sm:mt-8"
         >
           <Link
-            to="/drop/the-oath"
+            to={primaryCta.href}
             className="focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-5 text-sm font-semibold text-[var(--color-bg)] no-underline transition-transform hover:-translate-y-0.5"
           >
-            Explore Drop 01
+            {primaryCta.label}
           </Link>
           <Link
-            to="/shop"
+            to={secondaryCta.href}
             className="focus-ring inline-flex h-11 items-center gap-2 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)]/70 px-5 text-sm font-semibold no-underline backdrop-blur transition-transform hover:-translate-y-0.5"
           >
-            View the pieces
+            {secondaryCta.label}
             <span aria-hidden="true">↓</span>
           </Link>
         </div>

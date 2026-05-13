@@ -28,6 +28,7 @@
 :root[data-theme="oath-dark"] {
   --color-bg: var(--anvl-black);
   --color-surface: #121315;
+  --color-surface-soft: #161820;
   --color-surface-elevated: #1a1c1f;
   --color-line: rgba(231, 228, 223, 0.14);
   --color-text: #f5f4f2;

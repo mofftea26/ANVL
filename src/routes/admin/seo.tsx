@@ -1,0 +1,58 @@
+import { Link, createFileRoute } from '@tanstack/react-router'
+import { AdminCard } from '@/features/admin/components/AdminCard'
+import { AdminLayout } from '@/features/admin/components/AdminLayout'
+import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
+import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
+
+export const Route = createFileRoute('/admin/seo')({
+  component: SeoHubRoute,
+})
+
+function SeoHubRoute() {
+  return (
+    <ProtectedAdminRoute>
+      <SeoHubPage />
+    </ProtectedAdminRoute>
+  )
+}
+
+function SeoHubPage() {
+  return (
+    <AdminLayout
+      title="SEO"
+      description="Discovery copy now lives beside the content that actually ships on the homepage."
+    >
+      <AdminSectionHeader
+        eyebrow="Routing"
+        title="Where SEO is authored"
+        description="Homepage meta tags sync from the active drop. Product pages use per-SKU overrides via the commerce catalog."
+      />
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <AdminCard
+          title="Active drop"
+          description="Title, descriptions, OG image, and slug-level sharing for the live landing narrative."
+        >
+          <Link
+            to="/admin/drops"
+            className="inline-flex h-11 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-5 text-sm font-semibold text-[var(--color-bg)] no-underline"
+          >
+            Edit drops & SEO tabs
+          </Link>
+        </AdminCard>
+
+        <AdminCard
+          title="Products"
+          description="OG image URLs, PDP titles, and meta descriptions sync with storefront mocks."
+        >
+          <Link
+            to="/admin/products"
+            className="inline-flex h-11 items-center rounded-md border border-[var(--color-line)] px-5 text-sm font-semibold text-[var(--color-heading)] no-underline hover:bg-[var(--color-surface-elevated)]"
+          >
+            Manage catalog SEO fields
+          </Link>
+        </AdminCard>
+      </div>
+    </AdminLayout>
+  )
+}

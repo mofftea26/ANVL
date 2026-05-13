@@ -1,11 +1,16 @@
-import { useRef } from 'react'
-import { AnvlOathShape } from '@/shared/assets/brand'
+import { useMemo, useRef } from 'react'
+import type { CmsTenetItem } from '@/features/admin/landing-cms/landingCms.types'
+import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { Container } from '@/shared/components/ui/Container'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 
 interface OathStampSequenceProps {
+  actLabel: string
+  counterLabel?: string
   heading: string
-  lines: string[]
+  intro: string
+  tenets: CmsTenetItem[]
+  emblemSrc?: string
 }
 
 /**
@@ -21,8 +26,21 @@ interface OathStampSequenceProps {
  * in the background rotates slowly and parallaxes through the
  * viewport for ambient motion.
  */
-export function OathStampSequence({ heading, lines }: OathStampSequenceProps) {
+export function OathStampSequence({
+  actLabel,
+  counterLabel,
+  heading,
+  intro,
+  tenets,
+  emblemSrc,
+}: OathStampSequenceProps) {
   const root = useRef<HTMLElement | null>(null)
+  const visibleTenets = useMemo(
+    () => tenets.filter((tenet) => tenet.isVisible !== false),
+    [tenets],
+  )
+  const resolvedCounter =
+    counterLabel ?? `${String(visibleTenets.length).padStart(2, '0')} Tenets`
 
   useGSAP(
     () => {
@@ -149,20 +167,24 @@ export function OathStampSequence({ heading, lines }: OathStampSequenceProps) {
           data-oath-shape="true"
           className="block will-change-transform"
         >
-          <AnvlOathShape className="h-[110svh] w-auto text-[var(--color-heading)] opacity-[0.04] md:opacity-[0.07]" />
+          <DropEmblemDecor
+            src={emblemSrc}
+            presentationOnly
+            className="h-[110svh] w-auto text-[var(--color-heading)] opacity-[0.04] md:opacity-[0.07]"
+          />
         </span>
       </div>
 
       <Container className="relative z-10">
         <div className="flex items-baseline justify-between gap-4">
           <p data-oath-eyebrow="true" className="anvl-micro will-change-transform">
-            Act II — The Manifesto
+            {actLabel}
           </p>
           <p
             data-oath-counter="true"
             className="anvl-micro text-[var(--color-text-muted)] will-change-transform"
           >
-            {String(lines.length).padStart(2, '0')} Tenets
+            {resolvedCounter}
           </p>
         </div>
 
@@ -194,15 +216,14 @@ export function OathStampSequence({ heading, lines }: OathStampSequenceProps) {
               data-oath-intro="true"
               className="mt-5 max-w-md text-sm leading-relaxed text-[var(--color-text-muted)] will-change-transform sm:text-[15px]"
             >
-              The tenets we live by. Every piece is built around them, and
-              every rep is a quiet promise to honor them.
+              {intro}
             </p>
           </div>
 
           <ol className="grid gap-2 sm:gap-3">
-            {lines.map((line, index) => (
+            {visibleTenets.map((tenet, index) => (
               <li
-                key={line}
+                key={tenet.id}
                 data-oath-tenet="true"
                 className="group flex items-center gap-4 border-b border-[var(--color-line)] py-3 will-change-transform sm:py-4"
               >
@@ -210,7 +231,7 @@ export function OathStampSequence({ heading, lines }: OathStampSequenceProps) {
                   {String(index + 1).padStart(2, '0')}
                 </span>
                 <p className="anvl-heading text-base font-normal leading-tight tracking-[0.04em] text-[var(--color-heading)] sm:text-lg md:text-xl">
-                  {line}
+                  {tenet.text}
                 </p>
                 <span
                   aria-hidden="true"

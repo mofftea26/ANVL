@@ -1,9 +1,14 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
+import type { CmsMaterialItem } from '@/features/admin/landing-cms/landingCms.types'
 import { Container } from '@/shared/components/ui/Container'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 
 interface MaterialsMarqueeProps {
-  materials: Array<{ title: string; description: string }>
+  actLabel: string
+  counterSuffix: string
+  heading: string
+  intro: string
+  materials: CmsMaterialItem[]
 }
 
 const SWATCH_GRADIENTS = [
@@ -22,8 +27,28 @@ const SWATCH_GRADIENTS = [
  * worst offender for scroll-jank earlier. Entrance-only animations,
  * transform + opacity only.
  */
-export function MaterialsMarquee({ materials }: MaterialsMarqueeProps) {
+export function MaterialsMarquee({
+  actLabel,
+  counterSuffix,
+  heading,
+  intro,
+  materials,
+}: MaterialsMarqueeProps) {
   const root = useRef<HTMLElement | null>(null)
+  const visibleMaterials = useMemo(
+    () => materials.filter((material) => material.isVisible !== false),
+    [materials],
+  )
+  const { featured, rest } = useMemo(() => {
+    const featuredItem =
+      visibleMaterials.find((material) => material.isFeatured) ??
+      visibleMaterials[0] ??
+      null
+    const remaining = visibleMaterials.filter(
+      (material) => material !== featuredItem,
+    )
+    return { featured: featuredItem, rest: remaining }
+  }, [visibleMaterials])
 
   useGSAP(
     () => {
@@ -105,8 +130,6 @@ export function MaterialsMarquee({ materials }: MaterialsMarqueeProps) {
     { scope: root },
   )
 
-  const [featured, ...rest] = materials
-
   return (
     <section
       ref={root}
@@ -124,46 +147,41 @@ export function MaterialsMarquee({ materials }: MaterialsMarqueeProps) {
             data-mm-eyebrow="true"
             className="anvl-micro will-change-transform"
           >
-            Act V — Materials & Quality
+            {actLabel}
           </p>
           <p
             data-mm-counter="true"
             className="anvl-micro text-[var(--color-text-muted)] will-change-transform"
           >
-            {String(materials.length).padStart(2, '0')} · Engineered
+            {String(visibleMaterials.length).padStart(2, '0')} · {counterSuffix}
           </p>
         </div>
 
         <div className="mt-6 grid gap-8 sm:mt-8 md:grid-cols-[1.1fr_1fr] md:items-end md:gap-10 lg:gap-14">
           <h2 className="anvl-heading font-normal leading-[0.9] text-[clamp(1.875rem,6vw,4rem)]">
-            {'Engineered for the body that pays the bill.'
-              .split(' ')
-              .map((word, i) => (
+            {heading.split(' ').map((word, i) => (
+              <span
+                key={`${word}-${i}`}
+                className="mr-2 inline-block overflow-hidden pb-[0.06em] align-baseline"
+              >
                 <span
-                  key={`${word}-${i}`}
-                  className="mr-2 inline-block overflow-hidden pb-[0.06em] align-baseline"
+                  data-mm-word="true"
+                  className="inline-block will-change-transform"
                 >
-                  <span
-                    data-mm-word="true"
-                    className="inline-block will-change-transform"
-                  >
-                    {word}
-                  </span>
+                  {word}
                 </span>
-              ))}
+              </span>
+            ))}
           </h2>
 
           <p
             data-mm-intro="true"
             className="max-w-md text-sm leading-relaxed text-[var(--color-text-muted)] will-change-transform sm:text-[15px]"
           >
-            Heavyweight cotton, premium stretch blends, dense compression
-            knits and woven finish details — every material is chosen for
-            shape, recovery and feel under load.
+            {intro}
           </p>
         </div>
 
-        {/* Featured material — first row, full width on desktop. */}
         {featured ? (
           <article
             data-mm-card="true"
@@ -176,7 +194,7 @@ export function MaterialsMarquee({ materials }: MaterialsMarqueeProps) {
             />
             <div>
               <p className="anvl-micro text-[var(--color-accent)]">
-                M.01 · Hero material
+                {featured.code} · Hero material
               </p>
               <h3 className="anvl-heading mt-3 text-2xl font-normal leading-tight sm:text-3xl md:text-4xl">
                 {featured.title}
@@ -188,18 +206,17 @@ export function MaterialsMarquee({ materials }: MaterialsMarqueeProps) {
           </article>
         ) : null}
 
-        {/* Remaining materials in a tight grid. */}
         {rest.length ? (
           <div className="mt-4 grid gap-3 sm:mt-5 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
             {rest.map((material, i) => (
               <article
-                key={material.title}
+                key={material.id}
                 data-mm-card="true"
                 className="group relative overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4 transition-colors will-change-transform hover:border-[var(--color-accent)]/40 sm:p-5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <span className="anvl-micro text-[var(--color-accent)]">
-                    M.{String(i + 2).padStart(2, '0')}
+                    {material.code}
                   </span>
                   <span
                     aria-hidden="true"

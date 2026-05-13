@@ -1,50 +1,131 @@
 import { Link } from '@tanstack/react-router'
-import { AnvlOathShape } from '@/shared/assets/brand'
+import type { LandingNavigationContent } from '@/features/admin/landing-cms/landingCms.types'
+import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Container } from '@/shared/components/ui/Container'
 import { Input } from '@/shared/components/ui/Input'
 import { Button } from '@/shared/components/ui/Button'
 
-export function SiteFooter() {
+interface SiteFooterProps {
+  navigation: LandingNavigationContent
+}
+
+export function SiteFooter({ navigation }: SiteFooterProps) {
   const year = new Date().getFullYear()
+
+  const visibleFooterLinks = (navigation.footerLinks ?? []).filter(
+    (link) => link.isVisible !== false,
+  )
+
+  const groups = navigation.footerLinkGroups ?? []
+
+  const emblemSrc =
+    navigation.activeDropEmblemSrc?.trim() ||
+    navigation.footerDecorativeEmblemFallbackSrc?.trim()
+
+  const footerLogoSrc = navigation.footerLogoSrc?.trim()
+
+  const copyright =
+    navigation.copyrightSuffix?.trim() ||
+    'ANVL Athletics. All rights reserved.'
+
+  const social = navigation.socialLinks ?? []
 
   return (
     <footer className="relative mt-16 overflow-hidden border-t border-[var(--color-line)] py-12">
-      <AnvlOathShape
-        aria-hidden="true"
+      <DropEmblemDecor
+        src={emblemSrc}
+        alt=""
+        presentationOnly
         className="pointer-events-none absolute -right-32 top-1/2 z-0 h-[140%] w-auto -translate-y-1/2 text-[var(--color-heading)] opacity-[0.04] md:-right-20 md:opacity-[0.05]"
       />
-      <Container className="relative z-10 grid gap-8 md:grid-cols-[1.5fr_1fr_1fr]">
+      <Container className="relative z-10 grid gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
         <div>
-          <AnvlLogoImage
-            variant="stacked"
-            className="h-14 w-auto max-w-[min(100%,280px)] md:h-16"
-          />
+          {footerLogoSrc ? (
+            <img
+              src={footerLogoSrc}
+              alt="ANVL"
+              className="h-14 w-auto max-w-[min(100%,280px)] object-contain md:h-16"
+            />
+          ) : (
+            <AnvlLogoImage
+              variant="stacked"
+              className="h-14 w-auto max-w-[min(100%,280px)] md:h-16"
+            />
+          )}
           <p className="mt-3 max-w-sm text-sm text-[var(--color-text-muted)]">
-            Premium bodybuilding gymwear for serious lifters.
+            {navigation.footerTagline}
           </p>
-          <p className="anvl-micro mt-4">Forged Under Pressure</p>
+          <p className="anvl-micro mt-4">{navigation.footerMicroCaption}</p>
         </div>
-        <nav className="space-y-2 text-sm">
-          <Link to="/shop">Shop</Link>
-          <br />
-          <Link to="/about">About</Link>
-          <br />
-          <Link to="/size-guide">Size Guide</Link>
-          <br />
-          <Link to="/returns">Returns</Link>
-        </nav>
-        <div>
-          <p className="anvl-micro mb-3">Newsletter</p>
-          <div className="flex gap-2">
-            <Input aria-label="Email for newsletter" placeholder="Email address" />
-            <Button type="button">Join</Button>
+
+        {groups.length > 0 ? (
+          <div className="grid gap-8 sm:grid-cols-2 md:block md:space-y-8">
+            {groups.map((group) => {
+              const links = group.links.filter((l) => l.isVisible !== false)
+              if (!links.length) return null
+              return (
+                <nav key={group.id} className="space-y-2 text-sm">
+                  {group.title ? (
+                    <p className="anvl-micro mb-2 text-[10px] text-[var(--color-text-muted)]">
+                      {group.title}
+                    </p>
+                  ) : null}
+                  {links.map((link, index) => (
+                    <span key={link.id ?? link.href}>
+                      <Link to={link.href}>{link.label}</Link>
+                      {index < links.length - 1 ? <br /> : null}
+                    </span>
+                  ))}
+                </nav>
+              )
+            })}
           </div>
-          <p className="mt-3 text-xs text-[var(--color-text-muted)]">Instagram / TikTok placeholders</p>
+        ) : (
+          <nav className="space-y-2 text-sm">
+            {visibleFooterLinks.map((link, index) => (
+              <span key={link.id ?? link.href}>
+                <Link to={link.href}>{link.label}</Link>
+                {index < visibleFooterLinks.length - 1 ? <br /> : null}
+              </span>
+            ))}
+          </nav>
+        )}
+
+        <div>
+          <p className="anvl-micro mb-3">{navigation.newsletterTitle}</p>
+          <div className="flex gap-2">
+            <Input
+              aria-label="Email for newsletter"
+              placeholder={navigation.newsletterPlaceholder}
+            />
+            <Button type="button">{navigation.newsletterButtonText}</Button>
+          </div>
+          {social.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-3 text-xs">
+              {social.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="text-[var(--color-text-muted)] underline-offset-4 hover:text-[var(--color-heading)] hover:underline"
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+              Social links are configured in Website Layout.
+            </p>
+          )}
         </div>
       </Container>
       <Container className="relative z-10 mt-8 border-t border-[var(--color-line)] pt-6 text-xs text-[var(--color-text-muted)]">
-        <p>© {year} ANVL Athletics. All rights reserved.</p>
+        <p>
+          © {year} {copyright}
+        </p>
       </Container>
     </footer>
   )

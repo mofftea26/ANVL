@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { Link } from '@tanstack/react-router'
-import { AnvlOathShape } from '@/shared/assets/brand'
+import type { CmsMetaItem } from '@/features/admin/landing-cms/landingCms.types'
+import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { Badge } from '@/shared/components/ui/Badge'
 import { Container } from '@/shared/components/ui/Container'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
@@ -12,6 +13,8 @@ interface HeroForgeSequenceProps {
   subtitle: string
   primaryCta: { label: string; href: string }
   secondaryCta: { label: string; href: string }
+  meta?: CmsMetaItem[]
+  emblemSrc?: string
 }
 
 const EMBER_COUNT = 10
@@ -26,13 +29,22 @@ const EMBER_COUNT = 10
  * + idle loops, and a small scroll-linked parallax/fade as the user
  * leaves the section.
  */
+const DEFAULT_META: CmsMetaItem[] = [
+  { id: 'hero-meta-drop', label: 'Drop', value: '01' },
+  { id: 'hero-meta-pieces', label: 'Pieces', value: '03' },
+  { id: 'hero-meta-status', label: 'Status', value: 'Soon' },
+]
+
 export function HeroForgeSequence({
   badgeText,
   title,
   subtitle,
   primaryCta,
   secondaryCta,
+  meta = DEFAULT_META,
+  emblemSrc,
 }: HeroForgeSequenceProps) {
+  const metaItems = meta.length > 0 ? meta : DEFAULT_META
   const root = useRef<HTMLElement | null>(null)
 
   useGSAP(
@@ -224,7 +236,11 @@ export function HeroForgeSequence({
         className="pointer-events-none absolute right-[-22%] top-1/2 z-0 -translate-y-1/2 select-none text-[var(--color-heading)] opacity-[0.18] sm:right-[-14%] sm:opacity-[0.22] md:right-[-6%] md:opacity-[0.28] lg:right-[-2%] lg:opacity-[0.5]"
       >
         <span data-hero-crest="true" className="block will-change-transform">
-          <AnvlOathShape className="h-[62svh] w-auto sm:h-[68svh] md:h-[74svh] lg:h-[80svh]" />
+          <DropEmblemDecor
+            src={emblemSrc}
+            presentationOnly
+            className="h-[62svh] w-auto sm:h-[68svh] md:h-[74svh] lg:h-[80svh]"
+          />
         </span>
       </div>
 
@@ -320,29 +336,27 @@ export function HeroForgeSequence({
 
             <dl
               data-hero-meta="true"
-              className="mt-6 grid max-w-md grid-cols-3 gap-3 border-t border-[var(--color-line)] pt-4 sm:mt-8 sm:gap-5 sm:pt-5"
+              className="mt-6 grid max-w-md gap-3 border-t border-[var(--color-line)] pt-4 sm:mt-8 sm:gap-5 sm:pt-5"
+              style={{
+                gridTemplateColumns: `repeat(${Math.max(metaItems.length, 1)}, minmax(0, 1fr))`,
+              }}
             >
-              <div>
-                <dt className="anvl-micro text-[var(--color-text-muted)]">
-                  Drop
-                </dt>
-                <dd className="anvl-heading mt-1 text-xl font-normal">01</dd>
-              </div>
-              <div>
-                <dt className="anvl-micro text-[var(--color-text-muted)]">
-                  Pieces
-                </dt>
-                <dd className="anvl-heading mt-1 text-xl font-normal">03</dd>
-              </div>
-              <div>
-                <dt className="anvl-micro text-[var(--color-text-muted)]">
-                  Status
-                </dt>
-                <dd className="anvl-heading mt-1 flex items-center gap-2 text-xl font-normal">
-                  <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--color-accent)]" />
-                  Soon
-                </dd>
-              </div>
+              {metaItems.map((item) => {
+                const hasPulse = item.label.toLowerCase() === 'status'
+                return (
+                  <div key={item.id}>
+                    <dt className="anvl-micro text-[var(--color-text-muted)]">
+                      {item.label}
+                    </dt>
+                    <dd className="anvl-heading mt-1 flex items-center gap-2 text-xl font-normal">
+                      {hasPulse ? (
+                        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--color-accent)]" />
+                      ) : null}
+                      {item.value}
+                    </dd>
+                  </div>
+                )
+              })}
             </dl>
           </div>
         </div>

@@ -3,6 +3,7 @@ import {
   Outlet,
   Scripts,
   createRootRoute,
+  useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
@@ -10,14 +11,15 @@ import type { ReactNode } from "react";
 import { AppProviders } from "@/app/providers/AppProviders";
 import { RouteAnalytics } from "@/app/providers/RouteAnalytics";
 import { runtimeClients } from "@/app/config/runtime";
+import { useLandingCms } from "@/features/admin/landing-cms/useLandingCms";
 import { SiteFooter } from "@/shared/components/layout/SiteFooter";
 import { StickyHeader } from "@/shared/components/layout/StickyHeader";
 import appCss from "@/styles.css?url";
 
 export const Route = createRootRoute({
   loader: async () => {
-    const navigation = await runtimeClients.cms.getNavigation();
-    return { navigation };
+    const landing = await runtimeClients.cms.getLandingCmsContent();
+    return { landing };
   },
   head: () => ({
     meta: [
@@ -27,9 +29,9 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", sizes: "any" },
-      { rel: "shortcut icon", href: "/favicon.ico" },
-      { rel: "apple-touch-icon", sizes: "180x180", href: "/brand/favicon.png" },
+      { rel: "icon", href: "/brand/mark.svg", type: "image/svg+xml" },
+      { rel: "shortcut icon", href: "/brand/mark.svg", type: "image/svg+xml" },
+      { rel: "apple-touch-icon", href: "/brand/mark.svg" },
       { rel: "manifest", href: "/manifest.json" },
     ],
   }),
@@ -52,15 +54,22 @@ function RootDocument({ children }: { children: ReactNode }) {
 }
 
 function RootLayout() {
-  const { navigation } = Route.useLoaderData();
+  const { landing: ssrLanding } = Route.useLoaderData();
+  const landing = useLandingCms(ssrLanding);
+  const navigation = landing.navigation;
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const isAdminRoute = pathname.startsWith("/admin");
+
   return (
     <>
       <RouteAnalytics />
-      <StickyHeader navigation={navigation} />
+      {!isAdminRoute ? <StickyHeader navigation={navigation} /> : null}
       <main>
         <Outlet />
       </main>
-      <SiteFooter />
+      {!isAdminRoute ? <SiteFooter navigation={navigation} /> : null}
       <TanStackDevtools
         config={{ position: "bottom-right" }}
         plugins={[

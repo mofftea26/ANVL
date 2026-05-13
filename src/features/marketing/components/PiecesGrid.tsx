@@ -7,6 +7,14 @@ import { gsap, useGSAP } from '@/shared/lib/gsap'
 
 interface PiecesGridProps {
   products: Product[]
+  actLabel: string
+  headingLineOne: string
+  headingLineTwo: string
+  viewAllLabel: string
+  viewAllHref: string
+  footerLeftText: string
+  footerLinkLabel: string
+  footerLinkHref: string
 }
 
 /**
@@ -17,7 +25,17 @@ interface PiecesGridProps {
  * 3-column grid across every breakpoint. Width is capped so the
  * row reads as a tight editorial strip rather than a shop page.
  */
-export function PiecesGrid({ products }: PiecesGridProps) {
+export function PiecesGrid({
+  products,
+  actLabel,
+  headingLineOne,
+  headingLineTwo,
+  viewAllLabel,
+  viewAllHref,
+  footerLeftText,
+  footerLinkLabel,
+  footerLinkHref,
+}: PiecesGridProps) {
   const root = useRef<HTMLElement | null>(null)
 
   useGSAP(
@@ -117,13 +135,13 @@ export function PiecesGrid({ products }: PiecesGridProps) {
               data-pieces-eyebrow="true"
               className="anvl-micro will-change-transform"
             >
-              Act IV — The Pieces
+              {actLabel}
             </p>
             <h2 className="anvl-heading mt-2 font-normal leading-[0.9] text-[clamp(1.75rem,6vw,3.75rem)]">
               <span className="block">
-                {'Three pieces.'.split(' ').map((word) => (
+                {headingLineOne.split(' ').map((word, index) => (
                   <span
-                    key={word}
+                    key={`l1-${word}-${index}`}
                     className="mr-2 inline-block overflow-hidden pb-[0.04em] align-baseline"
                   >
                     <span
@@ -136,9 +154,9 @@ export function PiecesGrid({ products }: PiecesGridProps) {
                 ))}
               </span>
               <span className="block">
-                {'One oath.'.split(' ').map((word) => (
+                {headingLineTwo.split(' ').map((word, index) => (
                   <span
-                    key={word}
+                    key={`l2-${word}-${index}`}
                     className="mr-2 inline-block overflow-hidden pb-[0.04em] align-baseline"
                   >
                     <span
@@ -155,10 +173,10 @@ export function PiecesGrid({ products }: PiecesGridProps) {
 
           <Link
             data-pieces-meta="true"
-            to="/shop"
+            to={viewAllHref}
             className="anvl-micro inline-flex items-center gap-2 self-start will-change-transform sm:self-end"
           >
-            View all
+            {viewAllLabel}
             <span aria-hidden="true">→</span>
           </Link>
         </div>
@@ -209,13 +227,13 @@ export function PiecesGrid({ products }: PiecesGridProps) {
           className="mt-6 flex items-center justify-between gap-4 border-t border-[var(--color-line)] pt-4 will-change-transform sm:mt-8"
         >
           <p className="anvl-micro text-[var(--color-text-muted)]">
-            Numbered editions · Drop 01
+            {footerLeftText}
           </p>
           <Link
-            to="/drop/the-oath"
+            to={footerLinkHref}
             className="anvl-micro inline-flex items-center gap-2 text-[var(--color-heading)] no-underline underline-offset-4 hover:underline"
           >
-            Drop story
+            {footerLinkLabel}
             <span aria-hidden="true">→</span>
           </Link>
         </div>
