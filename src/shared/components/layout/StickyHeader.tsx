@@ -102,7 +102,10 @@ export function StickyHeader({
           >
             {LogoMark}
           </Link>
-          <nav className="ml-8 hidden items-center gap-6 md:flex">
+          <nav
+            className="ml-8 hidden items-center gap-6 md:flex"
+            aria-label="Main navigation"
+          >
             {visibleLinks.map((item) => (
               <Link
                 key={item.id ?? item.href}
@@ -117,10 +120,18 @@ export function StickyHeader({
             {showCart ? (
               <Link
                 to="/cart"
+                aria-label={
+                  quantity > 0
+                    ? `Shopping cart, ${quantity} items`
+                    : 'Shopping cart, empty'
+                }
                 className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)]"
               >
-                <ShoppingBag size={16} />
-                <span className="absolute -right-1 -top-1 rounded-full bg-[var(--color-accent)] px-1.5 text-[10px] text-[var(--color-bg)]">
+                <ShoppingBag size={16} aria-hidden="true" />
+                <span
+                  aria-hidden="true"
+                  className="absolute -right-1 -top-1 rounded-full bg-[var(--color-accent)] px-1.5 text-[10px] text-[var(--color-bg)]"
+                >
                   {quantity}
                 </span>
               </Link>
@@ -136,7 +147,7 @@ export function StickyHeader({
         </Container>
       </div>
 
-      <Drawer open={open} onClose={() => setOpen(false)}>
+      <Drawer open={open} onClose={() => setOpen(false)} aria-label="Site navigation">
         <div className="flex items-center justify-between">
           {LogoMark}
           <IconButton

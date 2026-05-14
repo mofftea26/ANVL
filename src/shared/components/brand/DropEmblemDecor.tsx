@@ -25,7 +25,6 @@ export function DropEmblemDecor({
         src={trimmed}
         alt={presentationOnly ? '' : alt}
         aria-hidden={presentationOnly ? true : undefined}
-        role={presentationOnly ? 'presentation' : undefined}
         className={cn('pointer-events-none select-none object-contain', className)}
       />
     )

@@ -3,10 +3,9 @@ import { useNavigate } from '@tanstack/react-router'
 import { useAdminAuth } from './useAdminAuth'
 
 /**
- * Client-side admin guard. Auth state lives in `localStorage`, which
- * isn't available during SSR — we therefore render a small skeleton
- * while hydration is in flight and only redirect once the auth state
- * is known.
+ * Client-side admin guard only — not production security. Auth state lives in
+ * `localStorage`, which isn't available during SSR, so we render a status
+ * region while hydration runs and redirect once auth is known.
  */
 export function ProtectedAdminRoute({ children }: PropsWithChildren) {
   const { isAuthenticated, isHydrated } = useAdminAuth()
@@ -20,7 +19,11 @@ export function ProtectedAdminRoute({ children }: PropsWithChildren) {
 
   if (!isHydrated || !isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)]">
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex min-h-screen items-center justify-center bg-[var(--color-bg)]"
+      >
         <p className="anvl-micro text-[var(--color-text-muted)]">
           {isHydrated ? 'Redirecting to admin login…' : 'Loading admin…'}
         </p>

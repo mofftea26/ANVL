@@ -2,6 +2,7 @@ import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Copy, ExternalLink, Trash2 } from 'lucide-react'
 import {
   useDeferredValue,
+  useId,
   useMemo,
   useState,
 } from 'react'
@@ -66,12 +67,19 @@ const STATUS_OPTIONS: Array<ProductStatus | 'all'> = [
   'archived',
 ]
 
-function primaryImg(p: AdminProduct): string | undefined {
+function primaryListImage(p: AdminProduct): { src: string; alt: string } | null {
   for (const c of p.colors) {
     const primary = c.images.find((i) => i.isPrimary) ?? c.images[0]
-    if (primary?.url) return primary.url
+    const url = primary?.url?.trim()
+    if (url) {
+      const altFromImage = primary?.alt?.trim()
+      const colorName = c.name?.trim() || 'Primary color'
+      const productName = p.name?.trim() || 'Product'
+      const alt = altFromImage || `${productName} — ${colorName}`
+      return { src: url, alt }
+    }
   }
-  return undefined
+  return null
 }
 
 function stockSummary(p: AdminProduct): string {
@@ -194,6 +202,7 @@ function ProductsIndex() {
   const [sortKey, setSortKey] = useState<SortKey>('updated_desc')
   const [groupMode, setGroupMode] = useState<GroupMode>('flat')
   const [pendingDelete, setPendingDelete] = useState<AdminProduct | null>(null)
+  const deleteModalTitleId = useId()
 
   const filtered = useMemo(() => {
     const cat = categoryQ.trim().toLowerCase()
@@ -269,7 +278,7 @@ function ProductsIndex() {
   }
 
   const renderCard = (p: AdminProduct) => {
-    const img = primaryImg(p)
+    const thumb = primaryListImage(p)
     return (
       <AdminCard
         key={p.id}
@@ -278,8 +287,8 @@ function ProductsIndex() {
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
           <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]">
-            {img ? (
-              <img src={img} alt="" className="h-full w-full object-cover" />
+            {thumb ? (
+              <img src={thumb.src} alt={thumb.alt} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center text-[10px] text-[var(--color-text-muted)]">
                 No image
@@ -578,9 +587,15 @@ function ProductsIndex() {
             </>}
       </div>
 
-      <Modal open={pendingDelete !== null} onClose={() => setPendingDelete(null)}>
+      <Modal
+        open={pendingDelete !== null}
+        onClose={() => setPendingDelete(null)}
+        aria-labelledby={deleteModalTitleId}
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Delete product?</h3>
+          <h3 id={deleteModalTitleId} className="anvl-heading text-xl font-normal">
+            Delete product?
+          </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Removes {pendingDelete?.name ?? 'this product'} from the catalog and
             every drop roster.

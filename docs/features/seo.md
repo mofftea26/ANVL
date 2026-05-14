@@ -45,3 +45,4 @@ type SeoDocument = {
 - Product pages need product structured data later.
 - Organization JSON-LD should use official ANVL brand identity.
 - Sitemap should include active public pages/products only when backend exists.
+- `JsonLd` serializes structured data with `<` replaced by `\u003c` inside the JSON string so untrusted CMS copy cannot break out of the script tag.

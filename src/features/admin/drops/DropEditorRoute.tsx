@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
@@ -73,6 +73,11 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const [confirmActivateOnly, setConfirmActivateOnly] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const saveModalTitleId = useId()
+  const activateModalTitleId = useId()
+  const resetModalTitleId = useId()
+  const deleteModalTitleId = useId()
 
   useEffect(() => {
     setDraft(saved)
@@ -694,9 +699,13 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </div>
       </div>
 
-      <Modal open={confirmSave} onClose={() => setConfirmSave(false)}>
+      <Modal
+        open={confirmSave}
+        onClose={() => setConfirmSave(false)}
+        aria-labelledby={saveModalTitleId}
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">
+          <h3 id={saveModalTitleId} className="anvl-heading text-xl font-normal">
             {makeActiveAfterSave
               ? 'Save & activate drop?'
               : 'Save this drop?'}
@@ -725,9 +734,15 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </div>
       </Modal>
 
-      <Modal open={confirmActivateOnly} onClose={() => setConfirmActivateOnly(false)}>
+      <Modal
+        open={confirmActivateOnly}
+        onClose={() => setConfirmActivateOnly(false)}
+        aria-labelledby={activateModalTitleId}
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Make this drop active?</h3>
+          <h3 id={activateModalTitleId} className="anvl-heading text-xl font-normal">
+            Make this drop active?
+          </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Make this drop active? This will deactivate the currently active drop and update the public landing page.
           </p>
@@ -751,9 +766,15 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </div>
       </Modal>
 
-      <Modal open={confirmReset} onClose={() => setConfirmReset(false)}>
+      <Modal
+        open={confirmReset}
+        onClose={() => setConfirmReset(false)}
+        aria-labelledby={resetModalTitleId}
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Reset drop?</h3>
+          <h3 id={resetModalTitleId} className="anvl-heading text-xl font-normal">
+            Reset drop?
+          </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Restores landing defaults while keeping this drop&apos;s id and slug.
           </p>
@@ -779,9 +800,15 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </div>
       </Modal>
 
-      <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)}>
+      <Modal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        aria-labelledby={deleteModalTitleId}
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Delete this drop?</h3>
+          <h3 id={deleteModalTitleId} className="anvl-heading text-xl font-normal">
+            Delete this drop?
+          </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Removes the drop locally. At least one drop always remains — defaults will respawn if needed.
           </p>

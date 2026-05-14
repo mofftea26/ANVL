@@ -42,7 +42,11 @@ export function AdminLayout({
         </div>
       </div>
 
-      <Drawer open={mobileOpen} onClose={() => setMobileOpen(false)}>
+      <Drawer
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        aria-label="Admin navigation"
+      >
         <AdminSidebar
           onNavigate={() => setMobileOpen(false)}
           className="h-full border-r-0"

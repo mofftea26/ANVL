@@ -24,6 +24,10 @@ export const AdminAuthContext = createContext<AdminAuthContextValue | null>(
   null,
 )
 
+/**
+ * Dev-only admin authentication: static credentials ship in the client bundle.
+ * Replace with real server-backed sessions before production.
+ */
 export function AdminAuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<AdminSession | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)

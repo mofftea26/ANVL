@@ -47,6 +47,12 @@ Cursor agents must append every completed task here.
 - Tests/manual checks: `pnpm run typecheck`, `pnpm run test` (no test files in repo; Vitest exits with code 1), `pnpm run build`; manual: `/admin/drops` search and tabs, activate with confirmation, schedule, archive, delete, duplicate, mobile card layout.
 - Notes/debt: Automatic activation at `scheduledActivationAt` is not implemented (storage and admin UI only).
 
+## 2026-05-14 — Prompt 19: Accessibility and frontend security pass
+- Summary: Hardened `Modal` and `Drawer` with focus management, Escape-to-close, and required accessible names; improved storefront/admin navigation labels; validated persisted drops JSON with Zod; escaped JSON-LD output; improved admin image alt text; documented dev-only admin auth and launch security backlog.
+- Files changed: `src/shared/components/ui/Modal.tsx`, `src/shared/components/ui/Drawer.tsx`, `src/shared/components/seo/JsonLd.tsx`, `src/features/admin/drops/drops.service.ts`, `src/shared/components/brand/DropEmblemDecor.tsx`, `src/features/admin/components/AdminLayout.tsx`, `src/shared/components/layout/StickyHeader.tsx`, `src/features/admin/auth/AdminAuthProvider.tsx`, `src/features/admin/auth/ProtectedAdminRoute.tsx`, `src/routes/admin/login.tsx`, `src/routes/admin/index.tsx`, `src/features/admin/drops/DropEditorRoute.tsx`, `src/features/admin/drops/DropsAdminList.tsx`, `src/features/admin/products/ProductEditorRoute.tsx`, `src/routes/admin/products/index.tsx`, `docs/changelog.md`, `docs/technical-debt.md`, `docs/performance-accessibility-security.md`, `docs/features/seo.md`
+- Tests/manual checks: `pnpm typecheck`, `pnpm build`; keyboard: Tab cycles inside an open admin modal, Escape closes; cart link announces count in VoiceOver/speech viewer; JSON-LD view-source shows `\u003c` escapes if a title contained `<`.
+- Notes/debt: Admin auth remains client-only; CSP and server-side rate limits still future work (see `docs/technical-debt.md`).
+
 ## 2026-05-14 — Add project documentation and agent prompts
 - Summary: Added `AGENTS.md` at the repository root, populated `docs/` with core and feature documentation, and added the numbered Cursor prompt library under `docs/prompts/` per the documentation index.
 - Files changed: `AGENTS.md`, `docs/README.md`, `docs/*.md` (core docs), `docs/features/*.md`, `docs/prompts/*.md`, `README.md`, `docs/changelog.md`

@@ -23,6 +23,7 @@
 - Every input has a label.
 - Every product image has meaningful alt text.
 - Keyboard usable menus, dialogs, filters, cart drawer.
+- `Modal` / `Drawer`: focus trap while open, restore focus on close, Escape closes, `aria-modal="true"`, and `aria-labelledby` (preferred) or `aria-label` on the dialog surface.
 - Visible focus states.
 - Sufficient contrast.
 - Respect `prefers-reduced-motion`.
@@ -33,6 +34,7 @@
 - Never expose API keys or admin secrets in frontend.
 - Validate all CMS/product/SEO data with schemas.
 - Sanitize rich text and HTML.
+- Escape JSON-LD / `application/ld+json` payloads so string values cannot inject `</script>` (see `JsonLd` helper).
 - Validate uploads by MIME, size, extension, dimensions.
 - Use CSP later.
 - Secure cookies later: HttpOnly, Secure, SameSite.

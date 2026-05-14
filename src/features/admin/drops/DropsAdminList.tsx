@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { ExternalLink } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
@@ -110,6 +110,10 @@ export function DropsAdminList() {
   const deleteMut = useDeleteAdminDropMutation()
 
   const [modal, setModal] = useState<ModalMode | null>(null)
+  const activateTitleId = useId()
+  const scheduleTitleId = useId()
+  const archiveTitleId = useId()
+  const deleteTitleId = useId()
   const [scheduleLocal, setScheduleLocal] = useState(() =>
     isoToDatetimeLocalValue(new Date(Date.now() + 60 * 60 * 1000).toISOString()),
   )
@@ -373,9 +377,15 @@ export function DropsAdminList() {
         ) : null}
       </div>
 
-      <Modal open={modal?.kind === 'activate'} onClose={() => setModal(null)}>
+      <Modal
+        open={modal?.kind === 'activate'}
+        onClose={() => setModal(null)}
+        aria-labelledby={activateTitleId}
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Make drop active?</h3>
+          <h3 id={activateTitleId} className="anvl-heading text-xl font-normal">
+            Make drop active?
+          </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will power
             the public landing page and theme. The current active drop will be set to inactive.
@@ -405,9 +415,15 @@ export function DropsAdminList() {
         </div>
       </Modal>
 
-      <Modal open={modal?.kind === 'schedule'} onClose={() => setModal(null)}>
+      <Modal
+        open={modal?.kind === 'schedule'}
+        onClose={() => setModal(null)}
+        aria-labelledby={scheduleTitleId}
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Schedule activation</h3>
+          <h3 id={scheduleTitleId} className="anvl-heading text-xl font-normal">
+            Schedule activation
+          </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Set a planned activation time for{' '}
             <span className="font-medium text-[var(--color-text)]">{modal?.label}</span>. This does
@@ -451,9 +467,15 @@ export function DropsAdminList() {
         </div>
       </Modal>
 
-      <Modal open={modal?.kind === 'archive'} onClose={() => setModal(null)}>
+      <Modal
+        open={modal?.kind === 'archive'}
+        onClose={() => setModal(null)}
+        aria-labelledby={archiveTitleId}
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Archive drop?</h3>
+          <h3 id={archiveTitleId} className="anvl-heading text-xl font-normal">
+            Archive drop?
+          </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will be
             hidden from activation and scheduling.
@@ -483,9 +505,15 @@ export function DropsAdminList() {
         </div>
       </Modal>
 
-      <Modal open={modal?.kind === 'delete'} onClose={() => setModal(null)}>
+      <Modal
+        open={modal?.kind === 'delete'}
+        onClose={() => setModal(null)}
+        aria-labelledby={deleteTitleId}
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Delete drop?</h3>
+          <h3 id={deleteTitleId} className="anvl-heading text-xl font-normal">
+            Delete drop?
+          </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             This removes{' '}
             <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> from local

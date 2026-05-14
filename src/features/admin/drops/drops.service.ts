@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { AdminProduct } from '@/features/admin/products/products.types'
 import { GLOBAL_BRAND_STORAGE_KEY } from '@/features/admin/global-brand/globalBrand.storage'
 import type { Drop, DropStatus, DropsPersistedState } from './drops.types'
@@ -35,6 +36,11 @@ import {
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 
 let hydrationRan = false
+
+/** Validates persisted shape before merging into typed drops (tamper-resistant). */
+const dropsPersistedPayloadSchema = z.object({
+  drops: z.array(z.record(z.string(), z.unknown())).min(1),
+})
 
 function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
   const base = createDefaultTheOathDrop([...DEFAULT_OATH_PRODUCT_IDS])
@@ -103,13 +109,9 @@ function parseDropsPayload(raw: string | null): DropsPersistedState | null {
   if (!raw) return null
   try {
     const parsed = JSON.parse(raw) as unknown
-    if (
-      !parsed ||
-      typeof parsed !== 'object' ||
-      !Array.isArray((parsed as DropsPersistedState).drops)
-    )
-      return null
-    const rawDrops = (parsed as DropsPersistedState).drops
+    const validated = dropsPersistedPayloadSchema.safeParse(parsed)
+    if (!validated.success) return null
+    const rawDrops = validated.data.drops
     const merged = rawDrops.map((d) =>
       mergeDropPartial((d ?? {}) as Partial<Drop>),
     )
