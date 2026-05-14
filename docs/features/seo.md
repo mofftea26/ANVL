@@ -45,3 +45,7 @@ type SeoDocument = {
 - Product pages need product structured data later.
 - Organization JSON-LD should use official ANVL brand identity.
 - Sitemap should include active public pages/products only when backend exists.
+
+## Backend API contracts
+Editorial SEO list/patch shapes for page/drop/product entities are defined as `CmsSeo*` types in `src/shared/api/contracts/cms.contract.ts` for a future CMS API. Route `head` functions continue to use loader data and `buildSeoMeta` today. See `docs/contracts/README.md`.
+

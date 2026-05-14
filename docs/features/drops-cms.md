@@ -100,3 +100,7 @@ When a drop becomes active:
 - The Drop Editor **Landing acts** tab includes `DropActsBuilderPanel` (add/remove/reorder, nature and preset selectors, eyebrow/title/subtitle/body) plus the legacy per-section forms. `Drop.acts` is persisted with the drop; `landingActSequence` toggles are synced when mapped slots have at least one enabled act.
 - The public `/` route renders `PublicLandingActs`, which switches on `nature` to existing section components (Act III onward lazy-loaded), respects `enabled === false`, and degrades unknown types to a small on-page notice.
 - Hero GSAP runs only at `min-width: 768px` with `prefers-reduced-motion: no-preference`; mobile and reduced-motion users see a static hero layout for speed and accessibility.
+
+## Backend API contracts
+Future REST/BFF payloads for drops, landing CMS, and SEO entities are sketched in `src/shared/api/contracts/cms.contract.ts` (list/create/update shapes, pagination, errors). The storefront continues to use `runtimeClients.cms` and local storage until a backend exists. See `docs/contracts/README.md` and `docs/backend-medusa-roadmap.md` (Typed API contracts).
+

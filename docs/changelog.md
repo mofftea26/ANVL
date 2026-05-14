@@ -13,8 +13,8 @@ Cursor agents must append every completed task here.
 
 ## 2026-05-14 — Backend API contracts planning (Prompt 20)
 - Summary: Added TypeScript API contract modules under `src/shared/api/contracts/` for CMS, products, auth, checkout, and orders: shared `ApiErrorResponse`, pagination/sort/filter helpers, list/create/update DTOs, plus documentation in `docs/backend-medusa-roadmap.md`, `docs/contracts/README.md`, `docs/README.md`, `docs/architecture.md`, and feature doc cross-links. No runtime adapter wiring; local/mock clients unchanged.
-- Files changed: `src/shared/api/contracts/common.types.ts`, `cms.contract.ts`, `products.contract.ts`, `auth.contract.ts`, `checkout-orders.contract.ts`, `index.ts`, `docs/backend-medusa-roadmap.md`, `docs/contracts/README.md`, `docs/README.md`, `docs/architecture.md`, `docs/features/auth-accounts-orders.md`, `docs/changelog.md`
-- Tests/manual checks: `pnpm typecheck` (pass), `pnpm build` (pass) on clean worktree from `cms` (`9020d26`); manual: read `docs/contracts/README.md` and `src/shared/api/contracts/index.ts`.
+- Files changed: `src/shared/api/contracts/common.types.ts`, `cms.contract.ts`, `products.contract.ts`, `auth.contract.ts`, `checkout-orders.contract.ts`, `index.ts`, `docs/backend-medusa-roadmap.md`, `docs/contracts/README.md`, `docs/README.md`, `docs/architecture.md`, `docs/features/auth-accounts-orders.md`, `docs/features/drops-cms.md`, `docs/features/products-commerce.md`, `docs/features/seo.md`, `docs/changelog.md`
+- Tests/manual checks: `pnpm typecheck` (pass), `pnpm build` (pass) on branch `cursor/20-backend-plan-and-contracts-73a1`; manual: read `docs/contracts/README.md` and `src/shared/api/contracts/index.ts`.
 - Notes/debt: `CmsDropListItemWire` and list filters are forward-looking; evolve when admin list types and `Drop` gain scheduling fields everywhere.
 
 ## 2026-05-14 — Configurable Acts Builder in Drop Editor (Prompt 07)

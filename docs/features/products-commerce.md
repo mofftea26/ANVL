@@ -112,6 +112,9 @@ Support:
 - Material, fit, care, shipping, returns accordion.
 - Related products by drop/category.
 
+## Backend API contracts
+Typed list/create/update DTOs for the storefront catalog and admin product CRUD live in `src/shared/api/contracts/products.contract.ts`. They align with `CommerceClient` reads and the admin catalog model without wiring new HTTP yet. See `docs/contracts/README.md` and `docs/backend-medusa-roadmap.md` (Typed API contracts).
+
 ## Medusa migration notes
 Map ANVL products to Medusa Product Module later:
 - Medusa product options: color, size.
