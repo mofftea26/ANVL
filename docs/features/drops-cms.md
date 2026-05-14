@@ -88,3 +88,9 @@ When a drop becomes active:
 - Site theme variables update to the active drop palette.
 - Drop page uses that drop's title, subtitle, visuals, description, and product cards.
 - Products assigned to the drop become visible in the global shop if their product status allows it.
+
+## Active drop storefront theme (runtime CMS)
+- `CmsClient.getActiveDrop()` returns the campaign drop used for public storefront theming (or `null` when none). Concrete adapters (`cmsClient.mock` today) delegate to `drops.service` / seed data as appropriate.
+- The root route loads `activeDrop` with landing CMS content, skips it for `/admin` paths, and emits serialized palette CSS in `head` so SSR and the client share the same `:root` variables (see `docs/design-system.md`).
+- `ActiveDropThemeProvider` wraps public header, main, and footer; it subscribes to drop storage changes and refreshes via the runtime CMS client. Official header/footer logos remain global brand assets, not drop campaign marks.
+

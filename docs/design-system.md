@@ -32,6 +32,12 @@ Per active drop, update:
 
 Never change the official header/footer ANVL logo per drop. Campaign logos/emblems live inside drop sections only.
 
+## Active drop storefront theming
+- **CSS variables**: `DropThemePalette` maps to shared custom properties (`--color-bg`, `--color-surface`, `--color-accent`, `--color-hero-glow`, etc.) via `dropPaletteToCssVarsRecord` / `serializeDropPaletteForRootStyle` in `src/features/admin/drops/dropPaletteStyle.ts`.
+- **SSR**: The root route loader calls `runtimeClients.cms.getActiveDrop()` for public paths; `head` injects a `<style id="anvl-active-drop-theme">` block so the first paint matches hydration (no client-only `:root` mutation during SSR).
+- **Client updates**: `ActiveDropThemeProvider` (public layout only) keeps the same style tag in sync when drops change in admin storage and on navigation; admin routes skip active-drop fetch/injection so CMS chrome stays on base tokens.
+- **Preview**: Admin-only previews use `DropPreviewThemeScope`, which applies palette variables on a scoped element, not the global brand header/footer mark.
+
 ## Mobile-first rules
 - Mobile: minimal motion, no scroll-jacking, no heavy pinned GSAP sequences, compressed media, simple product cards, sticky bottom cart/CTA when useful.
 - Tablet/Desktop: cinematic GSAP sections, layered visuals, scroll reveals, parallax, video backgrounds when optimized.

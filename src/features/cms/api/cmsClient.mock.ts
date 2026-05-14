@@ -32,6 +32,9 @@ function toLegacyHomepage(): HomePageContent {
 }
 
 export const mockCmsClient: CmsClient = {
+  async getActiveDrop() {
+    return getActiveDrop()
+  },
   async getLandingCmsContent() {
     return getLandingCmsContent()
   },

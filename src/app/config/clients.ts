@@ -1,6 +1,7 @@
 import type { Product } from '@/features/products/types/product.types'
 import type { HomePageContent, SeoContent } from '@/features/cms/types/cms.types'
 import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landingCms.types'
+import type { Drop } from '@/features/admin/drops/drops.types'
 import type { CartLine } from '@/features/cart/types/cart.types'
 import type {
   CheckoutInput,
@@ -17,6 +18,8 @@ export interface CommerceClient {
 }
 
 export interface CmsClient {
+  /** Active campaign drop for storefront theming; null when none. */
+  getActiveDrop(): Promise<Drop | null>
   getLandingCmsContent(): Promise<LandingPageCmsContent>
   getHomepageContent(): Promise<HomePageContent>
   getAnnouncementBar(): Promise<{ message: string; ctaLabel: string; ctaHref: string }>
