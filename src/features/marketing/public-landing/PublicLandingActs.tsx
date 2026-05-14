@@ -91,6 +91,7 @@ export function PublicLandingActs({
   return (
     <>
       {acts.map((act) => {
+        if (act.enabled === false) return null
         switch (act.nature) {
           case 'hero':
             return (
@@ -106,6 +107,7 @@ export function PublicLandingActs({
               />
             )
           case 'manifesto':
+          case 'storytelling':
             return wrapLazy(
               act.id,
               'Loading manifesto',
@@ -139,7 +141,7 @@ export function PublicLandingActs({
               act.id,
               'Loading pieces',
               <PiecesGrid
-                products={products}
+                products={products.slice(0, 6)}
                 actLabel={landing.pieces.actLabel}
                 headingLineOne={landing.pieces.headingLineOne}
                 headingLineTwo={landing.pieces.headingLineTwo}

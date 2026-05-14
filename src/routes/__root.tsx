@@ -14,6 +14,7 @@ import { runtimeClients } from "@/app/config/runtime";
 import { useLandingCms } from "@/features/admin/landing-cms/useLandingCms";
 import { SiteFooter } from "@/shared/components/layout/SiteFooter";
 import { StickyHeader } from "@/shared/components/layout/StickyHeader";
+import { serializeDropPaletteForRootStyle } from "@/features/admin/drops/dropPaletteStyle";
 import appCss from "@/styles.css?url";
 
 export const Route = createRootRoute({
@@ -57,17 +58,27 @@ function RootDocument({ children }: { children: ReactNode }) {
 }
 
 function RootLayout() {
-  const { landing: ssrLanding } = Route.useLoaderData();
+  const { landing: ssrLanding, activeDrop } = Route.useLoaderData();
   const landing = useLandingCms(ssrLanding);
   const navigation = landing.navigation;
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
   const isAdminRoute = pathname.startsWith("/admin");
+  const themeCss =
+    !isAdminRoute && activeDrop?.theme
+      ? serializeDropPaletteForRootStyle(activeDrop.theme)
+      : null;
 
   return (
     <>
       <RouteAnalytics />
+      {themeCss ? (
+        <style
+          id="anvl-active-drop-theme-ssr"
+          dangerouslySetInnerHTML={{ __html: themeCss }}
+        />
+      ) : null}
       {!isAdminRoute ? <StickyHeader navigation={navigation} /> : null}
       <main>
         <Outlet />

@@ -857,11 +857,13 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     checked={checked}
                     onChange={(e) => {
                       const next = e.target.checked
+                      const nextIds = next
+                        ? [...draft.dropIds, drop.id]
+                        : draft.dropIds.filter((id) => id !== drop.id)
                       setDraft({
                         ...draft,
-                        dropIds: next
-                          ? [...draft.dropIds, drop.id]
-                          : draft.dropIds.filter((id) => id !== drop.id),
+                        dropIds: nextIds,
+                        sourceType: deriveSourceType(nextIds),
                       })
                     }}
                   />

@@ -24,7 +24,7 @@ type SeoDocument = {
 ## CMS SEO sections
 1. Global SEO defaults.
 2. Landing page SEO.
-3. Active drop page SEO.
+3. Active drop page SEO — `buildSeoMeta` uses `DropSeo.title` / `description` for the HTML title and meta description; optional `ogTitle` and `ogDescription` override Open Graph and Twitter title/description while the HTML `<title>` and `description` meta stay on the primary fields.
 4. Shop SEO.
 5. Product SEO.
 6. About and Size Guide SEO.

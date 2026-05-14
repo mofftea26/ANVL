@@ -1,14 +1,34 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
-import { ExternalLink } from 'lucide-react'
-import { useMemo } from 'react'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Copy, ExternalLink, Trash2 } from 'lucide-react'
+import {
+  useDeferredValue,
+  useMemo,
+  useState,
+} from 'react'
+import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
 import type { Drop } from '@/features/admin/drops/drops.types'
 import { useDropsList } from '@/features/admin/drops/useDrops'
+import {
+  deleteAdminProduct,
+  duplicateAdminProduct,
+  upsertAdminProduct,
+} from '@/features/admin/products/products.service'
 import { useAdminProductsList } from '@/features/admin/products/useAdminProducts'
-import type { AdminProduct } from '@/features/admin/products/products.types'
+import type {
+  AdminProduct,
+  ProductSourceType,
+  ProductStatus,
+} from '@/features/admin/products/products.types'
+import { effectiveSellableUnits } from '@/features/admin/products/products.matrix'
+import { detachProductFromAllDrops } from '@/features/admin/drops/drops.service'
+import { Button } from '@/shared/components/ui/Button'
+import { Input } from '@/shared/components/ui/Input'
+import { Modal } from '@/shared/components/ui/Modal'
+import { Select } from '@/shared/components/ui/Select'
 
 export const Route = createFileRoute('/admin/products/')({
   component: ProductsIndexPage,
@@ -21,6 +41,30 @@ function ProductsIndexPage() {
     </ProtectedAdminRoute>
   )
 }
+
+type SortKey =
+  | 'updated_desc'
+  | 'updated_asc'
+  | 'release_desc'
+  | 'release_asc'
+  | 'price_desc'
+  | 'price_asc'
+  | 'status'
+
+type GroupMode = 'flat' | 'by_drop'
+
+type StockFilter = 'all' | 'in_stock' | 'out_of_stock'
+
+const STATUS_OPTIONS: Array<ProductStatus | 'all'> = [
+  'all',
+  'draft',
+  'active',
+  'inactive',
+  'comingSoon',
+  'outOfStock',
+  'sale',
+  'archived',
+]
 
 function primaryImg(p: AdminProduct): string | undefined {
   for (const c of p.colors) {
@@ -46,21 +90,292 @@ function dropsLabel(dropIds: string[], drops: Drop[]): string {
   return `${labels.join(', ')}${extra}`
 }
 
+function hasSellableVariant(p: AdminProduct): boolean {
+  return p.availability.some((row) => effectiveSellableUnits(row) > 0)
+}
+
+function matchesFilters(
+  p: AdminProduct,
+  opts: {
+    q: string
+    status: ProductStatus | 'all'
+    dropFilter: 'all' | 'none' | string
+    sourceType: ProductSourceType | 'all'
+    categoryQ: string
+    colorQ: string
+    stockFilter: StockFilter
+    updatedFrom: string
+    updatedTo: string
+  },
+): boolean {
+  if (opts.status !== 'all' && p.status !== opts.status) return false
+  if (opts.sourceType !== 'all' && p.sourceType !== opts.sourceType)
+    return false
+  if (opts.categoryQ && !p.category.toLowerCase().includes(opts.categoryQ))
+    return false
+  if (
+    opts.colorQ &&
+    !p.colors.some((c) => c.name.toLowerCase().includes(opts.colorQ))
+  )
+    return false
+  if (opts.stockFilter === 'in_stock' && !hasSellableVariant(p)) return false
+  if (opts.stockFilter === 'out_of_stock' && hasSellableVariant(p))
+    return false
+  if (opts.dropFilter === 'none' && p.dropIds.length > 0) return false
+  if (
+    opts.dropFilter !== 'all' &&
+    opts.dropFilter !== 'none' &&
+    !p.dropIds.includes(opts.dropFilter)
+  )
+    return false
+  if (opts.updatedFrom) {
+    const from = new Date(opts.updatedFrom)
+    if (!Number.isNaN(from.getTime()) && p.updatedAt < from.toISOString())
+      return false
+  }
+  if (opts.updatedTo) {
+    const to = new Date(opts.updatedTo)
+    if (!Number.isNaN(to.getTime())) {
+      const end = new Date(to)
+      end.setHours(23, 59, 59, 999)
+      if (p.updatedAt > end.toISOString()) return false
+    }
+  }
+  if (opts.q) {
+    const hay = `${p.name} ${p.slug} ${p.category} ${p.tags.join(' ')}`.toLowerCase()
+    if (!hay.includes(opts.q)) return false
+  }
+  return true
+}
+
+function sortProducts(list: AdminProduct[], sortKey: SortKey): AdminProduct[] {
+  const next = [...list]
+  const rel = (a: AdminProduct, b: AdminProduct) => {
+    const ad = a.releaseDate ?? ''
+    const bd = b.releaseDate ?? ''
+    return ad.localeCompare(bd)
+  }
+  switch (sortKey) {
+    case 'updated_asc':
+      return next.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt))
+    case 'release_desc':
+      return next.sort((a, b) => -rel(a, b))
+    case 'release_asc':
+      return next.sort(rel)
+    case 'price_desc':
+      return next.sort((a, b) => b.price - a.price)
+    case 'price_asc':
+      return next.sort((a, b) => a.price - b.price)
+    case 'status':
+      return next.sort((a, b) => a.status.localeCompare(b.status))
+    case 'updated_desc':
+    default:
+      return next.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  }
+}
+
 function ProductsIndex() {
+  const navigate = useNavigate()
   const products = useAdminProductsList()
   const drops = useDropsList()
-  const sorted = useMemo(
-    () =>
-      [...products].sort(
-        (a, b) => b.updatedAt.localeCompare(a.updatedAt),
-      ),
-    [products],
+
+  const [search, setSearch] = useState('')
+  const deferredSearch = useDeferredValue(search.trim().toLowerCase())
+  const [status, setStatus] = useState<ProductStatus | 'all'>('all')
+  const [dropFilter, setDropFilter] = useState<'all' | 'none' | string>('all')
+  const [sourceType, setSourceType] = useState<ProductSourceType | 'all'>(
+    'all',
   )
+  const [categoryQ, setCategoryQ] = useState('')
+  const [colorQ, setColorQ] = useState('')
+  const [stockFilter, setStockFilter] = useState<StockFilter>('all')
+  const [updatedFrom, setUpdatedFrom] = useState('')
+  const [updatedTo, setUpdatedTo] = useState('')
+  const [sortKey, setSortKey] = useState<SortKey>('updated_desc')
+  const [groupMode, setGroupMode] = useState<GroupMode>('flat')
+  const [pendingDelete, setPendingDelete] = useState<AdminProduct | null>(null)
+
+  const filtered = useMemo(() => {
+    const cat = categoryQ.trim().toLowerCase()
+    const col = colorQ.trim().toLowerCase()
+    return products.filter((p) =>
+      matchesFilters(
+        p,
+        {
+          q: deferredSearch,
+          status,
+          dropFilter,
+          sourceType,
+          categoryQ: cat,
+          colorQ: col,
+          stockFilter,
+          updatedFrom,
+          updatedTo,
+        },
+      ),
+    )
+  }, [
+    products,
+    drops,
+    deferredSearch,
+    status,
+    dropFilter,
+    sourceType,
+    categoryQ,
+    colorQ,
+    stockFilter,
+    updatedFrom,
+    updatedTo,
+  ])
+
+  const sorted = useMemo(
+    () => sortProducts(filtered, sortKey),
+    [filtered, sortKey],
+  )
+
+  const grouped = useMemo(() => {
+    if (groupMode === 'flat') return null
+    const byDrop: { title: string; id: string; items: AdminProduct[] }[] = []
+    for (const d of drops) {
+      const items = sorted.filter((p) => p.dropIds.includes(d.id))
+      if (items.length) {
+        byDrop.push({
+          id: d.id,
+          title: `${d.dropNumber} · ${d.name}`,
+          items,
+        })
+      }
+    }
+    const individuals = sorted.filter((p) => p.dropIds.length === 0)
+    return { byDrop, individuals }
+  }, [groupMode, sorted, drops])
+
+  const fieldClass =
+    'mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm'
+
+  const handleDuplicate = (p: AdminProduct) => {
+    const copy = duplicateAdminProduct(p)
+    upsertAdminProduct(copy)
+    toast.success('Duplicate created as draft.')
+    navigate({
+      to: '/admin/products/$productId',
+      params: { productId: copy.id },
+    })
+  }
+
+  const handleArchive = (p: AdminProduct) => {
+    upsertAdminProduct({ ...p, status: 'archived', isActive: false })
+    toast.success('Product archived.')
+  }
+
+  const renderCard = (p: AdminProduct) => {
+    const img = primaryImg(p)
+    return (
+      <AdminCard
+        key={p.id}
+        title={p.name}
+        description={`${p.slug} · ${p.status} · ${p.sourceType} · ${p.isActive ? 'Active listing' : 'Hidden listing'}`}
+      >
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]">
+            {img ? (
+              <img src={img} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full items-center justify-center text-[10px] text-[var(--color-text-muted)]">
+                No image
+              </div>
+            )}
+          </div>
+          <div className="grid flex-1 gap-3 text-sm md:grid-cols-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
+                Price
+              </p>
+              <p className="font-semibold text-[var(--color-heading)]">
+                {p.currency} {p.price.toFixed(0)}
+                {p.isOnSale && p.compareAtPrice ? (
+                  <span className="ml-2 text-xs text-[var(--color-text-muted)] line-through">
+                    {p.currency} {p.compareAtPrice.toFixed(0)}
+                  </span>
+                ) : null}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
+                Drops
+              </p>
+              <p className="text-[var(--color-text)]">
+                {dropsLabel(p.dropIds, drops)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
+                Variants
+              </p>
+              <p className="text-[var(--color-text)]">
+                {p.colors.length} colors · {p.sizes.length} sizes
+              </p>
+              <p className="text-xs text-[var(--color-text-muted)]">
+                {stockSummary(p)}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <Link
+              to="/admin/products/$productId"
+              params={{ productId: p.id }}
+              className="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] px-4 text-xs font-semibold text-[var(--color-heading)] no-underline hover:bg-[var(--color-surface-elevated)]"
+            >
+              Edit
+            </Link>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-10"
+              onClick={() => handleDuplicate(p)}
+            >
+              <Copy size={14} className="mr-1" aria-hidden="true" />
+              Duplicate
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-10"
+              onClick={() => handleArchive(p)}
+              disabled={p.status === 'archived'}
+            >
+              Archive
+            </Button>
+            <a
+              href={`/shop/${p.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--color-line)] px-4 text-xs font-semibold text-[var(--color-heading)] no-underline hover:bg-[var(--color-surface-elevated)]"
+            >
+              Preview
+              <ExternalLink size={14} aria-hidden="true" />
+            </a>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-10 text-red-400 hover:text-red-300"
+              onClick={() => setPendingDelete(p)}
+            >
+              <Trash2 size={14} aria-hidden="true" />
+            </Button>
+          </div>
+        </div>
+      </AdminCard>
+    )
+  }
 
   return (
     <AdminLayout
       title="Catalog"
-      description="Global SKUs shared across drops. Assignments sync from the Drops → Products tab as well."
+      description="Search, filter, and group global SKUs. Drop assignments stay in sync with the Drops editor."
     >
       <AdminSectionHeader
         eyebrow="Products"
@@ -86,72 +401,210 @@ function ProductsIndex() {
         }
       />
 
-      <div className="grid gap-5">
-        {sorted.map((p) => (
-          <AdminCard
-            key={p.id}
-            title={p.name}
-            description={`${p.slug} · ${p.status} · ${p.isActive ? 'Active listing' : 'Hidden listing'}`}
+      <div className="mb-8 grid gap-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)]/40 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+          Search
+          <Input
+            className={fieldClass}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Name, slug, tags…"
+            aria-label="Search products"
+          />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+          Status
+          <Select
+            className={fieldClass}
+            value={status}
+            onChange={(e) =>
+              setStatus(e.target.value as ProductStatus | 'all')
+            }
+            aria-label="Filter by status"
           >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-              <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]">
-                {primaryImg(p) ? (
-                  <img
-                    src={primaryImg(p)}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {s === 'all' ? 'All statuses' : s}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+          Drop
+          <Select
+            className={fieldClass}
+            value={dropFilter}
+            onChange={(e) => setDropFilter(e.target.value)}
+            aria-label="Filter by drop"
+          >
+            <option value="all">All drops</option>
+            <option value="none">Unassigned only</option>
+            {drops.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.dropNumber} · {d.name}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+          Source
+          <Select
+            className={fieldClass}
+            value={sourceType}
+            onChange={(e) =>
+              setSourceType(e.target.value as ProductSourceType | 'all')
+            }
+            aria-label="Filter by listing source"
+          >
+            <option value="all">All</option>
+            <option value="drop">Drop release</option>
+            <option value="individual">Individual</option>
+          </Select>
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+          Category contains
+          <Input
+            className={fieldClass}
+            value={categoryQ}
+            onChange={(e) => setCategoryQ(e.target.value)}
+            aria-label="Filter by category"
+          />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+          Color contains
+          <Input
+            className={fieldClass}
+            value={colorQ}
+            onChange={(e) => setColorQ(e.target.value)}
+            aria-label="Filter by color name"
+          />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+          Stock availability
+          <Select
+            className={fieldClass}
+            value={stockFilter}
+            onChange={(e) => setStockFilter(e.target.value as StockFilter)}
+            aria-label="Filter by variant stock"
+          >
+            <option value="all">Any</option>
+            <option value="in_stock">Has sellable variant</option>
+            <option value="out_of_stock">No sellable variant</option>
+          </Select>
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+          Updated from
+          <Input
+            type="date"
+            className={fieldClass}
+            value={updatedFrom}
+            onChange={(e) => setUpdatedFrom(e.target.value)}
+            aria-label="Updated on or after"
+          />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+          Updated to
+          <Input
+            type="date"
+            className={fieldClass}
+            value={updatedTo}
+            onChange={(e) => setUpdatedTo(e.target.value)}
+            aria-label="Updated on or before"
+          />
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+          Sort
+          <Select
+            className={fieldClass}
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+            aria-label="Sort products"
+          >
+            <option value="updated_desc">Newest update</option>
+            <option value="updated_asc">Oldest update</option>
+            <option value="release_desc">Release date (newest)</option>
+            <option value="release_asc">Release date (oldest)</option>
+            <option value="price_desc">Price (high)</option>
+            <option value="price_asc">Price (low)</option>
+            <option value="status">Status (A–Z)</option>
+          </Select>
+        </label>
+        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+          Grouping
+          <Select
+            className={fieldClass}
+            value={groupMode}
+            onChange={(e) => setGroupMode(e.target.value as GroupMode)}
+            aria-label="Group products"
+          >
+            <option value="flat">Flat list</option>
+            <option value="by_drop">By drop + individuals</option>
+          </Select>
+        </label>
+      </div>
+
+      <p className="mb-6 text-sm text-[var(--color-text-muted)]">
+        Showing {sorted.length} of {products.length} products
+        {deferredSearch !== search.trim().toLowerCase() ? ' (updating…)' : ''}
+      </p>
+
+      <div className="grid gap-5">
+        {groupMode === 'flat'
+          ? sorted.map((p) => renderCard(p))
+          : grouped &&
+            <>
+              {grouped.byDrop.map((section) => (
+                <div key={section.id} className="space-y-3">
+                  <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--color-heading)]">
+                    {section.title}
+                  </h2>
+                  <div className="grid gap-5">{section.items.map((p) => renderCard(p))}</div>
+                </div>
+              ))}
+              <div className="space-y-3">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--color-heading)]">
+                  Individual releases
+                </h2>
+                {grouped.individuals.length === 0 ? (
+                  <p className="text-sm text-[var(--color-text-muted)]">
+                    No unassigned products in this view.
+                  </p>
                 ) : (
-                  <div className="flex h-full items-center justify-center text-[10px] text-[var(--color-text-muted)]">
-                    No image
+                  <div className="grid gap-5">
+                    {grouped.individuals.map((p) => renderCard(p))}
                   </div>
                 )}
               </div>
-              <div className="grid flex-1 gap-3 text-sm md:grid-cols-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
-                    Price
-                  </p>
-                  <p className="font-semibold text-[var(--color-heading)]">
-                    ${p.price.toFixed(0)}
-                    {p.isOnSale && p.compareAtPrice ? (
-                      <span className="ml-2 text-xs text-[var(--color-text-muted)] line-through">
-                        ${p.compareAtPrice.toFixed(0)}
-                      </span>
-                    ) : null}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
-                    Drops
-                  </p>
-                  <p className="text-[var(--color-text)]">
-                    {dropsLabel(p.dropIds, drops)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
-                    Variants
-                  </p>
-                  <p className="text-[var(--color-text)]">
-                    {p.colors.length} colors · {p.sizes.length} sizes
-                  </p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    {stockSummary(p)}
-                  </p>
-                </div>
-              </div>
-              <Link
-                to="/admin/products/$productId"
-                params={{ productId: p.id }}
-                className="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] px-4 text-xs font-semibold text-[var(--color-heading)] no-underline hover:bg-[var(--color-surface-elevated)]"
-              >
-                Edit
-              </Link>
-            </div>
-          </AdminCard>
-        ))}
+            </>}
       </div>
+
+      <Modal open={pendingDelete !== null} onClose={() => setPendingDelete(null)}>
+        <div className="space-y-4">
+          <h3 className="anvl-heading text-xl font-normal">Delete product?</h3>
+          <p className="text-sm text-[var(--color-text-muted)]">
+            Removes {pendingDelete?.name ?? 'this product'} from the catalog and
+            every drop roster.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setPendingDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                if (!pendingDelete) return
+                detachProductFromAllDrops(pendingDelete.id)
+                deleteAdminProduct(pendingDelete.id)
+                toast.success('Product deleted.')
+                setPendingDelete(null)
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </AdminLayout>
   )
 }

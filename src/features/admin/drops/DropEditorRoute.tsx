@@ -21,16 +21,32 @@ import {
 } from '@/features/admin/products/products.mapper'
 import { getAdminProducts } from '@/features/admin/products/products.service'
 import { useAdminProductsList } from '@/features/admin/products/useAdminProducts'
-import { HeroForgeSequence } from '@/features/marketing/components/HeroForgeSequence'
-import { MaterialsMarquee } from '@/features/marketing/components/MaterialsMarquee'
-import { OathStampSequence } from '@/features/marketing/components/OathStampSequence'
-import { PiecesGrid } from '@/features/marketing/components/PiecesGrid'
-import { WaitlistSection } from '@/features/marketing/components/WaitlistSection'
+import { composeLandingPageFromDrop } from '@/features/admin/drops/drops.compose'
+import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
+import { PublicLandingActs } from '@/features/marketing/public-landing/PublicLandingActs'
 import { Button } from '@/shared/components/ui/Button'
 import { HexColorPicker } from '@/shared/components/ui/HexColorPicker'
 import { ImageFileOrUrlField } from '@/shared/components/ui/ImageFileOrUrlField'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
+
+function padDt(n: number): string {
+  return n < 10 ? `0${n}` : `${n}`
+}
+
+function isoToDatetimeLocalValue(iso: string | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getFullYear()}-${padDt(d.getMonth() + 1)}-${padDt(d.getDate())}T${padDt(d.getHours())}:${padDt(d.getMinutes())}`
+}
+
+function localInputToIso(local: string): string | undefined {
+  if (!local.trim()) return undefined
+  const d = new Date(local)
+  if (Number.isNaN(d.getTime())) return undefined
+  return d.toISOString()
+}
 
 const fieldClass =
   'mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm'
@@ -138,46 +154,16 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
     )
   }
 
+  const previewLanding = useMemo(
+    () => composeLandingPageFromDrop(draft, getWebsiteLayoutContent()),
+    [draft],
+  )
+
   const previewPanel = (
     <DropPreviewThemeScope palette={draft.theme} emblemUrl={draft.visuals.emblemImageUrl}>
       <div className="pointer-events-none select-none space-y-10 p-4 opacity-95 [&_a]:pointer-events-none">
-        <HeroForgeSequence
-          badgeText={draft.landingContent.hero.badgeText}
-          title={draft.landingContent.hero.title}
-          subtitle={draft.landingContent.hero.subtitle}
-          primaryCta={draft.landingContent.hero.primaryCta}
-          secondaryCta={draft.landingContent.hero.secondaryCta}
-          meta={draft.landingContent.hero.meta}
-          emblemSrc={draft.visuals.emblemImageUrl}
-        />
-        <OathStampSequence
-          actLabel={draft.landingContent.manifesto.actLabel}
-          counterLabel={draft.landingContent.manifesto.counterLabel}
-          heading={draft.landingContent.manifesto.heading}
-          intro={draft.landingContent.manifesto.intro}
-          tenets={draft.landingContent.manifesto.tenets}
-          emblemSrc={draft.visuals.emblemImageUrl}
-        />
-        <PiecesGrid
-          products={previewProducts.slice(0, 6)}
-          actLabel={draft.landingContent.pieces.actLabel}
-          headingLineOne={draft.landingContent.pieces.headingLineOne}
-          headingLineTwo={draft.landingContent.pieces.headingLineTwo}
-          viewAllLabel={draft.landingContent.pieces.viewAllLabel}
-          viewAllHref={draft.landingContent.pieces.viewAllHref}
-          footerLeftText={draft.landingContent.pieces.footerLeftText}
-          footerLinkLabel={draft.landingContent.pieces.footerLinkLabel}
-          footerLinkHref={draft.landingContent.pieces.footerLinkHref}
-        />
-        <MaterialsMarquee
-          actLabel={draft.landingContent.materials.actLabel}
-          counterSuffix={draft.landingContent.materials.counterSuffix}
-          heading={draft.landingContent.materials.heading}
-          intro={draft.landingContent.materials.intro}
-          materials={draft.landingContent.materials.materials}
-        />
-        <WaitlistSection
-          content={draft.landingContent.waitlist}
+        <PublicLandingActs
+          landing={previewLanding}
           products={previewProducts}
           emblemSrc={draft.visuals.emblemImageUrl}
         />
@@ -370,6 +356,25 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     }
                   />
                 </label>
+                <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+                  Release date (optional)
+                  <input
+                    type="datetime-local"
+                    className={fieldClass}
+                    value={isoToDatetimeLocalValue(draft.releaseDate)}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        releaseDate: e.target.value
+                          ? localInputToIso(e.target.value)
+                          : undefined,
+                      })
+                    }
+                  />
+                  <span className="mt-1 block text-[10px] text-[var(--color-text-muted)]">
+                    Shown on the public drop page with a live countdown after hydration.
+                  </span>
+                </label>
               </div>
             </AdminCard>
           ) : null}
@@ -403,6 +408,19 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     }
                   />
                 </label>
+                <div className="md:col-span-2">
+                  <ImageFileOrUrlField
+                    label="Drop page hero backdrop (optional)"
+                    hint="Large mood image behind the public `/drop/:slug` hero. Path, URL, or embedded file."
+                    value={draft.visuals.heroImageUrl ?? ''}
+                    onChange={(next) =>
+                      setDraft({
+                        ...draft,
+                        visuals: { ...draft.visuals, heroImageUrl: next || undefined },
+                      })
+                    }
+                  />
+                </div>
                 <div className="md:col-span-2">
                   <ImageFileOrUrlField
                     label="Logo (optional)"
@@ -516,6 +534,11 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               value={draft.landingContent}
               onChange={(landingContent) =>
                 setDraft({ ...draft, landingContent })
+              }
+              acts={draft.acts}
+              landingActSequence={draft.landingActSequence}
+              onActsChange={({ acts, landingActSequence }) =>
+                setDraft({ ...draft, acts, landingActSequence })
               }
             />
           ) : null}

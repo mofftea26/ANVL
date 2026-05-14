@@ -123,6 +123,10 @@ export function DropActsBuilderPanel({
     bootstrapFromLanding()
   }, [acts.length, bootstrapFromLanding])
 
+  function updateAct(id: string, patch: Partial<LandingAct>) {
+    emit(acts.map((a) => (a.id === id ? { ...a, ...patch } : a)))
+  }
+
   function removeAct(id: string) {
     emit(acts.filter((a) => a.id !== id).map((a, i) => ({ ...a, sortOrder: i })))
   }

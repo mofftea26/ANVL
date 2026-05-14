@@ -68,6 +68,19 @@ Product list must include:
 - Grouping: by drop and individual releases.
 - Actions: edit, duplicate, archive, delete, preview.
 
+### Admin catalog (local CMS, `AdminProduct`)
+The in-browser catalog at `/admin/products` implements the list above against `src/features/admin/products/products.types.ts`:
+
+- **Search** uses `useDeferredValue` for low-cost debouncing while typing.
+- **Filters**: status, drop (including “unassigned only”), listing source (`drop` vs `individual`), category substring, color name substring, sellable vs no sellable variants, updated date range.
+- **Sort**: newest/oldest `updatedAt`, release date, price, status.
+- **Grouping**: flat list or sections per drop plus an “Individual releases” bucket (`dropIds` empty).
+- **Actions**: edit, duplicate (deep clone, new slug, clears drop links), archive (`status: archived`), delete (with confirmation; detaches from drops), storefront preview link (`/shop/:slug`).
+- **Editor fields**: currency (ISO), release and sale window (`datetime-local` → ISO), optional video and 3D model URLs, SEO placeholders, bidirectional drop checklists.
+- **Variants**: color × size matrix with SKU, `stockQuantity`, `reservedQuantity`; `isAvailable` is recomputed from `max(0, stock − reserved) > 0`. `sourceType` is derived on save from `dropIds` (`individual` when unassigned).
+
+Persistence: `products.service` hydrates legacy JSON (`currency`, `reservedQuantity`, `sourceType`) and normalizes on `upsertAdminProduct`.
+
 ## Pricing and currency
 - Store a base currency and base price.
 - Support display currency conversion through a backend/service later.

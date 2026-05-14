@@ -83,6 +83,12 @@ type LandingAct = {
    - Content: CTA title, body, buttons, emblem/background.
    - Presets: centered, footer-overlap, product CTA.
 
+## Implementation (Drop Editor)
+- UI: `DropActsBuilderPanel` (`src/features/admin/drops/DropActsBuilderPanel.tsx`) embedded in `DropLandingActsEditor`.
+- Bootstrap: empty `acts` arrays are seeded from current `DropLandingContent` via `landingContentToSimpleActs` (`acts/landingActs.seed.ts`).
+- Validation: per-nature `content` objects can be validated with `safeParseActContent` in `acts/landingActs.zod.ts` (Zod); the panel resets `content` when nature changes.
+- Public pipeline: `acts/landingActs.normalize.ts` maps slot toggles to `PublicLandingAct` rows consumed by `PublicLandingActs` on `/`.
+
 ## Animation config
 ```ts
 type ActAnimationConfig = {
