@@ -6,7 +6,6 @@ import { buildSeoMeta } from '@/app/seo/meta'
 import { runtimeClients } from '@/app/config/runtime'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { CheckoutPaymentFields } from '@/features/checkout/components/CheckoutPaymentFields'
-import type { CheckoutPaymentMethodDefinition } from '@/features/checkout/config/checkoutPayments.config'
 import {
   CHECKOUT_COMMERCE_FLAGS,
   CHECKOUT_SHIPPING_COUNTRIES,
@@ -43,8 +42,6 @@ function CheckoutPage() {
   const { trackBeginCheckout, trackOrderPlaced } = useCartAnalytics()
 
   const country = useWatch({ control: form.control, name: 'country' }) ?? ''
-  const paymentMethod = useWatch({ control: form.control, name: 'paymentMethod' })
-
   useSyncCheckoutPaymentWithCountry(form, country)
 
   const paymentDefinitions = useMemo(
@@ -54,10 +51,6 @@ function CheckoutPage() {
 
   const internationalBlocked =
     country.length > 0 && !isLebanonShippingCountry(country) && !CHECKOUT_COMMERCE_FLAGS.internationalCheckoutEnabled
-
-  const selectedPaymentDefinition: CheckoutPaymentMethodDefinition | undefined = paymentDefinitions.find(
-    (d) => d.id === paymentMethod,
-  )
 
   const onSubmit = form.handleSubmit(async (values) => {
     if (lines.length === 0) {
@@ -172,7 +165,6 @@ function CheckoutPage() {
             <CheckoutPaymentFields
               definitions={paymentDefinitions}
               internationalBlocked={internationalBlocked}
-              selectedDefinition={selectedPaymentDefinition}
               register={form.register}
               errors={form.formState.errors}
             />

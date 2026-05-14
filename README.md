@@ -153,6 +153,7 @@ Designer SVG/PNG exports in `public/brand/`:
   - `src/features/checkout/schemas/checkout.schema.ts`
 - Region + payment catalog (Lebanon COD/Whish; international card behind env flag):
   - `src/features/checkout/config/checkoutPayments.config.ts`
+- **Env:** set `VITE_ANVL_INTERNATIONAL_CHECKOUT=true` in `.env` or CI to enable non-Lebanon card (mock) checkout for development.
 
 ### Payment Adapter Architecture
 

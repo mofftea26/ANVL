@@ -75,7 +75,8 @@ export const CHECKOUT_SHIPPING_COUNTRIES = [
 export type CheckoutShippingCountry = (typeof CHECKOUT_SHIPPING_COUNTRIES)[number]
 
 export function isLebanonShippingCountry(country: string): boolean {
-  return country.trim().toLowerCase() === LEBANON_COUNTRY_LABEL.toLowerCase()
+  const n = country.trim().toLowerCase()
+  return n === LEBANON_COUNTRY_LABEL.toLowerCase() || n === 'lb'
 }
 
 export function getCheckoutPaymentMethodDefinitions(

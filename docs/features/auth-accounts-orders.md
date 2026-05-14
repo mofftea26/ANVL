@@ -29,7 +29,7 @@ Lebanon payment methods:
 Outside Lebanon:
 - Card only when international shipping/card processing is enabled.
 
-Implementation in code: `src/features/checkout/config/checkoutPayments.config.ts` (typed payment catalog, Lebanon detection, `VITE_ANVL_INTERNATIONAL_CHECKOUT` flag). Checkout Zod schema and mock payment client enforce the same rules.
+Implementation in code: `src/features/checkout/config/checkoutPayments.config.ts` (typed payment catalog, Lebanon detection including ISO `lb`, `VITE_ANVL_INTERNATIONAL_CHECKOUT` flag). Checkout Zod schema and mock payment client enforce the same rules.
 
 ## Data model notes
 ```ts

@@ -1,12 +1,10 @@
 import type { UseFormRegister, FieldErrors } from 'react-hook-form'
 import type { CheckoutPaymentMethodDefinition } from '../config/checkoutPayments.config'
 import type { CheckoutSchemaInput } from '../schemas/checkout.schema'
-import { FormField, Select } from '@/shared/components/ui'
 
 interface CheckoutPaymentFieldsProps {
   definitions: readonly CheckoutPaymentMethodDefinition[]
   internationalBlocked: boolean
-  selectedDefinition: CheckoutPaymentMethodDefinition | undefined
   register: UseFormRegister<CheckoutSchemaInput>
   errors: FieldErrors<CheckoutSchemaInput>
 }
@@ -14,13 +12,12 @@ interface CheckoutPaymentFieldsProps {
 export function CheckoutPaymentFields({
   definitions,
   internationalBlocked,
-  selectedDefinition,
   register,
   errors,
 }: CheckoutPaymentFieldsProps) {
   return (
-    <div className="space-y-4">
-      <h2 className="anvl-heading pt-2 text-4xl">Payment</h2>
+    <fieldset className="space-y-4 border-0 p-0">
+      <legend className="anvl-heading pt-2 text-4xl">Payment</legend>
       {internationalBlocked ? (
         <p
           className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-[var(--color-text)]"
@@ -31,26 +28,34 @@ export function CheckoutPaymentFields({
         </p>
       ) : null}
       {definitions.length > 0 ? (
-        <>
-          <FormField label="Payment method" error={errors.paymentMethod?.message} htmlFor="checkout-payment">
-            <Select id="checkout-payment" {...register('paymentMethod')}>
-              {definitions.map((def) => (
-                <option key={def.id} value={def.id}>
-                  {def.label}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-          {selectedDefinition ? (
-            <div className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] p-3 text-xs text-[var(--color-text-muted)]">
-              <p>{selectedDefinition.description}</p>
-              <p className="mt-2 font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
-                Integration: {selectedDefinition.integrationPoint.replace(/_/g, ' ')}
-              </p>
-            </div>
-          ) : null}
-        </>
+        <div className="space-y-3" role="radiogroup" aria-label="Payment method">
+          {definitions.map((def) => (
+            <label
+              key={def.id}
+              className="flex cursor-pointer gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] p-4 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-text)] has-[:checked]:border-[var(--color-text-muted)]"
+            >
+              <input
+                type="radio"
+                value={def.id}
+                className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-text)]"
+                {...register('paymentMethod')}
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-[var(--color-text)]">{def.label}</span>
+                <span className="mt-1 block text-xs text-[var(--color-text-muted)]">{def.description}</span>
+                <span className="mt-2 block font-mono text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                  Integration: {def.integrationPoint.replace(/_/g, ' ')}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
       ) : null}
-    </div>
+      {errors.paymentMethod?.message ? (
+        <p className="text-xs text-red-300" role="alert">
+          {errors.paymentMethod.message}
+        </p>
+      ) : null}
+    </fieldset>
   )
 }
