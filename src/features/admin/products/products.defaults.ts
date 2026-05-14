@@ -32,6 +32,7 @@ function legacyProductToAdmin(p: Product, nowIso: string): AdminProduct {
         sizeId: s.id,
         sku: `${p.slug}-${s.label}-${c.name.slice(0, 3)}`.replace(/\s+/g, ''),
         stockQuantity: 24,
+        reservedQuantity: 0,
         isAvailable: true,
       })
     }
@@ -55,6 +56,8 @@ function legacyProductToAdmin(p: Product, nowIso: string): AdminProduct {
     sizes,
     availability,
     dropIds: [DEFAULT_OATH_DROP_ID],
+    sourceType: 'drop',
+    currency: 'USD',
     details: {
       fit: p.fit,
       fabric: p.fabric,
@@ -91,10 +94,17 @@ export function createEmptyAdminProduct(nowIso = new Date().toISOString()): Admi
     description: '',
     price: 0,
     isOnSale: false,
+    saleStartsAt: undefined,
+    saleEndsAt: undefined,
     status: 'draft',
     isActive: false,
     category: 'Uncategorized',
     tags: [],
+    sourceType: 'individual',
+    releaseDate: undefined,
+    currency: 'USD',
+    videoUrl: undefined,
+    model3dUrl: undefined,
     colors: [
       {
         id: colorId,
@@ -121,6 +131,8 @@ export function createEmptyAdminProduct(nowIso = new Date().toISOString()): Admi
       },
     ],
     dropIds: [],
+    sourceType: 'individual',
+    currency: 'USD',
     details: {},
     seo: {},
     createdAt: nowIso,

@@ -100,3 +100,14 @@ The `/admin/drops/$dropId` route renders a mobile-first scroll layout with an `x
 6. **Save & publish** — validates title, slug, and known theme preset; optional activate-after-save; optional schedule (`datetime-local` → `scheduledActivationAt`); confirmation modal; brief "Saved" state on the primary button.
 
 Draft edits stay in React state until `saveDrop` runs so public data does not change until save.
+
+## Storefront runtime clients
+
+Public routes load data through `createRuntimeClients({ isServer })` (`src/app/config/runtime.ts`):
+
+- **SSR** uses **seed** CMS/commerce/site-settings adapters built from default drop + composed landing snapshots (`src/features/cms/api/seedSnapshots.ts`) so loaders never touch `localStorage`.
+- **Browser** uses **localStorage-backed** adapters that read the same admin services as the CMS UI, keeping edits and the storefront aligned.
+
+`SeoClient` resolves per-path SEO (including `/shop`); `SiteSettingsClient` exposes header/footer layout for future chrome loaders.
+
+`landingActSequence` on each persisted `Drop` is normalized when merging from storage (`normalizeLandingActSequence` in `drops.actSequence.ts`) so every landing slot exists in canonical order; new drops use `defaultLandingActSequence()`.
