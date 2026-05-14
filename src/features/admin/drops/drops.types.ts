@@ -1,4 +1,9 @@
-export type DropStatus = 'draft' | 'active' | 'inactive' | 'archived'
+export type DropStatus =
+  | 'draft'
+  | 'active'
+  | 'inactive'
+  | 'scheduled'
+  | 'archived' 
 
 export type DropThemePalette = {
   id: string
@@ -105,6 +110,22 @@ export type DropSeo = {
   ogImage?: string
 }
 
+export const LANDING_ACT_SLOT_KEYS = [
+  'hero',
+  'manifesto',
+  'dropReveal',
+  'pieces',
+  'materials',
+  'waitlist',
+] as const
+
+export type LandingActSlotKey = (typeof LANDING_ACT_SLOT_KEYS)[number]
+
+export type LandingActSlot = {
+  key: LandingActSlotKey
+  enabled: boolean
+}
+
 export type Drop = {
   id: string
   slug: string
@@ -114,12 +135,15 @@ export type Drop = {
   subtitle: string
   description: string
   status: DropStatus
+  scheduledActivationAt?: string
   isActive: boolean
   createdAt: string
   updatedAt: string
   theme: DropThemePalette
   visuals: DropVisuals
   landingContent: DropLandingContent
+  /** Homepage + CMS preview: canonical section order and visibility */
+  landingActSequence: LandingActSlot[]
   productIds: string[]
   seo: DropSeo
 }

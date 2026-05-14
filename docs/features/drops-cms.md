@@ -88,3 +88,15 @@ When a drop becomes active:
 - Site theme variables update to the active drop palette.
 - Drop page uses that drop's title, subtitle, visuals, description, and product cards.
 - Products assigned to the drop become visible in the global shop if their product status allows it.
+
+## Drop editor shell (local CMS)
+The `/admin/drops/$dropId` route renders a mobile-first scroll layout with an `xl+` preview column placeholder:
+
+1. **Basic info** — identity fields; status shown read-only (changed via save options).
+2. **Theme & branding** — palette preset, colors, emblem/logo assets.
+3. **Acts builder** — placeholder until the acts builder ships.
+4. **Products assignment** — placeholder with linked product count.
+5. **SEO** — placeholder; persisted SEO remains until a future editor writes changes.
+6. **Save & publish** — validates title, slug, and known theme preset; optional activate-after-save; optional schedule (`datetime-local` → `scheduledActivationAt`); confirmation modal; brief "Saved" state on the primary button.
+
+Draft edits stay in React state until `saveDrop` runs so public data does not change until save.

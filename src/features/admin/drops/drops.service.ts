@@ -16,6 +16,7 @@ import {
   createDefaultTheOathDrop,
   createEmptyDrop,
 } from './drops.defaults'
+import { normalizeLandingActSequence } from '@/features/admin/drops/drops.actSequence'
 import {
   landingPageToDrop,
   landingNavigationToWebsiteLayout,
@@ -76,6 +77,12 @@ function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
       },
     },
     seo: { ...base.seo, ...(partial.seo ?? {}) },
+    landingActSequence: normalizeLandingActSequence(
+      partial.landingActSequence ?? base.landingActSequence,
+    ),
+    scheduledActivationAt: Object.hasOwn(partial, 'scheduledActivationAt')
+      ? partial.scheduledActivationAt
+      : base.scheduledActivationAt,
     productIds:
       Array.isArray(partial.productIds) && partial.productIds.length > 0
         ? [...partial.productIds]
