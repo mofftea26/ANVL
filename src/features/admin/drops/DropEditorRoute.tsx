@@ -1,9 +1,11 @@
 import { Link, useNavigate } from '@tanstack/react-router'
+import { Check } from 'lucide-react'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
+import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import { DROP_THEME_PRESETS } from '@/features/admin/drops/drops.presets'
 import { DropLandingActsEditor } from '@/features/admin/drops/DropLandingActsEditor'
 import type { DropStatus } from '@/features/admin/drops/drops.types'
@@ -57,13 +59,13 @@ type TabId =
   | 'landing'
   | 'products'
   | 'seo'
-  | 'preview'
 
 export function DropEditorRoute({ dropId }: { dropId: string }) {
   const navigate = useNavigate()
   const drops = useDropsList()
   const catalog = useAdminProductsList()
   const saved = useMemo(() => drops.find((d) => d.id === dropId), [drops, dropId])
+  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
 
   const [draft, setDraft] = useState(saved)
   const [tab, setTab] = useState<TabId>('basics')
@@ -140,7 +142,6 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
     { id: 'landing', label: 'Landing acts' },
     { id: 'products', label: 'Products' },
     { id: 'seo', label: 'SEO' },
-    { id: 'preview', label: 'Preview' },
   ]
 
   function toggleProduct(id: string) {
@@ -236,7 +237,14 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               Delete / archive flow
             </Button>
             <Button type="button" variant="primary" size="sm" onClick={() => setConfirmSave(true)}>
-              Save drop
+              {showSuccess ? (
+                <>
+                  <Check size={14} className="mr-1.5" aria-hidden="true" />
+                  Saved
+                </>
+              ) : (
+                'Save drop'
+              )}
             </Button>
           </div>
         }
@@ -269,8 +277,8 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         ))}
       </div>
 
-      <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_440px]">
-        <div className="space-y-8">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,40%)]">
+        <div className="order-2 space-y-8 lg:order-1">
           <div className="hidden flex-wrap gap-2 lg:flex">
             {tabDefs.map((t) => (
               <button
@@ -683,19 +691,21 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               </div>
             </AdminCard>
           ) : null}
-
-          {tab === 'preview' ? (
-            <div className="xl:hidden">{previewPanel}</div>
-          ) : null}
         </div>
 
-        <div className="hidden xl:block">
-          <div className="sticky top-28 space-y-3">
-            <p className="anvl-micro text-[10px] text-[var(--color-text-muted)]">
-              Live preview
-            </p>
-            {previewPanel}
-          </div>
+        <div className="order-1 space-y-3 lg:order-2">
+          <AdminCard
+            title="Live preview"
+            description="Draft edits appear here immediately. Visitors only see changes after you save the drop."
+          >
+            <div className="max-h-[min(70vh,720px)] overflow-y-auto overflow-x-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] lg:sticky lg:top-24">
+              {previewPanel ?? (
+                <p className="p-4 text-sm text-[var(--color-text-muted)]">
+                  Preview is unavailable for this drop state.
+                </p>
+              )}
+            </div>
+          </AdminCard>
         </div>
       </div>
 
@@ -725,6 +735,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               onClick={() => {
                 saveDrop(draft, { makeActive: makeActiveAfterSave })
                 toast.success('Drop saved.')
+                flashSuccess()
                 setConfirmSave(false)
               }}
             >

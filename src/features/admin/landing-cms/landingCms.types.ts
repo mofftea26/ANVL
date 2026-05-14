@@ -8,6 +8,7 @@
  */
 
 import type { PublicLandingAct } from '@/features/admin/drops/acts/landingActs.types'
+import type { SeoStructuredDataType } from '@/features/cms/types/cms.types'
 
 export interface CmsCta {
   label: string
@@ -58,9 +59,17 @@ export interface LandingSeoContent {
   title: string
   description: string
   path: string
+  metaTitle?: string
+  metaDescription?: string
+  canonicalUrl?: string
+  noIndex?: boolean
   ogTitle?: string
   ogDescription?: string
   ogImage?: string
+  twitterTitle?: string
+  twitterDescription?: string
+  twitterImage?: string
+  structuredDataType?: SeoStructuredDataType
 }
 
 export interface LandingSocialLink {

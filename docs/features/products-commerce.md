@@ -111,7 +111,7 @@ Support:
 - **Video**: YouTube URLs on `AdminProduct.videoUrl` resolve via `extractYoutubeVideoId` (`src/features/products/pdp/videoEmbed.ts`) and render as a privacy-enhanced embed on the PDP.
 - **3D**: `model3dUrl` shows a short placeholder plus external link (AR viewer integration later).
 - **Selectors**: `ColorSwatch` marks colorways with no in-stock sizes; `SizeSelector` disables OOS sizes for the active color using `shop.availabilityByColorAndSize`.
-- **Accordions**: `AccordionDisclosure` (`src/shared/components/ui/Accordion.tsx`) groups material, fit, care, shipping, and returns on the PDP.
+- **Accordions**: `AccordionDisclosure` (`src/shared/components/ui/AccordionDisclosure.tsx`) groups material, fit, care, shipping, and returns on the PDP.
 - **Related products**: `getRelatedStorefrontProducts` scores by shared primary drop, then category (`products.commerce.ts`).
 - **JSON-LD**: `productJsonLd` uses `shop.currency` and derived `Offer` availability from storefront status + variant stock (`structuredData.ts`).
 

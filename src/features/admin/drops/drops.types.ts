@@ -1,5 +1,6 @@
 import type { LandingActSlot } from './drops.actSequence'
 import type { LandingAct } from './acts/landingActs.types'
+import type { SeoStructuredDataType } from '@/features/cms/types/cms.types'
 
 export type { LandingActSlotKey, LandingActSlot } from './drops.actSequence'
 export {
@@ -117,9 +118,17 @@ export type DropLandingContent = {
 export type DropSeo = {
   title: string
   description: string
+  metaTitle?: string
+  metaDescription?: string
+  canonicalUrl?: string
+  noIndex?: boolean
   ogTitle?: string
   ogDescription?: string
   ogImage?: string
+  twitterTitle?: string
+  twitterDescription?: string
+  twitterImage?: string
+  structuredDataType?: SeoStructuredDataType
 }
 
 export type Drop = {

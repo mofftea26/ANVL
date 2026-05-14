@@ -66,11 +66,11 @@ function normalizeSeoPath(pathInput: string): string {
 
 function applySeoPatch(base: SeoContent, patch?: SeoFieldPatch): SeoContent {
   if (!patch) return base
-  const next: SeoContent = { ...base }
+  let next: SeoContent = { ...base }
   for (const [key, val] of Object.entries(patch) as [keyof SeoFieldPatch, unknown][]) {
     if (val === undefined) continue
     if (typeof val === 'string' && val.trim() === '') continue
-    ;(next as Record<string, unknown>)[key as string] = val
+    next = { ...next, [key]: val } as SeoContent
   }
   return next
 }
