@@ -45,3 +45,12 @@ type SeoDocument = {
 - Product pages need product structured data later.
 - Organization JSON-LD should use official ANVL brand identity.
 - Sitemap should include active public pages/products only when backend exists.
+
+
+## Runtime integration
+`SeoClient` is defined in `src/app/config/clients.ts` with two implementations:
+
+- `seedSeoClient` — SSR-safe; resolves `/`, `/drop/…` from the oath seed snapshot and other paths from `cmsMockData.seoByPath` until a real SEO CMS exists.
+- `localStorageSeoClient` — browser-only resolution via the same rules against persisted drops + landing CMS.
+
+`createRuntimeClients({ isServer })` selects the correct implementation. The shop index route (`src/routes/shop/index.tsx`) demonstrates loading `/shop` SEO from `runtimeClients.seo.getSeoByPath('/shop')` in the route loader and passing it into `buildSeoMeta()`.
