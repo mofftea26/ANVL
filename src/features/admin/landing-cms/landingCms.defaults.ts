@@ -1,4 +1,6 @@
 import type { LandingPageCmsContent } from './landingCms.types'
+import { defaultLandingActSequence } from '@/features/admin/drops/drops.actSequence'
+import { publicLandingActsFromSequence } from '@/features/admin/drops/acts/landingActs.normalize'
 
 export const LANDING_CMS_VERSION = 1
 
@@ -232,6 +234,7 @@ export const landingCmsDefaults: LandingPageCmsContent = {
       successToast: 'You are on the waitlist.',
     },
   },
+  landingActs: publicLandingActsFromSequence(defaultLandingActSequence()),
 }
 
 export function cloneLandingCmsDefaults(): LandingPageCmsContent {

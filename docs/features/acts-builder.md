@@ -100,3 +100,4 @@ type ActAnimationConfig = {
 - Every nature has a schema for its `content` object.
 - Unknown/invalid acts must fail gracefully with a hidden fallback in production and visible warning in CMS preview.
 - Heavy act renderers should be lazy-loaded.
+- Public homepage: composed `landingActs` follow the active drop's `landingActSequence`; the `/` route uses `PublicLandingActs` to map `nature` to existing marketing sections (lazy-loaded after Act I) and skips unknown types with a minimal notice.

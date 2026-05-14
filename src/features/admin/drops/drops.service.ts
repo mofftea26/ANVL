@@ -1,11 +1,7 @@
 import type { AdminProduct } from '@/features/admin/products/products.types'
 import { GLOBAL_BRAND_STORAGE_KEY } from '@/features/admin/global-brand/globalBrand.storage'
-import type { Drop, DropLandingContent, DropStatus, DropsPersistedState } from './drops.types'
-import { normalizeLandingActSequence } from './publicLandingActs.pipeline'
-import { coerceLandingAct } from './acts/landingActs.pipeline'
-import { dropLandingContentToActs } from './acts/landingActs.migrate'
-import { overlayActsOnDropLandingContent } from './acts/landingActs.compose'
-import { sortLandingActs } from './acts/landingActs.sort'
+import type { Drop, DropStatus, DropsPersistedState } from './drops.types'
+import { normalizeLandingActSequence } from './drops.actSequence'
 import {
   readActiveDropIdRaw,
   readDropsRaw,
@@ -43,7 +39,7 @@ let hydrationRan = false
 function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
   const base = createDefaultTheOathDrop([...DEFAULT_OATH_PRODUCT_IDS])
   const lc = partial.landingContent ?? base.landingContent
-  const mergedLanding: DropLandingContent = {
+  const mergedLanding = {
     ...base.landingContent,
     ...lc,
     hero: { ...base.landingContent.hero, ...(lc.hero ?? {}) },
@@ -69,16 +65,14 @@ function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
       },
     },
   }
-  const acts =
-    Array.isArray(partial.acts) && partial.acts.length > 0
-      ? sortLandingActs(partial.acts.map((a) => coerceLandingAct(a)))
-      : dropLandingContentToActs(mergedLanding)
-  const landingContent = overlayActsOnDropLandingContent(acts, mergedLanding)
   return {
     ...base,
     ...partial,
-    landingContent,
-    acts,
+    landingContent: mergedLanding,
+    acts:
+      Array.isArray(partial.acts) && partial.acts.length > 0
+        ? [...partial.acts]
+        : [...base.acts],
     landingActSequence: normalizeLandingActSequence(
       partial.landingActSequence ?? base.landingActSequence,
     ),

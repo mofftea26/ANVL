@@ -2,6 +2,7 @@ import { landingCmsDefaults } from '@/features/admin/landing-cms/landingCms.defa
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import type { Drop, DropLandingContent, DropVisuals } from './drops.types'
 import { DROP_THEME_PRESETS } from './drops.presets'
+import { defaultLandingActSequence } from './drops.actSequence'
 
 export const DEFAULT_OATH_DROP_ID = 'drop_the-oath'
 
@@ -99,6 +100,8 @@ export function createDefaultTheOathDrop(
     theme,
     visuals: defaultDropVisuals(),
     landingContent: landingDefaultsToDropLandingContent(),
+    landingActSequence: defaultLandingActSequence(),
+    acts: [],
     productIds: [...productIds],
     seo: {
       title: landingCmsDefaults.seo.title,

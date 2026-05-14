@@ -3,6 +3,7 @@ import type { Product } from '@/features/products/types/product.types'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import { DEFAULT_OATH_DROP_ID } from '@/features/admin/drops/drops.defaults'
 import type { AdminProduct, ProductVariantAvailability } from './products.types'
+import { rebuildAvailabilityMatrix } from './products.matrix'
 
 function legacyProductToAdmin(p: Product, nowIso: string): AdminProduct {
   const colors = p.colorways.map((cw, idx) => ({
@@ -32,12 +33,13 @@ function legacyProductToAdmin(p: Product, nowIso: string): AdminProduct {
         sizeId: s.id,
         sku: `${p.slug}-${s.label}-${c.name.slice(0, 3)}`.replace(/\s+/g, ''),
         stockQuantity: 24,
+        reservedQuantity: 0,
         isAvailable: true,
       })
     }
   }
 
-  return {
+  const base: AdminProduct = {
     id: p.id,
     slug: p.slug,
     name: p.name,
@@ -49,6 +51,11 @@ function legacyProductToAdmin(p: Product, nowIso: string): AdminProduct {
     saleLabel: undefined,
     status: 'active',
     isActive: true,
+    releaseDate: undefined,
+    saleStartsAt: undefined,
+    saleEndsAt: undefined,
+    currency: 'USD',
+    sourceType: 'drop',
     category: 'Apparel',
     tags: [],
     colors,
@@ -63,6 +70,8 @@ function legacyProductToAdmin(p: Product, nowIso: string): AdminProduct {
       care: p.careInstructions.join('\n'),
       features: [...p.designDetails],
     },
+    videoUrl: undefined,
+    model3dUrl: undefined,
     seo: {
       title: `${p.name} | ANVL Athletics`,
       description: p.storytelling,
@@ -71,6 +80,7 @@ function legacyProductToAdmin(p: Product, nowIso: string): AdminProduct {
     createdAt: nowIso,
     updatedAt: nowIso,
   }
+  return rebuildAvailabilityMatrix(base)
 }
 
 export function createSeedAdminProductsFromMock(
@@ -83,7 +93,7 @@ export function createEmptyAdminProduct(nowIso = new Date().toISOString()): Admi
   const id = createCmsId('prod')
   const colorId = createCmsId('color')
   const sizeId = createCmsId('size')
-  return {
+  const base: AdminProduct = {
     id,
     slug: 'new-piece',
     name: 'New piece',
@@ -93,6 +103,11 @@ export function createEmptyAdminProduct(nowIso = new Date().toISOString()): Admi
     isOnSale: false,
     status: 'draft',
     isActive: false,
+    releaseDate: undefined,
+    saleStartsAt: undefined,
+    saleEndsAt: undefined,
+    currency: 'USD',
+    sourceType: 'individual',
     category: 'Uncategorized',
     tags: [],
     colors: [
@@ -117,13 +132,17 @@ export function createEmptyAdminProduct(nowIso = new Date().toISOString()): Admi
         colorId,
         sizeId,
         stockQuantity: 0,
+        reservedQuantity: 0,
         isAvailable: false,
       },
     ],
     dropIds: [],
     details: {},
+    videoUrl: undefined,
+    model3dUrl: undefined,
     seo: {},
     createdAt: nowIso,
     updatedAt: nowIso,
   }
+  return rebuildAvailabilityMatrix(base)
 }

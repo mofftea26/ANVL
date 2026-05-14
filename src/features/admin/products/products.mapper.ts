@@ -1,5 +1,6 @@
 import type { Product } from '@/features/products/types/product.types'
 import type { AdminProduct, ProductImage, ProductSize } from './products.types'
+import { effectiveSellableUnits } from './products.matrix'
 
 export function sortSizes(sizes: ProductSize[]): ProductSize[] {
   return [...sizes].sort((a, b) => a.sortOrder - b.sortOrder)
@@ -93,6 +94,7 @@ export function variantIsPurchasable(
   const row = admin.availability.find(
     (a) => a.colorId === color.id && a.sizeId === size.id,
   )
-  if (!row?.isAvailable || row.stockQuantity <= 0) return false
+  if (!row) return false
+  if (effectiveSellableUnits(row) <= 0) return false
   return true
 }

@@ -1,7 +1,12 @@
-import type { LandingAct, LandingActSlot } from './publicLandingActs.pipeline'
+import type { LandingActSlot } from './drops.actSequence'
+import type { LandingAct } from './acts/landingActs.types'
 
-export type { LandingActSlotKey } from './publicLandingActs.pipeline'
-export { LANDING_ACT_SLOT_KEYS } from './publicLandingActs.pipeline'
+export type { LandingActSlotKey, LandingActSlot } from './drops.actSequence'
+export {
+  LANDING_ACT_SLOT_KEYS,
+  defaultLandingActSequence,
+  normalizeLandingActSequence,
+} from './drops.actSequence'
 
 export type DropStatus =
   | 'draft'
@@ -32,6 +37,8 @@ export type DropThemePalette = {
 export type DropVisuals = {
   emblemImageUrl: string
   emblemAlt: string
+  /** Optional backdrop for the public `/drop/:slug` hero. */
+  heroImageUrl?: string
   logoImageUrl?: string
   wordmarkImageUrl?: string
   loadingEmblemUrl?: string

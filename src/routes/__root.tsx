@@ -18,8 +18,11 @@ import appCss from "@/styles.css?url";
 
 export const Route = createRootRoute({
   loader: async () => {
-    const landing = await runtimeClients.cms.getLandingCmsContent();
-    return { landing };
+    const [landing, activeDrop] = await Promise.all([
+      runtimeClients.cms.getLandingCmsContent(),
+      runtimeClients.cms.getActiveDrop(),
+    ]);
+    return { landing, activeDrop };
   },
   head: () => ({
     meta: [

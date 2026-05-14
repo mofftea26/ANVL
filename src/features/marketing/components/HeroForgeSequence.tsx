@@ -49,42 +49,62 @@ export function HeroForgeSequence({
 
   useGSAP(
     () => {
-      const ctx = gsap.matchMedia()
+      const host = root.current
+      if (!host) return
 
-      ctx.add(
-        {
-          motionOk: '(prefers-reduced-motion: no-preference)',
-          reduced: '(prefers-reduced-motion: reduce)',
-        },
-        (context) => {
-          const conds = context.conditions ?? {}
-          const reduced = Boolean(conds.reduced)
-          const host = root.current
-          if (!host) return
+      const mm = gsap.matchMedia()
 
-          const words = gsap.utils.toArray<HTMLElement>('[data-hero-word]', host)
-          const badge = host.querySelector('[data-hero-badge]')
-          const subtitleEl = host.querySelector('[data-hero-sub]')
-          const ctaEl = host.querySelector('[data-hero-ctas]')
-          const meta = host.querySelector('[data-hero-meta]')
-          const crest = host.querySelector('[data-hero-crest]')
-          const glow = host.querySelector('[data-hero-glow]')
-          const vignette = host.querySelector('[data-hero-vignette]')
-          const embers = gsap.utils.toArray<HTMLElement>(
-            '[data-hero-ember]',
-            host,
-          )
+      const queryElements = () => {
+        const words = gsap.utils.toArray<HTMLElement>('[data-hero-word]', host)
+        const badge = host.querySelector('[data-hero-badge]')
+        const subtitleEl = host.querySelector('[data-hero-sub]')
+        const ctaEl = host.querySelector('[data-hero-ctas]')
+        const meta = host.querySelector('[data-hero-meta]')
+        const crest = host.querySelector('[data-hero-crest]')
+        const glow = host.querySelector('[data-hero-glow]')
+        const vignette = host.querySelector('[data-hero-vignette]')
+        const embers = gsap.utils.toArray<HTMLElement>(
+          '[data-hero-ember]',
+          host,
+        )
+        return {
+          words,
+          badge,
+          subtitleEl,
+          ctaEl,
+          meta,
+          crest,
+          glow,
+          vignette,
+          embers,
+        }
+      }
 
-          if (reduced) {
-            gsap.set([badge, subtitleEl, ctaEl, meta, crest, ...words], {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-            })
-            return
-          }
+      mm.add('(max-width: 767px), (prefers-reduced-motion: reduce)', () => {
+        const { words, badge, subtitleEl, ctaEl, meta, crest } =
+          queryElements()
+        gsap.set([badge, subtitleEl, ctaEl, meta, crest, ...words], {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+        })
+      })
 
-          // ---- Initial frame ------------------------------------------
+      mm.add(
+        '(min-width: 768px) and (prefers-reduced-motion: no-preference)',
+        () => {
+          const {
+            words,
+            badge,
+            subtitleEl,
+            ctaEl,
+            meta,
+            crest,
+            glow,
+            vignette,
+            embers,
+          } = queryElements()
+
           gsap.set(words, { yPercent: 115, opacity: 0 })
           gsap.set([badge, subtitleEl, ctaEl, meta], { opacity: 0, y: 22 })
           gsap.set(crest, {
@@ -150,7 +170,6 @@ export function HeroForgeSequence({
             .to(ctaEl, { opacity: 1, y: 0, duration: 0.7 }, 0.75)
             .to(meta, { opacity: 1, y: 0, duration: 0.7 }, 0.85)
 
-          // ---- Idle loops --------------------------------------------
           gsap.to(crest, {
             rotateY: 5,
             rotateX: -2,
@@ -184,11 +203,6 @@ export function HeroForgeSequence({
             })
           })
 
-          // ---- Scroll-linked outro ------------------------------------
-          // As the user scrolls down the Oath shape scales up,
-          // engulfing the viewport while the rest of the hero fades
-          // away. Creates a "stepping through the seal" feeling as
-          // Act II takes over.
           gsap
             .timeline({
               scrollTrigger: {
@@ -203,10 +217,10 @@ export function HeroForgeSequence({
             .to([badge, subtitleEl, ctaEl, meta], { opacity: 0, y: -18 }, 0)
             .to(vignette, { opacity: 1 }, 0)
         },
-        root,
+        host,
       )
 
-      return () => ctx.revert()
+      return () => mm.revert()
     },
     { scope: root },
   )

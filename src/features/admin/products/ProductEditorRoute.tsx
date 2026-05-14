@@ -18,6 +18,7 @@ import { useDropsList } from '@/features/admin/drops/useDrops'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import {
   deleteAdminProduct,
+  deriveSourceType,
   upsertAdminProduct,
 } from '@/features/admin/products/products.service'
 import { useAdminProductById } from '@/features/admin/products/useAdminProducts'
@@ -47,6 +48,25 @@ const PRODUCT_STATUSES: ProductStatus[] = [
   'archived',
 ]
 
+function pad2(n: number) {
+  return String(n).padStart(2, '0')
+}
+
+function toDatetimeLocal(iso: string | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+}
+
+function fromDatetimeLocal(value: string): string | undefined {
+  const v = value.trim()
+  if (!v) return undefined
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return undefined
+  return d.toISOString()
+}
+
 function cloneProduct(p: AdminProduct): AdminProduct {
   return structuredClone(p)
 }
@@ -75,17 +95,20 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
     return rebuilt.availability
   }, [draft])
 
+  const listingSourceDisplay = useMemo(() => {
+    if (!draft) return ''
+    return deriveSourceType(draft.dropIds) === 'drop'
+      ? 'Drop release (assigned to one or more drops)'
+      : 'Individual release (not on a drop roster)'
+  }, [draft])
+
   const primaryPreviewSrc =
     draft?.colors[0]?.images.find((i) => i.isPrimary)?.url ??
     draft?.colors[0]?.images[0]?.url
 
   const saveProduct = () => {
     if (!draft) return
-    const stamped: AdminProduct = {
-      ...draft,
-      updatedAt: new Date().toISOString(),
-    }
-    const rebuilt = rebuildAvailabilityMatrix(stamped)
+    const rebuilt = rebuildAvailabilityMatrix(draft)
     upsertAdminProduct(rebuilt)
     persistProductDropLinks(rebuilt)
     toast.success('Product saved.')
@@ -98,14 +121,14 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
     patch: Partial<ProductVariantAvailability>,
   ) => {
     if (!draft) return
-    setDraft({
-      ...draft,
-      availability: draft.availability.map((row) =>
-        row.colorId === colorId && row.sizeId === sizeId
-          ? { ...row, ...patch }
-          : row,
-      ),
-    })
+    const nextAvailability = draft.availability.map((row) =>
+      row.colorId === colorId && row.sizeId === sizeId
+        ? { ...row, ...patch }
+        : row,
+    )
+    setDraft(
+      rebuildAvailabilityMatrix({ ...draft, availability: nextAvailability }),
+    )
   }
 
   if (!draft) {
@@ -216,6 +239,81 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     setDraft({
                       ...draft,
                       price: Number.parseFloat(e.target.value) || 0,
+                    })
+                  }
+                />
+              </FormField>
+              <FormField label="Currency (ISO)">
+                <Input
+                  value={draft.currency}
+                  placeholder="USD"
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      currency: e.target.value.toUpperCase().slice(0, 8),
+                    })
+                  }
+                />
+              </FormField>
+              <FormField label="Listing source">
+                <Input readOnly value={listingSourceDisplay} />
+              </FormField>
+              <FormField label="Release date">
+                <Input
+                  type="datetime-local"
+                  value={toDatetimeLocal(draft.releaseDate)}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      releaseDate: fromDatetimeLocal(e.target.value),
+                    })
+                  }
+                />
+              </FormField>
+              <FormField label="Sale starts">
+                <Input
+                  type="datetime-local"
+                  value={toDatetimeLocal(draft.saleStartsAt)}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      saleStartsAt: fromDatetimeLocal(e.target.value),
+                    })
+                  }
+                />
+              </FormField>
+              <FormField label="Sale ends">
+                <Input
+                  type="datetime-local"
+                  value={toDatetimeLocal(draft.saleEndsAt)}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      saleEndsAt: fromDatetimeLocal(e.target.value),
+                    })
+                  }
+                />
+              </FormField>
+              <FormField label="Video URL">
+                <Input
+                  value={draft.videoUrl ?? ''}
+                  placeholder="https://"
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      videoUrl: e.target.value.trim() || undefined,
+                    })
+                  }
+                />
+              </FormField>
+              <FormField label="3D / AR model URL">
+                <Input
+                  value={draft.model3dUrl ?? ''}
+                  placeholder="https://"
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      model3dUrl: e.target.value.trim() || undefined,
                     })
                   }
                 />
@@ -360,7 +458,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                   }
                 />
               </FormField>
-              <FormField label="Fabric">
+              <FormField label="Material / fabric">
                 <Input
                   value={draft.details.fabric ?? ''}
                   onChange={(e) =>
@@ -660,7 +758,10 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
             </div>
           </AdminCard>
 
-          <AdminCard title="Availability matrix" description="SKU · stock · toggle per pairing.">
+          <AdminCard
+            title="Availability matrix"
+            description="Sellable rows update automatically from stock minus reserved units."
+          >
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse text-left text-xs">
                 <thead>
@@ -673,6 +774,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     </th>
                     <th className="py-2 pr-4 font-medium uppercase tracking-[0.16em]">
                       Stock
+                    </th>
+                    <th className="py-2 pr-4 font-medium uppercase tracking-[0.16em]">
+                      Reserved
                     </th>
                     <th className="py-2 font-medium uppercase tracking-[0.16em]">
                       Sellable
@@ -711,15 +815,21 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                           }
                         />
                       </td>
-                      <td className="py-3">
-                        <Checkbox
-                          checked={row.isAvailable}
+                      <td className="py-3 pr-4">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={row.reservedQuantity}
                           onChange={(e) =>
                             updateAvailabilityRow(row.colorId, row.sizeId, {
-                              isAvailable: e.target.checked,
+                              reservedQuantity:
+                                Number.parseInt(e.target.value, 10) || 0,
                             })
                           }
                         />
+                      </td>
+                      <td className="py-3 text-[var(--color-text)]">
+                        {row.isAvailable ? 'Yes' : 'No'}
                       </td>
                     </tr>
                   ))}

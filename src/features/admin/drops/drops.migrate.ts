@@ -8,6 +8,7 @@ import {
   defaultDropVisuals,
 } from './drops.defaults'
 import { DROP_THEME_PRESETS } from './drops.presets'
+import { defaultLandingActSequence } from './drops.actSequence'
 
 function slugFromLanding(landing: LandingPageCmsContent): string {
   const href = landing.hero.primaryCta.href
@@ -117,6 +118,7 @@ export function landingPageToDrop(landing: LandingPageCmsContent): Drop {
   const slug = slugFromLanding(landing)
   const emblemSrc =
     landing.dropReveal.dropIcon.src.trim() || DEFAULT_EMBLEM_URL
+  const lc = landingPageToDropLandingContent(landing)
 
   return {
     id: DEFAULT_OATH_DROP_ID,
@@ -138,7 +140,9 @@ export function landingPageToDrop(landing: LandingPageCmsContent): Drop {
         landing.dropReveal.dropIcon.alt || defaultDropVisuals().emblemAlt,
       loadingEmblemUrl: emblemSrc,
     },
-    landingContent: landingPageToDropLandingContent(landing),
+    landingContent: lc,
+    landingActSequence: defaultLandingActSequence(),
+    acts: [],
     productIds: [...DEFAULT_OATH_PRODUCT_IDS],
     seo: {
       title: landing.seo.title,

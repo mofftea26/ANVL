@@ -5,6 +5,11 @@ import {
 import type {
   LandingPageCmsContent,
 } from './landingCms.types'
+import { defaultLandingActSequence } from '@/features/admin/drops/drops.actSequence'
+import {
+  publicLandingActsFromSequence,
+  publicLandingActsFromUnknownList,
+} from '@/features/admin/drops/acts/landingActs.normalize'
 
 /**
  * Deep-merge stored content over defaults. Each section falls back
@@ -48,6 +53,11 @@ export function mergeLandingCmsWithDefaults(
         ...(stored.waitlist?.form ?? {}),
       },
     },
+    landingActs: (() => {
+      const parsed = publicLandingActsFromUnknownList(stored?.landingActs)
+      if (parsed && parsed.length > 0) return parsed
+      return publicLandingActsFromSequence(defaultLandingActSequence())
+    })(),
   }
 
   return merged

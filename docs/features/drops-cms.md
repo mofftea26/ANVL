@@ -89,3 +89,9 @@ When a drop becomes active:
 - Site theme variables update to the active drop palette.
 - Drop page uses that drop's title, subtitle, visuals, description, and product cards.
 - Products assigned to the drop become visible in the global shop if their product status allows it.
+
+## Public homepage act pipeline
+- `landingActSequence` on each drop is the ordered list of six canonical slots (`hero`, `manifesto`, `dropReveal`, `pieces`, `materials`, `waitlist`) with an `enabled` flag per slot.
+- `composeLandingPageFromDrop` adds `landingActs` to `LandingPageCmsContent`: public descriptors with `nature` (e.g. `productShowcase`), `preset`, `sortOrder`, and `animation` defaults for future GSAP gating.
+- The public `/` route renders `PublicLandingActs`, which switches on `nature` to existing section components (Act III onward lazy-loaded) and degrades unknown types to a small on-page notice.
+- Hero GSAP runs only at `min-width: 768px` with `prefers-reduced-motion: no-preference`; mobile and reduced-motion users see a static hero layout for speed and accessibility.
