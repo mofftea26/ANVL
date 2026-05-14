@@ -32,6 +32,24 @@ import { ImageFileOrUrlField } from '@/shared/components/ui/ImageFileOrUrlField'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
 
+function padDt(n: number): string {
+  return n < 10 ? `0${n}` : `${n}`
+}
+
+function isoToDatetimeLocalValue(iso: string | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getFullYear()}-${padDt(d.getMonth() + 1)}-${padDt(d.getDate())}T${padDt(d.getHours())}:${padDt(d.getMinutes())}`
+}
+
+function localInputToIso(local: string): string | undefined {
+  if (!local.trim()) return undefined
+  const d = new Date(local)
+  if (Number.isNaN(d.getTime())) return undefined
+  return d.toISOString()
+}
+
 const fieldClass =
   'mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm'
 
@@ -370,6 +388,25 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     }
                   />
                 </label>
+                <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+                  Release date (optional)
+                  <input
+                    type="datetime-local"
+                    className={fieldClass}
+                    value={isoToDatetimeLocalValue(draft.releaseDate)}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        releaseDate: e.target.value
+                          ? localInputToIso(e.target.value)
+                          : undefined,
+                      })
+                    }
+                  />
+                  <span className="mt-1 block text-[10px] text-[var(--color-text-muted)]">
+                    Shown on the public drop page with a live countdown after hydration.
+                  </span>
+                </label>
               </div>
             </AdminCard>
           ) : null}
@@ -403,6 +440,19 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     }
                   />
                 </label>
+                <div className="md:col-span-2">
+                  <ImageFileOrUrlField
+                    label="Drop page hero backdrop (optional)"
+                    hint="Large mood image behind the public `/drop/:slug` hero. Path, URL, or embedded file."
+                    value={draft.visuals.heroImageUrl ?? ''}
+                    onChange={(next) =>
+                      setDraft({
+                        ...draft,
+                        visuals: { ...draft.visuals, heroImageUrl: next || undefined },
+                      })
+                    }
+                  />
+                </div>
                 <div className="md:col-span-2">
                   <ImageFileOrUrlField
                     label="Logo (optional)"
