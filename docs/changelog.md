@@ -46,3 +46,9 @@ Cursor agents must append every completed task here.
 - Files changed: `AGENTS.md`, `docs/README.md`, `docs/*.md` (core docs), `docs/features/*.md`, `docs/prompts/*.md`, `README.md`, `docs/changelog.md`
 - Tests/manual checks: Verified file tree under `docs/` and `AGENTS.md` presence; no application code changes.
 - Notes/debt: Brand PDF/DOCX assets were already present under `docs/`; new markdown files sit alongside them.
+
+## 2026-05-14 — Header/footer/navigation/socials CMS (Prompt 14)
+- Summary: Website layout CMS treats `/drop/*` nav links as system-bound active campaign slots in admin (read-only label/href with context), requires at least one desktop `/drop/` link on save, normalizes optional stacked logo URLs so empty values use the bundled official mark, adds `logoMediaAssetId` placeholders, trims `/drop/` detection in compose, and improves public header/footer semantics (`aria-label`, social list markup).
+- Files changed: `src/features/admin/website-layout/websiteLayout.nav.ts`, `websiteLayout.types.ts`, `websiteLayout.defaults.ts`, `websiteLayout.service.ts`, `src/features/admin/drops/drops.migrate.ts`, `drops.compose.ts`, `src/routes/admin/website-layout.tsx`, `src/shared/components/layout/SiteFooter.tsx`, `src/shared/components/layout/StickyHeader.tsx`, `docs/features/drops-cms.md`, `docs/changelog.md`
+- Tests/manual checks: `pnpm typecheck` (pass), `pnpm build` (pass) on `cursor/14-header-footer-settings-73a1`.
+- Notes/debt: `logoMediaAssetId` is merged on load/save but not wired to uploads yet.

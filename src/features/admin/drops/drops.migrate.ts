@@ -84,14 +84,12 @@ export function landingNavigationToWebsiteLayout(
     version: 1,
     updatedAt: nowIso,
     header: {
-      logoStackedSrc: '/brand/stacked.svg',
       cartVisible: true,
       announcement: { enabled: false, message: '', href: '' },
       headerLinks: nav.headerLinks.map((l) => ({ ...l })),
       mobileExtraLinks: [],
     },
     footer: {
-      logoStackedSrc: '/brand/stacked.svg',
       decorativeEmblemFallbackSrc: DEFAULT_EMBLEM_URL,
       tagline: nav.footerTagline,
       microCaption: nav.footerMicroCaption,

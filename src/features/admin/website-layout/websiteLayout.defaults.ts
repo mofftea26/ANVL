@@ -11,14 +11,12 @@ export function createDefaultWebsiteLayout(
     version: WEBSITE_LAYOUT_VERSION,
     updatedAt: nowIso,
     header: {
-      logoStackedSrc: '/brand/stacked.svg',
       cartVisible: true,
       announcement: { enabled: false, message: '', href: '' },
       headerLinks: nav.headerLinks.map((l) => ({ ...l })),
       mobileExtraLinks: [],
     },
     footer: {
-      logoStackedSrc: '/brand/stacked.svg',
       decorativeEmblemFallbackSrc: '/brand/the-oath-shape.svg',
       tagline: nav.footerTagline,
       microCaption: nav.footerMicroCaption,

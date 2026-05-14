@@ -102,7 +102,10 @@ export function StickyHeader({
           >
             {LogoMark}
           </Link>
-          <nav className="ml-8 hidden items-center gap-6 md:flex">
+          <nav
+            className="ml-8 hidden items-center gap-6 md:flex"
+            aria-label="Primary"
+          >
             {visibleLinks.map((item) => (
               <Link
                 key={item.id ?? item.href}
@@ -146,7 +149,7 @@ export function StickyHeader({
             <X size={16} />
           </IconButton>
         </div>
-        <nav className="mt-8 flex flex-col gap-4">
+        <nav className="mt-8 flex flex-col gap-4" aria-label="Mobile">
           {drawerLinks.map((item) => (
             <Link
               key={`${item.id ?? item.href}-drawer`}
