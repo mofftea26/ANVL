@@ -2,6 +2,8 @@
 
 ## Storefront performance notes
 - PDP `ProductGallery` uses `fetchPriority="high"` on the hero frame, lazy + async decoding for thumbnails, and an optional `images` prop for colorway-specific galleries when `product.shop.imagesByColorName` is present.
+- `/shop` uses `useDeferredValue` on the filtered listing so rapid filter changes stay responsive while the loader-derived list catches up.
+- Admin `/admin/products` is loaded with `lazyRouteComponent` (`-adminProductsIndex.tsx`) so the catalog filters, grouping, and thumbnails are not bundled with the lightweight route shell; list thumbnails use `loading="lazy"` and `decoding="async"`.
 - Public storefront `Product` (`src/features/products/types/product.types.ts`) includes optional `shop?: ProductShopMeta` (storefront status, drop slug, pricing, availability matrix, media URLs) populated in `adminProductToLegacy` for filters, cards, PDP, and JSON-LD.
 
 ## Product model

@@ -12,6 +12,9 @@ Drops are the central content unit for ANVL campaigns. Each drop controls the la
 
 Only one drop can be active.
 
+## Public landing performance
+- `PublicLandingActs` lazy-loads act sections (including `HeroForgeSequence`) with `React.lazy` and per-act `Suspense` fallbacks so heavy marketing chunks are not all required for the first interactive paint.
+
 ## Drop fields
 ```ts
 type Drop = {
