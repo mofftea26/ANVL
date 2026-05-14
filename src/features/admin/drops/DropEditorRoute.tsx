@@ -1,6 +1,8 @@
 import { Link, useNavigate } from '@tanstack/react-router'
+import { Check } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import { DropPreviewThemeScope } from '@/app/providers/ActiveDropThemeBridge'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
@@ -58,10 +60,10 @@ type TabId =
   | 'landing'
   | 'products'
   | 'seo'
-  | 'preview'
 
 export function DropEditorRoute({ dropId }: { dropId: string }) {
   const navigate = useNavigate()
+  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const drops = useDropsList()
   const catalog = useAdminProductsList()
   const saved = useMemo(() => drops.find((d) => d.id === dropId), [drops, dropId])
@@ -114,7 +116,6 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
     { id: 'landing', label: 'Landing acts' },
     { id: 'products', label: 'Products' },
     { id: 'seo', label: 'SEO' },
-    { id: 'preview', label: 'Preview' },
   ]
 
   function toggleProduct(id: string) {
@@ -227,7 +228,14 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               Delete / archive flow
             </Button>
             <Button type="button" variant="primary" size="sm" onClick={() => setConfirmSave(true)}>
-              Save drop
+              {showSuccess ? (
+                <>
+                  <Check size={16} className="mr-1.5" aria-hidden="true" />
+                  Saved
+                </>
+              ) : (
+                'Save drop'
+              )}
             </Button>
           </div>
         }
@@ -260,8 +268,8 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         ))}
       </div>
 
-      <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_440px]">
-        <div className="space-y-8">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(400px,38vw)] xl:gap-8 xl:grid-cols-[minmax(0,1fr)_440px]">
+        <div className="order-2 min-w-0 space-y-8 lg:order-1">
           <div className="hidden flex-wrap gap-2 lg:flex">
             {tabDefs.map((t) => (
               <button
@@ -674,19 +682,18 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               </div>
             </AdminCard>
           ) : null}
-
-          {tab === 'preview' ? (
-            <div className="xl:hidden">{previewPanel}</div>
-          ) : null}
         </div>
 
-        <div className="hidden xl:block">
-          <div className="sticky top-28 space-y-3">
-            <p className="anvl-micro text-[10px] text-[var(--color-text-muted)]">
-              Live preview
-            </p>
-            {previewPanel}
-          </div>
+        <div className="order-1 lg:order-2 lg:self-start">
+          <AdminCard
+            title="Live preview"
+            description="Changes appear here in real time while you edit. Visitors only see updates after you save the drop."
+            className="lg:sticky lg:top-24"
+          >
+            <div className="max-h-[min(70vh,720px)] overflow-y-auto overflow-x-hidden rounded-lg border border-[var(--color-line)]/60 bg-[var(--color-bg)]">
+              {previewPanel}
+            </div>
+          </AdminCard>
         </div>
       </div>
 
@@ -712,6 +719,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               onClick={() => {
                 saveDrop(draft, { makeActive: makeActiveAfterSave })
                 toast.success('Drop saved.')
+                flashSuccess()
                 setConfirmSave(false)
               }}
             >

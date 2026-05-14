@@ -1,10 +1,12 @@
 import type { PropsWithChildren } from 'react'
 
-export function Modal({
-  open,
-  onClose,
-  children,
-}: PropsWithChildren<{ open: boolean; onClose: () => void }>) {
+type ModalProps = PropsWithChildren<{
+  open: boolean
+  onClose: () => void
+  'aria-labelledby'?: string
+}>
+
+export function Modal({ open, onClose, children, 'aria-labelledby': ariaLabelledBy }: ModalProps) {
   if (!open) return null
 
   return (
@@ -18,6 +20,7 @@ export function Modal({
         className="relative w-full max-w-lg rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-6"
         role="dialog"
         aria-modal="true"
+        aria-labelledby={ariaLabelledBy}
       >
         {children}
       </div>

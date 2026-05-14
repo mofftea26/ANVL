@@ -1,73 +1,96 @@
 export interface AdminNavItem {
   label: string
   href: string
-  description?: string
+  description: string
+  cluster: string
+  cta: string
+  badge: string
 }
 
-export interface AdminNavGroup {
-  label: string
-  items: AdminNavItem[]
-}
-
-export const adminNavGroups: AdminNavGroup[] = [
+/** Primary destinations; sidebar groups by `cluster`. */
+export const adminNavItems: AdminNavItem[] = [
   {
-    label: 'Overview',
-    items: [
-      {
-        label: 'Dashboard',
-        href: '/admin',
-        description: 'High-level controls for drops, catalog, and layout',
-      },
-    ],
+    label: 'Dashboard',
+    href: '/admin',
+    description: 'Signed-in overview and links into every CMS surface.',
+    cluster: 'Workspace',
+    cta: 'Open dashboard',
+    badge: 'Overview',
   },
   {
     label: 'Drops',
-    items: [
-      {
-        label: 'All drops',
-        href: '/admin/drops',
-        description: 'Create, edit, preview, and activate drops',
-      },
-      {
-        label: 'New drop',
-        href: '/admin/drops/new',
-        description: 'Guided flow for a new landing configuration',
-      },
-    ],
+    href: '/admin/drops',
+    description:
+      'Campaign landing content, acts, theme, and which SKUs appear in the drop story.',
+    cluster: 'Campaigns',
+    cta: 'Manage drops',
+    badge: 'Campaigns',
   },
   {
     label: 'Products',
-    items: [
-      {
-        label: 'Catalog',
-        href: '/admin/products',
-        description: 'Global inventory shared across drops',
-      },
-      {
-        label: 'New product',
-        href: '/admin/products/new',
-        description: 'Colors, sizes, pricing, availability matrix',
-      },
-    ],
+    href: '/admin/products',
+    description: 'Global catalog, variants, availability, and drop assignments.',
+    cluster: 'Catalog',
+    cta: 'Open catalog',
+    badge: 'Catalog',
   },
   {
-    label: 'Site',
-    items: [
-      {
-        label: 'Website layout',
-        href: '/admin/website-layout',
-        description: 'Header, footer, navigation, newsletter',
-      },
-      {
-        label: 'Theme & brand',
-        href: '/admin/theme',
-        description: 'Fallback emblem and loader preferences',
-      },
-      {
-        label: 'SEO hub',
-        href: '/admin/seo',
-        description: 'Where homepage and drop SEO are authored',
-      },
-    ],
+    label: 'Website layout',
+    href: '/admin/website-layout',
+    description: 'Header, footer, navigation, newsletter, and announcement bar.',
+    cluster: 'Site',
+    cta: 'Edit layout',
+    badge: 'Global',
+  },
+  {
+    label: 'Theme & brand',
+    href: '/admin/theme',
+    description: 'Fallback emblem paths before an active drop hydrates.',
+    cluster: 'Site',
+    cta: 'Brand settings',
+    badge: 'Fallback',
+  },
+  {
+    label: 'SEO',
+    href: '/admin/seo',
+    description: 'Homepage and drop metadata; deep pages inherit commerce defaults.',
+    cluster: 'Site',
+    cta: 'SEO overview',
+    badge: 'Discovery',
+  },
+  {
+    label: 'Media',
+    href: '/admin/media',
+    description:
+      'Where imagery attaches today: drop visuals, product galleries, layout, and SEO fields.',
+    cluster: 'Site',
+    cta: 'Media guide',
+    badge: 'Assets',
+  },
+  {
+    label: 'Settings',
+    href: '/admin/settings',
+    description: 'Session details and destructive reset of local dev CMS data.',
+    cluster: 'Workspace',
+    cta: 'Workspace settings',
+    badge: 'System',
   },
 ]
+
+const CLUSTER_ORDER = ['Workspace', 'Campaigns', 'Catalog', 'Site'] as const
+
+export function adminNavItemsByCluster(): {
+  cluster: string
+  items: AdminNavItem[]
+}[] {
+  const map = new Map<string, AdminNavItem[]>()
+  for (const item of adminNavItems) {
+    const list = map.get(item.cluster) ?? []
+    list.push(item)
+    map.set(item.cluster, list)
+  }
+  return CLUSTER_ORDER.filter((c) => map.has(c)).map((cluster) => ({
+    cluster,
+    items: map.get(cluster)!,
+  }))
+}

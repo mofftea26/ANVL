@@ -1,11 +1,17 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { cn } from '@/shared/lib/cn'
-import { adminNavGroups } from './adminNav'
+import { adminNavItemsByCluster } from './adminNav'
 
 interface AdminSidebarProps {
   onNavigate?: () => void
   className?: string
+}
+
+function pathIsActive(pathname: string, href: string) {
+  return href === '/admin'
+    ? pathname === '/admin'
+    : pathname === href || pathname.startsWith(`${href}/`)
 }
 
 export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
@@ -13,10 +19,12 @@ export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
     select: (state) => state.location.pathname,
   })
 
+  const clusters = adminNavItemsByCluster()
+
   return (
     <aside
       className={cn(
-        'flex h-full flex-col gap-8 border-r border-[var(--color-line)] bg-[var(--color-surface)] px-5 py-6',
+        'flex h-full flex-col gap-8 border-r border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-6 sm:px-5',
         className,
       )}
     >
@@ -31,42 +39,41 @@ export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
             ANVL Admin
           </p>
           <p className="anvl-micro mt-1 text-[10px] text-[var(--color-text-muted)]">
-            Content Workspace
+            CMS
           </p>
         </div>
       </Link>
 
       <nav className="flex flex-col gap-7 overflow-y-auto">
-        {adminNavGroups.map((group) => (
-          <div key={group.label} className="space-y-3">
+        {clusters.map(({ cluster, items }) => (
+          <div key={cluster} className="space-y-3">
             <p className="anvl-micro text-[10px] text-[var(--color-text-muted)]">
-              {group.label}
+              {cluster}
             </p>
-            <ul className="space-y-1">
-              {group.items.map((item) => {
-                const isActive =
-                  item.href === '/admin'
-                    ? pathname === '/admin'
-                    : pathname === item.href ||
-                      pathname.startsWith(`${item.href}/`)
+            <ul className="space-y-1.5">
+              {items.map((item) => {
+                const isActive = pathIsActive(pathname, item.href)
                 return (
                   <li key={item.href}>
                     <Link
                       to={item.href}
                       onClick={onNavigate}
                       className={cn(
-                        'block rounded-md border px-3 py-2 text-sm no-underline transition',
+                        'block rounded-md border px-3 py-2.5 text-sm no-underline transition',
                         isActive
                           ? 'border-[var(--color-accent)]/40 bg-[var(--color-surface-elevated)] text-[var(--color-heading)]'
                           : 'border-transparent text-[var(--color-text-muted)] hover:border-[var(--color-line)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)]',
                       )}
                     >
-                      <span className="block font-medium">{item.label}</span>
-                      {item.description ? (
-                        <span className="mt-0.5 block text-[11px] text-[var(--color-text-muted)]">
-                          {item.description}
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="block font-medium leading-snug">{item.label}</span>
+                        <span className="shrink-0 rounded-full border border-[var(--color-line)] px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
+                          {item.badge}
                         </span>
-                      ) : null}
+                      </span>
+                      <span className="mt-1 block text-[11px] leading-relaxed text-[var(--color-text-muted)]">
+                        {item.description}
+                      </span>
                     </Link>
                   </li>
                 )

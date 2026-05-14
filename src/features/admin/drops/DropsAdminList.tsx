@@ -119,6 +119,14 @@ export function DropsAdminList() {
     [data, search, statusTab],
   )
 
+  const totalDrops = data?.length ?? 0
+  const filtersActive = search.trim() !== '' || statusTab !== 'all'
+
+  function clearListFilters() {
+    setSearch('')
+    setStatusTab('all')
+  }
+
   function openSchedule(row: AdminDropListItem) {
     const base =
       row.scheduledActivationAt && !Number.isNaN(new Date(row.scheduledActivationAt).getTime())
@@ -214,134 +222,83 @@ export function DropsAdminList() {
           <p className="text-sm text-[var(--color-text-muted)]">Loading drops…</p>
         ) : null}
 
-        {!isLoading && !isError ? (
-          <>
-            <div className="grid gap-3 md:hidden">
-              {rows.map((row) => (
-                <AdminCard
-                  key={row.id}
-                  title={`${row.dropNumber} · ${row.name}`}
-                  description={
-                    <span className="text-[var(--color-text-muted)]">
-                      /drop/{row.slug} · {row.productCount} products
-                    </span>
-                  }
-                >
-                  <div className="space-y-3 text-sm">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={cn(
-                          'rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
-                          statusBadgeClass(row.status, row.isActive),
-                        )}
-                      >
-                        {row.isActive ? 'Live (active)' : row.status}
-                      </span>
-                      {row.isActive ? (
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
-                          Storefront drop
-                        </span>
-                      ) : null}
-                    </div>
-                    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-[var(--color-text-muted)]">
-                      <div>
-                        <dt className="text-[10px] uppercase tracking-wider">Release</dt>
-                        <dd className="text-[var(--color-text)]">{formatAdminDate(row.releaseDate)}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-[10px] uppercase tracking-wider">Scheduled</dt>
-                        <dd className="text-[var(--color-text)]">
-                          {formatAdminDate(row.scheduledActivationAt)}
-                        </dd>
-                      </div>
-                      <div className="col-span-2">
-                        <dt className="text-[10px] uppercase tracking-wider">Last edited</dt>
-                        <dd className="text-[var(--color-text)]">{formatAdminDate(row.updatedAt)}</dd>
-                      </div>
-                    </dl>
-                    <DropRowActions
-                      row={row}
-                      busy={busy}
-                      onActivate={() =>
-                        setModal({ kind: 'activate', id: row.id, label: row.title })
-                      }
-                      onSchedule={() => openSchedule(row)}
-                      onArchive={() =>
-                        setModal({ kind: 'archive', id: row.id, label: row.title })
-                      }
-                      onDelete={() =>
-                        setModal({ kind: 'delete', id: row.id, label: row.title })
-                      }
-                      onDuplicate={() => {
-                        duplicateMut.mutate(row.id, {
-                          onSuccess: () => toast.success('Drop duplicated as draft.'),
-                          onError: () => toast.error('Duplicate failed.'),
-                        })
-                      }}
-                    />
-                  </div>
-                </AdminCard>
-              ))}
-            </div>
+        {!isLoading && !isError && totalDrops === 0 ? (
+          <AdminCard
+            title="No drops yet"
+            description="Create your first campaign drop to configure the landing story, palette, and catalog slice."
+          >
+            <Link
+              to="/admin/drops/new"
+              className="inline-flex h-10 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-xs font-semibold text-[var(--color-bg)] no-underline"
+            >
+              Create a drop
+            </Link>
+          </AdminCard>
+        ) : null}
 
-            <div className="hidden overflow-x-auto rounded-lg border border-[var(--color-line)] md:block">
-              <table className="min-w-[960px] w-full border-collapse text-left text-sm">
-                <thead className="bg-[var(--color-surface)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                  <tr>
-                    <th className="px-3 py-2 font-semibold">Drop</th>
-                    <th className="px-3 py-2 font-semibold">Status</th>
-                    <th className="px-3 py-2 font-semibold">Release</th>
-                    <th className="px-3 py-2 font-semibold">Scheduled</th>
-                    <th className="px-3 py-2 font-semibold">Products</th>
-                    <th className="px-3 py-2 font-semibold">Last edited</th>
-                    <th className="px-3 py-2 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+        {!isLoading && !isError && totalDrops > 0 ? (
+          <>
+            {rows.length === 0 ? (
+              <AdminCard
+                title="Nothing matches"
+                description="Try another status tab or clear search to see every drop again."
+              >
+                {filtersActive ? (
+                  <Button type="button" size="sm" variant="secondary" onClick={clearListFilters}>
+                    Clear filters
+                  </Button>
+                ) : null}
+              </AdminCard>
+            ) : null}
+
+            {rows.length === 0 ? null : (
+              <>
+                <div className="grid gap-3 md:hidden">
                   {rows.map((row) => (
-                    <tr
+                    <AdminCard
                       key={row.id}
-                      className={cn(
-                        'border-t border-[var(--color-line)]',
-                        row.isActive && 'bg-emerald-500/[0.06]',
-                      )}
-                    >
-                      <td className="px-3 py-3 align-top">
-                        <div className="font-medium text-[var(--color-heading)]">{row.title}</div>
-                        <div className="text-xs text-[var(--color-text-muted)]">
-                          {row.dropNumber} · {row.name} · /drop/{row.slug}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 align-top">
-                        <span
-                          className={cn(
-                            'inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
-                            statusBadgeClass(row.status, row.isActive),
-                          )}
-                        >
-                          {row.isActive ? 'Live' : row.status}
+                      title={`${row.dropNumber} · ${row.name}`}
+                      description={
+                        <span className="text-[var(--color-text-muted)]">
+                          /drop/{row.slug} · {row.productCount} products
                         </span>
-                        {row.isActive ? (
-                          <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
-                            Active on site
+                      }
+                    >
+                      <div className="space-y-3 text-sm">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={cn(
+                              'rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
+                              statusBadgeClass(row.status, row.isActive),
+                            )}
+                          >
+                            {row.isActive ? 'Live (active)' : row.status}
+                          </span>
+                          {row.isActive ? (
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                              Storefront drop
+                            </span>
+                          ) : null}
+                        </div>
+                        <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-[var(--color-text-muted)]">
+                          <div>
+                            <dt className="text-[10px] uppercase tracking-wider">Release</dt>
+                            <dd className="text-[var(--color-text)]">{formatAdminDate(row.releaseDate)}</dd>
                           </div>
-                        ) : null}
-                      </td>
-                      <td className="px-3 py-3 align-top text-xs text-[var(--color-text)]">
-                        {formatAdminDate(row.releaseDate)}
-                      </td>
-                      <td className="px-3 py-3 align-top text-xs text-[var(--color-text)]">
-                        {formatAdminDate(row.scheduledActivationAt)}
-                      </td>
-                      <td className="px-3 py-3 align-top text-xs tabular-nums">{row.productCount}</td>
-                      <td className="px-3 py-3 align-top text-xs text-[var(--color-text)]">
-                        {formatAdminDate(row.updatedAt)}
-                      </td>
-                      <td className="px-3 py-3 align-top text-right">
+                          <div>
+                            <dt className="text-[10px] uppercase tracking-wider">Scheduled</dt>
+                            <dd className="text-[var(--color-text)]">
+                              {formatAdminDate(row.scheduledActivationAt)}
+                            </dd>
+                          </div>
+                          <div className="col-span-2">
+                            <dt className="text-[10px] uppercase tracking-wider">Last edited</dt>
+                            <dd className="text-[var(--color-text)]">{formatAdminDate(row.updatedAt)}</dd>
+                          </div>
+                        </dl>
                         <DropRowActions
                           row={row}
                           busy={busy}
-                          compact
                           onActivate={() =>
                             setModal({ kind: 'activate', id: row.id, label: row.title })
                           }
@@ -359,16 +316,94 @@ export function DropsAdminList() {
                             })
                           }}
                         />
-                      </td>
-                    </tr>
+                      </div>
+                    </AdminCard>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
 
-            {rows.length === 0 ? (
-              <p className="text-sm text-[var(--color-text-muted)]">No drops match this filter.</p>
-            ) : null}
+                <div className="hidden overflow-x-auto rounded-lg border border-[var(--color-line)] md:block">
+                  <table className="min-w-[960px] w-full border-collapse text-left text-sm">
+                    <thead className="bg-[var(--color-surface)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                      <tr>
+                        <th className="px-3 py-2 font-semibold">Drop</th>
+                        <th className="px-3 py-2 font-semibold">Status</th>
+                        <th className="px-3 py-2 font-semibold">Release</th>
+                        <th className="px-3 py-2 font-semibold">Scheduled</th>
+                        <th className="px-3 py-2 font-semibold">Products</th>
+                        <th className="px-3 py-2 font-semibold">Last edited</th>
+                        <th className="px-3 py-2 font-semibold text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row) => (
+                        <tr
+                          key={row.id}
+                          className={cn(
+                            'border-t border-[var(--color-line)]',
+                            row.isActive && 'bg-emerald-500/[0.06]',
+                          )}
+                        >
+                          <td className="px-3 py-3 align-top">
+                            <div className="font-medium text-[var(--color-heading)]">{row.title}</div>
+                            <div className="text-xs text-[var(--color-text-muted)]">
+                              {row.dropNumber} · {row.name} · /drop/{row.slug}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 align-top">
+                            <span
+                              className={cn(
+                                'inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
+                                statusBadgeClass(row.status, row.isActive),
+                              )}
+                            >
+                              {row.isActive ? 'Live' : row.status}
+                            </span>
+                            {row.isActive ? (
+                              <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                                Active on site
+                              </div>
+                            ) : null}
+                          </td>
+                          <td className="px-3 py-3 align-top text-xs text-[var(--color-text)]">
+                            {formatAdminDate(row.releaseDate)}
+                          </td>
+                          <td className="px-3 py-3 align-top text-xs text-[var(--color-text)]">
+                            {formatAdminDate(row.scheduledActivationAt)}
+                          </td>
+                          <td className="px-3 py-3 align-top text-xs tabular-nums">{row.productCount}</td>
+                          <td className="px-3 py-3 align-top text-xs text-[var(--color-text)]">
+                            {formatAdminDate(row.updatedAt)}
+                          </td>
+                          <td className="px-3 py-3 align-top text-right">
+                            <DropRowActions
+                              row={row}
+                              busy={busy}
+                              compact
+                              onActivate={() =>
+                                setModal({ kind: 'activate', id: row.id, label: row.title })
+                              }
+                              onSchedule={() => openSchedule(row)}
+                              onArchive={() =>
+                                setModal({ kind: 'archive', id: row.id, label: row.title })
+                              }
+                              onDelete={() =>
+                                setModal({ kind: 'delete', id: row.id, label: row.title })
+                              }
+                              onDuplicate={() => {
+                                duplicateMut.mutate(row.id, {
+                                  onSuccess: () => toast.success('Drop duplicated as draft.'),
+                                  onError: () => toast.error('Duplicate failed.'),
+                                })
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </>
         ) : null}
       </div>

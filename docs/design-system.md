@@ -43,6 +43,7 @@ Never change the official header/footer ANVL logo per drop. Campaign logos/emble
 - Strong hierarchy: title, status, action.
 - Use cards only where they help grouping; avoid dashboard clutter.
 - Admin pages should use two-column layouts on desktop: editor on left, live preview on right.
+- Admin navigation is grouped (Workspace, Campaigns, Catalog, Site) with compact badges; the dashboard mirrors the same destinations as cards.
 
 ## Media rules
 - Use responsive images.

@@ -28,7 +28,9 @@ import { Route as DropSlugRouteImport } from './routes/drop/$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout/success'
 import { Route as AdminWebsiteLayoutRouteImport } from './routes/admin/website-layout'
 import { Route as AdminThemeRouteImport } from './routes/admin/theme'
+import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminSeoRouteImport } from './routes/admin/seo'
+import { Route as AdminMediaRouteImport } from './routes/admin/media'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminProductsIndexRouteImport } from './routes/admin/products/index'
 import { Route as AdminDropsIndexRouteImport } from './routes/admin/drops/index'
@@ -132,9 +134,19 @@ const AdminThemeRoute = AdminThemeRouteImport.update({
   path: '/theme',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminSeoRoute = AdminSeoRouteImport.update({
   id: '/seo',
   path: '/seo',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminMediaRoute = AdminMediaRouteImport.update({
+  id: '/media',
+  path: '/media',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
@@ -186,7 +198,9 @@ export interface FileRoutesByFullPath {
   '/size-guide': typeof SizeGuideRoute
   '/terms': typeof TermsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/media': typeof AdminMediaRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin/website-layout': typeof AdminWebsiteLayoutRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -214,7 +228,9 @@ export interface FileRoutesByTo {
   '/size-guide': typeof SizeGuideRoute
   '/terms': typeof TermsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/media': typeof AdminMediaRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin/website-layout': typeof AdminWebsiteLayoutRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -244,7 +260,9 @@ export interface FileRoutesById {
   '/size-guide': typeof SizeGuideRoute
   '/terms': typeof TermsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/media': typeof AdminMediaRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin/website-layout': typeof AdminWebsiteLayoutRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -275,7 +293,9 @@ export interface FileRouteTypes {
     | '/size-guide'
     | '/terms'
     | '/admin/login'
+    | '/admin/media'
     | '/admin/seo'
+    | '/admin/settings'
     | '/admin/theme'
     | '/admin/website-layout'
     | '/checkout/success'
@@ -303,7 +323,9 @@ export interface FileRouteTypes {
     | '/size-guide'
     | '/terms'
     | '/admin/login'
+    | '/admin/media'
     | '/admin/seo'
+    | '/admin/settings'
     | '/admin/theme'
     | '/admin/website-layout'
     | '/checkout/success'
@@ -332,7 +354,9 @@ export interface FileRouteTypes {
     | '/size-guide'
     | '/terms'
     | '/admin/login'
+    | '/admin/media'
     | '/admin/seo'
+    | '/admin/settings'
     | '/admin/theme'
     | '/admin/website-layout'
     | '/checkout/success'
@@ -503,11 +527,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminThemeRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/seo': {
       id: '/admin/seo'
       path: '/seo'
       fullPath: '/admin/seo'
       preLoaderRoute: typeof AdminSeoRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/media': {
+      id: '/admin/media'
+      path: '/media'
+      fullPath: '/admin/media'
+      preLoaderRoute: typeof AdminMediaRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/login': {
@@ -564,7 +602,9 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminMediaRoute: typeof AdminMediaRoute
   AdminSeoRoute: typeof AdminSeoRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
   AdminThemeRoute: typeof AdminThemeRoute
   AdminWebsiteLayoutRoute: typeof AdminWebsiteLayoutRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -578,7 +618,9 @@ interface AdminRouteRouteChildren {
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
+  AdminMediaRoute: AdminMediaRoute,
   AdminSeoRoute: AdminSeoRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
   AdminThemeRoute: AdminThemeRoute,
   AdminWebsiteLayoutRoute: AdminWebsiteLayoutRoute,
   AdminIndexRoute: AdminIndexRoute,

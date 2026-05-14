@@ -2,6 +2,7 @@ import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Copy, ExternalLink, Trash2 } from 'lucide-react'
 import {
   useDeferredValue,
+  useId,
   useMemo,
   useState,
 } from 'react'
@@ -178,6 +179,7 @@ function ProductsIndex() {
   const navigate = useNavigate()
   const products = useAdminProductsList()
   const drops = useDropsList()
+  const archiveTitleId = useId()
 
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search.trim().toLowerCase())
@@ -194,6 +196,7 @@ function ProductsIndex() {
   const [sortKey, setSortKey] = useState<SortKey>('updated_desc')
   const [groupMode, setGroupMode] = useState<GroupMode>('flat')
   const [pendingDelete, setPendingDelete] = useState<AdminProduct | null>(null)
+  const [pendingArchive, setPendingArchive] = useState<AdminProduct | null>(null)
 
   const filtered = useMemo(() => {
     const cat = categoryQ.trim().toLowerCase()
@@ -233,6 +236,29 @@ function ProductsIndex() {
     [filtered, sortKey],
   )
 
+  const filtersActive =
+    search.trim() !== '' ||
+    status !== 'all' ||
+    dropFilter !== 'all' ||
+    sourceType !== 'all' ||
+    categoryQ.trim() !== '' ||
+    colorQ.trim() !== '' ||
+    stockFilter !== 'all' ||
+    updatedFrom !== '' ||
+    updatedTo !== ''
+
+  const clearListFilters = () => {
+    setSearch('')
+    setStatus('all')
+    setDropFilter('all')
+    setSourceType('all')
+    setCategoryQ('')
+    setColorQ('')
+    setStockFilter('all')
+    setUpdatedFrom('')
+    setUpdatedTo('')
+  }
+
   const grouped = useMemo(() => {
     if (groupMode === 'flat') return null
     const byDrop: { title: string; id: string; items: AdminProduct[] }[] = []
@@ -263,9 +289,15 @@ function ProductsIndex() {
     })
   }
 
-  const handleArchive = (p: AdminProduct) => {
-    upsertAdminProduct({ ...p, status: 'archived', isActive: false })
+  const confirmArchive = () => {
+    if (!pendingArchive) return
+    upsertAdminProduct({
+      ...pendingArchive,
+      status: 'archived',
+      isActive: false,
+    })
     toast.success('Product archived.')
+    setPendingArchive(null)
   }
 
   const renderCard = (p: AdminProduct) => {
@@ -343,7 +375,7 @@ function ProductsIndex() {
               variant="secondary"
               size="sm"
               className="h-10"
-              onClick={() => handleArchive(p)}
+              onClick={() => setPendingArchive(p)}
               disabled={p.status === 'archived'}
             >
               Archive
@@ -401,6 +433,21 @@ function ProductsIndex() {
         }
       />
 
+      {products.length === 0 ? (
+        <AdminCard
+          title="No products yet"
+          description="Create a SKU to attach images, variants, and drop assignments."
+        >
+          <Link
+            to="/admin/products/new"
+            className="inline-flex h-11 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-6 text-sm font-semibold text-[var(--color-bg)] no-underline transition hover:-translate-y-0.5"
+          >
+            Create a product
+          </Link>
+        </AdminCard>
+      ) : null}
+
+      {products.length > 0 ? (
       <div className="mb-8 grid gap-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)]/40 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Search
@@ -542,12 +589,33 @@ function ProductsIndex() {
           </Select>
         </label>
       </div>
+      ) : null}
 
+      {products.length > 0 ? (
       <p className="mb-6 text-sm text-[var(--color-text-muted)]">
         Showing {sorted.length} of {products.length} products
         {deferredSearch !== search.trim().toLowerCase() ? ' (updating…)' : ''}
       </p>
+      ) : null}
 
+      {products.length > 0 && sorted.length === 0 ? (
+        <AdminCard
+          title="Nothing matches"
+          description="Try widening filters or clearing search — the catalog still has products behind this view."
+        >
+          {filtersActive ? (
+            <Button type="button" variant="secondary" size="sm" onClick={clearListFilters}>
+              Clear filters
+            </Button>
+          ) : (
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Adjust filters above to see matching SKUs.
+            </p>
+          )}
+        </AdminCard>
+      ) : null}
+
+      {products.length > 0 ? (
       <div className="grid gap-5">
         {groupMode === 'flat'
           ? sorted.map((p) => renderCard(p))
@@ -577,6 +645,31 @@ function ProductsIndex() {
               </div>
             </>}
       </div>
+      ) : null}
+
+      <Modal
+        open={pendingArchive !== null}
+        onClose={() => setPendingArchive(null)}
+        aria-labelledby={archiveTitleId}
+      >
+        <div className="space-y-4">
+          <h3 id={archiveTitleId} className="anvl-heading text-xl font-normal">
+            Archive product?
+          </h3>
+          <p className="text-sm text-[var(--color-text-muted)]">
+            {pendingArchive?.name ?? 'This product'} will be hidden from storefront listings. You can
+            un-archive later from the product editor.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setPendingArchive(null)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" onClick={confirmArchive}>
+              Archive
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal open={pendingDelete !== null} onClose={() => setPendingDelete(null)}>
         <div className="space-y-4">

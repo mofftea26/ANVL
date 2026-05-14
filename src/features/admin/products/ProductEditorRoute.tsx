@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  Check,
   Plus,
   Save,
   Trash2,
@@ -10,6 +11,7 @@ import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
+import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import {
   detachProductFromAllDrops,
   persistProductDropLinks,
@@ -75,6 +77,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
   const navigate = useNavigate()
   const remote = useAdminProductById(productId)
   const drops = useDropsList()
+  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const [draft, setDraft] = useState<AdminProduct | null>(null)
   const [tab, setTab] = useState<
     'basics' | 'variants' | 'drops' | 'seo'
@@ -112,6 +115,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
     upsertAdminProduct(rebuilt)
     persistProductDropLinks(rebuilt)
     toast.success('Product saved.')
+    flashSuccess()
     setDraft(cloneProduct(rebuilt))
   }
 
@@ -170,8 +174,17 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
               Catalog
             </Link>
             <Button type="button" variant="primary" size="sm" onClick={saveProduct}>
-              <Save size={14} className="mr-1.5" aria-hidden="true" />
-              Save product
+              {showSuccess ? (
+                <>
+                  <Check size={14} className="mr-1.5" aria-hidden="true" />
+                  Saved
+                </>
+              ) : (
+                <>
+                  <Save size={14} className="mr-1.5" aria-hidden="true" />
+                  Save product
+                </>
+              )}
             </Button>
             <Button
               type="button"
