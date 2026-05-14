@@ -76,7 +76,9 @@ export function DropReleaseSection({ releaseDateIso, className }: Props) {
         ) : released ? (
           <span>Live — campaign released</span>
         ) : (
-          <span suppressHydrationWarning>{formatCountdown(remaining)}</span>
+          <span suppressHydrationWarning>
+            {formatCountdown(remaining ?? 0)}
+          </span>
         )}
       </p>
       {now !== null && !released ? (

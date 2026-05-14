@@ -35,6 +35,8 @@ type Drop = {
 };
 ```
 
+Canonical fields for the current codebase live in `src/features/admin/drops/drops.types.ts` — notably `visuals.heroImageUrl` for the public drop hero backdrop, `landingActSequence` / composed `landingActs` for the homepage pipeline, and `seo.ogTitle` / `seo.ogDescription` for social overrides on `/drop/:slug`.
+
 ## Drop theme
 ```ts
 type DropTheme = {
@@ -86,8 +88,10 @@ The CMS must show a live preview while editing:
 When a drop becomes active:
 - Landing page uses that drop's acts.
 - Drop nav item changes label and link to active drop.
-- Site theme variables update to the active drop palette.
-- Drop page uses that drop's title, subtitle, visuals, description, and product cards.
+- Header/footer/mobile links whose `href` starts with `/drop/` are rewritten to `/drop/{activeSlug}` and their **label** is set to the active drop **title** (for example “The Oath”).
+- Site theme variables update to the active drop palette (SSR inline `:root` style on the public shell plus `ActiveDropThemeBridge` after hydration).
+- The public `/drop/:slug` route resolves only the active drop: a mismatched slug redirects to the active slug.
+- Drop page shows title, subtitle, optional hero backdrop (`visuals.heroImageUrl`), emblem, description, optional **release** block (`releaseDate` with client-side countdown after hydration), and assigned product cards linking to `/shop/$slug`.
 - Products assigned to the drop become visible in the global shop if their product status allows it.
 
 ## Public homepage act pipeline
