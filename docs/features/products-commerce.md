@@ -103,6 +103,11 @@ Support:
 - Product card shows title, price, status/badge, color swatches, quick status.
 - No heavy animation on mobile.
 
+## Storefront checkout (guest)
+- Guest-first flow on `/checkout` (no sign-in gate).
+- Shipping: address lines 1–2, city, optional postal code, country select, phone, optional delivery notes; payment methods come from `src/features/checkout/config/checkoutPayments.config.ts` (Lebanon: COD + Whish Money; non-Lebanon: card only when `VITE_ANVL_INTERNATIONAL_CHECKOUT=true`).
+- Real PSP / Whish / Medusa wiring is stubbed in `paymentGateway.mock.ts` with explicit integration labels in the UI.
+
 ## Product details UX
 - Image gallery.
 - Optional video.

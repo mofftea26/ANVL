@@ -1,5 +1,9 @@
 import type { PaymentClient } from '@/app/config/clients'
 import type { CartLine } from '@/features/cart/types/cart.types'
+import {
+  CHECKOUT_COMMERCE_FLAGS,
+  isCheckoutPaymentMethodAllowedForCountry,
+} from '../config/checkoutPayments.config'
 import type { CheckoutInput } from '../types/checkout.types'
 import type { PaymentGatewayAdapter, PaymentMethodId } from './paymentGateway.types'
 
@@ -20,17 +24,17 @@ const adapters: Record<PaymentMethodId, PaymentGatewayAdapter> = {
       return createMockResult(lines)
     },
   },
-  tapPayments: {
-    id: 'tapPayments',
-    label: 'Tap Payments (placeholder)',
+  whishMoney: {
+    id: 'whishMoney',
+    label: 'Whish Money',
     async placeOrder(_input, lines) {
       await pause()
       return createMockResult(lines)
     },
   },
-  netCommerce: {
-    id: 'netCommerce',
-    label: 'NetCommerce (placeholder)',
+  card: {
+    id: 'card',
+    label: 'Card',
     async placeOrder(_input, lines) {
       await pause()
       return createMockResult(lines)
@@ -40,8 +44,23 @@ const adapters: Record<PaymentMethodId, PaymentGatewayAdapter> = {
 
 export const paymentAdapters = Object.values(adapters)
 
+function assertCheckoutRegionAllowsPayment(input: CheckoutInput): void {
+  if (
+    !isCheckoutPaymentMethodAllowedForCountry(
+      input.country,
+      input.paymentMethod,
+      CHECKOUT_COMMERCE_FLAGS,
+    )
+  ) {
+    throw new Error(
+      '[mockPaymentClient] Payment method is not permitted for this shipping country and checkout flags.',
+    )
+  }
+}
+
 export const mockPaymentClient: PaymentClient = {
   async placeOrder(input: CheckoutInput, lines: CartLine[]) {
+    assertCheckoutRegionAllowsPayment(input)
     const adapter = adapters[input.paymentMethod]
     return adapter.placeOrder(input, lines)
   },

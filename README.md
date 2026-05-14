@@ -151,6 +151,8 @@ Designer SVG/PNG exports in `public/brand/`:
 - Checkout forms and Zod schemas in:
   - `src/features/checkout/hooks/useCheckoutForm.ts`
   - `src/features/checkout/schemas/checkout.schema.ts`
+- Region + payment catalog (Lebanon COD/Whish; international card behind env flag):
+  - `src/features/checkout/config/checkoutPayments.config.ts`
 
 ### Payment Adapter Architecture
 
@@ -159,13 +161,13 @@ Gateway adapter types:
 
 Mock adapters:
 - `cashOnDelivery`
-- `tapPayments`
-- `netCommerce`
+- `whishMoney`
+- `card` (international / PSP placeholder)
 
 Implementation:
 - `src/features/checkout/api/paymentGateway.mock.ts`
 
-UI does not hardcode provider logic.
+UI reads payment options from `checkoutPayments.config.ts`, not scattered literals.
 
 ## Analytics
 
