@@ -83,6 +83,12 @@ type LandingAct = {
    - Content: CTA title, body, buttons, emblem/background.
    - Presets: centered, footer-overlap, product CTA.
 
+## Implementation (Drop Editor)
+- UI: `DropActsBuilderPanel` (`src/features/admin/drops/DropActsBuilderPanel.tsx`) embedded in `DropLandingActsEditor`.
+- Bootstrap: empty `acts` arrays are seeded from current `DropLandingContent` via `landingContentToSimpleActs` (`acts/landingActs.seed.ts`).
+- Validation: per-nature `content` objects can be validated with `safeParseActContent` in `acts/landingActs.zod.ts` (Zod); the panel resets `content` when nature changes.
+- Public pipeline: `acts/landingActs.normalize.ts` maps slot toggles to `PublicLandingAct` rows consumed by `PublicLandingActs` on `/`.
+
 ## Animation config
 ```ts
 type ActAnimationConfig = {
@@ -100,3 +106,4 @@ type ActAnimationConfig = {
 - Every nature has a schema for its `content` object.
 - Unknown/invalid acts must fail gracefully with a hidden fallback in production and visible warning in CMS preview.
 - Heavy act renderers should be lazy-loaded.
+- Public homepage: composed `landingActs` follow the active drop's `landingActSequence`; the `/` route uses `PublicLandingActs` to map `nature` to existing marketing sections (lazy-loaded after Act I) and skips unknown types with a minimal notice.
