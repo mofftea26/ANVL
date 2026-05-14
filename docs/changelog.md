@@ -1,0 +1,18 @@
+# Changelog
+
+Cursor agents must append every completed task here.
+
+## Format
+```md
+## YYYY-MM-DD — Task title
+- Summary:
+- Files changed:
+- Tests/manual checks:
+- Notes/debt:
+```
+
+## 2026-05-14 — Add project documentation and agent prompts
+- Summary: Added `AGENTS.md` at the repository root, populated `docs/` with core and feature documentation, and added the numbered Cursor prompt library under `docs/prompts/` per the documentation index.
+- Files changed: `AGENTS.md`, `docs/README.md`, `docs/*.md` (core docs), `docs/features/*.md`, `docs/prompts/*.md`, `README.md`, `docs/changelog.md`
+- Tests/manual checks: Verified file tree under `docs/` and `AGENTS.md` presence; no application code changes.
+- Notes/debt: Brand PDF/DOCX assets were already present under `docs/`; new markdown files sit alongside them.
