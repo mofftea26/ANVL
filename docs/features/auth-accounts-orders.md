@@ -61,5 +61,5 @@ type Order = {
 
 ## Security notes
 - Real passwords/auth must never be implemented as frontend-only storage.
-- Current static admin login must be clearly marked temporary and not production security.
+- Current static admin login must be clearly marked temporary and not production security. For local builds, set `VITE_ANVL_ADMIN_PASSWORD` (and optionally `VITE_ANVL_ADMIN_USERNAME`) in `.env` — values are still embedded in the client bundle at compile time, so this is only a convenience layer over hard-coded demo credentials.
 - When backend exists, use secure session cookies or trusted auth provider flow.

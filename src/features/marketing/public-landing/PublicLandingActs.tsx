@@ -4,9 +4,14 @@ import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landing
 import type { Product } from '@/features/products/types/product.types'
 import { defaultLandingActSequence } from '@/features/admin/drops/drops.actSequence'
 import { publicLandingActsFromSequence } from '@/features/admin/drops/acts/landingActs.normalize'
-import { HeroForgeSequence } from '@/features/marketing/components/HeroForgeSequence'
 import { Container } from '@/shared/components/ui'
 import { DropLoadingIndicator } from '@/shared/components/ui/DropLoadingIndicator'
+
+const HeroForgeSequence = lazy(() =>
+  import('@/features/marketing/components/HeroForgeSequence').then((m) => ({
+    default: m.HeroForgeSequence,
+  })),
+)
 
 const OathStampSequence = lazy(() =>
   import('@/features/marketing/components/OathStampSequence').then((m) => ({
@@ -117,9 +122,10 @@ export function PublicLandingActs({
         if (act.enabled === false) return null
         switch (act.nature) {
           case 'hero':
-            return (
+            return wrapLazy(
+              act.id,
+              'Loading hero',
               <HeroForgeSequence
-                key={act.id}
                 badgeText={landing.hero.badgeText}
                 title={landing.hero.title}
                 subtitle={landing.hero.subtitle}
@@ -127,7 +133,7 @@ export function PublicLandingActs({
                 secondaryCta={landing.hero.secondaryCta}
                 meta={landing.hero.meta}
                 emblemSrc={emblemSrc}
-              />
+              />,
             )
           case 'manifesto':
           case 'storytelling':

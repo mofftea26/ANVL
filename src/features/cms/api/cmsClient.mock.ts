@@ -12,8 +12,10 @@ import {
   scheduleDropActivation,
   setActiveDrop,
 } from '@/features/admin/drops/drops.service'
+import { getAdminProductBySlug } from '@/features/admin/products/products.service'
 import { cmsMockData } from '../data/cms.mock'
-import type { HomePageContent } from '../types/cms.types'
+import type { HomePageContent, SeoContent, SeoFieldPatch } from '../types/cms.types'
+import { getSiteSeoContent } from '../siteSeo.local'
 
 function dropToAdminListItem(d: Drop): AdminDropListItem {
   return {
@@ -56,6 +58,23 @@ function toLegacyHomepage(): HomePageContent {
   }
 }
 
+function normalizeSeoPath(pathInput: string): string {
+  const p = pathInput.trim() || '/'
+  if (p === '/') return '/'
+  return p.length > 1 && p.endsWith('/') ? p.slice(0, -1) : p
+}
+
+function applySeoPatch(base: SeoContent, patch?: SeoFieldPatch): SeoContent {
+  if (!patch) return base
+  const next: SeoContent = { ...base }
+  for (const [key, val] of Object.entries(patch) as [keyof SeoFieldPatch, unknown][]) {
+    if (val === undefined) continue
+    if (typeof val === 'string' && val.trim() === '') continue
+    ;(next as Record<string, unknown>)[key as string] = val
+  }
+  return next
+}
+
 export const mockCmsClient: CmsClient = {
   async getActiveDrop() {
     return getActiveDrop()
@@ -81,31 +100,93 @@ export const mockCmsClient: CmsClient = {
   async getLookbook() {
     return cmsMockData.lookbook
   },
-  async getSeoByPath(path) {
+  async getSiteSeo() {
+    return getSiteSeoContent()
+  },
+  async getSeoByPath(pathInput) {
+    const path = normalizeSeoPath(pathInput)
+    const site = getSiteSeoContent()
+
     if (path === '/') {
       const landing = getLandingCmsContent()
-      return {
+      const base: SeoContent = {
         title: landing.seo.title,
         description: landing.seo.description,
-        canonicalPath: landing.seo.path,
+        canonicalPath: landing.seo.path || '/',
+        metaTitle: landing.seo.metaTitle,
+        metaDescription: landing.seo.metaDescription,
+        canonicalUrl: landing.seo.canonicalUrl,
+        noIndex: landing.seo.noIndex,
+        ogTitle: landing.seo.ogTitle,
+        ogDescription: landing.seo.ogDescription,
         ogImage: landing.seo.ogImage,
+        twitterTitle: landing.seo.twitterTitle,
+        twitterDescription: landing.seo.twitterDescription,
+        twitterImage: landing.seo.twitterImage,
+        structuredDataType: landing.seo.structuredDataType,
       }
+      return applySeoPatch(base, site.staticPages['/'])
     }
+
     if (path.startsWith('/drop/')) {
       const slug = path.replace('/drop/', '').split('/')[0] ?? ''
       const drop = getDropBySlug(slug)
       const active = getActiveDrop()
       if (!drop || !active || drop.id !== active.id) return null
-      return {
+      const base: SeoContent = {
         title: drop.seo.title,
         description: drop.seo.description,
         canonicalPath: path,
-        ogImage: drop.seo.ogImage,
+        metaTitle: drop.seo.metaTitle,
+        metaDescription: drop.seo.metaDescription,
+        canonicalUrl: drop.seo.canonicalUrl,
+        noIndex: drop.seo.noIndex,
         ogTitle: drop.seo.ogTitle,
         ogDescription: drop.seo.ogDescription,
+        ogImage: drop.seo.ogImage,
+        twitterTitle: drop.seo.twitterTitle,
+        twitterDescription: drop.seo.twitterDescription,
+        twitterImage: drop.seo.twitterImage,
+        structuredDataType: drop.seo.structuredDataType,
       }
+      return base
     }
-    return cmsMockData.seoByPath[path] ?? null
+
+    const shopMatch = path.match(/^\/shop\/([^/]+)$/)
+    if (shopMatch?.[1]) {
+      const slug = shopMatch[1]
+      const admin = getAdminProductBySlug(slug)
+      if (!admin) return null
+      const base: SeoContent = {
+        title: admin.seo.title ?? admin.name,
+        description:
+          admin.seo.description ?? admin.shortDescription ?? admin.name,
+        canonicalPath: `/shop/${slug}`,
+        metaTitle: admin.seo.metaTitle,
+        metaDescription: admin.seo.metaDescription,
+        canonicalUrl: admin.seo.canonicalUrl,
+        noIndex: admin.seo.noIndex,
+        ogTitle: admin.seo.ogTitle,
+        ogDescription: admin.seo.ogDescription,
+        ogImage: admin.seo.ogImage,
+        twitterTitle: admin.seo.twitterTitle,
+        twitterDescription: admin.seo.twitterDescription,
+        twitterImage: admin.seo.twitterImage,
+        structuredDataType: admin.seo.structuredDataType,
+      }
+      return base
+    }
+
+    const seed = cmsMockData.seoByPath[path]
+    if (seed) {
+      const patch =
+        path === '/shop' || path === '/about' || path === '/size-guide'
+          ? site.staticPages[path]
+          : undefined
+      return applySeoPatch(seed, patch)
+    }
+
+    return null
   },
   async getAdminDropsList() {
     return readDropsArray().map(dropToAdminListItem)

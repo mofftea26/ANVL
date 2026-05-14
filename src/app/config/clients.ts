@@ -1,5 +1,6 @@
-import type { Product } from '@/features/products/types/product.types'
+import type { Product, ShopDropFilterOption } from '@/features/products/types/product.types'
 import type { HomePageContent, SeoContent } from '@/features/cms/types/cms.types'
+import type { SiteSeoContent } from '@/features/cms/siteSeo.local'
 import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import type { Drop } from '@/features/admin/drops/drops.types'
 import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landingCms.types'
@@ -10,16 +11,14 @@ import type {
 } from '@/features/checkout/types/checkout.types'
 
 export interface CommerceClient {
-  /** Full shop listing — publicly visible catalog items. */
   getProducts(): Promise<Product[]>
-  /** Homepage Act III–IV — limited to active drop assignment order. */
   getHomeProducts(): Promise<Product[]>
   getProductBySlug(slug: string): Promise<Product | null>
   getRelatedProducts(slug: string): Promise<Product[]>
+  getShopListingCatalog(): Promise<{ items: Product[]; drops: ShopDropFilterOption[] }>
 }
 
 export interface CmsClient {
-  /** Active campaign drop for storefront theming and `/drop/:slug`; null when none. */
   getActiveDrop(): Promise<Drop | null>
   getLandingCmsContent(): Promise<LandingPageCmsContent>
   getHomepageContent(): Promise<HomePageContent>
@@ -28,6 +27,7 @@ export interface CmsClient {
   getCampaigns(): Promise<Array<{ id: string; title: string; description: string }>>
   getLookbook(): Promise<Array<{ id: string; alt: string; src: string }>>
   getSeoByPath(path: string): Promise<SeoContent | null>
+  getSiteSeo(): Promise<SiteSeoContent>
   getAdminDropsList(): Promise<AdminDropListItem[]>
   duplicateAdminDrop(id: string): Promise<AdminDropListItem | null>
   setAdminActiveDrop(id: string): Promise<void>

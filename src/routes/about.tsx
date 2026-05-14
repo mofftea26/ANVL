@@ -1,5 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { buildSeoMeta } from '@/app/seo/meta'
+import { BRAND } from '@/shared/constants/brand'
+import {
+  buildSeoMetaFromCmsSource,
+  seoContentToMetaSource,
+} from '@/features/cms/seoMeta'
+import { runtimeClients } from '@/app/config/runtime'
+import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { AnvlCrest } from '@/shared/assets/brand'
 import { Container, Section } from '@/shared/components/ui'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
@@ -25,13 +31,36 @@ const VALUES = [
 ] as const
 
 export const Route = createFileRoute('/about')({
-  head: () =>
-    buildSeoMeta({
-      title: 'About | ANVL Athletics',
-      description:
-        'ANVL Athletics is premium bodybuilding gymwear from Lebanon—discipline-first silhouettes forged under pressure, built for serious lifters worldwide.',
-      path: '/about',
-    }),
+  loader: async () => {
+    const [siteSeo, seoDoc] = await Promise.all([
+      runtimeClients.cms.getSiteSeo(),
+      runtimeClients.cms.getSeoByPath('/about'),
+    ])
+    return { siteSeo, seoDoc }
+  },
+  head: ({ loaderData }) => {
+    const site = loaderData?.siteSeo
+    const doc = loaderData?.seoDoc
+    const fb = { defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.svg` }
+    if (!site || !doc) {
+      return buildSeoMetaFromCmsSource(
+        seoContentToMetaSource(
+          {
+            title: 'About | ANVL Athletics',
+            description:
+              'ANVL Athletics is premium bodybuilding gymwear from Lebanon—discipline-first silhouettes forged under pressure, built for serious lifters worldwide.',
+            canonicalPath: '/about',
+          },
+          fb,
+        ),
+        fb,
+      )
+    }
+    return buildSeoMetaFromCmsSource(
+      seoContentToMetaSource(doc, site.globalDefaults),
+      site.globalDefaults,
+    )
+  },
   component: AboutPage,
 })
 
@@ -143,6 +172,7 @@ function AboutPage() {
             </Link>
             <Link
               to="/shop"
+              search={defaultShopUrlSearch}
               className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-text)] no-underline hover:bg-[var(--color-surface-elevated)]"
             >
               Shop all

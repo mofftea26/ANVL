@@ -15,7 +15,8 @@
 - Dynamic import GSAP modules only on client.
 - Split CMS route group from public route group.
 - Keep 3D/model viewers optional and lazy.
-- Use bundle analyzer before release.
+- Use bundle analyzer before release: run `pnpm analyze` (sets `ANVL_ANALYZE=1` for `vite build` and writes `dist/stats.html` via `rollup-plugin-visualizer`). Review gzip/brotli sizes and large entry chunks after each major feature.
+- Vite `manualChunks` isolates `gsap`, `lenis`, and `framer-motion` into `vendor-*` chunks to keep them out of the main application graph where possible.
 
 ## Accessibility checklist
 - Semantic headings in order.
@@ -23,7 +24,8 @@
 - Every input has a label.
 - Every product image has meaningful alt text.
 - Keyboard usable menus, dialogs, filters, cart drawer.
-- `Modal` / `Drawer`: focus trap while open, restore focus on close, Escape closes, `aria-modal="true"`, and `aria-labelledby` (preferred) or `aria-label` on the dialog surface.
+- `Modal` / `Drawer`: focus trap while open, restore focus on close, Escape closes, `aria-modal="true"`, and `aria-labelledby` (preferred) or `aria-label` on the dialog surface. Shared logic lives in `useDialogFocusTrap` (client-only `useLayoutEffect`).
+- Storefront navigation: apply the `focus-ring` utility on header links, drawer links, and key CTAs so keyboard users get a visible outline.
 - Visible focus states.
 - Sufficient contrast.
 - Respect `prefers-reduced-motion`.
@@ -34,6 +36,8 @@
 - Never expose API keys or admin secrets in frontend.
 - Validate all CMS/product/SEO data with schemas.
 - Sanitize rich text and HTML.
+- Persisted drops in `localStorage` are validated with `persistedDropSchema` (`drops.persistence.zod.ts`) before merge — malformed rows are skipped so tampered JSON cannot drive the UI.
+- Strip angle-bracket tag patterns from CMS plain-text fields where editors might paste HTML (`stripAngleBracketTags`) so screen readers do not announce stray markup tokens.
 - Escape JSON-LD / `application/ld+json` payloads so string values cannot inject `</script>` (see `JsonLd` helper).
 - Validate uploads by MIME, size, extension, dimensions.
 - Use CSP later.

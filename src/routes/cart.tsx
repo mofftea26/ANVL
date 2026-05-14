@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { useCart } from '@/features/cart/hooks/useCart'
 import {
@@ -33,7 +34,7 @@ function CartPage() {
               title="No Iron In The Basket"
               description="Your cart is empty. Load Drop 01 and return stronger."
               actionLabel="Explore Shop"
-              onAction={() => navigate({ to: '/shop' })}
+              onAction={() => navigate({ to: '/shop', search: defaultShopUrlSearch })}
             />
           </div>
         ) : (

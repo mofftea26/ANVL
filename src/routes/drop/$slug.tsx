@@ -1,5 +1,10 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { buildSeoMeta } from '@/app/seo/meta'
+import { BRAND } from '@/shared/constants/brand'
+import {
+  buildSeoMetaFromCmsSource,
+  dropSeoToMetaSource,
+  seoContentToMetaSource,
+} from '@/features/cms/seoMeta'
 import { runtimeClients } from '@/app/config/runtime'
 import { getStorefrontProductsForDropSlug } from '@/features/admin/products/products.commerce'
 import { DropActivePageView } from '@/features/drops/public/DropActivePageView'
@@ -16,18 +21,37 @@ export const Route = createFileRoute('/drop/$slug')({
       })
     }
     const products = getStorefrontProductsForDropSlug(active.slug)
-    return { drop: active, products }
+    const [siteSeo, seoDoc] = await Promise.all([
+      runtimeClients.cms.getSiteSeo(),
+      runtimeClients.cms.getSeoByPath(`/drop/${params.slug}`),
+    ])
+    return { drop: active, products, siteSeo, seoDoc }
   },
   head: ({ loaderData }) => {
     const d = loaderData?.drop
-    return buildSeoMeta({
-      title: d?.seo.title ?? 'Drop | ANVL Athletics',
-      description: d?.seo.description ?? '',
-      path: d ? `/drop/${d.slug}` : '/drop',
-      image: d?.seo.ogImage,
-      ogTitle: d?.seo.ogTitle,
-      ogDescription: d?.seo.ogDescription,
-    })
+    const site = loaderData?.siteSeo
+    const doc = loaderData?.seoDoc
+    const fb = { defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.svg` }
+    if (!d || !site) {
+      return buildSeoMetaFromCmsSource(
+        dropSeoToMetaSource(
+          { title: 'Drop | ANVL Athletics', description: '' },
+          '/drop',
+          fb,
+        ),
+        fb,
+      )
+    }
+    if (doc) {
+      return buildSeoMetaFromCmsSource(
+        seoContentToMetaSource(doc, site.globalDefaults),
+        site.globalDefaults,
+      )
+    }
+    return buildSeoMetaFromCmsSource(
+      dropSeoToMetaSource(d.seo, `/drop/${d.slug}`, site.globalDefaults),
+      site.globalDefaults,
+    )
   },
   component: DropRoutePage,
 })

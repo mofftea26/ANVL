@@ -6,6 +6,7 @@ import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { useStickyHeader } from '@/shared/hooks/useStickyHeader'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { cn } from '@/shared/lib/cn'
+import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 import { Container } from '@/shared/components/ui/Container'
 import { IconButton } from '@/shared/components/ui/IconButton'
 import { Drawer } from '@/shared/components/ui/Drawer'
@@ -41,6 +42,10 @@ export function StickyHeader({
   const showCart = navigation.cartVisible !== false
   const logoSrc = navigation.headerLogoSrc?.trim()
   const announcement = navigation.announcement
+  const announcementText =
+    announcement?.enabled && announcement.message.trim()
+      ? stripAngleBracketTags(announcement.message.trim())
+      : ''
 
   const LogoMark = (
     <>
@@ -63,25 +68,25 @@ export function StickyHeader({
 
   return (
     <header className="sticky top-0 z-40">
-      {announcement?.enabled && announcement.message.trim() ? (
+      {announcement?.enabled && announcementText ? (
         <div className="border-b border-[var(--color-line)] bg-[var(--color-accent)]/10 py-2 text-center text-[11px] text-[var(--color-text-muted)]">
           <Container>
             {announcement.href?.startsWith('http') ? (
               <a
                 href={announcement.href}
-                className="font-medium text-[var(--color-heading)] underline-offset-4 hover:underline"
+                className="focus-ring font-medium text-[var(--color-heading)] underline-offset-4 hover:underline"
               >
-                {announcement.message}
+                {announcementText}
               </a>
             ) : announcement.href ? (
               <Link
                 to={announcement.href}
-                className="font-medium text-[var(--color-heading)] no-underline hover:underline"
+                className="focus-ring font-medium text-[var(--color-heading)] no-underline hover:underline"
               >
-                {announcement.message}
+                {announcementText}
               </Link>
             ) : (
-              <span>{announcement.message}</span>
+              <span>{announcementText}</span>
             )}
           </Container>
         </div>
@@ -98,7 +103,7 @@ export function StickyHeader({
         <Container className="flex h-16 items-center gap-3">
           <Link
             to="/"
-            className="inline-flex shrink-0 items-center text-[var(--color-heading)]"
+            className="focus-ring inline-flex shrink-0 items-center text-[var(--color-heading)]"
           >
             {LogoMark}
           </Link>
@@ -110,7 +115,7 @@ export function StickyHeader({
               <Link
                 key={item.id ?? item.href}
                 to={item.href}
-                className="anvl-micro text-xs no-underline hover:text-[var(--color-heading)]"
+                className="focus-ring anvl-micro text-xs no-underline hover:text-[var(--color-heading)]"
               >
                 {item.label}
               </Link>
@@ -157,12 +162,12 @@ export function StickyHeader({
             <X size={16} />
           </IconButton>
         </div>
-        <nav className="mt-8 flex flex-col gap-4">
+        <nav className="mt-8 flex flex-col gap-4" aria-label="Mobile navigation links">
           {drawerLinks.map((item) => (
             <Link
               key={`${item.id ?? item.href}-drawer`}
               to={item.href}
-              className="anvl-heading text-3xl no-underline"
+              className="focus-ring anvl-heading text-3xl no-underline"
               onClick={() => setOpen(false)}
             >
               {item.label}

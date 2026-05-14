@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { buildSeoMeta } from "@/app/seo/meta";
+import { BRAND } from "@/shared/constants/brand";
+import {
+  buildSeoMetaFromCmsSource,
+  seoContentToMetaSource,
+} from "@/features/cms/seoMeta";
 import { runtimeClients } from "@/app/config/runtime";
 import { JsonLd } from "@/shared/components/seo/JsonLd";
 import { organizationJsonLd } from "@/shared/components/seo/structuredData";
@@ -10,22 +14,43 @@ import { useHomeProducts } from "@/features/products/hooks/useHomeProducts";
 
 export const Route = createFileRoute("/")({
   loader: async () => {
-    const [products, landing] = await Promise.all([
+    const [products, landing, siteSeo, seoDoc] = await Promise.all([
       runtimeClients.commerce.getHomeProducts(),
       runtimeClients.cms.getLandingCmsContent(),
+      runtimeClients.cms.getSiteSeo(),
+      runtimeClients.cms.getSeoByPath("/"),
     ]);
-    return { products, landing };
+    return { products, landing, siteSeo, seoDoc };
   },
   head: ({ loaderData }) => {
-    const seo = loaderData?.landing.seo;
-    return buildSeoMeta({
-      title: seo?.title ?? "ANVL Athletics | Forged Under Pressure",
-      description:
-        seo?.description ??
-        "Premium bodybuilding gymwear built for disciplined lifters.",
-      path: seo?.path ?? "/",
-      image: seo?.ogImage,
-    });
+    const site = loaderData?.siteSeo;
+    const doc = loaderData?.seoDoc;
+    const landing = loaderData?.landing;
+    const fb = {
+      defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.svg`,
+    };
+    if (!site || !doc) {
+      return buildSeoMetaFromCmsSource(
+        seoContentToMetaSource(
+          {
+            title: landing?.seo.title ?? "ANVL Athletics | Forged Under Pressure",
+            description:
+              landing?.seo.description ??
+              "Premium bodybuilding gymwear built for disciplined lifters.",
+            canonicalPath: landing?.seo.path ?? "/",
+            ogImage: landing?.seo.ogImage,
+            ogTitle: landing?.seo.ogTitle,
+            ogDescription: landing?.seo.ogDescription,
+          },
+          fb,
+        ),
+        fb,
+      );
+    }
+    return buildSeoMetaFromCmsSource(
+      seoContentToMetaSource(doc, site.globalDefaults),
+      site.globalDefaults,
+    );
   },
   component: HomePage,
 });

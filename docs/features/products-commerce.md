@@ -1,5 +1,9 @@
 # Feature — Products / Commerce
 
+## Storefront performance notes
+- PDP `ProductGallery` uses `fetchPriority="high"` on the hero frame, lazy + async decoding for thumbnails, and an optional `images` prop for colorway-specific galleries when `product.shop.imagesByColorName` is present.
+- Public storefront `Product` (`src/features/products/types/product.types.ts`) includes optional `shop?: ProductShopMeta` (storefront status, drop slug, pricing, availability matrix, media URLs) populated in `adminProductToLegacy` for filters, cards, PDP, and JSON-LD.
+
 ## Product model
 Products must support both drop releases and individual releases.
 
@@ -96,21 +100,20 @@ Support:
 - badge label like Sale, Limited, Launch Offer
 
 ## Shop UX
-- Mobile-first product grid.
-- Filters in bottom sheet on mobile.
-- Sidebar filters on desktop.
-- Search with debounce.
-- Product card shows title, price, status/badge, color swatches, quick status.
-- No heavy animation on mobile.
+- Mobile-first product grid with **shareable URL filters** (`q`, `status`, `drop`, `source`, `color`, `size`, `minPrice`, `maxPrice`) validated in `src/features/products/shop/shopUrlSearch.ts`.
+- **Mobile**: filters live in a bottom `Drawer` (`placement="bottom"`). **Desktop**: filters in a left sidebar (`ShopFiltersForm`).
+- **Search** debounces (~350ms) into the URL from `src/routes/shop/index.tsx`.
+- **Product card** reads optional `product.shop` for status chips, compare-at strike price, and uses **desktop-only** hover scale (`md:`) to keep mobile light.
+- Catalog rows and filter options come from `getStorefrontShopListingCatalog()` in `products.commerce.ts` (mock commerce client implements `getShopListingCatalog()`).
 
 ## Product details UX
-- Image gallery.
-- Optional video.
-- Optional 3D image/model placeholder.
-- Color/size variant selector.
-- Availability by selected color/size.
-- Material, fit, care, shipping, returns accordion.
-- Related products by drop/category.
+- **Gallery**: `ProductGallery` accepts optional `images` for per-colorway media from `product.shop.imagesByColorName`.
+- **Video**: YouTube URLs on `AdminProduct.videoUrl` resolve via `extractYoutubeVideoId` (`src/features/products/pdp/videoEmbed.ts`) and render as a privacy-enhanced embed on the PDP.
+- **3D**: `model3dUrl` shows a short placeholder plus external link (AR viewer integration later).
+- **Selectors**: `ColorSwatch` marks colorways with no in-stock sizes; `SizeSelector` disables OOS sizes for the active color using `shop.availabilityByColorAndSize`.
+- **Accordions**: `AccordionDisclosure` (`src/shared/components/ui/Accordion.tsx`) groups material, fit, care, shipping, and returns on the PDP.
+- **Related products**: `getRelatedStorefrontProducts` scores by shared primary drop, then category (`products.commerce.ts`).
+- **JSON-LD**: `productJsonLd` uses `shop.currency` and derived `Offer` availability from storefront status + variant stock (`structuredData.ts`).
 
 ## Medusa migration notes
 Map ANVL products to Medusa Product Module later:

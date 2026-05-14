@@ -288,7 +288,13 @@ function ProductsIndex() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
           <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]">
             {thumb ? (
-              <img src={thumb.src} alt={thumb.alt} className="h-full w-full object-cover" />
+              <img
+                src={thumb.src}
+                alt={thumb.alt}
+                className="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
             ) : (
               <div className="flex h-full items-center justify-center text-[10px] text-[var(--color-text-muted)]">
                 No image
@@ -560,7 +566,7 @@ function ProductsIndex() {
       <div className="grid gap-5">
         {groupMode === 'flat'
           ? sorted.map((p) => renderCard(p))
-          : grouped &&
+          : grouped ? (
             <>
               {grouped.byDrop.map((section) => (
                 <div key={section.id} className="space-y-3">
@@ -584,7 +590,8 @@ function ProductsIndex() {
                   </div>
                 )}
               </div>
-            </>}
+            </>
+          ) : null}
       </div>
 
       <Modal

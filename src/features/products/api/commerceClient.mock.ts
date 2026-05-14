@@ -1,13 +1,15 @@
 import type { CommerceClient } from '@/app/config/clients'
 import {
+  getRelatedStorefrontProducts,
   getStorefrontProductBySlug,
   getStorefrontProductsForHome,
-  getStorefrontProductsForShop,
+  getStorefrontShopListingCatalog,
 } from '@/features/admin/products/products.commerce'
 
 export const mockCommerceClient: CommerceClient = {
   async getProducts() {
-    return getStorefrontProductsForShop()
+    const { items } = await getStorefrontShopListingCatalog()
+    return items
   },
   async getHomeProducts() {
     return getStorefrontProductsForHome()
@@ -16,8 +18,9 @@ export const mockCommerceClient: CommerceClient = {
     return getStorefrontProductBySlug(slug)
   },
   async getRelatedProducts(slug) {
-    return getStorefrontProductsForShop()
-      .filter((item) => item.slug !== slug)
-      .slice(0, 2)
+    return getRelatedStorefrontProducts(slug, 4)
+  },
+  async getShopListingCatalog() {
+    return getStorefrontShopListingCatalog()
   },
 }

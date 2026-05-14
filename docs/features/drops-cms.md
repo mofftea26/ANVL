@@ -92,7 +92,8 @@ When a drop becomes active:
 - Header/footer/mobile links whose `href` starts with `/drop/` are rewritten to `/drop/{activeSlug}` and their **label** is set to the active drop **title** (e.g. “The Oath”) so the top bar always matches the campaign name.
 - Site theme variables update to the active drop palette (SSR inline `:root` style on the public shell plus `ActiveDropThemeBridge` after hydration).
 - The public `/drop/:slug` route resolves only the active drop: wrong slug redirects to the active slug; there is no standalone archived drop URL in this phase.
-- Drop page shows title, subtitle, optional hero backdrop (`visuals.heroImageUrl`), emblem, description, optional **release** block (`releaseDate` with client-side countdown after hydration), and assigned product cards linking to `/shop/$slug`.
+- Drop page shows title, subtitle, optional hero backdrop (`visuals.heroImageUrl`), emblem, description, optional **release** block (`releaseDate` with client-side countdown after hydration), and assigned product cards linking to `/shop/$slug`. Plain-text hero fields run through `stripAngleBracketTags` so pasted markup does not pollute assistive-tech output.
+- Persisted drop rows loaded from `localStorage` must satisfy `persistedDropSchema` before merge; invalid rows are dropped and the hydrator can re-seed defaults when storage is empty.
 - Products assigned to the drop become visible in the global shop if their product status allows it.
 
 ## Public homepage act pipeline

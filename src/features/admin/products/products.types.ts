@@ -1,3 +1,5 @@
+import type { SeoStructuredDataType } from '@/features/cms/types/cms.types'
+
 export type ProductStatus =
   | 'draft'
   | 'active'
@@ -80,7 +82,17 @@ export type AdminProduct = {
   seo: {
     title?: string
     description?: string
+    metaTitle?: string
+    metaDescription?: string
+    canonicalUrl?: string
+    noIndex?: boolean
+    ogTitle?: string
+    ogDescription?: string
     ogImage?: string
+    twitterTitle?: string
+    twitterDescription?: string
+    twitterImage?: string
+    structuredDataType?: SeoStructuredDataType
   }
   createdAt: string
   updatedAt: string

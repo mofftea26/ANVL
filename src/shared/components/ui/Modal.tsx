@@ -1,11 +1,5 @@
-import {
-  type PropsWithChildren,
-  useLayoutEffect,
-  useRef,
-} from 'react'
-
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+import { type PropsWithChildren, useRef } from 'react'
+import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 
 export type ModalAriaProps = {
   'aria-labelledby'?: string
@@ -28,49 +22,7 @@ export function Modal({
   'aria-labelledby': ariaLabelledBy,
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
-  const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
-
-  useLayoutEffect(() => {
-    if (!open) return
-    const previouslyFocused = document.activeElement as HTMLElement | null
-    const panel = panelRef.current
-    if (!panel) return
-
-    const focusables = () =>
-      Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-        (el) => !el.hasAttribute('disabled'),
-      )
-
-    const first = focusables()[0]
-    queueMicrotask(() => first?.focus())
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.stopPropagation()
-        onCloseRef.current()
-        return
-      }
-      if (e.key !== 'Tab') return
-      const nodes = focusables()
-      if (nodes.length === 0) return
-      const firstNode = nodes[0]!
-      const lastNode = nodes[nodes.length - 1]!
-      if (!e.shiftKey && document.activeElement === lastNode) {
-        e.preventDefault()
-        firstNode.focus()
-      } else if (e.shiftKey && document.activeElement === firstNode) {
-        e.preventDefault()
-        lastNode.focus()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-      previouslyFocused?.focus?.()
-    }
-  }, [open])
+  useDialogFocusTrap({ open, panelRef, onClose })
 
   if (!open) return null
 
@@ -78,7 +30,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 grid place-items-center p-4">
       <div
         className="absolute inset-0 cursor-pointer bg-black/70"
-        onClick={() => onCloseRef.current()}
+        onClick={onClose}
         aria-hidden="true"
       />
       <div

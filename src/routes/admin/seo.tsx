@@ -20,12 +20,12 @@ function SeoHubPage() {
   return (
     <AdminLayout
       title="SEO"
-      description="Discovery copy now lives beside the content that actually ships on the homepage."
+      description="Discovery copy lives beside the content that ships — drops, catalog SKUs, and shared defaults from the mock CMS."
     >
       <AdminSectionHeader
-        eyebrow="Routing"
+        eyebrow="Discovery"
         title="Where SEO is authored"
-        description="Homepage meta tags sync from the active drop. Product pages use per-SKU overrides via the commerce catalog."
+        description="Homepage meta follows the active drop. Product pages use per-SKU fields in the catalog. Site-wide defaults come from the CMS mock until a backend ships."
       />
 
       <div className="grid gap-5 md:grid-cols-2">

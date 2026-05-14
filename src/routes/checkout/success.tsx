@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { AnvlFullLockup } from '@/shared/assets/brand'
 import { Button, Container, Section } from '@/shared/components/ui'
@@ -31,7 +32,7 @@ function CheckoutSuccessPage() {
           <p className="mt-2 text-xs text-[var(--color-text-muted)]">Order ID: {orderId}</p>
         ) : null}
         <div className="mt-8">
-          <Link to="/shop" className="no-underline">
+          <Link to="/shop" search={defaultShopUrlSearch} className="no-underline">
             <Button>Continue Shopping</Button>
           </Link>
         </div>

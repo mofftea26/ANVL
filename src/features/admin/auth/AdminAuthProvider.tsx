@@ -10,6 +10,7 @@ import {
   ADMIN_PASSWORD,
   ADMIN_USERNAME,
   clearAdminSession,
+  isAdminLoginConfigured,
   readAdminSession,
   subscribeAdminAuthChange,
   writeAdminSession,
@@ -25,8 +26,9 @@ export const AdminAuthContext = createContext<AdminAuthContextValue | null>(
 )
 
 /**
- * Dev-only admin authentication: static credentials ship in the client bundle.
- * Replace with real server-backed sessions before production.
+ * Dev-only admin authentication: credentials come from Vite env at build time
+ * and ship in the client bundle. Replace with real server-backed sessions
+ * before production.
  */
 export function AdminAuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<AdminSession | null>(null)
@@ -43,6 +45,13 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
 
   const login = useCallback(
     (credentials: AdminCredentials) => {
+      if (!isAdminLoginConfigured) {
+        return {
+          ok: false as const,
+          error:
+            'Admin login is not configured. Set VITE_ANVL_ADMIN_PASSWORD in a `.env` file (see `.env.example`).',
+        }
+      }
       if (
         credentials.username.trim() === ADMIN_USERNAME &&
         credentials.password === ADMIN_PASSWORD

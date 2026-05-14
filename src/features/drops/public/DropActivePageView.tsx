@@ -3,7 +3,9 @@ import type { Drop } from '@/features/admin/drops/drops.types'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { Container, ProductCard, Section } from '@/shared/components/ui'
 import { DropReleaseSection } from '@/features/drops/public/DropReleaseSection'
+import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { Link } from '@tanstack/react-router'
+import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 
 type Props = {
   drop: Drop
@@ -12,6 +14,9 @@ type Props = {
 
 export function DropActivePageView({ drop, products }: Props) {
   const heroUrl = drop.visuals.heroImageUrl?.trim()
+  const title = stripAngleBracketTags(drop.title)
+  const subtitle = stripAngleBracketTags(drop.subtitle)
+  const description = stripAngleBracketTags(drop.description)
 
   return (
     <Section className="relative overflow-hidden">
@@ -24,6 +29,8 @@ export function DropActivePageView({ drop, products }: Props) {
             src={heroUrl}
             alt=""
             className="h-full w-full object-cover opacity-[0.22] saturate-[0.85]"
+            decoding="async"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-bg)] via-[var(--color-bg)]/92 to-[var(--color-bg)]" />
         </div>
@@ -36,16 +43,16 @@ export function DropActivePageView({ drop, products }: Props) {
               Drop {drop.dropNumber}
             </p>
             <h1 className="anvl-heading mt-2 text-5xl sm:text-6xl md:text-7xl lg:text-8xl">
-              {drop.title}
+              {title}
             </h1>
-            {drop.subtitle ? (
+            {subtitle ? (
               <p className="mt-2 text-sm text-[var(--color-text-muted)] md:text-base">
-                {drop.subtitle}
+                {subtitle}
               </p>
             ) : null}
-            {drop.description ? (
+            {description ? (
               <p className="mt-5 max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)] md:text-base">
-                {drop.description}
+                {description}
               </p>
             ) : null}
 
@@ -56,7 +63,8 @@ export function DropActivePageView({ drop, products }: Props) {
 
             <Link
               to="/shop"
-              className="anvl-micro mt-8 inline-flex text-[var(--color-heading)] underline-offset-4 hover:underline"
+              search={defaultShopUrlSearch}
+              className="focus-ring anvl-micro mt-8 inline-flex text-[var(--color-heading)] underline-offset-4 hover:underline"
             >
               Shop the full catalog →
             </Link>

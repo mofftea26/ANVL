@@ -1,11 +1,31 @@
+export const SEO_STRUCTURED_DATA_TYPES = [
+  'Organization',
+  'Product',
+  'CollectionPage',
+  'WebPage',
+  'BreadcrumbList',
+] as const
+
+export type SeoStructuredDataType = (typeof SEO_STRUCTURED_DATA_TYPES)[number]
+
 export interface SeoContent {
   title: string
   description: string
   canonicalPath: string
-  ogImage?: string
+  metaTitle?: string
+  metaDescription?: string
+  canonicalUrl?: string
+  noIndex?: boolean
   ogTitle?: string
   ogDescription?: string
+  ogImage?: string
+  twitterTitle?: string
+  twitterDescription?: string
+  twitterImage?: string
+  structuredDataType?: SeoStructuredDataType
 }
+
+export type SeoFieldPatch = Partial<SeoContent>
 
 export interface HomePageContent {
   hero: {
