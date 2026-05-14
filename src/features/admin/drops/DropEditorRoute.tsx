@@ -540,6 +540,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               onActsChange={({ acts, landingActSequence }) =>
                 setDraft({ ...draft, acts, landingActSequence })
               }
+              catalogProducts={catalog.map((p) => ({
+                id: p.id,
+                name: p.name,
+              }))}
             />
           ) : null}
 

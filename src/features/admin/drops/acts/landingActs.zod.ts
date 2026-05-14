@@ -2,6 +2,12 @@ import { z } from 'zod'
 
 const cta = z.object({ label: z.string(), href: z.string() })
 
+const galleryItem = z.object({
+  src: z.string(),
+  caption: z.string().optional(),
+  mediaType: z.enum(['image', 'video']).optional(),
+})
+
 export const heroContentSchema = z.object({
   countdownTargetIso: z.string().optional(),
   backgroundImageUrl: z.string().optional(),
@@ -12,6 +18,7 @@ export const heroContentSchema = z.object({
 
 export const manifestoContentSchema = z.object({
   quote: z.string().optional(),
+  storyParagraphs: z.string().optional(),
 })
 
 export const storytellingContentSchema = z.object({
@@ -21,20 +28,29 @@ export const storytellingContentSchema = z.object({
 
 export const dropRevealContentSchema = z.object({
   releaseDateIso: z.string().optional(),
+  primaryCta: cta.optional(),
+  secondaryCta: cta.optional(),
+  dropVisualSrc: z.string().optional(),
 })
 
 export const productShowcaseContentSchema = z.object({
   cardStyle: z.enum(['carousel', 'grid', 'story']).optional(),
+  viewAllLabel: z.string().optional(),
+  viewAllHref: z.string().optional(),
 })
 
 export const materialShowcaseContentSchema = z.object({
+  materialName: z.string().optional(),
   gsm: z.string().optional(),
   composition: z.string().optional(),
   fitNotes: z.string().optional(),
+  constructionNotes: z.string().optional(),
 })
 
 export const specialEventContentSchema = z.object({
+  eventTitle: z.string().optional(),
   startsAtIso: z.string().optional(),
+  endsAtIso: z.string().optional(),
   location: z.string().optional(),
   linkHref: z.string().optional(),
   rules: z.string().optional(),
@@ -43,14 +59,20 @@ export const specialEventContentSchema = z.object({
 
 export const lookbookContentSchema = z.object({
   layout: z.enum(['masonry', 'carousel', 'editorial']).optional(),
+  galleryItems: z.array(galleryItem).max(40).optional(),
 })
 
 export const newsletterContentSchema = z.object({
   consentCopy: z.string().optional(),
+  preferredProductOptions: z.array(z.string()).max(24).optional(),
+  formIntro: z.string().optional(),
 })
 
 export const finalCtaContentSchema = z.object({
   backgroundImageUrl: z.string().optional(),
+  primaryCta: cta.optional(),
+  secondaryCta: cta.optional(),
+  tertiaryCta: cta.optional(),
 })
 
 const SCHEMAS: Record<string, z.ZodType<Record<string, unknown>>> = {

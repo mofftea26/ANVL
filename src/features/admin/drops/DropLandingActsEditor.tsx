@@ -18,6 +18,8 @@ interface Props {
     acts: LandingAct[]
     landingActSequence: LandingActSlot[]
   }) => void
+  /** Catalog rows for product-showcase SKU checkboxes in the acts builder. */
+  catalogProducts?: Array<{ id: string; name: string }>
 }
 
 export function DropLandingActsEditor({
@@ -26,6 +28,7 @@ export function DropLandingActsEditor({
   acts,
   landingActSequence,
   onActsChange,
+  catalogProducts,
 }: Props) {
   const lc = value
 
@@ -49,6 +52,7 @@ export function DropLandingActsEditor({
         landingContentJson={landingContentJson}
         acts={acts}
         landingActSequence={landingActSequence}
+        catalogProducts={catalogProducts}
         onChange={onActsChange}
       />
 

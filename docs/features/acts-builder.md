@@ -13,7 +13,7 @@ type LandingAct = {
   subtitle?: string;
   eyebrow?: string;
   body?: string;
-  media?: ActMedia;
+  media?: { imageUrl?: string; videoUrl?: string; alt?: string };
   animation?: ActAnimationConfig;
   content: Record<string, unknown>;
   productIds?: string[];
@@ -84,10 +84,10 @@ type LandingAct = {
    - Presets: centered, footer-overlap, product CTA.
 
 ## Implementation (Drop Editor)
-- UI: `DropActsBuilderPanel` (`src/features/admin/drops/DropActsBuilderPanel.tsx`) embedded in `DropLandingActsEditor`.
-- Bootstrap: empty `acts` arrays are seeded from current `DropLandingContent` via `landingContentToSimpleActs` (`acts/landingActs.seed.ts`).
-- Validation: per-nature `content` objects can be validated with `safeParseActContent` in `acts/landingActs.zod.ts` (Zod); the panel resets `content` when nature changes.
-- Public pipeline: `acts/landingActs.normalize.ts` maps slot toggles to `PublicLandingAct` rows consumed by `PublicLandingActs` on `/`.
+- UI: `DropActsBuilderPanel` (`src/features/admin/drops/DropActsBuilderPanel.tsx`) embedded in `DropLandingActsEditor`. Each row: reorder, enable/disable, nature, preset, shared copy (eyebrow/title/subtitle/body), **act-level media** (image upload or URL, optional video URL, alt), **animation** (enabled, desktop-only, motion type key, intensity), nature-specific **content** sub-forms, and optional **product SKUs** for `productShowcase` (catalog checkboxes; empty means “use all drop products”).
+- Bootstrap: empty `acts` arrays are seeded from current `DropLandingContent` via `landingContentToSimpleActs` (`acts/landingActs.seed.ts`), including default `animation` rows.
+- Validation: per-nature `content` objects are narrowed with `safeParseActContent` in `acts/landingActs.zod.ts` (Zod); the panel resets `content` when nature changes.
+- Public pipeline: `acts/landingActs.normalize.ts` maps slot toggles to `PublicLandingAct` rows consumed by `PublicLandingActs` on `/`. Live marketing sections still read legacy `LandingPageCmsContent` section objects until an overlay merges act copy into compose.
 
 ## Animation config
 ```ts

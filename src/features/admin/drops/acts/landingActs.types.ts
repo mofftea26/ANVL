@@ -1,5 +1,12 @@
 export type ActAnimationIntensity = 'subtle' | 'standard' | 'bold'
 
+/** Optional hero / act backdrop references (paths or URLs). */
+export type ActMedia = {
+  imageUrl?: string
+  videoUrl?: string
+  alt?: string
+}
+
 export type ActAnimationConfig = {
   enabled: boolean
   desktopOnly: boolean
@@ -52,6 +59,7 @@ export type LandingAct = {
   subtitle?: string
   eyebrow?: string
   body?: string
+  media?: ActMedia
   animation?: ActAnimationConfig
   content?: Record<string, unknown>
   productIds?: string[]

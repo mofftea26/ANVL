@@ -1,9 +1,11 @@
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import type { DropLandingContent } from '../drops.types'
 import type { LandingAct } from './landingActs.types'
+import { mergeActAnimationConfig } from './landingActs.types'
 
 /** Bootstrap `Drop.acts` from legacy landing sections when the acts array is empty. */
 export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[] {
+  const anim = mergeActAnimationConfig()
   return [
     {
       id: createCmsId('act'),
@@ -15,6 +17,7 @@ export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[]
       subtitle: lc.hero.subtitle,
       eyebrow: lc.hero.badgeText,
       body: '',
+      animation: anim,
       content: {},
     },
     {
@@ -26,6 +29,7 @@ export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[]
       title: lc.manifesto.heading,
       eyebrow: lc.manifesto.counterLabel,
       body: lc.manifesto.intro,
+      animation: anim,
       content: {},
     },
     {
@@ -38,6 +42,7 @@ export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[]
       subtitle: lc.dropReveal.counterLabel,
       eyebrow: lc.dropReveal.actLabel,
       body: lc.dropReveal.tagline,
+      animation: anim,
       content: {},
     },
     {
@@ -48,6 +53,7 @@ export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[]
       sortOrder: 3,
       title: `${lc.pieces.headingLineOne} ${lc.pieces.headingLineTwo}`.trim(),
       eyebrow: lc.pieces.actLabel,
+      animation: anim,
       content: {},
     },
     {
@@ -60,6 +66,7 @@ export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[]
       subtitle: lc.materials.counterSuffix,
       eyebrow: lc.materials.actLabel,
       body: lc.materials.intro,
+      animation: anim,
       content: {},
     },
     {
@@ -72,6 +79,7 @@ export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[]
       subtitle: lc.waitlist.rightLabel,
       eyebrow: lc.waitlist.actLabel,
       body: lc.waitlist.intro,
+      animation: anim,
       content: {},
     },
   ]
