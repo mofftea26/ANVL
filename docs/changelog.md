@@ -11,6 +11,12 @@ Cursor agents must append every completed task here.
 - Notes/debt:
 ```
 
+## 2026-05-14 — Drop Editor live preview (Prompt 08)
+- Summary: Added `DropEditorLivePreview` with mobile/tablet/desktop viewport toggles, scoped `DropPreviewThemeScope` for instant palette CSS variables, and `DropEditorPreviewErrorBoundary` so invalid draft renders surface CMS recovery instead of a blank panel. Preview composes with `useDraftActsPipeline` and `publicLandingActsFromDraftActs` so `Drop.acts` order and enable flags match `PublicLandingActs` immediately; unknown act natures use `cmsPreview` warnings. Moved preview memos before the missing-drop early return to satisfy React hook rules.
+- Files changed: `src/features/admin/drops/DropEditorLivePreview.tsx`, `DropEditorRoute.tsx`, `drops.compose.ts`, `acts/landingActs.normalize.ts`, `PublicLandingActs.tsx`, `docs/features/drops-cms.md`, `docs/features/acts-builder.md`, `docs/changelog.md`
+- Tests/manual checks: `pnpm typecheck`, `pnpm build`; manual: `/admin/drops/:id` — theme + acts + viewport toggles; unsupported act shows amber CMS notice; Save still persists.
+- Notes/debt: Public homepage compose still uses `landingActSequence` only until the published pipeline opts into draft acts.
+
 ## 2026-05-14 — Configurable Acts Builder in Drop Editor (Prompt 07)
 - Summary: Ship the Drop Editor acts builder (`DropActsBuilderPanel`) for add/remove/reorder, enable/disable, nature and preset selection, and shared copy fields on each act, wired to `Drop.acts` and `landingActSequence`. Added `landingActs.seed.ts` to bootstrap acts from legacy `DropLandingContent`, `landingActs.zod.ts` for per-nature `content` validation helpers, and extended `PublicLandingAct` with `slotKey` and `enabled` in the normalize pipeline. Drop preview uses `composeLandingPageFromDrop` with `PublicLandingActs`; the public homepage skips disabled acts and maps `storytelling` to the manifesto renderer.
 - Files changed: `src/features/admin/drops/DropActsBuilderPanel.tsx`, `DropLandingActsEditor.tsx`, `DropEditorRoute.tsx`, `acts/landingActs.types.ts`, `acts/landingActs.normalize.ts`, `acts/landingActs.seed.ts`, `acts/landingActs.zod.ts`, `src/features/marketing/public-landing/PublicLandingActs.tsx`, `src/features/cms/api/cmsClient.mock.ts`, `docs/features/drops-cms.md`, `docs/features/acts-builder.md`, `docs/changelog.md`
