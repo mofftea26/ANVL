@@ -1,11 +1,36 @@
 import type { CmsClient } from '@/app/config/clients'
 import { getLandingCmsContent } from '@/features/admin/landing-cms/landingCms.service'
+import type { Drop } from '@/features/admin/drops/drops.types'
+import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import {
+  archiveDrop,
+  deleteDrop,
+  duplicateDrop,
   getActiveDrop,
   getDropBySlug,
+  readDropsArray,
+  scheduleDropActivation,
+  setActiveDrop,
 } from '@/features/admin/drops/drops.service'
 import { cmsMockData } from '../data/cms.mock'
 import type { HomePageContent } from '../types/cms.types'
+
+function dropToAdminListItem(d: Drop): AdminDropListItem {
+  return {
+    id: d.id,
+    slug: d.slug,
+    title: d.title,
+    name: d.name,
+    dropNumber: d.dropNumber,
+    status: d.status,
+    isActive: d.isActive,
+    releaseDate: d.releaseDate,
+    scheduledActivationAt: d.scheduledActivationAt,
+    productCount: d.productIds.length,
+    updatedAt: d.updatedAt,
+    createdAt: d.createdAt,
+  }
+}
 
 function toLegacyHomepage(): HomePageContent {
   const landing = getLandingCmsContent()
@@ -32,6 +57,9 @@ function toLegacyHomepage(): HomePageContent {
 }
 
 export const mockCmsClient: CmsClient = {
+  async getActiveDrop() {
+    return getActiveDrop()
+  },
   async getLandingCmsContent() {
     return getLandingCmsContent()
   },
@@ -73,8 +101,29 @@ export const mockCmsClient: CmsClient = {
         description: drop.seo.description,
         canonicalPath: path,
         ogImage: drop.seo.ogImage,
+        ogTitle: drop.seo.ogTitle,
+        ogDescription: drop.seo.ogDescription,
       }
     }
     return cmsMockData.seoByPath[path] ?? null
+  },
+  async getAdminDropsList() {
+    return readDropsArray().map(dropToAdminListItem)
+  },
+  async duplicateAdminDrop(id) {
+    const created = duplicateDrop(id)
+    return created ? dropToAdminListItem(created) : null
+  },
+  async setAdminActiveDrop(id) {
+    setActiveDrop(id)
+  },
+  async scheduleAdminDrop(id, activationIso) {
+    scheduleDropActivation(id, activationIso)
+  },
+  async archiveAdminDrop(id) {
+    archiveDrop(id)
+  },
+  async deleteAdminDrop(id) {
+    deleteDrop(id)
   },
 }

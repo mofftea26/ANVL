@@ -1,6 +1,11 @@
 import type { AdminProduct } from '@/features/admin/products/products.types'
 import { GLOBAL_BRAND_STORAGE_KEY } from '@/features/admin/global-brand/globalBrand.storage'
-import type { Drop, DropsPersistedState } from './drops.types'
+import type { Drop, DropLandingContent, DropStatus, DropsPersistedState } from './drops.types'
+import { normalizeLandingActSequence } from './publicLandingActs.pipeline'
+import { coerceLandingAct } from './acts/landingActs.pipeline'
+import { dropLandingContentToActs } from './acts/landingActs.migrate'
+import { overlayActsOnDropLandingContent } from './acts/landingActs.compose'
+import { sortLandingActs } from './acts/landingActs.sort'
 import {
   readActiveDropIdRaw,
   readDropsRaw,
@@ -31,41 +36,52 @@ import {
   getAdminProducts,
   saveAdminProducts,
 } from '@/features/admin/products/products.service'
+import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 
 let hydrationRan = false
 
 function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
   const base = createDefaultTheOathDrop([...DEFAULT_OATH_PRODUCT_IDS])
   const lc = partial.landingContent ?? base.landingContent
+  const mergedLanding: DropLandingContent = {
+    ...base.landingContent,
+    ...lc,
+    hero: { ...base.landingContent.hero, ...(lc.hero ?? {}) },
+    manifesto: {
+      ...base.landingContent.manifesto,
+      ...(lc.manifesto ?? {}),
+    },
+    dropReveal: {
+      ...base.landingContent.dropReveal,
+      ...(lc.dropReveal ?? {}),
+    },
+    pieces: { ...base.landingContent.pieces, ...(lc.pieces ?? {}) },
+    materials: {
+      ...base.landingContent.materials,
+      ...(lc.materials ?? {}),
+    },
+    waitlist: {
+      ...base.landingContent.waitlist,
+      ...(lc.waitlist ?? {}),
+      form: {
+        ...base.landingContent.waitlist.form,
+        ...(lc.waitlist?.form ?? {}),
+      },
+    },
+  }
+  const acts =
+    Array.isArray(partial.acts) && partial.acts.length > 0
+      ? sortLandingActs(partial.acts.map((a) => coerceLandingAct(a)))
+      : dropLandingContentToActs(mergedLanding)
+  const landingContent = overlayActsOnDropLandingContent(acts, mergedLanding)
   return {
     ...base,
     ...partial,
-    landingContent: {
-      ...base.landingContent,
-      ...lc,
-      hero: { ...base.landingContent.hero, ...(lc.hero ?? {}) },
-      manifesto: {
-        ...base.landingContent.manifesto,
-        ...(lc.manifesto ?? {}),
-      },
-      dropReveal: {
-        ...base.landingContent.dropReveal,
-        ...(lc.dropReveal ?? {}),
-      },
-      pieces: { ...base.landingContent.pieces, ...(lc.pieces ?? {}) },
-      materials: {
-        ...base.landingContent.materials,
-        ...(lc.materials ?? {}),
-      },
-      waitlist: {
-        ...base.landingContent.waitlist,
-        ...(lc.waitlist ?? {}),
-        form: {
-          ...base.landingContent.waitlist.form,
-          ...(lc.waitlist?.form ?? {}),
-        },
-      },
-    },
+    landingContent,
+    acts,
+    landingActSequence: normalizeLandingActSequence(
+      partial.landingActSequence ?? base.landingActSequence,
+    ),
     visuals: { ...base.visuals, ...(partial.visuals ?? {}) },
     theme: {
       ...base.theme,
@@ -76,6 +92,12 @@ function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
       },
     },
     seo: { ...base.seo, ...(partial.seo ?? {}) },
+    releaseDate: Object.hasOwn(partial, 'releaseDate')
+      ? partial.releaseDate
+      : base.releaseDate,
+    scheduledActivationAt: Object.hasOwn(partial, 'scheduledActivationAt')
+      ? partial.scheduledActivationAt
+      : base.scheduledActivationAt,
     productIds:
       Array.isArray(partial.productIds) && partial.productIds.length > 0
         ? [...partial.productIds]
@@ -102,6 +124,24 @@ function parseDropsPayload(raw: string | null): DropsPersistedState | null {
   } catch {
     return null
   }
+}
+
+function normalizeDropForPersist(drop: Drop, activeDropId: string | null): Drop {
+  const isActiveRow = activeDropId !== null && drop.id === activeDropId
+  if (drop.status === 'archived') {
+    return { ...drop, isActive: false }
+  }
+  if (isActiveRow) {
+    return {
+      ...drop,
+      isActive: true,
+      status: 'active',
+      scheduledActivationAt: undefined,
+    }
+  }
+  let nextStatus: DropStatus = drop.status
+  if (nextStatus === 'active') nextStatus = 'inactive'
+  return { ...drop, isActive: false, status: nextStatus }
 }
 
 /** Keep product.dropIds aligned with drop.productIds */
@@ -151,10 +191,7 @@ export function persistDropsState(
   drops: Drop[],
   activeDropId: string | null,
 ): void {
-  const synced = drops.map((d) => ({
-    ...d,
-    isActive: activeDropId !== null && d.id === activeDropId,
-  }))
+  const synced = drops.map((d) => normalizeDropForPersist(d, activeDropId))
   const body: DropsPersistedState = { drops: synced }
   writeDropsRaw(JSON.stringify(body))
   writeActiveDropId(activeDropId)
@@ -243,7 +280,7 @@ export function saveDrop(
       : drops.map((d, i) => (i === idx ? stamped : d))
 
   let activeId = readActiveDropIdRaw()
-  if (opts?.makeActive) activeId = stamped.id
+  if (opts?.makeActive && stamped.status !== 'archived') activeId = stamped.id
   else if (!activeId) activeId = stamped.id
 
   if (!mergedList.some((d) => d.id === activeId))
@@ -257,7 +294,8 @@ export function saveDrop(
 export function setActiveDrop(dropId: string): void {
   ensureDropSystemHydrated()
   const drops = readDropsArray()
-  if (!drops.some((d) => d.id === dropId)) return
+  const target = drops.find((d) => d.id === dropId)
+  if (!target || target.status === 'archived') return
   persistDropsState(drops, dropId)
 }
 
@@ -270,7 +308,10 @@ export function deleteDrop(dropId: string): void {
     return
   }
   let active = readActiveDropIdRaw()
-  if (active === dropId) active = drops[0]?.id ?? null
+  if (active === dropId) {
+    active =
+      drops.find((d) => d.status !== 'archived')?.id ?? drops[0]?.id ?? null
+  }
   persistDropsState(drops, active)
 }
 
@@ -294,6 +335,87 @@ export function createDraftDrop(): Drop {
   const base = createEmptyDrop()
   saveDrop(base)
   return base
+}
+
+export function duplicateDrop(sourceId: string): Drop | null {
+  ensureDropSystemHydrated()
+  const drops = readDropsArray()
+  const source = drops.find((d) => d.id === sourceId)
+  if (!source) return null
+  const takenSlugs = new Set(drops.map((d) => d.slug))
+  let nextSlug = `${source.slug}-copy`
+  let n = 2
+  while (takenSlugs.has(nextSlug)) {
+    nextSlug = `${source.slug}-copy-${n}`
+    n += 1
+  }
+  const now = new Date().toISOString()
+  const dup: Drop = {
+    ...source,
+    id: createCmsId('drop'),
+    slug: nextSlug,
+    name: `${source.name} (copy)`,
+    title: `${source.title} (copy)`,
+    status: 'draft',
+    isActive: false,
+    productIds: [],
+    scheduledActivationAt: undefined,
+    createdAt: now,
+    updatedAt: now,
+  }
+  return saveDrop(dup)
+}
+
+export function scheduleDropActivation(id: string, activationIso: string): void {
+  ensureDropSystemHydrated()
+  const drops = readDropsArray()
+  const existing = drops.find((d) => d.id === id)
+  if (!existing || existing.status === 'archived') return
+
+  let activeId = readActiveDropIdRaw()
+  if (activeId === id) {
+    activeId =
+      drops.find((d) => d.id !== id && d.status !== 'archived')?.id ?? null
+  }
+
+  const now = new Date().toISOString()
+  const next = drops.map((d) =>
+    d.id === id
+      ? {
+          ...d,
+          status: 'scheduled' as const,
+          scheduledActivationAt: activationIso,
+          isActive: false,
+          updatedAt: now,
+        }
+      : d,
+  )
+  persistDropsState(next, activeId)
+}
+
+export function archiveDrop(id: string): void {
+  ensureDropSystemHydrated()
+  const drops = readDropsArray()
+  const existing = drops.find((d) => d.id === id)
+  if (!existing || existing.status === 'archived') return
+
+  let activeId = readActiveDropIdRaw()
+  const now = new Date().toISOString()
+  const next = drops.map((d) =>
+    d.id === id
+      ? {
+          ...d,
+          status: 'archived' as const,
+          isActive: false,
+          scheduledActivationAt: undefined,
+          updatedAt: now,
+        }
+      : d,
+  )
+  if (activeId === id) {
+    activeId = next.find((d) => d.status !== 'archived')?.id ?? null
+  }
+  persistDropsState(next, activeId)
 }
 
 /** Dangerous — clears drops + layout + products keys (+ legacy landing). */
