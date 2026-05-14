@@ -31,6 +31,7 @@ export const landingCmsDefaults: LandingPageCmsContent = {
   navigation: {
     headerLinks: [
       { id: 'nav-shop', label: 'Shop', href: '/shop', isVisible: true },
+      { id: 'nav-account', label: 'Account', href: '/account', isVisible: true },
       {
         id: 'nav-the-oath',
         label: 'The Oath',

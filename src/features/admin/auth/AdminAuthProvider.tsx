@@ -10,6 +10,7 @@ import {
   ADMIN_PASSWORD,
   ADMIN_USERNAME,
   clearAdminSession,
+  isAdminLoginConfigured,
   readAdminSession,
   subscribeAdminAuthChange,
   writeAdminSession,
@@ -39,6 +40,13 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
 
   const login = useCallback(
     (credentials: AdminCredentials) => {
+      if (!isAdminLoginConfigured) {
+        return {
+          ok: false as const,
+          error:
+            'Admin login is not configured. Set VITE_ANVL_ADMIN_PASSWORD in a local .env file (see .env.example).',
+        }
+      }
       if (
         credentials.username.trim() === ADMIN_USERNAME &&
         credentials.password === ADMIN_PASSWORD
