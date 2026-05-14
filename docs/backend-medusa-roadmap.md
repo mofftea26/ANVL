@@ -27,6 +27,24 @@ Do not force all CMS content into Medusa. Use two domains:
 ## Why this split
 ANVL needs a cinematic drop CMS. Medusa is strong for commerce, but drop storytelling/act building/theme control is a brand-CMS concern. Keep the storefront consuming a clean API so Medusa can be added later without rewriting pages.
 
+## Typed API contracts (frontend)
+TypeScript DTOs and list/checkout shapes live under `src/shared/api/contracts/` (barrel: `@/shared/api/contracts`). They document the intended REST-style surface for TanStack Start server routes or an external BFF and are **not** wired into `runtimeClients` yet — local/mock adapters keep working unchanged.
+
+Human-readable route grouping: `docs/contracts/README.md`.
+
+### What maps to Medusa later vs what stays ANVL CMS
+
+| Concern | Likely owner | Notes |
+|--------|--------------|--------|
+| Drops, acts, themes, landing CMS JSON, navigation copy | ANVL CMS | `cms.contract.ts` |
+| Editorial SEO cards (page/drop/product) | ANVL CMS | `CmsSeo*` types |
+| Storefront product read model | BFF / composer | `products.contract.ts` storefront types align with `CommerceClient` |
+| Admin catalog editorial + `dropIds` | ANVL CMS until sync | `AdminProduct*` DTOs |
+| Variants, regional prices, inventory, reservations | Medusa | Maps to Inventory / Pricing modules |
+| Cart, checkout, payments, fulfillments, tax | Medusa (+ PSP) | `checkout-orders.contract.ts` |
+| Customer identity, sessions, password reset | Medusa Customer / auth (or IdP) | `auth.contract.ts` |
+| Guest → customer linking, Lebanon payment rules | ANVL BFF | Policy around Medusa APIs |
+
 ## Suggested database tables for ANVL CMS
 ```txt
 drops

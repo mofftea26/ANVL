@@ -18,6 +18,7 @@ Start here, then open only the docs needed for the task.
 - `features/seo.md` — CMS-managed SEO, structured data, metadata, redirects.
 - `features/auth-accounts-orders.md` — sign in/up, profile, addresses, orders, Lebanon payment logic.
 - `backend-medusa-roadmap.md` — future database/API/Medusa integration plan.
+- `contracts/README.md` — index for typed HTTP contracts (`src/shared/api/contracts/`).
 - `performance-accessibility-security.md` — performance, WCAG, SSR, security checklist.
 
 ## Prompt library

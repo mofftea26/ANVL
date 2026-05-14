@@ -63,3 +63,6 @@ type Order = {
 - Real passwords/auth must never be implemented as frontend-only storage.
 - Current static admin login must be clearly marked temporary and not production security.
 - When backend exists, use secure session cookies or trusted auth provider flow.
+
+## Backend API contracts
+Auth, profile, addresses, and session token shapes for a future BFF are in `src/shared/api/contracts/auth.contract.ts`. Checkout and order history payloads live in `checkout-orders.contract.ts` (Medusa cart/order modules when integrated). See `docs/contracts/README.md`.

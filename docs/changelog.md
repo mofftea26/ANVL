@@ -11,6 +11,12 @@ Cursor agents must append every completed task here.
 - Notes/debt:
 ```
 
+## 2026-05-14 — Backend API contracts planning (Prompt 20)
+- Summary: Added TypeScript API contract modules under `src/shared/api/contracts/` for CMS, products, auth, checkout, and orders: shared `ApiErrorResponse`, pagination/sort/filter helpers, list/create/update DTOs, plus documentation in `docs/backend-medusa-roadmap.md`, `docs/contracts/README.md`, `docs/README.md`, `docs/architecture.md`, and feature doc cross-links. No runtime adapter wiring; local/mock clients unchanged.
+- Files changed: `src/shared/api/contracts/common.types.ts`, `cms.contract.ts`, `products.contract.ts`, `auth.contract.ts`, `checkout-orders.contract.ts`, `index.ts`, `docs/backend-medusa-roadmap.md`, `docs/contracts/README.md`, `docs/README.md`, `docs/architecture.md`, `docs/features/auth-accounts-orders.md`, `docs/changelog.md`
+- Tests/manual checks: `pnpm typecheck` (pass), `pnpm build` (pass) on clean worktree from `cms` (`9020d26`); manual: read `docs/contracts/README.md` and `src/shared/api/contracts/index.ts`.
+- Notes/debt: `CmsDropListItemWire` and list filters are forward-looking; evolve when admin list types and `Drop` gain scheduling fields everywhere.
+
 ## 2026-05-14 — Configurable Acts Builder in Drop Editor (Prompt 07)
 - Summary: Ship the Drop Editor acts builder (`DropActsBuilderPanel`) for add/remove/reorder, enable/disable, nature and preset selection, and shared copy fields on each act, wired to `Drop.acts` and `landingActSequence`. Added `landingActs.seed.ts` to bootstrap acts from legacy `DropLandingContent`, `landingActs.zod.ts` for per-nature `content` validation helpers, and extended `PublicLandingAct` with `slotKey` and `enabled` in the normalize pipeline. Drop preview uses `composeLandingPageFromDrop` with `PublicLandingActs`; the public homepage skips disabled acts and maps `storytelling` to the manifesto renderer.
 - Files changed: `src/features/admin/drops/DropActsBuilderPanel.tsx`, `DropLandingActsEditor.tsx`, `DropEditorRoute.tsx`, `acts/landingActs.types.ts`, `acts/landingActs.normalize.ts`, `acts/landingActs.seed.ts`, `acts/landingActs.zod.ts`, `src/features/marketing/public-landing/PublicLandingActs.tsx`, `src/features/cms/api/cmsClient.mock.ts`, `docs/features/drops-cms.md`, `docs/features/acts-builder.md`, `docs/changelog.md`

@@ -87,7 +87,7 @@ src/
 - LocalStorage CMS adapter must not run during SSR. It must provide safe fallback seed data on the server and hydrate on the client.
 
 ## API interface first
-Create interfaces before concrete adapters:
+Typed HTTP DTOs for future REST/BFF endpoints live in `src/shared/api/contracts/` (see `docs/contracts/README.md`). Create interfaces before concrete adapters:
 ```ts
 interface CmsClient {
   getActiveDrop(): Promise<Drop>;
