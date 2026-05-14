@@ -2,6 +2,8 @@
 
 Production-ready SSR storefront for **ANVL Athletics** built with TanStack Start, TypeScript, and a feature-based architecture.
 
+Project rules for agents live in [`AGENTS.md`](./AGENTS.md). The full documentation index is [`docs/README.md`](./docs/README.md) (architecture, feature specs, and the `docs/prompts` task library).
+
 Brand context implemented from `/docs/ANVL_Athletics_Professional_Brand_Document.pdf`:
 - Brand: ANVL Athletics
 - Tagline: Forged Under Pressure
