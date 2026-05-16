@@ -109,6 +109,11 @@ Support:
 - **Product card** reads optional `product.shop` for status chips, compare-at strike price, and uses **desktop-only** hover scale (`md:`) to keep mobile light.
 - Catalog rows and filter options come from `getStorefrontShopListingCatalog()` in `products.commerce.ts` (mock commerce client implements `getShopListingCatalog()`).
 
+## Storefront checkout (guest)
+- Guest-first flow on `/checkout` (no sign-in gate).
+- Shipping: address lines 1–2, city, optional postal code, country select, phone, optional delivery notes; payment methods come from `src/features/checkout/config/checkoutPayments.config.ts` (Lebanon: COD + Whish Money when country matches Lebanon or ISO `lb`; non-Lebanon: card only when `VITE_ANVL_INTERNATIONAL_CHECKOUT=true`).
+- Real PSP / Whish / Medusa wiring is stubbed in `paymentGateway.mock.ts` with explicit integration labels in the UI.
+
 ## Product details UX
 - **Gallery**: `ProductGallery` accepts optional `images` for per-colorway media from `product.shop.imagesByColorName`.
 - **Video**: YouTube URLs on `AdminProduct.videoUrl` resolve via `extractYoutubeVideoId` (`src/features/products/pdp/videoEmbed.ts`) and render as a privacy-enhanced embed on the PDP.

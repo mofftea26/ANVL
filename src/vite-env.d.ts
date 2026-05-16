@@ -1,12 +1,6 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** Optional override; defaults to `admin` when unset. */
-  readonly VITE_ANVL_ADMIN_USERNAME?: string
-  /** Required for admin sign-in in local builds. */
-  readonly VITE_ANVL_ADMIN_PASSWORD?: string
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv
+  /** When `"true"`, non-Lebanon shipping shows card (mock) checkout in the storefront. */
+  readonly VITE_ANVL_INTERNATIONAL_CHECKOUT?: string
 }

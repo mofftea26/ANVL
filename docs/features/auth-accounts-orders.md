@@ -29,6 +29,8 @@ Lebanon payment methods:
 Outside Lebanon:
 - Card only when international shipping/card processing is enabled.
 
+Implementation in code: `src/features/checkout/config/checkoutPayments.config.ts` (typed payment catalog, Lebanon detection including ISO `lb`, `VITE_ANVL_INTERNATIONAL_CHECKOUT` flag). Checkout Zod schema and mock payment client enforce the same rules.
+
 ## Data model notes
 ```ts
 type Customer = {
@@ -72,3 +74,9 @@ type Order = {
 - **SEO**: All auth and account routes pass `noIndex: true` into `buildSeoMeta` so robots is `noindex,nofollow`.
 - **Navigation**: Default landing CMS header includes **Account** â†’ `/account`.
 - **Demo credentials**: `demo@anvl.lb` / `demo1234` (banner on sign-in). Reset password flow is UI-only (no email).
+
+- Current static admin login must be clearly marked temporary and not production security.
+- When backend exists, use secure session cookies or trusted auth provider flow.
+
+## Backend API contracts
+Auth, profile, addresses, and session token shapes for a future BFF are in `src/shared/api/contracts/auth.contract.ts`. Checkout and order history payloads live in `checkout-orders.contract.ts` (Medusa cart/order modules when integrated). See `docs/contracts/README.md`.
