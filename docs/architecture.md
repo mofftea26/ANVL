@@ -117,3 +117,7 @@ Runtime contracts for external/CMS JSON live under feature folders and shared pr
 3. External backend adapter.
 4. Medusa commerce adapter for products, variants, inventory, pricing, carts, orders.
 5. Custom ANVL CMS tables remain separate for drops, acts, SEO, media, and campaign content.
+
+## As-built snapshot (inventory)
+
+A Prompt 01 codebase audit (routes, CMS vs hard-coded copy, SSR/browser boundaries, GSAP/cart flows, and cautious files) lives in `docs/technical-debt.md` under **As-built audit (2026-05-14)**. Update that section when the app structure materially changes so agents do not rely on stale route lists.
