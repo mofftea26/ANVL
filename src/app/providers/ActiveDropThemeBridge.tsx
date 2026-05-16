@@ -1,50 +1,12 @@
-import { useEffect } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { subscribeDropsChange } from '@/features/admin/drops/drops.storage'
 import {
   DEFAULT_EMBLEM_URL,
 } from '@/features/admin/drops/drops.defaults'
 import { getGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.service'
-import { getActiveDrop } from '@/features/admin/drops/drops.service'
 import type { DropThemePalette } from '@/features/admin/drops/drops.types'
+import { dropPaletteToCssProperties } from '@/features/admin/drops/dropPaletteStyle'
 
 const PREVIEW_ATTR = 'data-anvl-drop-preview-scope'
-
-function paletteToCssVars(palette: DropThemePalette): Record<string, string> {
-  const c = palette.colors
-  return {
-    '--color-bg': c.background,
-    '--color-surface': c.surface,
-    '--color-surface-soft': c.surfaceSoft,
-    '--color-surface-elevated': c.surfaceSoft,
-    '--color-line': c.line,
-    '--color-text': c.text,
-    '--color-text-muted': c.mutedText,
-    '--color-heading': c.heading,
-    '--color-accent': c.accent,
-    '--color-chip': c.accentSoft,
-    '--color-hero-glow': c.heroGlow,
-  }
-}
-
-/** Applies active drop palette to `:root` on the public site. */
-export function ActiveDropThemeBridge() {
-  useEffect(() => {
-    const apply = () => {
-      const drop = getActiveDrop()
-      const palette = drop?.theme
-      const root = document.documentElement
-      if (!palette) return
-      const vars = paletteToCssVars(palette)
-      Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v))
-    }
-
-    apply()
-    return subscribeDropsChange(apply)
-  }, [])
-
-  return null
-}
 
 /** Scoped palette for admin preview containers only. */
 export function DropPreviewThemeScope({
@@ -57,7 +19,7 @@ export function DropPreviewThemeScope({
   children: ReactNode
 }) {
   const style = {
-    ...paletteToCssVars(palette),
+    ...dropPaletteToCssProperties(palette),
     ...(emblemUrl
       ? ({
           '--anvl-preview-emblem': `url("${emblemUrl}")`,

@@ -92,7 +92,6 @@ When a drop becomes active:
 - Drop page uses that drop's title, subtitle, visuals, description, and product cards.
 - Products assigned to the drop become visible in the global shop if their product status allows it.
 
-
 ## Storefront runtime clients
 Public routes and loaders should depend on `runtimeClients` from `src/app/config/runtime.ts`, not ad hoc `localStorage` reads.
 
@@ -100,3 +99,8 @@ Public routes and loaders should depend on `runtimeClients` from `src/app/config
 - **Browser (`isServer: false`)**: the same factory wires **localStorage-backed** adapters that delegate to admin services (`getLandingCmsContent`, drops storage, products storage, layout storage) so CMS edits and the storefront stay in sync.
 
 TODO hooks in adapter modules mark where Medusa or a headless CMS client will replace the implementation later.
+
+## Active drop storefront theme (runtime CMS)
+- `CmsClient.getActiveDrop()` returns the campaign drop used for public storefront theming (or `null` when none). Seed and localStorage adapters delegate to `drops.service` / seed snapshots as appropriate.
+- The root route loads `activeDrop` with landing CMS content, skips it for `/admin` paths, and emits serialized palette CSS in `head` so SSR and the client share the same `:root` variables (see `docs/design-system.md`).
+- `ActiveDropThemeProvider` wraps public header, main, and footer; it subscribes to drop storage changes and refreshes via the runtime CMS client. Official header/footer logos remain global brand assets, not drop campaign marks.

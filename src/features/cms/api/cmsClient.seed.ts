@@ -1,5 +1,5 @@
 import type { CmsClient } from '@/app/config/clients'
-import { SEED_LANDING_PAGE_CMS } from '@/features/cms/api/seedSnapshots'
+import { SEED_DROP, SEED_LANDING_PAGE_CMS } from '@/features/cms/api/seedSnapshots'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { HomePageContent } from '@/features/cms/types/cms.types'
 
@@ -31,6 +31,9 @@ function toLegacyHomepage(landing: typeof SEED_LANDING_PAGE_CMS): HomePageConten
  * TODO: replace with CMS/API-backed implementation when the backend ships.
  */
 export const seedCmsClient: CmsClient = {
+  async getActiveDrop() {
+    return structuredClone(SEED_DROP)
+  },
   async getLandingCmsContent() {
     return structuredClone(SEED_LANDING_PAGE_CMS)
   },

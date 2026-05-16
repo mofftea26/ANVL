@@ -1,4 +1,5 @@
 import type { CmsClient } from '@/app/config/clients'
+import { getActiveDrop } from '@/features/admin/drops/drops.service'
 import { getLandingCmsContent } from '@/features/admin/landing-cms/landingCms.service'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { HomePageContent } from '@/features/cms/types/cms.types'
@@ -33,6 +34,9 @@ function toLegacyHomepage(): HomePageContent {
  * TODO: replace with authenticated CMS/API client when the backend ships.
  */
 export const localStorageCmsClient: CmsClient = {
+  async getActiveDrop() {
+    return getActiveDrop()
+  },
   async getLandingCmsContent() {
     return getLandingCmsContent()
   },
