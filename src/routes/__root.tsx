@@ -9,53 +9,36 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { ReactNode } from "react";
 import { AppProviders } from "@/app/providers/AppProviders";
-import { ActiveDropThemeProvider } from "@/app/providers/ActiveDropThemeProvider";
 import { RouteAnalytics } from "@/app/providers/RouteAnalytics";
 import { runtimeClients } from "@/app/config/runtime";
-import {
-  ACTIVE_DROP_THEME_STYLE_ID,
-  serializeDropPaletteForRootStyle,
-} from "@/features/admin/drops/dropPaletteStyle";
 import { useLandingCms } from "@/features/admin/landing-cms/useLandingCms";
 import { SiteFooter } from "@/shared/components/layout/SiteFooter";
 import { StickyHeader } from "@/shared/components/layout/StickyHeader";
+import { serializeDropPaletteForRootStyle } from "@/features/admin/drops/dropPaletteStyle";
 import appCss from "@/styles.css?url";
 
 export const Route = createRootRoute({
-  loader: async ({ location }) => {
-    const landing = await runtimeClients.cms.getLandingCmsContent();
-    const isAdminRoute = location.pathname.startsWith("/admin");
-    const activeDrop = isAdminRoute
-      ? null
-      : await runtimeClients.cms.getActiveDrop();
+  loader: async () => {
+    const [landing, activeDrop] = await Promise.all([
+      runtimeClients.cms.getLandingCmsContent(),
+      runtimeClients.cms.getActiveDrop(),
+    ]);
     return { landing, activeDrop };
   },
-  head: ({ loaderData }) => {
-    const theme = loaderData?.activeDrop?.theme;
-    const styles = theme
-      ? [
-          {
-            id: ACTIVE_DROP_THEME_STYLE_ID,
-            children: serializeDropPaletteForRootStyle(theme),
-          },
-        ]
-      : [];
-    return {
-      meta: [
-        { charSet: "utf-8" },
-        { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { name: "theme-color", content: "#0B0B0C" },
-      ],
-      links: [
-        { rel: "stylesheet", href: appCss },
-        { rel: "icon", href: "/brand/mark.svg", type: "image/svg+xml" },
-        { rel: "shortcut icon", href: "/brand/mark.svg", type: "image/svg+xml" },
-        { rel: "apple-touch-icon", href: "/brand/mark.svg" },
-        { rel: "manifest", href: "/manifest.json" },
-      ],
-      styles,
-    };
-  },
+  head: () => ({
+    meta: [
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#0B0B0C" },
+    ],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/brand/mark.svg", type: "image/svg+xml" },
+      { rel: "shortcut icon", href: "/brand/mark.svg", type: "image/svg+xml" },
+      { rel: "apple-touch-icon", href: "/brand/mark.svg" },
+      { rel: "manifest", href: "/manifest.json" },
+    ],
+  }),
   shellComponent: RootDocument,
   component: RootLayout,
 });
@@ -82,23 +65,25 @@ function RootLayout() {
     select: (state) => state.location.pathname,
   });
   const isAdminRoute = pathname.startsWith("/admin");
+  const themeCss =
+    !isAdminRoute && activeDrop?.theme
+      ? serializeDropPaletteForRootStyle(activeDrop.theme)
+      : null;
 
   return (
     <>
       <RouteAnalytics />
-      {!isAdminRoute ? (
-        <ActiveDropThemeProvider initialDrop={activeDrop}>
-          <StickyHeader navigation={navigation} />
-          <main>
-            <Outlet />
-          </main>
-          <SiteFooter navigation={navigation} />
-        </ActiveDropThemeProvider>
-      ) : (
-        <main>
-          <Outlet />
-        </main>
-      )}
+      {themeCss ? (
+        <style
+          id="anvl-active-drop-theme-ssr"
+          dangerouslySetInnerHTML={{ __html: themeCss }}
+        />
+      ) : null}
+      {!isAdminRoute ? <StickyHeader navigation={navigation} /> : null}
+      <main>
+        <Outlet />
+      </main>
+      {!isAdminRoute ? <SiteFooter navigation={navigation} /> : null}
       <TanStackDevtools
         config={{ position: "bottom-right" }}
         plugins={[

@@ -75,10 +75,10 @@ export function DropReleaseSection({ releaseDateIso, className }: Props) {
           <time dateTime={releaseDateIso}>{staticLabel}</time>
         ) : released ? (
           <span>Live — campaign released</span>
-        ) : remaining !== null ? (
-          <span suppressHydrationWarning>{formatCountdown(remaining)}</span>
         ) : (
-          <time dateTime={releaseDateIso}>{staticLabel}</time>
+          <span suppressHydrationWarning>
+            {formatCountdown(remaining ?? 0)}
+          </span>
         )}
       </p>
       {now !== null && !released ? (

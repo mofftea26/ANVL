@@ -854,6 +854,10 @@ export function DropActsBuilderPanel({
     emit(list.map((a, i) => ({ ...a, sortOrder: i })))
   }
 
+  function updateAct(id: string, patch: Partial<LandingAct>) {
+    emit(acts.map((a) => (a.id === id ? { ...a, ...patch } : a)))
+  }
+
   function addAct() {
     const nature = 'hero'
     const preset = PRESETS[nature]?.[0] ?? 'default'
