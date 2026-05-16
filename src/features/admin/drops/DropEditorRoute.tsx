@@ -320,14 +320,12 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             description="Theme, acts, copy, and media render here as you type. Toggle viewport to QA each breakpoint."
             className="lg:sticky lg:top-24"
           >
-            <div className="max-h-[calc(100vh-220px)] overflow-y-auto overflow-x-hidden">
-              <DropEditorLivePreview
-                landing={previewLanding}
-                products={previewProducts}
-                palette={draft.theme}
-                emblemUrl={draft.visuals.emblemImageUrl}
-              />
-            </div>
+            <DropEditorLivePreview
+              landing={previewLanding}
+              products={previewProducts}
+              palette={draft.theme}
+              emblemUrl={draft.visuals.emblemImageUrl}
+            />
           </AdminCard>
         </section>
 

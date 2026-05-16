@@ -95,6 +95,13 @@ The CMS must show a live preview while editing:
 - Inline error hints render directly below each invalid field (color, slug, alt text, URLs, SEO length).
 - After a confirmed save, the primary “Save drop” control briefly shows a checkmark “Saved” state (`useSaveSuccessFlash`).
 
+### Responsive iframe preview
+- `DropEditorLivePreview` exposes four viewport pills: **Fit** (default, no iframe, fills the preview pane edge to edge), **Mobile 390**, **Tablet 820**, **Desktop 1280**.
+- Mobile / Tablet / Desktop render the preview inside a **portal-into-iframe** so every Tailwind `sm:` / `md:` / `lg:` variant evaluates against the *simulated* viewport width — the same way a real device would render the public route. The iframe scaffold copies the parent's stylesheets, fonts, and inline `<style>` blocks into its `<head>`, plus a `MutationObserver` mirrors HMR / active-drop theme updates from the parent in real time.
+- A `<base href="$origin/">` is injected so `/brand/...` and other public-path media in the preview resolve correctly. Anchor clicks inside the iframe are disabled via CSS so previews never trigger navigation.
+- A `PREVIEW_RESET_CSS` block neutralizes GSAP intro states (`[data-hero-*]`, `[data-drop-*]`, `[data-oath-*]`, `[data-pieces-*]`, `[data-mm-*]`, `[data-join-*]`) so the layout always renders in its final, post-animation state. Live animations remain available on the actual `/drop/$slug` route — the preview prioritizes accurate, jank-free layout QA over playing intro timelines that were tuned for the live scroll context.
+- Iframe width transitions use `cubic-bezier(0.16, 1, 0.3, 1)` over 380 ms so switching between viewports feels smooth; the iframe sits inside a subtle device-frame card (rounded panel + dot row + `/drop/preview` caption) on non-Fit modes.
+
 ### Color + media editing
 - Theme tab uses `ColorField` (full hex / RGB / opacity picker with native color wheel) for every palette token. Tokens that historically use rgba (e.g. `line`, `accentSoft`, `heroGlow`) keep alpha through round-trips.
 - Visuals tab uses `MediaPickerField` for every emblem/logo/wordmark/hero slot. Empty fields preview the bundled ANVL crest; each field exposes a "Leave empty (no fallback)" checkbox for editors who want zero rendering. Drag-and-drop and the OS file picker both embed files (≤ 2.5 MB image / 8 MB video) as data URLs in this no-backend phase; larger assets live under `/public` or a CDN URL.
