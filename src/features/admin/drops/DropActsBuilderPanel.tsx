@@ -7,7 +7,7 @@ import type { ActMedia, LandingAct } from '@/features/admin/drops/acts/landingAc
 import { mergeActAnimationConfig } from '@/features/admin/drops/acts/landingActs.types'
 import { safeParseActContent } from '@/features/admin/drops/acts/landingActs.zod'
 import { landingContentToSimpleActs } from '@/features/admin/drops/acts/landingActs.seed'
-import { ImageFileOrUrlField } from '@/shared/components/ui/ImageFileOrUrlField'
+import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 
 const NATURE_OPTIONS = [
   { value: 'hero', label: 'Hero' },
@@ -737,9 +737,10 @@ function ActMediaBlock({
       <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-heading)]">
         Act media
       </p>
-      <ImageFileOrUrlField
-        label="Image (path, URL, or upload)"
-        hint="Optional backdrop keyed to this act row."
+      <MediaPickerField
+        label="Act image (optional)"
+        kind="image"
+        hint="Backdrop keyed to this act row — defaults to the ANVL crest when empty."
         value={m.imageUrl ?? ''}
         onChange={(next) =>
           onChange({
@@ -749,22 +750,23 @@ function ActMediaBlock({
             alt: m.alt,
           })
         }
+        fallback="crest"
       />
-      <label className="block text-xs text-[var(--color-text-muted)]">
-        Video URL (optional)
-        <input
-          className={fieldClass}
-          value={m.videoUrl ?? ''}
-          onChange={(e) =>
-            onChange({
-              ...m,
-              imageUrl: m.imageUrl,
-              videoUrl: e.target.value || undefined,
-              alt: m.alt,
-            })
-          }
-        />
-      </label>
+      <MediaPickerField
+        label="Act video (optional)"
+        kind="video"
+        hint="Hosted .mp4/.webm URL, or upload a small file (≤ 8 MB) to embed."
+        value={m.videoUrl ?? ''}
+        onChange={(next) =>
+          onChange({
+            ...m,
+            imageUrl: m.imageUrl,
+            videoUrl: next || undefined,
+            alt: m.alt,
+          })
+        }
+        fallback="none"
+      />
       <label className="block text-xs text-[var(--color-text-muted)]">
         Alt text
         <input

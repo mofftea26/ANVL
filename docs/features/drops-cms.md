@@ -89,8 +89,16 @@ The CMS must show a live preview while editing:
 - Unknown act natures show an explicit CMS-only warning in preview (`cmsPreview`); unexpected render errors are caught by `DropEditorPreviewErrorBoundary` with a retry control.
 - Preview must not mutate published data until Save (draft state only until `saveDrop`).
 
+### Preview-centric editor layout
+- `DropEditorRoute` renders a **preview-first** two-column grid on `lg+`: the preview card sits in the wider column (≈1.45–1.7fr) and stays sticky; the editor side panel (`min(360px, 460px)`) hosts compact tabbed sections (Basics, Theme, Visuals, Acts, Products, SEO).
+- The tab strip lights up with a small red dot when a section has unresolved validation errors. Save attempts auto-jump to the first errored tab and toast the issue count.
+- Inline error hints render directly below each invalid field (color, slug, alt text, URLs, SEO length).
+- After a confirmed save, the primary “Save drop” control briefly shows a checkmark “Saved” state (`useSaveSuccessFlash`).
 
-- **Layout:** on small screens the preview column is ordered above the tabbed forms so the story stays visible; on large screens the editor and preview share a two-column grid with a scroll-clamped preview card. After a confirmed save, the primary “Save drop” control briefly shows a checkmark “Saved” state (`useSaveSuccessFlash`).
+### Color + media editing
+- Theme tab uses `ColorField` (full hex / RGB / opacity picker with native color wheel) for every palette token. Tokens that historically use rgba (e.g. `line`, `accentSoft`, `heroGlow`) keep alpha through round-trips.
+- Visuals tab uses `MediaPickerField` for every emblem/logo/wordmark/hero slot. Empty fields preview the bundled ANVL crest; each field exposes a "Leave empty (no fallback)" checkbox for editors who want zero rendering. Drag-and-drop and the OS file picker both embed files (≤ 2.5 MB image / 8 MB video) as data URLs in this no-backend phase; larger assets live under `/public` or a CDN URL.
+- The same components are reused by the Acts builder (act image + video), Website Layout (header/footer logos), the Theme & Brand route (crest fallbacks), and Product Editor swatches.
 ## Active drop behavior
 When a drop becomes active:
 - Landing page uses that drop's acts.

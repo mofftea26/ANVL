@@ -56,6 +56,25 @@ export function DropLandingActsEditor({
         onChange={onActsChange}
       />
 
+      <details className="group rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold text-[var(--color-heading)]">
+          <span>
+            Legacy section copy (Act I–VI)
+            <span className="ml-2 rounded-full border border-[var(--color-line)] px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
+              Advanced
+            </span>
+          </span>
+          <span className="text-[11px] text-[var(--color-text-muted)] transition group-open:rotate-180">
+            ▼
+          </span>
+        </summary>
+        <p className="px-5 pb-3 text-xs text-[var(--color-text-muted)]">
+          The Acts builder above is the canonical source. These fields stay for fine
+          edits to the legacy six-section copy until every act renderer reads from
+          the builder. Avoid editing here when an equivalent act exists.
+        </p>
+        <div className="space-y-6 border-t border-[var(--color-line)] px-5 py-5">
+
       <AdminCard title="Act I — Hero" description="Opening forge narration and CTAs.">
         <div className="grid gap-4 md:grid-cols-2">
           <label className="block text-xs text-[var(--color-text-muted)]">
@@ -824,6 +843,8 @@ export function DropLandingActsEditor({
           )}
         </div>
       </AdminCard>
+        </div>
+      </details>
     </div>
   )
 }

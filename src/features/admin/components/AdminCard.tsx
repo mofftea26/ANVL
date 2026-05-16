@@ -19,7 +19,7 @@ export function AdminCard({
   return (
     <section
       className={cn(
-        'rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-5 sm:p-6',
+        'rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-5 shadow-[0_1px_0_rgba(255,255,255,0.02)_inset,0_8px_28px_-22px_rgba(0,0,0,0.6)] transition-colors sm:p-6',
         className,
       )}
     >
