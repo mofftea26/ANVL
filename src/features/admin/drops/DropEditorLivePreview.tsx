@@ -6,9 +6,10 @@ import { PublicLandingActs } from '@/features/marketing/public-landing/PublicLan
 import type { Product } from '@/features/products/types/product.types'
 import { cn } from '@/shared/lib/cn'
 
-type ViewportId = 'mobile' | 'tablet' | 'desktop'
+type ViewportId = 'fit' | 'mobile' | 'tablet' | 'desktop'
 
 const VIEWPORT_OPTIONS: Array<{ id: ViewportId; label: string; widthClass: string }> = [
+  { id: 'fit', label: 'Fit', widthClass: 'w-full' },
   { id: 'mobile', label: 'Mobile', widthClass: 'w-full max-w-[390px]' },
   { id: 'tablet', label: 'Tablet', widthClass: 'w-full max-w-[820px]' },
   { id: 'desktop', label: 'Desktop', widthClass: 'w-full max-w-[1280px]' },
@@ -70,7 +71,7 @@ export function DropEditorLivePreview({
   palette,
   emblemUrl,
 }: DropEditorLivePreviewProps) {
-  const [viewport, setViewport] = useState<ViewportId>('mobile')
+  const [viewport, setViewport] = useState<ViewportId>('fit')
   const frameClass = useMemo(
     () => VIEWPORT_OPTIONS.find((o) => o.id === viewport)?.widthClass ?? 'w-full',
     [viewport],
