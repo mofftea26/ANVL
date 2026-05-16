@@ -2,6 +2,7 @@ import type { LandingActSlot } from '../drops.actSequence'
 import { normalizeLandingActSequence } from '../drops.actSequence'
 import {
   mergeActAnimationConfig,
+  type LandingAct,
   type PublicLandingAct,
 } from './landingActs.types'
 
@@ -68,6 +69,31 @@ function slotKeyFromNature(nature: string): string {
     default:
       return 'custom'
   }
+}
+
+/**
+ * Drop Editor live preview: derive `landingActs` from `Drop.acts` so builder
+ * order and enable flags match the preview immediately.
+ */
+export function publicLandingActsFromDraftActs(
+  acts: LandingAct[] | undefined | null,
+): PublicLandingAct[] | null {
+  if (!acts || acts.length === 0) return null
+  const sorted = [...acts].sort((a, b) => a.sortOrder - b.sortOrder)
+  const out: PublicLandingAct[] = []
+  let order = 0
+  for (const act of sorted) {
+    out.push({
+      id: act.id,
+      nature: act.nature,
+      preset: act.preset,
+      sortOrder: order++,
+      animation: mergeActAnimationConfig(act.animation),
+      slotKey: slotKeyFromNature(act.nature),
+      enabled: act.isEnabled !== false,
+    })
+  }
+  return out.length > 0 ? out : null
 }
 
 export function publicLandingActsFromUnknownList(

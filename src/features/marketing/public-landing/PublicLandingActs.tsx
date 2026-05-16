@@ -48,17 +48,37 @@ function SectionFallback({ label }: { label: string }) {
   )
 }
 
-function UnknownActNotice({ nature }: { nature: string }) {
+function UnknownActNotice({
+  nature,
+  cmsPreview,
+}: {
+  nature: string
+  cmsPreview?: boolean
+}) {
   return (
     <section
       className="border-b border-[var(--color-line)] bg-[var(--color-bg)] py-10"
       aria-label={`Unsupported act: ${nature}`}
     >
       <Container>
-        <p className="anvl-micro text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
-          Act type {nature} is not available on this build. The section is
-          skipped.
-        </p>
+        {cmsPreview ? (
+          <div
+            role="alert"
+            className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4 text-amber-50"
+          >
+            <p className="anvl-micro text-[10px] font-semibold uppercase tracking-[0.2em]">
+              CMS preview — unsupported act
+            </p>
+            <p className="mt-2 text-sm text-amber-100/90">
+              Type &quot;{nature}&quot; is not wired to a public section yet. The live site skips
+              this row; fix the nature or disable the act before publishing.
+            </p>
+          </div>
+        ) : (
+          <p className="anvl-micro text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
+            Act type {nature} is not available on this build. The section is skipped.
+          </p>
+        )}
       </Container>
     </section>
   )
@@ -76,12 +96,15 @@ export type PublicLandingActsProps = {
   landing: LandingPageCmsContent
   products: Product[]
   emblemSrc?: string
+  /** When true, unknown act types show an explicit admin warning instead of the public notice. */
+  cmsPreview?: boolean
 }
 
 export function PublicLandingActs({
   landing,
   products,
   emblemSrc,
+  cmsPreview,
 }: PublicLandingActsProps) {
   const acts =
     landing.landingActs.length > 0
@@ -175,7 +198,9 @@ export function PublicLandingActs({
               />,
             )
           default:
-            return <UnknownActNotice key={act.id} nature={act.nature} />
+            return (
+              <UnknownActNotice key={act.id} nature={act.nature} cmsPreview={cmsPreview} />
+            )
         }
       })}
     </>

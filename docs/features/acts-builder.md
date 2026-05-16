@@ -1,4 +1,4 @@
-# Feature — Landing Page Acts Builder
+﻿# Feature â€” Landing Page Acts Builder
 
 ## Purpose
 The landing page is not hard-coded as six sections anymore. It is a flexible sequence of acts controlled by the active drop.
@@ -84,11 +84,10 @@ type LandingAct = {
    - Presets: centered, footer-overlap, product CTA.
 
 ## Implementation (Drop Editor)
-- UI: `DropActsBuilderPanel` (`src/features/admin/drops/DropActsBuilderPanel.tsx`) embedded in `DropLandingActsEditor`. Each row: reorder, enable/disable, nature, preset, shared copy (eyebrow/title/subtitle/body), **act-level media** (image upload or URL, optional video URL, alt), **animation** (enabled, desktop-only, motion type key, intensity), nature-specific **content** sub-forms, and optional **product SKUs** for `productShowcase` (catalog checkboxes; empty means “use all drop products”).
+- UI: `DropActsBuilderPanel` (`src/features/admin/drops/DropActsBuilderPanel.tsx`) embedded in `DropLandingActsEditor`. Each row: reorder, enable/disable, nature, preset, shared copy (eyebrow/title/subtitle/body), **act-level media** (image upload or URL, optional video URL, alt), **animation** (enabled, desktop-only, motion type key, intensity), nature-specific **content** sub-forms, and optional **product SKUs** for `productShowcase` (catalog checkboxes; empty means "use all drop products").
 - Bootstrap: empty `acts` arrays are seeded from current `DropLandingContent` via `landingContentToSimpleActs` (`acts/landingActs.seed.ts`), including default `animation` rows.
 - Validation: per-nature `content` objects are narrowed with `safeParseActContent` in `acts/landingActs.zod.ts` (Zod); the panel resets `content` when nature changes.
-- Public pipeline: `acts/landingActs.normalize.ts` maps slot toggles to `PublicLandingAct` rows consumed by `PublicLandingActs` on `/`. Live marketing sections still read legacy `LandingPageCmsContent` section objects until an overlay merges act copy into compose.
-
+- Public pipeline: `acts/landingActs.normalize.ts` maps slot toggles to `PublicLandingAct` rows consumed by `PublicLandingActs` on `/`. For the Drop Editor preview, `publicLandingActsFromDraftActs` maps `Drop.acts` (sorted by `sortOrder`, respecting `isEnabled`) when `composeLandingPageFromDrop` is called with `useDraftActsPipeline: true`. Live marketing sections still read legacy `LandingPageCmsContent` section objects until an overlay merges act copy into compose.
 ## Animation config
 ```ts
 type ActAnimationConfig = {
@@ -107,6 +106,6 @@ type ActAnimationConfig = {
 ## Rendering rules
 - Every act nature maps to a renderer component.
 - Every nature has a schema for its `content` object.
-- Unknown/invalid acts must fail gracefully with a hidden fallback in production and visible warning in CMS preview.
+- Unknown/invalid acts must fail gracefully with a hidden fallback in production and visible warning in CMS preview (`PublicLandingActs` with `cmsPreview`, plus `DropEditorPreviewErrorBoundary` in `DropEditorLivePreview` for hard render failures).
 - Heavy act renderers should be lazy-loaded.
-- Public homepage: composed `landingActs` follow the active drop's `landingActSequence`; the `/` route uses `PublicLandingActs` to map `nature` to existing marketing sections (lazy-loaded after Act I) and skips unknown types with a minimal notice.
+- Public homepage: composed `landingActs` follow the active drop's `landingActSequence`; the `/` route uses `PublicLandingActs` to map `nature` to existing marketing sections (lazy-loaded after Act I) and skips unknown types with a minimal notice. The Drop Editor live preview prefers `Drop.acts` when present so builder state matches immediately.

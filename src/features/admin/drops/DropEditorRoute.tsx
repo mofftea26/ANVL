@@ -1,7 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { DropPreviewThemeScope } from '@/app/providers/ActiveDropThemeBridge'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
@@ -23,7 +22,7 @@ import { getAdminProducts } from '@/features/admin/products/products.service'
 import { useAdminProductsList } from '@/features/admin/products/useAdminProducts'
 import { composeLandingPageFromDrop } from '@/features/admin/drops/drops.compose'
 import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
-import { PublicLandingActs } from '@/features/marketing/public-landing/PublicLandingActs'
+import { DropEditorLivePreview } from '@/features/admin/drops/DropEditorLivePreview'
 import { Button } from '@/shared/components/ui/Button'
 import { HexColorPicker } from '@/shared/components/ui/HexColorPicker'
 import { ImageFileOrUrlField } from '@/shared/components/ui/ImageFileOrUrlField'
@@ -79,6 +78,38 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
     setDraft(saved)
   }, [saved])
 
+  const previewDrop = saved && draft ? draft : null
+  const previewLabel = previewDrop ? `${previewDrop.dropNumber}: ${previewDrop.name}` : ''
+
+  const previewProducts = useMemo(() => {
+    if (!previewDrop) return []
+    const map = new Map(getAdminProducts().map((p) => [p.id, p]))
+    return previewDrop.productIds
+      .map((id) => map.get(id))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p))
+      .filter(adminProductIsPubliclyVisible)
+      .map((p) => adminProductToLegacy(p, previewLabel))
+  }, [previewDrop, previewLabel])
+
+  const previewLanding = useMemo(() => {
+    if (!previewDrop) return null
+    return composeLandingPageFromDrop(previewDrop, getWebsiteLayoutContent(), {
+      useDraftActsPipeline: true,
+    })
+  }, [previewDrop])
+
+  const previewPanel = useMemo(() => {
+    if (!previewDrop || !previewLanding) return null
+    return (
+      <DropEditorLivePreview
+        landing={previewLanding}
+        products={previewProducts}
+        palette={previewDrop.theme}
+        emblemUrl={previewDrop.visuals.emblemImageUrl}
+      />
+    )
+  }, [previewDrop, previewLanding, previewProducts])
+
   if (!saved || !draft) {
     return (
       <AdminLayout title="Drop not found" description="This drop does not exist in storage.">
@@ -96,16 +127,6 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
       </AdminLayout>
     )
   }
-
-  const previewLabel = `${draft.dropNumber}: ${draft.name}`
-  const previewProducts = useMemo(() => {
-    const map = new Map(getAdminProducts().map((p) => [p.id, p]))
-    return draft.productIds
-      .map((id) => map.get(id))
-      .filter((p): p is NonNullable<typeof p> => Boolean(p))
-      .filter(adminProductIsPubliclyVisible)
-      .map((p) => adminProductToLegacy(p, previewLabel))
-  }, [draft.productIds, previewLabel])
 
   const tabDefs: Array<{ id: TabId; label: string }> = [
     { id: 'basics', label: 'Basics' },
@@ -153,23 +174,6 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         : prev,
     )
   }
-
-  const previewLanding = useMemo(
-    () => composeLandingPageFromDrop(draft, getWebsiteLayoutContent()),
-    [draft],
-  )
-
-  const previewPanel = (
-    <DropPreviewThemeScope palette={draft.theme} emblemUrl={draft.visuals.emblemImageUrl}>
-      <div className="pointer-events-none select-none space-y-10 p-4 opacity-95 [&_a]:pointer-events-none">
-        <PublicLandingActs
-          landing={previewLanding}
-          products={previewProducts}
-          emblemSrc={draft.visuals.emblemImageUrl}
-        />
-      </div>
-    </DropPreviewThemeScope>
-  )
 
   return (
     <AdminLayout

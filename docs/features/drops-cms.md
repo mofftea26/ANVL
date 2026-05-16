@@ -78,11 +78,12 @@ The Drops section should be simple:
 
 ## Live preview
 The CMS must show a live preview while editing:
-- Theme changes update instantly.
-- Act order changes update instantly.
-- Media selection updates instantly.
-- Desktop/mobile preview toggle.
-- Preview must not mutate published data until Save.
+- Theme changes update instantly via `DropPreviewThemeScope` (draft palette as CSS variables inside the preview frame).
+- Act order and enable/disable update instantly when `Drop.acts` is non-empty: preview compose uses `useDraftActsPipeline` and `publicLandingActsFromDraftActs`; otherwise the preview falls back to `landingActSequence` like the public homepage.
+- Section copy still follows composed `LandingPageCmsContent` (same `PublicLandingActs` renderer as `/`).
+- Desktop / tablet / mobile viewport toggles on `DropEditorLivePreview`.
+- Unknown act natures show an explicit CMS-only warning in preview (`cmsPreview`); unexpected render errors are caught by `DropEditorPreviewErrorBoundary` with a retry control.
+- Preview must not mutate published data until Save (draft state only until `saveDrop`).
 
 ## Active drop behavior
 When a drop becomes active:

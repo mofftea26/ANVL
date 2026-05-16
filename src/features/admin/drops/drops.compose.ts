@@ -4,7 +4,10 @@ import type {
 } from '@/features/admin/landing-cms/landingCms.types'
 import { LANDING_CMS_VERSION } from '@/features/admin/landing-cms/landingCms.defaults'
 import type { Drop } from './drops.types'
-import { publicLandingActsFromSequence } from '@/features/admin/drops/acts/landingActs.normalize'
+import {
+  publicLandingActsFromDraftActs,
+  publicLandingActsFromSequence,
+} from '@/features/admin/drops/acts/landingActs.normalize'
 import type { WebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.types'
 
 function patchDropHref(href: string, slug: string): string {
@@ -28,9 +31,18 @@ function patchDropNavLinks<T extends { href: string; label: string }>(
   )
 }
 
+export type ComposeLandingPageFromDropOptions = {
+  /**
+   * Drop Editor preview: prefer `drop.acts` for `landingActs` when non-empty,
+   * else fall back to `landingActSequence` (public homepage behavior).
+   */
+  useDraftActsPipeline?: boolean
+}
+
 export function composeLandingPageFromDrop(
   drop: Drop,
   layout: WebsiteLayoutContent,
+  options?: ComposeLandingPageFromDropOptions,
 ): LandingPageCmsContent {
   const lc = drop.landingContent
 
@@ -106,6 +118,12 @@ export function composeLandingPageFromDrop(
     },
     materials: lc.materials,
     waitlist: lc.waitlist,
-    landingActs: publicLandingActsFromSequence(drop.landingActSequence),
+    landingActs: (() => {
+      if (options?.useDraftActsPipeline) {
+        const fromActs = publicLandingActsFromDraftActs(drop.acts)
+        if (fromActs && fromActs.length > 0) return fromActs
+      }
+      return publicLandingActsFromSequence(drop.landingActSequence)
+    })(),
   }
 }
