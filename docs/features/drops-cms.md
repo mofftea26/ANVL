@@ -91,3 +91,12 @@ When a drop becomes active:
 - Site theme variables update to the active drop palette.
 - Drop page uses that drop's title, subtitle, visuals, description, and product cards.
 - Products assigned to the drop become visible in the global shop if their product status allows it.
+
+
+## Storefront runtime clients
+Public routes and loaders should depend on `runtimeClients` from `src/app/config/runtime.ts`, not ad hoc `localStorage` reads.
+
+- **Server (`isServer: true`)**: `createRuntimeClients` wires **seed** CMS/commerce/SEO/site-settings adapters. They use composed defaults (active oath drop + default layout) so SSR is deterministic and never touches `window.localStorage`.
+- **Browser (`isServer: false`)**: the same factory wires **localStorage-backed** adapters that delegate to admin services (`getLandingCmsContent`, drops storage, products storage, layout storage) so CMS edits and the storefront stay in sync.
+
+TODO hooks in adapter modules mark where Medusa or a headless CMS client will replace the implementation later.

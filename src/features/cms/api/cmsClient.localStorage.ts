@@ -1,11 +1,7 @@
 import type { CmsClient } from '@/app/config/clients'
 import { getLandingCmsContent } from '@/features/admin/landing-cms/landingCms.service'
-import {
-  getActiveDrop,
-  getDropBySlug,
-} from '@/features/admin/drops/drops.service'
-import { cmsMockData } from '../data/cms.mock'
-import type { HomePageContent } from '../types/cms.types'
+import { cmsMockData } from '@/features/cms/data/cms.mock'
+import type { HomePageContent } from '@/features/cms/types/cms.types'
 
 function toLegacyHomepage(): HomePageContent {
   const landing = getLandingCmsContent()
@@ -31,7 +27,12 @@ function toLegacyHomepage(): HomePageContent {
   }
 }
 
-export const mockCmsClient: CmsClient = {
+/**
+ * Browser CMS adapter — reads persisted admin/editor state from localStorage-backed services.
+ * Do not import this module from SSR entrypoints; use `seedCmsClient` via `createRuntimeClients`.
+ * TODO: replace with authenticated CMS/API client when the backend ships.
+ */
+export const localStorageCmsClient: CmsClient = {
   async getLandingCmsContent() {
     return getLandingCmsContent()
   },
@@ -52,29 +53,5 @@ export const mockCmsClient: CmsClient = {
   },
   async getLookbook() {
     return cmsMockData.lookbook
-  },
-  async getSeoByPath(path) {
-    if (path === '/') {
-      const landing = getLandingCmsContent()
-      return {
-        title: landing.seo.title,
-        description: landing.seo.description,
-        canonicalPath: landing.seo.path,
-        ogImage: landing.seo.ogImage,
-      }
-    }
-    if (path.startsWith('/drop/')) {
-      const slug = path.replace('/drop/', '').split('/')[0] ?? ''
-      const drop = getDropBySlug(slug)
-      const active = getActiveDrop()
-      if (!drop || !active || drop.id !== active.id) return null
-      return {
-        title: drop.seo.title,
-        description: drop.seo.description,
-        canonicalPath: path,
-        ogImage: drop.seo.ogImage,
-      }
-    }
-    return cmsMockData.seoByPath[path] ?? null
   },
 }

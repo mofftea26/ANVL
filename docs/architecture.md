@@ -12,10 +12,12 @@ The website should be split into three layers:
 3. Data/runtime layer
    - `runtimeClients.cms`
    - `runtimeClients.commerce`
-   - `runtimeClients.auth`
-   - `runtimeClients.checkout`
+   - `runtimeClients.seo`
+   - `runtimeClients.siteSettings`
+   - `runtimeClients.analytics`
+   - `runtimeClients.payment`
 
-Current no-backend phase can use local/mock adapters. Future backend phase swaps adapters with API/Medusa clients without rewriting UI.
+Current no-backend phase uses `createRuntimeClients({ isServer })`: **seed** adapters on the server (SSR-safe snapshots) and **localStorage-backed** adapters in the browser so admin edits match the storefront. Future backend phase swaps adapters with API/Medusa clients without rewriting UI.
 
 ## Recommended folder structure
 ```txt
@@ -87,18 +89,21 @@ src/
 - LocalStorage CMS adapter must not run during SSR. It must provide safe fallback seed data on the server and hydrate on the client.
 
 ## API interface first
-Create interfaces before concrete adapters:
+Contracts live in `src/app/config/clients.ts` (`CmsClient`, `CommerceClient`, `SeoClient`, `SiteSettingsClient`, …). Wiring lives in `src/app/config/runtime.ts` via `createRuntimeClients({ isServer })` so SSR never executes `localStorage` adapters.
+
+Illustrative contracts:
 ```ts
 interface CmsClient {
-  getActiveDrop(): Promise<Drop>;
-  listDrops(): Promise<DropSummary[]>;
-  getDropBySlug(slug: string): Promise<Drop>;
-  saveDrop(input: SaveDropInput): Promise<Drop>;
+  getLandingCmsContent(): Promise<LandingPageCmsContent>;
 }
 
 interface CommerceClient {
-  listProducts(params: ProductListParams): Promise<ProductListResult>;
-  getProductBySlug(slug: string): Promise<Product>;
+  getProducts(): Promise<Product[]>;
+  getProductBySlug(slug: string): Promise<Product | null>;
+}
+
+interface SeoClient {
+  getSeoByPath(path: string): Promise<SeoContent | null>;
 }
 ```
 

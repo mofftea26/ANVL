@@ -94,12 +94,14 @@ src/
 Interface contracts are centralized in:
 - `src/app/config/clients.ts`
 
-Runtime mock implementations are wired in:
+Runtime wiring uses `createRuntimeClients({ isServer })` in:
 - `src/app/config/runtime.ts`
 
-Current mock clients:
-- `mockCommerceClient` -> `src/features/products/api/commerceClient.mock.ts`
-- `mockCmsClient` -> `src/features/cms/api/cmsClient.mock.ts`
+Storefront data adapters (CMS, commerce, SEO, site settings):
+- **Server**: `cmsClient.seed.ts`, `commerceClient.seed.ts`, `seoClient.seed.ts`, `siteSettingsClient.seed.ts` — deterministic, no `localStorage`.
+- **Browser**: `cmsClient.localStorage.ts`, `commerceClient.localStorage.ts`, `seoClient.localStorage.ts`, `siteSettingsClient.localStorage.ts` — persisted admin/editor state.
+
+Still mocked (until productized):
 - `mockAnalyticsClient` -> `src/features/analytics/api/analyticsClient.mock.ts`
 - `mockPaymentClient` -> `src/features/checkout/api/paymentGateway.mock.ts`
 
@@ -190,18 +192,24 @@ CMS-like content shape and mock data:
 - `src/features/cms/types/cms.types.ts`
 - `src/features/cms/data/cms.mock.ts`
 
-Supported CMS methods:
+Supported CMS methods (via `CmsClient`):
+- `getLandingCmsContent()`
 - `getHomepageContent()`
 - `getAnnouncementBar()`
 - `getNavigation()`
 - `getCampaigns()`
 - `getLookbook()`
-- `getSeoByPath()`
+
+Per-path SEO (via `SeoClient`):
+- `getSeoByPath(path)`
+
+Site chrome (via `SiteSettingsClient`):
+- `getWebsiteLayout()`
 
 ## Medusa / Backend Integration Plan
 
-1. Replace `mockCommerceClient` with Medusa-powered `CommerceClient`.
-2. Replace `mockCmsClient` with Medusa custom module or Payload-backed `CmsClient`.
+1. Replace seed/local `CommerceClient` implementations with Medusa-powered adapters.
+2. Replace seed/local `CmsClient` / `SeoClient` / `SiteSettingsClient` with Medusa custom module, Payload, or dedicated ANVL CMS APIs.
 3. Replace `mockPaymentClient` adapters with real provider SDK/server endpoints.
 4. Keep route/component code unchanged by preserving interface contracts.
 5. Move price/inventory/order logic server-side and secure with server functions/APIs.

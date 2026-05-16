@@ -1,6 +1,7 @@
 import type { Product } from '@/features/products/types/product.types'
 import type { HomePageContent, SeoContent } from '@/features/cms/types/cms.types'
 import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landingCms.types'
+import type { WebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.types'
 import type { CartLine } from '@/features/cart/types/cart.types'
 import type {
   CheckoutInput,
@@ -23,7 +24,16 @@ export interface CmsClient {
   getNavigation(): Promise<Array<{ label: string; href: string }>>
   getCampaigns(): Promise<Array<{ id: string; title: string; description: string }>>
   getLookbook(): Promise<Array<{ id: string; alt: string; src: string }>>
+}
+
+/** Per-path SEO cards for public routes — replace with CMS/API-backed documents later. */
+export interface SeoClient {
   getSeoByPath(path: string): Promise<SeoContent | null>
+}
+
+/** Site chrome (header/footer layout) separate from page-level landing CMS. */
+export interface SiteSettingsClient {
+  getWebsiteLayout(): Promise<WebsiteLayoutContent>
 }
 
 export interface AnalyticsClient {
@@ -37,4 +47,13 @@ export interface AnalyticsClient {
 
 export interface PaymentClient {
   placeOrder(input: CheckoutInput, lines: CartLine[]): Promise<CheckoutOrderResult>
+}
+
+export type RuntimeClients = {
+  cms: CmsClient
+  commerce: CommerceClient
+  seo: SeoClient
+  siteSettings: SiteSettingsClient
+  analytics: AnalyticsClient
+  payment: PaymentClient
 }
