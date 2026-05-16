@@ -8,6 +8,9 @@
 - Admin `/admin/products` renders from `src/routes/admin/products/index.tsx`; list thumbnails use `loading="lazy"` and `decoding="async"`.
 - **Catalog empty / filter miss:** the catalog shows a â€œNo products yetâ€ card when storage is empty, and a â€œNothing matchesâ€ card with one-tap filter reset when the active filters hide every SKU.- Public storefront `Product` (`src/features/products/types/product.types.ts`) includes optional `shop?: ProductShopMeta` (storefront status, drop slug, pricing, availability matrix, media URLs) populated in `adminProductToLegacy` for filters, cards, PDP, and JSON-LD.
 
+- `/shop` uses `useDeferredValue` on the filtered listing so rapid filter changes stay responsive while the loader-derived list catches up.
+- Admin `/admin/products` is loaded with `lazyRouteComponent` (`-adminProductsIndex.tsx`) so the catalog filters, grouping, and thumbnails are not bundled with the lightweight route shell; list thumbnails use `loading="lazy"` and `decoding="async"`.
+- Public storefront `Product` (`src/features/products/types/product.types.ts`) includes optional `shop?: ProductShopMeta` (storefront status, drop slug, pricing, availability matrix, media URLs) populated in `adminProductToLegacy` for filters, cards, PDP, and JSON-LD.
 ## Product model
 Products must support both drop releases and individual releases.
 
