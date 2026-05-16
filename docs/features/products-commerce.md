@@ -60,6 +60,9 @@ Computed behavior:
 - Size selector should update based on selected color.
 - Color selector should show unavailable state when all sizes are unavailable.
 
+## Runtime contracts
+The commerce document `Product` model is implemented as **`CatalogProduct`** (plus `ProductVariant`, `ProductOption`, and related enums) in `src/features/products/schemas/commerce.schema.ts`, with re-exports in `src/features/products/types/commerce.types.ts`. This is separate from the storefront `Product` interface used by the shop UI today. Validated placeholders for Oversized Tee, Stringer, and Compression Tee ship in `src/content/seed/drop-01-the-oath.seed.ts` (`seedDrop01CatalogProducts`).
+
 ## CMS Product section
 Product list must include:
 - Search bar.
