@@ -1,3 +1,4 @@
+import { subscribeSiteSeoChange } from '@/features/cms/siteSeo.local'
 import { useSyncExternalStore } from 'react'
 import { getLandingCmsContent } from './landingCms.service'
 import { subscribeDropsChange } from '@/features/admin/drops/drops.storage'
@@ -29,6 +30,7 @@ function subscribe(listener: () => void): () => void {
   const unsubs = [
     subscribeDropsChange(wrapped),
     subscribeWebsiteLayoutChange(wrapped),
+    subscribeSiteSeoChange(wrapped),
   ]
   return () => unsubs.forEach((u) => u())
 }

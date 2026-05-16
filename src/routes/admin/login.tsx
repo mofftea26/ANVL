@@ -99,7 +99,11 @@ function AdminLoginPage() {
           </form>
 
           <p className="mt-5 rounded-lg border border-dashed border-[var(--color-line)] px-3 py-2 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
-            Temporary static admin login until backend authentication is added.
+            Temporary static admin login — not production-ready. Set{' '}
+            <span className="font-mono text-[10px]">VITE_ANVL_ADMIN_PASSWORD</span> in a
+            local <span className="font-mono text-[10px]">.env</span> (see{' '}
+            <span className="font-mono text-[10px]">.env.example</span>). Replace with
+            server sessions, rate-limited auth, HttpOnly cookies, and CSP before launch.
           </p>
         </div>
       </Container>

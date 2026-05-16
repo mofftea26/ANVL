@@ -1,4 +1,9 @@
-import type { Product } from '@/features/products/types/product.types'
+import { readDropsArray } from '@/features/admin/drops/drops.service'
+import type {
+  Product,
+  ProductShopMeta,
+  StorefrontProductStatus,
+} from '@/features/products/types/product.types'
 import type { AdminProduct, ProductImage, ProductSize } from './products.types'
 import { effectiveSellableUnits } from './products.matrix'
 
@@ -27,6 +32,80 @@ export function effectivePrice(p: AdminProduct): number {
     return Math.min(p.price, p.compareAtPrice)
   }
   return p.price
+}
+
+function totalSellableUnits(p: AdminProduct): number {
+  return p.availability.reduce((sum, row) => sum + effectiveSellableUnits(row), 0)
+}
+
+function computeStorefrontStatus(p: AdminProduct): StorefrontProductStatus {
+  if (p.status === 'comingSoon') return 'comingSoon'
+  if (p.status === 'outOfStock') return 'outOfStock'
+  if (totalSellableUnits(p) <= 0) return 'outOfStock'
+  const limited =
+    p.tags.some((t) => t.toLowerCase().includes('limited')) ||
+    (p.saleLabel?.toLowerCase().includes('limited') ?? false)
+  if (limited) return 'limitedEdition'
+  if (
+    p.status === 'sale' ||
+    (p.isOnSale &&
+      typeof p.compareAtPrice === 'number' &&
+      p.compareAtPrice > effectivePrice(p))
+  ) {
+    return 'sale'
+  }
+  return 'available'
+}
+
+function buildProductShopMeta(p: AdminProduct): ProductShopMeta {
+  const drops = readDropsArray()
+  const sortedColors = [...p.colors].sort((a, b) => a.name.localeCompare(b.name))
+  const sizes = sortSizes(p.sizes)
+
+  const primaryDropId = p.dropIds[0] ?? null
+  const primaryDrop = primaryDropId
+    ? drops.find((d) => d.id === primaryDropId) ?? null
+    : null
+
+  const availabilityByColorAndSize: Record<string, Record<string, number>> = {}
+  for (const c of sortedColors) {
+    availabilityByColorAndSize[c.name] = {}
+    for (const s of sizes) {
+      const row = p.availability.find((a) => a.colorId === c.id && a.sizeId === s.id)
+      const units = row ? effectiveSellableUnits(row) : 0
+      availabilityByColorAndSize[c.name]![s.label] = units
+    }
+  }
+
+  const imagesByColorName: Record<string, Array<{ src: string; alt: string }>> = {}
+  for (const c of sortedColors) {
+    const imgs = sortImages(c.images)
+    imagesByColorName[c.name] =
+      imgs.length > 0
+        ? imgs.map((img) => ({ src: img.url, alt: img.alt }))
+        : [{ src: '/brand/placeholder-product.svg', alt: p.name }]
+  }
+
+  const compareAt =
+    typeof p.compareAtPrice === 'number' && p.compareAtPrice > effectivePrice(p)
+      ? p.compareAtPrice
+      : null
+
+  return {
+    storefrontStatus: computeStorefrontStatus(p),
+    sourceType: p.sourceType,
+    dropId: primaryDropId,
+    dropSlug: primaryDrop?.slug ?? null,
+    compareAtPrice: compareAt,
+    listPrice: p.price,
+    currency: p.currency || 'USD',
+    saleLabel: p.saleLabel,
+    videoUrl: p.videoUrl,
+    model3dUrl: p.model3dUrl,
+    category: p.category,
+    availabilityByColorAndSize,
+    imagesByColorName,
+  }
 }
 
 export function adminProductToLegacy(
@@ -71,6 +150,7 @@ export function adminProductToLegacy(
     sizes: sizes.length > 0 ? sizes : ['M'],
     price: effectivePrice(p),
     images: legacyImages,
+    shop: buildProductShopMeta(p),
   }
 }
 

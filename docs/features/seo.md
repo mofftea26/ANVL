@@ -1,4 +1,4 @@
-# Feature — SEO CMS
+﻿# Feature â€” SEO CMS
 
 ## Goal
 Allow the admin to control SEO clearly from the CMS without touching code.
@@ -27,7 +27,7 @@ type SeoDocument = {
 ## CMS SEO sections
 1. Global SEO defaults.
 2. Landing page SEO.
-3. Active drop page SEO — `buildSeoMeta` uses `DropSeo.title` / `description` for the HTML title and meta description; optional `ogTitle` and `ogDescription` override Open Graph and Twitter title/description while the HTML `<title>` and `description` meta stay on the primary fields.
+3. Active drop page SEO â€” `buildSeoMeta` uses `DropSeo.title` / `description` for the HTML title and meta description; optional `ogTitle` and `ogDescription` override Open Graph and Twitter title/description while the HTML `<title>` and `description` meta stay on the primary fields.
 4. Shop SEO.
 5. Product SEO.
 6. About and Size Guide SEO.
@@ -53,7 +53,9 @@ type SeoDocument = {
 ## Runtime integration
 `SeoClient` is defined in `src/app/config/clients.ts` with two implementations:
 
-- `seedSeoClient` — SSR-safe; resolves `/`, `/drop/…` from the oath seed snapshot and other paths from `cmsMockData.seoByPath` until a real SEO CMS exists.
-- `localStorageSeoClient` — browser-only resolution via the same rules against persisted drops + landing CMS.
+- `seedSeoClient` â€” SSR-safe; resolves `/`, `/drop/â€¦` from the oath seed snapshot and other paths from `cmsMockData.seoByPath` until a real SEO CMS exists.
+- `localStorageSeoClient` â€” browser-only resolution via the same rules against persisted drops + landing CMS.
 
 `createRuntimeClients({ isServer })` selects the correct implementation. The shop index route (`src/routes/shop/index.tsx`) demonstrates loading `/shop` SEO from `runtimeClients.seo.getSeoByPath('/shop')` in the route loader and passing it into `buildSeoMeta()`.
+
+- `JsonLd` serializes structured data with `<` replaced by `\u003c` inside the JSON string so untrusted CMS copy cannot break out of the script tag.

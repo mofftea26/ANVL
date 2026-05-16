@@ -4,7 +4,7 @@ import {
   Save,
   Trash2,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
@@ -80,6 +80,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
     'basics' | 'variants' | 'drops' | 'seo'
   >('basics')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const deleteModalTitleId = useId()
 
   useEffect(() => {
     if (!remote) {
@@ -102,9 +103,19 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
       : 'Individual release (not on a drop roster)'
   }, [draft])
 
-  const primaryPreviewSrc =
-    draft?.colors[0]?.images.find((i) => i.isPrimary)?.url ??
-    draft?.colors[0]?.images[0]?.url
+  const primaryPreview = useMemo(() => {
+    if (!draft) return null
+    const color0 = draft.colors[0]
+    if (!color0) return null
+    const primary = color0.images.find((i) => i.isPrimary) ?? color0.images[0]
+    const url = primary?.url?.trim()
+    if (!url) return null
+    const altFromImage = primary?.alt?.trim()
+    const colorName = color0.name?.trim() || 'Primary color'
+    const productName = draft.name?.trim() || 'Product'
+    const alt = altFromImage || `${productName} preview — ${colorName}`
+    return { src: url, alt }
+  }, [draft])
 
   const saveProduct = () => {
     if (!draft) return
@@ -431,10 +442,10 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
 
           <AdminCard title="Preview tile" description="Primary hero frame.">
             <div className="aspect-square overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)]">
-              {primaryPreviewSrc ? (
+              {primaryPreview ? (
                 <img
-                  src={primaryPreviewSrc}
-                  alt=""
+                  src={primaryPreview.src}
+                  alt={primaryPreview.alt}
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -925,9 +936,15 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
         </AdminCard>
       ) : null}
 
-      <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)}>
+      <Modal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        aria-labelledby={deleteModalTitleId}
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Delete product?</h3>
+          <h3 id={deleteModalTitleId} className="anvl-heading text-xl font-normal">
+            Delete product?
+          </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Removes this SKU everywhere and strips it from every drop roster.
           </p>

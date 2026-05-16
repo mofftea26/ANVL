@@ -6,13 +6,18 @@ export const ADMIN_AUTH_STORAGE_KEYS = ['ANVL_ADMIN_AUTH', 'anvl.adminAuth.v1'] 
 export const ADMIN_AUTH_STORAGE_KEY = ADMIN_AUTH_STORAGE_KEYS[0]
 
 /**
- * Static admin credentials. This is a development/demo placeholder
- * only — replace with real authentication once a backend exists.
- *
- * TODO: replace with real auth (e.g. Supabase Auth or NextAuth).
+ * Build-time admin gate for the local CMS. Values are exposed in the client
+ * bundle — treat as dev-only; replace with real auth before production.
  */
-export const ADMIN_USERNAME = 'admin'
-export const ADMIN_PASSWORD = 'Test123@'
+export const ADMIN_USERNAME =
+  import.meta.env.VITE_ANVL_ADMIN_USERNAME?.trim() || 'admin'
+
+const configuredPassword = import.meta.env.VITE_ANVL_ADMIN_PASSWORD ?? ''
+
+export const ADMIN_PASSWORD = configuredPassword
+
+/** False when no password is set — login should surface a configuration error. */
+export const isAdminLoginConfigured = configuredPassword.length > 0
 
 export const ADMIN_AUTH_CHANGE_EVENT = 'anvl:adminAuth:change'
 

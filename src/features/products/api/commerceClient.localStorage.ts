@@ -1,27 +1,26 @@
 import type { CommerceClient } from '@/app/config/clients'
 import {
+  getRelatedStorefrontProducts,
   getStorefrontProductBySlug,
   getStorefrontProductsForHome,
-  getStorefrontProductsForShop,
+  getStorefrontShopListingCatalog,
 } from '@/features/admin/products/products.commerce'
 
-/**
- * Browser commerce — catalog + drop assignment hydrate from local admin storage.
- * TODO: replace with Medusa-backed `CommerceClient` when commerce API is available.
- */
-export const localStorageCommerceClient: CommerceClient = {
+export const mockCommerceClient: CommerceClient = {
   async getProducts() {
-    return getStorefrontProductsForShop()
+    const { items } = await getStorefrontShopListingCatalog()
+    return items
   },
   async getHomeProducts() {
     return getStorefrontProductsForHome()
   },
-  async getProductBySlug(slug: string) {
+  async getProductBySlug(slug) {
     return getStorefrontProductBySlug(slug)
   },
-  async getRelatedProducts(slug: string) {
-    return getStorefrontProductsForShop()
-      .filter((item) => item.slug !== slug)
-      .slice(0, 2)
+  async getRelatedProducts(slug) {
+    return getRelatedStorefrontProducts(slug, 4)
+  },
+  async getShopListingCatalog() {
+    return getStorefrontShopListingCatalog()
   },
 }

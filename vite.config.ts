@@ -1,14 +1,44 @@
 import { defineConfig } from 'vite'
 import { devtools } from '@tanstack/devtools-vite'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+const analyze = process.env.ANVL_ANALYZE === '1'
+
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
-  plugins: [devtools(), tailwindcss(), tanstackStart(), viteReact()],
+  plugins: [
+    devtools(),
+    tailwindcss(),
+    tanstackStart(),
+    viteReact(),
+    ...(analyze
+      ? [
+          visualizer({
+            filename: 'dist/stats.html',
+            gzipSize: true,
+            brotliSize: true,
+            open: false,
+            template: 'treemap',
+          }),
+        ]
+      : []),
+  ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/gsap')) return 'vendor-gsap'
+          if (id.includes('node_modules/lenis')) return 'vendor-lenis'
+          if (id.includes('node_modules/framer-motion')) return 'vendor-framer-motion'
+        },
+      },
+    },
+  },
 })
 
 export default config

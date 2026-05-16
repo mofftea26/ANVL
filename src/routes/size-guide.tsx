@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { buildSeoMeta } from '@/app/seo/meta'
+import { BRAND } from '@/shared/constants/brand'
+import {
+  buildSeoMetaFromCmsSource,
+  seoContentToMetaSource,
+} from '@/features/cms/seoMeta'
+import { runtimeClients } from '@/app/config/runtime'
+import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { Container, Section } from '@/shared/components/ui'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { IndustrialDivider } from '@/shared/components/layout/IndustrialDivider'
@@ -32,13 +38,36 @@ function Td({ children, className = '' }: { children: ReactNode; className?: str
 }
 
 export const Route = createFileRoute('/size-guide')({
-  head: () =>
-    buildSeoMeta({
-      title: 'Size Guide | ANVL Athletics',
-      description:
-        'ANVL sizing for Lebanon & EU retail: body measurements in cm, EU top sizes 44–52, and charts for Oversized Tee, Stringer, and Compression Tee.',
-      path: '/size-guide',
-    }),
+  loader: async () => {
+    const [siteSeo, seoDoc] = await Promise.all([
+      runtimeClients.cms.getSiteSeo(),
+      runtimeClients.cms.getSeoByPath('/size-guide'),
+    ])
+    return { siteSeo, seoDoc }
+  },
+  head: ({ loaderData }) => {
+    const site = loaderData?.siteSeo
+    const doc = loaderData?.seoDoc
+    const fb = { defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.svg` }
+    if (!site || !doc) {
+      return buildSeoMetaFromCmsSource(
+        seoContentToMetaSource(
+          {
+            title: 'Size Guide | ANVL Athletics',
+            description:
+              'ANVL sizing for Lebanon & EU retail: body measurements in cm, EU top sizes 44–52, and charts for Oversized Tee, Stringer, and Compression Tee.',
+            canonicalPath: '/size-guide',
+          },
+          fb,
+        ),
+        fb,
+      )
+    }
+    return buildSeoMetaFromCmsSource(
+      seoContentToMetaSource(doc, site.globalDefaults),
+      site.globalDefaults,
+    )
+  },
   component: SizeGuidePage,
 })
 
@@ -281,6 +310,7 @@ function SizeGuidePage() {
           <div className="flex flex-wrap gap-3">
             <Link
               to="/shop"
+              search={defaultShopUrlSearch}
               className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-sm font-semibold text-[var(--color-bg)] no-underline hover:opacity-90"
             >
               Shop

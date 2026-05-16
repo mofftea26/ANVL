@@ -4,6 +4,37 @@ export interface ProductColorway {
   accent: string
 }
 
+export type StorefrontProductStatus =
+  | 'available'
+  | 'comingSoon'
+  | 'outOfStock'
+  | 'sale'
+  | 'limitedEdition'
+
+export interface ShopDropFilterOption {
+  id: string
+  slug: string
+  name: string
+  dropNumber: string
+}
+
+/** Storefront-only metadata mapped from `AdminProduct` for shop filters, PDP, and JSON-LD. */
+export interface ProductShopMeta {
+  storefrontStatus: StorefrontProductStatus
+  sourceType: 'drop' | 'individual'
+  dropId: string | null
+  dropSlug: string | null
+  compareAtPrice: number | null
+  listPrice: number
+  currency: string
+  saleLabel?: string
+  videoUrl?: string
+  model3dUrl?: string
+  category: string
+  availabilityByColorAndSize: Record<string, Record<string, number>>
+  imagesByColorName: Record<string, Array<{ src: string; alt: string }>>
+}
+
 export interface Product {
   id: string
   slug: string
@@ -20,4 +51,5 @@ export interface Product {
   sizes: string[]
   price: number
   images: Array<{ src: string; alt: string }>
+  shop?: ProductShopMeta
 }

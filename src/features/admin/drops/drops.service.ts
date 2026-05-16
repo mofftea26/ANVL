@@ -1,3 +1,4 @@
+import { SITE_SEO_STORAGE_KEY } from '@/features/cms/siteSeo.local'
 import type { AdminProduct } from '@/features/admin/products/products.types'
 import { GLOBAL_BRAND_STORAGE_KEY } from '@/features/admin/global-brand/globalBrand.storage'
 import type { Drop, DropStatus, DropsPersistedState } from './drops.types'
@@ -33,6 +34,10 @@ import {
   saveAdminProducts,
 } from '@/features/admin/products/products.service'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
+import {
+  dropsPersistedPayloadSchema,
+  persistedDropSchema,
+} from './drops.persistence.zod'
 
 let hydrationRan = false
 
@@ -103,16 +108,14 @@ function parseDropsPayload(raw: string | null): DropsPersistedState | null {
   if (!raw) return null
   try {
     const parsed = JSON.parse(raw) as unknown
-    if (
-      !parsed ||
-      typeof parsed !== 'object' ||
-      !Array.isArray((parsed as DropsPersistedState).drops)
-    )
-      return null
-    const rawDrops = (parsed as DropsPersistedState).drops
-    const merged = rawDrops.map((d) =>
-      mergeDropPartial((d ?? {}) as Partial<Drop>),
-    )
+    const validated = dropsPersistedPayloadSchema.safeParse(parsed)
+    if (!validated.success) return null
+    const merged: Drop[] = []
+    for (const row of validated.data.drops) {
+      const rowOk = persistedDropSchema.safeParse(row)
+      if (!rowOk.success) continue
+      merged.push(mergeDropPartial(rowOk.data as Partial<Drop>))
+    }
     if (merged.length === 0) return null
     return { drops: merged }
   } catch {
@@ -422,6 +425,7 @@ export function resetAllLocalCmsKeys(): void {
     window.localStorage.removeItem('ANVL_WEBSITE_LAYOUT')
     window.localStorage.removeItem(GLOBAL_BRAND_STORAGE_KEY)
     window.localStorage.removeItem('anvl.landingCms.v1')
+    window.localStorage.removeItem(SITE_SEO_STORAGE_KEY)
   } catch {
     /* */
   }
