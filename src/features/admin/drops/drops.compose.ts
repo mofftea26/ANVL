@@ -4,6 +4,7 @@ import type {
 } from '@/features/admin/landing-cms/landingCms.types'
 import { LANDING_CMS_VERSION } from '@/features/admin/landing-cms/landingCms.defaults'
 import type { Drop } from './drops.types'
+import { publicLandingActsFromSequence } from '@/features/admin/drops/acts/landingActs.normalize'
 import type { WebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.types'
 
 function patchDropHref(href: string, slug: string): string {
@@ -11,10 +12,18 @@ function patchDropHref(href: string, slug: string): string {
   return href
 }
 
-function patchLinks<T extends { href: string }>(links: T[], slug: string): T[] {
+/** Header/footer/mobile nav: `/drop/*` targets active slug and public title. */
+function patchDropNavLinks<T extends { href: string; label: string }>(
+  links: T[],
+  drop: Drop,
+): T[] {
   return links.map((link) =>
     link.href.startsWith('/drop/')
-      ? { ...link, href: patchDropHref(link.href, slug) }
+      ? {
+          ...link,
+          href: patchDropHref(link.href, drop.slug),
+          label: drop.title,
+        }
       : link,
   )
 }
@@ -30,8 +39,8 @@ export function composeLandingPageFromDrop(
   )
 
   const navigation: LandingNavigationContent = {
-    headerLinks: patchLinks(layout.header.headerLinks, drop.slug),
-    footerLinks: patchLinks(flatFooterLinks, drop.slug),
+    headerLinks: patchDropNavLinks(layout.header.headerLinks, drop),
+    footerLinks: patchDropNavLinks(flatFooterLinks, drop),
     footerTagline: layout.footer.tagline,
     footerMicroCaption: layout.footer.microCaption,
     newsletterTitle: layout.footer.newsletterTitle,
@@ -43,7 +52,7 @@ export function composeLandingPageFromDrop(
     announcement: layout.header.announcement,
     footerLinkGroups: layout.footer.linkGroups.map((g) => ({
       ...g,
-      links: patchLinks(g.links, drop.slug),
+      links: patchDropNavLinks(g.links, drop),
     })),
     activeDropEmblemSrc: drop.visuals.emblemImageUrl,
     activeDropEmblemAlt: drop.visuals.emblemAlt,
@@ -51,7 +60,7 @@ export function composeLandingPageFromDrop(
       layout.footer.decorativeEmblemFallbackSrc,
     copyrightSuffix: layout.footer.copyrightText,
     socialLinks: layout.footer.socialLinks,
-    mobileExtraLinks: patchLinks(layout.header.mobileExtraLinks, drop.slug),
+    mobileExtraLinks: patchDropNavLinks(layout.header.mobileExtraLinks, drop),
   }
 
   return {
@@ -97,5 +106,6 @@ export function composeLandingPageFromDrop(
     },
     materials: lc.materials,
     waitlist: lc.waitlist,
+    landingActs: publicLandingActsFromSequence(drop.landingActSequence),
   }
 }

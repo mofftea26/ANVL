@@ -3,6 +3,8 @@ export interface SeoContent {
   description: string
   canonicalPath: string
   ogImage?: string
+  ogTitle?: string
+  ogDescription?: string
 }
 
 export interface HomePageContent {

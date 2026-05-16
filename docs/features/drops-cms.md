@@ -35,6 +35,8 @@ type Drop = {
 };
 ```
 
+Canonical fields for the current codebase live in `src/features/admin/drops/drops.types.ts` — notably `visuals.heroImageUrl` for the public drop hero backdrop, `landingActSequence` / composed `landingActs` for the homepage pipeline, and `seo.ogTitle` / `seo.ogDescription` for social overrides on `/drop/:slug`.
+
 ## Drop theme
 ```ts
 type DropTheme = {
@@ -55,9 +57,6 @@ type DropTheme = {
   };
 };
 ```
-
-## Runtime contracts
-Zod schemas and inferred TypeScript types for the canonical `Drop`, `DropTheme`, and `DropBranding` shapes live in `src/features/drops/schemas/drop.schema.ts` and `src/features/drops/types/drop.types.ts`. Example validated data for Drop 01 — The Oath is exported from `src/content/seed/drop-01-the-oath.seed.ts`.
 
 ## CMS UX
 The Drops section should be simple:
@@ -89,35 +88,15 @@ The CMS must show a live preview while editing:
 When a drop becomes active:
 - Landing page uses that drop's acts.
 - Drop nav item changes label and link to active drop.
-- Site theme variables update to the active drop palette.
-- Drop page uses that drop's title, subtitle, visuals, description, and product cards.
+- Header/footer/mobile links whose `href` starts with `/drop/` are rewritten to `/drop/{activeSlug}` and their **label** is set to the active drop **title** (e.g. “The Oath”) so the top bar always matches the campaign name.
+- Site theme variables update to the active drop palette (SSR inline `:root` style on the public shell plus `ActiveDropThemeBridge` after hydration).
+- The public `/drop/:slug` route resolves only the active drop: wrong slug redirects to the active slug; there is no standalone archived drop URL in this phase.
+- Drop page shows title, subtitle, optional hero backdrop (`visuals.heroImageUrl`), emblem, description, optional **release** block (`releaseDate` with client-side countdown after hydration), and assigned product cards linking to `/shop/$slug`.
 - Products assigned to the drop become visible in the global shop if their product status allows it.
 
-## Drop editor shell (local CMS)
-The `/admin/drops/$dropId` route renders a mobile-first scroll layout with an `xl+` preview column placeholder:
-
-1. **Basic info** — identity fields; status shown read-only (changed via save options).
-2. **Theme & branding** — palette preset, colors, emblem/logo assets.
-3. **Acts builder** — placeholder until the acts builder ships.
-4. **Products assignment** — placeholder with linked product count.
-5. **SEO** — placeholder; persisted SEO remains until a future editor writes changes.
-6. **Save & publish** — validates title, slug, and known theme preset; optional activate-after-save; optional schedule (`datetime-local` → `scheduledActivationAt`); confirmation modal; brief "Saved" state on the primary button.
-
-Draft edits stay in React state until `saveDrop` runs so public data does not change until save.
-
-## Storefront runtime clients
-Public routes and loaders should depend on `runtimeClients` from `src/app/config/runtime.ts`, not ad hoc `localStorage` reads.
-
-- **Server (`isServer: true`)**: `createRuntimeClients` wires **seed** CMS/commerce/SEO/site-settings adapters. They use composed defaults (active oath drop + default layout) so SSR is deterministic and never touches `window.localStorage`.
-- **Browser (`isServer: false`)**: the same factory wires **localStorage-backed** adapters that delegate to admin services (`getLandingCmsContent`, drops storage, products storage, layout storage) so CMS edits and the storefront stay in sync.
-
-`SeoClient` resolves per-path SEO (including `/shop`); `SiteSettingsClient` exposes header/footer layout for future chrome loaders.
-
-`landingActSequence` on each persisted `Drop` is normalized when merging from storage (`normalizeLandingActSequence` in `drops.actSequence.ts`) so every landing slot exists in canonical order; new drops use `defaultLandingActSequence()`.
-
-TODO hooks in adapter modules mark where Medusa or a headless CMS client will replace the implementation later.
-
-## Active drop storefront theme (runtime CMS)
-- `CmsClient.getActiveDrop()` returns the campaign drop used for public storefront theming (or `null` when none). Seed and localStorage adapters delegate to `drops.service` / seed snapshots as appropriate.
-- The root route loads `activeDrop` with landing CMS content, skips it for `/admin` paths, and emits serialized palette CSS in `head` so SSR and the client share the same `:root` variables (see `docs/design-system.md`).
-- `ActiveDropThemeProvider` wraps public header, main, and footer; it subscribes to drop storage changes and refreshes via the runtime CMS client. Official header/footer logos remain global brand assets, not drop campaign marks.
+## Public homepage act pipeline
+- `landingActSequence` on each drop is the ordered list of six canonical slots (`hero`, `manifesto`, `dropReveal`, `pieces`, `materials`, `waitlist`) with an `enabled` flag per slot.
+- `composeLandingPageFromDrop` adds `landingActs` to `LandingPageCmsContent`: public descriptors with `nature` (e.g. `productShowcase`), `preset`, `sortOrder`, `slotKey` (legacy homepage section id), `enabled`, and `animation` defaults for future GSAP gating.
+- The Drop Editor **Landing acts** tab includes `DropActsBuilderPanel` (add/remove/reorder, nature and preset selectors, eyebrow/title/subtitle/body) plus the legacy per-section forms. `Drop.acts` is persisted with the drop; `landingActSequence` toggles are synced when mapped slots have at least one enabled act.
+- The public `/` route renders `PublicLandingActs`, which switches on `nature` to existing section components (Act III onward lazy-loaded), respects `enabled === false`, and degrades unknown types to a small on-page notice.
+- Hero GSAP runs only at `min-width: 768px` with `prefers-reduced-motion: no-preference`; mobile and reduced-motion users see a static hero layout for speed and accessibility.

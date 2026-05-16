@@ -7,6 +7,8 @@
  * replacement only needs to honor the same contract.
  */
 
+import type { PublicLandingAct } from '@/features/admin/drops/acts/landingActs.types'
+
 export interface CmsCta {
   label: string
   href: string
@@ -191,9 +193,10 @@ export interface LandingPageCmsContent {
   pieces: LandingPiecesContent
   materials: LandingMaterialsContent
   waitlist: LandingWaitlistContent
+  landingActs: PublicLandingAct[]
 }
 
 export type LandingCmsSectionKey = Exclude<
   keyof LandingPageCmsContent,
-  'version' | 'updatedAt'
+  'version' | 'updatedAt' | 'landingActs'
 >

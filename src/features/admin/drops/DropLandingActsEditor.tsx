@@ -2,6 +2,9 @@ import { useMemo } from 'react'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import type { DropLandingContent } from '@/features/admin/drops/drops.types'
+import type { LandingAct } from '@/features/admin/drops/acts/landingActs.types'
+import type { LandingActSlot } from '@/features/admin/drops/drops.actSequence'
+import { DropActsBuilderPanel } from '@/features/admin/drops/DropActsBuilderPanel'
 
 const fieldClass =
   'mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)]'
@@ -9,10 +12,27 @@ const fieldClass =
 interface Props {
   value: DropLandingContent
   onChange: (next: DropLandingContent) => void
+  acts: LandingAct[]
+  landingActSequence: LandingActSlot[]
+  onActsChange: (next: {
+    acts: LandingAct[]
+    landingActSequence: LandingActSlot[]
+  }) => void
+  /** Catalog rows for product-showcase SKU checkboxes in the acts builder. */
+  catalogProducts?: Array<{ id: string; name: string }>
 }
 
-export function DropLandingActsEditor({ value, onChange }: Props) {
+export function DropLandingActsEditor({
+  value,
+  onChange,
+  acts,
+  landingActSequence,
+  onActsChange,
+  catalogProducts,
+}: Props) {
   const lc = value
+
+  const landingContentJson = useMemo(() => JSON.stringify(lc), [lc])
 
   const tenetLines = useMemo(
     () => lc.manifesto.tenets.map((t) => t.text).join('\n'),
@@ -28,6 +48,14 @@ export function DropLandingActsEditor({ value, onChange }: Props) {
 
   return (
     <div className="space-y-6">
+      <DropActsBuilderPanel
+        landingContentJson={landingContentJson}
+        acts={acts}
+        landingActSequence={landingActSequence}
+        catalogProducts={catalogProducts}
+        onChange={onActsChange}
+      />
+
       <AdminCard title="Act I — Hero" description="Opening forge narration and CTAs.">
         <div className="grid gap-4 md:grid-cols-2">
           <label className="block text-xs text-[var(--color-text-muted)]">

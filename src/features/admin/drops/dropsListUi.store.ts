@@ -1,7 +1,12 @@
 import { create } from 'zustand'
-import type { DropStatus } from '@/features/admin/drops/drops.types'
 
-export type DropsListStatusTab = 'all' | DropStatus
+export type DropsListStatusTab =
+  | 'all'
+  | 'draft'
+  | 'inactive'
+  | 'scheduled'
+  | 'active'
+  | 'archived'
 
 type DropsListUiState = {
   search: string

@@ -1,43 +1,41 @@
-import {
-  LANDING_ACT_SLOT_KEYS,
-  type LandingActSlot,
-  type LandingActSlotKey,
-} from '@/features/admin/drops/drops.types'
+export const LANDING_ACT_SLOT_KEYS = [
+  'hero',
+  'manifesto',
+  'dropReveal',
+  'pieces',
+  'materials',
+  'waitlist',
+] as const
 
-const DEFAULT_SEQUENCE: LandingActSlot[] = LANDING_ACT_SLOT_KEYS.map((key) => ({
-  key,
-  enabled: true,
-}))
+export type LandingActSlotKey = (typeof LANDING_ACT_SLOT_KEYS)[number]
 
-function isSlotKey(key: unknown): key is LandingActSlotKey {
-  return typeof key === 'string' && (LANDING_ACT_SLOT_KEYS as readonly string[]).includes(key)
+export type LandingActSlot = {
+  key: LandingActSlotKey
+  enabled: boolean
 }
 
-/**
- * Ensures every landing slot exists once, in canonical order, with sane `enabled` flags.
- */
+export function isSlotKey(value: string): value is LandingActSlotKey {
+  return (LANDING_ACT_SLOT_KEYS as readonly string[]).includes(value)
+}
+
 export function normalizeLandingActSequence(
   input: LandingActSlot[] | undefined | null,
 ): LandingActSlot[] {
-  if (!Array.isArray(input) || input.length === 0) {
-    return structuredClone(DEFAULT_SEQUENCE)
+  const byKey = new Map<LandingActSlotKey, LandingActSlot>()
+  for (const key of LANDING_ACT_SLOT_KEYS) {
+    byKey.set(key, { key, enabled: true })
   }
-
-  const byKey = new Map<LandingActSlotKey, boolean>()
-  for (const row of input) {
-    if (!row || typeof row !== 'object') continue
-    const key = 'key' in row ? (row as LandingActSlot).key : undefined
-    if (!isSlotKey(key) || byKey.has(key)) continue
-    byKey.set(key, typeof row.enabled === 'boolean' ? row.enabled : true)
+  if (Array.isArray(input)) {
+    for (const row of input) {
+      if (!row || typeof row !== 'object') continue
+      const k = row.key
+      if (typeof k !== 'string' || !isSlotKey(k)) continue
+      byKey.set(k, { key: k, enabled: Boolean(row.enabled) })
+    }
   }
-
-  return LANDING_ACT_SLOT_KEYS.map((key) => ({
-    key,
-    enabled: byKey.has(key) ? (byKey.get(key) as boolean) : true,
-  }))
+  return LANDING_ACT_SLOT_KEYS.map((key) => byKey.get(key)!)
 }
 
-/** Default order with every slot enabled (new drops / migrations). */
 export function defaultLandingActSequence(): LandingActSlot[] {
-  return normalizeLandingActSequence(undefined)
+  return LANDING_ACT_SLOT_KEYS.map((key) => ({ key, enabled: true }))
 }

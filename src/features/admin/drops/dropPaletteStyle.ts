@@ -1,33 +1,47 @@
-import type { CSSProperties } from 'react'
+﻿import type { CSSProperties } from 'react'
 import type { DropThemePalette } from '@/features/admin/drops/drops.types'
 
 export const ACTIVE_DROP_THEME_STYLE_ID = 'anvl-active-drop-theme'
 
-function sanitizeCssValue(value: string): string {
-  return value.replace(/[\r\n{}]/g, '').trim()
+/** Strip risky tokens from CMS-provided CSS values before injecting into `style`. */
+export function sanitizeCssValue(value: string, fallback: string): string {
+  const t = value.trim()
+  if (!t || t.length > 240) return fallback
+  if (/[{}<>]|expression\s*\(|javascript:|@import/i.test(t)) return fallback
+  return t
 }
 
 export function dropPaletteToCssVarsRecord(
   palette: DropThemePalette,
 ): Record<string, string> {
   const c = palette.colors
+  const bg = sanitizeCssValue(c.background, '#0B0B0C')
+  const surface = sanitizeCssValue(c.surface, '#1D1F21')
+  const surfaceSoft = sanitizeCssValue(c.surfaceSoft, '#34373A')
+  const line = sanitizeCssValue(c.line, '#34373A')
+  const text = sanitizeCssValue(c.text, '#E7E4DF')
+  const mutedText = sanitizeCssValue(c.mutedText, '#5B5E61')
+  const heading = sanitizeCssValue(c.heading, '#E7E4DF')
+  const accent = sanitizeCssValue(c.accent, '#E7E4DF')
+  const accentSoft = sanitizeCssValue(c.accentSoft, '#34373A')
+  const heroGlow = sanitizeCssValue(c.heroGlow, '#34373A')
   const record: Record<string, string> = {
-    '--color-bg': c.background,
-    '--color-surface': c.surface,
-    '--color-surface-soft': c.surfaceSoft,
-    '--color-surface-muted': c.surfaceSoft,
-    '--color-surface-elevated': c.surfaceSoft,
-    '--color-line': c.line,
-    '--color-border': c.line,
-    '--color-text': c.text,
-    '--color-text-muted': c.mutedText,
-    '--color-heading': c.heading,
-    '--color-accent': c.accent,
-    '--color-chip': c.accentSoft,
-    '--color-hero-glow': c.heroGlow,
+    '--color-bg': bg,
+    '--color-surface': surface,
+    '--color-surface-soft': surfaceSoft,
+    '--color-surface-muted': surfaceSoft,
+    '--color-surface-elevated': surfaceSoft,
+    '--color-line': line,
+    '--color-border': line,
+    '--color-text': text,
+    '--color-text-muted': mutedText,
+    '--color-heading': heading,
+    '--color-accent': accent,
+    '--color-chip': accentSoft,
+    '--color-hero-glow': heroGlow,
   }
-  if (c.danger) record['--color-danger'] = c.danger
-  if (c.success) record['--color-success'] = c.success
+  if (c.danger) record['--color-danger'] = sanitizeCssValue(c.danger, '#ef4444')
+  if (c.success) record['--color-success'] = sanitizeCssValue(c.success, '#22c55e')
   return record
 }
 
@@ -42,9 +56,9 @@ export function serializeDropPaletteForRootStyle(
 ): string {
   const rec = dropPaletteToCssVarsRecord(palette)
   const inner = Object.entries(rec)
-    .map(([k, v]) => `${k}: ${sanitizeCssValue(v)};`)
+    .map(([k, v]) => `${k}: ${v};`)
     .join('')
-  return `:root {${inner}}`
+  return `:root { ${inner} }`
 }
 
 export function syncActiveDropThemeStyleTag(palette: DropThemePalette | null) {

@@ -1,3 +1,13 @@
+import type { LandingActSlot } from './drops.actSequence'
+import type { LandingAct } from './acts/landingActs.types'
+
+export type { LandingActSlotKey, LandingActSlot } from './drops.actSequence'
+export {
+  LANDING_ACT_SLOT_KEYS,
+  defaultLandingActSequence,
+  normalizeLandingActSequence,
+} from './drops.actSequence'
+
 export type DropStatus =
   | 'draft'
   | 'active'
@@ -27,6 +37,8 @@ export type DropThemePalette = {
 export type DropVisuals = {
   emblemImageUrl: string
   emblemAlt: string
+  /** Optional backdrop for the public `/drop/:slug` hero. */
+  heroImageUrl?: string
   logoImageUrl?: string
   wordmarkImageUrl?: string
   loadingEmblemUrl?: string
@@ -110,22 +122,6 @@ export type DropSeo = {
   ogImage?: string
 }
 
-export const LANDING_ACT_SLOT_KEYS = [
-  'hero',
-  'manifesto',
-  'dropReveal',
-  'pieces',
-  'materials',
-  'waitlist',
-] as const
-
-export type LandingActSlotKey = (typeof LANDING_ACT_SLOT_KEYS)[number]
-
-export type LandingActSlot = {
-  key: LandingActSlotKey
-  enabled: boolean
-}
-
 export type Drop = {
   id: string
   slug: string
@@ -145,8 +141,8 @@ export type Drop = {
   theme: DropThemePalette
   visuals: DropVisuals
   landingContent: DropLandingContent
-  /** Homepage + CMS preview: canonical section order and visibility */
   landingActSequence: LandingActSlot[]
+  acts: LandingAct[]
   productIds: string[]
   seo: DropSeo
 }
