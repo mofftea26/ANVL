@@ -63,14 +63,15 @@ The Drops section should be simple:
 1. Drop list with search, status tabs, release date, scheduled activation, product count, and last edited date.
 2. Clear actions: Create, Edit, Preview, Duplicate, Set Active, Schedule, Archive, Delete.
 3. The admin list (`DropsAdminList` at `/admin/drops`) uses the runtime `CmsClient` for reads and mutations, TanStack Query for server state, and a small Zustand store for search and tab UI only.
-4. Create Drop flow:
+4. **Empty states:** when the CMS returns zero drops, the list shows a “No drops yet” card with a link to `/admin/drops/new`; when filters exclude every row, a “Nothing matches” card offers one tap to clear search + status tab.
+5. Create Drop flow:
    - Step 1: Basic info.
    - Step 2: Theme/branding.
    - Step 3: Acts builder.
    - Step 4: Products assignment.
    - Step 5: SEO.
    - Step 6: Save options.
-5. Save options:
+6. Save options:
    - Save as draft.
    - Save and set inactive.
    - Save and make active.
@@ -85,6 +86,8 @@ The CMS must show a live preview while editing:
 - Unknown act natures show an explicit CMS-only warning in preview (`cmsPreview`); unexpected render errors are caught by `DropEditorPreviewErrorBoundary` with a retry control.
 - Preview must not mutate published data until Save (draft state only until `saveDrop`).
 
+
+- **Layout:** on small screens the preview column is ordered above the tabbed forms so the story stays visible; on large screens the editor and preview share a two-column grid with a scroll-clamped preview card. After a confirmed save, the primary “Save drop” control briefly shows a checkmark “Saved” state (`useSaveSuccessFlash`).
 ## Active drop behavior
 When a drop becomes active:
 - Landing page uses that drop's acts.

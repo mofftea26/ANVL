@@ -1,26 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-const FLASH_MS = 2000
-
-/** Brief “Saved” affordance for admin editors without blocking further saves. */
-export function useSaveSuccessFlash() {
-  const [showSuccess, setShowSuccess] = useState(false)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
+/** Brief “saved” UI state after a successful save (client-only timer). */
+export function useSaveSuccessFlash(durationMs = 2200) {
+  const [show, setShow] = useState(false)
   const flashSuccess = useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    setShowSuccess(true)
-    timeoutRef.current = setTimeout(() => {
-      setShowSuccess(false)
-      timeoutRef.current = null
-    }, FLASH_MS)
+    setShow(true)
   }, [])
 
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    }
-  }, [])
+    if (!show) return
+    const id = window.setTimeout(() => setShow(false), durationMs)
+    return () => window.clearTimeout(id)
+  }, [show, durationMs])
 
-  return { showSuccess, flashSuccess }
+  return { showSuccess: show, flashSuccess }
 }

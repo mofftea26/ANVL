@@ -1,11 +1,12 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Check } from 'lucide-react'
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
+import { DropPreviewThemeScope } from '@/app/providers/ActiveDropThemeBridge'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
-import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import { DROP_THEME_PRESETS } from '@/features/admin/drops/drops.presets'
 import { DropLandingActsEditor } from '@/features/admin/drops/DropLandingActsEditor'
 import type { DropStatus } from '@/features/admin/drops/drops.types'
@@ -24,7 +25,7 @@ import { getAdminProducts } from '@/features/admin/products/products.service'
 import { useAdminProductsList } from '@/features/admin/products/useAdminProducts'
 import { composeLandingPageFromDrop } from '@/features/admin/drops/drops.compose'
 import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
-import { DropEditorLivePreview } from '@/features/admin/drops/DropEditorLivePreview'
+import { PublicLandingActs } from '@/features/marketing/public-landing/PublicLandingActs'
 import { Button } from '@/shared/components/ui/Button'
 import { HexColorPicker } from '@/shared/components/ui/HexColorPicker'
 import { ImageFileOrUrlField } from '@/shared/components/ui/ImageFileOrUrlField'
@@ -62,10 +63,10 @@ type TabId =
 
 export function DropEditorRoute({ dropId }: { dropId: string }) {
   const navigate = useNavigate()
+  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const drops = useDropsList()
   const catalog = useAdminProductsList()
   const saved = useMemo(() => drops.find((d) => d.id === dropId), [drops, dropId])
-  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
 
   const [draft, setDraft] = useState(saved)
   const [tab, setTab] = useState<TabId>('basics')
@@ -76,46 +77,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  const saveModalTitleId = useId()
-  const activateModalTitleId = useId()
-  const resetModalTitleId = useId()
-  const deleteModalTitleId = useId()
-
   useEffect(() => {
     setDraft(saved)
   }, [saved])
-
-  const previewDrop = saved && draft ? draft : null
-  const previewLabel = previewDrop ? `${previewDrop.dropNumber}: ${previewDrop.name}` : ''
-
-  const previewProducts = useMemo(() => {
-    if (!previewDrop) return []
-    const map = new Map(getAdminProducts().map((p) => [p.id, p]))
-    return previewDrop.productIds
-      .map((id) => map.get(id))
-      .filter((p): p is NonNullable<typeof p> => Boolean(p))
-      .filter(adminProductIsPubliclyVisible)
-      .map((p) => adminProductToLegacy(p, previewLabel))
-  }, [previewDrop, previewLabel])
-
-  const previewLanding = useMemo(() => {
-    if (!previewDrop) return null
-    return composeLandingPageFromDrop(previewDrop, getWebsiteLayoutContent(), {
-      useDraftActsPipeline: true,
-    })
-  }, [previewDrop])
-
-  const previewPanel = useMemo(() => {
-    if (!previewDrop || !previewLanding) return null
-    return (
-      <DropEditorLivePreview
-        landing={previewLanding}
-        products={previewProducts}
-        palette={previewDrop.theme}
-        emblemUrl={previewDrop.visuals.emblemImageUrl}
-      />
-    )
-  }, [previewDrop, previewLanding, previewProducts])
 
   if (!saved || !draft) {
     return (
@@ -134,6 +98,16 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
       </AdminLayout>
     )
   }
+
+  const previewLabel = `${draft.dropNumber}: ${draft.name}`
+  const previewProducts = useMemo(() => {
+    const map = new Map(getAdminProducts().map((p) => [p.id, p]))
+    return draft.productIds
+      .map((id) => map.get(id))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p))
+      .filter(adminProductIsPubliclyVisible)
+      .map((p) => adminProductToLegacy(p, previewLabel))
+  }, [draft.productIds, previewLabel])
 
   const tabDefs: Array<{ id: TabId; label: string }> = [
     { id: 'basics', label: 'Basics' },
@@ -180,6 +154,23 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         : prev,
     )
   }
+
+  const previewLanding = useMemo(
+    () => composeLandingPageFromDrop(draft, getWebsiteLayoutContent()),
+    [draft],
+  )
+
+  const previewPanel = (
+    <DropPreviewThemeScope palette={draft.theme} emblemUrl={draft.visuals.emblemImageUrl}>
+      <div className="pointer-events-none select-none space-y-10 p-4 opacity-95 [&_a]:pointer-events-none">
+        <PublicLandingActs
+          landing={previewLanding}
+          products={previewProducts}
+          emblemSrc={draft.visuals.emblemImageUrl}
+        />
+      </div>
+    </DropPreviewThemeScope>
+  )
 
   return (
     <AdminLayout
@@ -239,7 +230,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             <Button type="button" variant="primary" size="sm" onClick={() => setConfirmSave(true)}>
               {showSuccess ? (
                 <>
-                  <Check size={14} className="mr-1.5" aria-hidden="true" />
+                  <Check size={16} className="mr-1.5" aria-hidden="true" />
                   Saved
                 </>
               ) : (
@@ -277,8 +268,8 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         ))}
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,40%)]">
-        <div className="order-2 space-y-8 lg:order-1">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(400px,38vw)] xl:gap-8 xl:grid-cols-[minmax(0,1fr)_440px]">
+        <div className="order-2 min-w-0 space-y-8 lg:order-1">
           <div className="hidden flex-wrap gap-2 lg:flex">
             {tabDefs.map((t) => (
               <button
@@ -557,10 +548,6 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               onActsChange={({ acts, landingActSequence }) =>
                 setDraft({ ...draft, acts, landingActSequence })
               }
-              catalogProducts={catalog.map((p) => ({
-                id: p.id,
-                name: p.name,
-              }))}
             />
           ) : null}
 
@@ -697,29 +684,22 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
           ) : null}
         </div>
 
-        <div className="order-1 space-y-3 lg:order-2">
+        <div className="order-1 lg:order-2 lg:self-start">
           <AdminCard
             title="Live preview"
-            description="Draft edits appear here immediately. Visitors only see changes after you save the drop."
+            description="Changes appear here in real time while you edit. Visitors only see updates after you save the drop."
+            className="lg:sticky lg:top-24"
           >
-            <div className="max-h-[min(70vh,720px)] overflow-y-auto overflow-x-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] lg:sticky lg:top-24">
-              {previewPanel ?? (
-                <p className="p-4 text-sm text-[var(--color-text-muted)]">
-                  Preview is unavailable for this drop state.
-                </p>
-              )}
+            <div className="max-h-[min(70vh,720px)] overflow-y-auto overflow-x-hidden rounded-lg border border-[var(--color-line)]/60 bg-[var(--color-bg)]">
+              {previewPanel}
             </div>
           </AdminCard>
         </div>
       </div>
 
-      <Modal
-        open={confirmSave}
-        onClose={() => setConfirmSave(false)}
-        aria-labelledby={saveModalTitleId}
-      >
+      <Modal open={confirmSave} onClose={() => setConfirmSave(false)}>
         <div className="space-y-4">
-          <h3 id={saveModalTitleId} className="anvl-heading text-xl font-normal">
+          <h3 className="anvl-heading text-xl font-normal">
             {makeActiveAfterSave
               ? 'Save & activate drop?'
               : 'Save this drop?'}
@@ -749,15 +729,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </div>
       </Modal>
 
-      <Modal
-        open={confirmActivateOnly}
-        onClose={() => setConfirmActivateOnly(false)}
-        aria-labelledby={activateModalTitleId}
-      >
+      <Modal open={confirmActivateOnly} onClose={() => setConfirmActivateOnly(false)}>
         <div className="space-y-4">
-          <h3 id={activateModalTitleId} className="anvl-heading text-xl font-normal">
-            Make this drop active?
-          </h3>
+          <h3 className="anvl-heading text-xl font-normal">Make this drop active?</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Make this drop active? This will deactivate the currently active drop and update the public landing page.
           </p>
@@ -781,15 +755,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </div>
       </Modal>
 
-      <Modal
-        open={confirmReset}
-        onClose={() => setConfirmReset(false)}
-        aria-labelledby={resetModalTitleId}
-      >
+      <Modal open={confirmReset} onClose={() => setConfirmReset(false)}>
         <div className="space-y-4">
-          <h3 id={resetModalTitleId} className="anvl-heading text-xl font-normal">
-            Reset drop?
-          </h3>
+          <h3 className="anvl-heading text-xl font-normal">Reset drop?</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Restores landing defaults while keeping this drop&apos;s id and slug.
           </p>
@@ -815,15 +783,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </div>
       </Modal>
 
-      <Modal
-        open={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
-        aria-labelledby={deleteModalTitleId}
-      >
+      <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)}>
         <div className="space-y-4">
-          <h3 id={deleteModalTitleId} className="anvl-heading text-xl font-normal">
-            Delete this drop?
-          </h3>
+          <h3 className="anvl-heading text-xl font-normal">Delete this drop?</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Removes the drop locally. At least one drop always remains — defaults will respawn if needed.
           </p>

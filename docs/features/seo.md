@@ -36,6 +36,8 @@ type SeoDocument = {
 9. Redirects later.
 10. Sitemap settings later.
 
+Admin navigation surfaces SEO at `/admin/seo` and contextual image URLs in `/admin/media` (guide-only until a standalone asset library exists).
+
 ## UX rules
 - Show a Google-style snippet preview.
 - Show a social card preview.

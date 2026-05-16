@@ -1,8 +1,12 @@
-# Feature — Products / Commerce
+﻿# Feature â€” Products / Commerce
 
 ## Storefront performance notes
 - PDP `ProductGallery` uses `fetchPriority="high"` on the hero frame, lazy + async decoding for thumbnails, and an optional `images` prop for colorway-specific galleries when `product.shop.imagesByColorName` is present.
-- Public storefront `Product` (`src/features/products/types/product.types.ts`) includes optional `shop?: ProductShopMeta` (storefront status, drop slug, pricing, availability matrix, media URLs) populated in `adminProductToLegacy` for filters, cards, PDP, and JSON-LD.
+
+
+- `/shop` uses `useDeferredValue` on the filtered listing so rapid filter changes stay responsive while the loader-derived list catches up.
+- Admin `/admin/products` renders from `src/routes/admin/products/index.tsx`; list thumbnails use `loading="lazy"` and `decoding="async"`.
+- **Catalog empty / filter miss:** the catalog shows a â€œNo products yetâ€ card when storage is empty, and a â€œNothing matchesâ€ card with one-tap filter reset when the active filters hide every SKU.- Public storefront `Product` (`src/features/products/types/product.types.ts`) includes optional `shop?: ProductShopMeta` (storefront status, drop slug, pricing, availability matrix, media URLs) populated in `adminProductToLegacy` for filters, cards, PDP, and JSON-LD.
 
 ## Product model
 Products must support both drop releases and individual releases.
@@ -79,12 +83,12 @@ Product list must include:
 The in-browser catalog at `/admin/products` implements the list above against `src/features/admin/products/products.types.ts`:
 
 - **Search** uses `useDeferredValue` for low-cost debouncing while typing.
-- **Filters**: status, drop (including “unassigned only”), listing source (`drop` vs `individual`), category substring, color name substring, sellable vs no sellable variants, updated date range.
+- **Filters**: status, drop (including â€œunassigned onlyâ€), listing source (`drop` vs `individual`), category substring, color name substring, sellable vs no sellable variants, updated date range.
 - **Sort**: newest/oldest `updatedAt`, release date, price, status.
-- **Grouping**: flat list or sections per drop plus an “Individual releases” bucket (`dropIds` empty).
-- **Actions**: edit, duplicate (deep clone, new slug, clears drop links), archive (`status: archived`), delete (with confirmation; detaches from drops), storefront preview link (`/shop/:slug`).
-- **Editor fields**: currency (ISO), release and sale window (`datetime-local` → ISO), optional video and 3D model URLs, SEO placeholders, bidirectional drop checklists.
-- **Variants**: color × size matrix with SKU, `stockQuantity`, `reservedQuantity`; `isAvailable` is recomputed from `max(0, stock − reserved) > 0`. `sourceType` is derived on save from `dropIds` (`individual` when unassigned).
+- **Grouping**: flat list or sections per drop plus an â€œIndividual releasesâ€ bucket (`dropIds` empty).
+- **Actions**: edit, duplicate (deep clone, new slug, clears drop links), archive (`status: archived`, confirmation modal), delete (with confirmation; detaches from drops), storefront preview link (`/shop/:slug`).
+- **Catalog UX:** when the in-browser catalog is empty, `/admin/products` shows a â€œNo products yetâ€ card; when filters hide every row, a â€œNothing matchesâ€ card can clear filters in one action. Implementation lives in `src/routes/admin/products/index.tsx`.
+- **Variants**: color Ã— size matrix with SKU, `stockQuantity`, `reservedQuantity`; `isAvailable` is recomputed from `max(0, stock âˆ’ reserved) > 0`. `sourceType` is derived on save from `dropIds` (`individual` when unassigned).
 
 Persistence: `products.service` hydrates legacy JSON (`currency`, `reservedQuantity`, `sourceType`) and normalizes on `upsertAdminProduct`.
 
@@ -111,7 +115,7 @@ Support:
 
 ## Storefront checkout (guest)
 - Guest-first flow on `/checkout` (no sign-in gate).
-- Shipping: address lines 1–2, city, optional postal code, country select, phone, optional delivery notes; payment methods come from `src/features/checkout/config/checkoutPayments.config.ts` (Lebanon: COD + Whish Money when country matches Lebanon or ISO `lb`; non-Lebanon: card only when `VITE_ANVL_INTERNATIONAL_CHECKOUT=true`).
+- Shipping: address lines 1â€“2, city, optional postal code, country select, phone, optional delivery notes; payment methods come from `src/features/checkout/config/checkoutPayments.config.ts` (Lebanon: COD + Whish Money when country matches Lebanon or ISO `lb`; non-Lebanon: card only when `VITE_ANVL_INTERNATIONAL_CHECKOUT=true`).
 - Real PSP / Whish / Medusa wiring is stubbed in `paymentGateway.mock.ts` with explicit integration labels in the UI.
 
 ## Product details UX

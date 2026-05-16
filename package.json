@@ -6,12 +6,11 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev --port 3000",
-    "build": "vite build",
+    "dev": "node scripts/repatch-admin-route-tree.mjs && vite dev --port 3000",
+    "build": "vite build && node scripts/repatch-admin-route-tree.mjs",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "analyze": "ANVL_ANALYZE=1 vite build",
+    "typecheck": "node scripts/repatch-admin-route-tree.mjs && tsc --noEmit",
     "strip-brand-bg": "node scripts/strip-brand-logo-bg.mjs"
   },
   "dependencies": {
@@ -55,7 +54,6 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
     "jsdom": "^28.1.0",
-    "rollup-plugin-visualizer": "5.14.0",
     "sharp": "^0.34.5",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
