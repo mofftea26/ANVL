@@ -1,8 +1,3 @@
-import type { LandingAct, LandingActSlot } from './publicLandingActs.pipeline'
-
-export type { LandingActSlotKey } from './publicLandingActs.pipeline'
-export { LANDING_ACT_SLOT_KEYS } from './publicLandingActs.pipeline'
-
 export type DropStatus =
   | 'draft'
   | 'active'
@@ -115,6 +110,22 @@ export type DropSeo = {
   ogImage?: string
 }
 
+export const LANDING_ACT_SLOT_KEYS = [
+  'hero',
+  'manifesto',
+  'dropReveal',
+  'pieces',
+  'materials',
+  'waitlist',
+] as const
+
+export type LandingActSlotKey = (typeof LANDING_ACT_SLOT_KEYS)[number]
+
+export type LandingActSlot = {
+  key: LandingActSlotKey
+  enabled: boolean
+}
+
 export type Drop = {
   id: string
   slug: string
@@ -134,8 +145,8 @@ export type Drop = {
   theme: DropThemePalette
   visuals: DropVisuals
   landingContent: DropLandingContent
+  /** Homepage + CMS preview: canonical section order and visibility */
   landingActSequence: LandingActSlot[]
-  acts: LandingAct[]
   productIds: string[]
   seo: DropSeo
 }

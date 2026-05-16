@@ -7,6 +7,7 @@ import {
   DEFAULT_OATH_PRODUCT_IDS,
   defaultDropVisuals,
 } from './drops.defaults'
+import { defaultLandingActSequence } from './drops.actSequence'
 import { DROP_THEME_PRESETS } from './drops.presets'
 
 function slugFromLanding(landing: LandingPageCmsContent): string {
@@ -139,6 +140,7 @@ export function landingPageToDrop(landing: LandingPageCmsContent): Drop {
       loadingEmblemUrl: emblemSrc,
     },
     landingContent: landingPageToDropLandingContent(landing),
+    landingActSequence: defaultLandingActSequence(),
     productIds: [...DEFAULT_OATH_PRODUCT_IDS],
     seo: {
       title: landing.seo.title,

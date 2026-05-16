@@ -93,11 +93,27 @@ When a drop becomes active:
 - Drop page uses that drop's title, subtitle, visuals, description, and product cards.
 - Products assigned to the drop become visible in the global shop if their product status allows it.
 
+## Drop editor shell (local CMS)
+The `/admin/drops/$dropId` route renders a mobile-first scroll layout with an `xl+` preview column placeholder:
+
+1. **Basic info** — identity fields; status shown read-only (changed via save options).
+2. **Theme & branding** — palette preset, colors, emblem/logo assets.
+3. **Acts builder** — placeholder until the acts builder ships.
+4. **Products assignment** — placeholder with linked product count.
+5. **SEO** — placeholder; persisted SEO remains until a future editor writes changes.
+6. **Save & publish** — validates title, slug, and known theme preset; optional activate-after-save; optional schedule (`datetime-local` → `scheduledActivationAt`); confirmation modal; brief "Saved" state on the primary button.
+
+Draft edits stay in React state until `saveDrop` runs so public data does not change until save.
+
 ## Storefront runtime clients
 Public routes and loaders should depend on `runtimeClients` from `src/app/config/runtime.ts`, not ad hoc `localStorage` reads.
 
 - **Server (`isServer: true`)**: `createRuntimeClients` wires **seed** CMS/commerce/SEO/site-settings adapters. They use composed defaults (active oath drop + default layout) so SSR is deterministic and never touches `window.localStorage`.
 - **Browser (`isServer: false`)**: the same factory wires **localStorage-backed** adapters that delegate to admin services (`getLandingCmsContent`, drops storage, products storage, layout storage) so CMS edits and the storefront stay in sync.
+
+`SeoClient` resolves per-path SEO (including `/shop`); `SiteSettingsClient` exposes header/footer layout for future chrome loaders.
+
+`landingActSequence` on each persisted `Drop` is normalized when merging from storage (`normalizeLandingActSequence` in `drops.actSequence.ts`) so every landing slot exists in canonical order; new drops use `defaultLandingActSequence()`.
 
 TODO hooks in adapter modules mark where Medusa or a headless CMS client will replace the implementation later.
 
