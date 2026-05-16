@@ -1,7 +1,25 @@
 import type { CmsClient } from '@/app/config/clients'
 import { SEED_DROP, SEED_LANDING_PAGE_CMS } from '@/features/cms/api/seedSnapshots'
+import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { HomePageContent } from '@/features/cms/types/cms.types'
+
+function seedDropListItem(): AdminDropListItem {
+  return {
+    id: SEED_DROP.id,
+    slug: SEED_DROP.slug,
+    title: SEED_DROP.title,
+    name: SEED_DROP.name,
+    dropNumber: SEED_DROP.dropNumber,
+    status: SEED_DROP.status,
+    isActive: SEED_DROP.isActive,
+    releaseDate: SEED_DROP.releaseDate,
+    scheduledActivationAt: SEED_DROP.scheduledActivationAt,
+    productCount: SEED_DROP.productIds.length,
+    updatedAt: SEED_DROP.updatedAt,
+    createdAt: SEED_DROP.createdAt,
+  }
+}
 
 function toLegacyHomepage(landing: typeof SEED_LANDING_PAGE_CMS): HomePageContent {
   return {
@@ -53,5 +71,23 @@ export const seedCmsClient: CmsClient = {
   },
   async getLookbook() {
     return cmsMockData.lookbook
+  },
+  async getAdminDropsList() {
+    return [seedDropListItem()]
+  },
+  async duplicateAdminDrop() {
+    return null
+  },
+  async setAdminActiveDrop() {
+    /* SSR seed is read-only */
+  },
+  async scheduleAdminDrop() {
+    /* SSR seed is read-only */
+  },
+  async archiveAdminDrop() {
+    /* SSR seed is read-only */
+  },
+  async deleteAdminDrop() {
+    /* SSR seed is read-only */
   },
 }

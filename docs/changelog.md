@@ -11,6 +11,11 @@ Cursor agents must append every completed task here.
 - Notes/debt:
 ```
 
+## 2026-05-14 — Drops admin list (CMS shell, prompt 05)
+- Summary: Implemented the simplified Drops CMS list at `/admin/drops` with responsive table and card layouts, search and status tabs, columns for release date, scheduled activation, product count, and last edited time, and actions wired through `CmsClient` and TanStack Query. Extended `Drop` with `scheduled` status plus `releaseDate` and `scheduledActivationAt`; the drops service supports duplicate, archive, schedule, and safer active selection when deleting or archiving.
+- Files changed: `src/features/admin/drops/drops.types.ts`, `drops.defaults.ts`, `drops.service.ts`, `DropsAdminList.tsx`, `dropsListUi.store.ts`, `useAdminDropsListQuery.ts`, `src/features/cms/types/adminDrops.types.ts`, `src/app/config/clients.ts`, `src/features/cms/api/cmsClient.localStorage.ts`, `src/features/cms/api/cmsClient.seed.ts`, `src/routes/admin/drops/index.tsx`, `DropEditorRoute.tsx`, `docs/features/drops-cms.md`, `docs/changelog.md`
+- Tests/manual checks: `pnpm run typecheck`, `pnpm run build`; manual: `/admin/drops` search and tabs, activate with confirmation, schedule, archive, delete, duplicate, mobile card layout.
+- Notes/debt: Automatic activation at `scheduledActivationAt` is not implemented (storage and admin UI only). Admin drops APIs live on `CmsClient` (not `SeoClient`) alongside runtime SEO split from prompt 03.
 ## 2026-05-14 — Public layout active drop theme (prompt 04)
 - Summary: Added `ActiveDropThemeProvider`, shared `dropPaletteStyle` helpers, `CmsClient.getActiveDrop()`, SSR `<style>` injection on the root route for public pages, and client-side sync when drops change; admin routes skip global theme injection. Removed global `:root` mutation from `AppProviders` / `ActiveDropThemeBridge` in favor of the provider + head pipeline.
 - Files changed: `src/app/config/clients.ts`, `src/features/cms/api/cmsClient.localStorage.ts`, `src/features/cms/api/cmsClient.seed.ts`, `src/features/admin/drops/dropPaletteStyle.ts`, `src/app/providers/ActiveDropThemeProvider.tsx`, `src/app/providers/ActiveDropThemeBridge.tsx`, `src/app/providers/AppProviders.tsx`, `src/routes/__root.tsx`, `docs/design-system.md`, `docs/features/drops-cms.md`, `docs/changelog.md`

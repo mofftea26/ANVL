@@ -93,6 +93,7 @@ export function createDefaultTheOathDrop(
       'First ANVL launch drop featuring premium silhouettes built for serious lifters.',
     status: 'active',
     isActive: true,
+    releaseDate: '2026-06-15T18:00:00.000Z',
     createdAt: nowIso,
     updatedAt: nowIso,
     theme,

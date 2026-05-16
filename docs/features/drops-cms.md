@@ -61,16 +61,17 @@ Zod schemas and inferred TypeScript types for the canonical `Drop`, `DropTheme`,
 
 ## CMS UX
 The Drops section should be simple:
-1. Drop list with search, status tabs, release date, product count, last edited date.
-2. Clear actions: Edit, Preview, Duplicate, Set Active, Schedule, Archive, Delete.
-3. Create Drop flow:
+1. Drop list with search, status tabs, release date, scheduled activation, product count, and last edited date.
+2. Clear actions: Create, Edit, Preview, Duplicate, Set Active, Schedule, Archive, Delete.
+3. The admin list (`DropsAdminList` at `/admin/drops`) uses the runtime `CmsClient` for reads and mutations, TanStack Query for server state, and a small Zustand store for search and tab UI only.
+4. Create Drop flow:
    - Step 1: Basic info.
    - Step 2: Theme/branding.
    - Step 3: Acts builder.
    - Step 4: Products assignment.
    - Step 5: SEO.
    - Step 6: Save options.
-4. Save options:
+5. Save options:
    - Save as draft.
    - Save and set inactive.
    - Save and make active.

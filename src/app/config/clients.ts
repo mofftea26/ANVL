@@ -1,7 +1,8 @@
 import type { Product } from '@/features/products/types/product.types'
 import type { HomePageContent, SeoContent } from '@/features/cms/types/cms.types'
-import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landingCms.types'
+import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import type { Drop } from '@/features/admin/drops/drops.types'
+import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landingCms.types'
 import type { WebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.types'
 import type { CartLine } from '@/features/cart/types/cart.types'
 import type {
@@ -19,7 +20,7 @@ export interface CommerceClient {
 }
 
 export interface CmsClient {
-  /** Active campaign drop for storefront theming; null when none. */
+  /** Active campaign drop for storefront theming and `/drop/:slug`; null when none. */
   getActiveDrop(): Promise<Drop | null>
   getLandingCmsContent(): Promise<LandingPageCmsContent>
   getHomepageContent(): Promise<HomePageContent>
@@ -27,6 +28,12 @@ export interface CmsClient {
   getNavigation(): Promise<Array<{ label: string; href: string }>>
   getCampaigns(): Promise<Array<{ id: string; title: string; description: string }>>
   getLookbook(): Promise<Array<{ id: string; alt: string; src: string }>>
+  getAdminDropsList(): Promise<AdminDropListItem[]>
+  duplicateAdminDrop(id: string): Promise<AdminDropListItem | null>
+  setAdminActiveDrop(id: string): Promise<void>
+  scheduleAdminDrop(id: string, activationIso: string): Promise<void>
+  archiveAdminDrop(id: string): Promise<void>
+  deleteAdminDrop(id: string): Promise<void>
 }
 
 /** Per-path SEO cards for public routes — replace with CMS/API-backed documents later. */

@@ -338,6 +338,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     <option value="draft">Draft</option>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
+                    <option value="scheduled">Scheduled</option>
                     <option value="archived">Archived</option>
                   </select>
                 </label>

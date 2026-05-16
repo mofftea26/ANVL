@@ -1,4 +1,14 @@
-export type DropStatus = 'draft' | 'active' | 'inactive' | 'archived'
+import type { LandingAct, LandingActSlot } from './publicLandingActs.pipeline'
+
+export type { LandingActSlotKey } from './publicLandingActs.pipeline'
+export { LANDING_ACT_SLOT_KEYS } from './publicLandingActs.pipeline'
+
+export type DropStatus =
+  | 'draft'
+  | 'active'
+  | 'inactive'
+  | 'scheduled'
+  | 'archived'
 
 export type DropThemePalette = {
   id: string
@@ -115,11 +125,17 @@ export type Drop = {
   description: string
   status: DropStatus
   isActive: boolean
+  /** ISO date or datetime — campaign release label. */
+  releaseDate?: string
+  /** ISO datetime — planned activation (admin scheduling only; no auto job yet). */
+  scheduledActivationAt?: string
   createdAt: string
   updatedAt: string
   theme: DropThemePalette
   visuals: DropVisuals
   landingContent: DropLandingContent
+  landingActSequence: LandingActSlot[]
+  acts: LandingAct[]
   productIds: string[]
   seo: DropSeo
 }
