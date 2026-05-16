@@ -1,4 +1,4 @@
-import type { CommerceClient } from '@/app/config/clients'
+﻿import type { CommerceClient } from '@/app/config/clients'
 import {
   getRelatedStorefrontProducts,
   getStorefrontProductBySlug,
@@ -6,7 +6,7 @@ import {
   getStorefrontShopListingCatalog,
 } from '@/features/admin/products/products.commerce'
 
-export const mockCommerceClient: CommerceClient = {
+export const localStorageCommerceClient: CommerceClient = {
   async getProducts() {
     const { items } = await getStorefrontShopListingCatalog()
     return items

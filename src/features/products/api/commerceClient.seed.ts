@@ -1,8 +1,8 @@
-import type { CommerceClient } from '@/app/config/clients'
+﻿import type { CommerceClient } from '@/app/config/clients'
 import {
   getStorefrontProductBySlug,
   getStorefrontProductsForHome,
-  getStorefrontProductsForShop,
+  getStorefrontShopListingCatalog,
 } from '@/features/admin/products/products.commerce'
 
 /**
@@ -12,7 +12,8 @@ import {
  */
 export const seedCommerceClient: CommerceClient = {
   async getProducts() {
-    return getStorefrontProductsForShop()
+    const { items } = getStorefrontShopListingCatalog()
+    return items
   },
   async getHomeProducts() {
     return getStorefrontProductsForHome()
@@ -21,8 +22,10 @@ export const seedCommerceClient: CommerceClient = {
     return getStorefrontProductBySlug(slug)
   },
   async getRelatedProducts(slug: string) {
-    return getStorefrontProductsForShop()
-      .filter((item) => item.slug !== slug)
-      .slice(0, 2)
+    const { items } = getStorefrontShopListingCatalog()
+    return items.filter((item) => item.slug !== slug).slice(0, 4)
+  },
+  async getShopListingCatalog() {
+    return getStorefrontShopListingCatalog()
   },
 }

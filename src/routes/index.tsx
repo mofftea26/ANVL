@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { BRAND } from "@/shared/constants/brand";
 import {
   buildSeoMetaFromCmsSource,
@@ -17,8 +17,8 @@ export const Route = createFileRoute("/")({
     const [products, landing, siteSeo, seoDoc] = await Promise.all([
       runtimeClients.commerce.getHomeProducts(),
       runtimeClients.cms.getLandingCmsContent(),
-      runtimeClients.cms.getSiteSeo(),
-      runtimeClients.cms.getSeoByPath("/"),
+      runtimeClients.seo.getSiteSeo(),
+      runtimeClients.seo.getSeoByPath("/"),
     ]);
     return { products, landing, siteSeo, seoDoc };
   },

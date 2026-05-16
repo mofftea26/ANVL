@@ -1,4 +1,4 @@
-import { productsMock } from '@/features/products/data/products.mock'
+﻿import { productsMock } from '@/features/products/data/products.mock'
 import type { Product } from '@/features/products/types/product.types'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import { DEFAULT_OATH_DROP_ID } from '@/features/admin/drops/drops.defaults'
@@ -62,8 +62,6 @@ function legacyProductToAdmin(p: Product, nowIso: string): AdminProduct {
     sizes,
     availability,
     dropIds: [DEFAULT_OATH_DROP_ID],
-    sourceType: 'drop',
-    currency: 'USD',
     details: {
       fit: p.fit,
       fabric: p.fabric,
@@ -108,17 +106,10 @@ export function createEmptyAdminProduct(nowIso = new Date().toISOString()): Admi
     status: 'draft',
     isActive: false,
     releaseDate: undefined,
-    saleStartsAt: undefined,
-    saleEndsAt: undefined,
     currency: 'USD',
     sourceType: 'individual',
     category: 'Uncategorized',
     tags: [],
-    sourceType: 'individual',
-    releaseDate: undefined,
-    currency: 'USD',
-    videoUrl: undefined,
-    model3dUrl: undefined,
     colors: [
       {
         id: colorId,
@@ -146,8 +137,6 @@ export function createEmptyAdminProduct(nowIso = new Date().toISOString()): Admi
       },
     ],
     dropIds: [],
-    sourceType: 'individual',
-    currency: 'USD',
     details: {},
     videoUrl: undefined,
     model3dUrl: undefined,

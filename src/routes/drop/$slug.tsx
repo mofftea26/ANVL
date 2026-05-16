@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+﻿import { createFileRoute, redirect } from '@tanstack/react-router'
 import { BRAND } from '@/shared/constants/brand'
 import {
   buildSeoMetaFromCmsSource,
@@ -22,8 +22,8 @@ export const Route = createFileRoute('/drop/$slug')({
     }
     const products = getStorefrontProductsForDropSlug(active.slug)
     const [siteSeo, seoDoc] = await Promise.all([
-      runtimeClients.cms.getSiteSeo(),
-      runtimeClients.cms.getSeoByPath(`/drop/${params.slug}`),
+      runtimeClients.seo.getSiteSeo(),
+      runtimeClients.seo.getSeoByPath(`/drop/${params.slug}`),
     ])
     return { drop: active, products, siteSeo, seoDoc }
   },

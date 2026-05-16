@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+﻿import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import type { LandingActSlot } from '@/features/admin/drops/drops.actSequence'
@@ -719,7 +719,7 @@ function NatureContentFields({
 
   return (
     <p className="mt-2 text-[10px] text-[var(--color-text-muted)]">
-      Nature-specific fields for “{nature}” can be added later; content JSON is still validated on save paths.
+      Nature-specific fields for â€œ{nature}â€ can be added later; content JSON is still validated on save paths.
     </p>
   )
 }
@@ -854,9 +854,6 @@ export function DropActsBuilderPanel({
     emit(list.map((a, i) => ({ ...a, sortOrder: i })))
   }
 
-  function updateAct(id: string, patch: Partial<LandingAct>) {
-    emit(acts.map((a) => (a.id === id ? { ...a, ...patch } : a)))
-  }
 
   function addAct() {
     const nature = 'hero'
@@ -1082,7 +1079,7 @@ export function DropActsBuilderPanel({
                     Motion type key
                     <input
                       className={fieldClass}
-                      placeholder="fadeUp, parallax, none…"
+                      placeholder="fadeUp, parallax, noneâ€¦"
                       value={anim.type}
                       onChange={(e) =>
                         updateAct(act.id, {
@@ -1121,7 +1118,7 @@ export function DropActsBuilderPanel({
               {act.nature === 'productShowcase' ? (
                 <div className="mt-3 border-t border-[var(--color-line)]/60 pt-3">
                   <p className="mb-2 text-[10px] text-[var(--color-text-muted)]">
-                    Featured SKUs for this act (optional — leave empty to use all
+                    Featured SKUs for this act (optional â€” leave empty to use all
                     products assigned to the drop).
                   </p>
                   {catalogProducts.length === 0 ? (

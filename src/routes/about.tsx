@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+﻿import { createFileRoute, Link } from '@tanstack/react-router'
 import { BRAND } from '@/shared/constants/brand'
 import {
   buildSeoMetaFromCmsSource,
@@ -18,7 +18,7 @@ const VALUES = [
   },
   {
     label: 'Every Rep Is A Promise',
-    body: 'Fabric, fit, and finishing have to survive hard sets—then still read premium when you walk out.',
+    body: 'Fabric, fit, and finishing have to survive hard setsâ€”then still read premium when you walk out.',
   },
   {
     label: 'The Oath Never Expires',
@@ -26,15 +26,15 @@ const VALUES = [
   },
   {
     label: 'Forged Under Pressure',
-    body: 'Pressure reveals weakness— in iron and in design. We refine until the silhouette and hand feel hold up.',
+    body: 'Pressure reveals weaknessâ€” in iron and in design. We refine until the silhouette and hand feel hold up.',
   },
 ] as const
 
 export const Route = createFileRoute('/about')({
   loader: async () => {
     const [siteSeo, seoDoc] = await Promise.all([
-      runtimeClients.cms.getSiteSeo(),
-      runtimeClients.cms.getSeoByPath('/about'),
+      runtimeClients.seo.getSiteSeo(),
+      runtimeClients.seo.getSeoByPath('/about'),
     ])
     return { siteSeo, seoDoc }
   },
@@ -48,7 +48,7 @@ export const Route = createFileRoute('/about')({
           {
             title: 'About | ANVL Athletics',
             description:
-              'ANVL Athletics is premium bodybuilding gymwear from Lebanon—discipline-first silhouettes forged under pressure, built for serious lifters worldwide.',
+              'ANVL Athletics is premium bodybuilding gymwear from Lebanonâ€”discipline-first silhouettes forged under pressure, built for serious lifters worldwide.',
             canonicalPath: '/about',
           },
           fb,
@@ -78,7 +78,7 @@ function AboutPage() {
             Forged for serious lifters
           </h1>
           <p className="mt-6 max-w-2xl text-base text-[var(--color-text-muted)] md:text-lg">
-            ANVL Athletics builds premium bodybuilding gymwear in Lebanon for disciplined lifters—from Beirut to the
+            ANVL Athletics builds premium bodybuilding gymwear in Lebanon for disciplined liftersâ€”from Beirut to the
             platform abroad. Training comes first; the silhouette stays premium when the session ends.
           </p>
         </Container>
@@ -88,13 +88,13 @@ function AboutPage() {
         <Container className="max-w-3xl space-y-6">
           <h2 className="anvl-heading text-5xl">Our foundation</h2>
           <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
-            ANVL started from a simple read on culture: lifters deserve gear that respects the work—heavy cotton,
+            ANVL started from a simple read on culture: lifters deserve gear that respects the workâ€”heavy cotton,
             honest stretch, compression that holds its shape, and details that feel industrial without looking careless.
           </p>
           <IndustrialDivider />
           <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
             We are not chasing noise. Each drop is tight, intentional, and built around silhouettes that survive leg
-            day, pull day, and the walk home—so you never have to choose between performing and presenting.
+            day, pull day, and the walk homeâ€”so you never have to choose between performing and presenting.
           </p>
         </Container>
       </Section>
@@ -103,13 +103,13 @@ function AboutPage() {
         <Container className="max-w-3xl space-y-6">
           <h2 className="anvl-heading text-5xl">Why Lebanon</h2>
           <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
-            The brand is rooted in Lebanon—a place where pressure is never theoretical. That friction shows up in how
+            The brand is rooted in Lebanonâ€”a place where pressure is never theoretical. That friction shows up in how
             we edit color, texture, and proportion: dark, disciplined, premium. We ship that standard to lifters
             everywhere who want the same focus in what they wear.
           </p>
           <blockquote className="border-l-2 border-[var(--color-accent)] pl-6">
             <p className="text-lg text-[var(--color-text)]">
-              Every release is a promise—to the lifter who shows up anyway.
+              Every release is a promiseâ€”to the lifter who shows up anyway.
             </p>
           </blockquote>
         </Container>
@@ -119,7 +119,7 @@ function AboutPage() {
         <Container className="space-y-8">
           <h2 className="anvl-heading text-5xl">What we stand on</h2>
           <p className="max-w-2xl text-sm text-[var(--color-text-muted)]">
-            The same lines that guide Drop 01—The Oath—guide how we build the house.
+            The same lines that guide Drop 01â€”The Oathâ€”guide how we build the house.
           </p>
           <div className="grid gap-3 md:grid-cols-2">
             {VALUES.map((item) => (
@@ -139,7 +139,7 @@ function AboutPage() {
         <Container className="max-w-3xl space-y-6">
           <h2 className="anvl-heading text-5xl">Drop philosophy</h2>
           <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
-            We release in drops, not endless SKUs—so every piece earns its place. Heavyweight tees, a disciplined
+            We release in drops, not endless SKUsâ€”so every piece earns its place. Heavyweight tees, a disciplined
             stringer, compression that stays honest under load: each pattern is tested against real training, then
             refined for a premium streetwear read when you are off the clock.
           </p>
