@@ -107,9 +107,22 @@ interface SeoClient {
 }
 ```
 
+## Canonical CMS types (Zod)
+Runtime contracts for external/CMS JSON live under feature folders and shared primitives:
+- Drops: `src/features/drops/schemas/drop.schema.ts`, types re-exported from `src/features/drops/types/drop.types.ts`
+- Landing acts: `src/features/landing/schemas/landing-act.schema.ts`, `src/features/landing/types/landing-act.types.ts`
+- SEO documents: `src/features/seo/schemas/seo-document.schema.ts`, `src/features/seo/types/seo-document.types.ts`
+- Catalog products (commerce doc model): `src/features/products/schemas/commerce.schema.ts`, `src/features/products/types/commerce.types.ts`
+- Money, media, navigation, site settings: `src/shared/schemas/*.schema.ts`, `src/shared/types/*.types.ts`
+- Example validated seed: `src/content/seed/drop-01-the-oath.seed.ts`
+
 ## Migration path
 1. Local seed/localStorage adapter.
 2. TanStack Start server functions/server routes adapter.
 3. External backend adapter.
 4. Medusa commerce adapter for products, variants, inventory, pricing, carts, orders.
 5. Custom ANVL CMS tables remain separate for drops, acts, SEO, media, and campaign content.
+
+## As-built snapshot (inventory)
+
+A Prompt 01 codebase audit (routes, CMS vs hard-coded copy, SSR/browser boundaries, GSAP/cart flows, and cautious files) lives in `docs/technical-debt.md` under **As-built audit (2026-05-14)**. Update that section when the app structure materially changes so agents do not rely on stale route lists.

@@ -95,6 +95,9 @@ type ActAnimationConfig = {
 };
 ```
 
+## Runtime contracts
+`LandingAct`, `ActNature`, and `ActAnimationConfig` (plus `ActMedia`) are defined as Zod schemas in `src/features/landing/schemas/landing-act.schema.ts` with type re-exports in `src/features/landing/types/landing-act.types.ts`. Per-act `content` remains `Record<string, unknown>` until nature-specific content schemas are added.
+
 ## Rendering rules
 - Every act nature maps to a renderer component.
 - Every nature has a schema for its `content` object.

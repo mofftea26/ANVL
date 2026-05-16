@@ -21,6 +21,9 @@ type SeoDocument = {
 };
 ```
 
+## Runtime contracts
+`SeoDocument` is validated by `seoDocumentSchema` in `src/features/seo/schemas/seo-document.schema.ts` with types re-exported from `src/features/seo/types/seo-document.types.ts`. `NavigationItem` and `SiteSettings` schemas live in `src/shared/schemas/navigation.schema.ts` and `src/shared/schemas/site-settings.schema.ts` (types under `src/shared/types/`).
+
 ## CMS SEO sections
 1. Global SEO defaults.
 2. Landing page SEO.

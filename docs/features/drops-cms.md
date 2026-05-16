@@ -56,6 +56,9 @@ type DropTheme = {
 };
 ```
 
+## Runtime contracts
+Zod schemas and inferred TypeScript types for the canonical `Drop`, `DropTheme`, and `DropBranding` shapes live in `src/features/drops/schemas/drop.schema.ts` and `src/features/drops/types/drop.types.ts`. Example validated data for Drop 01 — The Oath is exported from `src/content/seed/drop-01-the-oath.seed.ts`.
+
 ## CMS UX
 The Drops section should be simple:
 1. Drop list with search, status tabs, release date, product count, last edited date.
