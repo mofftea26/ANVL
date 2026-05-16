@@ -11,7 +11,8 @@ import {
 import type { WebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.types'
 
 function patchDropHref(href: string, slug: string): string {
-  if (href.startsWith('/drop/')) return `/drop/${slug}`
+  const h = href.trim()
+  if (h.startsWith('/drop/')) return `/drop/${slug}`
   return href
 }
 
@@ -21,7 +22,7 @@ function patchDropNavLinks<T extends { href: string; label: string }>(
   drop: Drop,
 ): T[] {
   return links.map((link) =>
-    link.href.startsWith('/drop/')
+    link.href.trim().startsWith('/drop/')
       ? {
           ...link,
           href: patchDropHref(link.href, drop.slug),

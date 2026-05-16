@@ -2,11 +2,17 @@ import {
   WEBSITE_LAYOUT_VERSION,
   createDefaultWebsiteLayout,
 } from './websiteLayout.defaults'
+import { isActiveDropNavTemplateHref } from './websiteLayout.nav'
 import {
   readWebsiteLayoutRaw,
   writeWebsiteLayoutRaw,
 } from './websiteLayout.storage'
 import type { WebsiteLayoutContent } from './websiteLayout.types'
+
+function normalizeLogoSrc(src: string | undefined): string | undefined {
+  const t = src?.trim()
+  return t ? t : undefined
+}
 
 function mergeWebsiteLayout(
   stored: Partial<WebsiteLayoutContent> | null,
@@ -23,6 +29,11 @@ function mergeWebsiteLayout(
     header: {
       ...defaults.header,
       ...(stored.header ?? {}),
+      logoStackedSrc: normalizeLogoSrc(stored.header?.logoStackedSrc),
+      logoMediaAssetId:
+        typeof stored.header?.logoMediaAssetId === 'string'
+          ? stored.header.logoMediaAssetId.trim() || undefined
+          : defaults.header.logoMediaAssetId,
       announcement: {
         ...defaults.header.announcement,
         ...(stored.header?.announcement ?? {}),
@@ -39,6 +50,11 @@ function mergeWebsiteLayout(
     footer: {
       ...defaults.footer,
       ...(stored.footer ?? {}),
+      logoStackedSrc: normalizeLogoSrc(stored.footer?.logoStackedSrc),
+      logoMediaAssetId:
+        typeof stored.footer?.logoMediaAssetId === 'string'
+          ? stored.footer.logoMediaAssetId.trim() || undefined
+          : defaults.footer.logoMediaAssetId,
       linkGroups:
         Array.isArray(stored.footer?.linkGroups) &&
         stored.footer!.linkGroups.length > 0
@@ -63,11 +79,45 @@ export function getWebsiteLayoutContent(): WebsiteLayoutContent {
   }
 }
 
+export function getWebsiteLayoutSaveError(
+  content: WebsiteLayoutContent,
+): string | null {
+  const hasDropSlot = content.header.headerLinks.some((l) =>
+    isActiveDropNavTemplateHref(l.href),
+  )
+  if (!hasDropSlot) {
+    return 'Desktop navigation must include at least one link whose URL starts with /drop/ (the active campaign slot).'
+  }
+  return null
+}
+
+export function normalizeWebsiteLayoutForPersist(
+  content: WebsiteLayoutContent,
+): WebsiteLayoutContent {
+  return {
+    ...content,
+    header: {
+      ...content.header,
+      logoStackedSrc: normalizeLogoSrc(content.header.logoStackedSrc),
+      logoMediaAssetId: content.header.logoMediaAssetId?.trim() || undefined,
+    },
+    footer: {
+      ...content.footer,
+      logoStackedSrc: normalizeLogoSrc(content.footer.logoStackedSrc),
+      logoMediaAssetId: content.footer.logoMediaAssetId?.trim() || undefined,
+    },
+  }
+}
+
 export function saveWebsiteLayoutContent(
   content: WebsiteLayoutContent,
 ): WebsiteLayoutContent {
+  const err = getWebsiteLayoutSaveError(content)
+  if (err) {
+    throw new Error(err)
+  }
   const stamped: WebsiteLayoutContent = {
-    ...content,
+    ...normalizeWebsiteLayoutForPersist(content),
     version: WEBSITE_LAYOUT_VERSION,
     updatedAt: new Date().toISOString(),
   }

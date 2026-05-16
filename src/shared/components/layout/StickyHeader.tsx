@@ -6,7 +6,6 @@ import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { useStickyHeader } from '@/shared/hooks/useStickyHeader'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { cn } from '@/shared/lib/cn'
-import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 import { Container } from '@/shared/components/ui/Container'
 import { IconButton } from '@/shared/components/ui/IconButton'
 import { Drawer } from '@/shared/components/ui/Drawer'
@@ -42,10 +41,6 @@ export function StickyHeader({
   const showCart = navigation.cartVisible !== false
   const logoSrc = navigation.headerLogoSrc?.trim()
   const announcement = navigation.announcement
-  const announcementText =
-    announcement?.enabled && announcement.message.trim()
-      ? stripAngleBracketTags(announcement.message.trim())
-      : ''
 
   const LogoMark = (
     <>
@@ -68,25 +63,25 @@ export function StickyHeader({
 
   return (
     <header className="sticky top-0 z-40">
-      {announcement?.enabled && announcementText ? (
+      {announcement?.enabled && announcement.message.trim() ? (
         <div className="border-b border-[var(--color-line)] bg-[var(--color-accent)]/10 py-2 text-center text-[11px] text-[var(--color-text-muted)]">
           <Container>
             {announcement.href?.startsWith('http') ? (
               <a
                 href={announcement.href}
-                className="focus-ring font-medium text-[var(--color-heading)] underline-offset-4 hover:underline"
+                className="font-medium text-[var(--color-heading)] underline-offset-4 hover:underline"
               >
-                {announcementText}
+                {announcement.message}
               </a>
             ) : announcement.href ? (
               <Link
                 to={announcement.href}
-                className="focus-ring font-medium text-[var(--color-heading)] no-underline hover:underline"
+                className="font-medium text-[var(--color-heading)] no-underline hover:underline"
               >
-                {announcementText}
+                {announcement.message}
               </Link>
             ) : (
-              <span>{announcementText}</span>
+              <span>{announcement.message}</span>
             )}
           </Container>
         </div>
@@ -103,19 +98,19 @@ export function StickyHeader({
         <Container className="flex h-16 items-center gap-3">
           <Link
             to="/"
-            className="focus-ring inline-flex shrink-0 items-center text-[var(--color-heading)]"
+            className="inline-flex shrink-0 items-center text-[var(--color-heading)]"
           >
             {LogoMark}
           </Link>
           <nav
             className="ml-8 hidden items-center gap-6 md:flex"
-            aria-label="Main navigation"
+            aria-label="Primary"
           >
             {visibleLinks.map((item) => (
               <Link
                 key={item.id ?? item.href}
                 to={item.href}
-                className="focus-ring anvl-micro text-xs no-underline hover:text-[var(--color-heading)]"
+                className="anvl-micro text-xs no-underline hover:text-[var(--color-heading)]"
               >
                 {item.label}
               </Link>
@@ -125,18 +120,10 @@ export function StickyHeader({
             {showCart ? (
               <Link
                 to="/cart"
-                aria-label={
-                  quantity > 0
-                    ? `Shopping cart, ${quantity} items`
-                    : 'Shopping cart, empty'
-                }
                 className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)]"
               >
-                <ShoppingBag size={16} aria-hidden="true" />
-                <span
-                  aria-hidden="true"
-                  className="absolute -right-1 -top-1 rounded-full bg-[var(--color-accent)] px-1.5 text-[10px] text-[var(--color-bg)]"
-                >
+                <ShoppingBag size={16} />
+                <span className="absolute -right-1 -top-1 rounded-full bg-[var(--color-accent)] px-1.5 text-[10px] text-[var(--color-bg)]">
                   {quantity}
                 </span>
               </Link>
@@ -152,7 +139,7 @@ export function StickyHeader({
         </Container>
       </div>
 
-      <Drawer open={open} onClose={() => setOpen(false)} aria-label="Site navigation">
+      <Drawer open={open} onClose={() => setOpen(false)}>
         <div className="flex items-center justify-between">
           {LogoMark}
           <IconButton
@@ -162,12 +149,12 @@ export function StickyHeader({
             <X size={16} />
           </IconButton>
         </div>
-        <nav className="mt-8 flex flex-col gap-4" aria-label="Mobile navigation links">
+        <nav className="mt-8 flex flex-col gap-4" aria-label="Mobile">
           {drawerLinks.map((item) => (
             <Link
               key={`${item.id ?? item.href}-drawer`}
               to={item.href}
-              className="focus-ring anvl-heading text-3xl no-underline"
+              className="anvl-heading text-3xl no-underline"
               onClick={() => setOpen(false)}
             >
               {item.label}

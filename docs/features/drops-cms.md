@@ -106,3 +106,10 @@ When a drop becomes active:
 - The Drop Editor **Landing acts** tab includes `DropActsBuilderPanel` (add/remove/reorder, nature and preset selectors, eyebrow/title/subtitle/body) plus the legacy per-section forms. `Drop.acts` is persisted with the drop; `landingActSequence` toggles are synced when mapped slots have at least one enabled act.
 - The public `/` route renders `PublicLandingActs`, which switches on `nature` to existing section components (Act III onward lazy-loaded), respects `enabled === false`, and degrades unknown types to a small on-page notice.
 - Hero GSAP runs only at `min-width: 768px` with `prefers-reduced-motion: no-preference`; mobile and reduced-motion users see a static hero layout for speed and accessibility.
+
+## Website layout (global chrome)
+
+- **Admin route**: `/admin/website-layout` edits `WebsiteLayoutContent` (`src/features/admin/website-layout/websiteLayout.types.ts`), persisted via `websiteLayout.storage` (local storage in the no-backend phase).
+- **Logos**: Optional `header.logoStackedSrc` / `footer.logoStackedSrc`. When unset or blank after trim, the public shell uses the bundled `AnvlLogoImage` (official mark). The global brand logo does not switch with the active drop; campaign artwork stays on drop surfaces. `logoMediaAssetId` on header/footer is reserved for a future media library (merged in `websiteLayout.service.ts`, not yet used in UI).
+- **Active campaign slots**: Admin treats links whose URL starts with `/drop/` (trimmed) as system-managed placeholders; the storefront still receives the active drop **title** and `/drop/<slug>` from `composeLandingPageFromDrop` / `patchDropNavLinks`. Saves require at least one such link in desktop `headerLinks` (`getWebsiteLayoutSaveError` in `websiteLayout.service.ts`).
+- **Footer**: Grouped links, newsletter copy, `socialLinks` (shown in `SiteFooter`), copyright line.

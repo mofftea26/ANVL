@@ -22,7 +22,13 @@ export type WebsiteLayoutContent = {
   version: number
   updatedAt: string
   header: {
+    /**
+     * Optional custom stacked mark URL or data URL. When empty/undefined,
+     * the public shell uses the bundled `AnvlLogoImage` (official mark).
+     */
     logoStackedSrc?: string
+    /** Reserved for a future media library — ignored until wired. */
+    logoMediaAssetId?: string
     cartVisible: boolean
     announcement: WebsiteAnnouncementBar
     headerLinks: CmsLinkItem[]
@@ -30,6 +36,8 @@ export type WebsiteLayoutContent = {
   }
   footer: {
     logoStackedSrc?: string
+    /** Reserved for a future media library — ignored until wired. */
+    logoMediaAssetId?: string
     decorativeEmblemFallbackSrc?: string
     tagline: string
     microCaption: string

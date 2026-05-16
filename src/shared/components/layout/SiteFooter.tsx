@@ -102,22 +102,28 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
             <Button type="button">{navigation.newsletterButtonText}</Button>
           </div>
           {social.length > 0 ? (
-            <div className="mt-4 flex flex-wrap gap-3 text-xs">
+            <ul className="mt-4 flex flex-wrap gap-3 text-xs">
               {social.map((item) => (
-                <a
-                  key={item.id}
-                  href={item.href}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="text-[var(--color-text-muted)] underline-offset-4 hover:text-[var(--color-heading)] hover:underline"
-                >
-                  {item.label}
-                </a>
+                <li key={item.id}>
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-[var(--color-text-muted)] underline-offset-4 hover:text-[var(--color-heading)] hover:underline"
+                    aria-label={
+                      item.label.trim()
+                        ? `${item.label} (opens in a new tab)`
+                        : 'Social profile (opens in a new tab)'
+                    }
+                  >
+                    {item.label}
+                  </a>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
             <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-              Social links are configured in Website Layout.
+              Social links are configured in Website layout (admin).
             </p>
           )}
         </div>

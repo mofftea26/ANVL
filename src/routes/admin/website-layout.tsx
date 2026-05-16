@@ -1,15 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Plus, Save, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
+import {
+  ensureDropSystemHydrated,
+  getActiveDrop,
+} from '@/features/admin/drops/drops.service'
 import type { CmsLinkItem } from '@/features/admin/landing-cms/landingCms.types'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
+import { isActiveDropNavTemplateHref } from '@/features/admin/website-layout/websiteLayout.nav'
 import {
   getWebsiteLayoutContent,
+  getWebsiteLayoutSaveError,
   saveWebsiteLayoutContent,
 } from '@/features/admin/website-layout/websiteLayout.service'
 import type {
@@ -23,7 +29,6 @@ import { FormField } from '@/shared/components/ui/FormField'
 import { ImageFileOrUrlField } from '@/shared/components/ui/ImageFileOrUrlField'
 import { Input } from '@/shared/components/ui/Input'
 import { Textarea } from '@/shared/components/ui/Textarea'
-
 export const Route = createFileRoute('/admin/website-layout')({
   component: WebsiteLayoutRoute,
 })
@@ -61,9 +66,33 @@ function emptyGroup(): WebsiteFooterLinkGroup {
   }
 }
 
+function emptyDropCampaignLink(): CmsLinkItem {
+  return {
+    id: createCmsId('nav'),
+    label: 'Active campaign',
+    href: '/drop/the-oath',
+    isVisible: true,
+  }
+}
+
 function WebsiteLayoutPage() {
   const [layout, setLayout] = useState<WebsiteLayoutContent>(() =>
     getWebsiteLayoutContent(),
+  )
+  const [activeDropTitle, setActiveDropTitle] = useState<string>('')
+
+  useEffect(() => {
+    ensureDropSystemHydrated()
+    const drop = getActiveDrop()
+    setActiveDropTitle(drop?.title?.trim() ? drop.title : 'No active drop')
+  }, [])
+
+  const headerDropSlotCount = useMemo(
+    () =>
+      layout.header.headerLinks.filter((l) =>
+        isActiveDropNavTemplateHref(l.href),
+      ).length,
+    [layout.header.headerLinks],
   )
 
   const patchHeader = (patch: Partial<WebsiteLayoutContent['header']>) => {
@@ -108,9 +137,19 @@ function WebsiteLayoutPage() {
   }
 
   const save = () => {
-    saveWebsiteLayoutContent(layout)
-    toast.success('Website layout saved.')
-    setLayout(getWebsiteLayoutContent())
+    const err = getWebsiteLayoutSaveError(layout)
+    if (err) {
+      toast.error(err)
+      return
+    }
+    try {
+      saveWebsiteLayoutContent(layout)
+      toast.success('Website layout saved.')
+      setLayout(getWebsiteLayoutContent())
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Could not save layout.'
+      toast.error(message)
+    }
   }
 
   return (
@@ -134,7 +173,7 @@ function WebsiteLayoutPage() {
           <div className="md:col-span-2">
             <ImageFileOrUrlField
               label="Logo (stacked)"
-              hint="Header logo — embed with Choose file or keep a path under public/, e.g. /brand/stacked.svg."
+              hint="Leave empty to use the bundled official ANVL mark. Optional override: file upload or a path under public/."
               value={layout.header.logoStackedSrc ?? ''}
               onChange={(next) => patchHeader({ logoStackedSrc: next })}
             />
@@ -192,71 +231,126 @@ function WebsiteLayoutPage() {
         </div>
 
         <div className="mt-8 space-y-4">
+          <p className="text-xs text-[var(--color-text-muted)]">
+            Links whose URL starts with{' '}
+            <code className="rounded bg-[var(--color-surface)] px-1">/drop/</code>{' '}
+            are the active campaign slot: the storefront replaces label and path
+            using the active drop (currently:{' '}
+            <span className="text-[var(--color-text)]">{activeDropTitle}</span>
+            ).
+          </p>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-text-muted)]">
               Desktop navigation
             </p>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() =>
-                patchHeader({
-                  headerLinks: [...layout.header.headerLinks, emptyLink()],
-                })
-              }
-            >
-              <Plus size={14} className="mr-1" aria-hidden="true" />
-              Add link
-            </Button>
-          </div>
-          <div className="space-y-3">
-            {layout.header.headerLinks.map((link, index) => (
-              <div
-                key={link.id}
-                className="grid gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]/40 p-4 md:grid-cols-[1fr_1fr_auto_auto]"
-              >
-                <FormField label="Label">
-                  <Input
-                    value={link.label}
-                    onChange={(e) =>
-                      updateHeaderLink(index, { label: e.target.value })
-                    }
-                  />
-                </FormField>
-                <FormField label="Href">
-                  <Input
-                    value={link.href}
-                    onChange={(e) =>
-                      updateHeaderLink(index, { href: e.target.value })
-                    }
-                  />
-                </FormField>
-                <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                  <Checkbox
-                    checked={link.isVisible}
-                    onChange={(e) =>
-                      updateHeaderLink(index, { isVisible: e.target.checked })
-                    }
-                  />
-                  Visible
-                </label>
+            <div className="flex flex-wrap gap-2">
+              {getWebsiteLayoutSaveError(layout) ? (
                 <Button
                   type="button"
-                  variant="ghost"
                   size="sm"
+                  variant="secondary"
                   onClick={() =>
                     patchHeader({
-                      headerLinks: layout.header.headerLinks.filter(
-                        (_, i) => i !== index,
-                      ),
+                      headerLinks: [
+                        ...layout.header.headerLinks,
+                        emptyDropCampaignLink(),
+                      ],
                     })
                   }
                 >
-                  <Trash2 size={14} aria-hidden="true" />
+                  <Plus size={14} className="mr-1" aria-hidden="true" />
+                  Add /drop/ campaign slot
                 </Button>
-              </div>
-            ))}
+              ) : null}
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  patchHeader({
+                    headerLinks: [...layout.header.headerLinks, emptyLink()],
+                  })
+                }
+              >
+                <Plus size={14} className="mr-1" aria-hidden="true" />
+                Add link
+              </Button>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {layout.header.headerLinks.map((link, index) => {
+              const dropSlot = isActiveDropNavTemplateHref(link.href)
+              const blockDeleteDropSlot = dropSlot && headerDropSlotCount === 1
+              return (
+                <div
+                  key={link.id}
+                  className="grid gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]/40 p-4 md:grid-cols-[1fr_1fr_auto_auto]"
+                >
+                  {dropSlot ? (
+                    <div className="md:col-span-2 rounded-lg border border-dashed border-[var(--color-line)] bg-[var(--color-bg)]/60 p-3 text-xs text-[var(--color-text-muted)]">
+                      <p className="font-medium text-[var(--color-text)]">
+                        Active campaign slot (system-managed)
+                      </p>
+                      <p className="mt-1">
+                        The live site shows the active drop title and{' '}
+                        <code className="rounded bg-[var(--color-surface)] px-1">
+                          /drop/&lt;slug&gt;
+                        </code>{' '}
+                        instead of the placeholder values stored here.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <FormField label="Label">
+                        <Input
+                          value={link.label}
+                          onChange={(e) =>
+                            updateHeaderLink(index, { label: e.target.value })
+                          }
+                        />
+                      </FormField>
+                      <FormField label="Href">
+                        <Input
+                          value={link.href}
+                          onChange={(e) =>
+                            updateHeaderLink(index, { href: e.target.value })
+                          }
+                        />
+                      </FormField>
+                    </>
+                  )}
+                  <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+                    <Checkbox
+                      checked={link.isVisible}
+                      onChange={(e) =>
+                        updateHeaderLink(index, { isVisible: e.target.checked })
+                      }
+                    />
+                    Visible
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={blockDeleteDropSlot}
+                    title={
+                      blockDeleteDropSlot
+                        ? 'Desktop navigation must keep at least one /drop/ campaign slot.'
+                        : undefined
+                    }
+                    onClick={() =>
+                      patchHeader({
+                        headerLinks: layout.header.headerLinks.filter(
+                          (_, i) => i !== index,
+                        ),
+                      })
+                    }
+                  >
+                    <Trash2 size={14} aria-hidden="true" />
+                  </Button>
+                </div>
+              )
+            })}
           </div>
         </div>
 
@@ -283,55 +377,71 @@ function WebsiteLayoutPage() {
             </Button>
           </div>
           <div className="space-y-3">
-            {layout.header.mobileExtraLinks.map((link, index) => (
-              <div
-                key={link.id}
-                className="grid gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]/40 p-4 md:grid-cols-[1fr_1fr_auto_auto]"
-              >
-                <FormField label="Label">
-                  <Input
-                    value={link.label}
-                    onChange={(e) =>
-                      updateMobileLink(index, { label: e.target.value })
-                    }
-                  />
-                </FormField>
-                <FormField label="Href">
-                  <Input
-                    value={link.href}
-                    onChange={(e) =>
-                      updateMobileLink(index, { href: e.target.value })
-                    }
-                  />
-                </FormField>
-                <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                  <Checkbox
-                    checked={link.isVisible}
-                    onChange={(e) =>
-                      updateMobileLink(index, {
-                        isVisible: e.target.checked,
+            {layout.header.mobileExtraLinks.map((link, index) => {
+              const dropSlot = isActiveDropNavTemplateHref(link.href)
+              return (
+                <div
+                  key={link.id}
+                  className="grid gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]/40 p-4 md:grid-cols-[1fr_1fr_auto_auto]"
+                >
+                  {dropSlot ? (
+                    <div className="md:col-span-2 rounded-lg border border-dashed border-[var(--color-line)] bg-[var(--color-bg)]/60 p-3 text-xs text-[var(--color-text-muted)]">
+                      <p className="font-medium text-[var(--color-text)]">
+                        Active campaign slot (system-managed)
+                      </p>
+                      <p className="mt-1">
+                        Label and URL follow the active drop on the storefront.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <FormField label="Label">
+                        <Input
+                          value={link.label}
+                          onChange={(e) =>
+                            updateMobileLink(index, { label: e.target.value })
+                          }
+                        />
+                      </FormField>
+                      <FormField label="Href">
+                        <Input
+                          value={link.href}
+                          onChange={(e) =>
+                            updateMobileLink(index, { href: e.target.value })
+                          }
+                        />
+                      </FormField>
+                    </>
+                  )}
+                  <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+                    <Checkbox
+                      checked={link.isVisible}
+                      onChange={(e) =>
+                        updateMobileLink(index, {
+                          isVisible: e.target.checked,
+                        })
+                      }
+                    />
+                    Visible
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      patchHeader({
+                        mobileExtraLinks:
+                          layout.header.mobileExtraLinks.filter(
+                            (_, i) => i !== index,
+                          ),
                       })
                     }
-                  />
-                  Visible
-                </label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    patchHeader({
-                      mobileExtraLinks:
-                        layout.header.mobileExtraLinks.filter(
-                          (_, i) => i !== index,
-                        ),
-                    })
-                  }
-                >
-                  <Trash2 size={14} aria-hidden="true" />
-                </Button>
-              </div>
-            ))}
+                  >
+                    <Trash2 size={14} aria-hidden="true" />
+                  </Button>
+                </div>
+              )
+            })}
           </div>
         </div>
       </AdminCard>
@@ -341,7 +451,7 @@ function WebsiteLayoutPage() {
           <div className="md:col-span-2">
             <ImageFileOrUrlField
               label="Footer logo"
-              hint="Footer stacked mark — file picker embeds locally; paths work everywhere."
+              hint="Leave empty for the official bundled mark. Optional: custom stacked mark via file or public path."
               value={layout.footer.logoStackedSrc ?? ''}
               onChange={(next) => patchFooter({ logoStackedSrc: next })}
             />
@@ -477,59 +587,80 @@ function WebsiteLayoutPage() {
                 </Button>
               </div>
               <div className="space-y-3">
-                {group.links.map((link, li) => (
-                  <div
-                    key={link.id}
-                    className="grid gap-3 rounded-xl border border-[var(--color-line)]/80 p-3 md:grid-cols-[1fr_1fr_auto_auto]"
-                  >
-                    <FormField label="Label">
-                      <Input
-                        value={link.label}
-                        onChange={(e) =>
-                          updateGroupLink(gi, li, { label: e.target.value })
-                        }
-                      />
-                    </FormField>
-                    <FormField label="Href">
-                      <Input
-                        value={link.href}
-                        onChange={(e) =>
-                          updateGroupLink(gi, li, { href: e.target.value })
-                        }
-                      />
-                    </FormField>
-                    <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                      <Checkbox
-                        checked={link.isVisible}
-                        onChange={(e) =>
-                          updateGroupLink(gi, li, {
-                            isVisible: e.target.checked,
-                          })
-                        }
-                      />
-                      Visible
-                    </label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const linkGroups = layout.footer.linkGroups.map(
-                          (g, i) =>
-                            i === gi
-                              ? {
-                                  ...g,
-                                  links: g.links.filter((_, j) => j !== li),
-                                }
-                              : g,
-                        )
-                        patchFooter({ linkGroups })
-                      }}
+                {group.links.map((link, li) => {
+                  const dropSlot = isActiveDropNavTemplateHref(link.href)
+                  return (
+                    <div
+                      key={link.id}
+                      className="grid gap-3 rounded-xl border border-[var(--color-line)]/80 p-3 md:grid-cols-[1fr_1fr_auto_auto]"
                     >
-                      <Trash2 size={14} aria-hidden="true" />
-                    </Button>
-                  </div>
-                ))}
+                      {dropSlot ? (
+                        <div className="md:col-span-2 rounded-lg border border-dashed border-[var(--color-line)] bg-[var(--color-bg)]/60 p-3 text-xs text-[var(--color-text-muted)]">
+                          <p className="font-medium text-[var(--color-text)]">
+                            Active campaign slot (system-managed)
+                          </p>
+                          <p className="mt-1">
+                            Footer uses the active drop title and slug on the
+                            storefront.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <FormField label="Label">
+                            <Input
+                              value={link.label}
+                              onChange={(e) =>
+                                updateGroupLink(gi, li, {
+                                  label: e.target.value,
+                                })
+                              }
+                            />
+                          </FormField>
+                          <FormField label="Href">
+                            <Input
+                              value={link.href}
+                              onChange={(e) =>
+                                updateGroupLink(gi, li, {
+                                  href: e.target.value,
+                                })
+                              }
+                            />
+                          </FormField>
+                        </>
+                      )}
+                      <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+                        <Checkbox
+                          checked={link.isVisible}
+                          onChange={(e) =>
+                            updateGroupLink(gi, li, {
+                              isVisible: e.target.checked,
+                            })
+                          }
+                        />
+                        Visible
+                      </label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const linkGroups = layout.footer.linkGroups.map(
+                            (g, i) =>
+                              i === gi
+                                ? {
+                                    ...g,
+                                    links: g.links.filter((_, j) => j !== li),
+                                  }
+                                : g,
+                          )
+                          patchFooter({ linkGroups })
+                        }}
+                      >
+                        <Trash2 size={14} aria-hidden="true" />
+                      </Button>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           ))}
