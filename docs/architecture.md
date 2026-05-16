@@ -89,9 +89,11 @@ src/
 - LocalStorage CMS adapter must not run during SSR. It must provide safe fallback seed data on the server and hydrate on the client.
 
 ## API interface first
-Contracts live in `src/app/config/clients.ts` (`CmsClient`, `CommerceClient`, `SeoClient`, `SiteSettingsClient`, …). Wiring lives in `src/app/config/runtime.ts` via `createRuntimeClients({ isServer })` so SSR never executes `localStorage` adapters.
+**Runtime (today):** contracts live in `src/app/config/clients.ts` (`CmsClient`, `CommerceClient`, `SeoClient`, `SiteSettingsClient`, …). Wiring lives in `src/app/config/runtime.ts` via `createRuntimeClients({ isServer })` so SSR never executes `localStorage` adapters.
 
-Illustrative contracts:
+**Future HTTP/BFF:** typed DTOs for REST and Medusa integration live in `src/shared/api/contracts/` (see `docs/contracts/README.md` and `docs/backend-medusa-roadmap.md`). Define or extend those modules before swapping adapters.
+
+Illustrative runtime contracts:
 ```ts
 interface CmsClient {
   getLandingCmsContent(): Promise<LandingPageCmsContent>;
