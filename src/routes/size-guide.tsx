@@ -1,10 +1,7 @@
 import type { ReactNode } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { BRAND } from '@/shared/constants/brand'
-import {
-  buildSeoMetaFromCmsSource,
-  seoContentToMetaSource,
-} from '@/features/cms/seoMeta'
+import { buildSeoMetaFromCmsSource, seoContentToMetaSource } from '@/features/cms/seoMeta'
 import { runtimeClients } from '@/app/config/runtime'
 import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { Container, Section } from '@/shared/components/ui'

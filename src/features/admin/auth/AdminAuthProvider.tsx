@@ -25,11 +25,6 @@ export const AdminAuthContext = createContext<AdminAuthContextValue | null>(
   null,
 )
 
-/**
- * Dev-only admin authentication: credentials come from Vite env at build time
- * and ship in the client bundle. Replace with real server-backed sessions
- * before production.
- */
 export function AdminAuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<AdminSession | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)
@@ -49,7 +44,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
         return {
           ok: false as const,
           error:
-            'Admin login is not configured. Set VITE_ANVL_ADMIN_PASSWORD in a `.env` file (see `.env.example`).',
+            'Admin login is not configured. Set VITE_ANVL_ADMIN_PASSWORD in a local .env file (see .env.example).',
         }
       }
       if (
