@@ -10,6 +10,7 @@ import { Container } from '@/shared/components/ui/Container'
 import { IconButton } from '@/shared/components/ui/IconButton'
 import { Drawer } from '@/shared/components/ui/Drawer'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
+import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 
 export function StickyHeader({
   navigation,
@@ -72,10 +73,10 @@ export function StickyHeader({
                 href={announcement.href}
                 className="focus-ring font-medium text-[var(--color-heading)] underline-offset-4 hover:underline"
               >
-                {announcement.message}
+                {stripAngleBracketTags(announcement.message)}
               </SafeLink>
             ) : (
-              <span>{announcement.message}</span>
+              <span>{stripAngleBracketTags(announcement.message)}</span>
             )}
           </Container>
         </div>
@@ -106,7 +107,7 @@ export function StickyHeader({
                 href={item.href}
                 className="anvl-micro focus-ring text-xs no-underline hover:text-[var(--color-heading)]"
               >
-                {item.label}
+                {stripAngleBracketTags(item.label)}
               </SafeLink>
             ))}
           </nav>
@@ -151,7 +152,7 @@ export function StickyHeader({
               className="anvl-heading focus-ring text-3xl no-underline"
               onClick={() => setOpen(false)}
             >
-              {item.label}
+              {stripAngleBracketTags(item.label)}
             </SafeLink>
           ))}
         </nav>

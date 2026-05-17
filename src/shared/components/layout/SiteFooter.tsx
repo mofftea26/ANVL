@@ -5,6 +5,7 @@ import { Container } from '@/shared/components/ui/Container'
 import { Input } from '@/shared/components/ui/Input'
 import { Button } from '@/shared/components/ui/Button'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
+import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 
 interface SiteFooterProps {
   navigation: LandingNavigationContent
@@ -54,9 +55,11 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
             />
           )}
           <p className="mt-3 max-w-sm text-sm text-[var(--color-text-muted)]">
-            {navigation.footerTagline}
+            {stripAngleBracketTags(navigation.footerTagline)}
           </p>
-          <p className="anvl-micro mt-4">{navigation.footerMicroCaption}</p>
+          <p className="anvl-micro mt-4">
+            {stripAngleBracketTags(navigation.footerMicroCaption)}
+          </p>
         </div>
 
         {groups.length > 0 ? (
@@ -68,13 +71,13 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
                 <nav key={group.id} className="space-y-2 text-sm">
                   {group.title ? (
                     <p className="anvl-micro mb-2 text-[10px] text-[var(--color-text-muted)]">
-                      {group.title}
+                      {stripAngleBracketTags(group.title)}
                     </p>
                   ) : null}
                   {links.map((link, index) => (
                     <span key={link.id ?? link.href}>
                       <SafeLink href={link.href} className="focus-ring">
-                        {link.label}
+                        {stripAngleBracketTags(link.label)}
                       </SafeLink>
                       {index < links.length - 1 ? <br /> : null}
                     </span>
@@ -88,7 +91,7 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
             {visibleFooterLinks.map((link, index) => (
               <span key={link.id ?? link.href}>
                 <SafeLink href={link.href} className="focus-ring">
-                  {link.label}
+                  {stripAngleBracketTags(link.label)}
                 </SafeLink>
                 {index < visibleFooterLinks.length - 1 ? <br /> : null}
               </span>
@@ -133,7 +136,7 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
       </Container>
       <Container className="relative z-10 mt-8 border-t border-[var(--color-line)] pt-6 text-xs text-[var(--color-text-muted)]">
         <p>
-          © {year} {copyright}
+          © {year} {stripAngleBracketTags(copyright)}
         </p>
       </Container>
     </footer>
