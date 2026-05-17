@@ -9,8 +9,13 @@
     "dev": "node scripts/repatch-admin-route-tree.mjs && vite dev --port 3000",
     "build": "vite build && node scripts/repatch-admin-route-tree.mjs",
     "preview": "vite preview",
+    "analyze": "ANVL_ANALYZE=1 vite build && node scripts/repatch-admin-route-tree.mjs",
     "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:related": "vitest run --changed",
     "typecheck": "node scripts/repatch-admin-route-tree.mjs && tsc --noEmit",
+    "verify": "pnpm run typecheck && pnpm run test && pnpm run build",
     "strip-brand-bg": "node scripts/strip-brand-logo-bg.mjs"
   },
   "dependencies": {
