@@ -1,0 +1,47 @@
+---
+description: Security do/don't for the ANVL storefront + admin CMS. Applies to any change touching auth, CMS persistence, user-controlled URLs, HTML sinks, env vars, or SEO/structured data.
+globs: ["src/features/admin/**/*.{ts,tsx}", "src/features/cms/**/*.{ts,tsx}", "src/features/storefront-account/**/*.{ts,tsx}", "src/routes/admin/**/*.{ts,tsx}", "src/routes/auth/**/*.{ts,tsx}", "src/routes/account/**/*.{ts,tsx}", "src/shared/components/seo/**/*.{ts,tsx}", "src/app/config/**/*.{ts,tsx}", "src/shared/lib/url.ts", "vite.config.ts", ".env.example", "src/**/*.storage.ts", "src/**/*.persistence*.{ts,tsx}"]
+---
+
+# Security rules (Phase B + C of the audit)
+
+## Admin auth (locked until a real provider lands)
+
+- The admin gate at `src/features/admin/auth/**` is a **temporary static env-file gate** documented in `docs/technical-debt.md` (`SEC-01` / `SEC-02` / `SEC-03`). **Do not** refactor its auth model, swap to a different storage mechanism, or expand its surface. You may improve the **UI** (focus trap, error messages, copy) but not the **auth semantics**.
+- Never add new `VITE_*` env vars containing secrets — Vite inlines them into the client bundle. Read-only public config only.
+- `.env.example` must contain a placeholder like `changeme-please-set-a-strong-local-password`, never a realistic password (`SEC-06`).
+
+## CMS persistence — always Zod, never raw cast
+
+- Every `localStorage`-backed adapter under `src/features/admin/**/*.storage.ts` (and the matching `*.service.ts` read path) **must** validate input with a Zod schema before merging into defaults. Model: `src/features/admin/drops/drops.service.ts` + `drops.persistence.zod.ts` (`SEC-07`).
+- When introducing a new persisted store, use the upcoming `createJsonStore<TSchema>({ key, schema, defaults, merge })` helper (Phase C task) rather than hand-rolling `JSON.parse` + `as` casts.
+- Use `z.strict()` on persistence schemas and never spread raw parsed JSON into trusted state (`SEC-17` — protects against `__proto__` / `constructor` payloads).
+- Parsing user-pasted JSON in admin (e.g. `DropActsBuilderPanel.bootstrapFromLanding`) must run through the same schema as storage (`SEC-16`).
+
+## URLs, hrefs, images, embeds
+
+- Every CMS-driven `href` / `src` / `link` rendered into the DOM **must** go through `sanitizeHref(url, { allowRelative, schemes: ['https','http','mailto','tel'] })` (Phase B3 / `SEC-04`). When that helper lands in `src/shared/lib/url.ts`, use it instead of passing strings straight to `<a href>`, `<img src>`, `window.open`, or `navigate({ to })`.
+- Normalize absolute image URLs to HTTPS for canonical surfaces (JSON-LD, OG, sitemaps). Warn in admin on save for `http://` (`SEC-15`).
+- iframe `srcDoc` / `src` from CMS values must include a `sandbox` attribute or be documented as admin-only with a written threat model (`SEC-14`).
+- YouTube/video embeds must funnel through `extractYoutubeVideoId` (existing helper) — do not pass raw URLs into iframe `src`.
+
+## HTML / CSS / JSON sinks
+
+- The only places allowed to use `dangerouslySetInnerHTML` today are the active-drop palette `<style>` in `src/routes/__root.tsx` (via `sanitizeCssValue` in `dropPaletteStyle.ts`) and `JsonLd` (which escapes `<` to `\u003c`). New `dangerouslySetInnerHTML` usage requires:
+  1. A justification comment.
+  2. A sanitizer that rejects `<`, `{}`, `expression(`, `javascript:`, `@import` at minimum.
+  3. A Vitest test covering the sanitizer.
+- Plain-text editor fields rendered into the storefront should be stripped of angle-bracket tag patterns via `stripAngleBracketTags` (or a schema transform on save) — extend coverage rather than removing it (`SEC-19`).
+
+## Sign-up / forgot-password — avoid account enumeration
+
+- Sign-up errors must not reveal "email already registered" as a per-field error (`SEC-13`). Mirror the uniform success message pattern already used by forgot-password.
+
+## Devtools, analytics, logging
+
+- `TanStackDevtools`, `ReactQueryDevtools`, and any other devtools UI must be gated behind `import.meta.env.DEV` (`SEC-22`). Never log passwords, tokens, addresses, full emails, or full order payloads in `console.*` calls that ship to production.
+- New dependencies must be pinned (`^x.y.z` or exact), never `"latest"` (`SEC-23`).
+
+## What to do when blocked
+
+If the secure path requires server changes that don't exist yet (e.g. real session cookies, CSP headers, rate limits, server upload validation), open a Phase J task in `docs/audit-2026-05-17.md` instead of inventing a half-secure client-side workaround.

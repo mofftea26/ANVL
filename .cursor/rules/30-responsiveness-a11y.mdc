@@ -1,0 +1,58 @@
+---
+description: Responsiveness, accessibility, and smoothness rules. Mobile-first storefront; admin can be desktop-first but must degrade. Applies to every TSX, CSS, and animation file.
+globs: ["src/**/*.{tsx,css}", "src/styles.css"]
+---
+
+# Responsiveness, a11y & smoothness rules (Phase H of the audit)
+
+## Mobile-first storefront
+
+- Type scale: hero/page titles use `text-4xl sm:text-5xl md:text-6xl` (mirror `DropActivePageView`) — never raw `text-6xl` on mobile (`RESP-09`).
+- Long-text containers (product card title rows, checkout lines, cart heading) need `min-w-0` + `truncate`/`break-words`. `flex` rows containing a label and a price need `min-w-0` on the label and `shrink-0` on the price (`RESP-06`).
+- Grids must not be ≥3 columns at <360 px viewport (`PiecesGrid` is the cautionary tale — `RESP-08`).
+- Sticky bottom bars on mobile must include `pb-[max(env(safe-area-inset-bottom),...)]` and the page must include a bottom spacer / extra padding so content isn't covered (`RESP-02`).
+- Inputs use `text-base md:text-sm` to prevent iOS zoom-on-focus (`RESP-07`). 16 px minimum on touch.
+
+## Touch targets
+
+- Primary interactive surfaces ≥ 44 × 44 px (`RESP-05`). `IconButton` → `h-11 w-11`, `ColorSwatch` → `min-w-11 min-h-11`, `Button size="sm"` (`h-9`) is allowed only in desktop-only chrome, not on cart/PDP/quantity controls.
+
+## Focus
+
+- Every interactive element rendered in the storefront chrome (`StickyHeader`, `SiteFooter`, announcement bar, drawers, cards, gallery thumbs, sidebar links, accordion `summary`) gets the shared `focus-ring` utility (`RESP-04`, `RESP-14`).
+- Dialog surfaces (`Modal`, `Drawer`) must wire `useDialogFocusTrap`, set initial focus inside the dialog, restore focus on close, handle Escape, and expose `aria-modal="true"` + `aria-labelledby` pointing at a visible heading (`RESP-01`).
+- Decorative icons get `aria-hidden="true"`.
+
+## Semantics
+
+- `<button>` for actions, `<a>` (or `<Link>`) for navigation. Never `<div onClick>`.
+- Headings cascade in order. Dialog titles use `<h2>` (not `<h3>`) and back the `aria-labelledby` (`RESP-13`).
+- Newsletter / contact forms must be wrapped in `<form onSubmit>` even when the handler is a placeholder (`RESP-10`).
+- Footer group labels use heading elements, not styled `<p>` (`RESP-10`).
+
+## Reduced motion
+
+- Always respect `prefers-reduced-motion: reduce`. For GSAP code, see `.cursor/rules/20-performance-bundle.mdc` (combined viewport + reduced-motion gate). For CSS transitions ≥ 300 ms, ensure the `@media (prefers-reduced-motion: reduce)` block in `src/styles.css` covers them.
+
+## Status / color
+
+- Status (drop status pills, error/success messages) must not rely on color alone — include a text label or icon (`SEC` policy). Drop status pills already follow this; new badges must too.
+
+## Smoothness
+
+- Scroll listeners must be `{ passive: true }`.
+- Avoid forced layout reads (`offsetTop`, `getBoundingClientRect`) inside scroll/resize handlers. Use `ResizeObserver` and cache.
+- Animate `transform` / `opacity` only. Never animate `width`/`height`/`top`/`left`.
+- Debounce text inputs that drive expensive recomputes (≥ 250 ms — shop search is the model at 350 ms).
+
+## Toast / overlay placement
+
+- `Toaster` must use a responsive position (e.g. `bottom-center` on small screens, `top-right` on large) and respect safe-area insets (`RESP-11`).
+
+## Admin CMS responsiveness
+
+- Admin is desktop-first (≥ 1024 px). Below that, it must remain usable: `AdminSidebar` becomes a `Drawer`, dense tables become cards (`DropsAdminList` model). Don't ship admin layouts that horizontally scroll the entire viewport.
+
+## Copy hygiene
+
+- Source files must be UTF-8. No mojibake (`ΓÇö` instead of `—`, etc.) — `RESP-12`.

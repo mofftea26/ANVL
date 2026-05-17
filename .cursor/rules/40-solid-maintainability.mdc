@@ -1,0 +1,67 @@
+---
+description: SOLID, scalability, and maintainability rules to keep the codebase clean for a human developer hand-off. Applies to every TS/TSX file but especially admin editors, services, and shared components.
+globs: ["src/**/*.{ts,tsx}"]
+---
+
+# SOLID, scalability & maintainability rules (Phases D, E, F of the audit)
+
+## File size budget
+
+- **Soft limit 300 lines, hard limit 500 lines per file.** Files exceeding 500 lines need a written reason in the file header. The existing 600+ L editors (`MAINT-01`) are tracked refactor candidates — do not grow them further.
+- When adding a feature to an oversized file, split first (extract a hook or presentational subcomponent), then add.
+
+## Component shape
+
+- Components stay **presentational** when possible. State + side-effects live in:
+  - Route loaders (TanStack Router) for SSR data.
+  - Custom hooks (`useXxxEditor`, `useXxxList`, …) for client state + mutations.
+  - `*.service.ts` modules for persistence orchestration.
+  - Zustand stores only for local UI (drawer/modal/draft) state.
+- **Do not** call `*.service` methods from render or from a `useState` initializer. Wrap in a hook with `useSyncExternalStore` (model: `useLandingCms`, `useHomeProducts`, `useWebsiteLayout`).
+- Never put hooks after early returns or inside conditionals/loops. If a branch needs hooks, extract it into its own component.
+
+## Folder boundaries
+
+- `src/features/admin/**` is admin UI + mutation only.
+- Shared CMS reads (used by the storefront) live in `src/features/cms/**` or `src/features/drops/**`.
+- `src/shared/**` is framework- and feature-agnostic primitives. No imports from `src/features/**` or `src/routes/**`.
+- `src/routes/**` is the only place that imports from both `src/features/**` and `src/shared/**`.
+- A storefront route or marketing component importing from `src/features/admin/**` is a code smell — log it as `MAINT-02` / `PERF-03` debt or fix during the change.
+
+## TypeScript
+
+- `strict` is on. Avoid `any`; if you need it, write `// eslint-disable-next-line` (when ESLint lands) with a one-line reason.
+- Avoid `as unknown as T` casts. Prefer `z.infer<typeof schema>` or a discriminated union.
+- Avoid hand-written types that duplicate a Zod schema (`MAINT-06`/`REU-10`). Pick one source of truth per boundary: zod → infer.
+
+## Naming
+
+- Hooks: `useXxx`.
+- Route file-route components: `XxxRoute` (matches existing pattern).
+- Services: `*.service.ts` (sync local CRUD), `*.storage.ts` (raw localStorage I/O), `*.mapper.ts` (DTO conversions), `*.commerce.ts` (commerce-aggregate read views).
+- Zod schemas: `*.schema.ts` (canonical), `*.persistence.zod.ts` (storage-shaped).
+- Test files: co-located in `__tests__/*.test.ts(x)`.
+
+## Helpers and duplication
+
+- Datetime-local helpers (`pad2`, `isoToDatetimeLocal`, `toDatetimeLocal`) live in `src/features/admin/lib/adminDatetime.ts` (extract when you encounter the duplicate `REU-03`).
+- Primary product hero image lookup lives in `getAdminProductHeroImage(product)` (extract when you encounter `REU-04`).
+- Local storage scaffolding (`isBrowser`, EventTarget channel, change event) belongs in `createLocalStorageChannel` (Phase C1) — do not copy/paste the pattern into new `*.storage.ts` files.
+
+## Error handling
+
+- Wrap each route group with an error boundary (storefront-wide + admin-wide). Use `<AppErrorBoundary>` / `<AdminErrorBoundary>` from `src/app/components/`.
+- Throw early for invariant violations; return `Result`-style discriminated unions for expected validation failures (the existing `{ ok: false, error }` pattern is fine).
+
+## Code smell triggers — extract or split
+
+- Same `const fieldClass = 'mt-1 w-full rounded-md border …'` copied across files (`REU-01`) → use the admin field primitive.
+- A switch / if-chain on `act.nature` with > 3 branches → registry pattern (`{ nature: 'hero', component: HeroFields }`).
+- A `useEffect` that calls `setState` based on a prop → derived state with `useMemo` (or React 19 `use`).
+- A `useState` initialized from a service call → move to a hook + `useSyncExternalStore`.
+- A file with 3 or more responsibilities (forms + validation + persistence + presentational layout + helpers) → split per `MAINT-01` pattern.
+
+## Process
+
+- Every PR must reference the audit finding ID(s) it resolves and update the task list in `docs/audit-2026-05-17.md`.
+- New features in a half-built area land behind a feature flag (object map in `src/app/config/`) when behavior is non-trivial.
