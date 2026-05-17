@@ -37,7 +37,11 @@ export const ProductCard = memo(function ProductCard({ product }: { product: Pro
         'md:transition-transform md:hover:scale-[1.01]',
       )}
     >
-      <Link to="/shop/$slug" params={{ slug: product.slug }} className="block no-underline">
+      <Link
+        to="/shop/$slug"
+        params={{ slug: product.slug }}
+        className="focus-ring block rounded-xl no-underline"
+      >
         <div className="relative aspect-[4/5] overflow-hidden border-b border-[var(--color-line)]">
           <img
             src={product.images[0]?.src ?? '/brand/placeholder-product.svg'}

@@ -189,7 +189,7 @@ export function PiecesGrid({
               data-pieces-card="true"
               to="/shop/$slug"
               params={{ slug: product.slug }}
-              className="group flex flex-col overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] no-underline transition will-change-transform hover:-translate-y-0.5"
+              className="group focus-ring flex flex-col overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] no-underline transition will-change-transform hover:-translate-y-0.5"
             >
               <div className="relative aspect-[4/5] overflow-hidden border-b border-[var(--color-line)]">
                 <img

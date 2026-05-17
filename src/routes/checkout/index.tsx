@@ -74,7 +74,9 @@ function CheckoutPage() {
   return (
     <Section>
       <Container>
-        <h1 className="anvl-heading text-6xl">Checkout</h1>
+        <h1 className="anvl-heading text-4xl sm:text-5xl md:text-6xl">
+          Checkout
+        </h1>
         <p className="mt-3 max-w-2xl text-sm text-[var(--color-text-muted)]">
           Guest checkout — no account required. Create an account after your order when accounts launch.
         </p>

@@ -27,7 +27,7 @@ function CartPage() {
   return (
     <Section>
       <Container>
-        <h1 className="anvl-heading text-6xl">Cart</h1>
+        <h1 className="anvl-heading text-4xl sm:text-5xl md:text-6xl">Cart</h1>
         {lines.length === 0 ? (
           <div className="mt-8">
             <EmptyState
