@@ -186,9 +186,16 @@ function ViewportIframe({
     let cancelled = false
     let observer: MutationObserver | null = null
 
+    let initialized = false
+
     const initialize = () => {
       const doc = iframe.contentDocument
       if (!doc || cancelled) return
+      // Idempotent: srcDoc iframes can run our handler twice (sync-ready + load
+      // event). Re-running would leak a second MutationObserver and flicker the
+      // cloned head; bail after the first successful pass.
+      if (initialized) return
+      initialized = true
 
       doc.head.innerHTML = ''
 
@@ -206,7 +213,7 @@ function ViewportIframe({
       doc.head.appendChild(charset)
 
       const fontPreloads = document.head.querySelectorAll(
-        'style, link[rel="stylesheet"], link[rel="preload"][as="style"], link[as="font"], link[rel="preconnect"]',
+        'style, link[rel="stylesheet"], link[rel="preload"][as="style"], link[rel="preload"][as="font"], link[rel="preconnect"]',
       )
       fontPreloads.forEach((node) => doc.head.appendChild(node.cloneNode(true)))
 
@@ -219,6 +226,7 @@ function ViewportIframe({
 
       setBody(doc.body as HTMLBodyElement)
 
+      observer?.disconnect()
       observer = new MutationObserver((muts) => {
         muts.forEach((m) => {
           m.addedNodes.forEach((n) => {

@@ -127,26 +127,30 @@ function NatureContentFields({
             }
           />
         </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
-          Background image URL / path
-          <input
-            className={fieldClass}
+        <div className="md:col-span-2">
+          <MediaPickerField
+            label="Background image"
+            kind="image"
+            hint="Optional hero backdrop for this act."
             value={readStr(c, 'backgroundImageUrl')}
-            onChange={(e) =>
-              patchContent({ backgroundImageUrl: e.target.value || undefined })
+            onChange={(next) =>
+              patchContent({ backgroundImageUrl: next || undefined })
             }
+            fallback="crest"
           />
-        </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
-          Emblem / watermark src
-          <input
-            className={fieldClass}
+        </div>
+        <div className="md:col-span-2">
+          <MediaPickerField
+            label="Emblem / watermark"
+            kind="image"
+            hint="Decorative crest layered behind hero copy."
             value={readStr(c, 'emblemWatermarkSrc')}
-            onChange={(e) =>
-              patchContent({ emblemWatermarkSrc: e.target.value || undefined })
+            onChange={(next) =>
+              patchContent({ emblemWatermarkSrc: next || undefined })
             }
+            fallback="crest"
           />
-        </label>
+        </div>
         <label className="text-xs text-[var(--color-text-muted)]">
           Primary CTA label
           <input
@@ -266,16 +270,18 @@ function NatureContentFields({
             }
           />
         </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
-          Drop visual src
-          <input
-            className={fieldClass}
+        <div className="md:col-span-2">
+          <MediaPickerField
+            label="Drop visual"
+            kind="any"
+            hint="Image or video associated with the reveal."
             value={readStr(c, 'dropVisualSrc')}
-            onChange={(e) =>
-              patchContent({ dropVisualSrc: e.target.value || undefined })
+            onChange={(next) =>
+              patchContent({ dropVisualSrc: next || undefined })
             }
+            fallback="crest"
           />
-        </label>
+        </div>
         <label className="text-xs text-[var(--color-text-muted)]">
           Primary CTA label
           <input
@@ -568,16 +574,18 @@ function NatureContentFields({
         {[0, 1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="grid gap-2 rounded-lg border border-[var(--color-line)]/50 p-2 md:grid-cols-2"
+            className="grid gap-3 rounded-lg border border-[var(--color-line)]/50 p-3"
           >
-            <label className="text-[10px] text-[var(--color-text-muted)]">
-              Media URL {i + 1}
-              <input
-                className={fieldClass}
-                value={pad(i).src ?? ''}
-                onChange={(e) => setItem(i, { src: e.target.value, caption: pad(i).caption })}
-              />
-            </label>
+            <MediaPickerField
+              label={`Gallery item ${i + 1}`}
+              kind="any"
+              hint="Image or video for this lookbook slot."
+              value={pad(i).src ?? ''}
+              onChange={(next) =>
+                setItem(i, { src: next, caption: pad(i).caption })
+              }
+              fallback="none"
+            />
             <label className="text-[10px] text-[var(--color-text-muted)]">
               Caption {i + 1}
               <input
@@ -643,16 +651,18 @@ function NatureContentFields({
     const t = readCta(c, 'tertiaryCta')
     return (
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
-          Background image URL
-          <input
-            className={fieldClass}
+        <div className="md:col-span-2">
+          <MediaPickerField
+            label="Background image"
+            kind="image"
+            hint="Optional backdrop behind the final CTA copy."
             value={readStr(c, 'backgroundImageUrl')}
-            onChange={(e) =>
-              patchContent({ backgroundImageUrl: e.target.value || undefined })
+            onChange={(next) =>
+              patchContent({ backgroundImageUrl: next || undefined })
             }
+            fallback="crest"
           />
-        </label>
+        </div>
         <label className="text-xs text-[var(--color-text-muted)]">
           Primary CTA label
           <input

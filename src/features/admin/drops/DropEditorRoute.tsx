@@ -25,10 +25,9 @@ import {
   adminProductIsPubliclyVisible,
   adminProductToLegacy,
 } from '@/features/admin/products/products.mapper'
-import { getAdminProducts } from '@/features/admin/products/products.service'
 import { useAdminProductsList } from '@/features/admin/products/useAdminProducts'
 import { composeLandingPageFromDrop } from '@/features/admin/drops/drops.compose'
-import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
+import { useWebsiteLayout } from '@/features/admin/website-layout/useWebsiteLayout'
 import { Button } from '@/shared/components/ui/Button'
 import { ColorField } from '@/shared/components/ui/ColorField'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
@@ -88,6 +87,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const drops = useDropsList()
   const catalog = useAdminProductsList()
+  const websiteLayout = useWebsiteLayout()
   const saved = useMemo(() => drops.find((d) => d.id === dropId), [drops, dropId])
 
   const [draft, setDraft] = useState(saved)
@@ -118,18 +118,17 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
 
   const previewProducts = useMemo(() => {
     if (!draft) return []
-    const map = new Map(getAdminProducts().map((p) => [p.id, p]))
+    const map = new Map(catalog.map((p) => [p.id, p]))
     return draft.productIds
       .map((id) => map.get(id))
       .filter((p): p is NonNullable<typeof p> => Boolean(p))
       .filter(adminProductIsPubliclyVisible)
       .map((p) => adminProductToLegacy(p, previewLabel))
-  }, [draft, previewLabel])
+  }, [catalog, draft, previewLabel])
 
   const previewLanding = useMemo(
-    () =>
-      draft ? composeLandingPageFromDrop(draft, getWebsiteLayoutContent()) : null,
-    [draft],
+    () => (draft ? composeLandingPageFromDrop(draft, websiteLayout) : null),
+    [draft, websiteLayout],
   )
 
   if (!saved || !draft || !previewLanding) {
@@ -550,7 +549,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
           {tab === 'visuals' ? (
             <AdminCard
               title="Visuals"
-              description="Drop emblem, logo lockups, and hero backdrop. Empty fields default to the bundled ANVL crest; check “Leave empty (no fallback)” to render nothing."
+              description="Drop emblem, logo lockups, and hero backdrop. Empty fields default to the bundled ANVL crest; use “Hide crest preview” to QA an empty slot in the editor (note: storefront still applies its own fallback until per-field empty state is persisted)."
             >
               <div className="space-y-4">
                 <MediaPickerField

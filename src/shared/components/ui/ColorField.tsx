@@ -60,9 +60,7 @@ export function ColorField({
     () => parseColor(value) ?? SAFE_FALLBACK_COLOR,
     [value],
   )
-  const [hexDraft, setHexDraft] = useState<string>(() =>
-    value && isValidColor(value) ? rgbaToHex(parsed) : rgbaToHex(parsed),
-  )
+  const [hexDraft, setHexDraft] = useState<string>(() => rgbaToHex(parsed))
   const lastEmitted = useRef<string | null>(null)
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import {
   type ChangeEvent,
   type DragEvent,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -28,9 +29,16 @@ type MediaPickerFieldProps = {
    * preview rendering, and validation.
    */
   kind?: MediaPickerKind
-  /** Treat the field as fully optional even when empty (no crest fallback preview). */
+  /**
+   * Editor-only preference: when true, the field hides its crest fallback
+   * preview to reflect that the editor *wants* the slot to render empty
+   * downstream. This flag is **UI-only**; nothing about the persisted value
+   * changes. The storefront still falls back to the crest unless the renderer
+   * has been wired to honour a separate "explicitly empty" signal. See the
+   * follow-up note in `docs/features/drops-cms.md` ("Persisted leaveEmpty").
+   */
   leaveEmpty?: boolean
-  /** Toggle handler — when undefined the "Leave empty" control is hidden. */
+  /** Toggle handler — when undefined the toggle is hidden. */
   onLeaveEmptyChange?: (next: boolean) => void
   /**
    * Brand fallback shown in the preview when the field is empty and `leaveEmpty`
@@ -121,6 +129,7 @@ export function MediaPickerField({
 }: MediaPickerFieldProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [isOver, setIsOver] = useState(false)
+  const [supportsDragDrop, setSupportsDragDrop] = useState(true)
   const limit = useMemo(
     () => maxBytes ?? (kind === 'video' ? DEFAULT_VIDEO_MAX_BYTES : DEFAULT_MAX_BYTES),
     [kind, maxBytes],
@@ -128,6 +137,17 @@ export function MediaPickerField({
   const leaveEmptyId = useId()
   const fileId = useId()
   const urlId = useId()
+
+  // The brief carved out "drag and drop for desktops". Hide the affordance on
+  // touch-first devices where it's not a realistic gesture.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(hover: hover) and (pointer: fine)')
+    const apply = () => setSupportsDragDrop(mq.matches)
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [])
 
   const handleFile = (file: File) => {
     const err = validateFile(file, kind, limit)
@@ -155,7 +175,7 @@ export function MediaPickerField({
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setIsOver(false)
-    if (leaveEmpty) return
+    if (leaveEmpty || !supportsDragDrop) return
     const file = e.dataTransfer.files?.[0]
     if (file) handleFile(file)
   }
@@ -229,6 +249,10 @@ export function MediaPickerField({
           <label
             htmlFor={leaveEmptyId}
             className="inline-flex cursor-pointer items-center gap-2 text-[11px] text-[var(--color-text-muted)]"
+            // UI-only flag: hides the crest preview to indicate intent.
+            // Persistence will land in a follow-up once `DropVisuals` gains a
+            // sibling map for explicit-empty fields.
+            title="Hides the crest preview in this editor. The storefront still applies its own fallback until per-field 'empty' state is persisted (planned follow-up)."
           >
             <input
               id={leaveEmptyId}
@@ -237,7 +261,7 @@ export function MediaPickerField({
               onChange={(e) => onLeaveEmptyChange(e.target.checked)}
               className="focus-ring h-3.5 w-3.5 rounded border-[var(--color-line)] bg-[var(--color-surface)]"
             />
-            Leave empty (no fallback)
+            Hide crest preview
           </label>
         ) : null}
       </div>
@@ -287,9 +311,11 @@ export function MediaPickerField({
               <Upload size={14} className="mr-1.5" aria-hidden="true" />
               Choose file
             </Button>
-            <span className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-              or drag &amp; drop
-            </span>
+            {supportsDragDrop ? (
+              <span className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                or drag &amp; drop
+              </span>
+            ) : null}
             {trimmed && !dropzoneDisabled ? (
               <Button
                 type="button"

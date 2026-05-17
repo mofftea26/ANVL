@@ -3,9 +3,14 @@ import type { Drop, DropThemePalette } from '@/features/admin/drops/drops.types'
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
-/** Public URL — also accepts `/relative/paths` and `data:` URIs. */
+/**
+ * Public URL — also accepts `/relative/paths` and `data:` URIs.
+ * Data URIs accept either parameter delimiter:
+ *   - `data:image/png;base64,...`  (typical FileReader output)
+ *   - `data:image/svg+xml,<svg/>`  (param-less form, RFC 2397)
+ */
 const URL_OR_PATH_PATTERN =
-  /^(?:https?:\/\/|\/[^\s]*|data:[a-z]+\/[\w.+-]+;|mailto:|tel:)/i
+  /^(?:https?:\/\/|\/[^\s]*|data:[a-z]+\/[\w.+-]+[;,]|mailto:|tel:)/i
 
 const REQUIRED_PALETTE_KEYS: Array<keyof DropThemePalette['colors']> = [
   'background',
