@@ -23,16 +23,16 @@ export function AdminLayout({
       <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
         <AdminSidebar className="hidden lg:flex" />
 
-        <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-screen min-w-0 flex-col">
           <AdminTopbar
             title={title}
             description={description}
             onOpenMenu={() => setMobileOpen(true)}
           />
-          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+          <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
             <div
               className={cn(
-                'mx-auto w-full space-y-6',
+                'mx-auto min-w-0 w-full space-y-6',
                 layout === 'wide' ? 'max-w-[1600px]' : 'max-w-5xl',
               )}
             >

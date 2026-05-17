@@ -14,6 +14,7 @@ import type { DropThemePalette } from '@/features/drops/theme/dropThemePalette.t
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import { PublicLandingActs } from '@/features/marketing/public-landing/PublicLandingActs'
 import type { Product } from '@/features/products/types/product.types'
+import { AdminButton } from '@/features/admin/components/AdminButton'
 import { cn } from '@/shared/lib/cn'
 
 type ViewportId = 'fit' | 'mobile' | 'tablet' | 'desktop'
@@ -136,13 +137,15 @@ class DropEditorPreviewErrorBoundary extends Component<BoundaryProps, BoundarySt
             use &quot;Try again&quot;.
           </p>
           <p className="mt-2 font-mono text-xs text-amber-200/80">{this.state.error.message}</p>
-          <button
+          <AdminButton
             type="button"
-            className="mt-4 rounded-md border border-amber-400/60 bg-amber-500/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-amber-50 transition hover:bg-amber-500/30"
+            variant="ghost"
+            size="sm"
+            className="mt-4 border-amber-400/60 bg-amber-500/20 uppercase tracking-[0.14em] text-amber-50 hover:bg-amber-500/30"
             onClick={() => this.setState({ error: null })}
           >
             Try again
-          </button>
+          </AdminButton>
         </div>
       )
     }
@@ -324,16 +327,13 @@ export function DropEditorLivePreview({
           const Icon = opt.Icon
           const active = viewport === opt.id
           return (
-            <button
+            <AdminButton
               key={opt.id}
               type="button"
               aria-pressed={active}
-              className={cn(
-                'focus-ring inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition-colors',
-                active
-                  ? 'bg-[var(--color-accent)] text-[var(--color-bg)]'
-                  : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)]',
-              )}
+              variant="adminTabList"
+              data-active={active ? 'true' : 'false'}
+              className="inline-flex gap-1.5 tracking-[0.18em] transition-colors"
               onClick={() => setViewport(opt.id)}
             >
               <Icon size={12} aria-hidden="true" />
@@ -343,7 +343,7 @@ export function DropEditorLivePreview({
                   {opt.width}
                 </span>
               ) : null}
-            </button>
+            </AdminButton>
           )
         })}
         <span className="ml-auto pr-2 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">

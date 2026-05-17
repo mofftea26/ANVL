@@ -21,6 +21,11 @@ type ModalProps = PropsWithChildren<{
    * visible heading rendered by the caller. Mutually exclusive with `title`.
    */
   'aria-labelledby'?: string
+  /**
+   * Optional ID of the element describing the dialog — forwarded to
+   * `role="dialog"` for screen readers (PAIR with visible body copy).
+   */
+  'aria-describedby'?: string
   /** Aria label fallback when no `title` / `aria-labelledby` is set. */
   'aria-label'?: string
   className?: string
@@ -41,6 +46,7 @@ export function Modal({
   children,
   title,
   'aria-labelledby': ariaLabelledBy,
+  'aria-describedby': ariaDescribedBy,
   'aria-label': ariaLabel,
   className,
 }: ModalProps) {
@@ -76,6 +82,11 @@ export function Modal({
           labelledByProp || hasTitle ? undefined : ariaLabel?.trim() || 'Dialog'
         }
         aria-labelledby={labelledByProp ?? titleHeadingId}
+        aria-describedby={
+          ariaDescribedBy && ariaDescribedBy.trim()
+            ? ariaDescribedBy.trim()
+            : undefined
+        }
       >
         {hasTitle ? (
           <h2 id={titleHeadingId} className="anvl-heading mb-4 text-2xl">

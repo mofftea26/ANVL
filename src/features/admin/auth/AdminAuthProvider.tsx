@@ -7,7 +7,7 @@ import {
   type PropsWithChildren,
 } from 'react'
 import {
-  ADMIN_PASSWORD,
+  verifyAdminPassword,
   ADMIN_USERNAME,
   clearAdminSession,
   isAdminLoginConfigured,
@@ -49,7 +49,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
       }
       if (
         credentials.username.trim() === ADMIN_USERNAME &&
-        credentials.password === ADMIN_PASSWORD
+        verifyAdminPassword(credentials.password)
       ) {
         const nextSession: AdminSession = {
           username: ADMIN_USERNAME,

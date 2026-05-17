@@ -72,7 +72,7 @@ export const adminNavItems: AdminNavItem[] = [
     href: '/admin/settings',
     description: 'Session details and destructive reset of local dev CMS data.',
     cluster: 'Workspace',
-    cta: 'Workspace settings',
+    cta: 'Settings',
     badge: 'System',
   },
 ]

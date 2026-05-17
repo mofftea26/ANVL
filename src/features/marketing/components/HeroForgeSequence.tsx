@@ -332,7 +332,7 @@ export function HeroForgeSequence({
             >
               <SafeLink
                 href={primaryCta.href}
-                className="focus-ring group relative inline-flex h-11 items-center overflow-hidden rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-5 text-sm font-semibold text-[var(--color-bg)] no-underline transition-transform hover:-translate-y-0.5"
+                className="focus-ring group relative inline-flex h-11 items-center overflow-hidden rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-5 text-sm font-semibold text-[var(--color-bg)] no-underline"
               >
                 <span className="relative z-10">{primaryCta.label}</span>
                 <span
@@ -342,7 +342,7 @@ export function HeroForgeSequence({
               </SafeLink>
               <SafeLink
                 href={secondaryCta.href}
-                className="focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)]/70 px-5 text-sm font-semibold no-underline backdrop-blur transition-transform hover:-translate-y-0.5"
+                className="focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)]/70 px-5 text-sm font-semibold no-underline backdrop-blur"
               >
                 {secondaryCta.label}
               </SafeLink>

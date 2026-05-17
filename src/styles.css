@@ -22,6 +22,11 @@
      and pinned ScrollTrigger sequences offset by the same amount. */
   --anvl-header-h: 4rem;
   --anvl-section-h: calc(100svh - var(--anvl-header-h));
+
+  /* Shared timing for buttons + CTA-shaped links (honors prefers-reduced-motion
+     via the global transition clamp + motion-scoped transforms below). */
+  --anvl-control-transition-duration: 220ms;
+  --anvl-control-transition-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root,
@@ -134,6 +139,105 @@ a {
 
 .focus-ring:focus-visible {
   outline-color: var(--color-accent);
+}
+
+/* Admin Radix dropdown — subtle scale/opacity only when motion is OK (global reduced-motion clamp still applies separately). */
+@keyframes admin-dropdown-menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .admin-dropdown-menu-content[data-state='open'] {
+    animation: admin-dropdown-menu-in 120ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+  }
+}
+
+/*
+ * Interactive surfaces — cursor + cohesive hover (ANVL dark forge; no loud bounce).
+ * - Native buttons / file-picker button / disclosure summaries: brightness only on hover
+ *   so lifts inside `AdminCard` (`group/card` translate) never compound with an inner nudge.
+ * - CTA-shaped links: `focus-ring` + `inline-flex` + storefront/admin row heights; subtle
+ *   translate-Y only when `prefers-reduced-motion: no-preference`, suppressed under
+ *   `.group/card` where the plate hover already moves the shell.
+ */
+button:enabled,
+input:is([type='submit'], [type='button'], [type='reset']):not(:disabled),
+[role='button']:not([aria-disabled='true']),
+::file-selector-button {
+  cursor: pointer;
+  transition:
+    border-color var(--anvl-control-transition-duration) var(--anvl-control-transition-ease),
+    box-shadow var(--anvl-control-transition-duration) var(--anvl-control-transition-ease),
+    background-color var(--anvl-control-transition-duration) var(--anvl-control-transition-ease),
+    color var(--anvl-control-transition-duration) var(--anvl-control-transition-ease),
+    filter var(--anvl-control-transition-duration) var(--anvl-control-transition-ease),
+    opacity var(--anvl-control-transition-duration) var(--anvl-control-transition-ease);
+}
+
+button:enabled:hover,
+input:is([type='submit'], [type='button'], [type='reset']):not(:disabled):hover,
+[role='button']:not([aria-disabled='true']):hover,
+::file-selector-button:hover {
+  filter: brightness(1.06);
+}
+
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+input:is([type='submit'], [type='button'], [type='reset']):disabled,
+[role='button'][aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:enabled:hover,
+  input:is([type='submit'], [type='button'], [type='reset']):not(:disabled):hover,
+  [role='button']:not([aria-disabled='true']):hover,
+  ::file-selector-button:hover {
+    filter: brightness(1.03);
+  }
+}
+
+/* Link CTAs: same focus-ring + height conventions as storefront/admin (not plain text links). */
+a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11) {
+  cursor: pointer;
+  transition:
+    border-color var(--anvl-control-transition-duration) var(--anvl-control-transition-ease),
+    box-shadow var(--anvl-control-transition-duration) var(--anvl-control-transition-ease),
+    background-color var(--anvl-control-transition-duration) var(--anvl-control-transition-ease),
+    filter var(--anvl-control-transition-duration) var(--anvl-control-transition-ease),
+    opacity var(--anvl-control-transition-duration) var(--anvl-control-transition-ease),
+    transform var(--anvl-control-transition-duration) var(--anvl-control-transition-ease);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11):hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+  }
+
+  /* AdminCard (`group/card`) already lifts the plate — avoid a second vertical nudge on CTAs. */
+  [class*='group/card'] a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11):hover {
+    transform: none;
+    filter: brightness(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11):hover {
+    filter: brightness(1.04);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

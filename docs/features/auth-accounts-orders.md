@@ -65,7 +65,7 @@ type Order = {
 - Real passwords/auth must never be implemented as frontend-only storage.
 - Current static admin login must be clearly marked temporary and not production security. For local builds, set `VITE_ANVL_ADMIN_PASSWORD` (and optionally `VITE_ANVL_ADMIN_USERNAME`) in `.env` â€” values are still embedded in the client bundle at compile time, so this is only a convenience layer over hard-coded demo credentials.
 
-- The storefront admin gate remains **temporary**: credentials come from build-time `VITE_ANVL_ADMIN_*` env vars (see `.env.example`), not hardcoded strings in source. This is still not production security (values ship in the client bundle).- When backend exists, use secure session cookies or trusted auth provider flow.
+- The storefront admin gate remains **temporary**: credentials come from build-time `VITE_ANVL_ADMIN_*` env vars (see `.env.example`), not hardcoded strings in source. This is still not production security (values ship in the client bundle). **Settings → Danger zone → Reset all local CMS data** requires re-entering that same admin password twice; implementation uses **`verifyAdminPassword`** (`adminAuth.storage.ts`), mirroring the login check, without logging or exposing the secret.
 
 ## Storefront implementation (mock phase)
 - **Routes**: `/auth/sign-in`, `/auth/sign-up`, `/auth/forgot-password`; `/account` (layout + gated shell), `/account/personal`, `/account/addresses`, `/account/orders`, `/account/orders/:orderId`.

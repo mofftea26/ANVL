@@ -22,6 +22,16 @@ export const ADMIN_PASSWORD = configuredPassword
 /** False when no password is set — login should surface a configuration error. */
 export const isAdminLoginConfigured = configuredPassword.length > 0
 
+/**
+ * True when `candidate` equals the configured build-time admin password.
+ * Mirrors the password check in {@link AdminAuthProvider} login (plain compare
+ * against `VITE_ANVL_ADMIN_PASSWORD`); not a secure hash — dev gate only.
+ */
+export function verifyAdminPassword(candidate: string): boolean {
+  if (!isAdminLoginConfigured) return false
+  return candidate === configuredPassword
+}
+
 export const ADMIN_AUTH_CHANGE_EVENT = 'anvl:adminAuth:change'
 
 const adminAuthChannel = createLocalStorageChannel({

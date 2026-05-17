@@ -67,6 +67,19 @@ describe('Modal (Phase H / RESP-01)', () => {
     )
   })
 
+  it('forwards aria-describedby to the dialog surface', () => {
+    render(
+      <Modal open onClose={() => {}} title="T" aria-describedby="d1">
+        <p id="d1">
+          body
+        </p>
+      </Modal>,
+    )
+    expect(screen.getByRole('dialog').getAttribute('aria-describedby')).toBe(
+      'd1',
+    )
+  })
+
   it('closes on Escape (focus trap delegates to useDialogFocusTrap)', () => {
     const onClose = vi.fn()
     render(

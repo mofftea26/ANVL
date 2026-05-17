@@ -1,12 +1,20 @@
+import {
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  type Column,
+  type ColumnDef,
+  type SortingState,
+  useReactTable,
+} from '@tanstack/react-table'
 import { Link } from '@tanstack/react-router'
-import { ExternalLink } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Plus } from 'lucide-react'
+import { useCallback, useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
-import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
+import { AdminButton, adminButtonVariants } from '@/features/admin/components/AdminButton'
 import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
-import type { DropStatus } from '@/features/admin/drops/drops.types'
-import { Button } from '@/shared/components/ui/Button'
+import type { DropStatus } from '@/features/drops/drop.types'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
 import {
@@ -21,6 +29,7 @@ import {
   type DropsListStatusTab,
   useDropsListUiStore,
 } from '@/features/admin/drops/dropsListUi.store'
+import { DropRowOverflowMenu } from '@/features/admin/drops/DropRowOverflowMenu'
 
 const STATUS_TABS: Array<{ id: DropsListStatusTab; label: string }> = [
   { id: 'all', label: 'All' },
@@ -30,6 +39,14 @@ const STATUS_TABS: Array<{ id: DropsListStatusTab; label: string }> = [
   { id: 'active', label: 'Active' },
   { id: 'archived', label: 'Archived' },
 ]
+
+const STATUS_SORT_RANK: Record<DropStatus, number> = {
+  draft: 10,
+  scheduled: 20,
+  inactive: 30,
+  active: 40,
+  archived: 50,
+}
 
 function pad2(n: number) {
   return String(n).padStart(2, '0')
@@ -50,6 +67,17 @@ function formatAdminDate(iso?: string) {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return '—'
   return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+function parseOptionalTime(iso?: string): number {
+  if (!iso) return 0
+  const t = new Date(iso).getTime()
+  return Number.isNaN(t) ? 0 : t
+}
+
+function compareDropStatus(a: AdminDropListItem, b: AdminDropListItem): number {
+  if (a.isActive !== b.isActive) return a.isActive ? -1 : 1
+  return STATUS_SORT_RANK[a.status] - STATUS_SORT_RANK[b.status]
 }
 
 function statusBadgeClass(status: DropStatus, isActive: boolean) {
@@ -90,6 +118,37 @@ function filterRows(
   })
 }
 
+function DropsSortHeader({
+  column,
+  label,
+}: {
+  column: Column<AdminDropListItem, unknown>
+  label: string
+}) {
+  const sorted = column.getIsSorted()
+  const SortIcon =
+    sorted === 'asc' ? ArrowUp : sorted === 'desc' ? ArrowDown : ArrowUpDown
+
+  return (
+    <AdminButton
+      type="button"
+      variant="ghost"
+      size="compact"
+      className={cn(
+        '-ml-2 h-9 gap-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]',
+        'text-[var(--color-text-muted)] hover:bg-[var(--color-chip)] hover:text-[var(--color-text)]',
+      )}
+      onClick={column.getToggleSortingHandler()}
+    >
+      <span>{label}</span>
+      <SortIcon
+        className={cn('size-3 shrink-0', sorted ? 'opacity-90' : 'opacity-35')}
+        aria-hidden
+      />
+    </AdminButton>
+  )
+}
+
 type ModalMode =
   | { kind: 'activate'; id: string; label: string }
   | { kind: 'archive'; id: string; label: string }
@@ -110,10 +169,12 @@ export function DropsAdminList() {
   const deleteMut = useDeleteAdminDropMutation()
 
   const [modal, setModal] = useState<ModalMode | null>(null)
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'updatedAt', desc: true }])
   const activateTitleId = useId()
   const scheduleTitleId = useId()
   const archiveTitleId = useId()
   const deleteTitleId = useId()
+  const searchFieldId = useId()
   const [scheduleLocal, setScheduleLocal] = useState(() =>
     isoToDatetimeLocalValue(new Date(Date.now() + 60 * 60 * 1000).toISOString()),
   )
@@ -126,19 +187,14 @@ export function DropsAdminList() {
   const totalDrops = data?.length ?? 0
   const filtersActive = search.trim() !== '' || statusTab !== 'all'
 
-  function clearListFilters() {
-    setSearch('')
-    setStatusTab('all')
-  }
-
-  function openSchedule(row: AdminDropListItem) {
+  const openSchedule = useCallback((row: AdminDropListItem) => {
     const base =
       row.scheduledActivationAt && !Number.isNaN(new Date(row.scheduledActivationAt).getTime())
         ? row.scheduledActivationAt
         : new Date(Date.now() + 60 * 60 * 1000).toISOString()
     setScheduleLocal(isoToDatetimeLocalValue(base))
     setModal({ kind: 'schedule', id: row.id, label: row.title })
-  }
+  }, [])
 
   const busy =
     duplicateMut.isPending ||
@@ -147,68 +203,233 @@ export function DropsAdminList() {
     archiveMut.isPending ||
     deleteMut.isPending
 
-  return (
-    <>
-      <AdminSectionHeader
-        eyebrow="Drops"
-        title="Campaign drops"
-        description="Search, filter by status, and manage activation. Only one drop is live on the storefront at a time."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to="/admin/drops/new"
-              className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-xs font-semibold text-[var(--color-bg)] no-underline"
-            >
-              New drop
-            </Link>
-            <a
-              href="/"
-              target="_blank"
-              rel="noreferrer"
-              className="focus-ring inline-flex h-10 items-center gap-2 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-text)] no-underline"
-            >
-              View site
-              <ExternalLink size={14} aria-hidden="true" />
-            </a>
+  const columns = useMemo<ColumnDef<AdminDropListItem>[]>(
+    () => [
+      {
+        id: 'actions',
+        enableSorting: false,
+        enableResizing: false,
+        header: () => <span className="sr-only">Actions</span>,
+        cell: ({ row }) => (
+          <div className="flex justify-start">
+            <DropRowOverflowMenu
+              row={row.original}
+              busy={busy}
+              className="border-[var(--color-line)] bg-[var(--color-bg)]/60 hover:bg-[var(--color-surface-elevated)]"
+              onActivate={() =>
+                setModal({ kind: 'activate', id: row.original.id, label: row.original.title })
+              }
+              onSchedule={() => openSchedule(row.original)}
+              onArchive={() =>
+                setModal({ kind: 'archive', id: row.original.id, label: row.original.title })
+              }
+              onDelete={() =>
+                setModal({ kind: 'delete', id: row.original.id, label: row.original.title })
+              }
+              onDuplicate={() => {
+                duplicateMut.mutate(row.original.id, {
+                  onSuccess: () => toast.success('Drop duplicated as draft.'),
+                  onError: () => toast.error('Duplicate failed.'),
+                })
+              }}
+            />
           </div>
-        }
-      />
-
-      <div className="space-y-4">
-        <label className="block text-xs text-[var(--color-text-muted)]">
-          Search
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Title, internal name, slug, or drop #"
-            className="mt-1 w-full max-w-md rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]"
-            autoComplete="off"
-          />
-        </label>
-
-        <div
-          role="tablist"
-          aria-label="Drop status"
-          className="flex gap-1 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]"
-        >
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={statusTab === tab.id}
-              onClick={() => setStatusTab(tab.id)}
+        ),
+        size: 56,
+        minSize: 56,
+        maxSize: 72,
+      },
+      {
+        id: 'campaign',
+        accessorKey: 'title',
+        header: ({ column }) => <DropsSortHeader column={column} label="Campaign" />,
+        cell: ({ row }) => (
+          <div className="min-w-[140px] space-y-1 pr-2">
+            <div className="font-semibold leading-snug text-[var(--color-heading)]">{row.original.title}</div>
+            <div className="text-[11px] text-[var(--color-text-muted)]">
+              {row.original.dropNumber} · {row.original.name}
+            </div>
+          </div>
+        ),
+        size: 280,
+        minSize: 200,
+      },
+      {
+        accessorKey: 'slug',
+        header: ({ column }) => <DropsSortHeader column={column} label="Slug" />,
+        cell: ({ row }) => (
+          <span className="font-mono text-[11px] text-[var(--color-text-muted)]">/{row.original.slug}</span>
+        ),
+        size: 140,
+        minSize: 96,
+      },
+      {
+        id: 'status',
+        accessorFn: (r) => r.status,
+        sortingFn: (a, b) => compareDropStatus(a.original, b.original),
+        header: ({ column }) => <DropsSortHeader column={column} label="Status" />,
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <span
               className={cn(
-                'focus-ring shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em]',
-                statusTab === tab.id
-                  ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-bg)]'
-                  : 'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-text-muted)]',
+                'inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
+                statusBadgeClass(row.original.status, row.original.isActive),
               )}
             >
-              {tab.label}
-            </button>
-          ))}
+              {row.original.isActive ? 'Live' : row.original.status}
+            </span>
+            {row.original.isActive ? (
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                Active on site
+              </div>
+            ) : null}
+          </div>
+        ),
+        size: 152,
+        minSize: 120,
+      },
+      {
+        id: 'releaseDate',
+        accessorFn: (r) => parseOptionalTime(r.releaseDate),
+        header: ({ column }) => <DropsSortHeader column={column} label="Release" />,
+        cell: ({ row }) => (
+          <span className="text-xs tabular-nums text-[var(--color-text)]">{formatAdminDate(row.original.releaseDate)}</span>
+        ),
+        size: 168,
+        minSize: 132,
+      },
+      {
+        id: 'scheduledActivationAt',
+        accessorFn: (r) => parseOptionalTime(r.scheduledActivationAt),
+        header: ({ column }) => <DropsSortHeader column={column} label="Scheduled" />,
+        cell: ({ row }) => (
+          <span className="text-xs tabular-nums text-[var(--color-text)]">
+            {formatAdminDate(row.original.scheduledActivationAt)}
+          </span>
+        ),
+        size: 168,
+        minSize: 132,
+      },
+      {
+        accessorKey: 'productCount',
+        header: ({ column }) => <DropsSortHeader column={column} label="Products" />,
+        cell: ({ row }) => (
+          <span className="text-xs tabular-nums text-[var(--color-text)]">{row.original.productCount}</span>
+        ),
+        size: 104,
+        minSize: 88,
+      },
+      {
+        id: 'updatedAt',
+        accessorFn: (r) => parseOptionalTime(r.updatedAt),
+        header: ({ column }) => <DropsSortHeader column={column} label="Last edited" />,
+        cell: ({ row }) => (
+          <span className="text-xs tabular-nums text-[var(--color-text)]">{formatAdminDate(row.original.updatedAt)}</span>
+        ),
+        size: 176,
+        minSize: 140,
+      },
+    ],
+    [busy, duplicateMut, openSchedule],
+  )
+
+  const table = useReactTable({
+    data: rows,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    columnResizeMode: 'onChange',
+    enableColumnResizing: true,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    defaultColumn: {
+      minSize: 72,
+      size: 140,
+    },
+  })
+
+  function clearListFilters() {
+    setSearch('')
+    setStatusTab('all')
+  }
+
+  return (
+    <>
+      <div className="min-w-0 space-y-5">
+        <div className="min-w-0 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-soft)]/40 px-3 py-4 sm:px-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between xl:gap-6">
+            <div className="min-w-0 flex-1 space-y-2">
+              <label
+                htmlFor={searchFieldId}
+                className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]"
+              >
+                Search drops
+              </label>
+              <input
+                id={searchFieldId}
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Title, internal name, slug, or drop #"
+                className="focus-ring w-full max-w-xl rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]"
+                autoComplete="off"
+              />
+              <p className="max-w-xl text-xs leading-relaxed text-[var(--color-text-muted)]">
+                Search and filter below; manage lifecycle from each row&apos;s overflow menu (⋯).
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <Link
+                to="/admin/drops/new"
+                aria-label="Create new drop"
+                title="Create new drop"
+                className={cn(
+                  'focus-ring relative inline-flex h-11 min-h-11 min-w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg px-0 no-underline',
+                  'border border-[color-mix(in_oklab,var(--color-accent)_48%,transparent)]',
+                  'bg-[var(--color-surface)] text-[var(--color-heading)]',
+                  'shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.26),0_2px_8px_-2px_rgba(0,0,0,0.48)]',
+                  'hover:border-[var(--color-accent)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-accent)]',
+                  'hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.11),inset_0_-1px_0_rgba(0,0,0,0.26),0_12px_28px_-14px_rgba(0,0,0,0.6)]',
+                  'active:border-[color-mix(in_oklab,var(--color-accent)_65%,transparent)] active:bg-[var(--color-surface)] active:text-[var(--color-heading)]',
+                  'active:shadow-[inset_0_2px_6px_rgba(0,0,0,0.38)]',
+                )}
+              >
+                <Plus className="size-[18px]" aria-hidden />
+              </Link>
+              <a
+                href="/"
+                target="_blank"
+                rel="noreferrer"
+                className={cn(
+                  adminButtonVariants({ variant: 'secondary', size: 'md' }),
+                  'focus-ring inline-flex h-10 shrink-0 gap-2 px-4 no-underline',
+                )}
+              >
+                View site
+                <ExternalLink size={14} aria-hidden />
+              </a>
+            </div>
+          </div>
+
+          <div
+            role="tablist"
+            aria-label="Drop status filters"
+            className="mt-5 flex flex-wrap gap-1 border-t border-[var(--color-line)] pt-4 [-webkit-overflow-scrolling:touch]"
+          >
+            {STATUS_TABS.map((tab) => (
+              <AdminButton
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={statusTab === tab.id}
+                variant="adminTabList"
+                data-active={statusTab === tab.id ? 'true' : 'false'}
+                onClick={() => setStatusTab(tab.id)}
+              >
+                {tab.label}
+              </AdminButton>
+            ))}
+          </div>
         </div>
 
         {isError ? (
@@ -216,15 +437,13 @@ export function DropsAdminList() {
             <p className="text-sm text-[var(--color-text-muted)]">
               The CMS client failed to return the drops list.
             </p>
-            <Button type="button" size="sm" className="mt-3" onClick={() => void refetch()}>
+            <AdminButton type="button" size="sm" className="mt-3" onClick={() => void refetch()}>
               Retry
-            </Button>
+            </AdminButton>
           </AdminCard>
         ) : null}
 
-        {isLoading ? (
-          <p className="text-sm text-[var(--color-text-muted)]">Loading drops…</p>
-        ) : null}
+        {isLoading ? <p className="text-sm text-[var(--color-text-muted)]">Loading drops…</p> : null}
 
         {!isLoading && !isError && totalDrops === 0 ? (
           <AdminCard
@@ -233,7 +452,10 @@ export function DropsAdminList() {
           >
             <Link
               to="/admin/drops/new"
-              className="inline-flex h-10 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-xs font-semibold text-[var(--color-bg)] no-underline"
+              className={cn(
+                adminButtonVariants({ variant: 'primary', size: 'md' }),
+                'focus-ring inline-flex no-underline',
+              )}
             >
               Create a drop
             </Link>
@@ -248,9 +470,9 @@ export function DropsAdminList() {
                 description="Try another status tab or clear search to see every drop again."
               >
                 {filtersActive ? (
-                  <Button type="button" size="sm" variant="secondary" onClick={clearListFilters}>
+                  <AdminButton type="button" size="sm" variant="secondary" onClick={clearListFilters}>
                     Clear filters
-                  </Button>
+                  </AdminButton>
                 ) : null}
               </AdminCard>
             ) : null}
@@ -258,10 +480,39 @@ export function DropsAdminList() {
             {rows.length === 0 ? null : (
               <>
                 <div className="grid gap-3 md:hidden">
-                  {rows.map((row) => (
+                  {table.getRowModel().rows.map((tableRow) => {
+                    const row = tableRow.original
+                    return (
                     <AdminCard
                       key={row.id}
-                      title={`${row.dropNumber} · ${row.name}`}
+                      title={
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="min-w-0 leading-snug">
+                            {row.dropNumber} · {row.name}
+                          </span>
+                          <DropRowOverflowMenu
+                            row={row}
+                            busy={busy}
+                            className="border-[var(--color-line)] bg-[var(--color-bg)]/70 hover:bg-[var(--color-surface-elevated)]"
+                            onActivate={() =>
+                              setModal({ kind: 'activate', id: row.id, label: row.title })
+                            }
+                            onSchedule={() => openSchedule(row)}
+                            onArchive={() =>
+                              setModal({ kind: 'archive', id: row.id, label: row.title })
+                            }
+                            onDelete={() =>
+                              setModal({ kind: 'delete', id: row.id, label: row.title })
+                            }
+                            onDuplicate={() => {
+                              duplicateMut.mutate(row.id, {
+                                onSuccess: () => toast.success('Drop duplicated as draft.'),
+                                onError: () => toast.error('Duplicate failed.'),
+                              })
+                            }}
+                          />
+                        </div>
+                      }
                       description={
                         <span className="text-[var(--color-text-muted)]">
                           /drop/{row.slug} · {row.productCount} products
@@ -291,120 +542,79 @@ export function DropsAdminList() {
                           </div>
                           <div>
                             <dt className="text-[10px] uppercase tracking-wider">Scheduled</dt>
-                            <dd className="text-[var(--color-text)]">
-                              {formatAdminDate(row.scheduledActivationAt)}
-                            </dd>
+                            <dd className="text-[var(--color-text)]">{formatAdminDate(row.scheduledActivationAt)}</dd>
                           </div>
                           <div className="col-span-2">
                             <dt className="text-[10px] uppercase tracking-wider">Last edited</dt>
                             <dd className="text-[var(--color-text)]">{formatAdminDate(row.updatedAt)}</dd>
                           </div>
                         </dl>
-                        <DropRowActions
-                          row={row}
-                          busy={busy}
-                          onActivate={() =>
-                            setModal({ kind: 'activate', id: row.id, label: row.title })
-                          }
-                          onSchedule={() => openSchedule(row)}
-                          onArchive={() =>
-                            setModal({ kind: 'archive', id: row.id, label: row.title })
-                          }
-                          onDelete={() =>
-                            setModal({ kind: 'delete', id: row.id, label: row.title })
-                          }
-                          onDuplicate={() => {
-                            duplicateMut.mutate(row.id, {
-                              onSuccess: () => toast.success('Drop duplicated as draft.'),
-                              onError: () => toast.error('Duplicate failed.'),
-                            })
-                          }}
-                        />
                       </div>
                     </AdminCard>
-                  ))}
+                    )
+                  })}
                 </div>
 
-                <div className="hidden overflow-x-auto rounded-lg border border-[var(--color-line)] md:block">
-                  <table className="min-w-[960px] w-full border-collapse text-left text-sm">
-                    <thead className="bg-[var(--color-surface)] text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                      <tr>
-                        <th className="px-3 py-2 font-semibold">Drop</th>
-                        <th className="px-3 py-2 font-semibold">Status</th>
-                        <th className="px-3 py-2 font-semibold">Release</th>
-                        <th className="px-3 py-2 font-semibold">Scheduled</th>
-                        <th className="px-3 py-2 font-semibold">Products</th>
-                        <th className="px-3 py-2 font-semibold">Last edited</th>
-                        <th className="px-3 py-2 font-semibold text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((row) => (
-                        <tr
-                          key={row.id}
-                          className={cn(
-                            'border-t border-[var(--color-line)]',
-                            row.isActive && 'bg-emerald-500/[0.06]',
-                          )}
-                        >
-                          <td className="px-3 py-3 align-top">
-                            <div className="font-medium text-[var(--color-heading)]">{row.title}</div>
-                            <div className="text-xs text-[var(--color-text-muted)]">
-                              {row.dropNumber} · {row.name} · /drop/{row.slug}
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 align-top">
-                            <span
-                              className={cn(
-                                'inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
-                                statusBadgeClass(row.status, row.isActive),
-                              )}
-                            >
-                              {row.isActive ? 'Live' : row.status}
-                            </span>
-                            {row.isActive ? (
-                              <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
-                                Active on site
-                              </div>
-                            ) : null}
-                          </td>
-                          <td className="px-3 py-3 align-top text-xs text-[var(--color-text)]">
-                            {formatAdminDate(row.releaseDate)}
-                          </td>
-                          <td className="px-3 py-3 align-top text-xs text-[var(--color-text)]">
-                            {formatAdminDate(row.scheduledActivationAt)}
-                          </td>
-                          <td className="px-3 py-3 align-top text-xs tabular-nums">{row.productCount}</td>
-                          <td className="px-3 py-3 align-top text-xs text-[var(--color-text)]">
-                            {formatAdminDate(row.updatedAt)}
-                          </td>
-                          <td className="px-3 py-3 align-top text-right">
-                            <DropRowActions
-                              row={row}
-                              busy={busy}
-                              compact
-                              onActivate={() =>
-                                setModal({ kind: 'activate', id: row.id, label: row.title })
-                              }
-                              onSchedule={() => openSchedule(row)}
-                              onArchive={() =>
-                                setModal({ kind: 'archive', id: row.id, label: row.title })
-                              }
-                              onDelete={() =>
-                                setModal({ kind: 'delete', id: row.id, label: row.title })
-                              }
-                              onDuplicate={() => {
-                                duplicateMut.mutate(row.id, {
-                                  onSuccess: () => toast.success('Drop duplicated as draft.'),
-                                  onError: () => toast.error('Duplicate failed.'),
-                                })
-                              }}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="hidden min-w-0 md:block">
+                  <div className="max-w-full overflow-x-auto rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)] shadow-[inset_0_1px_0_rgba(231,228,223,0.04)]">
+                    <table
+                      className="border-collapse text-left text-sm"
+                      style={{ width: table.getTotalSize() }}
+                    >
+                      <thead className="sticky top-0 z-10 bg-[color-mix(in_oklab,var(--color-surface)_94%,transparent)] text-[var(--color-text-muted)] backdrop-blur-sm supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--color-surface)_82%,transparent)]">
+                        {table.getHeaderGroups().map((hg) => (
+                          <tr key={hg.id} className="border-b border-[var(--color-line)]">
+                            {hg.headers.map((header) => (
+                              <th
+                                key={header.id}
+                                colSpan={header.colSpan}
+                                className="relative px-3 py-2 text-left align-bottom text-[10px] font-semibold uppercase tracking-[0.14em]"
+                                style={{ width: header.getSize() }}
+                              >
+                                {header.isPlaceholder
+                                  ? null
+                                  : flexRender(header.column.columnDef.header, header.getContext())}
+                                {header.column.getCanResize() ? (
+                                  <div
+                                    aria-hidden
+                                    onMouseDown={header.getResizeHandler()}
+                                    onTouchStart={header.getResizeHandler()}
+                                    className={cn(
+                                      'absolute right-0 top-0 z-20 h-full w-2 translate-x-1/2 cursor-col-resize touch-none select-none rounded-sm bg-transparent',
+                                      'hover:bg-[color-mix(in_oklab,var(--color-accent)_35%,transparent)]',
+                                    )}
+                                  />
+                                ) : null}
+                              </th>
+                            ))}
+                          </tr>
+                        ))}
+                      </thead>
+                      <tbody>
+                        {table.getRowModel().rows.map((row, idx) => (
+                          <tr
+                            key={row.id}
+                            className={cn(
+                              'border-t border-[var(--color-line)] transition-colors',
+                              idx % 2 === 1 && 'bg-[color-mix(in_oklab,var(--color-surface)_55%,transparent)]',
+                              row.original.isActive &&
+                                'bg-[color-mix(in_oklab,rgb(16_185_129)_12%,transparent)]',
+                            )}
+                          >
+                            {row.getVisibleCells().map((cell) => (
+                              <td
+                                key={cell.id}
+                                className="px-3 py-2.5 align-middle"
+                                style={{ width: cell.column.getSize() }}
+                              >
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </>
             )}
@@ -412,24 +622,20 @@ export function DropsAdminList() {
         ) : null}
       </div>
 
-      <Modal
-        open={modal?.kind === 'activate'}
-        onClose={() => setModal(null)}
-        aria-labelledby={activateTitleId}
-      >
+      <Modal open={modal?.kind === 'activate'} onClose={() => setModal(null)} aria-labelledby={activateTitleId}>
         <div className="space-y-4">
           <h3 id={activateTitleId} className="anvl-heading text-xl font-normal">
             Make drop active?
           </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
-            <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will power
-            the public landing page and theme. The current active drop will be set to inactive.
+            <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will power the public landing page and theme.
+            The current active drop will be set to inactive.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setModal(null)}>
+            <AdminButton variant="ghost" size="sm" onClick={() => setModal(null)}>
               Cancel
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               variant="primary"
               size="sm"
               disabled={busy}
@@ -445,24 +651,19 @@ export function DropsAdminList() {
               }}
             >
               Activate
-            </Button>
+            </AdminButton>
           </div>
         </div>
       </Modal>
 
-      <Modal
-        open={modal?.kind === 'schedule'}
-        onClose={() => setModal(null)}
-        aria-labelledby={scheduleTitleId}
-      >
+      <Modal open={modal?.kind === 'schedule'} onClose={() => setModal(null)} aria-labelledby={scheduleTitleId}>
         <div className="space-y-4">
           <h3 id={scheduleTitleId} className="anvl-heading text-xl font-normal">
             Schedule activation
           </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Set a planned activation time for{' '}
-            <span className="font-medium text-[var(--color-text)]">{modal?.label}</span>. This does
-            not auto-publish yet; it records intent in the CMS.
+            <span className="font-medium text-[var(--color-text)]">{modal?.label}</span>. This does not auto-publish yet; it records intent in the CMS.
           </p>
           <label className="block text-xs text-[var(--color-text-muted)]">
             Activation (local time)
@@ -470,14 +671,14 @@ export function DropsAdminList() {
               type="datetime-local"
               value={scheduleLocal}
               onChange={(e) => setScheduleLocal(e.target.value)}
-              className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm"
+              className="focus-ring mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm"
             />
           </label>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setModal(null)}>
+            <AdminButton variant="ghost" size="sm" onClick={() => setModal(null)}>
               Cancel
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               variant="primary"
               size="sm"
               disabled={busy || !scheduleLocal}
@@ -497,29 +698,24 @@ export function DropsAdminList() {
               }}
             >
               Save schedule
-            </Button>
+            </AdminButton>
           </div>
         </div>
       </Modal>
 
-      <Modal
-        open={modal?.kind === 'archive'}
-        onClose={() => setModal(null)}
-        aria-labelledby={archiveTitleId}
-      >
+      <Modal open={modal?.kind === 'archive'} onClose={() => setModal(null)} aria-labelledby={archiveTitleId}>
         <div className="space-y-4">
           <h3 id={archiveTitleId} className="anvl-heading text-xl font-normal">
             Archive drop?
           </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
-            <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will be
-            hidden from activation and scheduling.
+            <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will be hidden from activation and scheduling.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setModal(null)}>
+            <AdminButton variant="ghost" size="sm" onClick={() => setModal(null)}>
               Cancel
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               variant="primary"
               size="sm"
               disabled={busy}
@@ -535,30 +731,25 @@ export function DropsAdminList() {
               }}
             >
               Archive
-            </Button>
+            </AdminButton>
           </div>
         </div>
       </Modal>
 
-      <Modal
-        open={modal?.kind === 'delete'}
-        onClose={() => setModal(null)}
-        aria-labelledby={deleteTitleId}
-      >
+      <Modal open={modal?.kind === 'delete'} onClose={() => setModal(null)} aria-labelledby={deleteTitleId}>
         <div className="space-y-4">
           <h3 id={deleteTitleId} className="anvl-heading text-xl font-normal">
             Delete drop?
           </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
-            This removes{' '}
-            <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> from local
-            storage. If it was the only drop, a fresh default drop is recreated.
+            This removes <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> from local storage.
+            If it was the only drop, a fresh default drop is recreated.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setModal(null)}>
+            <AdminButton variant="ghost" size="sm" onClick={() => setModal(null)}>
               Cancel
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               variant="primary"
               size="sm"
               disabled={busy}
@@ -574,74 +765,10 @@ export function DropsAdminList() {
               }}
             >
               Delete
-            </Button>
+            </AdminButton>
           </div>
         </div>
       </Modal>
     </>
-  )
-}
-
-function DropRowActions({
-  row,
-  busy,
-  compact,
-  onActivate,
-  onSchedule,
-  onArchive,
-  onDelete,
-  onDuplicate,
-}: {
-  row: AdminDropListItem
-  busy: boolean
-  compact?: boolean
-  onActivate: () => void
-  onSchedule: () => void
-  onArchive: () => void
-  onDelete: () => void
-  onDuplicate: () => void
-}) {
-  const canActivate = !row.isActive && row.status !== 'archived'
-  const wrap = compact ? 'flex flex-wrap justify-end gap-1' : 'flex flex-wrap gap-2'
-
-  return (
-    <div className={wrap}>
-      <Link
-        to="/admin/drops/$dropId"
-        params={{ dropId: row.id }}
-        className="inline-flex h-9 items-center rounded-md border border-[var(--color-line)] px-3 text-xs font-semibold text-[var(--color-heading)] no-underline hover:bg-[var(--color-surface-elevated)]"
-      >
-        Edit
-      </Link>
-      <a
-        href={`/drop/${row.slug}`}
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex h-9 items-center rounded-md border border-[var(--color-line)] px-3 text-xs font-semibold text-[var(--color-heading)] no-underline hover:bg-[var(--color-surface-elevated)]"
-      >
-        Preview
-      </a>
-      <Button type="button" size="sm" disabled={busy} onClick={onDuplicate}>
-        Duplicate
-      </Button>
-      {canActivate ? (
-        <Button type="button" size="sm" disabled={busy} onClick={onActivate}>
-          Set active
-        </Button>
-      ) : null}
-      {row.status !== 'archived' ? (
-        <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={onSchedule}>
-          Schedule
-        </Button>
-      ) : null}
-      {row.status !== 'archived' ? (
-        <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={onArchive}>
-          Archive
-        </Button>
-      ) : null}
-      <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={onDelete}>
-        Delete
-      </Button>
-    </div>
   )
 }

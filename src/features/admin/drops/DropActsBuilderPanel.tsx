@@ -8,6 +8,7 @@ import { mergeActAnimationConfig } from '@/features/admin/drops/acts/landingActs
 import { safeParseActContent } from '@/features/admin/drops/acts/landingActs.zod'
 import { landingContentToSimpleActs } from '@/features/admin/drops/acts/landingActs.seed'
 import { dropLandingContentSchema } from '@/features/admin/drops/drops.persistence.zod'
+import { AdminButton } from '@/features/admin/components/AdminButton'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 
 const NATURE_OPTIONS = [
@@ -895,20 +896,24 @@ export function DropActsBuilderPanel({
       description="Configure act order, visibility, nature, presets, copy, media, animation, and structured content. Legacy section fields remain below for fine edits."
     >
       <div className="mb-4 flex flex-wrap gap-2">
-        <button
+        <AdminButton
           type="button"
-          className="rounded-md border border-[var(--color-line)] px-3 py-1.5 text-xs uppercase tracking-[0.16em] text-[var(--color-heading)]"
+          variant="secondary"
+          size="sm"
+          className="text-xs uppercase tracking-[0.16em] text-[var(--color-heading)]"
           onClick={bootstrapFromLanding}
         >
           Reset acts from landing copy
-        </button>
-        <button
+        </AdminButton>
+        <AdminButton
           type="button"
-          className="rounded-md border border-[var(--color-line)] px-3 py-1.5 text-xs uppercase tracking-[0.16em] text-[var(--color-heading)]"
+          variant="secondary"
+          size="sm"
+          className="text-xs uppercase tracking-[0.16em] text-[var(--color-heading)]"
           onClick={addAct}
         >
           Add act
-        </button>
+        </AdminButton>
       </div>
 
       <div className="space-y-4">
@@ -941,27 +946,30 @@ export function DropActsBuilderPanel({
                   #{act.sortOrder + 1}
                 </span>
                 <div className="ml-auto flex gap-1">
-                  <button
+                  <AdminButton
                     type="button"
-                    className="rounded border border-[var(--color-line)] px-2 py-0.5 text-[10px] uppercase"
+                    variant="secondary"
+                    size="compact"
                     onClick={() => moveAct(act.id, -1)}
                   >
                     Up
-                  </button>
-                  <button
+                  </AdminButton>
+                  <AdminButton
                     type="button"
-                    className="rounded border border-[var(--color-line)] px-2 py-0.5 text-[10px] uppercase"
+                    variant="secondary"
+                    size="compact"
                     onClick={() => moveAct(act.id, 1)}
                   >
                     Down
-                  </button>
-                  <button
+                  </AdminButton>
+                  <AdminButton
                     type="button"
-                    className="rounded border border-red-500/40 px-2 py-0.5 text-[10px] uppercase text-red-300"
+                    variant="destructive"
+                    size="compact"
                     onClick={() => removeAct(act.id)}
                   >
                     Remove
-                  </button>
+                  </AdminButton>
                 </div>
               </div>
 

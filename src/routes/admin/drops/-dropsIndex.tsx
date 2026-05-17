@@ -7,7 +7,7 @@ export function AdminDropsIndexPageRoute() {
     <ProtectedAdminRoute>
       <AdminLayout
         title="Drops"
-        description="Only one drop can be active at a time on the public site."
+        description="Listing toolbar handles search, filters, and lifecycle actions (⋯ menu). Only one drop can be active on the storefront."
         layout="wide"
       >
         <DropsAdminList />

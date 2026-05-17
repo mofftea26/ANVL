@@ -32,7 +32,7 @@ import type {
   ProductStatus,
   ProductVariantAvailability,
 } from '@/features/admin/products/products.types'
-import { Button } from '@/shared/components/ui/Button'
+import { AdminButton } from '@/features/admin/components/AdminButton'
 import { Checkbox } from '@/shared/components/ui/Checkbox'
 import { FormField } from '@/shared/components/ui/FormField'
 import { ColorField } from '@/shared/components/ui/ColorField'
@@ -158,7 +158,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
               <ArrowLeft size={14} aria-hidden="true" />
               Catalog
             </Link>
-            <Button type="button" variant="primary" size="sm" onClick={saveProduct}>
+            <AdminButton type="button" variant="primary" size="sm" onClick={saveProduct}>
               {showSuccess ? (
                 <>
                   <Check size={14} className="mr-1.5" aria-hidden="true" />
@@ -170,15 +170,15 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                   Save product
                 </>
               )}
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => setConfirmDelete(true)}
             >
               <Trash2 size={14} aria-hidden="true" />
-            </Button>
+            </AdminButton>
           </>
         }
       />
@@ -192,18 +192,17 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
             ['seo', 'SEO'],
           ] as const
         ).map(([id, label]) => (
-          <button
+          <AdminButton
             key={id}
             type="button"
-            className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
-              tab === id
-                ? 'bg-[var(--color-accent)] text-[var(--color-bg)]'
-                : 'border border-[var(--color-line)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]/40'
-            }`}
+            role="tab"
+            aria-selected={tab === id}
+            variant="adminTabProduct"
+            data-active={tab === id ? 'true' : 'false'}
             onClick={() => setTab(id)}
           >
             {label}
-          </button>
+          </AdminButton>
         ))}
       </div>
 
@@ -537,7 +536,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
             title="Colors"
             description="Each colorway carries its own imagery stack."
             actions={
-              <Button
+              <AdminButton
                 type="button"
                 size="sm"
                 variant="secondary"
@@ -566,7 +565,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
               >
                 <Plus size={14} className="mr-1" aria-hidden="true" />
                 Add color
-              </Button>
+              </AdminButton>
             }
           >
             <div className="space-y-8">
@@ -607,7 +606,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                         />
                       </FormField>
                     </div>
-                    <Button
+                    <AdminButton
                       type="button"
                       variant="ghost"
                       size="sm"
@@ -617,14 +616,14 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                       }}
                     >
                       Remove color
-                    </Button>
+                    </AdminButton>
                   </div>
                   <div className="mt-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
                         Images
                       </p>
-                      <Button
+                      <AdminButton
                         type="button"
                         size="sm"
                         variant="secondary"
@@ -643,7 +642,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                         }}
                       >
                         Add image
-                      </Button>
+                      </AdminButton>
                     </div>
                     {color.images.map((img, imgIdx) => (
                       <div
@@ -702,7 +701,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
             title="Sizes"
             description="Sorted labels drive PDP selectors."
             actions={
-              <Button
+              <AdminButton
                 type="button"
                 size="sm"
                 variant="secondary"
@@ -721,7 +720,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                 }}
               >
                 Add size
-              </Button>
+              </AdminButton>
             }
           >
             <div className="grid gap-3 md:grid-cols-2">
@@ -742,7 +741,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                       />
                     </FormField>
                   </div>
-                  <Button
+                  <AdminButton
                     type="button"
                     variant="ghost"
                     size="sm"
@@ -752,7 +751,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     }}
                   >
                     Remove
-                  </Button>
+                  </AdminButton>
                 </div>
               ))}
             </div>
@@ -938,10 +937,10 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
             Removes this SKU everywhere and strips it from every drop roster.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
+            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
               Cancel
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               variant="primary"
               size="sm"
               onClick={() => {
@@ -953,7 +952,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
               }}
             >
               Delete
-            </Button>
+            </AdminButton>
           </div>
         </div>
       </Modal>

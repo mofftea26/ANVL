@@ -39,7 +39,7 @@ import {
   type LeaveEmptyMap,
   type TabId,
 } from '@/features/admin/drops/dropEditorRoute.shared'
-import { Button } from '@/shared/components/ui/Button'
+import { AdminButton } from '@/features/admin/components/AdminButton'
 import { ColorField } from '@/shared/components/ui/ColorField'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 import { Modal } from '@/shared/components/ui/Modal'
@@ -222,7 +222,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               Live route
             </a>
             {!draft.isActive ? (
-              <Button
+              <AdminButton
                 type="button"
                 variant="secondary"
                 size="sm"
@@ -230,15 +230,15 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               >
                 <Sparkles size={14} className="mr-1" aria-hidden="true" />
                 Make active
-              </Button>
+              </AdminButton>
             ) : null}
-            <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmReset(true)}>
+            <AdminButton type="button" variant="ghost" size="sm" onClick={() => setConfirmReset(true)}>
               Reset
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmDelete(true)}>
+            </AdminButton>
+            <AdminButton type="button" variant="ghost" size="sm" onClick={() => setConfirmDelete(true)}>
               Delete
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               type="button"
               variant="primary"
               size="sm"
@@ -254,7 +254,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               ) : (
                 'Save drop'
               )}
-            </Button>
+            </AdminButton>
           </div>
         }
       />
@@ -301,17 +301,13 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             {tabDefs.map((t) => {
               const hasError = tabWithErrors(t.id)
               return (
-                <button
+                <AdminButton
                   key={t.id}
                   role="tab"
                   aria-selected={tab === t.id}
                   type="button"
-                  className={cn(
-                    'focus-ring inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] transition',
-                    tab === t.id
-                      ? 'bg-[var(--color-accent)] text-[var(--color-bg)]'
-                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)]',
-                  )}
+                  variant="adminTabEditor"
+                  data-active={tab === t.id ? 'true' : 'false'}
                   onClick={() => setTab(t.id)}
                 >
                   {t.label}
@@ -321,7 +317,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                       className="inline-block h-1.5 w-1.5 rounded-full bg-red-400"
                     />
                   ) : null}
-                </button>
+                </AdminButton>
               )
             })}
           </div>
@@ -692,7 +688,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                       </label>
                       {checked ? (
                         <div className="flex gap-1">
-                          <Button
+                          <AdminButton
                             type="button"
                             variant="ghost"
                             size="sm"
@@ -700,8 +696,8 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                             onClick={() => moveProduct(p.id, -1)}
                           >
                             ↑
-                          </Button>
-                          <Button
+                          </AdminButton>
+                          <AdminButton
                             type="button"
                             variant="ghost"
                             size="sm"
@@ -709,7 +705,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                             onClick={() => moveProduct(p.id, 1)}
                           >
                             ↓
-                          </Button>
+                          </AdminButton>
                         </div>
                       ) : null}
                     </div>
@@ -833,10 +829,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               : 'Updates persist only in this browser until a backend ships.'}
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setConfirmSave(false)}>
+            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmSave(false)}>
               Cancel
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               variant="primary"
               size="sm"
               onClick={() => {
@@ -847,7 +843,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               }}
             >
               Save
-            </Button>
+            </AdminButton>
           </div>
         </div>
       </Modal>
@@ -862,10 +858,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             This will deactivate the currently active drop and update the public landing page.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setConfirmActivateOnly(false)}>
+            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmActivateOnly(false)}>
               Cancel
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               variant="primary"
               size="sm"
               onClick={() => {
@@ -876,7 +872,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               }}
             >
               Activate
-            </Button>
+            </AdminButton>
           </div>
         </div>
       </Modal>
@@ -891,10 +887,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             Restores landing defaults while keeping this drop&apos;s id and slug.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setConfirmReset(false)}>
+            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmReset(false)}>
               Cancel
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               variant="primary"
               size="sm"
               onClick={() => {
@@ -907,7 +903,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               }}
             >
               Reset
-            </Button>
+            </AdminButton>
           </div>
         </div>
       </Modal>
@@ -922,10 +918,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             Removes the drop locally. At least one drop always remains — defaults will respawn if needed.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
+            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
               Cancel
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               variant="primary"
               size="sm"
               onClick={() => {
@@ -936,7 +932,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               }}
             >
               Delete
-            </Button>
+            </AdminButton>
           </div>
         </div>
       </Modal>

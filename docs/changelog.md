@@ -1,4 +1,78 @@
 ﻿
+## 2026-05-17 — Admin `/admin/drops`: forged outline “Create new drop” icon control
+
+- Summary: Toolbar **`Plus`** link drops the flat **`primary`** pill for a **`DashboardCardCtaLink`-style** forged plate (**OKLab accent border**, **`--color-surface`** fill, inset rim + depth shadow, **`h-11`** / **44px** touch). **`focus-ring inline-flex`** stays on the global CTA hover path (`src/styles.css`).
+- Files changed: `src/features/admin/drops/DropsAdminList.tsx`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-17 — Admin `/admin/drops`: overflow (⋯) column first on desktop table
+
+- Summary: **`DropsAdminList`** **`ColumnDef`** order puts the **`DropRowOverflowMenu`** (**`actions`**) column **leftmost** before Campaign/Slug/etc.; overflow cell aligns **start**. Test asserts the **first** **`columnheader`** is **Actions** (sr-only).
+- Files changed: `src/features/admin/drops/DropsAdminList.tsx`, `src/features/admin/drops/__tests__/DropsAdminList.test.tsx`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**. Manual: desktop **`/admin/drops`** — ⋯ sits in the leading column.
+
+## 2026-05-17 — Admin layout: contain wide drops table (viewport overflow)
+
+- Summary: **`AdminLayout`** main column and **`DropsAdminList`** wrappers use **`min-w-0`** so grid/flex tracks can shrink below the table’s intrinsic width; the desktop table stays inside **`max-w-full overflow-x-auto`** so horizontal scroll is confined to the card, not the whole page (~320–390px sanity). Test asserts the table’s parent carries **`overflow-x-auto`** + **`max-w-full`**.
+- Files changed: `src/features/admin/components/AdminLayout.tsx`, `src/features/admin/drops/DropsAdminList.tsx`, `src/features/admin/drops/__tests__/DropsAdminList.test.tsx`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**. Manual: narrow viewport **`/admin/drops`** — body should not gain a horizontal scrollbar; table region may scroll horizontally.
+
+## 2026-05-17 — Admin `/admin/drops`: toolbar table + Radix overflow menus
+
+- Summary: Drops index drops the duplicate **`AdminSectionHeader`** hero in favor of a **toolbar card** (search, segmented status tabs, **`Plus`** square link with **`focus-ring`** / **`aria-label`**, View site). Desktop uses **`@tanstack/react-table`** for sortable columns (title/slug/status/dates/products/last edited), **sticky** header, zebra + active tint, **column resize** handles, and **`DropRowOverflowMenu`** (**`MoreVertical`** + **`AdminDropdownMenu`** / **`@radix-ui/react-dropdown-menu`**). Motion on menu panel respects **`prefers-reduced-motion`** via **`admin-dropdown-menu-content`** (`src/styles.css`). Tests: **`src/features/admin/drops/__tests__/DropsAdminList.test.tsx`** (+ **`@testing-library/user-event`**). **`pnpm verify`** green (**197** tests).
+- Files changed: `package.json`, `src/features/admin/drops/DropsAdminList.tsx`, `src/features/admin/drops/DropRowOverflowMenu.tsx`, `src/features/admin/components/AdminDropdownMenu.tsx`, `src/styles.css`, `src/routes/admin/drops/-dropsIndex.tsx`, `docs/features/admin-ui.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**. Manual: `/admin/drops` — sort headers, drag resize, ⋯ menu keyboard + reduced-motion OS toggle; confirm storefront bundle still has no admin imports.
+- Notes/debt: **`useReactTable`** was not previously used elsewhere (deps already listed **`@tanstack/react-table`**); jsdom ignores Tailwind breakpoints — RTL scopes desktop assertions **`within(table)`**.
+
+## 2026-05-17 — Admin Settings: password-gated local CMS reset
+
+- Summary: **Danger zone** on `/admin/settings` uses a **full-width destructive** control (min height ≥44px, `focus-ring`, no label truncation). **Reset** opens the shared **`Modal`** with **`AdminCard`-style** inset rim/shadow; **`verifyAdminPassword`** in `adminAuth.storage.ts` centralizes the same plain compare as login (dev gate, not a hash). Users must **match admin password in two fields**; inline errors for mismatch / wrong password; **Confirm** stays disabled until valid. **`Modal`** accepts optional **`aria-describedby`**. Tests: `src/routes/admin/__tests__/-adminSettings.test.tsx`, `Modal` described-by case.
+- Files changed: `src/features/admin/auth/adminAuth.storage.ts`, `src/features/admin/auth/AdminAuthProvider.tsx` (uses `verifyAdminPassword`), `src/routes/admin/-adminSettings.tsx`, `src/shared/components/ui/Modal.tsx`, `src/shared/components/ui/__tests__/Modal.test.tsx`, `src/routes/admin/__tests__/-adminSettings.test.tsx`, `docs/features/admin-ui.md`, `docs/features/auth-accounts-orders.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`** (this run). **PR screenshot:** Settings → Danger zone → open modal → show twin password fields + destructive actions on oath-dark panel.
+- Notes/debt: Still aligns with temporary **`VITE_ANVL_ADMIN_*`** client-exposed credentials (`SEC-*` debt unchanged).
+
+## 2026-05-17 — Admin: AdminButton + shared pressable variants
+
+- Summary: **`AdminButton`** re-exports the shared **`Button`** (`class-variance-authority` + `forwardRef`) from `src/features/admin/components/AdminButton.tsx` for admin feature imports. Extended **`src/shared/components/ui/Button.tsx`** with **`destructive`**, **`size: none | compact`**, and segmented-tab variants **`adminTabList` / `adminTabEditor` / `adminTabProduct`** (use with **`data-active="true" | "false"`**). Migrated high-traffic controls: drops list status tabs + modals + row actions (**`DropsAdminList`**), product + drop editor tabs and toolbars (**`ProductEditorRoute`**, **`DropEditorRoute`**), acts builder toolbar + reorder/remove (**`DropActsBuilderPanel`**), live preview viewport pills + error fallback (**`DropEditorLivePreview`**). Documented token mapping in **`docs/features/admin-ui.md`**. Tests: **`src/features/admin/components/__tests__/AdminButton.test.tsx`**.
+- Files changed: `src/shared/components/ui/Button.tsx`, `src/features/admin/components/AdminButton.tsx`, `src/features/admin/drops/DropsAdminList.tsx`, `src/features/admin/drops/DropEditorRoute.tsx`, `src/features/admin/drops/DropActsBuilderPanel.tsx`, `src/features/admin/drops/DropEditorLivePreview.tsx`, `src/features/admin/products/ProductEditorRoute.tsx`, `src/features/admin/components/__tests__/AdminButton.test.tsx`, `docs/features/admin-ui.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`** (see subagent run).
+- Notes/debt: **`AdminTopbar`** and other admin surfaces still import **`Button`** from `@/shared/components/ui/Button` directly; prefer **`AdminButton`** when touching those files. No **shadcn/ui** install — project already had CVA + tokens; path **(A)** chosen for minimal churn.
+
+## 2026-05-17 — Admin dashboard: equal-height cards + pinned footers + Settings CTA label
+
+- Summary: **`AdminCard`** is a **full-height column shell** (`flex flex-col`, `h-full`, `min-h-0`) so grids can **`items-stretch`** tiles; **`/admin`** dashboard cards get **`min-h`** + footer row **`mt-auto`** so the **badge stays bottom-left** and **`DashboardCardCtaLink`** **bottom-right** regardless of description length. **Settings** nav item **`cta`** renamed from “Workspace settings” to **“Settings”** (`adminNav.ts`); **`getByRole('link', { name: card.cta })`** keeps tests aligned. **`DropActsBuilderPanel`** restores the missing **`MediaPickerField`** import so **`pnpm verify`** typechecks (unrelated regressions caught while verifying).
+- Files changed: `src/features/admin/components/AdminCard.tsx`, `src/routes/admin/-adminDashboard.tsx`, `src/features/admin/components/adminNav.ts`, `src/features/admin/drops/DropActsBuilderPanel.tsx`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`** (this batch).
+- Notes/debt: Other **`AdminCard`** call sites omit **`mt-auto`** on **`children`** so editor forms are unchanged; dashboard owns the pinned footer markup.
+
+## 2026-05-17 — Admin: premium forged AdminCard treatment
+
+- Summary: **`AdminCard`** shell now uses layered inset/ambient shadows, a non-interactive **bone corner wash + inset hairline** overlay, tighter **title/description** rhythm, hover **border brighten + subtle lift** with transitions gated by **`motion-safe`** / **`motion-reduce`**. **Dashboard** tile footer: chip tint + **`DashboardCardCtaLink`** `rounded-lg` and deeper inset/ambient shadow to match the plate; inner CTAs intentionally stay **brightness + shadow-only** on hover (`src/styles.css` already suppresses **`transform`** on `focus-ring` links inside **`group/card`** so the plate lift isn’t doubled). **`AdminCard`** tests in `src/features/admin/components/__tests__/AdminCard.test.tsx`.
+- Files changed: `src/features/admin/components/AdminCard.tsx`, `src/routes/admin/-adminDashboard.tsx`, `src/features/admin/components/__tests__/AdminCard.test.tsx`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`** (see transcript).
+- Notes/debt: none for this cosmetic pass.
+
+## 2026-05-17 — Global button + CTA hover affordances
+
+- Summary: Centralized **`cursor: pointer`** and cohesive hover (**brightness + shared transition timing**; **–1px `translateY` only** on CTA-shaped **`a.focus-ring.inline-flex`** with row heights **`h-9`–`h-12` / `min-h-10` / `min-h-11`**, only under **`prefers-reduced-motion: no-preference`**) in **`src/styles.css`**. Native **`button`**, **`input` submit/button/reset**, **`[role='button']`** (when not `aria-disabled`), **`::file-selector-button`**, and **`summary`** inherit the treatment; **native controls intentionally skip hover translate** so **`AdminCard`'s `group/card` plate lift** never stacks with an inner nudge. **Dashboard / admin CTAs inside `AdminCard`** drop CTA translate on hover and use a slightly softer brightness so card + control don’t double-animate. **Hero / drop-reveal** SafeLinks dropped redundant **`transition-transform hover:-translate-y-0.5`** in favor of the global CTA layer (primary hero sheen unchanged). Contract coverage: **`src/test/anvl-global-interactive-styles.test.ts`**.
+- Files changed: `src/styles.css`, `src/features/marketing/components/HeroForgeSequence.tsx`, `src/features/marketing/components/DropRevealSection.tsx`, `src/test/anvl-global-interactive-styles.test.ts`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`** (log on this workstation); optional smoke: hover storefront hero CTAs, admin dashboard tiles, and a native **Join** / form button with motion on vs **reduced motion** in OS — translate should only appear for motion-OK link CTAs outside card shells; brightness-only for reduced motion.
+- Notes/debt: Plain text links (`focus-ring` + `inline-flex` without fixed row heights) are unchanged so underline / micro-label patterns are not forced into “button” hover. Any future CTA link that omits both `min-h-*` and `h-*` won’t pick up the global link translate until one is added or the selector is extended.
+
+
+## 2026-05-17 — Admin dashboard card CTA polish
+
+- Summary: Redesigned dashboard card primary links in `src/routes/admin/-adminDashboard.tsx` from flat accent fills to **outline + inset highlight** (`focus-ring`, bone/heading label, accent-tinted border, restrained hover/active shadow) so CTAs read as forged controls on dark admin chrome. Added a co-located `DashboardCardCtaLink` helper; extended `src/routes/admin/__tests__/-adminDashboard.test.tsx` to assert every tile’s CTA `href`.
+- Tests/manual checks: `pnpm verify` — typecheck + **185/185** Vitest tests + production build succeeded. Note: intermittent Windows `EBUSY` when copying `favicon.ico` into `dist` can occur if another process locks `dist`; clearing `dist/` and re-running resolves it.
+- Notes/debt: none for this visual-only admin slice.
+
+## 2026-05-17 — Admin dashboard: drop duplicate hero strip
+
+- Summary: Removed the redundant `AdminSectionHeader` block from `/admin` (signed-in eyebrow, personalized welcome, localStorage blurb, and external **View site** CTA). Context already lives in `AdminTopbar`; main content now opens with the CMS destination cards only. Added Vitest coverage in `src/routes/admin/__tests__/-adminDashboard.test.tsx` (layout/auth/router mocks; assertions avoid jest-dom matchers).
+- Files changed: `src/routes/admin/-adminDashboard.tsx`, `src/routes/admin/__tests__/-adminDashboard.test.tsx`, `docs/changelog.md`.
+- Tests/manual checks: `pnpm verify` (typecheck, Vitest, production build).
+- Notes/debt: `AdminSectionHeader` remains available for other admin routes.
+
 ## 2026-05-17 — Integrate cms_merge into cms; trim branches to master + cms
 
 - Summary: Fast-forwarded **`cms`** to **`cms_merge`** tip (`8a734e6`) so the main CMS line carries the full audit **A–J** stack. Deleted **`origin/cms_merge`** and all **`origin/cursor/*`** feature branches on GitHub; removed matching local branches. **Remote default branches remaining:** `master`, `cms`.
