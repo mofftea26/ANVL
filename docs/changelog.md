@@ -1,7 +1,14 @@
 ﻿
+## 2026-05-17 — cms_merge: merge Phase G (performance + storage migration)
+
+- Summary: Merged `origin/cursor/audit-remaining-storage-g-drawer-289d` so Phase **G** joins phases **A–J** already integrated on `cms_merge`. Resolved `adminAuth.storage.ts` by combining Phase J `publicEnv` credential reads with Phase G `createLocalStorageChannel` + shared `isBrowser`; `website-layout` uses the lazy route shell from Phase G.
+- Files changed (resolution only): `src/features/admin/auth/adminAuth.storage.ts`, `src/routes/admin/website-layout.tsx`.
+- Tests/manual checks: `pnpm verify` (typecheck, **178/178** tests, build).
+- Notes/debt: Full Phase G file list and audit-doc updates are in the entries immediately below this one.
+
 ## 2026-05-17 — cms_merge: merge audit phases A–H with existing D–J integration
 
-- Summary: Merged `cursor/audit-phase-h-responsiveness-289d` (linear phases A through H) into `cms_merge`, which already contained the phase D–J CMS-boundary and hardening work. Resolved conflicts in `docs/changelog.md`, `package.json` (`verify` runs typecheck, Vitest, and build), `SiteFooter.tsx` (storefront CMS types + newsletter toast), and `HeroForgeSequence.tsx` (storefront CMS types). Result: `cms_merge` reflects audit phases **A through J** in one working tree.
+- Summary: Merged `cursor/audit-phase-h-responsiveness-289d` (linear phases A through H) into `cms_merge`, which already contained the phase D–J CMS-boundary and hardening work. Resolved conflicts in `docs/changelog.md`, `package.json` (`verify` runs typecheck, Vitest, and build), `SiteFooter.tsx` (storefront CMS types + newsletter toast), and `HeroForgeSequence.tsx` (storefront CMS types). **Phase G** landed in a subsequent merge from `cursor/audit-remaining-storage-g-drawer-289d` (see entry above).
 - Files changed: `docs/changelog.md`, `package.json`, `src/shared/components/layout/SiteFooter.tsx`, `src/features/marketing/components/HeroForgeSequence.tsx`, `src/routes/auth/__tests__/-sign-up.test.ts` (renamed from `sign-up.test.ts` so TanStack Router ignores it per `routeFileIgnorePrefix`).
 - Tests/manual checks: `pnpm verify` after completing the merge commit.
 - Notes/debt: none for this merge-resolution slice.
