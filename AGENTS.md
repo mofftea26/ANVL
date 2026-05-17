@@ -43,7 +43,7 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 14. Every task must update the affected docs in `/docs` and add an entry to `/docs/changelog.md`.
 
 ## Required docs to read by task type
-- **Every task:** read `/docs/audit-2026-05-17.md` (active Phase A–J task list with stable finding IDs) and the matching `.cursor/rules/*.mdc` rule files. Reference the finding IDs (`SEC-04`, `PERF-02`, etc.) in commit messages and PR titles.
+- **Every task:** read `/docs/audit-2026-05-17.md` (stable finding IDs + phase tracker + **closure status**: the 2026-05-17 hardening *execution batch* is complete; follow-ups are listed under “Deferred work”). Also read the matching `.cursor/rules/*.mdc` rule files. Reference finding IDs (`SEC-04`, `PERF-02`, etc.) in commit messages and PR titles.
 - Architecture or folder work: read `/docs/architecture.md`, `/docs/cursor-workflow.md`
 - Landing page/drop work: read `/docs/features/drops-cms.md`, `/docs/features/acts-builder.md`, `/docs/design-system.md`
 - Product/shop work: read `/docs/features/products-commerce.md`

@@ -17,6 +17,8 @@ import { SiteFooter } from "@/shared/components/layout/SiteFooter";
 import { StickyHeader } from "@/shared/components/layout/StickyHeader";
 import { serializeDropPaletteForRootStyle } from "@/features/cms/theme/dropPaletteStyle";
 import appCss from "@/styles.css?url";
+import manropeLatinWoff2 from "@fontsource/manrope/files/manrope-latin-400-normal.woff2?url";
+import bebasLatinWoff2 from "@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2?url";
 
 const IS_DEV = import.meta.env.DEV;
 
@@ -36,6 +38,20 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      {
+        rel: "preload",
+        href: manropeLatinWoff2,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        href: bebasLatinWoff2,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
       { rel: "icon", href: "/brand/mark.svg", type: "image/svg+xml" },
       { rel: "shortcut icon", href: "/brand/mark.svg", type: "image/svg+xml" },
       { rel: "apple-touch-icon", href: "/brand/mark.svg" },

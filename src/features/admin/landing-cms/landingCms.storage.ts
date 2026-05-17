@@ -1,10 +1,9 @@
 import type { LandingPageCmsContent } from './landingCms.types'
+import { isBrowser } from '@/shared/lib/storage/isBrowser'
 
 export const LANDING_CMS_STORAGE_KEY = 'anvl.landingCms.v1'
 
-export function isBrowser(): boolean {
-  return typeof window !== 'undefined'
-}
+export { isBrowser }
 
 export function readLandingCmsRaw(): string | null {
   if (!isBrowser()) return null

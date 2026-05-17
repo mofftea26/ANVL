@@ -16,7 +16,7 @@
 - Split CMS route group from public route group.
 - Keep 3D/model viewers optional and lazy.
 - Use bundle analyzer before release: run `pnpm analyze` (sets `ANVL_ANALYZE=1` for `vite build` and writes `dist/stats.html` via `rollup-plugin-visualizer`). Review gzip/brotli sizes and large entry chunks after each major feature.
-- Vite `manualChunks` isolates `gsap`, `lenis`, and `framer-motion` into `vendor-*` chunks to keep them out of the main application graph where possible.
+- Vite `manualChunks` isolates `gsap`, `lenis`, `framer-motion`, `zod`, `@tanstack/*`, and `react`/`react-dom` into `vendor-*` chunks to keep them out of the main application graph where possible.
 
 ## Accessibility checklist
 - Semantic headings in order.

@@ -4,6 +4,7 @@ Start here, then open only the docs needed for the task.
 
 ## Core docs
 - `../AGENTS.md` — required global rules for every task.
+- `audit-2026-05-17.md` — full-app audit findings, phase tracker (A–J), and **closure status** for the 2026-05-17 hardening program.
 - `project-overview.md` — product, brand, and UX vision.
 - `architecture.md` — target frontend/backend architecture and folder structure.
 - `design-system.md` — drop theme tokens, typography, components, and animation policy.

@@ -1,10 +1,14 @@
-import { useMemo } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import type { DropLandingContent } from '@/features/admin/drops/drops.types'
 import type { LandingAct } from '@/features/admin/drops/acts/landingActs.types'
 import type { LandingActSlot } from '@/features/admin/drops/drops.actSequence'
-import { DropActsBuilderPanel } from '@/features/admin/drops/DropActsBuilderPanel'
+const DropActsBuilderPanel = lazy(() =>
+  import('@/features/admin/drops/DropActsBuilderPanel').then((m) => ({
+    default: m.DropActsBuilderPanel,
+  })),
+)
 
 const fieldClass =
   'mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)]'
@@ -48,13 +52,21 @@ export function DropLandingActsEditor({
 
   return (
     <div className="space-y-6">
-      <DropActsBuilderPanel
-        landingContentJson={landingContentJson}
-        acts={acts}
-        landingActSequence={landingActSequence}
-        catalogProducts={catalogProducts}
-        onChange={onActsChange}
-      />
+      <Suspense
+        fallback={
+          <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-5 py-8 text-sm text-[var(--color-text-muted)]">
+            Loading acts builder…
+          </div>
+        }
+      >
+        <DropActsBuilderPanel
+          landingContentJson={landingContentJson}
+          acts={acts}
+          landingActSequence={landingActSequence}
+          catalogProducts={catalogProducts}
+          onChange={onActsChange}
+        />
+      </Suspense>
 
       <details className="group rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)]">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold text-[var(--color-heading)]">
