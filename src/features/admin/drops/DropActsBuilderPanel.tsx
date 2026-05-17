@@ -7,6 +7,7 @@ import type { ActMedia, LandingAct } from '@/features/admin/drops/acts/landingAc
 import { mergeActAnimationConfig } from '@/features/admin/drops/acts/landingActs.types'
 import { safeParseActContent } from '@/features/admin/drops/acts/landingActs.zod'
 import { landingContentToSimpleActs } from '@/features/admin/drops/acts/landingActs.seed'
+import { dropLandingContentSchema } from '@/features/admin/drops/drops.persistence.zod'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 
 const NATURE_OPTIONS = [
@@ -832,14 +833,18 @@ export function DropActsBuilderPanel({
   )
 
   const bootstrapFromLanding = useCallback(() => {
+    let parsed: unknown
     try {
-      const lc = JSON.parse(landingContentJson) as Parameters<
-        typeof landingContentToSimpleActs
-      >[0]
-      emit(landingContentToSimpleActs(lc))
+      parsed = JSON.parse(landingContentJson)
     } catch {
-      /* ignore */
+      return
     }
+    // SEC-16 — never feed unvalidated JSON into the act builder. A
+    // malformed paste used to throw downstream during normalize; a
+    // hostile one would drive unexpected state in the builder draft.
+    const result = dropLandingContentSchema.safeParse(parsed)
+    if (!result.success) return
+    emit(landingContentToSimpleActs(result.data))
   }, [emit, landingContentJson])
 
   useEffect(() => {

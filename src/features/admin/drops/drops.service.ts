@@ -1,6 +1,5 @@
-import { SITE_SEO_STORAGE_KEY } from '@/features/cms/siteSeo.local'
 import type { AdminProduct } from '@/features/admin/products/products.types'
-import { GLOBAL_BRAND_STORAGE_KEY } from '@/features/admin/global-brand/globalBrand.storage'
+import { ALL_ADMIN_STORAGE_KEYS } from '@/features/admin/storageKeys'
 import type { Drop, DropStatus, DropsPersistedState } from './drops.types'
 import { normalizeLandingActSequence } from './drops.actSequence'
 import {
@@ -9,8 +8,6 @@ import {
   writeActiveDropId,
   writeDropsRaw,
   isBrowser,
-  DROPS_STORAGE_KEY,
-  ACTIVE_DROP_ID_STORAGE_KEY,
 } from './drops.storage'
 import {
   DEFAULT_OATH_DROP_ID,
@@ -415,17 +412,18 @@ export function archiveDrop(id: string): void {
   persistDropsState(next, activeId)
 }
 
-/** Dangerous — clears drops + layout + products keys (+ legacy landing). */
+/**
+ * Dangerous — clears every admin localStorage key (drops + layout +
+ * products + brand + legacy landing + site SEO). Sources the key list
+ * from src/features/admin/storageKeys.ts so adding a new persisted key
+ * automatically includes it in this reset (Phase C3 / MAINT-08).
+ */
 export function resetAllLocalCmsKeys(): void {
   if (!isBrowser()) return
   try {
-    window.localStorage.removeItem(DROPS_STORAGE_KEY)
-    window.localStorage.removeItem(ACTIVE_DROP_ID_STORAGE_KEY)
-    window.localStorage.removeItem('ANVL_PRODUCTS')
-    window.localStorage.removeItem('ANVL_WEBSITE_LAYOUT')
-    window.localStorage.removeItem(GLOBAL_BRAND_STORAGE_KEY)
-    window.localStorage.removeItem('anvl.landingCms.v1')
-    window.localStorage.removeItem(SITE_SEO_STORAGE_KEY)
+    for (const key of ALL_ADMIN_STORAGE_KEYS) {
+      window.localStorage.removeItem(key)
+    }
   } catch {
     /* */
   }
