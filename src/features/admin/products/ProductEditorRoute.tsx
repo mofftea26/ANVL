@@ -35,7 +35,7 @@ import type {
 import { Button } from '@/shared/components/ui/Button'
 import { Checkbox } from '@/shared/components/ui/Checkbox'
 import { FormField } from '@/shared/components/ui/FormField'
-import { HexColorPicker } from '@/shared/components/ui/HexColorPicker'
+import { ColorField } from '@/shared/components/ui/ColorField'
 import { Input } from '@/shared/components/ui/Input'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Select } from '@/shared/components/ui/Select'
@@ -617,14 +617,16 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                         />
                       </FormField>
                       <FormField label="Swatch">
-                        <HexColorPicker
+                        <ColorField
                           value={color.hex}
                           ariaLabel={`Pick swatch color for ${color.name}`}
-                          onChange={(hex) => {
+                          inline
+                          withAlpha={false}
+                          onChange={(next) => {
                             const colors = [...draft.colors]
                             colors[colorIdx] = {
                               ...color,
-                              hex,
+                              hex: next,
                             }
                             setDraft(rebuildAvailabilityMatrix({ ...draft, colors }))
                           }}

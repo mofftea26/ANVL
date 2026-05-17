@@ -11,8 +11,7 @@ import {
 } from '@/features/admin/global-brand/globalBrand.service'
 import { subscribeGlobalBrandChange } from '@/features/admin/global-brand/globalBrand.storage'
 import { Button } from '@/shared/components/ui/Button'
-import { FormField } from '@/shared/components/ui/FormField'
-import { Input } from '@/shared/components/ui/Input'
+import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 
 export const Route = createFileRoute('/admin/theme')({
   component: ThemeSettingsRoute,
@@ -55,30 +54,34 @@ function ThemeSettingsPage() {
         }
       />
 
-      <AdminCard title="Paths" description="Use public assets (/brand/...) or full URLs.">
-        <div className="grid gap-4 md:grid-cols-2">
-          <FormField label="Default emblem">
-            <Input
-              value={settings.emblemFallbackUrl}
-              onChange={(e) =>
-                setSettings((prev) => ({
-                  ...prev,
-                  emblemFallbackUrl: e.target.value,
-                }))
-              }
-            />
-          </FormField>
-          <FormField label="Loading emblem">
-            <Input
-              value={settings.loadingEmblemFallbackUrl}
-              onChange={(e) =>
-                setSettings((prev) => ({
-                  ...prev,
-                  loadingEmblemFallbackUrl: e.target.value,
-                }))
-              }
-            />
-          </FormField>
+      <AdminCard title="Crest fallbacks" description="Used while an active drop hydrates, or when a drop omits emblem paths. Empty fields default to the bundled ANVL crest.">
+        <div className="grid gap-5 md:grid-cols-2">
+          <MediaPickerField
+            label="Default emblem"
+            kind="image"
+            hint="Used before the active drop emblem is known."
+            value={settings.emblemFallbackUrl}
+            onChange={(next) =>
+              setSettings((prev) => ({
+                ...prev,
+                emblemFallbackUrl: next,
+              }))
+            }
+            fallback="crest"
+          />
+          <MediaPickerField
+            label="Loading emblem"
+            kind="image"
+            hint="Shown during initial mark hydration."
+            value={settings.loadingEmblemFallbackUrl}
+            onChange={(next) =>
+              setSettings((prev) => ({
+                ...prev,
+                loadingEmblemFallbackUrl: next,
+              }))
+            }
+            fallback="crest"
+          />
         </div>
         <p className="mt-4 text-sm text-[var(--color-text-muted)]">
           Tip: Active drop visuals override these automatically. Adjust drop-level

@@ -48,8 +48,13 @@ Never change the official header/footer ANVL logo per drop. Campaign logos/emble
 - Large preview surfaces in CMS.
 - Strong hierarchy: title, status, action.
 - Use cards only where they help grouping; avoid dashboard clutter.
-- Admin pages should use two-column layouts on desktop: editor on left, live preview on right.
+- The drop editor is **preview-centric**: the live preview claims the wider column on desktop while the editor lives in a compact tabbed side panel. Other admin pages may stay editor-only or two-column at their discretion.
 - Admin navigation is grouped (Workspace, Campaigns, Catalog, Site) with compact badges; the dashboard mirrors the same destinations as cards.
+
+## Shared CMS field components
+- `ColorField` (`src/shared/components/ui/ColorField.tsx`) — full color picker exposing the OS color wheel (`<input type="color">`), a HEX text input, three R/G/B numeric channels, and an opacity slider with numeric companion. Emits `#rrggbb` when alpha is 1, `rgba(r, g, b, a)` otherwise. Parsing accepts hex (3/6/8), `rgb()`, `rgba()`, and percentage alpha tokens.
+- `MediaPickerField` (`src/shared/components/ui/MediaPickerField.tsx`) — single picker for **images, SVGs, and videos**. Supports drag-and-drop on desktop plus the native file picker, and falls back to a paste-URL/public-path input. Validates MIME and size, embeds small files as data URLs. Empty values default-preview the bundled ANVL crest; pass `fallback="none"` for fields that should genuinely render nothing, or wire `onLeaveEmptyChange` to expose a "Leave empty (no fallback)" checkbox per field.
+- `parseColor` / `rgbaToCss` (`src/shared/lib/color.ts`) — shared utilities used by `ColorField` so RGB/HEX/RGBA round-trips are lossless.
 
 ## Media rules
 - Use responsive images.

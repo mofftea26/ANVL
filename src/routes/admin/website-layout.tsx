@@ -26,7 +26,7 @@ import type {
 import { Button } from '@/shared/components/ui/Button'
 import { Checkbox } from '@/shared/components/ui/Checkbox'
 import { FormField } from '@/shared/components/ui/FormField'
-import { ImageFileOrUrlField } from '@/shared/components/ui/ImageFileOrUrlField'
+import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 import { Input } from '@/shared/components/ui/Input'
 import { Textarea } from '@/shared/components/ui/Textarea'
 export const Route = createFileRoute('/admin/website-layout')({
@@ -171,11 +171,13 @@ function WebsiteLayoutPage() {
       <AdminCard title="Header & announcement">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
-            <ImageFileOrUrlField
-              label="Logo (stacked)"
-              hint="Leave empty to use the bundled official ANVL mark. Optional override: file upload or a path under public/."
+            <MediaPickerField
+              label="Header logo (stacked)"
+              kind="image"
+              hint="Leave empty to use the bundled official ANVL mark. Optional override: drag-drop, file picker, or paste a URL/public path."
               value={layout.header.logoStackedSrc ?? ''}
               onChange={(next) => patchHeader({ logoStackedSrc: next })}
+              fallback="crest"
             />
           </div>
           <label className="flex items-center gap-3 text-sm text-[var(--color-text)] md:col-span-2">
@@ -449,11 +451,13 @@ function WebsiteLayoutPage() {
       <AdminCard title="Footer">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
-            <ImageFileOrUrlField
+            <MediaPickerField
               label="Footer logo"
-              hint="Leave empty for the official bundled mark. Optional: custom stacked mark via file or public path."
+              kind="image"
+              hint="Leave empty for the official bundled mark. Optional: custom stacked mark via file picker, drag-drop, or public path."
               value={layout.footer.logoStackedSrc ?? ''}
               onChange={(next) => patchFooter({ logoStackedSrc: next })}
+              fallback="crest"
             />
           </div>
           <FormField label="Decorative emblem fallback">
