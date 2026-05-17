@@ -1,4 +1,11 @@
 ﻿
+## 2026-05-17 — Integrate cms_merge into cms; trim branches to master + cms
+
+- Summary: Fast-forwarded **`cms`** to **`cms_merge`** tip (`8a734e6`) so the main CMS line carries the full audit **A–J** stack. Deleted **`origin/cms_merge`** and all **`origin/cursor/*`** feature branches on GitHub; removed matching local branches. **Remote default branches remaining:** `master`, `cms`.
+- Files changed: none (git-only); this changelog entry.
+- Tests/manual checks: merge was fast-forward; prior `pnpm verify` green on merged tip.
+- Notes/debt: Clone fresh or `git fetch --prune` so stale remote-tracking refs disappear locally.
+
 ## 2026-05-17 — cms_merge: merge Phase G (performance + storage migration)
 
 - Summary: Merged `origin/cursor/audit-remaining-storage-g-drawer-289d` so Phase **G** joins phases **A–J** already integrated on `cms_merge`. Resolved `adminAuth.storage.ts` by combining Phase J `publicEnv` credential reads with Phase G `createLocalStorageChannel` + shared `isBrowser`; `website-layout` uses the lazy route shell from Phase G.
