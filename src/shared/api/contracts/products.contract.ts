@@ -5,7 +5,7 @@
  * **ANVL CMS / BFF** — drop assignments (`dropIds`), editorial copy, merchandising, SEO.
  */
 
-import type { AdminProduct, ProductStatus } from '@/features/admin/products/products.types'
+import type { AdminProduct, ProductStatus } from '@/features/products/types/catalogProduct.types'
 import type { Product } from '@/features/products/types/product.types'
 import type { DateRangeFilter, ListSort, OffsetPaginatedResult, OffsetPaginationQuery } from './common.types'
 

@@ -17,6 +17,7 @@ Typed contracts live in TypeScript under `src/shared/api/contracts/` (`@/shared/
 - **List**: query types combine `OffsetPaginationQuery` (and optional domain filters) with `ListSort`.
 - **Write**: `*CreateBody` is full create payload; `*UpdateBody` is patch-style partial.
 - **Errors**: JSON endpoints should return `ApiErrorResponse` on failure with optional `details` for field errors.
+- **Catalog documents**: `AdminProduct` and related row types are defined in `src/features/products/types/catalogProduct.types.ts` (contracts import from there; admin re-exports for editor code).
 
 ## Medusa alignment
 
