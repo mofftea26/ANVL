@@ -98,3 +98,27 @@ export function upgradeHttpToHttps(href: string): string {
   if (href.startsWith('http://')) return 'https://' + href.slice('http://'.length)
   return href
 }
+
+/**
+ * Allowlist for values rendered into `<img src>` / `<video src>` / `<source>`
+ * elements: https/http, `/public` paths, and `data:image/*` or `data:video/*`
+ * URIs (typical FileReader output).
+ *
+ * Rejects: `javascript:`, `data:text/html`, `vbscript:`, `file:`, scheme-less
+ * ambiguous strings, control chars, and the empty string.
+ *
+ * Audit refs: Phase B4 / SEC-20.
+ */
+export function isLikelySafeMediaSrc(raw: unknown): boolean {
+  if (typeof raw !== 'string') return false
+  const t = raw.trim()
+  if (!t) return false
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/.test(t)) return false
+  // Relative public path or query/hash — accepted (in-app routing usually).
+  if (t.startsWith('/') || t.startsWith('#') || t.startsWith('?')) return true
+  // data:image/...,foo or data:video/...,foo  (NOT data:text/html or data:application/*).
+  if (/^data:(?:image|video)\/[\w.+-]+[;,]/i.test(t)) return true
+  // Absolute http(s) URLs only.
+  return /^https?:\/\//i.test(t)
+}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   isExternalHref,
+  isLikelySafeMediaSrc,
   sanitizeHref,
   upgradeHttpToHttps,
 } from '@/shared/lib/url'
@@ -82,6 +83,42 @@ describe('isExternalHref', () => {
     ['?q=x', false],
   ])('classifies %s as external=%s', (input, expected) => {
     expect(isExternalHref(input)).toBe(expected)
+  })
+})
+
+describe('isLikelySafeMediaSrc (SEC-20)', () => {
+  it.each([
+    ['/brand/stacked.svg'],
+    ['/media/hero.mp4'],
+    ['https://cdn.example.com/img.png'],
+    ['http://insecure.example.com/img.png'],
+    ['data:image/png;base64,AAAA'],
+    ['data:image/svg+xml,<svg/>'],
+    ['data:video/mp4;base64,AAAA'],
+    ['#frag'],
+  ])('accepts %s', (input) => {
+    expect(isLikelySafeMediaSrc(input)).toBe(true)
+  })
+
+  it.each([
+    ['javascript:alert(1)'],
+    ['data:text/html,<script>alert(1)</script>'],
+    ['data:application/x-shockwave-flash,...'],
+    ['vbscript:msgbox()'],
+    ['file:///etc/passwd'],
+    ['ssh://malicious'],
+    ['brand/stacked.svg'], // scheme-less, ambiguous
+    [''],
+    ['  '],
+    ['javascript\n:alert(1)'],
+  ])('rejects %s', (input) => {
+    expect(isLikelySafeMediaSrc(input)).toBe(false)
+  })
+
+  it('rejects non-string input', () => {
+    expect(isLikelySafeMediaSrc(null)).toBe(false)
+    expect(isLikelySafeMediaSrc(undefined)).toBe(false)
+    expect(isLikelySafeMediaSrc(42)).toBe(false)
   })
 })
 
