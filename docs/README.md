@@ -10,6 +10,7 @@ Start here, then open only the docs needed for the task.
 - `cursor-workflow.md` — how Cursor agents should work without burning context.
 - `changelog.md` — every task must append changes here.
 - `technical-debt.md` — known issues, compromises, and future work.
+- `audit-2026-05-17.md` — full security / performance / reusability / SOLID / a11y audit + prioritized task list (Phases A–J).
 
 ## Feature docs
 - `features/drops-cms.md` — drop list, active/scheduled drops, theme activation, live preview.
