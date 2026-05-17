@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { Product } from '@/features/products/types/product.types'
-import { subscribeProductsChange } from '@/features/admin/products/products.storage'
-import { getStorefrontProductsForHome } from '@/features/admin/products/products.commerce'
+import { subscribeProductsChange } from '@/features/products/catalog/productSubscriptions'
+import { getStorefrontProductsForHome } from '@/features/products/catalog/storefrontCatalog'
 
 let snapshot: Product[] | null = null
 

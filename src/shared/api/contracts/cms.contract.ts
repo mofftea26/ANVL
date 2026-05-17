@@ -5,7 +5,7 @@
  * Commerce (products, cart, checkout) stays a separate domain (Medusa later).
  */
 
-import type { Drop } from '@/features/admin/drops/drops.types'
+import type { Drop } from '@/features/drops/drop.types'
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import type { SeoContent } from '@/features/cms/types/cms.types'
 import type { DateRangeFilter, ListSort, OffsetPaginatedResult, OffsetPaginationQuery } from './common.types'

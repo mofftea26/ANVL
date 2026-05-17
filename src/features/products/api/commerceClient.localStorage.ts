@@ -4,7 +4,7 @@ import {
   getStorefrontProductBySlug,
   getStorefrontProductsForHome,
   getStorefrontShopListingCatalog,
-} from '@/features/admin/products/products.commerce'
+} from '@/features/products/catalog/storefrontCatalog'
 
 export const localStorageCommerceClient: CommerceClient = {
   async getProducts() {

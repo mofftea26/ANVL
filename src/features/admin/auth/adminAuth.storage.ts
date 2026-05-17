@@ -1,4 +1,5 @@
 import type { AdminSession } from './adminAuth.types'
+import { publicEnv } from '@/app/config/publicEnv'
 
 export const ADMIN_AUTH_STORAGE_KEYS = ['ANVL_ADMIN_AUTH', 'anvl.adminAuth.v1'] as const
 
@@ -10,9 +11,9 @@ export const ADMIN_AUTH_STORAGE_KEY = ADMIN_AUTH_STORAGE_KEYS[0]
  * bundle — treat as dev-only; replace with real auth before production.
  */
 export const ADMIN_USERNAME =
-  import.meta.env.VITE_ANVL_ADMIN_USERNAME?.trim() || 'admin'
+  publicEnv.VITE_ANVL_ADMIN_USERNAME?.trim() || 'admin'
 
-const configuredPassword = import.meta.env.VITE_ANVL_ADMIN_PASSWORD ?? ''
+const configuredPassword = publicEnv.VITE_ANVL_ADMIN_PASSWORD ?? ''
 
 export const ADMIN_PASSWORD = configuredPassword
 

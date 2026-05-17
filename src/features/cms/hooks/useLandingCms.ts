@@ -1,7 +1,6 @@
 import { subscribeSiteSeoChange } from '@/features/cms/siteSeo.local'
 import { useSyncExternalStore } from 'react'
-import { subscribeDropsChange } from '@/features/admin/drops/drops.storage'
-import { subscribeWebsiteLayoutChange } from '@/features/admin/website-layout/websiteLayout.storage'
+import { subscribeDropsChange, subscribeWebsiteLayoutChange } from '@/features/cms/read/cmsSubscriptions'
 import { getLandingCmsContent } from '@/features/cms/landing/landingCmsRead'
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 

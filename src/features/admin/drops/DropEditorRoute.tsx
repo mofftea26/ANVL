@@ -26,61 +26,24 @@ import {
   adminProductToLegacy,
 } from '@/features/admin/products/products.mapper'
 import { useAdminProductsList } from '@/features/admin/products/useAdminProducts'
-import { composeLandingPageFromDrop } from '@/features/admin/drops/drops.compose'
+import { composeLandingPageFromDrop } from '@/features/cms/landing/composeLandingPageFromDrop'
 import { useWebsiteLayout } from '@/features/admin/website-layout/useWebsiteLayout'
+import {
+  DropEditorFieldError,
+} from '@/features/admin/drops/DropEditorFieldError'
+import {
+  fieldClass,
+  fieldErrorClass,
+  isoToDatetimeLocalValue,
+  localInputToIso,
+  type LeaveEmptyMap,
+  type TabId,
+} from '@/features/admin/drops/dropEditorRoute.shared'
 import { Button } from '@/shared/components/ui/Button'
 import { ColorField } from '@/shared/components/ui/ColorField'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
-
-function padDt(n: number): string {
-  return n < 10 ? `0${n}` : `${n}`
-}
-
-function isoToDatetimeLocalValue(iso: string | undefined): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  return `${d.getFullYear()}-${padDt(d.getMonth() + 1)}-${padDt(d.getDate())}T${padDt(d.getHours())}:${padDt(d.getMinutes())}`
-}
-
-function localInputToIso(local: string): string | undefined {
-  if (!local.trim()) return undefined
-  const d = new Date(local)
-  if (Number.isNaN(d.getTime())) return undefined
-  return d.toISOString()
-}
-
-const fieldClass =
-  'mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus-ring'
-
-const fieldErrorClass = 'border-red-500/60 bg-red-500/5'
-
-type TabId =
-  | 'basics'
-  | 'visuals'
-  | 'theme'
-  | 'landing'
-  | 'products'
-  | 'seo'
-
-type LeaveEmptyMap = Partial<{
-  logoImageUrl: boolean
-  wordmarkImageUrl: boolean
-  heroImageUrl: boolean
-  loadingEmblemUrl: boolean
-}>
-
-/** Field error label used under inline inputs. */
-function FieldError({ message }: { message?: string }) {
-  if (!message) return null
-  return (
-    <p role="alert" className="mt-1 text-[11px] text-red-300">
-      {message}
-    </p>
-  )
-}
 
 export function DropEditorRoute({ dropId }: { dropId: string }) {
   const navigate = useNavigate()
@@ -376,7 +339,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     value={draft.name}
                     onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                   />
-                  <FieldError message={errors.fields['basics.name']} />
+                  <DropEditorFieldError message={errors.fields['basics.name']} />
                 </label>
                 <label className="text-xs text-[var(--color-text-muted)]">
                   Drop number
@@ -403,7 +366,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                       })
                     }
                   />
-                  <FieldError message={errors.fields['basics.slug']} />
+                  <DropEditorFieldError message={errors.fields['basics.slug']} />
                 </label>
                 <label className="text-xs text-[var(--color-text-muted)]">
                   Status
@@ -442,7 +405,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                       })
                     }
                   />
-                  <FieldError message={errors.fields['basics.releaseDate']} />
+                  <DropEditorFieldError message={errors.fields['basics.releaseDate']} />
                 </label>
                 <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
                   Title (public)
@@ -454,7 +417,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     value={draft.title}
                     onChange={(e) => setDraft({ ...draft, title: e.target.value })}
                   />
-                  <FieldError message={errors.fields['basics.title']} />
+                  <DropEditorFieldError message={errors.fields['basics.title']} />
                 </label>
                 <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
                   Subtitle
@@ -580,7 +543,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                       })
                     }
                   />
-                  <FieldError message={errors.fields['visuals.emblemAlt']} />
+                  <DropEditorFieldError message={errors.fields['visuals.emblemAlt']} />
                 </label>
 
                 <MediaPickerField
@@ -786,7 +749,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                       })
                     }
                   />
-                  <FieldError message={errors.fields['seo.title']} />
+                  <DropEditorFieldError message={errors.fields['seo.title']} />
                 </label>
                 <label className="text-xs text-[var(--color-text-muted)]">
                   Description{' '}
@@ -806,7 +769,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                       })
                     }
                   />
-                  <FieldError message={errors.fields['seo.description']} />
+                  <DropEditorFieldError message={errors.fields['seo.description']} />
                 </label>
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="text-xs text-[var(--color-text-muted)]">

@@ -1,5 +1,5 @@
 import type { CmsClient } from '@/app/config/clients'
-import type { Drop } from '@/features/admin/drops/drops.types'
+import type { Drop } from '@/features/drops/drop.types'
 import {
   archiveDrop,
   deleteDrop,

@@ -2,9 +2,9 @@
 import type { HomePageContent, SeoContent } from '@/features/cms/types/cms.types'
 import type { SiteSeoContent } from '@/features/cms/siteSeo.local'
 import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
-import type { Drop } from '@/features/admin/drops/drops.types'
+import type { Drop } from '@/features/drops/drop.types'
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
-import type { WebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.types'
+import type { WebsiteLayoutContent } from '@/features/cms/layout/websiteLayout.types'
 import type { CartLine } from '@/features/cart/types/cart.types'
 import type {
   CheckoutInput,

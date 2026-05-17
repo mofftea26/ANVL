@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "node scripts/repatch-admin-route-tree.mjs && tsc --noEmit",
+    "verify": "pnpm typecheck && pnpm build",
     "strip-brand-bg": "node scripts/strip-brand-logo-bg.mjs"
   },
   "dependencies": {

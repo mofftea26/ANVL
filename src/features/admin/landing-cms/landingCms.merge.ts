@@ -5,11 +5,11 @@ import {
 import type {
   LandingPageCmsContent,
 } from './landingCms.types'
-import { defaultLandingActSequence } from '@/features/admin/drops/drops.actSequence'
+import { defaultLandingActSequence } from '@/features/drops/drops.actSequence'
 import {
   publicLandingActsFromSequence,
   publicLandingActsFromUnknownList,
-} from '@/features/admin/drops/acts/landingActs.normalize'
+} from '@/features/cms/landing/landingActs.normalize'
 
 /**
  * Deep-merge stored content over defaults. Each section falls back

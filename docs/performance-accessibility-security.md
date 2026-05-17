@@ -34,6 +34,7 @@
 
 ## Security checklist
 - Never expose API keys or admin secrets in frontend.
+- **`publicEnv`:** client-visible `VITE_*` values used in-app (demo admin login, feature flags) are parsed through `src/app/config/publicEnv.ts` (Zod) for a consistent shape; they are still bundled for the browser and must be replaced with real server auth before production.
 - Validate all CMS/product/SEO data with schemas.
 - Sanitize rich text and HTML.
 - Persisted drops in `localStorage` are validated with `persistedDropSchema` (`drops.persistence.zod.ts`) before merge — malformed rows are skipped so tampered JSON cannot drive the UI.

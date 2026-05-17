@@ -4,9 +4,9 @@ import { buildSeoMeta } from '@/app/seo/meta'
 import { runtimeClients } from '@/app/config/runtime'
 import {
   effectivePrice,
+  getAdminProductBySlug,
   variantIsPurchasable,
-} from '@/features/admin/products/products.mapper'
-import { getAdminProductBySlug } from '@/features/admin/products/products.service'
+} from '@/features/products/catalog/storefrontCatalog'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useProductAnalytics } from '@/features/analytics/hooks/useProductAnalytics'
 import { useTrackProductView } from '@/features/products/hooks/useTrackProductView'

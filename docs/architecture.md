@@ -82,7 +82,15 @@ src/
 
 Storefront routes, marketing acts, and shared layout should import **read models and theme helpers** from `src/features/cms/**` and `src/features/drops/**`, not from `src/features/admin/**`. Admin-only editors and persistence stay under `features/admin/**`.
 
-**Phase D (audit):** canonical public landing CMS types (`landing/landingPageCms.types.ts`), resolved read path (`landing/landingCmsRead.ts`), `hooks/useLandingCms`, and palette CSS serialization (`theme/dropPaletteStyle.ts`) live in `features/cms/`. `DropThemePalette` is defined in `features/drops/theme/dropThemePalette.types.ts`. Legacy admin paths may re-export these modules until all import sites are migrated.
+**Phase D (audit):** canonical public landing CMS types (`landing/landingPageCms.types.ts`), resolved read path (`landing/landingCmsRead.ts`), `hooks/useLandingCms`, compose + act normalization (`landing/composeLandingPageFromDrop.ts`, `landing/landingActs.normalize.ts`), `LANDING_CMS_VERSION` (`landing/landingCms.constants.ts`), and palette CSS serialization (`theme/dropPaletteStyle.ts`) live in `features/cms/`. **`Drop` document types** and **landing act slot keys** live in `features/drops/` (`drop.types.ts`, `drops.actSequence.ts`). **Website layout types** live in `features/cms/layout/websiteLayout.types.ts`. Storefront code uses thin **read facades** under `features/cms/read/*` and `features/products/catalog/storefrontCatalog.ts` so routes do not import `@/features/admin/*` for catalog or CMS reads. Admin modules may re-export for compatibility.
+
+**Phase E (audit):** large admin editors gain colocated shared modules — e.g. `dropEditorRoute.shared.ts`, `DropEditorFieldError.tsx`, `productEditorRoute.shared.ts` — to keep route components readable without changing behavior.
+
+**Phase F (audit):** `pnpm verify` runs `typecheck` then `build` for a single local gate before merge.
+
+**Phase I (audit):** `docs/tooling/router-repatch.md` documents why `scripts/repatch-admin-route-tree.mjs` exists and how to extend it.
+
+**Phase J (audit):** `src/app/config/publicEnv.ts` validates selected `VITE_*` keys with Zod; admin login and checkout flags read through it (still client-bundled — not production secrets).
 
 ## State rules
 - TanStack Query: drops, products, CMS documents, SEO documents, user profile, orders.

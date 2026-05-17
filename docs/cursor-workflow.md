@@ -10,6 +10,9 @@
 4. Ask for complete files only for the files it touches.
 5. End every task by updating docs/changelog.
 
+## Verification
+- For a full pre-merge gate locally, run **`pnpm verify`** (`typecheck` + `build`).
+
 ## Standard task instruction block
 Copy this into every Cursor chat before the specific task:
 

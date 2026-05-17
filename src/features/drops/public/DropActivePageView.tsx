@@ -1,5 +1,5 @@
 import type { Product } from '@/features/products/types/product.types'
-import type { Drop } from '@/features/admin/drops/drops.types'
+import type { Drop } from '@/features/drops/drop.types'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { Container, ProductCard, Section } from '@/shared/components/ui'
 import { DropReleaseSection } from '@/features/drops/public/DropReleaseSection'

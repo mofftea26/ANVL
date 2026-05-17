@@ -21,5 +21,8 @@ Start here, then open only the docs needed for the task.
 - `contracts/README.md` — index for typed HTTP contracts (`src/shared/api/contracts/`).
 - `performance-accessibility-security.md` — performance, WCAG, SSR, security checklist.
 
+## Tooling
+- `tooling/router-repatch.md` — TanStack admin route tree post-process (`repatch-admin-route-tree.mjs`).
+
 ## Prompt library
 Use the files in `/docs/prompts` one by one in separate Cursor chats/agents. Never give all prompts to the same agent unless the task is tiny.

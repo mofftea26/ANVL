@@ -1,7 +1,7 @@
 import { useEffect, useState, type PropsWithChildren } from 'react'
 import { runtimeClients } from '@/app/config/runtime'
-import { subscribeDropsChange } from '@/features/admin/drops/drops.storage'
-import type { Drop } from '@/features/admin/drops/drops.types'
+import { subscribeDropsChange } from '@/features/cms/read/cmsSubscriptions'
+import type { Drop } from '@/features/drops/drop.types'
 import { syncActiveDropThemeStyleTag } from '@/features/cms/theme/dropPaletteStyle'
 
 type Props = PropsWithChildren<{

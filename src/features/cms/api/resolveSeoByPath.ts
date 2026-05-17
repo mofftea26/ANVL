@@ -1,4 +1,4 @@
-import type { Drop } from '@/features/admin/drops/drops.types'
+import type { Drop } from '@/features/drops/drop.types'
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { SeoContent } from '@/features/cms/types/cms.types'

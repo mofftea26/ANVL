@@ -40,38 +40,12 @@ import { Input } from '@/shared/components/ui/Input'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Select } from '@/shared/components/ui/Select'
 import { Textarea } from '@/shared/components/ui/Textarea'
-const PRODUCT_STATUSES: ProductStatus[] = [
-  'draft',
-  'active',
-  'inactive',
-  'comingSoon',
-  'outOfStock',
-  'sale',
-  'archived',
-]
-
-function pad2(n: number) {
-  return String(n).padStart(2, '0')
-}
-
-function toDatetimeLocal(iso: string | undefined): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`
-}
-
-function fromDatetimeLocal(value: string): string | undefined {
-  const v = value.trim()
-  if (!v) return undefined
-  const d = new Date(v)
-  if (Number.isNaN(d.getTime())) return undefined
-  return d.toISOString()
-}
-
-function cloneProduct(p: AdminProduct): AdminProduct {
-  return structuredClone(p)
-}
+import {
+  cloneProduct,
+  PRODUCT_STATUSES,
+  productEditorFromDatetimeLocal,
+  productEditorToDatetimeLocal,
+} from '@/features/admin/products/productEditorRoute.shared'
 
 export function ProductEditorRoute({ productId }: { productId: string }) {
   const navigate = useNavigate()
@@ -285,11 +259,11 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
               <FormField label="Release date">
                 <Input
                   type="datetime-local"
-                  value={toDatetimeLocal(draft.releaseDate)}
+                  value={productEditorToDatetimeLocal(draft.releaseDate)}
                   onChange={(e) =>
                     setDraft({
                       ...draft,
-                      releaseDate: fromDatetimeLocal(e.target.value),
+                      releaseDate: productEditorFromDatetimeLocal(e.target.value),
                     })
                   }
                 />
@@ -297,11 +271,11 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
               <FormField label="Sale starts">
                 <Input
                   type="datetime-local"
-                  value={toDatetimeLocal(draft.saleStartsAt)}
+                  value={productEditorToDatetimeLocal(draft.saleStartsAt)}
                   onChange={(e) =>
                     setDraft({
                       ...draft,
-                      saleStartsAt: fromDatetimeLocal(e.target.value),
+                      saleStartsAt: productEditorFromDatetimeLocal(e.target.value),
                     })
                   }
                 />
@@ -309,11 +283,11 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
               <FormField label="Sale ends">
                 <Input
                   type="datetime-local"
-                  value={toDatetimeLocal(draft.saleEndsAt)}
+                  value={productEditorToDatetimeLocal(draft.saleEndsAt)}
                   onChange={(e) =>
                     setDraft({
                       ...draft,
-                      saleEndsAt: fromDatetimeLocal(e.target.value),
+                      saleEndsAt: productEditorFromDatetimeLocal(e.target.value),
                     })
                   }
                 />

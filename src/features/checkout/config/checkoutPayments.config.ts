@@ -9,6 +9,8 @@
  * Toggle international card checkout via `VITE_ANVL_INTERNATIONAL_CHECKOUT=true` at build time.
  */
 
+import { publicEnv } from '@/app/config/publicEnv'
+
 export const LEBANON_COUNTRY_LABEL = 'Lebanon' as const
 
 export type CheckoutPaymentMethodId = 'cashOnDelivery' | 'whishMoney' | 'card'
@@ -46,17 +48,10 @@ const INTERNATIONAL_CARD_ONLY: readonly CheckoutPaymentMethodDefinition[] = [
   },
 ]
 
-function readInternationalCheckoutEnabledFromEnv(): boolean {
-  try {
-    return import.meta.env?.VITE_ANVL_INTERNATIONAL_CHECKOUT === 'true'
-  } catch {
-    return false
-  }
-}
-
 /** Evaluated once per bundle load; stable for SSR + client. */
 export const CHECKOUT_COMMERCE_FLAGS = {
-  internationalCheckoutEnabled: readInternationalCheckoutEnabledFromEnv(),
+  internationalCheckoutEnabled:
+    publicEnv.VITE_ANVL_INTERNATIONAL_CHECKOUT === 'true',
 } as const
 
 /** Storefront shipping country labels (expand when logistics supports more lanes). */

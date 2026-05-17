@@ -1,8 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import {
-  DEFAULT_EMBLEM_URL,
-} from '@/features/admin/drops/drops.defaults'
-import { getGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.service'
+import { DEFAULT_EMBLEM_URL, getGlobalBrandSettings } from '@/features/cms/read/themeBrandDefaults'
 import type { DropThemePalette } from '@/features/drops/theme/dropThemePalette.types'
 import { dropPaletteToCssProperties } from '@/features/cms/theme/dropPaletteStyle'
 

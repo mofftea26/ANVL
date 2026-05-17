@@ -6,7 +6,7 @@ import {
   seoContentToMetaSource,
 } from '@/features/cms/seoMeta'
 import { runtimeClients } from '@/app/config/runtime'
-import { getStorefrontProductsForDropSlug } from '@/features/admin/products/products.commerce'
+import { getStorefrontProductsForDropSlug } from '@/features/products/catalog/storefrontCatalog'
 import { DropActivePageView } from '@/features/drops/public/DropActivePageView'
 
 export const Route = createFileRoute('/drop/$slug')({

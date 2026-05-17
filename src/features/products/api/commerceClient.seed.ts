@@ -3,7 +3,7 @@ import {
   getStorefrontProductBySlug,
   getStorefrontProductsForHome,
   getStorefrontShopListingCatalog,
-} from '@/features/admin/products/products.commerce'
+} from '@/features/products/catalog/storefrontCatalog'
 
 /**
  * Storefront commerce — on the server, admin services resolve to in-memory seed catalog

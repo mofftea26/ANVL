@@ -1,5 +1,5 @@
 import { previewLoadingSrc } from '@/app/providers/ActiveDropThemeBridge'
-import { getActiveDrop } from '@/features/admin/drops/drops.service'
+import { getActiveDrop } from '@/features/cms/read/dropRuntime'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { cn } from '@/shared/lib/cn'
 

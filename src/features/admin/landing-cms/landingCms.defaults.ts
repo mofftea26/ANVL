@@ -1,8 +1,9 @@
 import type { LandingPageCmsContent } from './landingCms.types'
-import { defaultLandingActSequence } from '@/features/admin/drops/drops.actSequence'
-import { publicLandingActsFromSequence } from '@/features/admin/drops/acts/landingActs.normalize'
+import { LANDING_CMS_VERSION } from '@/features/cms/landing/landingCms.constants'
+import { defaultLandingActSequence } from '@/features/drops/drops.actSequence'
+import { publicLandingActsFromSequence } from '@/features/cms/landing/landingActs.normalize'
 
-export const LANDING_CMS_VERSION = 1
+export { LANDING_CMS_VERSION }
 
 /**
  * Frozen reference copy of the original ANVL landing page content.

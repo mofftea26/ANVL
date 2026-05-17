@@ -1,13 +1,10 @@
-import { composeLandingPageFromDrop } from '@/features/admin/drops/drops.compose'
+import { composeLandingPageFromDrop } from '@/features/cms/landing/composeLandingPageFromDrop'
+import { getActiveDrop, ensureDropSystemHydrated } from '@/features/cms/read/dropRuntime'
 import {
-  ensureDropSystemHydrated,
-  getActiveDrop,
-} from '@/features/admin/drops/drops.service'
-import {
+  getWebsiteLayoutContent,
   normalizeLandingCmsImport,
-} from '@/features/admin/landing-cms/landingCms.merge'
-import { readLandingCmsFromStorage } from '@/features/admin/landing-cms/landingCms.storage'
-import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
+  readLandingCmsFromStorage,
+} from '@/features/cms/read/landingCmsRuntime'
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 
 /**

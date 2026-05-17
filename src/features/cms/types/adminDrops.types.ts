@@ -1,4 +1,4 @@
-import type { DropStatus } from '@/features/admin/drops/drops.types'
+import type { DropStatus } from '@/features/drops/drop.types'
 
 /** Row shape for the admin Drops list (derived from `Drop`). */
 export type AdminDropListItem = {
