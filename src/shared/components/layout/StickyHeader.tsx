@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { Menu, ShoppingBag, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import type { LandingNavigationContent } from '@/features/admin/landing-cms/landingCms.types'
+import type { LandingNavigationContent } from '@/features/cms/landing/landingPageCms.types'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { useStickyHeader } from '@/shared/hooks/useStickyHeader'
 import { useCart } from '@/features/cart/hooks/useCart'

@@ -2,7 +2,7 @@ import { useEffect, useState, type PropsWithChildren } from 'react'
 import { runtimeClients } from '@/app/config/runtime'
 import { subscribeDropsChange } from '@/features/admin/drops/drops.storage'
 import type { Drop } from '@/features/admin/drops/drops.types'
-import { syncActiveDropThemeStyleTag } from '@/features/admin/drops/dropPaletteStyle'
+import { syncActiveDropThemeStyleTag } from '@/features/cms/theme/dropPaletteStyle'
 
 type Props = PropsWithChildren<{
   initialDrop: Drop | null

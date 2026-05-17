@@ -4,14 +4,9 @@ import {
 } from './landingCms.defaults'
 import type { LandingPageCmsContent } from './landingCms.types'
 import { normalizeLandingCmsImport } from './landingCms.merge'
-import { getResolvedLandingPageCms } from '@/features/cms/publicLanding'
 
 export { normalizeLandingCmsImport }
-
-/** Resolved homepage CMS: active drop + website layout (legacy JSON migration handled elsewhere). */
-export function getLandingCmsContent(): LandingPageCmsContent {
-  return getResolvedLandingPageCms()
-}
+export { getLandingCmsContent } from '@/features/cms/landing/landingCmsRead'
 
 export function getLandingCmsDefaults(): LandingPageCmsContent {
   return cloneLandingCmsDefaults()

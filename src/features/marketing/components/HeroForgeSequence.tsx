@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { Link } from '@tanstack/react-router'
-import type { CmsMetaItem } from '@/features/admin/landing-cms/landingCms.types'
+import type { CmsMetaItem } from '@/features/cms/landing/landingPageCms.types'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { Badge } from '@/shared/components/ui/Badge'
 import { Container } from '@/shared/components/ui/Container'

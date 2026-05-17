@@ -8,7 +8,7 @@ import {
 } from '@/features/admin/landing-cms/landingCms.merge'
 import { readLandingCmsFromStorage } from '@/features/admin/landing-cms/landingCms.storage'
 import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
-import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landingCms.types'
+import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 
 /**
  * Canonical homepage CMS snapshot — prefers active drop + website layout,

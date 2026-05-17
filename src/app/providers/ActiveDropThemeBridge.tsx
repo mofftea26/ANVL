@@ -3,8 +3,8 @@ import {
   DEFAULT_EMBLEM_URL,
 } from '@/features/admin/drops/drops.defaults'
 import { getGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.service'
-import type { DropThemePalette } from '@/features/admin/drops/drops.types'
-import { dropPaletteToCssProperties } from '@/features/admin/drops/dropPaletteStyle'
+import type { DropThemePalette } from '@/features/drops/theme/dropThemePalette.types'
+import { dropPaletteToCssProperties } from '@/features/cms/theme/dropPaletteStyle'
 
 const PREVIEW_ATTR = 'data-anvl-drop-preview-scope'
 

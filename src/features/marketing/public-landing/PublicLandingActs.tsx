@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { lazy, Suspense } from 'react'
-import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landingCms.types'
+import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import type { Product } from '@/features/products/types/product.types'
 import { defaultLandingActSequence } from '@/features/admin/drops/drops.actSequence'
 import { publicLandingActsFromSequence } from '@/features/admin/drops/acts/landingActs.normalize'

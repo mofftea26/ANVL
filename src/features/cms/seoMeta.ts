@@ -6,7 +6,7 @@ import {
 } from '@/app/seo/meta'
 import type { SeoContent } from '@/features/cms/types/cms.types'
 import type { DropSeo } from '@/features/admin/drops/drops.types'
-import type { LandingSeoContent } from '@/features/admin/landing-cms/landingCms.types'
+import type { LandingSeoContent } from '@/features/cms/landing/landingPageCms.types'
 import type { SiteSeoGlobalDefaults } from '@/features/cms/siteSeo.local'
 
 export type { SiteSeoGlobalDefaults } from '@/features/cms/siteSeo.local'

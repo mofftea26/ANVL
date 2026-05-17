@@ -4,7 +4,7 @@ import type {
   CmsCta,
   CmsStatItem,
   LandingDropIcon,
-} from '@/features/admin/landing-cms/landingCms.types'
+} from '@/features/cms/landing/landingPageCms.types'
 import { AnvlWordmark } from '@/shared/assets/brand'
 import { Container } from '@/shared/components/ui/Container'
 import { gsap, useGSAP } from '@/shared/lib/gsap'

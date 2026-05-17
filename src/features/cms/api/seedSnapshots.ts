@@ -4,7 +4,7 @@ import {
   createDefaultTheOathDrop,
 } from '@/features/admin/drops/drops.defaults'
 import type { Drop } from '@/features/admin/drops/drops.types'
-import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landingCms.types'
+import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import { createDefaultWebsiteLayout } from '@/features/admin/website-layout/websiteLayout.defaults'
 import type { WebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.types'
 

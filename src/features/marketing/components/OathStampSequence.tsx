@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react'
-import type { CmsTenetItem } from '@/features/admin/landing-cms/landingCms.types'
+import type { CmsTenetItem } from '@/features/cms/landing/landingPageCms.types'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { Container } from '@/shared/components/ui/Container'
 import { gsap, useGSAP } from '@/shared/lib/gsap'

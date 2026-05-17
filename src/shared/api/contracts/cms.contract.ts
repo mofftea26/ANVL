@@ -6,7 +6,7 @@
  */
 
 import type { Drop } from '@/features/admin/drops/drops.types'
-import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landingCms.types'
+import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import type { SeoContent } from '@/features/cms/types/cms.types'
 import type { DateRangeFilter, ListSort, OffsetPaginatedResult, OffsetPaginationQuery } from './common.types'
 

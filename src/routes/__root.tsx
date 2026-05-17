@@ -11,10 +11,10 @@ import type { ReactNode } from "react";
 import { AppProviders } from "@/app/providers/AppProviders";
 import { RouteAnalytics } from "@/app/providers/RouteAnalytics";
 import { runtimeClients } from "@/app/config/runtime";
-import { useLandingCms } from "@/features/admin/landing-cms/useLandingCms";
+import { useLandingCms } from "@/features/cms/hooks/useLandingCms";
 import { SiteFooter } from "@/shared/components/layout/SiteFooter";
 import { StickyHeader } from "@/shared/components/layout/StickyHeader";
-import { serializeDropPaletteForRootStyle } from "@/features/admin/drops/dropPaletteStyle";
+import { serializeDropPaletteForRootStyle } from "@/features/cms/theme/dropPaletteStyle";
 import appCss from "@/styles.css?url";
 
 export const Route = createRootRoute({

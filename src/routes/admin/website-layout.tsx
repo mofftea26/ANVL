@@ -10,7 +10,7 @@ import {
   ensureDropSystemHydrated,
   getActiveDrop,
 } from '@/features/admin/drops/drops.service'
-import type { CmsLinkItem } from '@/features/admin/landing-cms/landingCms.types'
+import type { CmsLinkItem } from '@/features/cms/landing/landingPageCms.types'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import { isActiveDropNavTemplateHref } from '@/features/admin/website-layout/websiteLayout.nav'
 import {

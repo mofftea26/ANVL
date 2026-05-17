@@ -9,7 +9,7 @@ import { JsonLd } from "@/shared/components/seo/JsonLd";
 import { organizationJsonLd } from "@/shared/components/seo/structuredData";
 import { useLenisScroll } from "@/shared/hooks/useLenisScroll";
 import { PublicLandingActs } from "@/features/marketing/public-landing/PublicLandingActs";
-import { useLandingCms } from "@/features/admin/landing-cms/useLandingCms";
+import { useLandingCms } from "@/features/cms/hooks/useLandingCms";
 import { useHomeProducts } from "@/features/products/hooks/useHomeProducts";
 
 export const Route = createFileRoute("/")({

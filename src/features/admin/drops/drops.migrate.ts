@@ -1,4 +1,4 @@
-import type { LandingPageCmsContent } from '@/features/admin/landing-cms/landingCms.types'
+import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import type { Drop, DropLandingContent } from './drops.types'
 import type { WebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.types'
 import {

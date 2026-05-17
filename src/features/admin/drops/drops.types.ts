@@ -1,8 +1,10 @@
 import type { LandingActSlot } from './drops.actSequence'
 import type { LandingAct } from './acts/landingActs.types'
 import type { SeoStructuredDataType } from '@/features/cms/types/cms.types'
+import type { DropThemePalette } from '@/features/drops/theme/dropThemePalette.types'
 
 export type { LandingActSlotKey, LandingActSlot } from './drops.actSequence'
+export type { DropThemePalette }
 export {
   LANDING_ACT_SLOT_KEYS,
   defaultLandingActSequence,
@@ -15,25 +17,6 @@ export type DropStatus =
   | 'inactive'
   | 'scheduled'
   | 'archived'
-
-export type DropThemePalette = {
-  id: string
-  name: string
-  colors: {
-    background: string
-    surface: string
-    surfaceSoft: string
-    heading: string
-    text: string
-    mutedText: string
-    line: string
-    accent: string
-    accentSoft: string
-    heroGlow: string
-    danger?: string
-    success?: string
-  }
-}
 
 export type DropVisuals = {
   emblemImageUrl: string

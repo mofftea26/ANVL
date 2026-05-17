@@ -1,7 +1,7 @@
 import type {
   LandingNavigationContent,
   LandingPageCmsContent,
-} from '@/features/admin/landing-cms/landingCms.types'
+} from '@/features/cms/landing/landingPageCms.types'
 import { LANDING_CMS_VERSION } from '@/features/admin/landing-cms/landingCms.defaults'
 import type { Drop } from './drops.types'
 import {

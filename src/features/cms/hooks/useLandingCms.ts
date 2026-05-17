@@ -1,0 +1,51 @@
+import { subscribeSiteSeoChange } from '@/features/cms/siteSeo.local'
+import { useSyncExternalStore } from 'react'
+import { subscribeDropsChange } from '@/features/admin/drops/drops.storage'
+import { subscribeWebsiteLayoutChange } from '@/features/admin/website-layout/websiteLayout.storage'
+import { getLandingCmsContent } from '@/features/cms/landing/landingCmsRead'
+import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
+
+/**
+ * Module-scoped snapshot cache — `useSyncExternalStore` requires stable snapshots.
+ */
+let clientSnapshot: LandingPageCmsContent | null = null
+const serverSnapshot = getLandingCmsContent()
+
+function getClientSnapshot(): LandingPageCmsContent {
+  if (clientSnapshot === null) {
+    clientSnapshot = getLandingCmsContent()
+  }
+  return clientSnapshot
+}
+
+function refreshClientSnapshot() {
+  clientSnapshot = getLandingCmsContent()
+}
+
+function subscribe(listener: () => void): () => void {
+  const wrapped = () => {
+    refreshClientSnapshot()
+    listener()
+  }
+  const unsubs = [
+    subscribeDropsChange(wrapped),
+    subscribeWebsiteLayoutChange(wrapped),
+    subscribeSiteSeoChange(wrapped),
+  ]
+  return () => unsubs.forEach((u) => u())
+}
+
+function getServerSnapshot(initial?: LandingPageCmsContent) {
+  return initial ?? serverSnapshot
+}
+
+/** Homepage CMS driven by drops + layout; updates when either changes in localStorage. */
+export function useLandingCms(
+  initial?: LandingPageCmsContent,
+): LandingPageCmsContent {
+  return useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    () => getServerSnapshot(initial),
+  )
+}

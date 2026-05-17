@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { toast } from 'sonner'
-import type { LandingWaitlistContent } from '@/features/admin/landing-cms/landingCms.types'
+import type { LandingWaitlistContent } from '@/features/cms/landing/landingPageCms.types'
 import type { Product } from '@/features/products/types/product.types'
 import { useCartAnalytics } from '@/features/analytics/hooks/useCartAnalytics'
 import { useWaitlistForm } from '@/features/marketing/hooks/useWaitlistForm'

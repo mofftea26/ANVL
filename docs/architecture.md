@@ -78,6 +78,12 @@ src/
     mocks/
 ```
 
+## CMS vs admin boundary
+
+Storefront routes, marketing acts, and shared layout should import **read models and theme helpers** from `src/features/cms/**` and `src/features/drops/**`, not from `src/features/admin/**`. Admin-only editors and persistence stay under `features/admin/**`.
+
+**Phase D (audit):** canonical public landing CMS types (`landing/landingPageCms.types.ts`), resolved read path (`landing/landingCmsRead.ts`), `hooks/useLandingCms`, and palette CSS serialization (`theme/dropPaletteStyle.ts`) live in `features/cms/`. `DropThemePalette` is defined in `features/drops/theme/dropThemePalette.types.ts`. Legacy admin paths may re-export these modules until all import sites are migrated.
+
 ## State rules
 - TanStack Query: drops, products, CMS documents, SEO documents, user profile, orders.
 - Zustand: CMS editor draft state, preview state, drawers, modals, filters before commit, cart drawer visibility.
