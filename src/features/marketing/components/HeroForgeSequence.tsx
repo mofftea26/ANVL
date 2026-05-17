@@ -1,9 +1,9 @@
 import { useRef } from 'react'
-import { Link } from '@tanstack/react-router'
 import type { CmsMetaItem } from '@/features/admin/landing-cms/landingCms.types'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { Badge } from '@/shared/components/ui/Badge'
 import { Container } from '@/shared/components/ui/Container'
+import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 
@@ -330,8 +330,8 @@ export function HeroForgeSequence({
               data-hero-ctas="true"
               className="mt-5 flex flex-wrap items-center gap-3 sm:mt-6"
             >
-              <Link
-                to={primaryCta.href}
+              <SafeLink
+                href={primaryCta.href}
                 className="focus-ring group relative inline-flex h-11 items-center overflow-hidden rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-5 text-sm font-semibold text-[var(--color-bg)] no-underline transition-transform hover:-translate-y-0.5"
               >
                 <span className="relative z-10">{primaryCta.label}</span>
@@ -339,13 +339,13 @@ export function HeroForgeSequence({
                   aria-hidden="true"
                   className="absolute inset-0 -translate-x-full bg-gradient-to-r from-white/0 via-white/30 to-white/0 transition-transform duration-500 group-hover:translate-x-full"
                 />
-              </Link>
-              <a
+              </SafeLink>
+              <SafeLink
                 href={secondaryCta.href}
                 className="focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)]/70 px-5 text-sm font-semibold no-underline backdrop-blur transition-transform hover:-translate-y-0.5"
               >
                 {secondaryCta.label}
-              </a>
+              </SafeLink>
             </div>
 
             <dl

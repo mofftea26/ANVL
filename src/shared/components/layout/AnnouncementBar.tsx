@@ -1,5 +1,6 @@
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { Container } from '@/shared/components/ui/Container'
+import { SafeLink } from '@/shared/components/ui/SafeLink'
 
 export function AnnouncementBar({
   message,
@@ -20,9 +21,12 @@ export function AnnouncementBar({
           />
           <p className="anvl-micro truncate text-[10px] sm:text-xs">{message}</p>
         </div>
-        <a className="anvl-micro text-[10px] underline sm:text-xs" href={ctaHref}>
+        <SafeLink
+          href={ctaHref}
+          className="anvl-micro focus-ring text-[10px] underline sm:text-xs"
+        >
           {ctaLabel}
-        </a>
+        </SafeLink>
       </Container>
     </div>
   )

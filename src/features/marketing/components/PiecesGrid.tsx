@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import type { Product } from '@/features/products/types/product.types'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { Container } from '@/shared/components/ui/Container'
+import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 
 interface PiecesGridProps {
@@ -171,14 +172,14 @@ export function PiecesGrid({
             </h2>
           </div>
 
-          <Link
+          <SafeLink
             data-pieces-meta="true"
-            to={viewAllHref}
-            className="anvl-micro inline-flex items-center gap-2 self-start will-change-transform sm:self-end"
+            href={viewAllHref}
+            className="anvl-micro focus-ring inline-flex items-center gap-2 self-start will-change-transform sm:self-end"
           >
             {viewAllLabel}
             <span aria-hidden="true">→</span>
-          </Link>
+          </SafeLink>
         </div>
 
         <div className="mx-auto mt-8 grid w-full max-w-3xl grid-cols-3 gap-3 sm:mt-10 sm:gap-5">
@@ -229,13 +230,13 @@ export function PiecesGrid({
           <p className="anvl-micro text-[var(--color-text-muted)]">
             {footerLeftText}
           </p>
-          <Link
-            to={footerLinkHref}
-            className="anvl-micro inline-flex items-center gap-2 text-[var(--color-heading)] no-underline underline-offset-4 hover:underline"
+          <SafeLink
+            href={footerLinkHref}
+            className="anvl-micro focus-ring inline-flex items-center gap-2 text-[var(--color-heading)] no-underline underline-offset-4 hover:underline"
           >
             {footerLinkLabel}
             <span aria-hidden="true">→</span>
-          </Link>
+          </SafeLink>
         </div>
       </Container>
     </section>

@@ -23,6 +23,7 @@ import {
   ProductCard,
   ProductGallery,
   QuantityStepper,
+  SafeLink,
   Section,
   SizeSelector,
 } from '@/shared/components/ui'
@@ -192,14 +193,13 @@ function ProductPage() {
                 <p className="anvl-micro mb-1">3D / AR</p>
                 <p className="text-[var(--color-text-muted)]">
                   Interactive model preview is coming soon.{' '}
-                  <a
+                  <SafeLink
                     href={modelUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[var(--color-accent)] underline"
+                    forceExternal
+                    className="focus-ring text-[var(--color-accent)] underline"
                   >
                     Open model link
-                  </a>
+                  </SafeLink>
                 </p>
               </div>
             ) : null}

@@ -1,10 +1,10 @@
-import { Link } from '@tanstack/react-router'
 import type { LandingNavigationContent } from '@/features/admin/landing-cms/landingCms.types'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Container } from '@/shared/components/ui/Container'
 import { Input } from '@/shared/components/ui/Input'
 import { Button } from '@/shared/components/ui/Button'
+import { SafeLink } from '@/shared/components/ui/SafeLink'
 
 interface SiteFooterProps {
   navigation: LandingNavigationContent
@@ -73,7 +73,9 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
                   ) : null}
                   {links.map((link, index) => (
                     <span key={link.id ?? link.href}>
-                      <Link to={link.href}>{link.label}</Link>
+                      <SafeLink href={link.href} className="focus-ring">
+                        {link.label}
+                      </SafeLink>
                       {index < links.length - 1 ? <br /> : null}
                     </span>
                   ))}
@@ -85,7 +87,9 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
           <nav className="space-y-2 text-sm">
             {visibleFooterLinks.map((link, index) => (
               <span key={link.id ?? link.href}>
-                <Link to={link.href}>{link.label}</Link>
+                <SafeLink href={link.href} className="focus-ring">
+                  {link.label}
+                </SafeLink>
                 {index < visibleFooterLinks.length - 1 ? <br /> : null}
               </span>
             ))}
@@ -105,11 +109,10 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
             <ul className="mt-4 flex flex-wrap gap-3 text-xs">
               {social.map((item) => (
                 <li key={item.id}>
-                  <a
+                  <SafeLink
                     href={item.href}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="text-[var(--color-text-muted)] underline-offset-4 hover:text-[var(--color-heading)] hover:underline"
+                    forceExternal
+                    className="focus-ring text-[var(--color-text-muted)] underline-offset-4 hover:text-[var(--color-heading)] hover:underline"
                     aria-label={
                       item.label.trim()
                         ? `${item.label} (opens in a new tab)`
@@ -117,7 +120,7 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
                     }
                   >
                     {item.label}
-                  </a>
+                  </SafeLink>
                 </li>
               ))}
             </ul>
