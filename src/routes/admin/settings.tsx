@@ -73,9 +73,12 @@ function SettingsPage() {
         </AdminCard>
       </div>
 
-      <Modal open={confirmReset} onClose={() => setConfirmReset(false)}>
+      <Modal
+        open={confirmReset}
+        onClose={() => setConfirmReset(false)}
+        title="Reset all local CMS data?"
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Reset all local CMS data?</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Clears drops, products, layout keys, any leftover legacy landing JSON key, and re-seeds
             The Oath defaults. This cannot be undone.
