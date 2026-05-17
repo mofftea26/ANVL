@@ -35,6 +35,14 @@ const config = defineConfig({
           if (id.includes('node_modules/gsap')) return 'vendor-gsap'
           if (id.includes('node_modules/lenis')) return 'vendor-lenis'
           if (id.includes('node_modules/framer-motion')) return 'vendor-framer-motion'
+          if (id.includes('node_modules/zod')) return 'vendor-zod'
+          if (id.includes('node_modules/@tanstack')) return 'vendor-tanstack'
+          if (
+            id.includes('node_modules/react-dom') ||
+            id.includes('node_modules/react/')
+          ) {
+            return 'vendor-react'
+          }
         },
       },
     },

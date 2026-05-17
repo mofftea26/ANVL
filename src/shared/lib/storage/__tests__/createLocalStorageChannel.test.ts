@@ -87,4 +87,41 @@ describe('createLocalStorageChannel (Phase C1 / REU-05)', () => {
     expect(() => ch.write('boom')).not.toThrow()
     window.localStorage.setItem = original
   })
+
+  it('readKey/writeKey round-trip on sibling keys (drops + active id model)', () => {
+    const ch = createLocalStorageChannel({
+      key: 'TEST_CH_MAIN_K',
+      changeEvent: 'test:maink:change',
+      alsoListenForKeys: ['TEST_CH_SIBLING_K'],
+    })
+    expect(ch.readKey('TEST_CH_SIBLING_K')).toBeNull()
+    ch.writeKey('TEST_CH_SIBLING_K', 'active-1')
+    expect(window.localStorage.getItem('TEST_CH_SIBLING_K')).toBe('active-1')
+    expect(ch.readKey('TEST_CH_SIBLING_K')).toBe('active-1')
+    ch.writeKey('TEST_CH_SIBLING_K', null)
+    expect(window.localStorage.getItem('TEST_CH_SIBLING_K')).toBeNull()
+  })
+
+  it('readKey/writeKey ignore keys outside the watchlist', () => {
+    const ch = createLocalStorageChannel({
+      key: 'TEST_CH_WATCHED',
+      changeEvent: 'test:watched:change',
+    })
+    window.localStorage.setItem('OTHER_KEY', 'x')
+    expect(ch.readKey('OTHER_KEY')).toBeNull()
+    ch.writeKey('OTHER_KEY', 'y')
+    expect(window.localStorage.getItem('OTHER_KEY')).toBe('x')
+  })
+
+  it('notifyChange pings subscribers without mutating storage', () => {
+    const ch = createLocalStorageChannel({
+      key: 'TEST_CH_NOTIFY',
+      changeEvent: 'test:notify:change',
+    })
+    const listener = vi.fn()
+    ch.subscribe(listener)
+    ch.notifyChange()
+    expect(listener).toHaveBeenCalledTimes(1)
+    expect(ch.read()).toBeNull()
+  })
 })

@@ -17,6 +17,21 @@ export type LocalStorageChannel = {
   read(): string | null
   write(value: string): void
   remove(): void
+  /**
+   * Read any watched key (primary `key` or `alsoListenForKeys` entry).
+   * Unknown keys return `null` without touching storage.
+   */
+  readKey(storageKey: string): string | null
+  /**
+   * Write or remove a watched key and notify subscribers (same-tab + cross-tab).
+   * Passing `null` removes the key. Unknown keys are ignored.
+   */
+  writeKey(storageKey: string, value: string | null): void
+  /**
+   * Notify subscribers without a storage mutation — for mirrored multi-key
+   * writes (e.g. admin auth session duplicated across legacy keys).
+   */
+  notifyChange(): void
   subscribe(listener: () => void): () => void
 }
 
@@ -33,9 +48,7 @@ export type CreateLocalStorageChannelOptions = {
   alsoListenForKeys?: ReadonlyArray<string>
 }
 
-function isBrowser(): boolean {
-  return typeof window !== 'undefined'
-}
+import { isBrowser } from './isBrowser'
 
 export function createLocalStorageChannel(
   options: CreateLocalStorageChannelOptions,
@@ -48,35 +61,47 @@ export function createLocalStorageChannel(
     events?.dispatchEvent(new Event(changeEvent))
   }
 
+  const readKeyImpl = (storageKey: string): string | null => {
+    if (!watchedKeys.has(storageKey)) return null
+    if (!isBrowser()) return null
+    try {
+      return window.localStorage.getItem(storageKey)
+    } catch {
+      return null
+    }
+  }
+
+  const writeKeyImpl = (storageKey: string, value: string | null): void => {
+    if (!watchedKeys.has(storageKey)) return
+    if (!isBrowser()) return
+    try {
+      if (value === null) window.localStorage.removeItem(storageKey)
+      else window.localStorage.setItem(storageKey, value)
+      notify()
+    } catch {
+      // Quota errors — same policy as `write()`.
+    }
+  }
+
   return {
     key,
     read(): string | null {
-      if (!isBrowser()) return null
-      try {
-        return window.localStorage.getItem(key)
-      } catch {
-        return null
-      }
+      return readKeyImpl(key)
     },
     write(value: string): void {
-      if (!isBrowser()) return
-      try {
-        window.localStorage.setItem(key, value)
-        notify()
-      } catch {
-        // Quota / serialization errors are intentionally swallowed —
-        // the admin will surface its own toast on save failures and the
-        // storefront keeps reading stale-but-valid data.
-      }
+      writeKeyImpl(key, value)
     },
     remove(): void {
-      if (!isBrowser()) return
-      try {
-        window.localStorage.removeItem(key)
-        notify()
-      } catch {
-        // swallow
-      }
+      writeKeyImpl(key, null)
+    },
+    readKey(storageKey: string): string | null {
+      return readKeyImpl(storageKey)
+    },
+    writeKey(storageKey: string, value: string | null): void {
+      writeKeyImpl(storageKey, value)
+    },
+    notifyChange(): void {
+      notify()
     },
     subscribe(listener: () => void): () => void {
       if (!isBrowser()) return () => {}

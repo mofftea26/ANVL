@@ -15,6 +15,10 @@ Only one drop can be active.
 ## Public landing performance
 - `PublicLandingActs` lazy-loads act sections (including `HeroForgeSequence`) with `React.lazy` and per-act `Suspense` fallbacks so heavy marketing chunks are not all required for the first interactive paint.
 
+## Admin editor bundles
+- `/admin/drops/$dropId` is a thin `lazyRouteComponent` shell (`-dropEditorPage.tsx`); the drop editor / acts builder / previews split into their own async chunks at build time.
+- `DropLandingActsEditor` wraps `DropActsBuilderPanel` in `React.lazy` + `Suspense` so the large builder module is fetched as a separate chunk (see audit `PERF-02`).
+
 ## Drop fields
 ```ts
 type Drop = {

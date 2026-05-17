@@ -1,4 +1,6 @@
 import type { AdminSession } from './adminAuth.types'
+import { createLocalStorageChannel } from '@/shared/lib/storage/createLocalStorageChannel'
+import { isBrowser } from '@/shared/lib/storage/isBrowser'
 
 export const ADMIN_AUTH_STORAGE_KEYS = ['ANVL_ADMIN_AUTH', 'anvl.adminAuth.v1'] as const
 
@@ -21,18 +23,19 @@ export const isAdminLoginConfigured = configuredPassword.length > 0
 
 export const ADMIN_AUTH_CHANGE_EVENT = 'anvl:adminAuth:change'
 
-const adminAuthEvents =
-  typeof window !== 'undefined' ? new EventTarget() : null
+const adminAuthChannel = createLocalStorageChannel({
+  key: ADMIN_AUTH_STORAGE_KEY,
+  changeEvent: ADMIN_AUTH_CHANGE_EVENT,
+  alsoListenForKeys: [ADMIN_AUTH_STORAGE_KEYS[1]],
+})
 
-function isBrowser(): boolean {
-  return typeof window !== 'undefined'
-}
+export { isBrowser }
 
 export function readAdminSession(): AdminSession | null {
   if (!isBrowser()) return null
   try {
     for (const key of ADMIN_AUTH_STORAGE_KEYS) {
-      const raw = window.localStorage.getItem(key)
+      const raw = adminAuthChannel.readKey(key)
       if (!raw) continue
       const parsed = JSON.parse(raw) as Partial<AdminSession>
       if (
@@ -65,7 +68,7 @@ export function writeAdminSession(session: AdminSession): void {
     ADMIN_AUTH_STORAGE_KEYS.forEach((key) => {
       window.localStorage.setItem(key, payload)
     })
-    notifyAdminAuthChange()
+    adminAuthChannel.notifyChange()
   } catch {
     // Non-fatal in a demo CMS.
   }
@@ -75,34 +78,12 @@ export function clearAdminSession(): void {
   if (!isBrowser()) return
   try {
     ADMIN_AUTH_STORAGE_KEYS.forEach((key) => window.localStorage.removeItem(key))
-    notifyAdminAuthChange()
+    adminAuthChannel.notifyChange()
   } catch {
     // Swallow.
   }
 }
 
-function notifyAdminAuthChange() {
-  adminAuthEvents?.dispatchEvent(new Event(ADMIN_AUTH_CHANGE_EVENT))
-}
-
 export function subscribeAdminAuthChange(listener: () => void): () => void {
-  if (!isBrowser()) return () => {}
-
-  adminAuthEvents?.addEventListener(ADMIN_AUTH_CHANGE_EVENT, listener)
-  const onStorage = (event: StorageEvent) => {
-    if (isAdminAuthStorageKey(event.key)) listener()
-  }
-  window.addEventListener('storage', onStorage)
-
-  return () => {
-    adminAuthEvents?.removeEventListener(ADMIN_AUTH_CHANGE_EVENT, listener)
-    window.removeEventListener('storage', onStorage)
-  }
-}
-
-function isAdminAuthStorageKey(eventKey: string | null): boolean {
-  if (!eventKey) return false
-  return ADMIN_AUTH_STORAGE_KEYS.includes(
-    eventKey as (typeof ADMIN_AUTH_STORAGE_KEYS)[number],
-  )
+  return adminAuthChannel.subscribe(listener)
 }

@@ -1,22 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { AdminLayout } from '@/features/admin/components/AdminLayout'
-import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
-import { DropsAdminList } from '@/features/admin/drops/DropsAdminList'
+import { createFileRoute, lazyRouteComponent } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/admin/drops/')({
-  component: DropsIndexPage,
+  component: lazyRouteComponent(
+    () => import('./-dropsIndex'),
+    'AdminDropsIndexPageRoute',
+  ),
 })
-
-function DropsIndexPage() {
-  return (
-    <ProtectedAdminRoute>
-      <AdminLayout
-        title="Drops"
-        description="Only one drop can be active at a time on the public site."
-        layout="wide"
-      >
-        <DropsAdminList />
-      </AdminLayout>
-    </ProtectedAdminRoute>
-  )
-}
