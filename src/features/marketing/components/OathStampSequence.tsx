@@ -46,10 +46,13 @@ export function OathStampSequence({
     () => {
       const ctx = gsap.matchMedia()
 
+      // RESP-03 — gate timelines on both viewport AND reduced motion so
+      // mobile users get the static final state by default. Matches the
+      // HeroForgeSequence pattern.
       ctx.add(
         {
-          motionOk: '(prefers-reduced-motion: no-preference)',
-          reduced: '(prefers-reduced-motion: reduce)',
+          motionOk: '(min-width: 768px) and (prefers-reduced-motion: no-preference)',
+          reduced: '(max-width: 767px), (prefers-reduced-motion: reduce)',
         },
         (context) => {
           const conds = context.conditions ?? {}
