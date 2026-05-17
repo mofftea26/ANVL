@@ -1,0 +1,56 @@
+---
+description: Testing rules for ANVL. Every non-trivial change ships with Vitest coverage. Applies to every TS/TSX file under src/.
+globs: ["src/**/*.{ts,tsx}", "vitest.config.ts", "src/test/**"]
+alwaysApply: true
+---
+
+# Testing rules (Phase A1 of the audit — safety net)
+
+## Always
+
+- Run `pnpm verify` before declaring any task done. It runs `typecheck` + `test` + `build` in series. If `pnpm verify` doesn't exist yet (it lands with Phase A), run all three manually.
+- New features and bug fixes ship with **at least one Vitest test**. For UI changes, also include a manual test note + screenshot/video in the PR.
+- Use Vitest 4 + `@testing-library/react@16` + `jsdom`. Setup file: `src/test/setup.ts` (mocks `matchMedia`, `IntersectionObserver`, resets `localStorage` between tests).
+
+## Test layout
+
+- Co-locate tests with the source: `src/features/X/__tests__/file.test.ts`.
+- Use `*.test.ts` for pure logic, `*.test.tsx` for components.
+- Integration tests for cross-feature flows go under `src/test/integration/*.test.tsx`.
+- Path imports use the `@/` alias (matches tsconfig + Vitest config).
+
+## What to cover
+
+Each touched module must add coverage for:
+
+| Area | Minimum coverage |
+|---|---|
+| Zod schemas / persistence | Happy-path parse + at least one reject case + one migration case (model: `drops.persistence.zod.test.ts`). |
+| Pure helpers / mappers | One case per branch. |
+| Hooks | A renderHook test that exercises the public surface (no implementation details). |
+| Components | Render + the primary user interaction (click/submit/keyboard). Use `@testing-library/react` queries by role/label. |
+| Route loaders | A test that the loader returns the expected shape given a mocked runtime client. |
+| Sanitizers / security helpers | Reject cases for every documented threat vector (`<script>`, `javascript:`, `data:`, `expression(`, `@import`, `__proto__`, etc.). |
+
+## What **not** to do
+
+- Don't write tests against internal CSS class names (e.g. `expect(el).toHaveClass('mt-1')`). Test behavior, not implementation.
+- Don't snapshot whole DOM trees. Snapshot small, stable structures only (e.g. SEO meta tags, JSON-LD output).
+- Don't mock `localStorage` per test; the setup file resets it via `vi.clearAllMocks()` + `window.localStorage.clear()`.
+- Don't import from `src/features/admin/**` in a storefront/marketing test (same boundary rule as runtime).
+- Don't add `framer-motion`, `gsap`, `lenis` to a test — animation libraries are mocked in `src/test/setup.ts` where they would crash jsdom.
+
+## Running
+
+- `pnpm test` — single run (CI-style).
+- `pnpm test:watch` — TDD loop.
+- `pnpm test:coverage` — coverage report (Vitest v8 provider).
+- `pnpm test src/features/admin/drops` — run a single feature.
+
+## When you can skip tests
+
+- Pure documentation changes.
+- Dependency pins (with no semantic change in source).
+- Asset-only commits (`/public/*`, image swaps with no markup change).
+
+Every other commit needs tests. If your change is genuinely untestable, write a paragraph in the PR explaining why and update `docs/audit-2026-05-17.md` to flag the gap.

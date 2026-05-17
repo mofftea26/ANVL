@@ -9,6 +9,8 @@ import { cn } from '@/shared/lib/cn'
 import { Container } from '@/shared/components/ui/Container'
 import { IconButton } from '@/shared/components/ui/IconButton'
 import { Drawer } from '@/shared/components/ui/Drawer'
+import { SafeLink } from '@/shared/components/ui/SafeLink'
+import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 
 export function StickyHeader({
   navigation,
@@ -66,22 +68,15 @@ export function StickyHeader({
       {announcement?.enabled && announcement.message.trim() ? (
         <div className="border-b border-[var(--color-line)] bg-[var(--color-accent)]/10 py-2 text-center text-[11px] text-[var(--color-text-muted)]">
           <Container>
-            {announcement.href?.startsWith('http') ? (
-              <a
+            {announcement.href ? (
+              <SafeLink
                 href={announcement.href}
-                className="font-medium text-[var(--color-heading)] underline-offset-4 hover:underline"
+                className="focus-ring font-medium text-[var(--color-heading)] underline-offset-4 hover:underline"
               >
-                {announcement.message}
-              </a>
-            ) : announcement.href ? (
-              <Link
-                to={announcement.href}
-                className="font-medium text-[var(--color-heading)] no-underline hover:underline"
-              >
-                {announcement.message}
-              </Link>
+                {stripAngleBracketTags(announcement.message)}
+              </SafeLink>
             ) : (
-              <span>{announcement.message}</span>
+              <span>{stripAngleBracketTags(announcement.message)}</span>
             )}
           </Container>
         </div>
@@ -107,13 +102,13 @@ export function StickyHeader({
             aria-label="Primary"
           >
             {visibleLinks.map((item) => (
-              <Link
+              <SafeLink
                 key={item.id ?? item.href}
-                to={item.href}
-                className="anvl-micro text-xs no-underline hover:text-[var(--color-heading)]"
+                href={item.href}
+                className="anvl-micro focus-ring text-xs no-underline hover:text-[var(--color-heading)]"
               >
-                {item.label}
-              </Link>
+                {stripAngleBracketTags(item.label)}
+              </SafeLink>
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
@@ -151,14 +146,14 @@ export function StickyHeader({
         </div>
         <nav className="mt-8 flex flex-col gap-4" aria-label="Mobile">
           {drawerLinks.map((item) => (
-            <Link
+            <SafeLink
               key={`${item.id ?? item.href}-drawer`}
-              to={item.href}
-              className="anvl-heading text-3xl no-underline"
+              href={item.href}
+              className="anvl-heading focus-ring text-3xl no-underline"
               onClick={() => setOpen(false)}
             >
-              {item.label}
-            </Link>
+              {stripAngleBracketTags(item.label)}
+            </SafeLink>
           ))}
         </nav>
       </Drawer>

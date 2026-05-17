@@ -23,6 +23,7 @@ import {
   ProductCard,
   ProductGallery,
   QuantityStepper,
+  SafeLink,
   Section,
   SizeSelector,
 } from '@/shared/components/ui'
@@ -142,7 +143,9 @@ function ProductPage() {
         <div className="grid gap-10 lg:grid-cols-2">
           <ProductGallery product={product} images={galleryImages} />
           <article className="space-y-6">
-            <h1 className="anvl-heading text-6xl">{product.name}</h1>
+            <h1 className="anvl-heading text-4xl sm:text-5xl md:text-6xl">
+              {product.name}
+            </h1>
             <p className="text-sm text-[var(--color-text-muted)]">{product.dropName}</p>
             <div className="flex flex-wrap items-baseline gap-3">
               {saleActive ? (
@@ -192,14 +195,13 @@ function ProductPage() {
                 <p className="anvl-micro mb-1">3D / AR</p>
                 <p className="text-[var(--color-text-muted)]">
                   Interactive model preview is coming soon.{' '}
-                  <a
+                  <SafeLink
                     href={modelUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[var(--color-accent)] underline"
+                    forceExternal
+                    className="focus-ring text-[var(--color-accent)] underline"
                   >
                     Open model link
-                  </a>
+                  </SafeLink>
                 </p>
               </div>
             ) : null}
@@ -302,7 +304,18 @@ function ProductPage() {
           </div>
         </div>
       </Container>
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--color-line)] bg-[rgba(11,11,12,0.95)] p-3 lg:hidden">
+      {/*
+        Spacer beneath the article so the mobile sticky purchase bar
+        (below) never covers related products / accordion / footer.
+        Roughly matches the bar height + safe-area inset (RESP-02).
+      */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none h-[calc(64px+env(safe-area-inset-bottom,0px))] lg:hidden"
+      />
+      <div
+        className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--color-line)] bg-[rgba(11,11,12,0.95)] px-3 pt-3 pb-[max(env(safe-area-inset-bottom,0px),12px)] lg:hidden"
+      >
         <Container className="flex items-center justify-between gap-3">
           <p className="anvl-heading min-w-0 truncate text-2xl">{product.name}</p>
           <Button

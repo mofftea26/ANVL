@@ -8,6 +8,7 @@ import {
   writeWebsiteLayoutRaw,
 } from './websiteLayout.storage'
 import type { WebsiteLayoutContent } from './websiteLayout.types'
+import { persistedWebsiteLayoutSchema } from './websiteLayout.persistence.zod'
 
 function normalizeLogoSrc(src: string | undefined): string | undefined {
   const t = src?.trim()
@@ -70,13 +71,19 @@ function mergeWebsiteLayout(
 export function getWebsiteLayoutContent(): WebsiteLayoutContent {
   const raw = readWebsiteLayoutRaw()
   if (!raw) return createDefaultWebsiteLayout()
+  let parsed: unknown
   try {
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== 'object') return createDefaultWebsiteLayout()
-    return mergeWebsiteLayout(parsed as Partial<WebsiteLayoutContent>)
+    parsed = JSON.parse(raw)
   } catch {
     return createDefaultWebsiteLayout()
   }
+  // SEC-07 — Zod-validate before merge. A failed parse falls back to
+  // defaults rather than letting tampered / stale-schema data drive the
+  // admin runtime. Successful parses still flow through mergeWebsiteLayout
+  // for forward-compat field defaults.
+  const result = persistedWebsiteLayoutSchema.safeParse(parsed)
+  if (!result.success) return createDefaultWebsiteLayout()
+  return mergeWebsiteLayout(result.data as Partial<WebsiteLayoutContent>)
 }
 
 export function getWebsiteLayoutSaveError(

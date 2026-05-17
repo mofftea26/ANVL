@@ -5,6 +5,7 @@ import {
   writeGlobalBrandRaw,
   isBrowser,
 } from './globalBrand.storage'
+import { persistedGlobalBrandSchema } from './globalBrand.persistence.zod'
 
 function mergeStored(raw: Partial<GlobalBrandSettings> | null): GlobalBrandSettings {
   const defaults = createDefaultGlobalBrandSettings()
@@ -28,14 +29,18 @@ export function getGlobalBrandSettings(): GlobalBrandSettings {
   if (!isBrowser()) return createDefaultGlobalBrandSettings()
   const raw = readGlobalBrandRaw()
   if (!raw) return createDefaultGlobalBrandSettings()
+  let parsed: unknown
   try {
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== 'object')
-      return createDefaultGlobalBrandSettings()
-    return mergeStored(parsed as Partial<GlobalBrandSettings>)
+    parsed = JSON.parse(raw)
   } catch {
     return createDefaultGlobalBrandSettings()
   }
+  // SEC-07 — Zod-validate before merge so tampered blobs cannot drive
+  // the admin runtime. mergeStored still runs to apply the
+  // empty-string -> default normalization for URL fields.
+  const result = persistedGlobalBrandSchema.safeParse(parsed)
+  if (!result.success) return createDefaultGlobalBrandSettings()
+  return mergeStored(result.data)
 }
 
 export function saveGlobalBrandSettings(

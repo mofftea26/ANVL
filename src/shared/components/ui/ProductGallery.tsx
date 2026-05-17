@@ -32,14 +32,16 @@ export function ProductGallery({ product, images }: ProductGalleryProps) {
         {list.map((image, index) => (
           <button
             key={`${image.src}-${index}`}
+            type="button"
             className={cn(
-              'overflow-hidden rounded-md border',
+              'focus-ring overflow-hidden rounded-md border',
               index === activeIndex
                 ? 'border-[var(--color-accent)]'
                 : 'border-[var(--color-line)]',
             )}
             onClick={() => setActiveIndex(index)}
             aria-label={`View ${product.name} image ${index + 1}`}
+            aria-pressed={index === activeIndex}
           >
             <img
               src={image.src}

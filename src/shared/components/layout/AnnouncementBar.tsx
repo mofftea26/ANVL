@@ -1,5 +1,7 @@
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { Container } from '@/shared/components/ui/Container'
+import { SafeLink } from '@/shared/components/ui/SafeLink'
+import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 
 export function AnnouncementBar({
   message,
@@ -18,11 +20,16 @@ export function AnnouncementBar({
             aria-hidden="true"
             className="h-4 w-auto shrink-0 text-[var(--color-heading)] opacity-70"
           />
-          <p className="anvl-micro truncate text-[10px] sm:text-xs">{message}</p>
+          <p className="anvl-micro truncate text-[10px] sm:text-xs">
+            {stripAngleBracketTags(message)}
+          </p>
         </div>
-        <a className="anvl-micro text-[10px] underline sm:text-xs" href={ctaHref}>
-          {ctaLabel}
-        </a>
+        <SafeLink
+          href={ctaHref}
+          className="anvl-micro focus-ring text-[10px] underline sm:text-xs"
+        >
+          {stripAngleBracketTags(ctaLabel)}
+        </SafeLink>
       </Container>
     </div>
   )

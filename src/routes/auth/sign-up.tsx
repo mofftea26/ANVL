@@ -56,11 +56,15 @@ function SignUpPage() {
           toast.success('Welcome to ANVL.')
           window.location.assign(sanitizeInternalRedirect(redirect))
         },
-        onError: (err: unknown) => {
-          if (err instanceof Error && err.message === 'STOREFRONT_ACCOUNT_EMAIL_TAKEN') {
-            form.setError('email', { message: 'This email is already registered.' })
-          }
-          toast.error('Could not create account.')
+        // SEC-13 — never disclose whether the email is already registered.
+        // Both the "email taken" branch and any other failure surface the
+        // same neutral message; an attacker can't enumerate accounts from
+        // sign-up responses. Real auth (Phase J1) should also match
+        // success-response *timing* server-side.
+        onError: () => {
+          toast.error(
+            'Could not create account. Check your details and try again.',
+          )
         },
       },
     )

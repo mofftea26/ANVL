@@ -821,11 +821,12 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </section>
       </div>
 
-      <Modal open={confirmSave} onClose={() => setConfirmSave(false)}>
+      <Modal
+        open={confirmSave}
+        onClose={() => setConfirmSave(false)}
+        title={makeActiveAfterSave ? 'Save & activate drop?' : 'Save this drop?'}
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">
-            {makeActiveAfterSave ? 'Save & activate drop?' : 'Save this drop?'}
-          </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             {makeActiveAfterSave
               ? 'This will make this drop active and deactivate all other drops.'
@@ -851,9 +852,12 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </div>
       </Modal>
 
-      <Modal open={confirmActivateOnly} onClose={() => setConfirmActivateOnly(false)}>
+      <Modal
+        open={confirmActivateOnly}
+        onClose={() => setConfirmActivateOnly(false)}
+        title="Make this drop active?"
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Make this drop active?</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             This will deactivate the currently active drop and update the public landing page.
           </p>
@@ -877,9 +881,12 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </div>
       </Modal>
 
-      <Modal open={confirmReset} onClose={() => setConfirmReset(false)}>
+      <Modal
+        open={confirmReset}
+        onClose={() => setConfirmReset(false)}
+        title="Reset drop?"
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Reset drop?</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Restores landing defaults while keeping this drop&apos;s id and slug.
           </p>
@@ -905,9 +912,12 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </div>
       </Modal>
 
-      <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)}>
+      <Modal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        title="Delete this drop?"
+      >
         <div className="space-y-4">
-          <h3 className="anvl-heading text-xl font-normal">Delete this drop?</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
             Removes the drop locally. At least one drop always remains — defaults will respawn if needed.
           </p>

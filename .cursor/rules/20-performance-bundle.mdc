@@ -1,0 +1,50 @@
+---
+description: Performance, bundle size, and code-splitting rules. Applies to vite config, routes, route components, animation imports, and any change that adds runtime dependencies.
+globs: ["vite.config.ts", "vitest.config.ts", "src/router.tsx", "src/routes/**/*.{ts,tsx}", "src/routeTree.gen.ts", "src/features/marketing/**/*.{ts,tsx}", "src/features/admin/**/*.{ts,tsx}", "src/shared/lib/gsap.ts", "src/shared/hooks/useLenisScroll.ts", "package.json"]
+---
+
+# Performance & bundle rules (Phase G of the audit)
+
+## Code splitting
+
+- **Every admin route** in `src/routes/admin/**` must be wrapped with `lazyRouteComponent(() => import('...'))` (`PERF-01`). Don't statically import admin-only components from non-admin routes.
+- `DropActsBuilderPanel` and any other ≥600-line editor panel must be loaded behind a `React.lazy` + `Suspense` boundary keyed by tab visibility (`PERF-02`).
+- When you author a new admin page, default to lazy. The storefront entry chunk should not import anything from `src/features/admin/**` runtime (types-only is fine — `verbatimModuleSyntax` keeps that erased).
+
+## Storefront ↔ admin boundary
+
+- Storefront and marketing code **must not** import runtime code from `src/features/admin/**` (`PERF-03` / `MAINT-02`). Shared CMS reads belong in `src/features/cms/**` or `src/features/drops/**`. Type-only imports (`import type`) are acceptable but discouraged — prefer extracting the type into the shared module.
+- A future ESLint `no-restricted-imports` rule will enforce this (Phase D2). Until then, treat the rule as enforced in review.
+
+## Bundle hygiene
+
+- Extend `manualChunks` in `vite.config.ts` when adding a heavy dependency (`PERF-05`). Today the buckets are `vendor-gsap`, `vendor-lenis`, `vendor-framer-motion`; add new buckets for `@tanstack/react-router*`, `@tanstack/react-query*`, `react-hook-form` + resolvers, `zod`, `lucide-react`, `sonner` as opportunities appear.
+- Confirm impact via `pnpm analyze` (sets `ANVL_ANALYZE=1` + writes `dist/stats.html`). Attach the relevant `stats.html` line count delta to PRs that touch shared chunks.
+- Never add a dependency listed as unused in the audit (`framer-motion`, `@tanstack/react-table`, `@tanstack/react-virtual`, `@tanstack/react-query-devtools` — `PERF-11`) unless you actually import it.
+- `lucide-react` imports must be named (`import { Menu } from 'lucide-react'`) — never `import * as Icons`.
+
+## Animation policy
+
+- GSAP / ScrollTrigger code must use `gsap.matchMedia` with **both** a viewport gate (`(min-width: 768px)`) and a reduced-motion gate (`(prefers-reduced-motion: no-preference)`). The mirror branch `(max-width: 767px), (prefers-reduced-motion: reduce)` must snap to final state via `gsap.set` (`RESP-03`). `HeroForgeSequence.tsx` is the model.
+- Always call `mm.revert()` / `ctx.revert()` in the cleanup return of `useGSAP`.
+- Lenis must stay gated by `useLenisScroll` (desktop + no reduced motion); never call `new Lenis()` directly from a component.
+- Never import GSAP plugins at module top-level outside `src/shared/lib/gsap.ts` (that module owns `registerPlugin`).
+
+## SSR / hydration
+
+- Route loaders must `Promise.all` independent fetches. If the loader has a redirect-guard fetch, run it first and parallelize the rest afterwards.
+- Components must not read `window`, `document`, `localStorage`, `matchMedia`, `ResizeObserver`, `IntersectionObserver`, or GSAP at module top-level or in render. Gate inside `useEffect` / hooks.
+
+## TanStack Router / Query
+
+- Use `lazyRouteComponent` for heavy routes. Keep `defaultPreload: 'intent'` but adopt a small non-zero `defaultPreloadStaleTime` once measured (`PERF-07`).
+- Query keys must use a per-feature factory (object map of arrays), not bare `['products']` strings (`REU-14`).
+
+## Images & fonts
+
+- Every `<img>` rendered with a CMS-driven `src` must have `width`, `height`, `loading="lazy"` (unless it's the LCP image), `decoding="async"`, and `alt`.
+- Add new font weights only after confirming they're actually used. Prefer variable fonts and `<link rel="preload" as="font" type="font/woff2" crossorigin>` for the 1–2 critical faces.
+
+## Dev tools
+
+- `TanStackDevtools` and `ReactQueryDevtools` are dev-only — gate with `import.meta.env.DEV` (`SEC-22` / `PERF-16`).

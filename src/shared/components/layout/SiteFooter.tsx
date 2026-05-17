@@ -1,10 +1,12 @@
-import { Link } from '@tanstack/react-router'
+import { toast } from 'sonner'
 import type { LandingNavigationContent } from '@/features/cms/landing/landingPageCms.types'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Container } from '@/shared/components/ui/Container'
 import { Input } from '@/shared/components/ui/Input'
 import { Button } from '@/shared/components/ui/Button'
+import { SafeLink } from '@/shared/components/ui/SafeLink'
+import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 
 interface SiteFooterProps {
   navigation: LandingNavigationContent
@@ -54,9 +56,11 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
             />
           )}
           <p className="mt-3 max-w-sm text-sm text-[var(--color-text-muted)]">
-            {navigation.footerTagline}
+            {stripAngleBracketTags(navigation.footerTagline)}
           </p>
-          <p className="anvl-micro mt-4">{navigation.footerMicroCaption}</p>
+          <p className="anvl-micro mt-4">
+            {stripAngleBracketTags(navigation.footerMicroCaption)}
+          </p>
         </div>
 
         {groups.length > 0 ? (
@@ -67,13 +71,17 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
               return (
                 <nav key={group.id} className="space-y-2 text-sm">
                   {group.title ? (
-                    <p className="anvl-micro mb-2 text-[10px] text-[var(--color-text-muted)]">
-                      {group.title}
-                    </p>
+                    /* RESP-10 — promote to heading so the footer participates
+                       in the document outline; visual styling unchanged. */
+                    <h3 className="anvl-micro mb-2 text-[10px] font-normal text-[var(--color-text-muted)]">
+                      {stripAngleBracketTags(group.title)}
+                    </h3>
                   ) : null}
                   {links.map((link, index) => (
                     <span key={link.id ?? link.href}>
-                      <Link to={link.href}>{link.label}</Link>
+                      <SafeLink href={link.href} className="focus-ring">
+                        {stripAngleBracketTags(link.label)}
+                      </SafeLink>
                       {index < links.length - 1 ? <br /> : null}
                     </span>
                   ))}
@@ -85,7 +93,9 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
           <nav className="space-y-2 text-sm">
             {visibleFooterLinks.map((link, index) => (
               <span key={link.id ?? link.href}>
-                <Link to={link.href}>{link.label}</Link>
+                <SafeLink href={link.href} className="focus-ring">
+                  {stripAngleBracketTags(link.label)}
+                </SafeLink>
                 {index < visibleFooterLinks.length - 1 ? <br /> : null}
               </span>
             ))}
@@ -93,23 +103,38 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
         )}
 
         <div>
-          <p className="anvl-micro mb-3">{navigation.newsletterTitle}</p>
-          <div className="flex gap-2">
+          {/* RESP-10 — promote newsletter title to <h3> for document outline. */}
+          <h3 className="anvl-micro mb-3 font-normal">
+            {stripAngleBracketTags(navigation.newsletterTitle)}
+          </h3>
+          {/* RESP-10 — wrap in <form> so the Enter key submits and screen
+              readers announce the form context. The handler is a placeholder
+              toast until the real newsletter backend lands. */}
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault()
+              toast.success('Thanks — we’ll be in touch.')
+              event.currentTarget.reset()
+            }}
+          >
             <Input
+              type="email"
+              name="email"
+              required
               aria-label="Email for newsletter"
               placeholder={navigation.newsletterPlaceholder}
             />
-            <Button type="button">{navigation.newsletterButtonText}</Button>
-          </div>
+            <Button type="submit">{navigation.newsletterButtonText}</Button>
+          </form>
           {social.length > 0 ? (
             <ul className="mt-4 flex flex-wrap gap-3 text-xs">
               {social.map((item) => (
                 <li key={item.id}>
-                  <a
+                  <SafeLink
                     href={item.href}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="text-[var(--color-text-muted)] underline-offset-4 hover:text-[var(--color-heading)] hover:underline"
+                    forceExternal
+                    className="focus-ring text-[var(--color-text-muted)] underline-offset-4 hover:text-[var(--color-heading)] hover:underline"
                     aria-label={
                       item.label.trim()
                         ? `${item.label} (opens in a new tab)`
@@ -117,7 +142,7 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
                     }
                   >
                     {item.label}
-                  </a>
+                  </SafeLink>
                 </li>
               ))}
             </ul>
@@ -130,7 +155,7 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
       </Container>
       <Container className="relative z-10 mt-8 border-t border-[var(--color-line)] pt-6 text-xs text-[var(--color-text-muted)]">
         <p>
-          © {year} {copyright}
+          © {year} {stripAngleBracketTags(copyright)}
         </p>
       </Container>
     </footer>

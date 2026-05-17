@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { AnvlCrest } from '@/shared/assets/brand'
 import { Button } from '@/shared/components/ui/Button'
 import { cn } from '@/shared/lib/cn'
+import { isLikelySafeMediaSrc } from '@/shared/lib/url'
 
 /** Stay under typical localStorage quotas when embedding picks as data URLs. */
 const DEFAULT_MAX_BYTES = 2_500_000
@@ -181,6 +182,11 @@ export function MediaPickerField({
   }
 
   const trimmed = value.trim()
+  // SEC-20 — refuse to render <img>/<video> for values that don't match
+  // the media URL allowlist (javascript:, data:text/html, vbscript:, …).
+  // We still keep the typed value in the input so the user sees the bad
+  // paste and can correct it, but we don't let it reach the preview.
+  const isUnsafeSrc = trimmed.length > 0 && !isLikelySafeMediaSrc(trimmed)
   const showVideo =
     kind === 'video' || (kind === 'any' && isVideoHref(trimmed))
   const showImage =
@@ -191,6 +197,13 @@ export function MediaPickerField({
       return (
         <span className="px-2 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
           Empty — not rendered
+        </span>
+      )
+    }
+    if (isUnsafeSrc) {
+      return (
+        <span className="px-2 text-center text-[10px] uppercase tracking-[0.16em] text-red-300">
+          Unsafe URL blocked
         </span>
       )
     }
@@ -359,6 +372,14 @@ export function MediaPickerField({
         </div>
       </div>
 
+      {isUnsafeSrc ? (
+        <p role="alert" className="text-xs text-red-300">
+          That URL scheme isn&rsquo;t allowed for media. Use a public path
+          (<code className="rounded bg-[var(--color-surface)] px-1">/brand/...</code>),
+          an https URL, or a <code className="rounded bg-[var(--color-surface)] px-1">data:image/*</code>
+          / <code className="rounded bg-[var(--color-surface)] px-1">data:video/*</code> URI.
+        </p>
+      ) : null}
       {error ? (
         <p role="alert" className="text-xs text-red-300">
           {error}

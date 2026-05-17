@@ -1,0 +1,39 @@
+---
+description: Always-on ANVL working agreement. Read first; defers to AGENTS.md and the audit task list for specifics.
+alwaysApply: true
+---
+
+# ANVL working agreement
+
+You are working on the ANVL Athletics storefront + admin CMS (TanStack Start + React 19 + Vite + Tailwind v4 + Zod). Before doing anything else for a non-trivial task:
+
+1. **Read `AGENTS.md`** (project rules — brand identity, tech stack, non-negotiables, docs-by-task-type).
+2. **Read `docs/audit-2026-05-17.md`** for the active task list (Phases A–J) and the stable finding IDs (`SEC-*`, `PERF-*`, `REU-*`, `RESP-*`, `MAINT-*`).
+3. **Pick or confirm the finding ID(s) you are addressing** and reference them in commit messages and the PR title (example: `fix(security): allowlist CMS href schemes — addresses SEC-04`).
+4. **Update `docs/audit-2026-05-17.md`** when you complete a task (mark the task as done with the commit SHA / PR number) and **append a changelog entry** to `docs/changelog.md` per AGENTS.md rule 14.
+
+## Phase-aware focus areas
+
+The other rule files in `.cursor/rules/` codify the audit phases as concrete do/don't lists. They will auto-attach by glob/description. Always:
+
+- **Security** (`10-security.mdc`) — admin auth stays as the documented temporary static env-file gate (`SEC-01`/`02`/`03`/`11` are tracked as hosted-demo blockers in `docs/technical-debt.md`); never re-bundle new secrets, never relax existing sanitizers.
+- **Performance & bundle** (`20-performance-bundle.mdc`) — code-split admin, keep the storefront graph free of admin imports, watch for regression in `pnpm analyze`.
+- **Responsiveness, a11y, smoothness** (`30-responsiveness-a11y.mdc`) — mobile-first, gate GSAP on viewport **and** reduced-motion, focus-ring everywhere, ≥44 px touch targets.
+- **SOLID & maintainability** (`40-solid-maintainability.mdc`) — keep files small, split tabs into hooks + presentational components, no side effects in render.
+- **Testing** (`50-testing.mdc`) — every non-trivial change ships with at least one Vitest test; run `pnpm verify` before declaring done.
+
+## Definition of done (every task)
+
+1. `pnpm typecheck` passes.
+2. `pnpm test` passes (and includes new/updated tests for the change).
+3. `pnpm build` passes.
+4. If the change is visual/UX, manual notes (with screenshots/video for UI) accompany the PR.
+5. `docs/changelog.md` updated.
+6. `docs/audit-2026-05-17.md` task statuses updated where applicable.
+7. Affected feature doc in `docs/features/` updated when behavior changes.
+
+## Things that are **not** in scope right now
+
+- Replacing the static `VITE_ANVL_ADMIN_*` admin auth — keep it as the documented temporary gate until a real auth provider lands. Do not refactor `src/features/admin/auth/**` semantics; you may improve sanitization, focus-trap, or UI of those pages, but the auth model stays.
+- Mass dependency upgrades. Pin first (`SEC-23`/Phase A4 done), upgrade later via a focused PR.
+- Replacing `framer-motion`, `lenis`, or `gsap` with an alternative motion stack. Removing one of them after confirming zero usage is fine (Phase F6).

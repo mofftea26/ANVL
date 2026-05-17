@@ -43,20 +43,26 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 14. Every task must update the affected docs in `/docs` and add an entry to `/docs/changelog.md`.
 
 ## Required docs to read by task type
+- **Every task:** read `/docs/audit-2026-05-17.md` (active Phase A–J task list with stable finding IDs) and the matching `.cursor/rules/*.mdc` rule files. Reference the finding IDs (`SEC-04`, `PERF-02`, etc.) in commit messages and PR titles.
 - Architecture or folder work: read `/docs/architecture.md`, `/docs/cursor-workflow.md`
 - Landing page/drop work: read `/docs/features/drops-cms.md`, `/docs/features/acts-builder.md`, `/docs/design-system.md`
 - Product/shop work: read `/docs/features/products-commerce.md`
 - SEO work: read `/docs/features/seo.md`
 - Auth/account/orders work: read `/docs/features/auth-accounts-orders.md`
 - Backend/API work: read `/docs/backend-medusa-roadmap.md`
-- Performance/security/a11y: read `/docs/performance-accessibility-security.md`
+- Performance/security/a11y: read `/docs/performance-accessibility-security.md` plus `/docs/audit-2026-05-17.md` §2–§5
+
+## Admin auth — locked
+The admin gate (`src/features/admin/auth/**`) is a **temporary static `VITE_ANVL_ADMIN_*` env-file gate**, intentionally retained until a real auth provider lands (Phase J1). Do **not** refactor its auth model, change its storage strategy, or expand the surface in this phase. UI polish (focus trap, copy, error messages) is fine; semantics must not change. Hosted-demo blockers `SEC-01` / `SEC-02` / `SEC-03` / `SEC-11` live in `/docs/technical-debt.md`.
 
 ## Definition of done
 A task is done only when:
-- It builds without TypeScript errors.
+- `pnpm verify` passes (`typecheck` + `test` + `build`).
+- New behavior is covered by Vitest tests (unit and/or integration). See `/docs/audit-2026-05-17.md` Phase A1 and `.cursor/rules/50-testing.mdc`.
 - It does not break SSR.
-- It preserves mobile performance.
-- It has clear data types and schemas.
-- It follows feature boundaries.
-- It updates docs and changelog.
-- It includes basic manual test notes in the final response.
+- It preserves mobile performance and accessibility (see `.cursor/rules/30-responsiveness-a11y.mdc`).
+- It has clear data types and Zod schemas where external/CMS data is involved.
+- It follows feature boundaries (`.cursor/rules/40-solid-maintainability.mdc`).
+- `/docs/changelog.md` is updated.
+- `/docs/audit-2026-05-17.md` task statuses are updated where applicable.
+- For UI changes, a manual test note + screenshot/video is included in the PR.

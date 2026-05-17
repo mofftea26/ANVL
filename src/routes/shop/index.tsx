@@ -43,7 +43,7 @@ export const Route = createFileRoute('/shop/')({
       title: loaderData?.seoDoc?.title ?? 'Shop | ANVL Athletics',
       description:
         loaderData?.seoDoc?.description ??
-        'Browse ANVL Athletics premium gymwear ΓÇö filters, search, and drop releases.',
+        'Browse ANVL Athletics premium gymwear — filters, search, and drop releases.',
       path: '/shop',
       image: loaderData?.seoDoc?.ogImage,
       ogTitle: loaderData?.seoDoc?.ogTitle,
@@ -109,7 +109,9 @@ function ShopPage() {
 
           <div className="min-w-0 flex-1 space-y-6">
             <header>
-              <h1 className="anvl-heading text-6xl">Shop</h1>
+              <h1 className="anvl-heading text-4xl sm:text-5xl md:text-6xl">
+                Shop
+              </h1>
               <p className="mt-2 text-sm text-[var(--color-text-muted)]">
                 {deferredFiltered.length} piece{deferredFiltered.length === 1 ? '' : 's'} match your
                 filters.

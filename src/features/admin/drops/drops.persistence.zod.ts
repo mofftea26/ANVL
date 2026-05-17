@@ -124,7 +124,7 @@ const waitlistFormSchema = z.object({
   successToast: z.string(),
 })
 
-const dropLandingContentSchema = z.object({
+export const dropLandingContentSchema = z.object({
   hero: z.object({
     actLabel: z.string(),
     badgeText: z.string(),

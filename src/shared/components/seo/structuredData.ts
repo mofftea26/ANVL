@@ -1,8 +1,16 @@
 import { BRAND } from '@/shared/constants/brand'
+import { upgradeHttpToHttps } from '@/shared/lib/url'
 import type { Product } from '@/features/products/types/product.types'
 
+/**
+ * Resolves a CMS image src to an absolute URL suitable for SEO/JSON-LD
+ * surfaces. Always returns https — mixed-content http:// values are
+ * upgraded (SEC-15 / Phase B7).
+ */
 function absoluteImageUrl(src: string): string {
-  if (src.startsWith('http://') || src.startsWith('https://')) return src
+  if (src.startsWith('http://') || src.startsWith('https://')) {
+    return upgradeHttpToHttps(src)
+  }
   return `${BRAND.canonicalBaseUrl}${src.startsWith('/') ? '' : '/'}${src}`
 }
 

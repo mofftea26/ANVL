@@ -1,5 +1,4 @@
 import { useRef } from 'react'
-import { Link } from '@tanstack/react-router'
 import type {
   CmsCta,
   CmsStatItem,
@@ -7,6 +6,7 @@ import type {
 } from '@/features/cms/landing/landingPageCms.types'
 import { AnvlWordmark } from '@/shared/assets/brand'
 import { Container } from '@/shared/components/ui/Container'
+import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 import type { Product } from '@/features/products/types/product.types'
 
@@ -63,10 +63,12 @@ export function DropRevealSection({
     () => {
       const ctx = gsap.matchMedia()
 
+      // RESP-03 — gate timelines on both viewport AND reduced motion so
+      // mobile users get the static final state by default.
       ctx.add(
         {
-          motionOk: '(prefers-reduced-motion: no-preference)',
-          reduced: '(prefers-reduced-motion: reduce)',
+          motionOk: '(min-width: 768px) and (prefers-reduced-motion: no-preference)',
+          reduced: '(max-width: 767px), (prefers-reduced-motion: reduce)',
         },
         (context) => {
           const conds = context.conditions ?? {}
@@ -271,19 +273,19 @@ export function DropRevealSection({
           data-drop-cta="true"
           className="mt-6 flex flex-wrap items-center gap-3 will-change-transform sm:mt-8"
         >
-          <Link
-            to={primaryCta.href}
+          <SafeLink
+            href={primaryCta.href}
             className="focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-5 text-sm font-semibold text-[var(--color-bg)] no-underline transition-transform hover:-translate-y-0.5"
           >
             {primaryCta.label}
-          </Link>
-          <Link
-            to={secondaryCta.href}
+          </SafeLink>
+          <SafeLink
+            href={secondaryCta.href}
             className="focus-ring inline-flex h-11 items-center gap-2 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)]/70 px-5 text-sm font-semibold no-underline backdrop-blur transition-transform hover:-translate-y-0.5"
           >
             {secondaryCta.label}
             <span aria-hidden="true">↓</span>
-          </Link>
+          </SafeLink>
         </div>
       </Container>
     </section>

@@ -6,6 +6,10 @@ import {
 } from './products.defaults'
 import { readProductsRaw, writeProductsRaw, isBrowser } from './products.storage'
 import { rebuildAvailabilityMatrix } from './products.matrix'
+import {
+  persistedProductSchema,
+  productsPersistedPayloadSchema,
+} from './products.persistence.zod'
 
 export type ProductsPersistedState = {
   products: AdminProduct[]
@@ -15,16 +19,31 @@ export function deriveSourceType(dropIds: string[]): ProductSourceType {
   return dropIds.length > 0 ? 'drop' : 'individual'
 }
 
-function mergeProducts(stored: Partial<ProductsPersistedState> | null): AdminProduct[] {
+/**
+ * Validates each persisted product row with Zod and drops malformed
+ * entries (audit SEC-07 / Phase C2). When the entire payload is missing
+ * or every row is invalid, falls back to seed defaults instead of
+ * trusting an `as` cast.
+ *
+ * Matches the drops pattern: tolerant of single bad rows so an editor's
+ * mid-migration save doesn't wipe valid neighbors, but never lets
+ * unvalidated data hit the rest of the admin runtime.
+ */
+function mergeProducts(stored: unknown): AdminProduct[] {
   const defaults = createSeedAdminProductsFromMock()
-  if (
-    !stored ||
-    typeof stored !== 'object' ||
-    !Array.isArray(stored.products) ||
-    stored.products.length === 0
-  )
-    return defaults
-  return stored.products as AdminProduct[]
+  const outerResult = productsPersistedPayloadSchema.safeParse(stored)
+  if (!outerResult.success) return defaults
+  const rows = outerResult.data.products
+  if (!Array.isArray(rows) || rows.length === 0) return defaults
+  const validated: AdminProduct[] = []
+  for (const row of rows) {
+    const rowResult = persistedProductSchema.safeParse(row)
+    if (rowResult.success) {
+      validated.push(rowResult.data as AdminProduct)
+    }
+  }
+  if (validated.length === 0) return defaults
+  return validated
 }
 
 export function hydrateAdminProductFromStorage(p: AdminProduct): AdminProduct {
@@ -117,16 +136,13 @@ export function ensureProductsSeededWhenEmpty(): void {
 export function getAdminProducts(): AdminProduct[] {
   const raw = readProductsRaw()
   if (!raw) return createSeedAdminProductsFromMock().map(hydrateAdminProductFromStorage)
+  let parsed: unknown
   try {
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== 'object')
-      return createSeedAdminProductsFromMock().map(hydrateAdminProductFromStorage)
-    return mergeProducts(parsed as Partial<ProductsPersistedState>).map(
-      hydrateAdminProductFromStorage,
-    )
+    parsed = JSON.parse(raw)
   } catch {
     return createSeedAdminProductsFromMock().map(hydrateAdminProductFromStorage)
   }
+  return mergeProducts(parsed).map(hydrateAdminProductFromStorage)
 }
 
 export function getAdminProductBySlug(slug: string): AdminProduct | undefined {

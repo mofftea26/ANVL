@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import type { Product } from '@/features/products/types/product.types'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { Container } from '@/shared/components/ui/Container'
+import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 
 interface PiecesGridProps {
@@ -42,10 +43,12 @@ export function PiecesGrid({
     () => {
       const ctx = gsap.matchMedia()
 
+      // RESP-03 — gate timelines on both viewport AND reduced motion so
+      // mobile users get the static final state by default.
       ctx.add(
         {
-          motionOk: '(prefers-reduced-motion: no-preference)',
-          reduced: '(prefers-reduced-motion: reduce)',
+          motionOk: '(min-width: 768px) and (prefers-reduced-motion: no-preference)',
+          reduced: '(max-width: 767px), (prefers-reduced-motion: reduce)',
         },
         (context) => {
           const conds = context.conditions ?? {}
@@ -171,24 +174,28 @@ export function PiecesGrid({
             </h2>
           </div>
 
-          <Link
+          <SafeLink
             data-pieces-meta="true"
-            to={viewAllHref}
-            className="anvl-micro inline-flex items-center gap-2 self-start will-change-transform sm:self-end"
+            href={viewAllHref}
+            className="anvl-micro focus-ring inline-flex items-center gap-2 self-start will-change-transform sm:self-end"
           >
             {viewAllLabel}
             <span aria-hidden="true">→</span>
-          </Link>
+          </SafeLink>
         </div>
 
-        <div className="mx-auto mt-8 grid w-full max-w-3xl grid-cols-3 gap-3 sm:mt-10 sm:gap-5">
+        {/*
+          RESP-08 — 3 columns at 320 px squeezes type and tap targets.
+          Two columns on phones, three on sm+ (default Tailwind sm = 640 px).
+        */}
+        <div className="mx-auto mt-8 grid w-full max-w-3xl grid-cols-2 gap-3 sm:mt-10 sm:grid-cols-3 sm:gap-5">
           {products.map((product, index) => (
             <Link
               key={product.id}
               data-pieces-card="true"
               to="/shop/$slug"
               params={{ slug: product.slug }}
-              className="group flex flex-col overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] no-underline transition will-change-transform hover:-translate-y-0.5"
+              className="group focus-ring flex flex-col overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] no-underline transition will-change-transform hover:-translate-y-0.5"
             >
               <div className="relative aspect-[4/5] overflow-hidden border-b border-[var(--color-line)]">
                 <img
@@ -229,13 +236,13 @@ export function PiecesGrid({
           <p className="anvl-micro text-[var(--color-text-muted)]">
             {footerLeftText}
           </p>
-          <Link
-            to={footerLinkHref}
-            className="anvl-micro inline-flex items-center gap-2 text-[var(--color-heading)] no-underline underline-offset-4 hover:underline"
+          <SafeLink
+            href={footerLinkHref}
+            className="anvl-micro focus-ring inline-flex items-center gap-2 text-[var(--color-heading)] no-underline underline-offset-4 hover:underline"
           >
             {footerLinkLabel}
             <span aria-hidden="true">→</span>
-          </Link>
+          </SafeLink>
         </div>
       </Container>
     </section>

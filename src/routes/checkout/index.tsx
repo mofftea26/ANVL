@@ -74,7 +74,9 @@ function CheckoutPage() {
   return (
     <Section>
       <Container>
-        <h1 className="anvl-heading text-6xl">Checkout</h1>
+        <h1 className="anvl-heading text-4xl sm:text-5xl md:text-6xl">
+          Checkout
+        </h1>
         <p className="mt-3 max-w-2xl text-sm text-[var(--color-text-muted)]">
           Guest checkout — no account required. Create an account after your order when accounts launch.
         </p>
@@ -182,13 +184,14 @@ function CheckoutPage() {
             <div className="mt-4 space-y-2 text-sm">
               {lines.map((line) => (
                 <div
-                  className="flex items-center justify-between"
+                  className="flex items-center justify-between gap-3"
                   key={`${line.productId}:${line.size}:${line.colorway}`}
                 >
-                  <span>
+                  {/* min-w-0 + break-words let long CMS product names wrap instead of pushing the price off-screen (RESP-06). */}
+                  <span className="min-w-0 break-words">
                     {line.name} x {line.quantity}
                   </span>
-                  <span>${(line.price * line.quantity).toFixed(2)}</span>
+                  <span className="shrink-0">${(line.price * line.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>

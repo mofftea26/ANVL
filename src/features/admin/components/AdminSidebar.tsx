@@ -30,7 +30,7 @@ export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
     >
       <Link
         to="/admin"
-        className="flex items-center gap-2 text-[var(--color-heading)] no-underline"
+        className="focus-ring flex items-center gap-2 rounded-md text-[var(--color-heading)] no-underline"
         onClick={onNavigate}
       >
         <AnvlCompactMark className="h-7 w-auto" aria-hidden="true" />
@@ -59,7 +59,7 @@ export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
                       to={item.href}
                       onClick={onNavigate}
                       className={cn(
-                        'block rounded-md border px-3 py-2.5 text-sm no-underline transition',
+                        'focus-ring block rounded-md border px-3 py-2.5 text-sm no-underline transition',
                         isActive
                           ? 'border-[var(--color-accent)]/40 bg-[var(--color-surface-elevated)] text-[var(--color-heading)]'
                           : 'border-transparent text-[var(--color-text-muted)] hover:border-[var(--color-line)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)]',
