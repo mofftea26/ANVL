@@ -46,8 +46,10 @@ function CartPage() {
                   className="grid gap-4 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4 md:grid-cols-[90px_1fr_auto]"
                 >
                   <img src={line.image} alt={`${line.name} in ${line.colorway}`} className="aspect-square w-full rounded-md object-cover" />
-                  <div>
-                    <h2 className="anvl-heading text-3xl">{line.name}</h2>
+                  <div className="min-w-0">
+                    <h2 className="anvl-heading break-words text-2xl sm:text-3xl">
+                      {line.name}
+                    </h2>
                     <p className="text-xs text-[var(--color-text-muted)]">{line.colorway} / {line.size}</p>
                     <p className="mt-1 text-sm">${line.price}</p>
                   </div>

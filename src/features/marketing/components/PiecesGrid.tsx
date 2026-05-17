@@ -182,7 +182,11 @@ export function PiecesGrid({
           </SafeLink>
         </div>
 
-        <div className="mx-auto mt-8 grid w-full max-w-3xl grid-cols-3 gap-3 sm:mt-10 sm:gap-5">
+        {/*
+          RESP-08 — 3 columns at 320 px squeezes type and tap targets.
+          Two columns on phones, three on sm+ (default Tailwind sm = 640 px).
+        */}
+        <div className="mx-auto mt-8 grid w-full max-w-3xl grid-cols-2 gap-3 sm:mt-10 sm:grid-cols-3 sm:gap-5">
           {products.map((product, index) => (
             <Link
               key={product.id}

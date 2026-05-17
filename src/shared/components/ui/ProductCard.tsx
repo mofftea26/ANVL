@@ -62,10 +62,11 @@ export const ProductCard = memo(function ProductCard({ product }: { product: Pro
         </div>
         <div className="space-y-3 p-4">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="anvl-heading text-2xl">
+            {/* min-w-0 lets long CMS names truncate / wrap instead of pushing the price off-card (RESP-06). */}
+            <h3 className="anvl-heading min-w-0 break-words text-2xl">
               {stripAngleBracketTags(product.name)}
             </h3>
-            <div className="text-right text-sm">
+            <div className="shrink-0 text-right text-sm">
               {showCompare && shop ? (
                 <p className="text-[var(--color-text-muted)] line-through">
                   ${shop.compareAtPrice}
