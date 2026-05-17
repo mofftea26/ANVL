@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import type { LandingNavigationContent } from '@/features/admin/landing-cms/landingCms.types'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
@@ -70,9 +71,11 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
               return (
                 <nav key={group.id} className="space-y-2 text-sm">
                   {group.title ? (
-                    <p className="anvl-micro mb-2 text-[10px] text-[var(--color-text-muted)]">
+                    /* RESP-10 — promote to heading so the footer participates
+                       in the document outline; visual styling unchanged. */
+                    <h3 className="anvl-micro mb-2 text-[10px] font-normal text-[var(--color-text-muted)]">
                       {stripAngleBracketTags(group.title)}
-                    </p>
+                    </h3>
                   ) : null}
                   {links.map((link, index) => (
                     <span key={link.id ?? link.href}>
@@ -100,14 +103,30 @@ export function SiteFooter({ navigation }: SiteFooterProps) {
         )}
 
         <div>
-          <p className="anvl-micro mb-3">{navigation.newsletterTitle}</p>
-          <div className="flex gap-2">
+          {/* RESP-10 — promote newsletter title to <h3> for document outline. */}
+          <h3 className="anvl-micro mb-3 font-normal">
+            {stripAngleBracketTags(navigation.newsletterTitle)}
+          </h3>
+          {/* RESP-10 — wrap in <form> so the Enter key submits and screen
+              readers announce the form context. The handler is a placeholder
+              toast until the real newsletter backend lands. */}
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault()
+              toast.success('Thanks — we’ll be in touch.')
+              event.currentTarget.reset()
+            }}
+          >
             <Input
+              type="email"
+              name="email"
+              required
               aria-label="Email for newsletter"
               placeholder={navigation.newsletterPlaceholder}
             />
-            <Button type="button">{navigation.newsletterButtonText}</Button>
-          </div>
+            <Button type="submit">{navigation.newsletterButtonText}</Button>
+          </form>
           {social.length > 0 ? (
             <ul className="mt-4 flex flex-wrap gap-3 text-xs">
               {social.map((item) => (

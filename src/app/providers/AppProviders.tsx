@@ -18,7 +18,18 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <Toaster richColors position="top-right" />
+      {/*
+        RESP-11 — bottom-center reads well on mobile (doesn't fight the
+        sticky header) and on desktop (sits above the fold without
+        obscuring primary chrome). `mobileOffset` raises the toast above
+        the iPhone home indicator + the PDP sticky purchase bar.
+      */}
+      <Toaster
+        richColors
+        position="bottom-center"
+        offset={16}
+        mobileOffset={{ bottom: 96 }}
+      />
     </QueryClientProvider>
   )
 }
