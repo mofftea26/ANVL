@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { DEFAULT_EMBLEM_URL, getGlobalBrandSettings } from '@/features/cms/read/themeBrandDefaults'
+import type { GlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.types'
 import type { DropThemePalette } from '@/features/drops/theme/dropThemePalette.types'
 import { dropPaletteToCssProperties } from '@/features/cms/theme/dropPaletteStyle'
 
@@ -35,14 +36,18 @@ export function DropPreviewThemeScope({
   )
 }
 
-export function previewLoadingSrc(drop?: {
-  visuals: { loadingEmblemUrl?: string; emblemImageUrl: string }
-}): string {
+export function previewLoadingSrc(
+  drop?: {
+    visuals: { loadingEmblemUrl?: string; emblemImageUrl: string }
+  },
+  /** When set (e.g. from published Supabase projection), matches SSR without reading localStorage. */
+  publishedGlobalBrand?: GlobalBrandSettings | null,
+): string {
   const fromDrop =
     drop?.visuals.loadingEmblemUrl?.trim() ||
     drop?.visuals.emblemImageUrl?.trim()
   if (fromDrop) return fromDrop
-  const g = getGlobalBrandSettings()
+  const g = publishedGlobalBrand ?? getGlobalBrandSettings()
   return (
     g.loadingEmblemFallbackUrl.trim() ||
     g.emblemFallbackUrl.trim() ||

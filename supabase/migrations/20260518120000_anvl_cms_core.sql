@@ -103,12 +103,12 @@ $$;
 CREATE TRIGGER anvl_drops_touch_updated_at
   BEFORE UPDATE ON public.anvl_drops
   FOR EACH ROW
-  EXECUTE PROCEDURE public.touch_row_updated_at();
+  EXECUTE FUNCTION public.touch_row_updated_at();
 
 CREATE TRIGGER cms_admin_products_touch_updated_at
   BEFORE UPDATE ON public.cms_admin_products
   FOR EACH ROW
-  EXECUTE PROCEDURE public.touch_row_updated_at();
+  EXECUTE FUNCTION public.touch_row_updated_at();
 
 -- ---------------------------------------------------------------------------
 -- Publish RPC: editor/admin only; transactional; single active drop.

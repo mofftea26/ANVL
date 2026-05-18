@@ -11,6 +11,20 @@
  *
  * If you add a new persisted key, add it here first, then reference it
  * from the matching `*.storage.ts` channel.
+ *
+ * Supabase counterpart (when `VITE_SUPABASE_URL` + anon key are set):
+ *   - `drops` / `activeDropId` → `public.anvl_drops` drafts + `active_drop_id`
+ *     on `storefront_publication`; published drop is `published_drop_snapshot`.
+ *   - `products` → `public.cms_admin_products`; published catalog array is
+ *     `storefront_publication.products_snapshot` (+ `catalog_drop_index`).
+ *   - `websiteLayout` → draft: admin persistence TBD; published:
+ *     `storefront_publication.website_layout`.
+ *   - `globalBrand` → published: `storefront_publication.global_brand` (optional jsonb).
+ *   - `siteSeo` → published: `storefront_publication.site_seo`.
+ *   - `landingCmsLegacy` → migrate to `storefront_publication.legacy_landing_cms`
+ *     or fold into drop/layout; local key until removed.
+ *   - `dropThemePalettePresets` → **local-only** admin convenience (or future per-user row).
+ *   - `dropEditorPreviewSplitPx` → **local-only** UI splitter width.
  */
 export const ADMIN_STORAGE_KEYS = {
   drops: 'ANVL_DROPS',

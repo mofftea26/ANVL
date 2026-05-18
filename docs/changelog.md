@@ -1,4 +1,12 @@
 ﻿
+## 2026-05-18 — Supabase: publication catalog snapshot + storefront commerce read path
+
+- **Schema:** Migration **`20260518140000_storefront_publication_catalog.sql`** adds **`products_snapshot`**, **`catalog_drop_index`**, **`global_brand`**, **`campaigns`**, **`lookbook`**, **`legacy_landing_cms`** on **`storefront_publication`**; **`cms_publish_drop`** now aggregates **`cms_admin_products`** into **`products_snapshot`** and rebuilds **`catalog_drop_index`** from **`anvl_drops`** referenced by product **`dropIds`**.
+- **App:** **`publicStorefrontPublication`** selects/normalizes the new columns (Zod parity with **`persistedProductSchema`**, catalog index, global brand merge, campaigns/lookbook). **`supabaseCommerceClient`** serves **`CommerceClient`** from the published projection on SSR and CSR when Supabase env is set (**`createRuntimeClients`**). **`supabaseStorefrontReaders`** uses layout for announcement bar and publication rows for campaigns/lookbook when present. Root loader / theme bridge can consume published **`globalBrand`**.
+- **Bootstrap:** **`tools/genBootstrapSql.mjs`** / **`tools/oath-bootstrap.sql`** reset and set the new publication columns for idempotent Oath seeds.
+- **Docs / DX:** **`.env.example`**, **`storageKeys.ts`** mapping comment, **`docs/features/drops-cms.md`**, **`docs/features/supabase-cms.md`**, **`publicStorefrontPublication.test.ts`** (extended normalization cases).
+- Tests / verify: **`pnpm verify`**.
+
 ## 2026-05-18 — Supabase: published storefront CMS + Edge publish stubs
 
 - **Backend / CMS:** Added tracked migration **`supabase/migrations/20260518120000_anvl_cms_core.sql`** (`storefront_publication`, `anvl_drops`, `cms_profiles`, `cms_admin_products`, RLS, **`cms_publish_drop`** RPC). Edge Functions **`publish-storefront`** (forward JWT → RPC) and **`medusa-webhook-stub`** (shared secret placeholder).

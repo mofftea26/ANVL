@@ -2,6 +2,7 @@ import { readDropsArray } from '@/features/admin/drops/drops.service'
 import type {
   Product,
   ProductShopMeta,
+  ShopDropFilterOption,
   StorefrontProductStatus,
 } from '@/features/products/types/product.types'
 import type { AdminProduct, ProductImage, ProductSize } from './products.types'
@@ -57,14 +58,28 @@ function computeStorefrontStatus(p: AdminProduct): StorefrontProductStatus {
   return 'available'
 }
 
-function buildProductShopMeta(p: AdminProduct): ProductShopMeta {
-  const drops = readDropsArray()
+function dropsToShopFilterOptions(
+  drops: ReturnType<typeof readDropsArray>,
+): ShopDropFilterOption[] {
+  return drops.map((d) => ({
+    id: d.id,
+    slug: d.slug,
+    name: d.name,
+    dropNumber: d.dropNumber,
+  }))
+}
+
+/** Published storefront catalog uses {@link ShopDropFilterOption} rows instead of full {@link readDropsArray}. */
+export function buildProductShopMetaFromDropIndex(
+  p: AdminProduct,
+  dropIndex: ShopDropFilterOption[],
+): ProductShopMeta {
   const sortedColors = [...p.colors].sort((a, b) => a.name.localeCompare(b.name))
   const sizes = sortSizes(p.sizes)
 
   const primaryDropId = p.dropIds[0] ?? null
   const primaryDrop = primaryDropId
-    ? drops.find((d) => d.id === primaryDropId) ?? null
+    ? dropIndex.find((d) => d.id === primaryDropId) ?? null
     : null
 
   const availabilityByColorAndSize: Record<string, Record<string, number>> = {}
@@ -108,9 +123,14 @@ function buildProductShopMeta(p: AdminProduct): ProductShopMeta {
   }
 }
 
+function buildProductShopMeta(p: AdminProduct): ProductShopMeta {
+  return buildProductShopMetaFromDropIndex(p, dropsToShopFilterOptions(readDropsArray()))
+}
+
 export function adminProductToLegacy(
   p: AdminProduct,
   dropDisplayName: string,
+  options?: { dropIndex?: ShopDropFilterOption[] },
 ): Product {
   const sortedColors = [...p.colors].sort((a, b) => a.name.localeCompare(b.name))
   const sizes = sortSizes(p.sizes).map((s) => s.label)
@@ -131,6 +151,10 @@ export function adminProductToLegacy(
     accent: c.hex,
   }))
 
+  const shop = options?.dropIndex
+    ? buildProductShopMetaFromDropIndex(p, options.dropIndex)
+    : buildProductShopMeta(p)
+
   return {
     id: p.id,
     slug: p.slug,
@@ -150,7 +174,7 @@ export function adminProductToLegacy(
     sizes: sizes.length > 0 ? sizes : ['M'],
     price: effectivePrice(p),
     images: legacyImages,
-    shop: buildProductShopMeta(p),
+    shop,
   }
 }
 

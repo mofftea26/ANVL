@@ -20,15 +20,42 @@ import appCss from "@/styles.css?url";
 import manropeLatinWoff2 from "@fontsource/manrope/files/manrope-latin-400-normal.woff2?url";
 import bebasLatinWoff2 from "@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2?url";
 
+import { composeLandingPageFromDrop } from '@/features/cms/landing/composeLandingPageFromDrop'
+import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import { fetchPublishedStorefrontProjection } from '@/features/cms/api/publicStorefrontPublication'
+import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
+
 const IS_DEV = import.meta.env.DEV;
 
 export const Route = createRootRoute({
   loader: async () => {
+    const env = getSupabasePublicEnv();
+    if (env) {
+      try {
+        const p = await fetchPublishedStorefrontProjection(env);
+        if (p) {
+          return {
+            landing: composeLandingPageFromDrop(
+              structuredClone(p.drop),
+              structuredClone(p.layout),
+            ),
+            activeDrop: p.drop,
+            globalBrand: p.globalBrand,
+          };
+        }
+      } catch {
+        /* missing project / network */
+      }
+    }
     const [landing, activeDrop] = await Promise.all([
       runtimeClients.cms.getLandingCmsContent(),
       runtimeClients.cms.getActiveDrop(),
     ]);
-    return { landing, activeDrop };
+    return {
+      landing,
+      activeDrop,
+      globalBrand: createDefaultGlobalBrandSettings(),
+    };
   },
   head: () => ({
     meta: [
@@ -77,7 +104,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 }
 
 function RootLayout() {
-  const { landing: ssrLanding, activeDrop } = Route.useLoaderData();
+  const { landing: ssrLanding, activeDrop, globalBrand } = Route.useLoaderData();
   const landing = useLandingCms(ssrLanding);
   const navigation = landing.navigation;
   const pathname = useRouterState({
@@ -114,7 +141,7 @@ function RootLayout() {
 
   return (
     <>
-      <ActiveDropThemeProvider initialDrop={activeDrop}>
+      <ActiveDropThemeProvider initialDrop={activeDrop} initialGlobalBrand={globalBrand}>
         <RouteAnalytics />
         <StickyHeader navigation={navigation} />
         <main>

@@ -73,12 +73,33 @@ export function createSupabaseCmsPublicReadSlice(
     },
 
     async getAnnouncementBar() {
-      return cmsMockData.announcementBar
+      const landing = await loadLandingResolved()
+      const a = landing.navigation.announcement
+      if (a?.enabled && a.message.trim()) {
+        return {
+          message: a.message,
+          ctaLabel: a.href?.trim() ? 'Open' : '',
+          ctaHref: a.href?.trim() ?? '#',
+        }
+      }
+      return { message: '', ctaLabel: '', ctaHref: '#' }
     },
     async getCampaigns() {
+      try {
+        const p = await fetchPublishedStorefrontProjection(env)
+        if (p) return p.campaigns
+      } catch {
+        /* */
+      }
       return cmsMockData.campaigns
     },
     async getLookbook() {
+      try {
+        const p = await fetchPublishedStorefrontProjection(env)
+        if (p) return p.lookbook
+      } catch {
+        /* */
+      }
       return cmsMockData.lookbook
     },
   }

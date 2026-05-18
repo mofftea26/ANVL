@@ -1,4 +1,5 @@
 import { previewLoadingSrc } from '@/app/providers/ActiveDropThemeBridge'
+import { useStorefrontPublishedGlobalBrand } from '@/app/providers/ActiveDropThemeProvider'
 import { resolveStorefrontActiveDrop } from '@/features/cms/runtime/storefrontCmsSync'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { cn } from '@/shared/lib/cn'
@@ -13,7 +14,8 @@ export function DropLoadingIndicator({
   className,
 }: DropLoadingIndicatorProps) {
   const drop = resolveStorefrontActiveDrop()
-  const src = previewLoadingSrc(drop ?? undefined)
+  const publishedBrand = useStorefrontPublishedGlobalBrand()
+  const src = previewLoadingSrc(drop ?? undefined, publishedBrand)
 
   return (
     <div

@@ -103,7 +103,18 @@ The CMS must show a live preview while editing:
 
 ### Supabase publish path (MVP)
 
-When **`VITE_SUPABASE_URL`** and an anon key are configured, the **live storefront** reads **`storefront_publication`** (published drop snapshot + layout + optional `site_seo`) so SSR matches all visitors. **Publishing** (copy draft → snapshot, single active drop) is **`cms_publish_drop`** in SQL or the **`publish-storefront`** Edge Function with an authenticated CMS JWT. Editor persistence to `anvl_drops` and Supabase Auth for admins remain follow-ups; see **`docs/features/supabase-cms.md`**.
+When **`VITE_SUPABASE_URL`** and an anon key are configured, the **live storefront** reads **`storefront_publication`** (singleton `id = 1`) so SSR and anonymous clients match:
+
+- **`published_drop_snapshot`** — full **`persistedDropSchema`** drop (theme, visuals, landing, acts, SEO, product ids, etc.).
+- **`website_layout`** — **`persistedWebsiteLayoutSchema`** (includes **`header.announcement`**; **`getAnnouncementBar`** in the Supabase read slice prefers this so nav chrome is a single source).
+- **`site_seo`** — same shape as **`parseSiteSeoUnknown`** / `SiteSeoContent`.
+- **`products_snapshot`** — jsonb array of **`persistedProductSchema`** rows copied from **`cms_admin_products`** on publish (shop + PDP use **`CommerceClient`** backed by this snapshot when Supabase is on).
+- **`catalog_drop_index`** — `{ id, slug, name, dropNumber }[]` for drops referenced by catalog products (filters / PDP “drop” label meta).
+- **`global_brand`** — optional **`persistedGlobalBrandSchema`** (emblem fallbacks); merged with app defaults when null/invalid.
+- **`campaigns`**, **`lookbook`** — public homepage cards / tiles; when non-empty, Supabase readers stop returning CMS mocks for these slices.
+- **`legacy_landing_cms`** — optional blob reserved for migrating off **`anvl.landingCms.v1`**.
+
+**Publishing** (demote other actives, copy winning draft → snapshot, refresh catalog snapshots) is **`cms_publish_drop(uuid)`** (`SECURITY DEFINER`, **`cms_profiles`** roles **`editor` / `admin`**) or the **`publish-storefront`** Edge Function forwarding the user JWT. Product edits in **`cms_admin_products`** appear on the storefront after the next publish (or a future trigger). Editor persistence from the React admin to Supabase tables and Auth replacing **`VITE_ANVL_ADMIN_*`** are tracked in **`docs/features/supabase-cms.md`**.
 
 ### Preview-centric editor layout
 - `DropEditorRoute` uses a **two-column flex row** from the **`xl` breakpoint** so tablet-width viewports stay **single-column** (no cramped split). Below `xl`, **Hide / Show live preview** on the **Live preview** card header (**`AdminCard` actions**, `xl:hidden`) collapses the preview chrome; **`xl`+** has no collapse control.

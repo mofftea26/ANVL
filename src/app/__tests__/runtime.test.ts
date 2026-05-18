@@ -1,10 +1,20 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('@/features/cms/api/supabasePublicEnv', () => ({
+  getSupabasePublicEnv: () => null,
+}))
+
 import { createRuntimeClients } from '@/app/config/runtime'
 
 /**
  * The runtime factory must hand out seed adapters during SSR (no
  * localStorage allowed) and the localStorage-backed adapters in the
  * browser. This is the contract every CMS read depends on (SEC-08).
+ *
+ * `getSupabasePublicEnv` is mocked off here so CI/developer machines with
+ * `VITE_SUPABASE_*` set still exercise the seed vs localStorage split; when
+ * Supabase is configured, server and browser intentionally share the same
+ * Supabase read singletons for CMS/commerce/SEO.
  */
 describe('createRuntimeClients', () => {
   it('returns seed clients when isServer is true', () => {
