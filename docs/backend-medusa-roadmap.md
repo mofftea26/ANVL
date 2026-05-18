@@ -47,6 +47,10 @@ Human-readable route grouping: `docs/contracts/README.md`.
 
 ## Suggested database tables for ANVL CMS
 ```txt
+storefront_publication (singleton published projection — implemented in Supabase MVP)
+anvl_drops (draft/published JSON — implemented)
+cms_profiles (auth-linked roles — implemented)
+cms_admin_products (editorial + medusa_product_id nullable — implemented)
 drops
 landing_acts
 drop_products

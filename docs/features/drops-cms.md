@@ -101,6 +101,10 @@ The CMS must show a live preview while editing:
 - Unknown act natures show an explicit CMS-only warning in preview (`cmsPreview`); unexpected render errors are caught by `DropEditorPreviewErrorBoundary` with a retry control.
 - Preview must not mutate published data until Save (draft state only until `saveDrop`).
 
+### Supabase publish path (MVP)
+
+When **`VITE_SUPABASE_URL`** and an anon key are configured, the **live storefront** reads **`storefront_publication`** (published drop snapshot + layout + optional `site_seo`) so SSR matches all visitors. **Publishing** (copy draft → snapshot, single active drop) is **`cms_publish_drop`** in SQL or the **`publish-storefront`** Edge Function with an authenticated CMS JWT. Editor persistence to `anvl_drops` and Supabase Auth for admins remain follow-ups; see **`docs/features/supabase-cms.md`**.
+
 ### Preview-centric editor layout
 - `DropEditorRoute` uses a **two-column flex row** from the **`xl` breakpoint** so tablet-width viewports stay **single-column** (no cramped split). Below `xl`, **Hide / Show live preview** on the **Live preview** card header (**`AdminCard` actions**, `xl:hidden`) collapses the preview chrome; **`xl`+** has no collapse control.
 - **Resizable split (`xl`+):** a vertical **sash** (separator) between **Live preview** and the form column supports **pointer-drag** with capture; preview width is clamped between **320px** and **70%** of the split container. The last width is persisted in **`localStorage`** (`ANVL_DROP_EDITOR_PREVIEW_SPLIT_PX`) when the drag ends (or when using **←/→** with the sash focused). The wrapper uses **`overflow-x-hidden`**, **`min-w-0`**, and **`overscroll-x-contain`** so dragging does not introduce horizontal **page** scroll; column width does not animate (compatible with **prefers-reduced-motion** expectations).

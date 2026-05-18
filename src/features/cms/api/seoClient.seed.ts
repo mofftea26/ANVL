@@ -13,6 +13,8 @@ const seedSeoCtx = {
   getDropBySlug: (slug: string) => getDropBySlug(slug),
 }
 
+export const seedSeoResolutionContext: typeof seedSeoCtx = seedSeoCtx
+
 export const seedSeoClient: SeoClient = {
   async getSeoByPath(path: string) {
     return resolveSeoByPath(path, seedSeoCtx)

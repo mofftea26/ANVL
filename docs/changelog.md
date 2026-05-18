@@ -1,4 +1,11 @@
 ﻿
+## 2026-05-18 — Supabase: published storefront CMS + Edge publish stubs
+
+- **Backend / CMS:** Added tracked migration **`supabase/migrations/20260518120000_anvl_cms_core.sql`** (`storefront_publication`, `anvl_drops`, `cms_profiles`, `cms_admin_products`, RLS, **`cms_publish_drop`** RPC). Edge Functions **`publish-storefront`** (forward JWT → RPC) and **`medusa-webhook-stub`** (shared secret placeholder).
+- **App:** When **`VITE_SUPABASE_URL`** + anon key are set, **`createRuntimeClients`** overlays Supabase **public read** slices for CMS landing/active drop, **website layout**, and **SEO** via **`publicStorefrontPublication`** (Zod parity with **`persistedDropSchema`** / layout schema). Admin list/mutations still use existing local adapters. **`tsconfig`** excludes **`supabase/functions/**`** from `tsc`.
+- **Docs / tests:** **`docs/features/supabase-cms.md`**, **`publicStorefrontPublication.test.ts`**, **`parseSiteSeoUnknown`** helper, **`seedSeoResolutionContext`** export.
+- Tests / verify: **`pnpm verify`**.
+
 ## 2026-05-18 — Drop editor live preview: ViewportIframe fills shell height
 
 - **UX:** **`ViewportIframe`** iframe uses **`flex-1 min-h-0 h-full max-w-full w-full`** (no **`62dvh`/`760px`** cap) so it consumes the **`drop-editor-viewport-iframe-shell`** height inside the gradient card; **`justify-start`** stays **top-aligned**. Shell adds **`overflow-hidden`** to reduce double-scrollbar risk.

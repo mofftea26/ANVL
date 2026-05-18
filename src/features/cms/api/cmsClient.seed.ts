@@ -1,5 +1,6 @@
 import type { CmsClient } from '@/app/config/clients'
 import { SEED_DROP } from '@/features/cms/api/seedSnapshots'
+import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import {
   getResolvedStorefrontLandingCmsSync,
   resolveStorefrontActiveDrop,
@@ -25,8 +26,8 @@ function seedDropListItem(): AdminDropListItem {
   }
 }
 
-function toLegacyHomepage(
-  landing: ReturnType<typeof getResolvedStorefrontLandingCmsSync>,
+export function landingCmsToLegacyHomepage(
+  landing: LandingPageCmsContent,
 ): HomePageContent {
   return {
     hero: {
@@ -63,7 +64,7 @@ export const seedCmsClient: CmsClient = {
     return structuredClone(getResolvedStorefrontLandingCmsSync())
   },
   async getHomepageContent() {
-    return toLegacyHomepage(getResolvedStorefrontLandingCmsSync())
+    return landingCmsToLegacyHomepage(getResolvedStorefrontLandingCmsSync())
   },
   async getAnnouncementBar() {
     return cmsMockData.announcementBar

@@ -81,6 +81,17 @@ export function defaultSiteSeoContent(): SiteSeoContent {
   }
 }
 
+/** Parse site SEO blob from DB (`storefront_publication.site_seo`) or unknown JSON. */
+export function parseSiteSeoUnknown(raw: unknown): SiteSeoContent {
+  if (raw == null) return defaultSiteSeoContent()
+  const r = siteSeoSchema.safeParse(raw)
+  if (!r.success) return defaultSiteSeoContent()
+  return {
+    globalDefaults: r.data.globalDefaults,
+    staticPages: r.data.staticPages ?? {},
+  }
+}
+
 function parseStored(raw: string | null): SiteSeoContent {
   if (!raw) return defaultSiteSeoContent()
   try {
