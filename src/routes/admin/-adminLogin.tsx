@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { Button } from '@/shared/components/ui/Button'
 import { Container } from '@/shared/components/ui/Container'
@@ -12,14 +13,23 @@ import { Input } from '@/shared/components/ui/Input'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 
 const schema = z.object({
-  username: z.string().min(1, 'Username is required'),
+  username: z.string().min(1, 'This field is required'),
   password: z.string().min(1, 'Password is required'),
 })
 
 type LoginFormValues = z.infer<typeof schema>
 
+const supabaseConfigured = Boolean(getSupabasePublicEnv())
+
 export function AdminLoginPageRoute() {
-  const { login, isAuthenticated, isHydrated } = useAdminAuth()
+  const {
+    login,
+    isAuthenticated,
+    isHydrated,
+    isRemoteCmsReady,
+    remoteHydrateError,
+    authMode,
+  } = useAdminAuth()
   const navigate = useNavigate()
 
   const form = useForm<LoginFormValues>({
@@ -28,13 +38,13 @@ export function AdminLoginPageRoute() {
   })
 
   useEffect(() => {
-    if (isHydrated && isAuthenticated) {
+    if (isHydrated && isRemoteCmsReady && isAuthenticated) {
       void navigate({ to: '/admin', replace: true })
     }
-  }, [isHydrated, isAuthenticated, navigate])
+  }, [isHydrated, isRemoteCmsReady, isAuthenticated, navigate])
 
-  const onSubmit = form.handleSubmit((values) => {
-    const result = login(values)
+  const onSubmit = form.handleSubmit(async (values) => {
+    const result = await login(values)
     if (!result.ok) {
       form.setError('password', { message: result.error })
       toast.error(result.error)
@@ -43,6 +53,10 @@ export function AdminLoginPageRoute() {
     toast.success('Signed in to ANVL Admin.')
     void navigate({ to: '/admin', replace: true })
   })
+
+  const idLabel = supabaseConfigured ? 'Email' : 'Username'
+  const idAutoComplete = supabaseConfigured ? 'email' : 'username'
+  const idPlaceholder = supabaseConfigured ? 'you@company.com' : 'admin'
 
   return (
     <div className="grid min-h-screen place-items-center bg-[var(--color-bg)] px-4 py-10">
@@ -63,14 +77,24 @@ export function AdminLoginPageRoute() {
             </div>
           </div>
 
+          {remoteHydrateError ? (
+            <p
+              role="alert"
+              className="mt-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-[12px] text-[var(--color-text-muted)]"
+            >
+              {remoteHydrateError}
+            </p>
+          ) : null}
+
           <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
             <FormField
-              label="Username"
+              label={idLabel}
               error={form.formState.errors.username?.message}
             >
               <Input
-                autoComplete="username"
-                placeholder="admin"
+                type={supabaseConfigured ? 'email' : 'text'}
+                autoComplete={idAutoComplete}
+                placeholder={idPlaceholder}
                 {...form.register('username')}
               />
             </FormField>
@@ -95,11 +119,24 @@ export function AdminLoginPageRoute() {
           </form>
 
           <p className="mt-5 rounded-lg border border-dashed border-[var(--color-line)] px-3 py-2 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
-            Temporary static admin login — not production-ready. Set{' '}
-            <span className="font-mono text-[10px]">VITE_ANVL_ADMIN_PASSWORD</span> in a
-            local <span className="font-mono text-[10px]">.env</span> (see{' '}
-            <span className="font-mono text-[10px]">.env.example</span>). Replace with
-            server sessions, rate-limited auth, HttpOnly cookies, and CSP before launch.
+            {authMode === 'supabase' ? (
+              <>
+                Supabase Auth — only users with{' '}
+                <span className="font-mono text-[10px]">cms_profiles.role = admin</span>{' '}
+                can use this panel. Create the user in Supabase Authentication and add
+                their row in{' '}
+                <span className="font-mono text-[10px]">public.cms_profiles</span>.
+              </>
+            ) : (
+              <>
+                Local static admin login — not production-ready. Set{' '}
+                <span className="font-mono text-[10px]">VITE_ANVL_ADMIN_PASSWORD</span>{' '}
+                in a local <span className="font-mono text-[10px]">.env</span> (see{' '}
+                <span className="font-mono text-[10px]">.env.example</span>). When{' '}
+                <span className="font-mono text-[10px]">VITE_SUPABASE_*</span> is set, this
+                app uses Supabase instead.
+              </>
+            )}
           </p>
         </div>
       </Container>

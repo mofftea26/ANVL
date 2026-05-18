@@ -1,4 +1,12 @@
 ﻿
+## 2026-05-18 — Supabase: admin Auth (admin role) + debounced CMS writes
+
+- **DB:** Migration **`20260518220000_anvl_drops_client_id_admin_rls.sql`** — **`anvl_drops.client_drop_id`** (stable app `Drop.id`), idempotent **`storefront_publication`** catalog columns, **admin-only** INSERT/UPDATE/DELETE RLS on **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** updates; **`cms_publish_drop`** now requires **`cms_profiles.role = admin`** (catalog snapshot refresh preserved).
+- **App:** When **`VITE_SUPABASE_*`** is set, **`AdminAuthProvider`** uses Supabase **`signInWithPassword`**, **`hydrateAdminCmsFromSupabase`**, and **`scheduleAdminCmsRemoteSync`** after saves (drops / products / layout / site SEO / global brand). Legacy **`VITE_ANVL_ADMIN_*`** remains when Supabase env is absent. **`ProtectedAdminRoute`** waits for remote hydration; **`/admin/settings`** shows Supabase email and uses a dual-field confirmation for local reset when Supabase is on.
+- **Tests:** **`adminCmsProfileRole.test.ts`**.
+- **Docs:** **`docs/features/supabase-cms.md`**, **`docs/features/admin-ui.md`**, **`AGENTS.md`**, **`docs/audit-2026-05-17.md`**, **`.env.example`**.
+- Tests / verify: **`pnpm verify`**.
+
 ## 2026-05-18 — Supabase: publication catalog snapshot + storefront commerce read path
 
 - **Schema:** Migration **`20260518140000_storefront_publication_catalog.sql`** adds **`products_snapshot`**, **`catalog_drop_index`**, **`global_brand`**, **`campaigns`**, **`lookbook`**, **`legacy_landing_cms`** on **`storefront_publication`**; **`cms_publish_drop`** now aggregates **`cms_admin_products`** into **`products_snapshot`** and rebuilds **`catalog_drop_index`** from **`anvl_drops`** referenced by product **`dropIds`**.

@@ -42,22 +42,61 @@ const adminAuthChannel = createLocalStorageChannel({
 
 export { isBrowser }
 
+function normalizeStoredAdminSession(
+  parsed: unknown,
+): AdminSession | null {
+  if (!parsed || typeof parsed !== 'object') return null
+  const o = parsed as Partial<AdminSession> & {
+    username?: unknown
+    loggedInAt?: unknown
+    email?: unknown
+    userId?: unknown
+  }
+  if (typeof o.loggedInAt !== 'string') return null
+  if (o.kind === 'supabase') {
+    if (typeof o.email === 'string' && typeof o.userId === 'string') {
+      return {
+        kind: 'supabase',
+        email: o.email,
+        userId: o.userId,
+        loggedInAt: o.loggedInAt,
+      }
+    }
+    return null
+  }
+  if (typeof o.username === 'string') {
+    return {
+      kind: 'legacy',
+      username: o.username,
+      loggedInAt: o.loggedInAt,
+    }
+  }
+  return null
+}
+
 export function readAdminSession(): AdminSession | null {
   if (!isBrowser()) return null
   try {
     for (const key of ADMIN_AUTH_STORAGE_KEYS) {
       const raw = adminAuthChannel.readKey(key)
       if (!raw) continue
-      const parsed = JSON.parse(raw) as Partial<AdminSession>
-      if (
-        !parsed ||
-        typeof parsed.username !== 'string' ||
-        typeof parsed.loggedInAt !== 'string'
-      ) {
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(raw) as unknown
+      } catch {
         window.localStorage.removeItem(key)
         continue
       }
-      return { username: parsed.username, loggedInAt: parsed.loggedInAt }
+      const session = normalizeStoredAdminSession(parsed)
+      if (!session) {
+        window.localStorage.removeItem(key)
+        continue
+      }
+      if (session.kind === 'supabase') {
+        window.localStorage.removeItem(key)
+        continue
+      }
+      return session
     }
     return null
   } catch {
@@ -74,6 +113,7 @@ export function readAdminSession(): AdminSession | null {
 
 export function writeAdminSession(session: AdminSession): void {
   if (!isBrowser()) return
+  if (session.kind !== 'legacy') return
   try {
     const payload = JSON.stringify(session)
     ADMIN_AUTH_STORAGE_KEYS.forEach((key) => {

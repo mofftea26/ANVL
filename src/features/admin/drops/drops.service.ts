@@ -40,6 +40,11 @@ import { bumpDropsPersistGeneration } from './drops.persistGeneration'
 
 let hydrationRan = false
 
+/** Reset so the next `ensureDropSystemHydrated()` re-reads storage (used after Supabase pull). */
+export function resetDropSystemHydrationGate(): void {
+  hydrationRan = false
+}
+
 /** Resolves `acts` when merging a persisted or partial drop row (Vitest covers edge cases). */
 export function resolveActsForMergedDrop(
   partial: Partial<Drop>,
@@ -51,7 +56,7 @@ export function resolveActsForMergedDrop(
   return landingContentToSimpleActs(mergedLanding)
 }
 
-function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
+export function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
   const base = createDefaultTheOathDrop([...DEFAULT_OATH_PRODUCT_IDS])
   const lc = partial.landingContent ?? base.landingContent
   const mergedLanding = {
@@ -201,6 +206,11 @@ export function persistDropsState(
   writeDropsRaw(JSON.stringify(body))
   writeActiveDropId(activeDropId)
   synced.forEach(syncProductsWithDrop)
+  if (typeof window !== 'undefined' && import.meta.env.MODE !== 'test') {
+    void import('@/features/admin/cmsRemote/adminCmsRemoteSync').then((m) =>
+      m.scheduleAdminCmsRemoteSync(),
+    )
+  }
 }
 
 export function ensureDropSystemHydrated(): void {

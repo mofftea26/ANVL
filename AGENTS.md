@@ -52,8 +52,13 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 - Backend/API work: read `/docs/backend-medusa-roadmap.md`
 - Performance/security/a11y: read `/docs/performance-accessibility-security.md` plus `/docs/audit-2026-05-17.md` §2–§5
 
-## Admin auth — locked
-The admin gate (`src/features/admin/auth/**`) is a **temporary static `VITE_ANVL_ADMIN_*` env-file gate**, intentionally retained until a real auth provider lands (Phase J1). Do **not** refactor its auth model, change its storage strategy, or expand the surface in this phase. UI polish (focus trap, copy, error messages) is fine; semantics must not change. Hosted-demo blockers `SEC-01` / `SEC-02` / `SEC-03` / `SEC-11` live in `/docs/technical-debt.md`.
+## Admin auth
+
+- **When `VITE_SUPABASE_URL` + anon/publishable key are set:** the admin app uses **Supabase Auth** (email + password). Only users with **`public.cms_profiles.role = 'admin'`** may access `/admin` (editors/viewers are rejected at sign-in). The browser Supabase client uses storage key **`anvl.supabase.admin.v1`**. Authenticated saves are pushed to **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** (debounced) while the editor continues to use localStorage as its working copy.
+
+- **When Supabase env is unset (local CMS only):** the temporary static **`VITE_ANVL_ADMIN_*`** gate remains. It is still not production-grade security (see **`docs/technical-debt.md`**, SEC-01 / SEC-02 / SEC-03 / SEC-11 and Phase J).
+
+- Never bundle **`SUPABASE_SERVICE_ROLE_KEY`** or other server-only secrets into client code.
 
 ## Definition of done
 A task is done only when:

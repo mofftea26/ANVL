@@ -124,6 +124,11 @@ export function saveSiteSeoContent(next: SiteSeoContent): SiteSeoContent {
   try {
     window.localStorage.setItem(SITE_SEO_STORAGE_KEY, JSON.stringify(safe))
     notifySiteSeoChange()
+    if (import.meta.env.MODE !== 'test') {
+      void import('@/features/admin/cmsRemote/adminCmsRemoteSync').then((m) =>
+        m.scheduleAdminCmsRemoteSync(),
+      )
+    }
   } catch {
     /* */
   }
