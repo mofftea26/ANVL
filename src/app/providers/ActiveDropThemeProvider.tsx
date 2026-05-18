@@ -1,17 +1,21 @@
 import { useEffect, useState, type PropsWithChildren } from 'react'
-import { runtimeClients } from '@/app/config/runtime'
 import { subscribeDropsChange } from '@/features/cms/read/cmsSubscriptions'
+import {
+  ACTIVE_DROP_THEME_STYLE_ID,
+  serializeDropPaletteForRootStyle,
+} from '@/features/cms/theme/dropPaletteStyle'
+import { runtimeClients } from '@/app/config/runtime'
 import type { Drop } from '@/features/drops/drop.types'
-import { syncActiveDropThemeStyleTag } from '@/features/cms/theme/dropPaletteStyle'
 
 type Props = PropsWithChildren<{
   initialDrop: Drop | null
 }>
 
-export function ActiveDropThemeProvider({
-  initialDrop,
-  children,
-}: Props) {
+/**
+ * Owns the public `:root` palette `<style>` for the active drop and keeps it
+ * in sync when local CMS drop storage changes (no reliance on parent loader re-runs).
+ */
+export function ActiveDropThemeProvider({ initialDrop, children }: Props) {
   const [drop, setDrop] = useState<Drop | null>(initialDrop)
 
   useEffect(() => {
@@ -19,20 +23,23 @@ export function ActiveDropThemeProvider({
   }, [initialDrop])
 
   useEffect(() => {
-    syncActiveDropThemeStyleTag(drop?.theme ?? null)
-  }, [drop])
-
-  useEffect(() => {
-    return () => {
-      syncActiveDropThemeStyleTag(null)
-    }
-  }, [])
-
-  useEffect(() => {
     return subscribeDropsChange(() => {
       void runtimeClients.cms.getActiveDrop().then(setDrop)
     })
   }, [])
 
-  return <>{children}</>
+  const themeCss =
+    drop?.theme != null ? serializeDropPaletteForRootStyle(drop.theme) : null
+
+  return (
+    <>
+      {themeCss ? (
+        <style
+          id={ACTIVE_DROP_THEME_STYLE_ID}
+          dangerouslySetInnerHTML={{ __html: themeCss }}
+        />
+      ) : null}
+      {children}
+    </>
+  )
 }

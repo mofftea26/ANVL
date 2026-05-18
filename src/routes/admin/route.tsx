@@ -1,5 +1,6 @@
 import { Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
 import { AdminAuthProvider } from '@/features/admin/auth/AdminAuthProvider'
+import { AdminPageActionsProvider } from '@/features/admin/components/AdminPageActionsContext'
 import { AdminErrorBoundary } from '@/app/components/AdminErrorBoundary'
 
 export const Route = createFileRoute('/admin')({
@@ -13,7 +14,9 @@ function AdminRouteShell() {
   return (
     <AdminAuthProvider>
       <AdminErrorBoundary resetKey={pathname}>
-        <Outlet />
+        <AdminPageActionsProvider>
+          <Outlet />
+        </AdminPageActionsProvider>
       </AdminErrorBoundary>
     </AdminAuthProvider>
   )

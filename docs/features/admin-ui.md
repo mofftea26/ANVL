@@ -6,6 +6,14 @@
 - **Local CMS reset:** Primary control is **destructive**, **full-width** (max `max-w-xl` on wide layouts), **≥44px** touch height, **`focus-ring`**, with **no ellipsis** (labels wrap). Opening it shows the shared **`Modal`**: forged **inset rim + shadow** tokens aligned with **`AdminCard`**, **`aria-describedby`** on the summary copy.
 - **Gate:** Reset runs only after **two password fields** match each other **and** pass **`verifyAdminPassword`** (`src/features/admin/auth/adminAuth.storage.ts` — same comparison as login against build-time `VITE_ANVL_ADMIN_PASSWORD`). **Cancel**, backdrop, and **Escape** close without resetting. Wrong or non-matching input uses **inline** `FormField` errors; submit stays **disabled** until the gate passes.
 
+## Global chrome (`AdminTopbar`, sidebar footer)
+
+- **`AdminLayout`** (`src/features/admin/components/AdminLayout.tsx`): shell, grid, and main column use **`min-h-[100dvh]`** (dynamic viewport height) so the admin floor matches mobile browser chrome; **`main`** uses modest **`pb-8`** (with **`lg:py-10`**) so the page doesn’t leave a tall empty band on desktop; toast clearance stays on the global **`sonner`** **`Toaster`** (**`AppProviders`**: `offset` / `mobileOffset`).
+- **`AdminSidebar`** (desktop **`lg:flex`** column): **`lg:self-start lg:sticky lg:top-0`** with **`h` / `min-h` / `max-h` `100dvh`** so the rail stays viewport-sized and does not stretch to match a very tall **`main`** row (grid default **`stretch`**). Nav links, footer actions, and auth are unchanged. Mobile **`Drawer`** copy still uses **`density="drawer"`**; the panel remains **`h-[100dvh]`** (`Drawer.tsx`).
+- **`AdminTopbar`** (`src/features/admin/components/AdminTopbar.tsx`): sticky document header with mobile nav trigger, **micro label + primary page title + optional description** from **`AdminLayout`** props, and a trailing **`admin-page-actions`** region fed by **`AdminPageActionsProvider`** / **`useAdminPageActions()`** (registered per route; starts empty on SSR until client effects run — matches hydration). **`--admin-topbar-height`** in **`src/styles.css`** approximates this block for layout math (e.g. drop editor live preview **`min-height`**).
+- **Page actions API:** `AdminPageActionsProvider` wraps the **`/admin`** route **`Outlet`** (`src/routes/admin/route.tsx`). Routes call **`useAdminPageActions()`** and **`useEffect`** (`setActions(<Fragment/>)` + cleanup `setActions(null)`). **`useAdminPageActionsSlot()`** is read-only for layout/tests.
+- **Sidebar footer:** **`AdminSidebar`** anchors **View storefront** (opens `/` in a new tab, **`focus-ring`**, **≥44px** height) and **Logout** (same **`useAdminAuth`** `logout` as before) under **`border-t`**, freeing the top bar’s trailing cluster for route actions only.
+
 ## Buttons
 
 - **Implementation:** `src/shared/components/ui/Button.tsx` (CVA + `forwardRef`) is the canonical control. **`AdminButton`** in `src/features/admin/components/AdminButton.tsx` re-exports it so admin routes import from the feature boundary.
@@ -21,10 +29,25 @@
 - **Row actions:** **`DropRowOverflowMenu`** — **`AdminButton`** **`ghost`** **`compact`** trigger (**`MoreVertical`**, **`aria-label`** per row) opens **`AdminDropdownMenu`** (Radix **`@radix-ui/react-dropdown-menu`**) with forge styling + **`admin-dropdown-menu-content`** motion only when **`prefers-reduced-motion: no-preference`** (`src/styles.css`).
 - **Mobile:** Same overflow menu on **`AdminCard`** headers; row order follows the sorted table model.
 
+## Drop editor (`/admin/drops/:id`)
+
+- **Toolbar:** No **`AdminSectionHeader`** strip — document title + status/error chips stay in **`AdminTopbar`** via **`AdminLayout`**. Primary controls register into the top bar as **`IconButton`** controls (**`RotateCcw`**, **`Trash2`**, **`Save`** / **`Check`** flash, **`aria-label`**, **`focus-ring`**, **44×44** targets): **Reset**, **Delete**, **Save** (disabled when validation blocks persistence). Each opens the shared **`Modal`** (**never `window.confirm()`**): **Reset** — “Discard unsaved changes?” (copy explains defaults restore); **Delete** — destructive confirm (**`AdminButton`** **`destructive`** on confirm); **Save** — “Commit changes to storage?” with persistence summary plus **`AdminCheckbox` Activate this drop after saving** (same helper text as before; drives **`saveDrop(..., { makeActive })`**). The drops index still has its own activate/archive flow.
+- **Form controls:** **`AdminInput`** / **`AdminTextarea`** (`src/features/admin/components/AdminInput.tsx`), **`AdminDateTimeField`** (**Basics · optional release**, `AdminDateTimeField.tsx`), **`AdminCheckbox`** (`AdminCheckbox.tsx`), and **`AdminSelect`** mirror oath-dark **`adminFieldControlClass`** from `dropEditorRoute.shared.ts`. **`MediaPickerField`** (`src/shared/components/ui/MediaPickerField.tsx`) shares the same URL-row chrome and uses **`AdminSpinner`** for embed loading. **Theme** (`DropThemePaletteCard`), **Visuals**, **SEO**, **Products**, and **`DropActsBuilderPanel`** use these primitives instead of ad-hoc `<input>` chrome where practical.
+
 ## Menus / dropdowns
 
 - **Implementation:** `src/features/admin/components/AdminDropdownMenu.tsx` wraps Radix primitives with oath-dark tokens (`--color-bg`, `--color-line`, `--color-chip`, inset shadow aligned with **`AdminCard`**). Prefer this for admin menus instead of pulling the full shadcn registry; no **`components.json`** required for this primitive-only install.
 
+## Select fields
+
+- **Implementation:** `src/features/admin/components/AdminSelect.tsx` wraps **`@radix-ui/react-select`** with the same forged surface tokens / shadows as **`AdminDropdownMenu`**. Use for compact enumerated fields (currency, status, origin) instead of native `<select>` where the oath-dark chrome matters — e.g. **Quick create product** on **`DropEditorRoute`**.
+
+## Date & time pickers
+
+- **Implementation:** **`AdminDateTimeField.tsx`** (UTC ISO / `Date`, optional **`clear`**, minute **`timeStepMinutes`**) and **`AdminDateField.tsx`** (**`YYYY-MM-DD`** string, optional **`clear`**). Both mount **`AdminPopover.tsx`** (**`@radix-ui/react-popover`**) with **`AdminCard`/`AdminSelect`**-grade rim + shadow tokens (**`z-[85]`**, oath-dark **`--color-*`**). Calendars use **`react-day-picker` v9** (`adminCalendarSkin.ts`, `react-day-picker/style.css`), **`focus-ring`** navigation, and **`motion-reduce`**-friendly hovers.
+- **Persistence contract:** Store **UTC ISO timestamps** on the wire (`toISOString()`). The calendar + 24h selects reflect the **browser’s local wall clock**, matching the old **`<input type="datetime-local>`** behavior (`adminDateTime.ts` + inline footer on the datetime popover).
+- **Call sites:** **`DropEditorRoute`** (Basics release), **`DropsAdminList`** (schedule modal), **`ProductEditorRoute`** (release/sale windows), **`/admin/products` index** (**Updated from / to** filters keeps `YYYY-MM-DD` filter strings).
+
 ## Non-goals
 
-- Dashboard card primary links remain **`DashboardCardCtaLink`** (and similar link CTAs) where the global CTA / `AdminCard` hover contract applies.
+- **`AdminCard`** uses **border + shadow** hover only ( **`motion-safe` / `motion-reduce`**); the shell **no longer translates**. Dashboard **`DashboardCardCtaLink`** (and similar **`focus-ring`** row-height links) uses the global **–1px** CTA hover lift from **`src/styles.css`** (still suppressed automatically when **`prefers-reduced-motion: reduce`**).

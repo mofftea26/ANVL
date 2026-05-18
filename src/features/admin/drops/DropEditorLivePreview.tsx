@@ -2,7 +2,7 @@ import {
   Component,
   type ErrorInfo,
   type ReactNode,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -11,11 +11,21 @@ import { createPortal } from 'react-dom'
 import { Monitor, Smartphone, Tablet, Maximize2 } from 'lucide-react'
 import { DropPreviewThemeScope } from '@/app/providers/ActiveDropThemeBridge'
 import type { DropThemePalette } from '@/features/drops/theme/dropThemePalette.types'
+import type { LandingAct } from '@/features/cms/landing/landingActs.types'
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import { PublicLandingActs } from '@/features/marketing/public-landing/PublicLandingActs'
 import type { Product } from '@/features/products/types/product.types'
 import { AdminButton } from '@/features/admin/components/AdminButton'
+import {
+  DROP_EDITOR_PREVIEW_IFRAME_SRCDOC,
+  isDropEditorPreviewIframeDocumentReady,
+} from '@/features/admin/drops/dropEditorLivePreviewIframe'
 import { cn } from '@/shared/lib/cn'
+
+export type BelowXlLivePreviewCollapse = {
+  collapsed: boolean
+  onToggle: () => void
+}
 
 type ViewportId = 'fit' | 'mobile' | 'tablet' | 'desktop'
 
@@ -155,7 +165,7 @@ class DropEditorPreviewErrorBoundary extends Component<BoundaryProps, BoundarySt
 
 /**
  * Iframe wrapper that hosts a React subtree at a simulated viewport width. The
- * iframe is loaded with a minimal `srcDoc` scaffold, then we:
+ * iframe is loaded with `DROP_EDITOR_PREVIEW_IFRAME_SRCDOC`, then we:
  *   - copy the parent's stylesheets, inline styles, and font preloads into the
  *     iframe `<head>` so the same Tailwind / CMS theme tokens render inside
  *   - install a `MutationObserver` on the parent `<head>` to mirror live HMR /
@@ -164,116 +174,253 @@ class DropEditorPreviewErrorBoundary extends Component<BoundaryProps, BoundarySt
  *     preview layout
  *   - portal the React children into the iframe `<body>` via `createPortal`
  *
+ * Bootstrap must survive `interactive` timelines and `load` events that race
+ * `useLayoutEffect` (listeners attached after navigation completes). Retries +
+ * React `onLoad` cover that alongside a synchronous probe.
+ *
+ * **Blank iframe RCA (recurring):**
+ * - `createPortal(children, iframeBody)` renders the **same** React tree into a
+ *   foreign `Document`; errors in that subtree bubble to **`DropEditorPreviewErrorBoundary`**.
+ * - `composeLandingPageFromDrop` chooses **acts** (+ hero fallback via `DropEditorRoute`)
+ *   so **`PublicLandingActs`** is not handed an empty **`landingActs`** slice.
+ * - If `bootstrap()` runs against **doc A**, then **`load`** fires again and
+ *   `iframe.contentDocument` becomes **doc B**, a one-shot `readystatechange` on
+ *   **doc A** + `bootstrappedRef === true` can strand the portal **off-DOM**
+ *   (white iframe). Fixing that requires **`Document` identity** tracking and
+ *   per-document **`readystatechange`** wiring.
+ *
  * Result: act renderers receive a *real* viewport width inside the iframe, so
  * every `sm:` / `md:` / `lg:` Tailwind variant evaluates against the simulated
  * device width instead of the admin window width.
  */
 function ViewportIframe({
-  width,
-  height,
+  widthPx,
+  fill,
   children,
   className,
 }: {
-  width: number
-  height: string
+  /** Device width in CSS px when `fill` is false. */
+  widthPx: number
+  /** When true, span the preview column width (`width: 100%`); iframe height fills the stretch shell. */
+  fill?: boolean
   children: ReactNode
+  /** Classes for the iframe element (replaced element); shell wrapper uses flex stretch. */
   className?: string
 }) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  /** Latest bootstrap closure for `iframe` `load` callbacks (attached before refs settle). */
+  const bootstrapIframeRef = useRef<(() => boolean) | null>(null)
   const [body, setBody] = useState<HTMLBodyElement | null>(null)
+  /**
+   * `Document` we've fully wired (`clone styles + MutationObserver`). When `iframe` fires
+   * `load` again (hidden→visible quirks, navigations), `contentDocument` is a fresh instance —
+   * we must detach `readystatechange` / mirrors and bootstrap again despite `bootstrappedRef`.
+   */
+  const wiredPreviewDocRef = useRef<Document | null>(null)
+  /** True after cloned head / observer wiring for the active `wiredPreviewDocRef`. */
+  const bootstrappedRef = useRef(false)
+  const observerRef = useRef<MutationObserver | null>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const iframe = iframeRef.current
     if (!iframe) return
 
     let cancelled = false
-    let observer: MutationObserver | null = null
+    let docPollRaf = 0
+    /**
+     * `readystatechange` / microtasks can call `bootstrap` while a run is mid-flight.
+     * Re-entrancy would double-clear `doc.head`; bail and let the first run finish.
+     */
+    let bootstrapInFlight = false
+    /** `readystatechange` must follow the current iframe document (not attach once globally). */
+    let readystateAttachedTo: Document | null = null
+    let detachReadystate: (() => void) | null = null
 
-    let initialized = false
+    const disconnectMirror = () => {
+      observerRef.current?.disconnect()
+      observerRef.current = null
+    }
 
-    const initialize = () => {
+    bootstrappedRef.current = false
+    wiredPreviewDocRef.current = null
+
+    const bootstrap = (): boolean => {
+      if (cancelled) return true
+
       const doc = iframe.contentDocument
-      if (!doc || cancelled) return
-      // Idempotent: srcDoc iframes can run our handler twice (sync-ready + load
-      // event). Re-running would leak a second MutationObserver and flicker the
-      // cloned head; bail after the first successful pass.
-      if (initialized) return
-      initialized = true
+      if (!isDropEditorPreviewIframeDocumentReady(doc)) return false
 
-      doc.head.innerHTML = ''
+      const sameDoc = wiredPreviewDocRef.current === doc
+      if (sameDoc && bootstrappedRef.current) return true
+      if (bootstrapInFlight) return false
 
-      const base = doc.createElement('base')
-      base.href = window.location.origin + '/'
-      doc.head.appendChild(base)
+      bootstrapInFlight = true
+      try {
+        disconnectMirror()
 
-      const meta = doc.createElement('meta')
-      meta.setAttribute('name', 'viewport')
-      meta.setAttribute('content', 'width=device-width, initial-scale=1')
-      doc.head.appendChild(meta)
+        doc.head.innerHTML = ''
 
-      const charset = doc.createElement('meta')
-      charset.setAttribute('charset', 'utf-8')
-      doc.head.appendChild(charset)
+        const base = doc.createElement('base')
+        base.href = window.location.origin + '/'
+        doc.head.appendChild(base)
 
-      const fontPreloads = document.head.querySelectorAll(
-        'style, link[rel="stylesheet"], link[rel="preload"][as="style"], link[rel="preload"][as="font"], link[rel="preconnect"]',
-      )
-      fontPreloads.forEach((node) => doc.head.appendChild(node.cloneNode(true)))
+        const meta = doc.createElement('meta')
+        meta.setAttribute('name', 'viewport')
+        meta.setAttribute('content', 'width=device-width, initial-scale=1')
+        doc.head.appendChild(meta)
 
-      const reset = doc.createElement('style')
-      reset.dataset['anvlPreviewReset'] = 'true'
-      reset.textContent = PREVIEW_RESET_CSS
-      doc.head.appendChild(reset)
+        const charset = doc.createElement('meta')
+        charset.setAttribute('charset', 'utf-8')
+        doc.head.appendChild(charset)
 
-      doc.documentElement.classList.add('anvl-preview-iframe')
+        const fontPreloads = document.head.querySelectorAll(
+          'style, link[rel="stylesheet"], link[rel="preload"][as="style"], link[rel="preload"][as="font"], link[rel="preconnect"]',
+        )
+        fontPreloads.forEach((node) => doc.head.appendChild(node.cloneNode(true)))
 
-      setBody(doc.body as HTMLBodyElement)
+        const reset = doc.createElement('style')
+        reset.dataset['anvlPreviewReset'] = 'true'
+        reset.textContent = PREVIEW_RESET_CSS
+        doc.head.appendChild(reset)
 
-      observer?.disconnect()
-      observer = new MutationObserver((muts) => {
-        muts.forEach((m) => {
-          m.addedNodes.forEach((n) => {
-            if (
-              n instanceof HTMLElement &&
-              (n.tagName === 'STYLE' || n.tagName === 'LINK')
-            ) {
-              doc.head.appendChild(n.cloneNode(true))
-            }
+        doc.documentElement.classList.add('anvl-preview-iframe')
+
+        observerRef.current = new MutationObserver((muts) => {
+          muts.forEach((m) => {
+            m.addedNodes.forEach((n) => {
+              if (
+                n instanceof HTMLElement &&
+                (n.tagName === 'STYLE' || n.tagName === 'LINK')
+              ) {
+                doc.head.appendChild(n.cloneNode(true))
+              }
+            })
           })
         })
-      })
-      observer.observe(document.head, { childList: true })
+        observerRef.current.observe(document.head, { childList: true })
+
+        setBody(doc.body as HTMLBodyElement)
+        wiredPreviewDocRef.current = doc
+        bootstrappedRef.current = true
+        return true
+      } finally {
+        bootstrapInFlight = false
+      }
     }
 
-    iframe.addEventListener('load', initialize)
-    if (iframe.contentDocument?.readyState === 'complete') {
-      initialize()
+    bootstrapIframeRef.current = bootstrap
+
+    const onLoad = () => {
+      if (!cancelled) wireDocAndBootstrap()
     }
+
+    /** Rebind whenever `iframe.contentDocument` changes so we never strand on an unloaded doc. */
+    const attachReadystateForDoc = (doc: Document) => {
+      if (readystateAttachedTo === doc) return
+      detachReadystate?.()
+      detachReadystate = null
+      readystateAttachedTo = null
+
+      const onRs = () => {
+        if (!cancelled) void bootstrap()
+      }
+      doc.addEventListener('readystatechange', onRs)
+      readystateAttachedTo = doc
+      detachReadystate = () => {
+        doc.removeEventListener('readystatechange', onRs)
+        if (readystateAttachedTo === doc) readystateAttachedTo = null
+        detachReadystate = null
+      }
+    }
+
+    /** Poll: `contentDocument` can be null briefly; `readyState` may sit on `loading` until `readystatechange`. */
+    const MAX_DOC_POLL_FRAMES = 240
+    let docPollFrames = 0
+    const wireDocAndBootstrap = () => {
+      if (cancelled) return
+      const doc = iframe.contentDocument
+      if (!doc) {
+        if (docPollFrames >= MAX_DOC_POLL_FRAMES) return
+        if (docPollRaf) return
+        docPollRaf = requestAnimationFrame(() => {
+          docPollRaf = 0
+          docPollFrames += 1
+          wireDocAndBootstrap()
+        })
+        return
+      }
+      docPollFrames = 0
+      attachReadystateForDoc(doc)
+      void bootstrap()
+    }
+
+    iframe.addEventListener('load', onLoad)
+
+    const scheduleRetries = () => {
+      queueMicrotask(() => {
+        if (!cancelled) bootstrap()
+      })
+      requestAnimationFrame(() => {
+        if (!cancelled) bootstrap()
+      })
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!cancelled) bootstrap()
+        })
+      })
+    }
+
+    scheduleRetries()
+
+    /** Covers: (1) doc already live before `load` listeners, (2) `contentDocument` / `readystate` races. */
+    wireDocAndBootstrap()
 
     return () => {
       cancelled = true
-      iframe.removeEventListener('load', initialize)
-      observer?.disconnect()
+      iframe.removeEventListener('load', onLoad)
+      if (docPollRaf) cancelAnimationFrame(docPollRaf)
+      detachReadystate?.()
+      detachReadystate = null
+      readystateAttachedTo = null
+      disconnectMirror()
+      bootstrappedRef.current = false
+      wiredPreviewDocRef.current = null
+      bootstrapIframeRef.current = null
+      setBody(null)
     }
   }, [])
 
+  /**
+   * The iframe sits in a **flex-1 min-h-0** shell — not as the row flex item directly — so `%`
+   * height quirks on replaced elements cannot collapse the lane to ~150px. The shell stretches
+   * to the gradient card; **`flex-1 min-h-0 h-full`** on the iframe consumes that height while
+   * **`justify-start`** keeps authored layout top-anchored inside the iframe document.
+   */
   return (
     <>
-      <iframe
-        ref={iframeRef}
-        title="Drop preview"
-        srcDoc={'<!doctype html><html><head></head><body></body></html>'}
-        style={{
-          width,
-          height,
-          transition:
-            'width 380ms cubic-bezier(0.16, 1, 0.3, 1), height 380ms cubic-bezier(0.16, 1, 0.3, 1)',
-        }}
+      <div
+        data-testid="drop-editor-viewport-iframe-shell"
         className={cn(
-          'block max-w-full border-0 bg-[var(--color-bg)] shadow-[0_18px_60px_-30px_rgba(0,0,0,0.85)]',
-          className,
+          'flex min-h-0 min-w-0 flex-1 flex-col justify-start overflow-hidden self-stretch',
+          fill ? 'w-full' : 'items-center',
         )}
-      />
+      >
+        <iframe
+          ref={iframeRef}
+          title="Drop preview"
+          srcDoc={DROP_EDITOR_PREVIEW_IFRAME_SRCDOC}
+          onLoad={() => bootstrapIframeRef.current?.()}
+          style={{
+            width: fill ? '100%' : widthPx,
+            maxWidth: '100%',
+            transition: 'width 380ms cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+          className={cn(
+            'mx-auto min-h-0 min-w-0 h-full flex-1 w-full max-w-full border-0 bg-[var(--color-bg)] shadow-[0_18px_60px_-30px_rgba(0,0,0,0.85)]',
+            className,
+          )}
+        />
+      </div>
       {body ? createPortal(children, body) : null}
     </>
   )
@@ -284,6 +431,10 @@ export type DropEditorLivePreviewProps = {
   products: Product[]
   palette: DropThemePalette
   emblemUrl: string
+  /** Act rows from the drop editor — merged over `landing` slices in the preview renderer. */
+  draftActs?: LandingAct[]
+  /** Below `xl`: parent drives collapse; preview hides toolbar + iframe shell (`max-xl:hidden`). */
+  belowXlCollapse?: BelowXlLivePreviewCollapse
 }
 
 export function DropEditorLivePreview({
@@ -291,6 +442,8 @@ export function DropEditorLivePreview({
   products,
   palette,
   emblemUrl,
+  draftActs,
+  belowXlCollapse,
 }: DropEditorLivePreviewProps) {
   const [viewport, setViewport] = useState<ViewportId>('fit')
   const option = useMemo(
@@ -301,12 +454,13 @@ export function DropEditorLivePreview({
   const previewBody = (
     <DropPreviewThemeScope palette={palette} emblemUrl={emblemUrl}>
       <DropEditorPreviewErrorBoundary>
-        <div className="select-none">
+        <div className="pointer-events-none select-none [&_a]:pointer-events-none">
           <PublicLandingActs
             landing={landing}
             products={products}
             emblemSrc={emblemUrl}
             cmsPreview
+            draftActs={draftActs}
           />
         </div>
       </DropEditorPreviewErrorBoundary>
@@ -314,14 +468,25 @@ export function DropEditorLivePreview({
   )
 
   const isFit = option.width === null
-  const iframeHeight = 'min(82vh, 940px)'
+  const deviceWidthPx = option.width ?? 1280
+
+  /**
+   * RCA — viewport toggle glitch (“iframe flashes then content jumps down”):
+   * - `key={option.id}` on the iframe forced a full remount on each breakpoint,
+   *   so `body` was briefly null → portal vanished → layout collapsed.
+   * Fix: stable iframe instance (no breakpoint key) + **width-only** CSS transition.
+   */
+  const collapsedBelowXl = Boolean(belowXlCollapse?.collapsed)
 
   return (
-    <div className="space-y-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
       <div
         role="toolbar"
         aria-label="Preview viewport size"
-        className="flex flex-wrap items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-surface)]/70 p-1.5 backdrop-blur"
+        className={cn(
+          'flex shrink-0 flex-wrap items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-surface)]/70 p-1.5 backdrop-blur',
+          collapsedBelowXl ? 'max-xl:hidden' : '',
+        )}
       >
         {VIEWPORT_OPTIONS.map((opt) => {
           const Icon = opt.Icon
@@ -346,58 +511,51 @@ export function DropEditorLivePreview({
             </AdminButton>
           )
         })}
-        <span className="ml-auto pr-2 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-          {isFit
-            ? 'fits preview pane'
-            : `simulating ${option.width}px viewport`}
-        </span>
       </div>
 
-      <div className="relative rounded-2xl border border-[var(--color-line)] bg-gradient-to-b from-[var(--color-bg)] to-black/40 p-3 shadow-inner">
-        {/* Subtle device-frame chrome — only visible when constrained. */}
-        {!isFit ? (
-          <div className="mb-2 flex items-center gap-1.5">
-            <span className="block h-2 w-2 rounded-full bg-red-400/60" />
-            <span className="block h-2 w-2 rounded-full bg-amber-400/60" />
-            <span className="block h-2 w-2 rounded-full bg-emerald-400/60" />
-            <span className="ml-3 font-mono text-[10px] tracking-tight text-[var(--color-text-muted)]">
-              /drop/preview
-            </span>
-          </div>
-        ) : null}
-
-        <div
-          className={cn(
-            'flex justify-center overflow-x-auto rounded-xl bg-[var(--color-bg)]',
-            isFit ? 'p-0' : 'p-3',
-          )}
-        >
-          {isFit ? (
-            // Fit mode: inline render (no iframe overhead) at full pane width.
-            <div className="w-full">
-              <DropPreviewThemeScope palette={palette} emblemUrl={emblemUrl}>
-                <DropEditorPreviewErrorBoundary>
-                  <div className="pointer-events-none select-none [&_a]:pointer-events-none">
-                    <PublicLandingActs
-                      landing={landing}
-                      products={products}
-                      emblemSrc={emblemUrl}
-                      cmsPreview
-                    />
-                  </div>
-                </DropEditorPreviewErrorBoundary>
-              </DropPreviewThemeScope>
+      <div
+        className={cn(
+          /* Shell fills below the viewport pills; scrolling stays inside the iframe doc. */
+          'flex min-h-0 flex-1 flex-col overflow-hidden overscroll-contain pr-0.5',
+          collapsedBelowXl ? 'max-xl:hidden' : '',
+        )}
+      >
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col rounded-2xl border border-[var(--color-line)] bg-gradient-to-b from-[var(--color-bg)] to-black/40 p-2 shadow-inner">
+          {/* Subtle device-frame chrome — only visible when constrained. */}
+          {!isFit ? (
+            <div className="mb-2 flex shrink-0 items-center gap-1.5">
+              <span className="block h-2 w-2 rounded-full bg-red-400/60" />
+              <span className="block h-2 w-2 rounded-full bg-amber-400/60" />
+              <span className="block h-2 w-2 rounded-full bg-emerald-400/60" />
+              <span className="ml-3 font-mono text-[10px] tracking-tight text-[var(--color-text-muted)]">
+                /drop/preview
+              </span>
             </div>
-          ) : (
-            <ViewportIframe
-              key={option.id}
-              width={option.width!}
-              height={iframeHeight}
-              className="rounded-lg"
+          ) : null}
+
+          <div
+            className={cn(
+              'flex min-h-0 min-w-0 flex-1 flex-col rounded-xl bg-[var(--color-bg)]',
+              !isFit && 'min-h-0 overflow-x-auto p-2',
+            )}
+          >
+            <div
+              className={cn(
+                /* Row: stretch shell so the iframe host (inside ViewportIframe) gets a definite block height. */
+                'flex min-h-0 min-w-0 w-full flex-1 flex-row items-stretch justify-center self-stretch',
+              )}
             >
-              {previewBody}
-            </ViewportIframe>
-          )}
+              <ViewportIframe
+                fill={isFit}
+                widthPx={deviceWidthPx}
+                className={cn(
+                  isFit ? 'w-full max-w-full' : 'rounded-lg',
+                )}
+              >
+                {previewBody}
+              </ViewportIframe>
+            </div>
+          </div>
         </div>
       </div>
     </div>

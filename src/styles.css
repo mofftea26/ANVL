@@ -23,6 +23,15 @@
   --anvl-header-h: 4rem;
   --anvl-section-h: calc(100svh - var(--anvl-header-h));
 
+  /* Admin CMS — approximate sticky `AdminTopbar` block (padding + title + description slot).
+     Used by drop editor live preview `min-height`; raise if top bar layout grows. */
+  --admin-topbar-height: 6.5rem;
+
+  /* Main content vertical breathing room for “usable viewport below topbar” math in the drop
+     editor (pairs with `--admin-topbar-height`; ~`main` block padding — not exact per-breakpoint).
+     See `DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS` / `DROP_EDITOR_SPLIT_XL_MIN_H_CLASS`. */
+  --admin-main-block-gutter: 3rem;
+
   /* Shared timing for buttons + CTA-shaped links (honors prefers-reduced-motion
      via the global transition clamp + motion-scoped transforms below). */
   --anvl-control-transition-duration: 220ms;
@@ -57,6 +66,64 @@
   --color-hero-glow: rgba(29, 31, 33, 0.08);
 }
 
+/* Scrollbars — thin rails themed off `--color-*` (Firefox `scrollbar-color` + WebKit). */
+:root {
+  color-scheme: dark;
+  --anvl-scrollbar-thumb: color-mix(
+    in srgb,
+    var(--color-accent) 56%,
+    var(--color-heading) 44%
+  );
+  --anvl-scrollbar-thumb-hover: color-mix(
+    in srgb,
+    var(--color-accent) 68%,
+    var(--color-heading) 32%
+  );
+  --anvl-scrollbar-track: color-mix(
+    in srgb,
+    var(--color-surface) 88%,
+    var(--color-bg) 12%
+  );
+}
+
+:root[data-theme="bone-light"] {
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  scrollbar-width: thin;
+  scrollbar-color: var(--anvl-scrollbar-thumb) var(--anvl-scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--anvl-scrollbar-track);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  border: 2px solid var(--anvl-scrollbar-track);
+  background-color: var(--anvl-scrollbar-thumb);
+  transition: background-color 140ms ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--anvl-scrollbar-thumb-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *::-webkit-scrollbar-thumb {
+    transition-duration: 45ms;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -68,6 +135,8 @@ body,
 }
 
 html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--anvl-scrollbar-thumb) var(--anvl-scrollbar-track);
   scroll-behavior: smooth;
   /* Prevent any horizontal scroll from off-canvas brand shapes,
      pinned scroll tracks, or 3D crest transforms. `clip` clips
@@ -164,10 +233,9 @@ a {
 /*
  * Interactive surfaces — cursor + cohesive hover (ANVL dark forge; no loud bounce).
  * - Native buttons / file-picker button / disclosure summaries: brightness only on hover
- *   so lifts inside `AdminCard` (`group/card` translate) never compound with an inner nudge.
+ *   (no translate) so they never stack with nearby motion on card/section shells.
  * - CTA-shaped links: `focus-ring` + `inline-flex` + storefront/admin row heights; subtle
- *   translate-Y only when `prefers-reduced-motion: no-preference`, suppressed under
- *   `.group/card` where the plate hover already moves the shell.
+ *   translate-Y only when `prefers-reduced-motion: no-preference`.
  */
 button:enabled,
 input:is([type='submit'], [type='button'], [type='reset']):not(:disabled),
@@ -225,12 +293,6 @@ a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11) {
   a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11):hover {
     filter: brightness(1.06);
     transform: translateY(-1px);
-  }
-
-  /* AdminCard (`group/card`) already lifts the plate — avoid a second vertical nudge on CTAs. */
-  [class*='group/card'] a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11):hover {
-    transform: none;
-    filter: brightness(1.05);
   }
 }
 

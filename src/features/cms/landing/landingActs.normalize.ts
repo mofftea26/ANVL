@@ -1,5 +1,8 @@
 import type { LandingActSlot } from '@/features/drops/drops.actSequence'
-import { normalizeLandingActSequence } from '@/features/drops/drops.actSequence'
+import {
+  LANDING_ACT_SLOT_KEYS,
+  normalizeLandingActSequence,
+} from '@/features/drops/drops.actSequence'
 import {
   mergeActAnimationConfig,
   type LandingAct,
@@ -22,6 +25,18 @@ const SLOT_TO_PRESET: Record<LandingActSlot['key'], string> = {
   pieces: 'threeCardEditorial',
   materials: 'fabricRunway',
   waitlist: 'oathFullWidthForm',
+}
+
+/**
+ * Single hero-row preview used when the drop editor has no enabled acts but we
+ * still want Drop 01 slot wiring (home-page sequence / presets, not hand-written copy).
+ */
+export function publicLandingActsHeroSlotOnly(): PublicLandingAct[] {
+  const seq: LandingActSlot[] = LANDING_ACT_SLOT_KEYS.map((key) => ({
+    key,
+    enabled: key === 'hero',
+  }))
+  return publicLandingActsFromSequence(seq)
 }
 
 export function publicLandingActsFromSequence(

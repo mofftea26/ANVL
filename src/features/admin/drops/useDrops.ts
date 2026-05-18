@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { subscribeDropsChange } from '@/features/admin/drops/drops.storage'
+import { getDropsPersistGeneration } from '@/features/admin/drops/drops.persistGeneration'
 import {
   getActiveDrop,
   readDropsArray,
@@ -13,16 +14,24 @@ import type { Drop } from '@/features/admin/drops/drops.types'
  */
 let clientDropsSnapshot: Drop[] | null = null
 let clientActiveDropSnapshot: Drop | null | undefined = undefined
+/** Last `getDropsPersistGeneration()` applied to `clientDropsSnapshot` / active snapshot. */
+let lastSyncedPersistGeneration = -1
 
 const SERVER_DROPS_SNAPSHOT: Drop[] = []
 
 function refreshSnapshots(): void {
   clientDropsSnapshot = readDropsArray()
   clientActiveDropSnapshot = getActiveDrop()
+  lastSyncedPersistGeneration = getDropsPersistGeneration()
 }
 
 function ensureSnapshots(): void {
-  if (clientDropsSnapshot === null || clientActiveDropSnapshot === undefined) {
+  const gen = getDropsPersistGeneration()
+  if (
+    clientDropsSnapshot === null ||
+    clientActiveDropSnapshot === undefined ||
+    gen !== lastSyncedPersistGeneration
+  ) {
     refreshSnapshots()
   }
 }

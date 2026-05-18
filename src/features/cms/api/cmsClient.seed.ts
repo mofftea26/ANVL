@@ -1,5 +1,9 @@
 import type { CmsClient } from '@/app/config/clients'
-import { SEED_DROP, SEED_LANDING_PAGE_CMS } from '@/features/cms/api/seedSnapshots'
+import { SEED_DROP } from '@/features/cms/api/seedSnapshots'
+import {
+  getResolvedStorefrontLandingCmsSync,
+  resolveStorefrontActiveDrop,
+} from '@/features/cms/runtime/storefrontCmsSync'
 import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { HomePageContent } from '@/features/cms/types/cms.types'
@@ -21,7 +25,9 @@ function seedDropListItem(): AdminDropListItem {
   }
 }
 
-function toLegacyHomepage(landing: typeof SEED_LANDING_PAGE_CMS): HomePageContent {
+function toLegacyHomepage(
+  landing: ReturnType<typeof getResolvedStorefrontLandingCmsSync>,
+): HomePageContent {
   return {
     hero: {
       title: landing.hero.title,
@@ -50,19 +56,20 @@ function toLegacyHomepage(landing: typeof SEED_LANDING_PAGE_CMS): HomePageConten
  */
 export const seedCmsClient: CmsClient = {
   async getActiveDrop() {
-    return structuredClone(SEED_DROP)
+    const d = resolveStorefrontActiveDrop()
+    return d ? structuredClone(d) : structuredClone(SEED_DROP)
   },
   async getLandingCmsContent() {
-    return structuredClone(SEED_LANDING_PAGE_CMS)
+    return structuredClone(getResolvedStorefrontLandingCmsSync())
   },
   async getHomepageContent() {
-    return toLegacyHomepage(SEED_LANDING_PAGE_CMS)
+    return toLegacyHomepage(getResolvedStorefrontLandingCmsSync())
   },
   async getAnnouncementBar() {
     return cmsMockData.announcementBar
   },
   async getNavigation() {
-    return SEED_LANDING_PAGE_CMS.navigation.headerLinks
+    return getResolvedStorefrontLandingCmsSync().navigation.headerLinks
       .filter((link) => link.isVisible)
       .map((link) => ({ label: link.label, href: link.href }))
   },

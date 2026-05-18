@@ -1,3 +1,5 @@
+import { adminFieldControlClass } from '@/shared/lib/cmsFieldStyles'
+
 /** Shared form styling + tab model for the drop editor route. */
 
 export type TabId =
@@ -15,25 +17,31 @@ export type LeaveEmptyMap = Partial<{
   loadingEmblemUrl: boolean
 }>
 
-export function padDt(n: number): string {
-  return n < 10 ? `0${n}` : `${n}`
-}
+export { isoToDatetimeLocalValue, localInputToIso } from '@/features/admin/lib/adminDateTime'
 
-export function isoToDatetimeLocalValue(iso: string | undefined): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  return `${d.getFullYear()}-${padDt(d.getMonth() + 1)}-${padDt(d.getDate())}T${padDt(d.getHours())}:${padDt(d.getMinutes())}`
-}
+/** Kept name for historical imports; prefers shared `pad2` implementation. */
+export { pad2 as padDt } from '@/features/admin/lib/adminDateTime'
 
-export function localInputToIso(local: string): string | undefined {
-  if (!local.trim()) return undefined
-  const d = new Date(local)
-  if (Number.isNaN(d.getTime())) return undefined
-  return d.toISOString()
-}
+export { adminFieldControlClass, adminCheckboxControlClass } from '@/shared/lib/cmsFieldStyles'
 
-export const fieldClass =
-  'mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus-ring'
+/** Shared control chrome (width, border, typography). Pair with `mt-1` under stacked labels. */
+export const fieldClass = `mt-1 ${adminFieldControlClass}`
 
 export const fieldErrorClass = 'border-red-500/60 bg-red-500/5'
+
+/**
+ * Preview column shell: usable viewport below sticky {@link AdminTopbar}, main gutters, and
+ * safe-area insets. Uses `--admin-topbar-height`, `--admin-main-block-gutter` in `src/styles.css`.
+ * On `xl`, pair with {@link DROP_EDITOR_SPLIT_XL_MIN_H_CLASS} + `items-stretch` so the preview
+ * stack matches the builder column (tabs + forms) height.
+ */
+export const DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS =
+  'min-h-[calc(100dvh-var(--admin-topbar-height)-var(--admin-main-block-gutter)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]'
+
+/**
+ * On `xl`, the split row uses the same minimum height so a **short** builder column still leaves
+ * a tall preview lane; when the builder rail is taller, flex `items-stretch` grows the preview
+ * column to the full rail (including the BASICS/THEME tab row).
+ */
+export const DROP_EDITOR_SPLIT_XL_MIN_H_CLASS =
+  'xl:min-h-[calc(100dvh-var(--admin-topbar-height)-var(--admin-main-block-gutter)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]'

@@ -9,8 +9,13 @@ import {
 } from 'react'
 import { Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { AnvlCrest } from '@/shared/assets/brand'
+import { AnvlCrest, AnvlWordmark } from '@/shared/assets/brand'
+import { AdminSpinner } from '@/shared/components/ui/AdminSpinner'
 import { Button } from '@/shared/components/ui/Button'
+import {
+  adminCheckboxControlClass,
+  adminFieldControlClass,
+} from '@/shared/lib/cmsFieldStyles'
 import { cn } from '@/shared/lib/cn'
 import { isLikelySafeMediaSrc } from '@/shared/lib/url'
 
@@ -42,10 +47,16 @@ type MediaPickerFieldProps = {
   /** Toggle handler — when undefined the toggle is hidden. */
   onLeaveEmptyChange?: (next: boolean) => void
   /**
-   * Brand fallback shown in the preview when the field is empty and `leaveEmpty`
-   * is false. Defaults to the bundled ANVL crest.
+   * Brand fallback shown in the preview when the field is empty (or the remote
+   * asset fails to load) and `leaveEmpty` is false. Defaults to the bundled ANVL crest.
    */
-  fallback?: 'crest' | 'none'
+  fallback?: 'crest' | 'wordmark' | 'none'
+  /**
+   * Optional chained preview URL when the main value is empty (still gated by
+   * {@link isLikelySafeMediaSrc}). Wordmarks commonly reuse the campaign logo
+   * image before falling back to the crest.
+   */
+  fallbackPreviewSrc?: string
   /** Optional explicit max bytes; defaults are 2.5 MB image / 8 MB video. */
   maxBytes?: number
   /** Validation message rendered below the dropzone. */
@@ -122,6 +133,7 @@ export function MediaPickerField({
   leaveEmpty = false,
   onLeaveEmptyChange,
   fallback = 'crest',
+  fallbackPreviewSrc,
   maxBytes,
   error,
   hideUrlInput,
@@ -131,6 +143,9 @@ export function MediaPickerField({
   const fileRef = useRef<HTMLInputElement>(null)
   const [isOver, setIsOver] = useState(false)
   const [supportsDragDrop, setSupportsDragDrop] = useState(true)
+  const [isEmbeddingFile, setIsEmbeddingFile] = useState(false)
+  const [mainImageFailed, setMainImageFailed] = useState(false)
+  const [chainImageFailed, setChainImageFailed] = useState(false)
   const limit = useMemo(
     () => maxBytes ?? (kind === 'video' ? DEFAULT_VIDEO_MAX_BYTES : DEFAULT_MAX_BYTES),
     [kind, maxBytes],
@@ -138,6 +153,25 @@ export function MediaPickerField({
   const leaveEmptyId = useId()
   const fileId = useId()
   const urlId = useId()
+
+  const trimmed = value.trim()
+  // SEC-20 — refuse to render <img>/<video> for values that don't match
+  // the media URL allowlist (javascript:, data:text/html, vbscript:, …).
+  // We still keep the typed value in the input so the user sees the bad
+  // paste and can correct it, but we don't let it reach the preview.
+  const isUnsafeSrc = trimmed.length > 0 && !isLikelySafeMediaSrc(trimmed)
+  const showVideo =
+    kind === 'video' || (kind === 'any' && isVideoHref(trimmed))
+  const showImage =
+    kind === 'image' || (kind === 'any' && isImageHref(trimmed))
+
+  const chainPreview = fallbackPreviewSrc?.trim()
+  const safeChain =
+    chainPreview && isLikelySafeMediaSrc(chainPreview) ? chainPreview : ''
+  const chainIsRenderableImage =
+    Boolean(safeChain) &&
+    kind !== 'video' &&
+    isImageHref(safeChain)
 
   // The brief carved out "drag and drop for desktops". Hide the affordance on
   // touch-first devices where it's not a realistic gesture.
@@ -157,13 +191,18 @@ export function MediaPickerField({
       return
     }
     const reader = new FileReader()
+    setIsEmbeddingFile(true)
     reader.onload = () => {
+      setIsEmbeddingFile(false)
       if (typeof reader.result === 'string') {
         onChange(reader.result)
         toast.success('Embedded for this browser.')
       }
     }
-    reader.onerror = () => toast.error('Could not read that file.')
+    reader.onerror = () => {
+      setIsEmbeddingFile(false)
+      toast.error('Could not read that file.')
+    }
     reader.readAsDataURL(file)
   }
 
@@ -181,18 +220,59 @@ export function MediaPickerField({
     if (file) handleFile(file)
   }
 
-  const trimmed = value.trim()
-  // SEC-20 — refuse to render <img>/<video> for values that don't match
-  // the media URL allowlist (javascript:, data:text/html, vbscript:, …).
-  // We still keep the typed value in the input so the user sees the bad
-  // paste and can correct it, but we don't let it reach the preview.
-  const isUnsafeSrc = trimmed.length > 0 && !isLikelySafeMediaSrc(trimmed)
-  const showVideo =
-    kind === 'video' || (kind === 'any' && isVideoHref(trimmed))
-  const showImage =
-    kind === 'image' || (kind === 'any' && isImageHref(trimmed))
+  useEffect(() => {
+    setMainImageFailed(false)
+    setChainImageFailed(false)
+  }, [trimmed, safeChain, leaveEmpty])
+
+  const renderBrandPreviewFallback = () => {
+    if (fallback === 'none') {
+      return (
+        <span className="px-2 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+          No media
+        </span>
+      )
+    }
+    if (fallback === 'wordmark') {
+      return (
+        <div
+          data-fallback="wordmark"
+          className="flex h-full w-full max-h-full max-w-full items-center justify-center p-1"
+        >
+          <AnvlWordmark className="h-9 w-auto max-w-full text-[var(--color-text-muted)] opacity-70" />
+        </div>
+      )
+    }
+    return (
+      <div
+        data-fallback="crest"
+        className="flex h-full w-full max-h-full max-w-full items-center justify-center p-1"
+      >
+        <AnvlCrest
+          aria-label="Default ANVL crest"
+          className="h-12 w-auto max-w-full text-[var(--color-text-muted)] opacity-60"
+        />
+      </div>
+    )
+  }
 
   const previewBody = (() => {
+    if (isEmbeddingFile) {
+      return (
+        <div
+          className="flex flex-col items-center justify-center gap-2 px-2 text-center"
+          aria-live="polite"
+        >
+          <AdminSpinner label="Embedding file" />
+          <span
+            className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]"
+            aria-hidden
+          >
+            Embedding…
+          </span>
+        </div>
+      )
+    }
     if (leaveEmpty) {
       return (
         <span className="px-2 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
@@ -208,19 +288,18 @@ export function MediaPickerField({
       )
     }
     if (!trimmed) {
-      if (fallback === 'crest') {
+      if (chainIsRenderableImage && !chainImageFailed) {
         return (
-          <AnvlCrest
-            aria-label="Default ANVL crest"
-            className="h-12 w-auto text-[var(--color-text-muted)] opacity-60"
+          <img
+            key={safeChain}
+            src={safeChain}
+            alt=""
+            className="max-h-full max-w-full object-contain opacity-90"
+            onError={() => setChainImageFailed(true)}
           />
         )
       }
-      return (
-        <span className="px-2 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-          No media
-        </span>
-      )
+      return renderBrandPreviewFallback()
     }
     if (showVideo && isVideoHref(trimmed)) {
       return (
@@ -235,11 +314,23 @@ export function MediaPickerField({
       )
     }
     if (showImage || isImageHref(trimmed)) {
+      if (mainImageFailed) {
+        if (fallback === 'none') {
+          return (
+            <span className="px-2 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+              Preview unavailable
+            </span>
+          )
+        }
+        return renderBrandPreviewFallback()
+      }
       return (
         <img
+          key={trimmed}
           src={trimmed}
           alt="Preview"
           className="max-h-full max-w-full object-contain"
+          onError={() => setMainImageFailed(true)}
         />
       )
     }
@@ -261,20 +352,22 @@ export function MediaPickerField({
         {onLeaveEmptyChange ? (
           <label
             htmlFor={leaveEmptyId}
-            className="inline-flex cursor-pointer items-center gap-2 text-[11px] text-[var(--color-text-muted)]"
+            className="flex max-w-[min(100%,20rem)] cursor-pointer items-start gap-2 rounded-lg border border-transparent py-1 text-[11px] text-[var(--color-text-muted)]"
             // UI-only flag: hides the crest preview to indicate intent.
             // Persistence will land in a follow-up once `DropVisuals` gains a
             // sibling map for explicit-empty fields.
-            title="Hides the crest preview in this editor. The storefront still applies its own fallback until per-field 'empty' state is persisted (planned follow-up)."
+            title="Hides the brand fallback preview in this editor. The storefront still applies its own fallback until per-field 'empty' state is persisted (planned follow-up)."
           >
             <input
               id={leaveEmptyId}
               type="checkbox"
               checked={leaveEmpty}
               onChange={(e) => onLeaveEmptyChange(e.target.checked)}
-              className="focus-ring h-3.5 w-3.5 rounded border-[var(--color-line)] bg-[var(--color-surface)]"
+              className={adminCheckboxControlClass}
             />
-            Hide crest preview
+            <span className="min-w-0 leading-snug">
+              <span className="font-medium text-[var(--color-text)]">Hide fallback preview</span>
+            </span>
           </label>
         ) : null}
       </div>
@@ -359,7 +452,7 @@ export function MediaPickerField({
                     ? 'https://… or /media/video.mp4'
                     : '/brand/stacked.svg'
                 }
-                className="focus-ring mt-2 h-9 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-2 text-xs text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]"
+                className={cn('mt-2 h-9 py-1.5 text-xs', adminFieldControlClass)}
                 spellCheck={false}
               />
               <p className="mt-1 text-[10px] text-[var(--color-text-muted)]">

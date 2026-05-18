@@ -46,7 +46,7 @@ const landingActSchema = z.object({
   productIds: z.array(z.string()).optional(),
 })
 
-const dropThemePaletteSchema = z.object({
+export const dropThemePaletteSchema = z.object({
   id: z.string(),
   name: z.string(),
   colors: z.object({

@@ -9,13 +9,13 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { ReactNode } from "react";
 import { AppProviders } from "@/app/providers/AppProviders";
+import { ActiveDropThemeProvider } from "@/app/providers/ActiveDropThemeProvider";
 import { RouteAnalytics } from "@/app/providers/RouteAnalytics";
 import { AppErrorBoundary } from "@/app/components/AppErrorBoundary";
 import { runtimeClients } from "@/app/config/runtime";
 import { useLandingCms } from "@/features/cms/hooks/useLandingCms";
 import { SiteFooter } from "@/shared/components/layout/SiteFooter";
 import { StickyHeader } from "@/shared/components/layout/StickyHeader";
-import { serializeDropPaletteForRootStyle } from "@/features/cms/theme/dropPaletteStyle";
 import appCss from "@/styles.css?url";
 import manropeLatinWoff2 from "@fontsource/manrope/files/manrope-latin-400-normal.woff2?url";
 import bebasLatinWoff2 from "@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2?url";
@@ -84,38 +84,47 @@ function RootLayout() {
     select: (state) => state.location.pathname,
   });
   const isAdminRoute = pathname.startsWith("/admin");
-  const themeCss =
-    !isAdminRoute && activeDrop?.theme
-      ? serializeDropPaletteForRootStyle(activeDrop.theme)
-      : null;
+
+  const devtools =
+    IS_DEV ? (
+      <TanStackDevtools
+        config={{ position: "bottom-right" }}
+        plugins={[
+          {
+            name: "TanStack Router",
+            render: <TanStackRouterDevtoolsPanel />,
+          },
+        ]}
+      />
+    ) : null;
+
+  if (isAdminRoute) {
+    return (
+      <>
+        <RouteAnalytics />
+        <main>
+          <AppErrorBoundary resetKey={pathname}>
+            <Outlet />
+          </AppErrorBoundary>
+        </main>
+        {devtools}
+      </>
+    );
+  }
 
   return (
     <>
-      <RouteAnalytics />
-      {themeCss ? (
-        <style
-          id="anvl-active-drop-theme-ssr"
-          dangerouslySetInnerHTML={{ __html: themeCss }}
-        />
-      ) : null}
-      {!isAdminRoute ? <StickyHeader navigation={navigation} /> : null}
-      <main>
-        <AppErrorBoundary resetKey={pathname}>
-          <Outlet />
-        </AppErrorBoundary>
-      </main>
-      {!isAdminRoute ? <SiteFooter navigation={navigation} /> : null}
-      {IS_DEV ? (
-        <TanStackDevtools
-          config={{ position: "bottom-right" }}
-          plugins={[
-            {
-              name: "TanStack Router",
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-          ]}
-        />
-      ) : null}
+      <ActiveDropThemeProvider initialDrop={activeDrop}>
+        <RouteAnalytics />
+        <StickyHeader navigation={navigation} />
+        <main>
+          <AppErrorBoundary resetKey={pathname}>
+            <Outlet />
+          </AppErrorBoundary>
+        </main>
+        <SiteFooter navigation={navigation} />
+      </ActiveDropThemeProvider>
+      {devtools}
     </>
   );
 }

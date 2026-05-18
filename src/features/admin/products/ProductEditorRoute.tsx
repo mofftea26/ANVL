@@ -33,6 +33,7 @@ import type {
   ProductVariantAvailability,
 } from '@/features/admin/products/products.types'
 import { AdminButton } from '@/features/admin/components/AdminButton'
+import { AdminDateTimeField } from '@/features/admin/components/AdminDateTimeField'
 import { Checkbox } from '@/shared/components/ui/Checkbox'
 import { FormField } from '@/shared/components/ui/FormField'
 import { ColorField } from '@/shared/components/ui/ColorField'
@@ -43,8 +44,6 @@ import { Textarea } from '@/shared/components/ui/Textarea'
 import {
   cloneProduct,
   PRODUCT_STATUSES,
-  productEditorFromDatetimeLocal,
-  productEditorToDatetimeLocal,
 } from '@/features/admin/products/productEditorRoute.shared'
 
 export function ProductEditorRoute({ productId }: { productId: string }) {
@@ -256,37 +255,40 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                 <Input readOnly value={listingSourceDisplay} />
               </FormField>
               <FormField label="Release date">
-                <Input
-                  type="datetime-local"
-                  value={productEditorToDatetimeLocal(draft.releaseDate)}
-                  onChange={(e) =>
+                <AdminDateTimeField
+                  clear
+                  className="mt-0"
+                  value={draft.releaseDate}
+                  onChange={(next) =>
                     setDraft({
                       ...draft,
-                      releaseDate: productEditorFromDatetimeLocal(e.target.value),
+                      releaseDate: next,
                     })
                   }
                 />
               </FormField>
               <FormField label="Sale starts">
-                <Input
-                  type="datetime-local"
-                  value={productEditorToDatetimeLocal(draft.saleStartsAt)}
-                  onChange={(e) =>
+                <AdminDateTimeField
+                  clear
+                  className="mt-0"
+                  value={draft.saleStartsAt}
+                  onChange={(next) =>
                     setDraft({
                       ...draft,
-                      saleStartsAt: productEditorFromDatetimeLocal(e.target.value),
+                      saleStartsAt: next,
                     })
                   }
                 />
               </FormField>
               <FormField label="Sale ends">
-                <Input
-                  type="datetime-local"
-                  value={productEditorToDatetimeLocal(draft.saleEndsAt)}
-                  onChange={(e) =>
+                <AdminDateTimeField
+                  clear
+                  className="mt-0"
+                  value={draft.saleEndsAt}
+                  onChange={(next) =>
                     setDraft({
                       ...draft,
-                      saleEndsAt: productEditorFromDatetimeLocal(e.target.value),
+                      saleEndsAt: next,
                     })
                   }
                 />

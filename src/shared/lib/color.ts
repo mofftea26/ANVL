@@ -101,6 +101,18 @@ export function rgbaToHex(color: RgbaColor): string {
   return `#${to2Hex(color.r)}${to2Hex(color.g)}${to2Hex(color.b)}`
 }
 
+/** `#RRGGBB` when opaque; `#RRGGBBAA` with alpha channel when semi-transparent (clipboard / display). */
+export function rgbaToClipboardHex(color: RgbaColor): string {
+  const r = to2Hex(color.r)
+  const g = to2Hex(color.g)
+  const b = to2Hex(color.b)
+  if (color.a >= 0.999) {
+    return `#${r}${g}${b}`.toUpperCase()
+  }
+  const aByte = to2Hex(Math.round(clamp(color.a * 255, 0, 255)))
+  return `#${r}${g}${b}${aByte}`.toUpperCase()
+}
+
 export function rgbaToCss(color: RgbaColor): string {
   if (color.a >= 0.999) return rgbaToHex(color)
   const a = Math.round(color.a * 1000) / 1000

@@ -1,4 +1,298 @@
 ﻿
+## 2026-05-18 — Drop editor live preview: ViewportIframe fills shell height
+
+- **UX:** **`ViewportIframe`** iframe uses **`flex-1 min-h-0 h-full max-w-full w-full`** (no **`62dvh`/`760px`** cap) so it consumes the **`drop-editor-viewport-iframe-shell`** height inside the gradient card; **`justify-start`** stays **top-aligned**. Shell adds **`overflow-hidden`** to reduce double-scrollbar risk.
+- Files: **`DropEditorLivePreview.tsx`**, **`__tests__/DropEditorLivePreview.test.tsx`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Storefront: single active-drop resolver + live theme provider
+
+- **Storefront:** Added **`storefrontCmsSync`** so SSR (`SEED_DROP` / `SEED_WEBSITE_LAYOUT`) and browser (`localStorage` CMS) resolve the active drop + layout the same way for composed landing content, seed **`CmsClient` / `SeoClient`**, homepage catalog picks, and related helpers. **`ActiveDropThemeProvider`** now owns the public **`:root`** palette `<style>` (id **`anvl-active-drop-theme`**) and subscribes to drop storage changes so theme/nav/footer stay aligned without relying on root loader re-runs.
+- Files: **`src/features/cms/runtime/storefrontCmsSync.ts`**, **`publicLanding.ts`**, **`cmsClient.seed.ts`**, **`cmsClient.localStorage.ts`**, **`seoClient.seed.ts`**, **`products.commerce.ts`**, **`ActiveDropThemeProvider.tsx`**, **`__root.tsx`**, **`DropLoadingIndicator.tsx`**, **`storefrontCmsSync.test.ts`**, **`docs/features/drops-cms.md`**, **`docs/design-system.md`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor live preview: viewport iframe shell top-aligned
+
+- **UX:** **`ViewportIframe`** shell (**`drop-editor-viewport-iframe-shell`**) uses **`justify-start`** so the iframe aligns to the **top** of the preview chrome (no vertical centering gap above).
+
+## 2026-05-18 — Drop editor live preview: capped iframe box + shell letterboxing
+
+- **UX:** After the **`ViewportIframe`** shell fix, **`height:100%`** on the iframe stretched the iframe to the full preview column, so **`svh`-based landing sections reflowed and the hero read “huge” on desktop.** Fix:** Shell stays **`flex-1 min-h-0 self-stretch`** with **`justify-start`**; iframe **`width`** stays Fit **`100%`** or device widths **390 / 820 / 1280**. **`height` / `max-height`** use Tailwind **`h-[min(62dvh,760px)] max-h-[…]`** (avoids jsdom stripping `min()` in React inline styles while matching browser intent); surplus shell letterboxes inside the gradient chrome.
+- Files: **`DropEditorLivePreview.tsx`**, **`__tests__/DropEditorLivePreview.test.tsx`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+
+- **RCA:** **`ViewportIframe`** rendered the **`<iframe>`** as the **direct flex item** of the preview row (`DropEditorLivePreview`). For replaced elements, **`height: 100%`** often **does not resolve** when the flex item’s used size is still tied to the **intrinsic default iframe height (~150px)** — so the live preview band collapsed while the builder column stayed tall. Separately, the **`layout="wide"`** content wrapper did not participate in a **`flex-1` / `min-h-0`** chain under **`main`**, so the split row could not reliably consume **remaining viewport height** below the top bar.
+- **Fix:** Wrap the iframe in a **`flex-1 min-h-0 self-stretch`** shell (**`data-testid="drop-editor-viewport-iframe-shell"`**); iframe keeps **`h-full min-h-0 flex-1`** inside that shell. **`AdminLayout`** (`wide` only): **`main`** + inner **`max-w-[1600px]`** wrapper use **`flex flex-col flex-1 min-h-0`**. **`DropEditorRoute`** split: **`flex-1 min-h-0`** + **`xl:flex-nowrap`**. Dropped redundant **`max-h-full`** / **`h-full`** duplications on the iframe **`className`** in **`DropEditorLivePreview`** (height comes from the shell + inline **`height: 100%`**).
+- Files: **`AdminLayout.tsx`**, **`DropEditorRoute.tsx`**, **`DropEditorLivePreview.tsx`**, **`__tests__/DropEditorLivePreview.test.tsx`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor live preview: `main` gutter in `min-h`, `xl` split row floor, tighter device shell
+
+- **UX:** **`DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS`** and new **`DROP_EDITOR_SPLIT_XL_MIN_H_CLASS`** subtract **`--admin-main-block-gutter`** (**`3rem`**, in **`src/styles.css`**) from **`100dvh`** alongside **`--admin-topbar-height`** + safe-area so the preview lane matches “viewport below top bar + **main** breathing room.” On **`xl`**, the **split row** shares that **`min-h`** so a **short** builder stack still yields a tall preview column; **`items-stretch`** + builder **`xl:flex xl:h-full`** keep the **live preview** stack aligned with the **BASICS/THEME** tab row + forms when the rail grows. **`DropEditorLivePreview`** trims **`gap`/`p`** on the device shell; the **Live preview** **`AdminCard`** uses slightly tighter padding (**`!p-4` / `sm:!p-5`**) to reduce dead chrome.
+- Files: **`src/styles.css`**, **`dropEditorRoute.shared.ts`**, **`DropEditorRoute.tsx`**, **`DropEditorLivePreview.tsx`**, **`DropEditorRoute.visuals.test.tsx`**, **`docs/features/drops-cms.md`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor `xl` preview column: full stack height + iframe fills shell
+
+- **UX:** Row stretch height applies to the **entire** preview column (**toolbar** + **AdminCard** chrome + body). **`DropEditorLivePreview`** uses **`overflow-hidden`** on the outer shell so scrolling stays **inside the iframe**; the iframe host row drops **`items-start`** so **`height:100%`** no longer leaves a **gray slab** under the device frame. **`AdminCard`** wraps **`children`** in **`min-h-0 flex-1`** so the live preview body participates in the height chain below the header.
+- Files: **`DropEditorRoute.tsx`**, **`DropEditorLivePreview.tsx`**, **`AdminCard.tsx`**, **`DropEditorRoute.visuals.test.tsx`**.
+
+## 2026-05-18 — Drop editor live preview: viewport `min-height` + `xl` row stretch
+
+- **UX:** The **Live preview** column uses **`min-h-[calc(100dvh-var(--admin-topbar-height)-env(safe-area-inset-top,0px))]`** so the chrome fills roughly **one viewport below the sticky top bar** at every breakpoint; **`--admin-topbar-height`** (**`6.5rem`**) lives in **`src/styles.css`** as an apron for **`AdminTopbar`** (incl. description slot). On **`xl`**, **`h-full`** + **`self-stretch`** remain so when the **builder** rail is taller than that minimum, the **preview** column **matches the row height** (sash split unchanged; no builder column scroll traps).
+- Files: **`src/styles.css`**, **`dropEditorRoute.shared.ts`** (**`DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS`**), **`DropEditorRoute.tsx`**, **`DropEditorRoute.visuals.test.tsx`**, **`docs/features/drops-cms.md`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor `xl`: stretch preview + builder row, document-scroll forms
+
+- **RCA:** **`xl:items-start`** on the split row matched preview height to short **Basics** content but left the **live preview** column visually shorter than the **builder** column when the form grew; nested **`min-h-0` / flex scroll chains** on the builder rail also encouraged **column-internal** scrolling instead of **`AdminLayout` `main`**.
+- **Fix:** Restore **`xl:items-stretch`** on the **`xl`** split flex row; keep preview column **`min-h-0`** + **`xl:h-full`** **`AdminCard`** so **`DropEditorLivePreview`** still scrolls inside the preview chrome. Builder rail uses **`xl:overflow-visible`** and drops **`xl:min-h-0`**; tab **`AdminCard`**s (and **`DropActsBuilderPanel`**) pass **`h-auto min-h-0`** so cards **hug tab content** without a giant empty **Basics** plate.
+- Files: **`DropEditorRoute.tsx`**, **`DropActsBuilderPanel.tsx`**, **`docs/features/drops-cms.md`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor live preview: re-bootstrap on new iframe `Document`
+
+- **RCA:** `readystatechange` was attached **once** (`if detachReadystate return`), so when `iframe` fired **`load`** again and the browser handed us a **fresh** `contentDocument`, the listener stayed on the **old**, detached `Document`. Meanwhile `bootstrappedRef` short-circuited **`bootstrap()`**, so we never recloned styles or re-pointed **`createPortal`** at the new **`body`** → **blank white frame** after reloads/hidden-preview/show cycles/engines that recreate the srcdoc document.
+- **Fix:** Track **`wiredPreviewDocRef`** (`Document` identity): if `contentDocument` differs, run full bootstrap again; **rebind** `readystatechange` whenever the active iframe document changes; **try/finally** + **`bootstrapInFlight`** guard against re-entrant double head clears.
+- **Tests:** `DropEditorLivePreview` asserts **`body`** contains **`[data-anvl-drop-preview-scope]`** before/after viewport toggle; second **`load`** after **`contentDocument` swap** must repopulate **`style[data-anvl-preview-reset]`** and the scope marker. **`minimalProps`** aligns with the route via **`editorPreviewHeroFallback: true`**.
+- Files: **`DropEditorLivePreview.tsx`**, **`__tests__/DropEditorLivePreview.test.tsx`**, **`docs/features/drops-cms.md`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Admin shell: trim main bottom padding (desktop)
+
+- **RCA:** **`AdminLayout`** **`main`** used **`pb-28` / `lg:pb-32`**, which exaggerated the empty strip below page content on desktop. **Toasts** are already lifted via global **`sonner`** **`Toaster`** (`offset`, **`mobileOffset`**).
+- **Fix:** **`pb-8`** / **`lg:pb-8`** alongside existing horizontal + top padding. **Regression:** mobile nav **`Drawer`** unchanged; long drop/product pages still scroll inside **`main`** as before.
+- **Verify hardening:** Vitest **`testTimeout: 15s`** so parallel admin UI suites don’t flake at the default 5s; **`DropEditorRoute.products.test.tsx`** / **`newDropRoute.test.tsx`** avoid untyped **`jest-dom`** matchers under strict **`tsc`**.
+- Files: **`AdminLayout.tsx`**, **`__tests__/AdminLayout.test.tsx`**, **`vitest.config.ts`**, **`DropEditorRoute.products.test.tsx`**, **`newDropRoute.test.tsx`**, **`docs/features/admin-ui.md`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Admin: `/admin/drops/new` without “Missing drop” flicker
+
+- Summary: **`createDraftDrop`** could run while **`useDropsList`** had no active subscriber, leaving the hook’s snapshot stale so **`DropEditorRoute`** briefly rendered **Missing drop**. **Fix:** bump a persist generation at the start of **`persistDropsState`** so **`ensureSnapshots`** always refreshes after writes. **Bootstrap UX:** **`AdminSpinner`** + verified id before **`replace`** navigation; storage verify failure surfaces an alert + back link.
+- Files changed: **`drops.persistGeneration.ts`**, **`drops.service.ts`**, **`useDrops.ts`**, **`-newDrop.tsx`**, **`useDropsList.cache.test.ts`**, **`-newDropRoute.test.tsx`**, **`src/test/setup.ts`** ( **`@testing-library/jest-dom`** ), **`vitest.config.ts`** ( **`maxWorkers` cap** ), **`docs/features/drops-cms.md`**, **`docs/changelog.md`**. Stabilized **`DropEditorRoute`** header + products RTL tests ( **`waitFor`** / duplicate **Active** pill assertions ).
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor `xl`: resizable live preview / builder split
+
+- Summary: At **`xl`**, the drop editor uses a **sash** between **Live preview** and the form column: **pointer capture** drag, clamp **320px–70%** of the split container width, optional persist to **`ANVL_DROP_EDITOR_PREVIEW_SPLIT_PX`**, **←/→** nudge when the sash is focused. **`overflow-x-hidden`**, **`min-w-0`**, and **`overscroll-x-contain`** avoid horizontal page scroll while dragging; **no width transition** (respects reduced-motion expectations). **`clampDropEditorPreviewWidthPx`** unit-tested.
+- Files changed: **`DropEditorRoute.tsx`**, **`useDropEditorXlPreviewSplit.ts`**, **`dropEditorPreviewSash.ts`**, **`dropEditorPreviewSash.test.ts`**, **`storageKeys.ts`**, **`docs/features/drops-cms.md`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**. Manual: drag sash at **`xl`**, reload confirms width; narrow window clamps. **Vitest** default timeout raised to **15s** (parallel Windows runs); **`@testing-library/jest-dom/vitest`** in setup + **`vite-env`** reference fixes **`tsc`** on DOM matchers.
+
+## 2026-05-18 — Drop editor Products tab: responsive roster cards
+
+- Summary: Product roster under **Products** replaced viewport **`sm:grid-cols-2`** (which forced two cramped columns inside the **`xl`** ~**460px** rail) with **container-query** columns and per-card **stack → row** breakpoints; thumbnails use a controlled **5:4 / square** aspect, **`min-w-0`** + **`line-clamp-2`** on titles, refined status / **Active** · **Hidden** pills, lazy images, and RTL-safe toolbar spacing (**`me-1.5`**). **Tests:** **`DropEditorRoute.products.test.tsx`** (roster smoke + RTL checkbox).
+- Files changed: **`DropEditorRoute.tsx`**, **`DropEditorRoute.products.test.tsx`**, **`docs/features/drops-cms.md`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Admin sidebar: `100dvh` + sticky rail (lg+)
+
+- Summary: **`AdminSidebar`** (default density) uses **`lg:self-start lg:sticky lg:top-0`** with **`h` / `min-h` / `max-h` `100dvh`** so the left column tracks the dynamic viewport instead of stretching with a tall document row; **`AdminLayout`** shell/grid/main use **`min-h-[100dvh]`**. **`src/test/setup.ts`** imports **`@testing-library/jest-dom/vitest`** ( **`@testing-library/jest-dom`** devDep) so matcher typings match usage across tests. **`AdminSidebar.test.tsx`** covers logout + drawer **`onNavigate`**; **`AdminLayout.test.tsx`** **`useRouterState`** mock supports **`select`**.
+- Files changed: **`AdminSidebar.tsx`**, **`AdminLayout.tsx`**, **`src/test/setup.ts`**, **`package.json`**, **`pnpm-lock.yaml`**, **`AdminSidebar.test.tsx`**, **`AdminLayout.test.tsx`**, **`docs/features/admin-ui.md`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**. **Manual (Chrome, ≥lg):** open a long admin page (e.g. drop editor); sidebar height stays one viewport; scroll **`main`** — rail stays pinned; border/footer do not extend with page height.
+
+## 2026-05-18 — Drop editor xl split: form cards hug content
+
+- Summary: On **`xl`**, the editor grid used **`items-stretch`**, so the form column matched the tall preview row and **`AdminCard`**’s default **`h-full`** left empty space below short tabs (e.g. **Basics**). **Fix:** **`xl:items-start`** on the grid and **`xl:self-stretch xl:h-full xl:min-h-0`** on the preview column so only the live-preview pane fills the row; form **`AdminCard`**s height follows tab content. **&lt;xl** layout unchanged.
+- Files changed: **`DropEditorRoute.tsx`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**. Manual: at **`xl`**, **Basics** card ends after fields; preview column still fills.
+
+## 2026-05-18 — Drop editor live preview: iframe `contentDocument` / `readystatechange` bootstrap
+
+- Summary: **RCA (still-blank iframe):** `ViewportIframe` could strand React portal wiring when `iframe.contentDocument` was **temporarily null**, or when `readyState` stayed **`loading`** until a later **`readystatechange`** after microtask/`rAF` retries (so **`load`** and one-shot probes were not enough). **Fix:** **`requestAnimationFrame`** poll (bounded) until `contentDocument` exists, plus a **`readystatechange`** listener on the iframe document to re-run bootstrap, keeping **`scheduleRetries`** as extra coverage. **Tests:** **`DropEditorLivePreview`** asserts **`[data-anvl-drop-preview-scope]`** appears under the iframe **`body`**; iframe helper tests cover marker toggles under **`loading`**.
+- Files changed: **`DropEditorLivePreview.tsx`**, **`__tests__/DropEditorLivePreview.test.tsx`**, **`__tests__/dropEditorLivePreviewIframe.test.ts`**, **`ColorField.test.tsx`** (assertions aligned with compact row DOM), **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — ColorField compact: input-height row (quick create modal)
+
+- Summary: **`density="compact"`** is a fixed **`h-10 max-h-10`** bordered control (inset swatch chip + mono hex, **`rounded-md`**) so grid **`items-stretch`** no longer grows a full-bleed swatch tile; **Quick create** modal grid adds **`sm:items-end`** plus **`flex flex-col gap-1`** stacks and **`AdminInput mt-0`** for aligned label/control pairs.
+- Files changed: **`ColorField.tsx`**, **`ColorField.test.tsx`**, **`DropEditorRoute.tsx`**, **`docs/features/drops-cms.md`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor: iframe preview bootstrap, Oath hero fallback, palette presets
+
+- Summary: **RCA (blank preview):** some `srcDoc` iframes stayed on `readyState === "loading"` after `head`/`body` existed, so `isDropEditorPreviewIframeDocumentReady` never bootstrapped the portal (white iframe). **Fix:** treat `loading` as ready when the stub’s `data-anvl-drop-editor-live-preview` is on `<html>`; **unmount** clears `body` portal state. **Empty / all-disabled acts:** `composeLandingPageFromDrop(..., { editorActsPreview: true, editorPreviewHeroFallback: true })` uses `publicLandingActsHeroSlotOnly()` (canonical hero slot + Oath preset wiring; copy from composed `landing.hero`). **Theme:** **Save as preset** persists Zod-validated rows to **`ANVL_DROP_THEME_PALETTE_PRESETS`**; preset select merges built-ins + `user-…` rows. **Quick create product** uses **`DebouncedColorField`** for swatch + popover hex UX.
+- Files changed: `dropEditorLivePreviewIframe.ts`, `DropEditorLivePreview.tsx`, `composeLandingPageFromDrop.ts`, `landingActs.normalize.ts`, `DropEditorRoute.tsx`, `DropThemePaletteCard.tsx`, `dropThemePalettePresets.*`, `drops.persistence.zod.ts` (export palette schema), `storageKeys.ts`, tests, `docs/features/drops-cms.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — `ColorField` swatch tile, popover editor, hex copy
+
+- Summary: **Default** `ColorField` is **swatch-first** (~7–7.5rem min height): checkerboard under semi-transparent fills, forge-style rim, mono **hex** copy (**`toast.success`**), **`SlidersHorizontal` `IconButton`** opens a **non-modal** Radix popover (`modal={false}`, no inner scroll, `w-[min(22rem,92vw)]`) containing **`ColorFieldPopoverForm`** (native wheel + HEX / RGB / α). **`rgbaToClipboardHex`** in **`color.ts`** emits **`#RRGGBB`** / **`#RRGGBBAA`**. **`inline`** keeps compact always-visible controls. **`DebouncedColorField`** behavior unchanged (**`startTransition` + debounce**).
+- Files changed: **`src/shared/lib/color.ts`**, **`src/shared/components/ui/ColorField.tsx`**, **`src/shared/components/ui/__tests__/ColorField.test.tsx`**, **`docs/design-system.md`**, **`docs/changelog.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor preview: act copy overlay + xl height / Fit iframe
+
+- Summary: **Live preview** now merges **`draft.acts`** row fields (eyebrow/title/subtitle/body + **`content` CTAs**) over composed landing slices in **`PublicLandingActs`**, so Acts builder edits re-render immediately. **`ViewportIframe`** supports **`fill`** (**Fit** = `width: 100%` / `max-width: 100%`); **Fit** always uses the iframe+portal path (breakpoints still match the iframe width). **`DropEditorRoute`** **`xl`** grid uses **`items-stretch`** / **`min-h-0`**, preview **`AdminCard`** drops **`sticky`** so column height tracks the builder; preview scroll stays inside **`overflow-y-auto`**. **`DropActsBuilderPanel`** **`onChange`** uses functional **`setDraft`** to avoid stale merges.
+- Files changed: **`landingActPreviewOverlay.ts`**, **`PublicLandingActs.tsx`**, **`DropEditorLivePreview.tsx`**, **`DropEditorRoute.tsx`**, tests, **`docs/changelog.md`**.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor live preview: remove viewport status caption
+
+Removed the trailing **`fits preview pane`** / simulated-width caption from **`DropEditorLivePreview`** viewport toolbar (**`pnpm verify`**).
+
+## 2026-05-18 — Drop editor Visuals: reliable media fallbacks + AdminSpinner
+
+- Summary: **`MediaPickerField`** adds **`onError`** recovery for raster previews, **`fallback="wordmark"`** (inline **`AnvlWordmark`**), and **`AdminSpinner`** for file-embed loading (`prefers-reduced-motion` safe). **Visuals** tab uses **Basics/Theme-style** subsection shells (**emblem → wordmark → hero**, then **Additional lockups**), hero previews use **`fallback="none"`**, wordmark chains **logo → emblem → global emblem fallback**. New **`AdminSpinner`** in shared UI.
+- Files changed: **`MediaPickerField.tsx`**, **`AdminSpinner.tsx`**, **`index.ts`**, **`AnvlCrest.tsx`**, **`AnvlWordmark.tsx`**, **`DropEditorRoute.tsx`**, **`MediaPickerField.test.tsx`**, **`DropEditorRoute.visuals.test.tsx`**, **`docs/features/drops-cms.md`**, **`docs/changelog.md`**.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — MediaPickerField: hoist trimmed (toast TDZ) + test repair
+
+- Summary: Move **`trimmed`** / SEC-20 preview flags before file handlers so synchronous **`toast`** cannot trigger **`ReferenceError`** from the **`trimmed`** temporal dead zone. Restore **`onError`** preview test (**`fireEvent.error`**) and use **`queryByRole`** assertions instead of untyped **`toBeInTheDocument`**.
+- Files changed: **`MediaPickerField.tsx`**, **`MediaPickerField.test.tsx`**, **`docs/changelog.md`**.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Acts builder: icon reorder/remove toolbar (44px targets)
+
+- Summary: **`DropActsBuilderPanel`** act rows replace **Up / Down / Remove** text buttons with **`IconButton`** + **lucide** (**`ChevronUp`**, **`ChevronDown`**, **`Trash2`**), **`aria-label`** move/remove copy (optional position when multiple acts), disabled **up**/**down** at ends, destructive styling on remove, compact bordered **`inline-flex`** group.
+- Files changed: **`DropActsBuilderPanel.tsx`**, **`DropActsBuilderPanel.test.tsx`**, **`docs/changelog.md`**.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Admin date fields: trigger height matches AdminInput
+
+- Summary: **`AdminDateTimeField`** / **`AdminDateField`** popover triggers drop **`min-h-[44px]`** so height follows shared **`adminFieldControlClass`** (**`py-2`**, **`text-sm`**, **`focus-ring`**, same border as **`AdminInput`**). **`AdminDateField`** adds **`mt-1`** + **`self-center`** on icons for parity; clear side buttons rely on row **`items-stretch`** instead of a fixed **44px** min-height.
+- Files changed: **`AdminDateTimeField.tsx`**, **`AdminDateField.tsx`**, **`docs/changelog.md`**.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Admin forge date pickers: oath accent selection + taller popover shell
+
+- Summary: **`adminCalendarSkin`** replaces the library default **blue** selection/`--rdp-accent-*` with **`--color-accent`** + **bone-tinted** border/fill (**`color-mix`**) and **`focus-visible`** rings on **`rdp-day_button`**; tightens **rdp** cell/nav sizing. **`AdminPopoverContent`** shell uses **`max-h-[min(520px,var(--radix-popover-content-available-height))]`**, **`flex flex-col`**, and a **single** **`overflow-y-auto`** (removed the old **`!overflow-hidden`** fight). **`AdminDateTimeField`** / **`AdminDateField`** drop duplicate max-height/padding overrides; datetime time block **`pt-2`**/**`gap-2.5`**.
+- Files changed: **`adminCalendarSkin.ts`**, **`AdminPopover.tsx`**, **`AdminDateTimeField.tsx`**, **`AdminDateField.tsx`**, **`docs/changelog.md`**.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Acts builder: Radix AdminSelect for nature / preset / fields
+
+- Summary: **`DropActsBuilderPanel`** replaces native **`<select>`** (nature, preset, animation intensity, product showcase card style, lookbook layout) with **`AdminSelect`** (Radix), **`aria-labelledby`** + trigger **`id`** parity with Basics Status, and **`data-testid="drop-acts-builder-panel"`** on the Acts **`AdminCard`** for tests. Optional card style / lookbook layout use a **`__inherit__`** sentinel item for “schema default” (maps to **`undefined`** in content).
+- Files changed: **`DropActsBuilderPanel.tsx`**, **`AdminCard.tsx`**, **`DropActsBuilderPanel.test.tsx`**, **`docs/features/acts-builder.md`**, **`docs/changelog.md`**.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor Visuals tab + MediaPickerField chrome alignment
+
+- Summary: **Visuals** **AdminCard** uses **`testId="drop-editor-visuals"`**; **Emblem alt** uses the **Basics-style** label + **`aria-labelledby`** pattern. **`MediaPickerField`** **Hide crest preview** uses **`adminCheckboxControlClass`**; the **URL** row uses **`adminFieldControlClass`** from **`src/shared/lib/cmsFieldStyles.ts`** (also sourced by **`AdminInput`**, **`AdminCheckbox`**, **`dropEditorRoute.shared`**). **`DropEditorRoute.visuals.test.tsx`** smoke: open **Visuals** tab, **`querySelector('select')`** is null inside the card, **Emblem alt** textbox present.
+- Files changed: **`cmsFieldStyles.ts`**, **`dropEditorRoute.shared.ts`**, **`AdminInput.tsx`**, **`AdminCheckbox.tsx`**, **`MediaPickerField.tsx`**, **`DropEditorRoute.tsx`**, **`MediaPickerField.test.tsx`**, **`DropEditorRoute.visuals.test.tsx`**, **`docs/changelog.md`**.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor theme: AdminSelect preset + admin chrome on color HEX/RGB inputs
+
+- Summary: **`DropThemePaletteCard`** preset uses **`AdminSelect`** (Radix combobox) instead of a native **`<select>`**. **`DebouncedColorField`** passes shared **`adminFieldControlClass`** into **`ColorField`** via new **`fineInputControlClass`** so HEX / numeric channel inputs match **`AdminInput`** styling while **`startTransition`** debounced commits are unchanged.
+- Files changed: **`DropThemePaletteCard.tsx`**, **`DebouncedColorField.tsx`**, **`ColorField.tsx`**, **`DropThemePaletteCard.test.tsx`**, **`ColorField.test.tsx`**, **`DropActsBuilderPanel.tsx`** (remove unsupported Radix **`modal`** prop), **`DropActsBuilderPanel.test.tsx`** (explicit **`disabled`** assertions), **`DropEditorRoute.visuals.test.tsx`** (scoped **`querySelector`**), **`AdminDateTimeField.test.tsx`** (longer timeout for jsdom), **`docs/changelog.md`**.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor: legacy Act I–VI panel removed; acts merge + builder bootstrap
+
+- Summary: Deleted **`DropLandingActsEditor`** (legacy **`<details>`** block editing **`Drop.landingContent`** Act I–VI). The **Acts** tab now loads **`DropActsBuilderPanel`** with **`React.lazy`** + **`Suspense`** from **`DropEditorRoute`**. **`resolveActsForMergedDrop`** / **`mergeDropPartial`** preserve persisted **`acts: []`** instead of re-deriving acts from merged landing; partial rows **without** an **`acts`** key still seed via **`landingContentToSimpleActs`** for migration. **`DropActsBuilderPanel`** no longer auto-imports landing JSON on mount when acts are empty — operators use **Reset acts from landing copy** explicitly. **`Drop.landingContent`** remains stored and used by default homepage compose (non-preview paths) and section payloads; **`composeLandingPageFromDrop(..., { editorActsPreview: true })`** continues to build **`landingActs`** only from **`Drop.acts`**.
+- Files changed: **`DropEditorRoute.tsx`**, **`DropActsBuilderPanel.tsx`**, **`drops.service.ts`**, removed **`DropLandingActsEditor.tsx`**, **`resolveActsForMergedDrop.test.ts`**, **`docs/features/drops-cms.md`**, **`docs/features/acts-builder.md`**, **`docs/features/admin-ui.md`**, **`docs/changelog.md`**.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor live preview: reliable `ViewportIframe` bootstrap
+
+- Summary: **`ViewportIframe`** retries **`srcDoc`** mounting (**`interactive`** or **`complete`**, **`queueMicrotask`**, double **`requestAnimationFrame`**, synchronous probe, **`load`** listener **+ React `onLoad`**) so **`setBody`** / portal wiring is not stranded when navigation completes before **`useLayoutEffect`**. Stub HTML lives in **`dropEditorLivePreviewIframe.ts`** with **`data-anvl-drop-editor-live-preview`** on **`<html>`** for regressions/tests.
+- Files changed: **`DropEditorLivePreview.tsx`**, **`dropEditorLivePreviewIframe.ts`**, **`__tests__/dropEditorLivePreviewIframe.test.ts`**, **`DropEditorLivePreview.test.tsx`**, **`AdminDateTimeField.test.tsx`** (hour option **17** avoids duplicate **MM** vs **HH** labels in open Radix lists), **`docs/features/drops-cms.md`**, **`docs/changelog.md`**.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Admin `AdminDateTimeField` popover polish (calendar + time row)
+
+- Summary: **Forge date+time picker** uses **`navLayout="around"`** with **`IconButton`** month nav, restored **`rdp-*` skin classes** so react-day-picker positioning works, **`MMM yyyy`** caption, **accent ring** selection + **today** outline, **months** area owns **vertical scroll** on short viewports while the **popover shell** stays **`overflow-hidden`** (no redundant axes). **Hour / minute** use **`AdminSelect`** in one row; **Today** shortcut in the calendar footer; helper copy tightened.
+- Files changed: `AdminDateTimeField.tsx`, `AdminDateField.tsx`, `adminCalendarSkin.ts`, `adminDayPickerChrome.tsx`, `AdminDateTimeField.test.tsx`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Admin forge calendar pickers (`react-day-picker` + Radix popover)
+
+- Summary: **`AdminDateTimeField`** / **`AdminDateField`** replace native **`<input type="datetime-local>`** / **`<input type="date>`** on drop editors, schedules, product editor pricing windows, and product index Updated filters (`src/features/admin/lib/adminDateTime.ts` explains UTC ISO persistence + legacy `datetime-local` semantics). Dependencies: **`react-day-picker` v9**, **`@radix-ui/react-popover`**.
+- Files changed: `src/features/admin/components/AdminDateTimeField.tsx`, `AdminDateField.tsx`, `AdminPopover.tsx`, `adminCalendarSkin.ts`, `adminDateTime.ts`, `DropEditorRoute.tsx`, `DropsAdminList.tsx`, `ProductEditorRoute.tsx`, `-adminProductsIndex.tsx`, shared route helpers, Vitest specs, `package.json`, `docs/features/admin-ui.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Admin/storefront: drop card shell hover translate
+
+- Summary: **`AdminCard`** loses **`motion-safe:hover:-translate-y`** and **`transform`** transitions — hover stays **border + inset/ambient shadow** only ( **`motion-reduce`** still kills transitions ). Global CSS **removed** the **`.group/card`** override that zeroed CTA **`translateY`** now that the plate no longer lifts, so **`DashboardCardCtaLink`** and peers regain the usual **micro-lift**. **Pieces grid** product links drop **`hover:-translate-y`** / **`will-change-transform`** for a subtle **border** transition instead. **`anvl-global-interactive-styles`** contract test updated.
+- Files changed: `AdminCard.tsx`, `PiecesGrid.tsx`, `src/styles.css`, `src/test/anvl-global-interactive-styles.test.ts`, `docs/features/admin-ui.md`, `docs/changelog.md`.
+- Tests: **`pnpm verify`**.
+
+## 2026-05-18 — Global scrollbars + admin mobile drawer from left
+
+- Summary: Site-wide **thin scrollbars** use **`scrollbar-color`** (Firefox) plus **`::-webkit-scrollbar-*`** (Chromium/Safari), themed from **`--color-*`** (`--anvl-scrollbar-thumb` / hover / track). **`color-scheme`** follows **`data-theme="bone-light"`** vs dark defaults. **`Drawer`** adds **`placement="left"`**; **`AdminLayout`** mobile nav uses it with **`overflow-hidden`** shell + **`AdminSidebar`** **`density="drawer"`** (no inner nav scroll, tighter spacing, truncated labels, descriptions omitted). **`pnpm verify`** passes.
+- Files changed: `src/styles.css`, `Drawer.tsx`, `AdminLayout.tsx`, `AdminSidebar.tsx`, `Drawer.test.tsx`, `docs/design-system.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**. **Manual QA:** Firefox + Chromium/Edge — viewport scrollbar readable (thumb visible on Windows); **`/admin`** &lt; `lg`: menu opens from **left**, backdrop dismisses; sidebar clusters fit **`100dvh`** without an interior scroll strip (short viewport may clip — acceptable); storefront **`Drawer`** still slides from **right**. **PR screenshots:** narrow **`/admin`** with drawer open (left rail); optional storefront **`Drawer`** unchanged.
+
+## 2026-05-18 — Drop editor: Basics status AdminSelect
+
+- Summary: **Basics** tab **Status** uses **`AdminSelect`** (Radix) instead of a native **`<select>`**, with labelled trigger (**`id`** + **`aria-labelledby`**) matching other admin fields.
+- Files changed: `DropEditorRoute.tsx`, `DropEditorRoute.header.test.tsx`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor: live preview collapse in preview chrome
+
+- Summary: Below **`xl`**, **Hide / Show live preview** **`IconButton`** (**`EyeOff`** / **`Eye`**) sits in **`AdminCard` `actions`** on the same row as **Live preview** (**`aria-label`**, **`title`**, **`aria-expanded`**); **`DropEditorLivePreview`** only applies **`max-xl:hidden`** to the viewport toolbar + scrollable iframe shell when collapsed (no overlay on the preview frame).
+- Files changed: `DropEditorRoute.tsx`, `DropEditorLivePreview.tsx`, `DropEditorLivePreview.test.tsx`, `DropEditorRoute.header.test.tsx`, `docs/features/drops-cms.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Drop editor: activate-after-save in save modal only
+
+- Summary: **Activate this drop after saving** moved from the editor body into the **Commit changes to storage?** modal (same label/description; summary copy + `saveDrop(..., { makeActive })` unchanged). Vitest covers modal-only checkbox + `makeActive` + re-open pre-check.
+- Files changed: `DropEditorRoute.tsx`, `DropEditorRoute.header.test.tsx`, `docs/features/admin-ui.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**.
+
+## 2026-05-18 — Admin: global page actions + drop editor top bar icons
+
+- Summary: **`AdminPageActionsProvider`** wraps the **`/admin`** **`Outlet`** so routes register **`ReactNode`** toolbar slots via **`useAdminPageActions()`** (cleanup on unmount). **`AdminTopbar`** renders the slot (**`data-testid="admin-page-actions"`**); **`View storefront`** + **Logout** moved to **`AdminSidebar`** footer (**≥44×44** targets). **`DropEditorRoute`** drops **`AdminSectionHeader`** — **Reset** / **Delete** / **Save** are **`IconButton`** controls with themed **`Modal`** confirms (**Commit changes to storage?**, **Discard unsaved changes?**, destructive delete). Vitest: **`AdminPageActionsContext`**, updated **`DropEditorRoute`** toolbar tests (`DropEditorRoute.header.test.tsx`).
+- Files changed: `src/routes/admin/route.tsx`, `AdminPageActionsContext.tsx`, `AdminTopbar.tsx`, `AdminSidebar.tsx`, `DropEditorRoute.tsx`, tests under `src/features/admin/**/__tests__/`, `docs/features/admin-ui.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**. **Manual:** `/admin/drops/:id` — icons in top bar, modals fire; sidebar footer opens storefront + logs out; **`/admin`** dashboard — top actions region empty, sidebar footer unchanged behavior.
+
+## 2026-05-18 — Drop editor: quick-create catalog modal + preview viewport stability
+
+- Summary: **`AdminSelect`** (`@radix-ui/react-select`) matches **`AdminDropdownMenu`** forge styling. **Quick create product** uses **`MediaPickerField`** (native picker + drag-drop + optional URL), exposes pragmatic **`AdminProduct`** fields (slug, category, descriptions, tags, PDP detail lines, color + comma-separated sizes, visibility toggles, listing origin), **SKU prefix**, and **Quantity** (UI label — persists as **`stockQuantity`** on each variant via **`buildQuickCreateAdminProduct`** + **`rebuildAvailabilityMatrix`**). **Link this drop** controls **`dropIds`** / roster append. **`DropEditorLivePreview`**: iframe viewport glitch fixed (no breakpoint **`key`** remount; drop **`height`** from CSS transition; stable fixed viewport shell + **width-only** animation); preview shell uses **bounded height** with **sticky viewport toolbar** and **scrollable** chrome/iframe region.
+- Files changed: `src/features/admin/components/AdminSelect.tsx`, `src/features/admin/drops/quickCreateAdminProduct.ts`, `DropEditorRoute.tsx`, `DropEditorLivePreview.tsx`, `src/test/setup.ts`, `src/features/admin/components/__tests__/AdminSelect.test.tsx`, `src/features/admin/drops/__tests__/quickCreateAdminProduct.test.ts`, `products.persistence.zod.test.ts`, `package.json`, `docs/features/drops-cms.md`, `docs/features/admin-ui.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`** (220 tests). **Manual:** toggle Mobile → Tablet → Desktop — preview height stays stable; quick-create modal scrolls; Radix selects open + persist value.
+
+## 2026-05-18 — Drop editor: P5–P8 follow-through (theme card, products modal, SEO shells)
+
+- Summary: **P5** — `DropThemePaletteCard` unifies preset header, live swatch strip, and per-token `DebouncedColorField` grid; **Revert palette** compares against last saved drop snapshot; **Copy JSON** exports `Drop.theme`; persistence remains **`saveDrop`** (palette-only persistence API still absent). **P2** — Debounced commits (~72ms) replace per-frame draft updates for theme sliders. **P6** — `MediaPickerField` adds **`fallbackPreviewSrc`** (safe relative/https/data-image chain before crest) plus an **embedding spinner** while FileReader runs (`motion-reduce` simplifies animation). **P7** — Products tab uses thumbnail cards + **`AdminCheckbox`** roster, reorder arrows, and a **Quick create product** modal (`uniqueProductSlug`, `upsertAdminProduct`, `persistProductDropLinks`). **P8** — SEO tab splits **Core metadata** vs **Open Graph** inset sections with **`AdminInput`/`AdminTextarea`**. **P4** — `DropActsBuilderPanel` + legacy **`DropLandingActsEditor`** advanced blocks adopt shared admin controls. **`adminProductPrimaryPreviewImage`** powers listing thumbnails; **`AdminLayout`** increases bottom padding (`pb-28`, `lg:pb-32`).
+- Files changed: `DropEditorRoute.tsx`, `DropThemePaletteCard.tsx`, `DebouncedColorField.tsx`, `DropActsBuilderPanel.tsx`, `DropLandingActsEditor.tsx`, `MediaPickerField.tsx`, `AdminLayout.tsx`, `products.slug.ts`, `products.mapper.ts`, new/updated Vitest files (`DebouncedColorField`, `DropThemePaletteCard`, `products.slug`, `products.mapper.preview`, `MediaPickerField`), `docs/features/admin-ui.md`, `docs/features/drops-cms.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`** (212 tests).
+
+### Phased checklist (this batch)
+
+| Phase | Status | Notes |
+|-------|--------|--------|
+| P2 Color perf | Done | `DebouncedColorField` + `startTransition` on flush |
+| P4 Admin inputs | Done | Acts builder, legacy landing advanced, visuals/SEO/products |
+| P5 Theme cards / palette UX | Done | Unified card; revert + JSON export |
+| P6 Visuals fallbacks/spinner | Done | `fallbackPreviewSrc`; embed spinner |
+| P7 Products cards + modal | Done | Quick create stays on page |
+| P8 SEO hierarchy | Done | Core vs OG panels |
+
+- Notes/debt: **Named palette preset persistence** (user-stored presets beyond Copy JSON / shipped `DROP_THEME_PRESETS`) not implemented. **Quick-create** intentionally seeds a minimal `AdminProduct` — full variant matrix / PDP SEO still require **`ProductEditorRoute`**. **`leaveEmpty` visuals** remain editor-only until storefront honors persisted empties (prior debt). **Zero persisted acts** flag unchanged.
+
+## 2026-05-18 — Drop editor: acts-only preview, layout/iframe QA, admin inputs
+
+- Summary: **P0** — `composeLandingPageFromDrop(..., { editorActsPreview: true })` drives the CMS preview strictly from `Drop.acts` (no `landingActSequence` fallback). `PublicLandingActs` shows an explicit empty state when `cmsPreview` + zero acts. Default Oath / `createEmptyDrop` seed `acts` via `landingContentToSimpleActs`; `mergeDropPartial` bootstraps acts from merged landing when storage has an empty `acts` array (cannot persist a truly empty act list until a flag lands — see debt). **Viewport iframe** uses `useLayoutEffect`, explicit `minHeight`, and `min-h-[280px]`; preview wrapper uses `min-h-0` flex discipline. **P1** — Editor grid is **two-column from `xl` only**; **Hide/Show live preview** below `xl`. **P2 (partial)** — Theme `ColorField` updates wrapped in `startTransition`. **P3** — Slug field help text. **P4 (partial)** — `AdminInput` / `AdminTextarea` / `AdminCheckbox` (+ shared `adminFieldControlClass`) on Basics + Theme. **Layout** — `AdminLayout` main adds bottom padding for toasts/safe scroll.
+- Files changed: `composeLandingPageFromDrop.ts`, `PublicLandingActs.tsx`, `DropEditorRoute.tsx`, `DropEditorLivePreview.tsx`, `drops.defaults.ts`, `drops.service.ts`, `dropEditorRoute.shared.ts`, `AdminLayout.tsx`, `AdminInput.tsx`, `AdminCheckbox.tsx`, `src/features/cms/landing/__tests__/composeLandingPageFromDrop.test.ts`, `docs/features/drops-cms.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`** (205 tests).
+- **Manual QA matrix (tablet/mobile editor):** (1) `/admin/drops/$id` below 1280px: single column, forms full width. (2) “Hide live preview” hides preview card; “Show” restores. (3) At `xl+`: two columns, preview sticky. (4) Preview pills: Fit vs Mobile/Tablet/Desktop — iframe modes show the same act stack as Fit (GSAP reset CSS). (5) Acts tab reorder/disable — preview updates without relying on slot toggles alone. (6) Slug help reads clearly on narrow widths.
+
+### Phased checklist (this batch)
+
+| Phase | Status | Notes |
+|-------|--------|--------|
+| P0 Preview + iframe + overlap | Done | Acts-only compose; iframe init/layout; admin main `pb-*` |
+| P1 Responsive split | Done | `xl` breakpoint; collapsible preview `< xl` |
+| P2 Color perf | Partial | `startTransition` on theme colors; debounce revisit if still janky |
+| P3 Slug copy | Done | |
+| P4 Admin inputs | Partial | Basics + Theme only |
+| P5 Theme cards / palette persist | Deferred | |
+| P6 Visuals fallbacks/spinner | Deferred | |
+| P7 Products cards + modal create | Deferred | |
+| P8 SEO hierarchy | Deferred | |
+
+- Notes/debt: **Empty `acts`** now round-trip on merge without landing re-seed (see newer changelog entry); storefront compose without **`editorActsPreview`** still falls back to **`landingActSequence`** when acts are empty. **ColorField** debounce was reverted (controlled slider sync); prefer `startTransition` + future `memo`d subtree. P5–P8 unchanged in this slice.
+
+## 2026-05-18 — Admin drop editor: streamlined section header toolbar
+
+- Summary: **`DropEditorRoute`** **`AdminSectionHeader`** no longer shows the preview explainer paragraph or the external **Live route** link. The strip keeps **Drop editor** + **title** ( **`Untitled`** when the internal name is blank/whitespace), with **`AdminButton`** actions only: **Reset** (`secondary`), **Delete** (`destructive`), **Save drop** (`primary`, disabled when validation fails). **Make active** was removed from the header (activation remains via **Activate this drop after saving** + save, and the drops index). **`AdminSectionHeader`** tightens vertical rhythm when **`description`** is omitted and tunes the **`h2`** for oath-dark headings. Tests: **`src/features/admin/drops/__tests__/DropEditorRoute.header.test.tsx`**.
+- Files changed: `src/features/admin/drops/DropEditorRoute.tsx`, `src/features/admin/components/AdminSectionHeader.tsx`, `src/features/admin/drops/__tests__/DropEditorRoute.header.test.tsx`, `docs/features/admin-ui.md`, `docs/changelog.md`.
+- Tests/manual checks: **`pnpm verify`**.
+
 ## 2026-05-17 — Admin `/admin/drops`: forged outline “Create new drop” icon control
 
 - Summary: Toolbar **`Plus`** link drops the flat **`primary`** pill for a **`DashboardCardCtaLink`-style** forged plate (**OKLab accent border**, **`--color-surface`** fill, inset rim + depth shadow, **`h-11`** / **44px** touch). **`focus-ring inline-flex`** stays on the global CTA hover path (`src/styles.css`).

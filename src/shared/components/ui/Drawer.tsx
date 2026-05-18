@@ -17,7 +17,7 @@ export type DrawerProps = PropsWithChildren<
     open: boolean
     onClose: () => void
     className?: string
-    placement?: 'right' | 'bottom'
+    placement?: 'left' | 'right' | 'bottom'
     title?: ReactNode
   } & DrawerAriaProps
 >
@@ -39,6 +39,7 @@ export function Drawer({
   const generatedTitleId = useId()
 
   const isBottom = placement === 'bottom'
+  const isLeft = placement === 'left'
   const hasTitle = title != null && title !== ''
 
   useDialogFocusTrap({ open, panelRef, onClose })
@@ -60,10 +61,12 @@ export function Drawer({
         ref={panelRef}
         tabIndex={-1}
         className={cn(
-          'absolute overflow-y-auto border-[var(--color-line)] bg-[var(--color-surface)] p-6 outline-none',
+          'absolute flex min-h-0 flex-col border-[var(--color-line)] bg-[var(--color-surface)] p-6 outline-none',
           isBottom
-            ? 'bottom-0 left-0 right-0 max-h-[88vh] rounded-t-2xl border-t'
-            : 'right-0 top-0 h-full w-[88%] max-w-sm border-l',
+            ? 'bottom-0 left-0 right-0 max-h-[88vh] overflow-y-auto rounded-t-2xl border-t'
+            : isLeft
+              ? 'left-0 top-0 h-[100dvh] max-h-[100dvh] w-[88%] max-w-sm overflow-y-auto border-r border-l-0'
+              : 'right-0 top-0 h-full max-h-[100dvh] w-[88%] max-w-sm overflow-y-auto border-l',
           className,
         )}
         role="dialog"
@@ -78,7 +81,14 @@ export function Drawer({
             {title}
           </h2>
         ) : null}
-        <div className={cn('min-h-0', isBottom && 'pb-2')}>{children}</div>
+        <div
+          className={cn(
+            'flex min-h-0 flex-1 flex-col',
+            isBottom && 'pb-2',
+          )}
+        >
+          {children}
+        </div>
       </aside>
     </div>
   )

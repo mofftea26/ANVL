@@ -51,6 +51,18 @@ describe('persistedProductSchema (SEC-07 / Phase C2)', () => {
     const { slug: _slug, ...incomplete } = seed[0]!
     expect(persistedProductSchema.safeParse(incomplete).success).toBe(false)
   })
+
+  it('rejects when availability.stockQuantity is not a number', () => {
+    const brokenAvail = seed[0]!.availability.map((a, i) =>
+      i === 0 ? { ...a, stockQuantity: '12' as unknown as number } : a,
+    )
+    expect(
+      persistedProductSchema.safeParse({
+        ...seed[0],
+        availability: brokenAvail,
+      }).success,
+    ).toBe(false)
+  })
 })
 
 describe('productsPersistedPayloadSchema', () => {

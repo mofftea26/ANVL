@@ -33,10 +33,14 @@ Per active drop, update:
 Never change the official header/footer ANVL logo per drop. Campaign logos/emblems live inside drop sections only.
 
 ## Active drop storefront theming
-- **CSS variables**: `DropThemePalette` maps to shared custom properties (`--color-bg`, `--color-surface`, `--color-accent`, `--color-hero-glow`, etc.) via `dropPaletteToCssVarsRecord` / `serializeDropPaletteForRootStyle` in `src/features/admin/drops/dropPaletteStyle.ts`.
-- **SSR**: The root route loader calls `runtimeClients.cms.getActiveDrop()` for public paths; `head` injects a `<style id="anvl-active-drop-theme">` block so the first paint matches hydration (no client-only `:root` mutation during SSR).
-- **Client updates**: `ActiveDropThemeProvider` (public layout only) keeps the same style tag in sync when drops change in admin storage and on navigation; admin routes skip active-drop fetch/injection so CMS chrome stays on base tokens.
+- **CSS variables**: `DropThemePalette` maps to shared custom properties (`--color-bg`, `--color-surface`, `--color-accent`, `--color-hero-glow`, etc.) via `dropPaletteToCssVarsRecord` / `serializeDropPaletteForRootStyle` in `src/features/cms/theme/dropPaletteStyle.ts`.
+- **SSR + client**: The public shell wraps storefront routes in **`ActiveDropThemeProvider`**, which renders `<style id="anvl-active-drop-theme">` from the active drop (root loader on SSR) and keeps that tag updated when local CMS drop storage changes (**`anvl:drops:change`**). Admin routes are excluded so CMS chrome stays on base tokens.
 - **Preview**: Admin-only previews use `DropPreviewThemeScope`, which applies palette variables on a scoped element, not the global brand header/footer mark.
+
+## Scrollbars
+- Global rails live in **`src/styles.css`**: **`scrollbar-width: thin`** + **`scrollbar-color`** (Firefox) and matching **`::-webkit-scrollbar-*`** rules (Chromium/WebKit). Thumb/track colors derive from **`--color-accent`**, **`--color-heading`**, **`--color-surface`**, and **`--color-bg`** via **`--anvl-scrollbar-thumb`** / **`--anvl-scrollbar-thumb-hover`** / **`--anvl-scrollbar-track`** so storefront themes stay coherent.
+- **`color-scheme`** on **`:root`** is **`dark`** by default and switches to **`light`** for **`data-theme="bone-light"`** so native controls match the active palette.
+- Thumb hover uses a short **`background-color`** transition; **`prefers-reduced-motion: reduce`** tightens that duration.
 
 ## Mobile-first rules
 - Mobile: minimal motion, no scroll-jacking, no heavy pinned GSAP sequences, compressed media, simple product cards, sticky bottom cart/CTA when useful.
@@ -52,9 +56,9 @@ Never change the official header/footer ANVL logo per drop. Campaign logos/emble
 - Admin navigation is grouped (Workspace, Campaigns, Catalog, Site) with compact badges; the dashboard mirrors the same destinations as cards.
 
 ## Shared CMS field components
-- `ColorField` (`src/shared/components/ui/ColorField.tsx`) — full color picker exposing the OS color wheel (`<input type="color">`), a HEX text input, three R/G/B numeric channels, and an opacity slider with numeric companion. Emits `#rrggbb` when alpha is 1, `rgba(r, g, b, a)` otherwise. Parsing accepts hex (3/6/8), `rgb()`, `rgba()`, and percentage alpha tokens.
+- `ColorField` (`src/shared/components/ui/ColorField.tsx`) — full color picker with an in-panel **SV + hue** control (**`react-colorful`** `RgbColorPicker`: saturation/value square + hue slider; keyboard nudges on the library’s interactive surfaces), plus a HEX text input, three R/G/B numeric channels, and an opacity slider with numeric companion (no native color popover as the primary control). Emits `#rrggbb` when alpha is 1, `rgba(r, g, b, a)` otherwise. Parsing accepts hex (3/6/8), `rgb()`, `rgba()`, and percentage alpha tokens. **Default layout**: large swatch tile (checkerboard under alpha) with mono hex copy + **`IconButton`** opening a **non-modal** popover for precision controls; **`inline`** keeps the compact “all controls visible” layout (e.g. product swatch rows).
 - `MediaPickerField` (`src/shared/components/ui/MediaPickerField.tsx`) — single picker for **images, SVGs, and videos**. Supports drag-and-drop on desktop plus the native file picker, and falls back to a paste-URL/public-path input. Validates MIME and size, embeds small files as data URLs. Empty values default-preview the bundled ANVL crest; pass `fallback="none"` for fields that should genuinely render nothing, or wire `onLeaveEmptyChange` to expose a "Leave empty (no fallback)" checkbox per field.
-- `parseColor` / `rgbaToCss` (`src/shared/lib/color.ts`) — shared utilities used by `ColorField` so RGB/HEX/RGBA round-trips are lossless.
+- `parseColor` / `rgbaToCss` / `rgbaToClipboardHex` (`src/shared/lib/color.ts`) — shared utilities used by `ColorField` so RGB/HEX/RGBA round-trips are lossless; clipboard format uses `#RRGGBB` or `#RRGGBBAA` when alpha is below 1.
 
 ## Media rules
 - Use responsive images.

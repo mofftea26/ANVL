@@ -1,10 +1,16 @@
-export function AnvlWordmark({ className }: { className?: string }) {
+export function AnvlWordmark({
+  className,
+  'aria-label': ariaLabel = 'ANVL wordmark',
+}: {
+  className?: string
+  'aria-label'?: string
+}) {
   return (
     <svg
       className={className}
       viewBox="170 785 1750 385"
       role="img"
-      aria-label="ANVL wordmark"
+      aria-label={ariaLabel}
       fill="currentColor"
     >
       <path d="M 977.939 789.17 L 1050.93 789.184 L 1050.96 1031 L 1051.02 1115.67 C 1051.03 1130.49 1051.53 1149.67 1050.62 1164.11 L 988.099 1164.09 C 958.577 1130.65 929.551 1095.45 900.716 1061.35 L 768.706 905.837 L 768.815 1164.11 L 696.387 1164.09 L 696.588 789.18 L 760.442 789.14 C 785.031 819.733 814.131 852.454 839.71 882.482 L 977.837 1046.65 L 977.939 789.17 z" />

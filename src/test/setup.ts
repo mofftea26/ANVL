@@ -10,6 +10,8 @@
  * monkey-patching globals you don't understand.
  */
 
+import '@testing-library/jest-dom/vitest'
+
 import { afterEach, beforeEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
@@ -68,4 +70,25 @@ if (typeof globalThis !== 'undefined' && !('ResizeObserver' in globalThis)) {
   }
   ;(globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver =
     MockResizeObserver
+}
+
+// Pointer capture — Radix Select expects these DOM APIs (missing in jsdom).
+if (typeof Element !== 'undefined') {
+  const proto = Element.prototype as Element & {
+    hasPointerCapture?: (pointerId: number) => boolean
+    setPointerCapture?: (pointerId: number) => void
+    releasePointerCapture?: (pointerId: number) => void
+  }
+  if (!proto.hasPointerCapture) {
+    proto.hasPointerCapture = () => false
+  }
+  if (!proto.setPointerCapture) {
+    proto.setPointerCapture = () => {}
+  }
+  if (!proto.releasePointerCapture) {
+    proto.releasePointerCapture = () => {}
+  }
+  proto.scrollIntoView = function scrollIntoView() {
+    /* Radix Select focuses options via scrollIntoView — jsdom stub. */
+  }
 }

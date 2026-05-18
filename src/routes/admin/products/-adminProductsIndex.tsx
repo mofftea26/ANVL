@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
+import { AdminDateField } from '@/features/admin/components/AdminDateField'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
@@ -30,6 +31,7 @@ import { Button } from '@/shared/components/ui/Button'
 import { Input } from '@/shared/components/ui/Input'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Select } from '@/shared/components/ui/Select'
+import { cn } from '@/shared/lib/cn'
 
 export function AdminProductsIndexRoute() {
   return (
@@ -505,22 +507,22 @@ function ProductsIndex() {
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Updated from
-          <Input
-            type="date"
-            className={fieldClass}
-            value={updatedFrom}
-            onChange={(e) => setUpdatedFrom(e.target.value)}
+          <AdminDateField
+            clear
+            className={cn('focus-ring', fieldClass)}
             aria-label="Updated on or after"
+            value={updatedFrom}
+            onChange={setUpdatedFrom}
           />
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Updated to
-          <Input
-            type="date"
-            className={fieldClass}
-            value={updatedTo}
-            onChange={(e) => setUpdatedTo(e.target.value)}
+          <AdminDateField
+            clear
+            className={cn('focus-ring', fieldClass)}
             aria-label="Updated on or before"
+            value={updatedTo}
+            onChange={setUpdatedTo}
           />
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">

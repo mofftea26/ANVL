@@ -4,7 +4,6 @@ import {
   archiveDrop,
   deleteDrop,
   duplicateDrop,
-  getActiveDrop,
   readDropsArray,
   scheduleDropActivation,
   setActiveDrop,
@@ -13,6 +12,7 @@ import { getLandingCmsContent } from '@/features/admin/landing-cms/landingCms.se
 import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { HomePageContent } from '@/features/cms/types/cms.types'
+import { resolveStorefrontActiveDrop } from '@/features/cms/runtime/storefrontCmsSync'
 
 function dropToAdminListItem(d: Drop): AdminDropListItem {
   return {
@@ -62,7 +62,7 @@ function toLegacyHomepage(): HomePageContent {
  */
 export const localStorageCmsClient: CmsClient = {
   async getActiveDrop() {
-    return getActiveDrop()
+    return resolveStorefrontActiveDrop()
   },
   async getLandingCmsContent() {
     return getLandingCmsContent()

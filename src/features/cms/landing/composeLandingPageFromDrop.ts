@@ -7,6 +7,7 @@ import type { Drop } from '@/features/drops/drop.types'
 import {
   publicLandingActsFromDraftActs,
   publicLandingActsFromSequence,
+  publicLandingActsHeroSlotOnly,
 } from '@/features/cms/landing/landingActs.normalize'
 import type { WebsiteLayoutContent } from '@/features/cms/layout/websiteLayout.types'
 
@@ -34,8 +35,19 @@ function patchDropNavLinks<T extends { href: string; label: string }>(
 
 export type ComposeLandingPageFromDropOptions = {
   /**
-   * Drop Editor preview: prefer `drop.acts` for `landingActs` when non-empty,
-   * else fall back to `landingActSequence` (public homepage behavior).
+   * Drop editor live preview: `landingActs` come **only** from `Drop.acts` (acts builder).
+   * Empty acts yield an empty `landingActs` array (no `landingActSequence` merge).
+   */
+  editorActsPreview?: boolean
+  /**
+   * When paired with `editorActsPreview`: if there are no persisted acts, or every
+   * act is disabled, compose a **single hero** row from the canonical homepage slot
+   * sequence (same shape as Drop 01 hero) so the iframe preview is never blank.
+   */
+  editorPreviewHeroFallback?: boolean
+  /**
+   * Prefer `drop.acts` when non-empty, else fall back to `landingActSequence`
+   * (homepage-style merge for tools/tests — not used by the drop editor preview).
    */
   useDraftActsPipeline?: boolean
 }
@@ -120,6 +132,17 @@ export function composeLandingPageFromDrop(
     materials: lc.materials,
     waitlist: lc.waitlist,
     landingActs: (() => {
+      if (options?.editorActsPreview) {
+        const acts = publicLandingActsFromDraftActs(drop.acts) ?? []
+        const anyEnabled = acts.some((a) => a.enabled !== false)
+        if (
+          options.editorPreviewHeroFallback &&
+          (acts.length === 0 || !anyEnabled)
+        ) {
+          return publicLandingActsHeroSlotOnly()
+        }
+        return acts
+      }
       if (options?.useDraftActsPipeline) {
         const fromActs = publicLandingActsFromDraftActs(drop.acts)
         if (fromActs && fromActs.length > 0) return fromActs

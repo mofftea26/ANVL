@@ -1,5 +1,5 @@
 import { previewLoadingSrc } from '@/app/providers/ActiveDropThemeBridge'
-import { getActiveDrop } from '@/features/cms/read/dropRuntime'
+import { resolveStorefrontActiveDrop } from '@/features/cms/runtime/storefrontCmsSync'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { cn } from '@/shared/lib/cn'
 
@@ -12,7 +12,7 @@ export function DropLoadingIndicator({
   label = 'Loading',
   className,
 }: DropLoadingIndicatorProps) {
-  const drop = getActiveDrop()
+  const drop = resolveStorefrontActiveDrop()
   const src = previewLoadingSrc(drop ?? undefined)
 
   return (

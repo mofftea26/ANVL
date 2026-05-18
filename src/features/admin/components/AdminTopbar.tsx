@@ -1,9 +1,7 @@
-import { Link } from '@tanstack/react-router'
-import { ExternalLink, LogOut, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Button } from '@/shared/components/ui/Button'
 import { IconButton } from '@/shared/components/ui/IconButton'
-import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
+import { useAdminPageActionsSlot } from '@/features/admin/components/AdminPageActionsContext'
 
 interface AdminTopbarProps {
   title: string
@@ -16,7 +14,7 @@ export function AdminTopbar({
   description,
   onOpenMenu,
 }: AdminTopbarProps) {
-  const { logout } = useAdminAuth()
+  const pageActions = useAdminPageActionsSlot()
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--color-line)] bg-[var(--color-bg)]/85 backdrop-blur">
@@ -43,26 +41,14 @@ export function AdminTopbar({
           ) : null}
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            to="/"
-            target="_blank"
-            rel="noreferrer"
-            className="focus-ring hidden h-10 items-center gap-2 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-3 text-xs font-semibold text-[var(--color-text)] no-underline transition hover:bg-[var(--color-surface-elevated)] sm:inline-flex"
+        {pageActions ? (
+          <div
+            className="flex shrink-0 flex-wrap items-center justify-end gap-2"
+            data-testid="admin-page-actions"
           >
-            View homepage
-            <ExternalLink size={14} aria-hidden="true" />
-          </Link>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={logout}
-          >
-            <LogOut size={14} aria-hidden="true" className="mr-2" />
-            Logout
-          </Button>
-        </div>
+            {pageActions}
+          </div>
+        ) : null}
       </div>
     </header>
   )

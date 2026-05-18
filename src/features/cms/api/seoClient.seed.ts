@@ -1,12 +1,16 @@
 ﻿import type { SeoClient } from '@/app/config/clients'
 import { resolveSeoByPath } from '@/features/cms/api/resolveSeoByPath'
-import { SEED_DROP, SEED_LANDING_PAGE_CMS } from '@/features/cms/api/seedSnapshots'
+import { getDropBySlug } from '@/features/cms/read/dropRuntime'
+import {
+  getResolvedStorefrontLandingCmsSync,
+  resolveStorefrontActiveDrop,
+} from '@/features/cms/runtime/storefrontCmsSync'
 import { defaultSiteSeoContent } from '@/features/cms/siteSeo.local'
 
 const seedSeoCtx = {
-  loadLanding: () => SEED_LANDING_PAGE_CMS,
-  getActiveDrop: () => SEED_DROP,
-  getDropBySlug: (slug: string) => (slug === SEED_DROP.slug ? SEED_DROP : undefined),
+  loadLanding: () => getResolvedStorefrontLandingCmsSync(),
+  getActiveDrop: () => resolveStorefrontActiveDrop(),
+  getDropBySlug: (slug: string) => getDropBySlug(slug),
 }
 
 export const seedSeoClient: SeoClient = {

@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
 import viteReact from '@vitejs/plugin-react'
+import { availableParallelism } from 'node:os'
 import { resolve } from 'node:path'
 
 /**
@@ -18,6 +19,10 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    /** Heavy UI suites + shared runners can exceed Vitest's default 5s budget. */
+    testTimeout: 15_000,
+    /** Very high core counts + jsdom + userEvent can starve and time out on Windows. */
+    maxWorkers: Math.min(4, Math.max(1, availableParallelism())),
     globals: false,
     css: false,
     setupFiles: ['./src/test/setup.ts'],

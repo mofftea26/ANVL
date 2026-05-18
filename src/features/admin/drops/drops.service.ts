@@ -1,6 +1,6 @@
 import type { AdminProduct } from '@/features/admin/products/products.types'
 import { ALL_ADMIN_STORAGE_KEYS } from '@/features/admin/storageKeys'
-import type { Drop, DropStatus, DropsPersistedState } from './drops.types'
+import type { Drop, DropLandingContent, DropStatus, DropsPersistedState } from './drops.types'
 import { normalizeLandingActSequence } from './drops.actSequence'
 import {
   readActiveDropIdRaw,
@@ -30,13 +30,26 @@ import {
   getAdminProducts,
   saveAdminProducts,
 } from '@/features/admin/products/products.service'
+import { landingContentToSimpleActs } from '@/features/admin/drops/acts/landingActs.seed'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import {
   dropsPersistedPayloadSchema,
   persistedDropSchema,
 } from './drops.persistence.zod'
+import { bumpDropsPersistGeneration } from './drops.persistGeneration'
 
 let hydrationRan = false
+
+/** Resolves `acts` when merging a persisted or partial drop row (Vitest covers edge cases). */
+export function resolveActsForMergedDrop(
+  partial: Partial<Drop>,
+  mergedLanding: DropLandingContent,
+): Drop['acts'] {
+  if (Object.hasOwn(partial, 'acts') && Array.isArray(partial.acts)) {
+    return [...partial.acts]
+  }
+  return landingContentToSimpleActs(mergedLanding)
+}
 
 function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
   const base = createDefaultTheOathDrop([...DEFAULT_OATH_PRODUCT_IDS])
@@ -71,10 +84,7 @@ function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
     ...base,
     ...partial,
     landingContent: mergedLanding,
-    acts:
-      Array.isArray(partial.acts) && partial.acts.length > 0
-        ? [...partial.acts]
-        : [...base.acts],
+    acts: resolveActsForMergedDrop(partial, mergedLanding),
     landingActSequence: normalizeLandingActSequence(
       partial.landingActSequence ?? base.landingActSequence,
     ),
@@ -185,6 +195,7 @@ export function persistDropsState(
   drops: Drop[],
   activeDropId: string | null,
 ): void {
+  bumpDropsPersistGeneration()
   const synced = drops.map((d) => normalizeDropForPersist(d, activeDropId))
   const body: DropsPersistedState = { drops: synced }
   writeDropsRaw(JSON.stringify(body))

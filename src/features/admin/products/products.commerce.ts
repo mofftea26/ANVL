@@ -1,10 +1,7 @@
 import type { Product, ShopDropFilterOption } from '@/features/products/types/product.types'
 import type { AdminProduct } from '@/features/admin/products/products.types'
-import {
-  getActiveDrop,
-  getDropBySlug,
-  readDropsArray,
-} from '@/features/admin/drops/drops.service'
+import { getDropBySlug, readDropsArray } from '@/features/admin/drops/drops.service'
+import { resolveStorefrontActiveDrop } from '@/features/cms/runtime/storefrontCmsSync'
 import {
   adminProductIsPubliclyVisible,
   adminProductToLegacy,
@@ -12,7 +9,7 @@ import {
 import { getAdminProducts } from '@/features/admin/products/products.service'
 
 function dropDisplayNameFromActive(): string {
-  const drop = getActiveDrop()
+  const drop = resolveStorefrontActiveDrop()
   return drop ? `${drop.dropNumber}: ${drop.name}` : 'ANVL Athletics'
 }
 
@@ -57,7 +54,7 @@ export function getStorefrontProductsForShop(): Product[] {
 
 /** Homepage / drop hero — ordered list limited to active drop assignment. */
 export function getStorefrontProductsForHome(): Product[] {
-  const drop = getActiveDrop()
+  const drop = resolveStorefrontActiveDrop()
   const label = drop ? `${drop.dropNumber}: ${drop.name}` : dropDisplayNameFromActive()
   if (!drop) return []
   const map = new Map(getAdminProducts().map((p) => [p.id, p]))

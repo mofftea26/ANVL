@@ -1,6 +1,7 @@
 import { landingCmsDefaults } from '@/features/admin/landing-cms/landingCms.defaults'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import type { Drop, DropLandingContent, DropVisuals } from './drops.types'
+import { landingContentToSimpleActs } from '@/features/admin/drops/acts/landingActs.seed'
 import { DROP_THEME_PRESETS } from './drops.presets'
 import { defaultLandingActSequence } from './drops.actSequence'
 
@@ -83,6 +84,7 @@ export function createDefaultTheOathDrop(
   nowIso = new Date().toISOString(),
 ): Drop {
   const theme = structuredClone(DROP_THEME_PRESETS[0])
+  const landingContent = landingDefaultsToDropLandingContent()
   return {
     id: DEFAULT_OATH_DROP_ID,
     slug: 'the-oath',
@@ -99,9 +101,9 @@ export function createDefaultTheOathDrop(
     updatedAt: nowIso,
     theme,
     visuals: defaultDropVisuals(),
-    landingContent: landingDefaultsToDropLandingContent(),
+    landingContent,
     landingActSequence: defaultLandingActSequence(),
-    acts: [],
+    acts: landingContentToSimpleActs(landingContent),
     productIds: [...productIds],
     seo: {
       title: landingCmsDefaults.seo.title,
@@ -128,6 +130,7 @@ export function createEmptyDrop(nowIso = new Date().toISOString()): Drop {
     status: 'draft',
     isActive: false,
     productIds: [],
+    acts: landingContentToSimpleActs(oath.landingContent),
     seo: {
       title: 'ANVL Athletics',
       description: '',

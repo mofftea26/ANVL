@@ -160,6 +160,25 @@ export function adminProductAllowsAddToCart(p: AdminProduct): boolean {
   return true
 }
 
+/** Primary listing image URL + alt text for admin surfaces. */
+export function adminProductPrimaryPreviewImage(p: AdminProduct): {
+  src: string
+  alt: string
+} | null {
+  const color0 = p.colors[0]
+  if (!color0) return null
+  const sorted = sortImages(color0.images)
+  const primary = sorted.find((i) => i.isPrimary) ?? sorted[0]
+  const url = primary?.url?.trim()
+  if (!url) return null
+  const productName = p.name?.trim() || 'Product'
+  const colorName = color0.name?.trim() || 'Color'
+  const alt =
+    primary.alt?.trim() ||
+    `${productName} preview — ${colorName}`
+  return { src: url, alt }
+}
+
 export function variantIsPurchasable(
   admin: AdminProduct,
   colorIndex: number,

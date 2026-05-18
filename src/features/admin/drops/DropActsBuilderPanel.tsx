@@ -1,4 +1,5 @@
-﻿import { useCallback, useEffect, useMemo, useRef } from 'react'
+﻿import { useCallback, useMemo } from 'react'
+import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import type { LandingActSlot } from '@/features/admin/drops/drops.actSequence'
@@ -9,7 +10,17 @@ import { safeParseActContent } from '@/features/admin/drops/acts/landingActs.zod
 import { landingContentToSimpleActs } from '@/features/admin/drops/acts/landingActs.seed'
 import { dropLandingContentSchema } from '@/features/admin/drops/drops.persistence.zod'
 import { AdminButton } from '@/features/admin/components/AdminButton'
+import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
+import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
+import {
+  AdminSelect,
+  AdminSelectContent,
+  AdminSelectItem,
+  AdminSelectTrigger,
+  AdminSelectValue,
+} from '@/features/admin/components/AdminSelect'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
+import { IconButton } from '@/shared/components/ui/IconButton'
 
 const NATURE_OPTIONS = [
   { value: 'hero', label: 'Hero' },
@@ -73,8 +84,8 @@ function syncSequence(
   })
 }
 
-const fieldClass =
-  'mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)]'
+/** Radix Select item value for “use schema default” (optional card layout fields). */
+const INHERIT_VALUE = '__inherit__'
 
 function readCta(
   c: Record<string, unknown>,
@@ -121,9 +132,8 @@ function NatureContentFields({
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Countdown target (ISO datetime)
-          <input
-            className={fieldClass}
-            value={readStr(c, 'countdownTargetIso')}
+          <AdminInput
+                        value={readStr(c, 'countdownTargetIso')}
             onChange={(e) =>
               patchContent({ countdownTargetIso: e.target.value || undefined })
             }
@@ -155,9 +165,8 @@ function NatureContentFields({
         </div>
         <label className="text-xs text-[var(--color-text-muted)]">
           Primary CTA label
-          <input
-            className={fieldClass}
-            value={p.label}
+          <AdminInput
+                        value={p.label}
             onChange={(e) =>
               patchContent({
                 primaryCta: { ...p, label: e.target.value },
@@ -167,9 +176,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Primary CTA href
-          <input
-            className={fieldClass}
-            value={p.href}
+          <AdminInput
+                        value={p.href}
             onChange={(e) =>
               patchContent({
                 primaryCta: { ...p, href: e.target.value },
@@ -179,9 +187,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Secondary CTA label
-          <input
-            className={fieldClass}
-            value={s.label}
+          <AdminInput
+                        value={s.label}
             onChange={(e) =>
               patchContent({
                 secondaryCta: { ...s, label: e.target.value },
@@ -191,9 +198,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Secondary CTA href
-          <input
-            className={fieldClass}
-            value={s.href}
+          <AdminInput
+                        value={s.href}
             onChange={(e) =>
               patchContent({
                 secondaryCta: { ...s, href: e.target.value },
@@ -210,16 +216,15 @@ function NatureContentFields({
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
         <label className="text-xs text-[var(--color-text-muted)]">
           Quote
-          <input
-            className={fieldClass}
-            value={readStr(c, 'quote')}
+          <AdminInput
+                        value={readStr(c, 'quote')}
             onChange={(e) => patchContent({ quote: e.target.value || undefined })}
           />
         </label>
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Story paragraphs
-          <textarea
-            className={`${fieldClass} min-h-[72px]`}
+          <AdminTextarea
+            className="min-h-[72px]"
             value={readStr(c, 'storyParagraphs')}
             onChange={(e) =>
               patchContent({ storyParagraphs: e.target.value || undefined })
@@ -235,9 +240,8 @@ function NatureContentFields({
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
         <label className="text-xs text-[var(--color-text-muted)]">
           Chapter title
-          <input
-            className={fieldClass}
-            value={readStr(c, 'chapterTitle')}
+          <AdminInput
+                        value={readStr(c, 'chapterTitle')}
             onChange={(e) =>
               patchContent({ chapterTitle: e.target.value || undefined })
             }
@@ -245,8 +249,8 @@ function NatureContentFields({
         </label>
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Chapter body
-          <textarea
-            className={`${fieldClass} min-h-[72px]`}
+          <AdminTextarea
+            className="min-h-[72px]"
             value={readStr(c, 'chapterBody')}
             onChange={(e) =>
               patchContent({ chapterBody: e.target.value || undefined })
@@ -264,9 +268,8 @@ function NatureContentFields({
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Release date (ISO)
-          <input
-            className={fieldClass}
-            value={readStr(c, 'releaseDateIso')}
+          <AdminInput
+                        value={readStr(c, 'releaseDateIso')}
             onChange={(e) =>
               patchContent({ releaseDateIso: e.target.value || undefined })
             }
@@ -286,9 +289,8 @@ function NatureContentFields({
         </div>
         <label className="text-xs text-[var(--color-text-muted)]">
           Primary CTA label
-          <input
-            className={fieldClass}
-            value={p.label}
+          <AdminInput
+                        value={p.label}
             onChange={(e) =>
               patchContent({ primaryCta: { ...p, label: e.target.value } })
             }
@@ -296,9 +298,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Primary CTA href
-          <input
-            className={fieldClass}
-            value={p.href}
+          <AdminInput
+                        value={p.href}
             onChange={(e) =>
               patchContent({ primaryCta: { ...p, href: e.target.value } })
             }
@@ -306,9 +307,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Secondary CTA label
-          <input
-            className={fieldClass}
-            value={s.label}
+          <AdminInput
+                        value={s.label}
             onChange={(e) =>
               patchContent({ secondaryCta: { ...s, label: e.target.value } })
             }
@@ -316,9 +316,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Secondary CTA href
-          <input
-            className={fieldClass}
-            value={s.href}
+          <AdminInput
+                        value={s.href}
             onChange={(e) =>
               patchContent({ secondaryCta: { ...s, href: e.target.value } })
             }
@@ -329,40 +328,49 @@ function NatureContentFields({
   }
 
   if (nature === 'productShowcase') {
+    const cardStyleRaw = readStr(c, 'cardStyle')
+    const cardStyleValue =
+      cardStyleRaw === 'carousel' ||
+      cardStyleRaw === 'grid' ||
+      cardStyleRaw === 'story'
+        ? cardStyleRaw
+        : INHERIT_VALUE
     return (
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <label className="text-xs text-[var(--color-text-muted)]">
-          Card style
-          <select
-            className={fieldClass}
-            value={
-              readStr(c, 'cardStyle') === 'carousel' ||
-              readStr(c, 'cardStyle') === 'grid' ||
-              readStr(c, 'cardStyle') === 'story'
-                ? readStr(c, 'cardStyle')
-                : ''
-            }
-            onChange={(e) => {
-              const v = e.target.value
-              if (v === '' || v === 'carousel' || v === 'grid' || v === 'story') {
-                patchContent({
-                  cardStyle:
-                    v === '' ? undefined : (v as 'carousel' | 'grid' | 'story'),
-                })
-              }
+        <div className="text-xs text-[var(--color-text-muted)]">
+          <span className="block" id={`act-${act.id}-card-style-label`}>
+            Card style
+          </span>
+          <AdminSelect
+            value={cardStyleValue}
+            onValueChange={(v) => {
+              patchContent({
+                cardStyle:
+                  v === INHERIT_VALUE
+                    ? undefined
+                    : (v as 'carousel' | 'grid' | 'story'),
+              })
             }}
           >
-            <option value="">Default</option>
-            <option value="carousel">Carousel</option>
-            <option value="grid">Grid</option>
-            <option value="story">Story</option>
-          </select>
-        </label>
+            <AdminSelectTrigger
+              id={`act-${act.id}-card-style`}
+              aria-labelledby={`act-${act.id}-card-style-label`}
+              className="mt-1"
+            >
+              <AdminSelectValue placeholder="Card style" />
+            </AdminSelectTrigger>
+            <AdminSelectContent>
+              <AdminSelectItem value={INHERIT_VALUE}>Default</AdminSelectItem>
+              <AdminSelectItem value="carousel">Carousel</AdminSelectItem>
+              <AdminSelectItem value="grid">Grid</AdminSelectItem>
+              <AdminSelectItem value="story">Story</AdminSelectItem>
+            </AdminSelectContent>
+          </AdminSelect>
+        </div>
         <label className="text-xs text-[var(--color-text-muted)]">
           View all label
-          <input
-            className={fieldClass}
-            value={readStr(c, 'viewAllLabel')}
+          <AdminInput
+                        value={readStr(c, 'viewAllLabel')}
             onChange={(e) =>
               patchContent({ viewAllLabel: e.target.value || undefined })
             }
@@ -370,9 +378,8 @@ function NatureContentFields({
         </label>
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           View all href
-          <input
-            className={fieldClass}
-            value={readStr(c, 'viewAllHref')}
+          <AdminInput
+                        value={readStr(c, 'viewAllHref')}
             onChange={(e) =>
               patchContent({ viewAllHref: e.target.value || undefined })
             }
@@ -387,9 +394,8 @@ function NatureContentFields({
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Material name
-          <input
-            className={fieldClass}
-            value={readStr(c, 'materialName')}
+          <AdminInput
+                        value={readStr(c, 'materialName')}
             onChange={(e) =>
               patchContent({ materialName: e.target.value || undefined })
             }
@@ -397,17 +403,15 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           GSM
-          <input
-            className={fieldClass}
-            value={readStr(c, 'gsm')}
+          <AdminInput
+                        value={readStr(c, 'gsm')}
             onChange={(e) => patchContent({ gsm: e.target.value || undefined })}
           />
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Composition
-          <input
-            className={fieldClass}
-            value={readStr(c, 'composition')}
+          <AdminInput
+                        value={readStr(c, 'composition')}
             onChange={(e) =>
               patchContent({ composition: e.target.value || undefined })
             }
@@ -415,8 +419,8 @@ function NatureContentFields({
         </label>
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Fit notes
-          <textarea
-            className={`${fieldClass} min-h-[56px]`}
+          <AdminTextarea
+            className="min-h-[56px]"
             value={readStr(c, 'fitNotes')}
             onChange={(e) =>
               patchContent({ fitNotes: e.target.value || undefined })
@@ -425,8 +429,8 @@ function NatureContentFields({
         </label>
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Construction notes
-          <textarea
-            className={`${fieldClass} min-h-[56px]`}
+          <AdminTextarea
+            className="min-h-[56px]"
             value={readStr(c, 'constructionNotes')}
             onChange={(e) =>
               patchContent({ constructionNotes: e.target.value || undefined })
@@ -443,9 +447,8 @@ function NatureContentFields({
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Event title
-          <input
-            className={fieldClass}
-            value={readStr(c, 'eventTitle')}
+          <AdminInput
+                        value={readStr(c, 'eventTitle')}
             onChange={(e) =>
               patchContent({ eventTitle: e.target.value || undefined })
             }
@@ -453,9 +456,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Starts (ISO)
-          <input
-            className={fieldClass}
-            value={readStr(c, 'startsAtIso')}
+          <AdminInput
+                        value={readStr(c, 'startsAtIso')}
             onChange={(e) =>
               patchContent({ startsAtIso: e.target.value || undefined })
             }
@@ -463,9 +465,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Ends (ISO)
-          <input
-            className={fieldClass}
-            value={readStr(c, 'endsAtIso')}
+          <AdminInput
+                        value={readStr(c, 'endsAtIso')}
             onChange={(e) =>
               patchContent({ endsAtIso: e.target.value || undefined })
             }
@@ -473,9 +474,8 @@ function NatureContentFields({
         </label>
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Location
-          <input
-            className={fieldClass}
-            value={readStr(c, 'location')}
+          <AdminInput
+                        value={readStr(c, 'location')}
             onChange={(e) =>
               patchContent({ location: e.target.value || undefined })
             }
@@ -483,9 +483,8 @@ function NatureContentFields({
         </label>
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Link href
-          <input
-            className={fieldClass}
-            value={readStr(c, 'linkHref')}
+          <AdminInput
+                        value={readStr(c, 'linkHref')}
             onChange={(e) =>
               patchContent({ linkHref: e.target.value || undefined })
             }
@@ -493,17 +492,16 @@ function NatureContentFields({
         </label>
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Rules
-          <textarea
-            className={`${fieldClass} min-h-[56px]`}
+          <AdminTextarea
+            className="min-h-[56px]"
             value={readStr(c, 'rules')}
             onChange={(e) => patchContent({ rules: e.target.value || undefined })}
           />
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           CTA label
-          <input
-            className={fieldClass}
-            value={ct.label}
+          <AdminInput
+                        value={ct.label}
             onChange={(e) =>
               patchContent({ cta: { ...ct, label: e.target.value } })
             }
@@ -511,9 +509,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           CTA href
-          <input
-            className={fieldClass}
-            value={ct.href}
+          <AdminInput
+                        value={ct.href}
             onChange={(e) =>
               patchContent({ cta: { ...ct, href: e.target.value } })
             }
@@ -542,34 +539,45 @@ function NatureContentFields({
         }))
       patchContent({ galleryItems: galleryItems.length ? galleryItems : undefined })
     }
+    const layoutRaw = readStr(c, 'layout')
+    const layoutValue =
+      layoutRaw === 'masonry' ||
+      layoutRaw === 'carousel' ||
+      layoutRaw === 'editorial'
+        ? layoutRaw
+        : INHERIT_VALUE
     return (
       <div className="mt-3 space-y-3 border-t border-[var(--color-line)]/60 pt-3">
-        <label className="block text-xs text-[var(--color-text-muted)]">
-          Layout
-          <select
-            className={fieldClass}
-            value={
-              readStr(c, 'layout') === 'masonry' ||
-              readStr(c, 'layout') === 'carousel' ||
-              readStr(c, 'layout') === 'editorial'
-                ? readStr(c, 'layout')
-                : ''
-            }
-            onChange={(e) => {
-              const v = e.target.value
-              if (v === '' || v === 'masonry' || v === 'carousel' || v === 'editorial') {
-                patchContent({
-                  layout: v === '' ? undefined : (v as 'masonry' | 'carousel' | 'editorial'),
-                })
-              }
+        <div className="text-xs text-[var(--color-text-muted)]">
+          <span className="block" id={`act-${act.id}-lookbook-layout-label`}>
+            Layout
+          </span>
+          <AdminSelect
+            value={layoutValue}
+            onValueChange={(v) => {
+              patchContent({
+                layout:
+                  v === INHERIT_VALUE
+                    ? undefined
+                    : (v as 'masonry' | 'carousel' | 'editorial'),
+              })
             }}
           >
-            <option value="">Default</option>
-            <option value="masonry">Masonry</option>
-            <option value="carousel">Carousel</option>
-            <option value="editorial">Editorial</option>
-          </select>
-        </label>
+            <AdminSelectTrigger
+              id={`act-${act.id}-lookbook-layout`}
+              aria-labelledby={`act-${act.id}-lookbook-layout-label`}
+              className="mt-1"
+            >
+              <AdminSelectValue placeholder="Layout" />
+            </AdminSelectTrigger>
+            <AdminSelectContent>
+              <AdminSelectItem value={INHERIT_VALUE}>Default</AdminSelectItem>
+              <AdminSelectItem value="masonry">Masonry</AdminSelectItem>
+              <AdminSelectItem value="carousel">Carousel</AdminSelectItem>
+              <AdminSelectItem value="editorial">Editorial</AdminSelectItem>
+            </AdminSelectContent>
+          </AdminSelect>
+        </div>
         <p className="text-[10px] text-[var(--color-text-muted)]">
           Up to five gallery entries (image or hosted video URL in src).
         </p>
@@ -590,9 +598,8 @@ function NatureContentFields({
             />
             <label className="text-[10px] text-[var(--color-text-muted)]">
               Caption {i + 1}
-              <input
-                className={fieldClass}
-                value={pad(i).caption ?? ''}
+              <AdminInput
+                                value={pad(i).caption ?? ''}
                 onChange={(e) => setItem(i, { src: pad(i).src, caption: e.target.value })}
               />
             </label>
@@ -609,8 +616,8 @@ function NatureContentFields({
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Form intro
-          <textarea
-            className={`${fieldClass} min-h-[56px]`}
+          <AdminTextarea
+            className="min-h-[56px]"
             value={readStr(c, 'formIntro')}
             onChange={(e) =>
               patchContent({ formIntro: e.target.value || undefined })
@@ -619,8 +626,8 @@ function NatureContentFields({
         </label>
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Consent copy
-          <textarea
-            className={`${fieldClass} min-h-[56px]`}
+          <AdminTextarea
+            className="min-h-[56px]"
             value={readStr(c, 'consentCopy')}
             onChange={(e) =>
               patchContent({ consentCopy: e.target.value || undefined })
@@ -629,8 +636,8 @@ function NatureContentFields({
         </label>
         <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
           Preferred product options (one per line)
-          <textarea
-            className={`${fieldClass} min-h-[72px]`}
+          <AdminTextarea
+            className="min-h-[72px]"
             value={optLine}
             onChange={(e) => {
               const lines = e.target.value
@@ -667,9 +674,8 @@ function NatureContentFields({
         </div>
         <label className="text-xs text-[var(--color-text-muted)]">
           Primary CTA label
-          <input
-            className={fieldClass}
-            value={p.label}
+          <AdminInput
+                        value={p.label}
             onChange={(e) =>
               patchContent({ primaryCta: { ...p, label: e.target.value } })
             }
@@ -677,9 +683,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Primary CTA href
-          <input
-            className={fieldClass}
-            value={p.href}
+          <AdminInput
+                        value={p.href}
             onChange={(e) =>
               patchContent({ primaryCta: { ...p, href: e.target.value } })
             }
@@ -687,9 +692,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Secondary CTA label
-          <input
-            className={fieldClass}
-            value={s.label}
+          <AdminInput
+                        value={s.label}
             onChange={(e) =>
               patchContent({ secondaryCta: { ...s, label: e.target.value } })
             }
@@ -697,9 +701,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Secondary CTA href
-          <input
-            className={fieldClass}
-            value={s.href}
+          <AdminInput
+                        value={s.href}
             onChange={(e) =>
               patchContent({ secondaryCta: { ...s, href: e.target.value } })
             }
@@ -707,9 +710,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Tertiary CTA label
-          <input
-            className={fieldClass}
-            value={t.label}
+          <AdminInput
+                        value={t.label}
             onChange={(e) =>
               patchContent({ tertiaryCta: { ...t, label: e.target.value } })
             }
@@ -717,9 +719,8 @@ function NatureContentFields({
         </label>
         <label className="text-xs text-[var(--color-text-muted)]">
           Tertiary CTA href
-          <input
-            className={fieldClass}
-            value={t.href}
+          <AdminInput
+                        value={t.href}
             onChange={(e) =>
               patchContent({ tertiaryCta: { ...t, href: e.target.value } })
             }
@@ -731,7 +732,8 @@ function NatureContentFields({
 
   return (
     <p className="mt-2 text-[10px] text-[var(--color-text-muted)]">
-      Nature-specific fields for â€œ{nature}â€ can be added later; content JSON is still validated on save paths.
+      Nature-specific fields for &ldquo;{nature}&rdquo; can be added later;
+      content JSON is still validated on save paths.
     </p>
   )
 }
@@ -781,8 +783,7 @@ function ActMediaBlock({
       />
       <label className="block text-xs text-[var(--color-text-muted)]">
         Alt text
-        <input
-          className={fieldClass}
+        <AdminInput
           value={m.alt ?? ''}
           onChange={(e) =>
             onChange({
@@ -816,8 +817,6 @@ export function DropActsBuilderPanel({
   catalogProducts = [],
   onChange,
 }: Props) {
-  const seeded = useRef(false)
-
   const sorted = useMemo(
     () => [...acts].sort((a, b) => a.sortOrder - b.sortOrder),
     [acts],
@@ -847,12 +846,6 @@ export function DropActsBuilderPanel({
     if (!result.success) return
     emit(landingContentToSimpleActs(result.data))
   }, [emit, landingContentJson])
-
-  useEffect(() => {
-    if (acts.length > 0 || seeded.current) return
-    seeded.current = true
-    bootstrapFromLanding()
-  }, [acts.length, bootstrapFromLanding])
 
   function updateAct(id: string, patch: Partial<LandingAct>) {
     emit(acts.map((a) => (a.id === id ? { ...a, ...patch } : a)))
@@ -892,8 +885,10 @@ export function DropActsBuilderPanel({
 
   return (
     <AdminCard
+      className="h-auto min-h-0"
+      testId="drop-acts-builder-panel"
       title="Acts builder"
-      description="Configure act order, visibility, nature, presets, copy, media, animation, and structured content. Legacy section fields remain below for fine edits."
+      description="Configure act order, visibility, nature, presets, copy, media, animation, and structured content. Use “Reset acts from landing copy” only when you intentionally want to re-import legacy `Drop.landingContent` into acts."
     >
       <div className="mb-4 flex flex-wrap gap-2">
         <AdminButton
@@ -917,8 +912,12 @@ export function DropActsBuilderPanel({
       </div>
 
       <div className="space-y-4">
-        {sorted.map((act) => {
+        {sorted.map((act, actIndex) => {
           const anim = mergeActAnimationConfig(act.animation)
+          const presetChoices = [...(PRESETS[act.nature] ?? ['default'])]
+          const presetSelectValue = presetChoices.includes(act.preset)
+            ? act.preset
+            : (presetChoices[0] ?? 'default')
           const patchContent = (patch: Record<string, unknown>) => {
             const merged = safeParseActContent(act.nature, {
               ...(act.content ?? {}),
@@ -932,55 +931,78 @@ export function DropActsBuilderPanel({
               className="rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]/30 p-4"
             >
               <div className="flex flex-wrap items-center gap-3">
-                <label className="inline-flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                  <input
-                    type="checkbox"
-                    checked={act.isEnabled}
-                    onChange={(e) =>
-                      updateAct(act.id, { isEnabled: e.target.checked })
-                    }
-                  />
-                  On
-                </label>
+                <AdminCheckbox
+                  className="py-0"
+                  checked={act.isEnabled}
+                  onChange={(e) =>
+                    updateAct(act.id, { isEnabled: e.target.checked })
+                  }
+                  label="On"
+                />
                 <span className="anvl-micro text-[10px] text-[var(--color-text-muted)]">
                   #{act.sortOrder + 1}
                 </span>
-                <div className="ml-auto flex gap-1">
-                  <AdminButton
+                <div
+                  className="ml-auto inline-flex gap-1 rounded-md border border-[var(--color-line)] p-0.5"
+                  role="group"
+                  aria-label={
+                    sorted.length > 1
+                      ? `Reorder act ${actIndex + 1} of ${sorted.length}`
+                      : 'Act actions'
+                  }
+                >
+                  <IconButton
                     type="button"
-                    variant="secondary"
-                    size="compact"
+                    aria-label={
+                      sorted.length > 1
+                        ? `Move act up, position ${actIndex + 1} of ${sorted.length}`
+                        : 'Move act up'
+                    }
+                    title="Move act up"
+                    disabled={actIndex === 0}
+                    className="border-transparent bg-transparent hover:bg-[var(--color-surface-elevated)] disabled:pointer-events-none disabled:opacity-40 disabled:hover:bg-transparent"
                     onClick={() => moveAct(act.id, -1)}
                   >
-                    Up
-                  </AdminButton>
-                  <AdminButton
+                    <ChevronUp size={20} aria-hidden="true" />
+                  </IconButton>
+                  <IconButton
                     type="button"
-                    variant="secondary"
-                    size="compact"
+                    aria-label={
+                      sorted.length > 1
+                        ? `Move act down, position ${actIndex + 1} of ${sorted.length}`
+                        : 'Move act down'
+                    }
+                    title="Move act down"
+                    disabled={actIndex >= sorted.length - 1}
+                    className="border-transparent bg-transparent hover:bg-[var(--color-surface-elevated)] disabled:pointer-events-none disabled:opacity-40 disabled:hover:bg-transparent"
                     onClick={() => moveAct(act.id, 1)}
                   >
-                    Down
-                  </AdminButton>
-                  <AdminButton
+                    <ChevronDown size={20} aria-hidden="true" />
+                  </IconButton>
+                  <IconButton
                     type="button"
-                    variant="destructive"
-                    size="compact"
+                    aria-label={
+                      sorted.length > 1
+                        ? `Remove act, position ${actIndex + 1} of ${sorted.length}`
+                        : 'Remove act'
+                    }
+                    title="Remove act"
+                    className="border-transparent bg-transparent text-red-300 hover:border-red-400/60 hover:bg-red-500/10 hover:text-red-200"
                     onClick={() => removeAct(act.id)}
                   >
-                    Remove
-                  </AdminButton>
+                    <Trash2 size={20} aria-hidden="true" />
+                  </IconButton>
                 </div>
               </div>
 
               <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <label className="text-xs text-[var(--color-text-muted)]">
-                  Nature
-                  <select
-                    className={fieldClass}
+                <div className="text-xs text-[var(--color-text-muted)]">
+                  <span className="block" id={`act-${act.id}-nature-label`}>
+                    Nature
+                  </span>
+                  <AdminSelect
                     value={act.nature}
-                    onChange={(e) => {
-                      const nature = e.target.value
+                    onValueChange={(nature) => {
                       const preset = PRESETS[nature]?.[0] ?? 'default'
                       updateAct(act.id, {
                         nature,
@@ -993,34 +1015,52 @@ export function DropActsBuilderPanel({
                       })
                     }}
                   >
-                    {NATURE_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="text-xs text-[var(--color-text-muted)]">
-                  Preset
-                  <select
-                    className={fieldClass}
-                    value={act.preset}
-                    onChange={(e) =>
-                      updateAct(act.id, { preset: e.target.value })
+                    <AdminSelectTrigger
+                      id={`act-${act.id}-nature`}
+                      aria-labelledby={`act-${act.id}-nature-label`}
+                      className="mt-1"
+                    >
+                      <AdminSelectValue placeholder="Nature" />
+                    </AdminSelectTrigger>
+                    <AdminSelectContent>
+                      {NATURE_OPTIONS.map((o) => (
+                        <AdminSelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </AdminSelectItem>
+                      ))}
+                    </AdminSelectContent>
+                  </AdminSelect>
+                </div>
+                <div className="text-xs text-[var(--color-text-muted)]">
+                  <span className="block" id={`act-${act.id}-preset-label`}>
+                    Preset
+                  </span>
+                  <AdminSelect
+                    value={presetSelectValue}
+                    onValueChange={(preset) =>
+                      updateAct(act.id, { preset })
                     }
                   >
-                    {(PRESETS[act.nature] ?? ['default']).map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <AdminSelectTrigger
+                      id={`act-${act.id}-preset`}
+                      aria-labelledby={`act-${act.id}-preset-label`}
+                      className="mt-1"
+                    >
+                      <AdminSelectValue placeholder="Preset" />
+                    </AdminSelectTrigger>
+                    <AdminSelectContent>
+                      {presetChoices.map((p) => (
+                        <AdminSelectItem key={p} value={p}>
+                          {p}
+                        </AdminSelectItem>
+                      ))}
+                    </AdminSelectContent>
+                  </AdminSelect>
+                </div>
                 <label className="text-xs text-[var(--color-text-muted)]">
                   Eyebrow
-                  <input
-                    className={fieldClass}
-                    value={act.eyebrow ?? ''}
+                  <AdminInput
+                                        value={act.eyebrow ?? ''}
                     onChange={(e) =>
                       updateAct(act.id, { eyebrow: e.target.value })
                     }
@@ -1028,9 +1068,8 @@ export function DropActsBuilderPanel({
                 </label>
                 <label className="text-xs text-[var(--color-text-muted)]">
                   Title
-                  <input
-                    className={fieldClass}
-                    value={act.title ?? ''}
+                  <AdminInput
+                                        value={act.title ?? ''}
                     onChange={(e) =>
                       updateAct(act.id, { title: e.target.value })
                     }
@@ -1038,9 +1077,8 @@ export function DropActsBuilderPanel({
                 </label>
                 <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
                   Subtitle
-                  <input
-                    className={fieldClass}
-                    value={act.subtitle ?? ''}
+                  <AdminInput
+                                        value={act.subtitle ?? ''}
                     onChange={(e) =>
                       updateAct(act.id, { subtitle: e.target.value })
                     }
@@ -1048,8 +1086,8 @@ export function DropActsBuilderPanel({
                 </label>
                 <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
                   Body
-                  <textarea
-                    className={`${fieldClass} min-h-[72px]`}
+                  <AdminTextarea
+                    className="min-h-[72px]"
                     value={act.body ?? ''}
                     onChange={(e) =>
                       updateAct(act.id, { body: e.target.value })
@@ -1068,43 +1106,38 @@ export function DropActsBuilderPanel({
                   Animation
                 </p>
                 <div className="flex flex-wrap gap-4 text-xs text-[var(--color-text-muted)]">
-                  <label className="inline-flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={anim.enabled}
-                      onChange={(e) =>
-                        updateAct(act.id, {
-                          animation: mergeActAnimationConfig({
-                            ...anim,
-                            enabled: e.target.checked,
-                          }),
-                        })
-                      }
-                    />
-                    Enabled
-                  </label>
-                  <label className="inline-flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={anim.desktopOnly}
-                      onChange={(e) =>
-                        updateAct(act.id, {
-                          animation: mergeActAnimationConfig({
-                            ...anim,
-                            desktopOnly: e.target.checked,
-                          }),
-                        })
-                      }
-                    />
-                    Desktop / tablet only
-                  </label>
+                  <AdminCheckbox
+                    className="py-0"
+                    checked={anim.enabled}
+                    onChange={(e) =>
+                      updateAct(act.id, {
+                        animation: mergeActAnimationConfig({
+                          ...anim,
+                          enabled: e.target.checked,
+                        }),
+                      })
+                    }
+                    label="Enabled"
+                  />
+                  <AdminCheckbox
+                    className="py-0"
+                    checked={anim.desktopOnly}
+                    onChange={(e) =>
+                      updateAct(act.id, {
+                        animation: mergeActAnimationConfig({
+                          ...anim,
+                          desktopOnly: e.target.checked,
+                        }),
+                      })
+                    }
+                    label="Desktop / tablet only"
+                  />
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="text-xs text-[var(--color-text-muted)]">
                     Motion type key
-                    <input
-                      className={fieldClass}
-                      placeholder="fadeUp, parallax, noneâ€¦"
+                    <AdminInput
+                      placeholder="fadeUp, parallax, none…"
                       value={anim.type}
                       onChange={(e) =>
                         updateAct(act.id, {
@@ -1116,25 +1149,40 @@ export function DropActsBuilderPanel({
                       }
                     />
                   </label>
-                  <label className="text-xs text-[var(--color-text-muted)]">
-                    Intensity
-                    <select
-                      className={fieldClass}
+                  <div className="text-xs text-[var(--color-text-muted)]">
+                    <span
+                      className="block"
+                      id={`act-${act.id}-anim-intensity-label`}
+                    >
+                      Intensity
+                    </span>
+                    <AdminSelect
                       value={anim.intensity}
-                      onChange={(e) =>
+                      onValueChange={(v) =>
                         updateAct(act.id, {
                           animation: mergeActAnimationConfig({
                             ...anim,
-                            intensity: e.target.value as typeof anim.intensity,
+                            intensity: v as typeof anim.intensity,
                           }),
                         })
                       }
                     >
-                      <option value="subtle">Subtle</option>
-                      <option value="standard">Standard</option>
-                      <option value="bold">Bold</option>
-                    </select>
-                  </label>
+                      <AdminSelectTrigger
+                        id={`act-${act.id}-anim-intensity`}
+                        aria-labelledby={`act-${act.id}-anim-intensity-label`}
+                        className="mt-1"
+                      >
+                        <AdminSelectValue placeholder="Intensity" />
+                      </AdminSelectTrigger>
+                      <AdminSelectContent>
+                        <AdminSelectItem value="subtle">Subtle</AdminSelectItem>
+                        <AdminSelectItem value="standard">
+                          Standard
+                        </AdminSelectItem>
+                        <AdminSelectItem value="bold">Bold</AdminSelectItem>
+                      </AdminSelectContent>
+                    </AdminSelect>
+                  </div>
                 </div>
               </div>
 
@@ -1143,7 +1191,7 @@ export function DropActsBuilderPanel({
               {act.nature === 'productShowcase' ? (
                 <div className="mt-3 border-t border-[var(--color-line)]/60 pt-3">
                   <p className="mb-2 text-[10px] text-[var(--color-text-muted)]">
-                    Featured SKUs for this act (optional â€” leave empty to use all
+                    Featured SKUs for this act (optional — leave empty to use all
                     products assigned to the drop).
                   </p>
                   {catalogProducts.length === 0 ? (
@@ -1155,28 +1203,24 @@ export function DropActsBuilderPanel({
                       {catalogProducts.map((p) => {
                         const picked = act.productIds?.includes(p.id) ?? false
                         return (
-                          <label
+                          <AdminCheckbox
                             key={p.id}
-                            className="flex cursor-pointer items-center gap-2 text-xs text-[var(--color-text)]"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={picked}
-                              onChange={(e) => {
-                                const cur = act.productIds ?? []
-                                const next = e.target.checked
-                                  ? [...cur, p.id]
-                                  : cur.filter((x) => x !== p.id)
-                                updateAct(act.id, {
-                                  productIds: next.length ? next : undefined,
-                                })
-                              }}
-                            />
-                            <span>{p.name}</span>
-                            <span className="text-[10px] text-[var(--color-text-muted)]">
-                              {p.id}
-                            </span>
-                          </label>
+                            className="border border-[var(--color-line)]/40 px-2 py-1"
+                            checked={picked}
+                            onChange={(e) => {
+                              const cur = act.productIds ?? []
+                              const next = e.target.checked
+                                ? [...cur, p.id]
+                                : cur.filter((x) => x !== p.id)
+                              updateAct(act.id, {
+                                productIds: next.length ? next : undefined,
+                              })
+                            }}
+                            label={p.name}
+                            description={
+                              <span className="font-mono text-[10px]">{p.id}</span>
+                            }
+                          />
                         )
                       })}
                     </div>

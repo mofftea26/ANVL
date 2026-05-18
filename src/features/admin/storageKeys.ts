@@ -20,6 +20,10 @@ export const ADMIN_STORAGE_KEYS = {
   globalBrand: 'ANVL_GLOBAL_BRAND',
   landingCmsLegacy: 'anvl.landingCms.v1',
   siteSeo: 'anvl.siteSeo.v1',
+  /** Saved campaign palette rows (admin theme card “Save as preset”). */
+  dropThemePalettePresets: 'ANVL_DROP_THEME_PALETTE_PRESETS',
+  /** Drop editor `xl` split: live preview column width (px). */
+  dropEditorPreviewSplitPx: 'ANVL_DROP_EDITOR_PREVIEW_SPLIT_PX',
 } as const
 
 export type AdminStorageKey =

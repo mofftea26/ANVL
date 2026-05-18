@@ -1,5 +1,14 @@
 import type { ReactNode } from 'react'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
+import type { LandingAct } from '@/features/cms/landing/landingActs.types'
+import {
+  previewDropRevealFields,
+  previewHeroFields,
+  previewManifestoFields,
+  previewMaterialsFields,
+  previewPiecesFields,
+  previewWaitlistFields,
+} from '@/features/cms/landing/landingActPreviewOverlay'
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import type { Product } from '@/features/products/types/product.types'
 import { defaultLandingActSequence } from '@/features/drops/drops.actSequence'
@@ -103,6 +112,11 @@ export type PublicLandingActsProps = {
   emblemSrc?: string
   /** When true, unknown act types show an explicit admin warning instead of the public notice. */
   cmsPreview?: boolean
+  /**
+   * Drop editor: merge each act row’s builder fields over the composed landing
+   * slices so copy / CTAs refresh immediately (order still comes from `landing.landingActs`).
+   */
+  draftActs?: LandingAct[]
 }
 
 export function PublicLandingActs({
@@ -110,7 +124,35 @@ export function PublicLandingActs({
   products,
   emblemSrc,
   cmsPreview,
+  draftActs,
 }: PublicLandingActsProps) {
+  const rowById = useMemo(() => {
+    if (!draftActs?.length) return null
+    return new Map(draftActs.map((a) => [a.id, a]))
+  }, [draftActs])
+
+  function rowFor(actId: string): LandingAct | undefined {
+    return rowById?.get(actId)
+  }
+  if (cmsPreview && landing.landingActs.length === 0) {
+    return (
+      <section
+        className="border-b border-[var(--color-line)] bg-[var(--color-bg)] py-16"
+        aria-label="Drop preview has no acts"
+      >
+        <Container>
+          <p className="anvl-micro text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
+            CMS preview
+          </p>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--color-text)]">
+            No landing acts yet. Open the <strong>Acts</strong> tab to add rows or sync copy — the
+            live preview only reflects the acts builder, not the legacy slot sequence.
+          </p>
+        </Container>
+      </section>
+    )
+  }
+
   const acts =
     landing.landingActs.length > 0
       ? [...landing.landingActs].sort((a, b) => a.sortOrder - b.sortOrder)
@@ -120,85 +162,100 @@ export function PublicLandingActs({
     <>
       {acts.map((act) => {
         if (act.enabled === false) return null
+        const row = rowFor(act.id)
         switch (act.nature) {
-          case 'hero':
+          case 'hero': {
+            const hero = previewHeroFields(landing.hero, row)
             return wrapLazy(
               act.id,
               'Loading hero',
               <HeroForgeSequence
-                badgeText={landing.hero.badgeText}
-                title={landing.hero.title}
-                subtitle={landing.hero.subtitle}
-                primaryCta={landing.hero.primaryCta}
-                secondaryCta={landing.hero.secondaryCta}
+                badgeText={hero.badgeText}
+                title={hero.title}
+                subtitle={hero.subtitle}
+                primaryCta={hero.primaryCta}
+                secondaryCta={hero.secondaryCta}
                 meta={landing.hero.meta}
                 emblemSrc={emblemSrc}
               />,
             )
+          }
           case 'manifesto':
-          case 'storytelling':
+          case 'storytelling': {
+            const m = previewManifestoFields(
+              landing.manifesto,
+              row,
+              act.nature === 'storytelling' ? 'storytelling' : 'manifesto',
+            )
             return wrapLazy(
               act.id,
               'Loading manifesto',
               <OathStampSequence
-                actLabel={landing.manifesto.actLabel}
-                counterLabel={landing.manifesto.counterLabel}
-                heading={landing.manifesto.heading}
-                intro={landing.manifesto.intro}
-                tenets={landing.manifesto.tenets}
+                actLabel={m.actLabel}
+                counterLabel={m.counterLabel}
+                heading={m.heading}
+                intro={m.intro}
+                tenets={m.tenets}
                 emblemSrc={emblemSrc}
               />,
             )
-          case 'dropReveal':
+          }
+          case 'dropReveal': {
+            const d = previewDropRevealFields(landing.dropReveal, row)
             return wrapLazy(
               act.id,
               'Loading drop',
               <DropRevealSection
                 products={products}
-                actLabel={landing.dropReveal.actLabel}
-                counterLabel={landing.dropReveal.counterLabel}
-                words={landing.dropReveal.words}
-                tagline={landing.dropReveal.tagline}
+                actLabel={d.actLabel}
+                counterLabel={d.counterLabel}
+                words={d.words}
+                tagline={d.tagline}
                 stats={landing.dropReveal.stats}
-                primaryCta={landing.dropReveal.primaryCta}
-                secondaryCta={landing.dropReveal.secondaryCta}
-                dropIcon={landing.dropReveal.dropIcon}
+                primaryCta={d.primaryCta}
+                secondaryCta={d.secondaryCta}
+                dropIcon={d.dropIcon}
               />,
             )
-          case 'productShowcase':
+          }
+          case 'productShowcase': {
+            const p = previewPiecesFields(landing.pieces, row)
             return wrapLazy(
               act.id,
               'Loading pieces',
               <PiecesGrid
                 products={products.slice(0, 6)}
-                actLabel={landing.pieces.actLabel}
-                headingLineOne={landing.pieces.headingLineOne}
-                headingLineTwo={landing.pieces.headingLineTwo}
-                viewAllLabel={landing.pieces.viewAllLabel}
-                viewAllHref={landing.pieces.viewAllHref}
-                footerLeftText={landing.pieces.footerLeftText}
-                footerLinkLabel={landing.pieces.footerLinkLabel}
-                footerLinkHref={landing.pieces.footerLinkHref}
+                actLabel={p.actLabel}
+                headingLineOne={p.headingLineOne}
+                headingLineTwo={p.headingLineTwo}
+                viewAllLabel={p.viewAllLabel}
+                viewAllHref={p.viewAllHref}
+                footerLeftText={p.footerLeftText}
+                footerLinkLabel={p.footerLinkLabel}
+                footerLinkHref={p.footerLinkHref}
               />,
             )
-          case 'materialShowcase':
+          }
+          case 'materialShowcase': {
+            const mat = previewMaterialsFields(landing.materials, row)
             return wrapLazy(
               act.id,
               'Loading materials',
               <MaterialsMarquee
-                actLabel={landing.materials.actLabel}
-                counterSuffix={landing.materials.counterSuffix}
-                heading={landing.materials.heading}
-                intro={landing.materials.intro}
-                materials={landing.materials.materials}
+                actLabel={mat.actLabel}
+                counterSuffix={mat.counterSuffix}
+                heading={mat.heading}
+                intro={mat.intro}
+                materials={mat.materials}
               />,
             )
+          }
           case 'newsletterWaitlist':
             return wrapLazy(
               act.id,
               'Loading waitlist',
               <WaitlistSection
-                content={landing.waitlist}
+                content={previewWaitlistFields(landing.waitlist, row)}
                 products={products}
                 emblemSrc={emblemSrc}
               />,

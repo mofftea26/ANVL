@@ -11,10 +11,12 @@ import { Link } from '@tanstack/react-router'
 import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Plus } from 'lucide-react'
 import { useCallback, useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminButton, adminButtonVariants } from '@/features/admin/components/AdminButton'
+import { AdminCard } from '@/features/admin/components/AdminCard'
+import { AdminDateTimeField } from '@/features/admin/components/AdminDateTimeField'
 import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import type { DropStatus } from '@/features/drops/drop.types'
+import { coerceToDate } from '@/features/admin/lib/adminDateTime'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
 import {
@@ -46,20 +48,6 @@ const STATUS_SORT_RANK: Record<DropStatus, number> = {
   inactive: 30,
   active: 40,
   archived: 50,
-}
-
-function pad2(n: number) {
-  return String(n).padStart(2, '0')
-}
-
-function isoToDatetimeLocalValue(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`
-}
-
-function localInputToIso(value: string): string {
-  return new Date(value).toISOString()
 }
 
 function formatAdminDate(iso?: string) {
@@ -172,11 +160,12 @@ export function DropsAdminList() {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'updatedAt', desc: true }])
   const activateTitleId = useId()
   const scheduleTitleId = useId()
+  const scheduleFieldLabelId = useId()
   const archiveTitleId = useId()
   const deleteTitleId = useId()
   const searchFieldId = useId()
-  const [scheduleLocal, setScheduleLocal] = useState(() =>
-    isoToDatetimeLocalValue(new Date(Date.now() + 60 * 60 * 1000).toISOString()),
+  const [scheduleIso, setScheduleIso] = useState(
+    () => new Date(Date.now() + 60 * 60 * 1000).toISOString(),
   )
 
   const rows = useMemo(
@@ -192,7 +181,7 @@ export function DropsAdminList() {
       row.scheduledActivationAt && !Number.isNaN(new Date(row.scheduledActivationAt).getTime())
         ? row.scheduledActivationAt
         : new Date(Date.now() + 60 * 60 * 1000).toISOString()
-    setScheduleLocal(isoToDatetimeLocalValue(base))
+    setScheduleIso(base)
     setModal({ kind: 'schedule', id: row.id, label: row.title })
   }, [])
 
@@ -666,12 +655,16 @@ export function DropsAdminList() {
             <span className="font-medium text-[var(--color-text)]">{modal?.label}</span>. This does not auto-publish yet; it records intent in the CMS.
           </p>
           <label className="block text-xs text-[var(--color-text-muted)]">
-            Activation (local time)
-            <input
-              type="datetime-local"
-              value={scheduleLocal}
-              onChange={(e) => setScheduleLocal(e.target.value)}
-              className="focus-ring mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm"
+            <span className="mb-1 block" id={scheduleFieldLabelId}>
+              Activation (local time — stored as UTC ISO in CMS)
+            </span>
+            <AdminDateTimeField
+              aria-labelledby={scheduleFieldLabelId}
+              disabled={busy}
+              value={scheduleIso}
+              onChange={(next) => {
+                if (next) setScheduleIso(next)
+              }}
             />
           </label>
           <div className="flex justify-end gap-2">
@@ -681,10 +674,13 @@ export function DropsAdminList() {
             <AdminButton
               variant="primary"
               size="sm"
-              disabled={busy || !scheduleLocal}
+              disabled={
+                busy ||
+                !coerceToDate(scheduleIso)
+              }
               onClick={() => {
-                if (modal?.kind !== 'schedule' || !scheduleLocal) return
-                const iso = localInputToIso(scheduleLocal)
+                if (modal?.kind !== 'schedule' || !coerceToDate(scheduleIso)) return
+                const iso = scheduleIso
                 scheduleMut.mutate(
                   { id: modal.id, activationIso: iso },
                   {
