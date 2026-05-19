@@ -23,6 +23,7 @@ import {
   beginAdminCmsRemoteHydration,
   endAdminCmsRemoteHydration,
 } from '@/features/admin/cmsRemote/adminCmsRemoteGate'
+import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
 
 type AnvlDropRow = {
   draft_body: unknown
@@ -93,24 +94,26 @@ export async function hydrateAdminCmsFromSupabase(
       writeActiveDropId(activeId)
     }
 
-    const { data: prodRows, error: prodErr } = await client
-      .from('cms_admin_products')
-      .select('body')
-      .order('slug')
+    if (!getShopifyPublicEnv()) {
+      const { data: prodRows, error: prodErr } = await client
+        .from('cms_admin_products')
+        .select('body')
+        .order('slug')
 
-    if (prodErr) {
-      throw new Error(prodErr.message)
-    }
+      if (prodErr) {
+        throw new Error(prodErr.message)
+      }
 
-    const products: AdminProduct[] = []
-    for (const row of prodRows ?? []) {
-      const parsed = persistedProductSchema.safeParse(row.body)
-      if (!parsed.success) continue
-      products.push(
-        hydrateAdminProductFromStorage(parsed.data as AdminProduct),
-      )
+      const products: AdminProduct[] = []
+      for (const row of prodRows ?? []) {
+        const parsed = persistedProductSchema.safeParse(row.body)
+        if (!parsed.success) continue
+        products.push(
+          hydrateAdminProductFromStorage(parsed.data as AdminProduct),
+        )
+      }
+      writeProductsRaw(JSON.stringify({ products }))
     }
-    writeProductsRaw(JSON.stringify({ products }))
 
     const { data: pub, error: pubErr } = await client
       .from('storefront_publication')

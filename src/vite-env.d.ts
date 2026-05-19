@@ -13,4 +13,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY?: string
   /** Alias some dashboards use for the anon key. */
   readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string
+  /** Shopify store host, e.g. your-store.myshopify.com */
+  readonly VITE_SHOPIFY_STORE_DOMAIN?: string
+  readonly VITE_SHOPIFY_STOREFRONT_API_VERSION?: string
+  readonly VITE_SHOPIFY_STOREFRONT_PUBLIC_TOKEN?: string
 }

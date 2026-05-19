@@ -20,9 +20,7 @@ import {
   getStorefrontOfflineLandingCms,
 } from '@/features/cms/runtime/storefrontReadFallback'
 import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
-import { seedCommerceClient } from '@/features/products/api/commerceClient.seed'
-import { localStorageCommerceClient } from '@/features/products/api/commerceClient.localStorage'
-import { supabaseCommerceClient } from '@/features/products/api/commerceClient.supabase'
+import { createCommerceClient } from '@/features/products/api/createCommerceClient'
 
 /**
  * Factory for storefront runtime clients. Server uses seed adapters (no `localStorage`)
@@ -32,10 +30,11 @@ import { supabaseCommerceClient } from '@/features/products/api/commerceClient.s
  * Browser uses persisted admin state for **admin-only** CMS mutations; public reads + commerce
  * still prefer Supabase when configured so the storefront matches SSR.
  *
- * TODO: add Medusa-backed factories and branch on env when the commerce backend ships.
+ * Commerce: Shopify Storefront API when configured, else Supabase snapshot, else local/seed.
  */
 export function createRuntimeClients(options: { isServer: boolean }): RuntimeClients {
   const supabase = getSupabasePublicEnv()
+  const commerce = createCommerceClient(options)
 
   if (options.isServer) {
     const cms = supabase
@@ -67,7 +66,7 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
 
     return {
       cms,
-      commerce: supabase ? supabaseCommerceClient : seedCommerceClient,
+      commerce,
       seo,
       siteSettings,
       analytics: mockAnalyticsClient,
@@ -104,7 +103,7 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
 
   return {
     cms,
-    commerce: supabase ? supabaseCommerceClient : localStorageCommerceClient,
+    commerce,
     seo,
     siteSettings,
     analytics: mockAnalyticsClient,

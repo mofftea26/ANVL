@@ -1,16 +1,9 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type PropsWithChildren,
-} from 'react'
-import { subscribeDropsChange } from '@/features/cms/read/cmsSubscriptions'
+import { createContext, useContext, type PropsWithChildren } from 'react'
 import {
   ACTIVE_DROP_THEME_STYLE_ID,
   serializeDropPaletteForRootStyle,
 } from '@/features/cms/theme/dropPaletteStyle'
-import { runtimeClients } from '@/app/config/runtime'
+import { useActiveDrop } from '@/features/drops/hooks/useActiveDrop'
 import type { Drop } from '@/features/drops/drop.types'
 import type { GlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.types'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
@@ -39,20 +32,8 @@ export function ActiveDropThemeProvider({
   initialGlobalBrand,
   children,
 }: Props) {
-  const [drop, setDrop] = useState<Drop | null>(initialDrop)
-  const [globalBrand] = useState<GlobalBrandSettings>(() =>
-    initialGlobalBrand ?? createDefaultGlobalBrandSettings(),
-  )
-
-  useEffect(() => {
-    setDrop(initialDrop)
-  }, [initialDrop])
-
-  useEffect(() => {
-    return subscribeDropsChange(() => {
-      void runtimeClients.cms.getActiveDrop().then(setDrop)
-    })
-  }, [])
+  const drop = useActiveDrop(initialDrop)
+  const globalBrand = initialGlobalBrand ?? createDefaultGlobalBrandSettings()
 
   const themeCss =
     drop?.theme != null ? serializeDropPaletteForRootStyle(drop.theme) : null

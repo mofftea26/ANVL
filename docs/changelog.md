@@ -1,4 +1,14 @@
 ﻿
+## 2026-05-19 — Commerce: Shopify headless adapter + CMS migration branch (`cms-migration`)
+
+- **Shopify:** `src/features/shopify/**` — Storefront API client, product mapper, `commerceClient.shopify.ts`, `createCommerceClient()` selection (Shopify → Supabase snapshot → local/seed).
+- **CMS:** Admin `/admin/products*` redirects to Shopify when `VITE_SHOPIFY_*` is set; remote sync skips `cms_admin_products`.
+- **Storefront:** `useActiveDrop`, `useStorefrontPublication`; `ActiveDropThemeProvider` uses published active drop.
+- **DB:** Migration `20260519140000_shopify_product_links.sql`; Edge `shopify-webhook`.
+- **Docs:** `docs/features/shopify-commerce.md`, `docs/backend-shopify-roadmap.md`, `.env.example`, plan `docs/plans/2026-05-19-cms-migration-shopify.md`.
+- **Deferred:** Cart/checkout redirect to Shopify Checkout (wire when store + token exist).
+- Tests / verify: **`pnpm verify`** (305 tests).
+
 ## 2026-05-19 — Storefront: Supabase reads with local/seed offline fallback
 
 - **Reads:** `useLandingCms` and `useHomeProducts` prefer published Supabase data when `VITE_SUPABASE_*` is set, then SSR loader data, then the **existing** local/seed storefront (`storefrontReadFallback.ts`). Avoids replacing the live site with seed-only when the backend is down or unpublished.

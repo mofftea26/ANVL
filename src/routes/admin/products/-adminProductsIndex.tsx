@@ -32,11 +32,13 @@ import { Input } from '@/shared/components/ui/Input'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Select } from '@/shared/components/ui/Select'
 import { cn } from '@/shared/lib/cn'
+import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
+import { AdminShopifyCatalogRedirect } from '@/features/admin/products/AdminShopifyCatalogRedirect'
 
 export function AdminProductsIndexRoute() {
   return (
     <ProtectedAdminRoute>
-      <ProductsIndex />
+      {getShopifyPublicEnv() ? <AdminShopifyCatalogRedirect /> : <ProductsIndex />}
     </ProtectedAdminRoute>
   )
 }
