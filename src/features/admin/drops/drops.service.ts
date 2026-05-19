@@ -352,6 +352,46 @@ export function createDraftDrop(): Drop {
   return base
 }
 
+export type CreateDraftDropResult =
+  | { ok: true; drop: Drop }
+  | { ok: false; error: string }
+
+/**
+ * Persists a draft locally and, when Supabase is configured, inserts
+ * `anvl_drops` immediately before the editor route loads.
+ */
+export async function createDraftDropAsync(): Promise<CreateDraftDropResult> {
+  const drop = createDraftDrop()
+  if (!getDropById(drop.id)) {
+    return {
+      ok: false,
+      error:
+        'The new drop did not appear in storage. Try again or return to the list.',
+    }
+  }
+
+  const { insertAnvlDropToSupabase } = await import(
+    '@/features/admin/cmsRemote/adminCmsInsertDrop'
+  )
+  const { getSupabasePublicEnv } = await import(
+    '@/features/cms/api/supabasePublicEnv'
+  )
+  const { notifyAdminDropsListChanged } = await import(
+    '@/features/admin/cmsRemote/invalidateAdminDropsList'
+  )
+
+  if (getSupabasePublicEnv()) {
+    const remote = await insertAnvlDropToSupabase(drop)
+    if (!remote.ok) {
+      deleteDrop(drop.id)
+      return remote
+    }
+    await notifyAdminDropsListChanged()
+  }
+
+  return { ok: true, drop }
+}
+
 export function duplicateDrop(sourceId: string): Drop | null {
   ensureDropSystemHydrated()
   const drops = readDropsArray()

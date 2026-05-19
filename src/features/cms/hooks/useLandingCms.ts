@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { subscribeSiteSeoChange } from '@/features/cms/siteSeo.local'
 import { useSyncExternalStore } from 'react'
 import { subscribeDropsChange, subscribeWebsiteLayoutChange } from '@/features/cms/read/cmsSubscriptions'
@@ -9,6 +10,7 @@ import {
   fetchStorefrontPublicationView,
   STOREFRONT_PUBLICATION_QUERY_KEY,
 } from '@/features/cms/hooks/storefrontPublicationQuery'
+import { getResolvedStorefrontLandingCmsSync } from '@/features/cms/runtime/storefrontCmsSync'
 
 /**
  * Module-scoped snapshot cache — `useSyncExternalStore` requires stable snapshots.
@@ -56,8 +58,14 @@ function useLandingCmsFromLocalStorage(
 
 function useLandingCmsFromSupabase(
   initial: LandingPageCmsContent | undefined,
-  offlineFallback: LandingPageCmsContent,
 ): LandingPageCmsContent {
+  const publishedFallback = useMemo(
+    () =>
+      initial ??
+      getResolvedStorefrontLandingCmsSync({ forceSsrSnapshot: true }),
+    [initial],
+  )
+
   const query = useQuery({
     queryKey: STOREFRONT_PUBLICATION_QUERY_KEY,
     queryFn: fetchStorefrontPublicationView,
@@ -68,19 +76,18 @@ function useLandingCmsFromSupabase(
   })
 
   if (query.data != null) return query.data
-  if (initial != null) return initial
-  return offlineFallback
+  return publishedFallback
 }
 
 /**
  * Homepage CMS for the public storefront.
- * With Supabase: published snapshot when available; otherwise SSR initial, then the
- * same local/seed pipeline as before Supabase (offline, errors, empty publication).
+ * With Supabase: published snapshot when available; SSR initial or seed fallback
+ * (never admin localStorage drafts on the public site).
  */
 export function useLandingCms(
   initial?: LandingPageCmsContent,
 ): LandingPageCmsContent {
-  const offlineFallback = useLandingCmsFromLocalStorage(initial)
-  const fromSupabase = useLandingCmsFromSupabase(initial, offlineFallback)
-  return getSupabasePublicEnv() ? fromSupabase : offlineFallback
+  const fromLocal = useLandingCmsFromLocalStorage(initial)
+  const fromSupabase = useLandingCmsFromSupabase(initial)
+  return getSupabasePublicEnv() ? fromSupabase : fromLocal
 }

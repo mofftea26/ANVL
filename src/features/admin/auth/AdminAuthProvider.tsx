@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from 'react'
@@ -21,20 +22,33 @@ import type {
   AdminCredentials,
   AdminSession,
 } from './adminAuth.types'
-import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import {
+  getSupabaseEnvIssue,
+  isSupabaseAuthTarget,
+} from '@/features/cms/api/supabasePublicEnv'
 import {
   disposeAdminSupabaseBrowserClient,
+  getAdminAuthBootstrapEpoch,
   getAdminSupabaseBrowserClient,
+  resetAdminSupabaseBrowserClient,
 } from '@/features/admin/auth/adminSupabaseBrowserClient'
-import { fetchCmsProfileRole } from '@/features/admin/auth/adminCmsProfileRole'
-import { hydrateAdminCmsFromSupabase } from '@/features/admin/cmsRemote/adminCmsHydration'
+import {
+  adminSessionFromSupabaseUser,
+  assertSupabaseAdminAccess,
+  BOOTSTRAP_WATCHDOG_MESSAGE,
+  ensureAdminSupabaseSessionAttached,
+  pullRemoteCmsForAdmin,
+  readBootstrapAdminSession,
+  signInAdminWithPassword,
+  STALE_ADMIN_SESSION_MESSAGE,
+} from '@/features/admin/auth/adminSupabaseAuthFlow'
 
 export const AdminAuthContext = createContext<AdminAuthContextValue | null>(
   null,
 )
 
 function resolveAuthMode(): AdminAuthMode {
-  return getSupabasePublicEnv() ? 'supabase' : 'legacy'
+  return isSupabaseAuthTarget() ? 'supabase' : 'legacy'
 }
 
 export function AdminAuthProvider({ children }: PropsWithChildren) {
@@ -46,6 +60,29 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
   )
 
   const authMode = useMemo(() => resolveAuthMode(), [])
+  const loginInFlightRef = useRef(false)
+  const remotePullGenerationRef = useRef(0)
+
+  const startRemoteCmsPull = useCallback(
+    (client: NonNullable<ReturnType<typeof getAdminSupabaseBrowserClient>>) => {
+      const generation = remotePullGenerationRef.current + 1
+      remotePullGenerationRef.current = generation
+      setIsRemoteCmsReady(false)
+      setRemoteHydrateError(null)
+
+      void (async () => {
+        const result = await pullRemoteCmsForAdmin(client)
+        if (remotePullGenerationRef.current !== generation) return
+        if (!result.ok) {
+          setRemoteHydrateError(result.error)
+        } else {
+          setRemoteHydrateError(null)
+        }
+        setIsRemoteCmsReady(true)
+      })()
+    },
+    [],
+  )
 
   useEffect(() => {
     if (authMode === 'legacy') {
@@ -58,159 +95,224 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
       return unsubscribe
     }
 
-    const client = getAdminSupabaseBrowserClient()
+    let client = getAdminSupabaseBrowserClient()
     if (!client) {
+      const envIssue = getSupabaseEnvIssue()
+      if (envIssue) {
+        setRemoteHydrateError(envIssue)
+      }
       setIsRemoteCmsReady(true)
       setIsHydrated(true)
       return
     }
 
     let cancelled = false
+    let timedOut = false
+    const bootstrapEpoch = getAdminAuthBootstrapEpoch()
+    const BOOTSTRAP_TIMEOUT_MS = 120_000
+    let timeoutId: number | undefined
+    let bootstrapFinished = false
+
+    const cancelBootstrapWatchdog = () => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId)
+        timeoutId = undefined
+      }
+    }
+
+    const finishAuthBootstrap = () => {
+      if (bootstrapFinished) return
+      bootstrapFinished = true
+      cancelBootstrapWatchdog()
+      setIsHydrated(true)
+    }
+
+    timeoutId = window.setTimeout(() => {
+      if (cancelled || bootstrapFinished) return
+      timedOut = true
+      disposeAdminSupabaseBrowserClient()
+      setRemoteHydrateError(BOOTSTRAP_WATCHDOG_MESSAGE)
+      setIsRemoteCmsReady(true)
+      finishAuthBootstrap()
+    }, BOOTSTRAP_TIMEOUT_MS)
 
     void (async () => {
       setRemoteHydrateError(null)
-      const { data } = await client.auth.getSession()
-      if (cancelled) return
+      try {
+        let bootstrap = await readBootstrapAdminSession(client)
+        if (
+          cancelled ||
+          timedOut ||
+          bootstrapEpoch !== getAdminAuthBootstrapEpoch()
+        ) {
+          return
+        }
 
-      if (data.session) {
-        const role = await fetchCmsProfileRole(client)
-        if (cancelled) return
-        if (role !== 'admin') {
-          await client.auth.signOut()
-          if (!cancelled) {
-            setSession(null)
+        if (bootstrap.bootstrapTimedOut) {
+          disposeAdminSupabaseBrowserClient()
+          client = getAdminSupabaseBrowserClient()
+          if (!client) {
             setIsRemoteCmsReady(true)
-            setIsHydrated(true)
+            return
           }
-          return
         }
-        try {
-          await hydrateAdminCmsFromSupabase(client)
-        } catch (e) {
-          const msg =
-            e instanceof Error
-              ? e.message
-              : 'Failed to load CMS data from Supabase.'
-          await client.auth.signOut()
-          if (!cancelled) {
-            setRemoteHydrateError(msg)
-            setSession(null)
+
+        if (bootstrap.staleStorageCleared) {
+          const hadStoredSession = bootstrap.hadStoredSession
+          resetAdminSupabaseBrowserClient()
+          client = getAdminSupabaseBrowserClient()
+          if (!client) {
+            if (hadStoredSession) {
+              setRemoteHydrateError(STALE_ADMIN_SESSION_MESSAGE)
+            }
             setIsRemoteCmsReady(true)
-            setIsHydrated(true)
+            return
           }
-          return
+          bootstrap = await readBootstrapAdminSession(client)
+          if (
+            cancelled ||
+            timedOut ||
+            bootstrapEpoch !== getAdminAuthBootstrapEpoch()
+          ) {
+            return
+          }
+          if (!bootstrap.session && hadStoredSession) {
+            setRemoteHydrateError(STALE_ADMIN_SESSION_MESSAGE)
+            setIsRemoteCmsReady(true)
+            return
+          }
         }
-        if (cancelled) return
-        const u = data.session.user
-        setSession({
-          kind: 'supabase',
-          email: u.email ?? '',
-          userId: u.id,
-          loggedInAt: new Date().toISOString(),
-        })
-      }
-      if (!cancelled) {
-        setIsRemoteCmsReady(true)
-        setIsHydrated(true)
+
+        const attached = bootstrap.session
+        if (attached?.user && client) {
+          cancelBootstrapWatchdog()
+          const access = await assertSupabaseAdminAccess(client, attached.user, {
+            skipSessionAttach: true,
+            session: attached.access_token ? attached : null,
+          })
+          if (
+            cancelled ||
+            timedOut ||
+            bootstrapEpoch !== getAdminAuthBootstrapEpoch()
+          ) {
+            return
+          }
+          if (!access.ok) {
+            await client.auth.signOut()
+            resetAdminSupabaseBrowserClient()
+            client = getAdminSupabaseBrowserClient()
+            if (!cancelled && !timedOut) {
+              setRemoteHydrateError(access.error)
+              setSession(null)
+              setIsRemoteCmsReady(true)
+            }
+          } else if (!cancelled && !timedOut) {
+            setSession(adminSessionFromSupabaseUser(access.user))
+            startRemoteCmsPull(client)
+          }
+        } else if (!cancelled && !timedOut) {
+          setIsRemoteCmsReady(true)
+        }
+      } finally {
+        finishAuthBootstrap()
       }
     })()
 
-    const { data: sub } = client.auth.onAuthStateChange(
-      async (event, nextSession) => {
-        if (event === 'SIGNED_OUT' || !nextSession) {
+    const { data: sub } = client.auth.onAuthStateChange(async (event, nextSession) => {
+      const activeClient = getAdminSupabaseBrowserClient()
+      if (!activeClient) return
+      if (loginInFlightRef.current) return
+
+      if (event === 'SIGNED_OUT') {
+        remotePullGenerationRef.current += 1
+        setSession(null)
+        setIsRemoteCmsReady(true)
+        setRemoteHydrateError(null)
+        return
+      }
+
+      if (
+        (event === 'SIGNED_IN' ||
+          event === 'TOKEN_REFRESHED' ||
+          event === 'USER_UPDATED') &&
+        nextSession?.user
+      ) {
+        const access = await assertSupabaseAdminAccess(
+          activeClient,
+          nextSession.user,
+          { skipSessionAttach: true, session: nextSession },
+        )
+        if (!access.ok) {
+          await activeClient.auth.signOut()
+          resetAdminSupabaseBrowserClient()
+          setRemoteHydrateError(access.error)
           setSession(null)
+          setIsRemoteCmsReady(true)
           return
         }
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          const role = await fetchCmsProfileRole(client)
-          if (role !== 'admin') {
-            await client.auth.signOut()
-            setSession(null)
-            return
-          }
-          if (event === 'SIGNED_IN') {
-            try {
-              await hydrateAdminCmsFromSupabase(client)
-              setRemoteHydrateError(null)
-            } catch (e) {
-              const msg =
-                e instanceof Error
-                  ? e.message
-                  : 'Failed to load CMS data from Supabase.'
-              setRemoteHydrateError(msg)
-              await client.auth.signOut()
-              setSession(null)
-              return
-            }
-          }
-          const u = nextSession.user
-          setSession({
-            kind: 'supabase',
-            email: u.email ?? '',
-            userId: u.id,
-            loggedInAt: new Date().toISOString(),
-          })
-        }
-      },
-    )
+        setSession(adminSessionFromSupabaseUser(access.user))
+        startRemoteCmsPull(activeClient)
+      }
+    })
 
     return () => {
       cancelled = true
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId)
+      }
       sub.subscription.unsubscribe()
     }
-  }, [authMode])
+  }, [authMode, startRemoteCmsPull])
 
   const login = useCallback(
     async (credentials: AdminCredentials) => {
       if (authMode === 'supabase') {
+        const envIssue = getSupabaseEnvIssue()
+        if (envIssue) {
+          return { ok: false as const, error: envIssue }
+        }
+
+        disposeAdminSupabaseBrowserClient()
         const client = getAdminSupabaseBrowserClient()
         if (!client) {
           return {
             ok: false as const,
             error:
-              'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.',
+              'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY, then restart the dev server.',
           }
         }
-        const email = credentials.username.trim()
-        const { data, error } = await client.auth.signInWithPassword({
-          email,
-          password: credentials.password,
-        })
-        if (error || !data.user) {
-          return {
-            ok: false as const,
-            error: error?.message ?? 'Sign-in failed.',
-          }
-        }
-        const role = await fetchCmsProfileRole(client)
-        if (role !== 'admin') {
-          await client.auth.signOut()
-          return {
-            ok: false as const,
-            error:
-              'This account is not an ANVL CMS admin. Ask an owner to set your role to admin in Supabase (cms_profiles).',
-          }
-        }
+
+        loginInFlightRef.current = true
         try {
-          await hydrateAdminCmsFromSupabase(client)
-        } catch (e) {
-          await client.auth.signOut()
-          return {
-            ok: false as const,
-            error:
-              e instanceof Error
-                ? e.message
-                : 'Failed to load CMS data from Supabase.',
+          const email = credentials.username.trim()
+          const signedIn = await signInAdminWithPassword(client, {
+            email,
+            password: credentials.password,
+          })
+          if (!signedIn.ok) {
+            return { ok: false as const, error: signedIn.error }
           }
+
+          await ensureAdminSupabaseSessionAttached(client, signedIn.session)
+
+          const access = await assertSupabaseAdminAccess(client, signedIn.user, {
+            skipSessionAttach: true,
+            fastRoleCheck: true,
+            session: signedIn.session,
+          })
+          if (!access.ok) {
+            void client.auth.signOut()
+            resetAdminSupabaseBrowserClient()
+            return { ok: false as const, error: access.error }
+          }
+
+          setRemoteHydrateError(null)
+          setSession(adminSessionFromSupabaseUser(access.user))
+          startRemoteCmsPull(client)
+          return { ok: true as const }
+        } finally {
+          loginInFlightRef.current = false
         }
-        setRemoteHydrateError(null)
-        setSession({
-          kind: 'supabase',
-          email: data.user.email ?? email,
-          userId: data.user.id,
-          loggedInAt: new Date().toISOString(),
-        })
-        return { ok: true as const }
       }
 
       if (!isAdminLoginConfigured) {
@@ -238,17 +340,20 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
         error: 'Incorrect username or password.',
       }
     },
-    [authMode],
+    [authMode, startRemoteCmsPull],
   )
 
   const logout = useCallback(async () => {
+    remotePullGenerationRef.current += 1
     if (authMode === 'supabase') {
       const client = getAdminSupabaseBrowserClient()
       await client?.auth.signOut()
-      disposeAdminSupabaseBrowserClient()
+      resetAdminSupabaseBrowserClient()
     }
     clearAdminSession()
     setSession(null)
+    setRemoteHydrateError(null)
+    setIsRemoteCmsReady(true)
   }, [authMode])
 
   const value = useMemo<AdminAuthContextValue>(

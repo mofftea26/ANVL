@@ -33,7 +33,7 @@ export async function publishStorefrontDropByClientId(
     return { ok: false, error: 'Supabase client is not available.' }
   }
 
-  const role = await fetchCmsProfileRole(client)
+  const { role } = await fetchCmsProfileRole(client)
   if (role !== 'admin') {
     return { ok: false, error: 'Only CMS admins can publish to the storefront.' }
   }

@@ -38,9 +38,9 @@ describe('sanitizeCssValue (SEC defense for active-drop theme injection)', () =>
 })
 
 describe('serializeDropPaletteForRootStyle', () => {
-  it('produces a single :root rule with the expected color variables', () => {
+  it('produces a data-theme :root rule that overrides static storefront defaults', () => {
     const css = serializeDropPaletteForRootStyle(safePalette)
-    expect(css.startsWith(':root {')).toBe(true)
+    expect(css.startsWith(':root[data-theme="oath-dark"] {')).toBe(true)
     expect(css.endsWith('}')).toBe(true)
     expect(css).toContain('--color-bg:')
     expect(css).toContain('--color-text:')

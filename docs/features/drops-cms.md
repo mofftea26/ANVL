@@ -78,7 +78,7 @@ The Drops section should be simple:
 3. The admin list (`DropsAdminList` at `/admin/drops`) uses the runtime `CmsClient` for reads and mutations, TanStack Query for server state, and a small Zustand store for search and tab UI only.
 4. **Empty states:** when the CMS returns zero drops, the list shows a “No drops yet” card with a link to `/admin/drops/new`; when filters exclude every row, a “Nothing matches” card offers one tap to clear search + status tab.
 5. Create Drop flow:
-   - **`/admin/drops/new`** is a bootstrap route: it persists a draft via **`createDraftDrop`** ( **`saveDrop`** / **`persistDropsState`** ), confirms the id round-trips with **`getDropById`**, then **`replace`‑navigates** to **`/admin/drops/:id`**. While that runs, **`AdminSpinner`** + copy replace a transient “Missing drop” flash. **`persistDropsState`** bumps a small generation counter consumed by **`useDropsList`** so the React snapshot cache re-reads localStorage immediately even when nothing was subscribed during the write (e.g. first paint after navigation).
+   - **`/admin/drops/new`** is a bootstrap route: it calls **`createDraftDropAsync`**, which persists a draft via **`createDraftDrop`** / **`saveDrop`**, and when Supabase is configured immediately **`insert`s** into **`public.anvl_drops`** (so login hydration cannot wipe a local-only draft). On success it **`replace`‑navigates** to **`/admin/drops/:id`**. While that runs, **`AdminSpinner`** + copy replace a transient “Missing drop” flash. Failures (e.g. slug collision) surface an alert + back link.
    - Step 1: Basic info.
    - Step 2: Theme/branding.
    - Step 3: Acts builder.

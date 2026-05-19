@@ -1,4 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority'
+import { Loader2 } from 'lucide-react'
 import { forwardRef, type ButtonHTMLAttributes } from 'react'
 import { cn } from '@/shared/lib/cn'
 
@@ -53,11 +54,23 @@ function isAdminTabVariant(v: ButtonVariant | null | undefined): v is TabVariant
 }
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
-  VariantProps<typeof buttonVariants>
+  VariantProps<typeof buttonVariants> & {
+    /** Shows an inline spinner and disables interaction. */
+    loading?: boolean
+  }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(
-    { className, variant, size, type = 'button', ...props },
+    {
+      className,
+      variant,
+      size,
+      type = 'button',
+      loading = false,
+      disabled,
+      children,
+      ...props
+    },
     ref,
   ) {
     const isTab = isAdminTabVariant(variant)
@@ -66,12 +79,24 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         type={type}
+        disabled={disabled || loading}
+        aria-busy={loading || undefined}
         className={cn(
           buttonVariants({ variant, size: resolvedSize }),
+          loading && 'pointer-events-none opacity-90',
           className,
         )}
         {...props}
-      />
+      >
+        {loading ? (
+          <Loader2
+            size={16}
+            aria-hidden="true"
+            className={cn('shrink-0 animate-spin', children ? 'mr-2' : '')}
+          />
+        ) : null}
+        {children}
+      </button>
     )
   },
 )

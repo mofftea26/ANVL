@@ -2,9 +2,21 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { runtimeClients } from '@/app/config/runtime'
 import { subscribeDropsChange } from '@/features/admin/drops/drops.storage'
+import { notifyStorefrontPublicationChanged } from '@/features/cms/hooks/invalidateStorefrontPublication'
+import { fetchAdminDropsListFromSupabase } from '@/features/admin/cmsRemote/adminCmsDropsList'
+import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import { rehydrateAdminCmsFromRemote } from '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'
+import { notifyAdminDropsListChanged } from '@/features/admin/cmsRemote/invalidateAdminDropsList'
 
 export const ADMIN_DROPS_LIST_QUERY_KEY = ['admin', 'drops', 'list'] as const
 
+export async function loadAdminDropsList() {
+  if (getSupabasePublicEnv()) {
+    const remote = await fetchAdminDropsListFromSupabase()
+    if (remote.ok) return remote.items
+  }
+  return runtimeClients.cms.getAdminDropsList()
+}
 export function useAdminDropsListQuery() {
   const queryClient = useQueryClient()
 
@@ -16,7 +28,7 @@ export function useAdminDropsListQuery() {
 
   return useQuery({
     queryKey: ADMIN_DROPS_LIST_QUERY_KEY,
-    queryFn: () => runtimeClients.cms.getAdminDropsList(),
+    queryFn: loadAdminDropsList,
   })
 }
 
@@ -38,7 +50,12 @@ export function useSetActiveAdminDropMutation() {
   const invalidate = useInvalidateAdminDropsList()
   return useMutation({
     mutationFn: (id: string) => runtimeClients.cms.setAdminActiveDrop(id),
-    onSuccess: () => invalidate(),
+    onSuccess: async () => {
+      invalidate()
+      await rehydrateAdminCmsFromRemote()
+      await notifyStorefrontPublicationChanged()
+      await notifyAdminDropsListChanged()
+    },
   })
 }
 

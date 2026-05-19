@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { createDefaultTheOathDrop } from '@/features/admin/drops/drops.defaults'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
 import { createDefaultWebsiteLayout } from '@/features/admin/website-layout/websiteLayout.defaults'
-import { normalizeStorefrontPublicationRow } from '@/features/cms/api/publicStorefrontPublication'
+import {
+  getSupabasePublicationAnonClient,
+  normalizeStorefrontPublicationRow,
+} from '@/features/cms/api/publicStorefrontPublication'
 import { parseSiteSeoUnknown } from '@/features/cms/siteSeo.local'
 import type { AdminProduct } from '@/features/admin/products/products.types'
 
@@ -139,6 +142,18 @@ describe('normalizeStorefrontPublicationRow', () => {
       { id: 'c1', title: 'Summer', description: 'Drop' },
     ])
     expect(out!.lookbook).toEqual([{ id: 'l1', alt: 'Look', src: '/look.webp' }])
+  })
+})
+
+describe('getSupabasePublicationAnonClient', () => {
+  it('returns the same in-memory client for identical env (singleton)', () => {
+    const env = {
+      url: 'https://unit-test.supabase.co',
+      anonKey: 'anon-unit-test',
+    }
+    expect(getSupabasePublicationAnonClient(env)).toBe(
+      getSupabasePublicationAnonClient(env),
+    )
   })
 })
 

@@ -3,6 +3,9 @@ import type { DropThemePalette } from '@/features/drops/theme/dropThemePalette.t
 
 export const ACTIVE_DROP_THEME_STYLE_ID = 'anvl-active-drop-theme'
 
+/** Matches `<html data-theme>` on the public storefront shell (`__root.tsx`). */
+export const STOREFRONT_ROOT_DATA_THEME = 'oath-dark'
+
 /** Strip risky tokens from CMS-provided CSS values before injecting into `style`. */
 export function sanitizeCssValue(value: string, fallback: string): string {
   const t = value.trim()
@@ -58,7 +61,9 @@ export function serializeDropPaletteForRootStyle(
   const inner = Object.entries(rec)
     .map(([k, v]) => `${k}: ${v};`)
     .join('')
-  return `:root { ${inner} }`
+  // Same specificity as `styles.css` `:root[data-theme="oath-dark"]`; injected
+  // later in the document so published drop palettes win over static defaults.
+  return `:root[data-theme="${STOREFRONT_ROOT_DATA_THEME}"] { ${inner} }`
 }
 
 export function syncActiveDropThemeStyleTag(palette: DropThemePalette | null) {

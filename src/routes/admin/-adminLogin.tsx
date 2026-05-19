@@ -1,14 +1,16 @@
 import { useNavigate } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import { getSupabaseEnvIssue, isSupabaseAuthTarget } from '@/features/cms/api/supabasePublicEnv'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { Button } from '@/shared/components/ui/Button'
 import { Container } from '@/shared/components/ui/Container'
 import { FormField } from '@/shared/components/ui/FormField'
+import { IconButton } from '@/shared/components/ui/IconButton'
 import { Input } from '@/shared/components/ui/Input'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 
@@ -19,14 +21,18 @@ const schema = z.object({
 
 type LoginFormValues = z.infer<typeof schema>
 
-const supabaseConfigured = Boolean(getSupabasePublicEnv())
+const supabaseConfigured = isSupabaseAuthTarget()
+const supabaseEnvIssue = getSupabaseEnvIssue()
+
+const ADMIN_LOGIN_PASSWORD_ID = 'admin-login-password'
 
 export function AdminLoginPageRoute() {
+  const [showPassword, setShowPassword] = useState(false)
+  const [signingIn, setSigningIn] = useState(false)
   const {
     login,
     isAuthenticated,
     isHydrated,
-    isRemoteCmsReady,
     remoteHydrateError,
     authMode,
   } = useAdminAuth()
@@ -38,20 +44,25 @@ export function AdminLoginPageRoute() {
   })
 
   useEffect(() => {
-    if (isHydrated && isRemoteCmsReady && isAuthenticated) {
+    if (isHydrated && isAuthenticated) {
       void navigate({ to: '/admin', replace: true })
     }
-  }, [isHydrated, isRemoteCmsReady, isAuthenticated, navigate])
+  }, [isHydrated, isAuthenticated, navigate])
 
   const onSubmit = form.handleSubmit(async (values) => {
-    const result = await login(values)
-    if (!result.ok) {
-      form.setError('password', { message: result.error })
-      toast.error(result.error)
-      return
+    setSigningIn(true)
+    try {
+      const result = await login(values)
+      if (!result.ok) {
+        form.setError('password', { message: result.error })
+        toast.error(result.error)
+        return
+      }
+      toast.success('Signed in to ANVL Admin.')
+      void navigate({ to: '/admin', replace: true })
+    } finally {
+      setSigningIn(false)
     }
-    toast.success('Signed in to ANVL Admin.')
-    void navigate({ to: '/admin', replace: true })
   })
 
   const idLabel = supabaseConfigured ? 'Email' : 'Username'
@@ -77,12 +88,12 @@ export function AdminLoginPageRoute() {
             </div>
           </div>
 
-          {remoteHydrateError ? (
+          {remoteHydrateError || supabaseEnvIssue ? (
             <p
               role="alert"
               className="mt-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-[12px] text-[var(--color-text-muted)]"
             >
-              {remoteHydrateError}
+              {remoteHydrateError ?? supabaseEnvIssue}
             </p>
           ) : null}
 
@@ -100,21 +111,41 @@ export function AdminLoginPageRoute() {
             </FormField>
             <FormField
               label="Password"
+              htmlFor={ADMIN_LOGIN_PASSWORD_ID}
               error={form.formState.errors.password?.message}
             >
-              <Input
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                {...form.register('password')}
-              />
+              <div className="relative">
+                <Input
+                  id={ADMIN_LOGIN_PASSWORD_ID}
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  className="pr-12"
+                  {...form.register('password')}
+                />
+                <IconButton
+                  type="button"
+                  aria-pressed={showPassword}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-1 top-1/2 h-11 w-11 -translate-y-1/2 border-transparent bg-transparent hover:bg-[var(--color-surface-elevated)]"
+                  onClick={() => setShowPassword((v) => !v)}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} aria-hidden="true" />
+                  ) : (
+                    <Eye size={20} aria-hidden="true" />
+                  )}
+                </IconButton>
+              </div>
             </FormField>
             <Button
               type="submit"
               className="w-full"
-              disabled={form.formState.isSubmitting}
+              loading={signingIn}
+              disabled={signingIn}
             >
-              {form.formState.isSubmitting ? 'Signing in…' : 'Sign in'}
+              Sign in
             </Button>
           </form>
 
