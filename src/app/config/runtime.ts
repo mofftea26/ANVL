@@ -16,9 +16,9 @@ import {
   createSupabaseSiteSettingsReadSlice,
 } from '@/features/cms/api/supabaseStorefrontReaders'
 import {
-  getResolvedStorefrontLandingCmsSync,
-  resolveStorefrontActiveDrop,
-} from '@/features/cms/runtime/storefrontCmsSync'
+  getStorefrontOfflineActiveDrop,
+  getStorefrontOfflineLandingCms,
+} from '@/features/cms/runtime/storefrontReadFallback'
 import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
 import { seedCommerceClient } from '@/features/products/api/commerceClient.seed'
 import { localStorageCommerceClient } from '@/features/products/api/commerceClient.localStorage'
@@ -42,9 +42,8 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
       ? {
           ...seedCmsClient,
           ...createSupabaseCmsPublicReadSlice(supabase, {
-            landingFallback: () =>
-              getResolvedStorefrontLandingCmsSync({ forceSsrSnapshot: true }),
-            activeDropFallback: () => resolveStorefrontActiveDrop(),
+            landingFallback: () => getStorefrontOfflineLandingCms(),
+            activeDropFallback: () => getStorefrontOfflineActiveDrop(),
           }),
         }
       : seedCmsClient
@@ -81,8 +80,8 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
     ? {
         ...localStorageCmsClient,
         ...createSupabaseCmsPublicReadSlice(supabase, {
-          landingFallback: () => getResolvedStorefrontLandingCmsSync(),
-          activeDropFallback: () => resolveStorefrontActiveDrop(),
+          landingFallback: () => getStorefrontOfflineLandingCms(),
+          activeDropFallback: () => getStorefrontOfflineActiveDrop(),
         }),
       }
     : localStorageCmsClient

@@ -4,7 +4,7 @@
 
 Supabase backs **published** storefront state so SSR, crawlers, and anonymous visitors see the same campaign as production — not an operator’s `localStorage` snapshot.
 
-Local/demo admin (`VITE_ANVL_ADMIN_*`) and browser persistence remain until app auth is wired to Supabase JWTs.
+When **`VITE_SUPABASE_*`** is unset, local/demo admin (`VITE_ANVL_ADMIN_*`) and browser persistence remain. When Supabase is set, **`/admin/login`** uses Supabase Auth and only **`cms_profiles.role = admin`** may access the panel.
 
 ## Tables (public schema)
 
@@ -32,7 +32,7 @@ Object paths should stay unguessable (UUID prefixes) for defense in depth.
 
 - **`anon`:** `SELECT` on `storefront_publication` only. Cannot read `anvl_drops` or drafts.
 - **`authenticated`** with `cms_profiles`: `SELECT` drops/products as role allows; **`editor` / `admin`:** insert/update/delete drops and products; update publication layout/SEO.
-- **`cms_publish_drop(uuid)`:** `SECURITY DEFINER` RPC; **`editor` / `admin` only**; demotes other active drops, writes snapshot + bumps `revision`.
+- **`cms_publish_drop(uuid)`:** `SECURITY DEFINER` RPC; **`admin` only**; demotes other active drops, writes snapshot + bumps `revision`. **`anon`** cannot execute (see migration **`20260519120000_revoke_anon_cms_publish_drop.sql`**).
 
 ## Edge Functions
 
@@ -66,6 +66,13 @@ When **`VITE_SUPABASE_*`** is configured:
 1. **Sign-in:** `/admin/login` uses Supabase **`signInWithPassword`**. Only **`cms_profiles.role = 'admin'`** may use `/admin` (other roles are rejected).
 2. **Hydration:** After sign-in (and on session restore), **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** (`website_layout`, `site_seo`, `global_brand` when present) are **pulled into localStorage** so existing editor code is unchanged.
 3. **Sync:** Local saves to drops, products, layout, site SEO, and global brand **schedule a debounced push** to Supabase (`client_drop_id` matches app `Drop.id`; products keyed by `slug`). Remote rows removed locally are deleted on the server. Vitest skips this path (`import.meta.env.MODE === 'test'`).
+4. **Publish:** **Set active** in the drops list calls **`cms_publish_drop`** (after flush sync) so **`storefront_publication.published_drop_snapshot`** matches the activated campaign for anonymous SSR/CSR reads.
+
+### Storefront read priority (with `VITE_SUPABASE_*` set)
+
+1. **Published** `storefront_publication` row (SSR loaders + client TanStack Query).
+2. **SSR loader data** from the first paint when the fetch is still in flight.
+3. **Offline fallback** — same as the pre-Supabase storefront: seed on the server, local admin `localStorage` in the browser (`storefrontReadFallback.ts`, `useLandingCms`, `useHomeProducts`, `commerceClient.supabase`). Used when the network fails, the row has no `published_drop_snapshot`, or the home catalog snapshot is empty.
 
 Without Supabase env, admin keeps the **`VITE_ANVL_ADMIN_*`** gate only (no remote sync).
 
