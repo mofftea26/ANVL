@@ -7,6 +7,7 @@ import {
   getStorefrontProductBySlugFromProjection,
   getStorefrontProductsForHomeFromProjection,
 } from '@/features/cms/api/storefrontPublicationCommerce'
+import { localStorageCommerceClient } from '@/features/products/api/commerceClient.localStorage'
 import { seedCommerceClient } from '@/features/products/api/commerceClient.seed'
 
 async function withPublication<T>(
@@ -23,35 +24,57 @@ async function withPublication<T>(
   }
 }
 
+/** Seed on SSR; local admin catalog in the browser — same as the legacy storefront. */
+function offlineCommerceClient(): CommerceClient {
+  return typeof window === 'undefined'
+    ? seedCommerceClient
+    : localStorageCommerceClient
+}
+
+async function readWithOfflineFallback<T>(
+  fromPublication: (
+    p: NonNullable<Awaited<ReturnType<typeof fetchPublishedStorefrontProjection>>>,
+  ) => T,
+  offline: (client: CommerceClient) => Promise<T>,
+): Promise<T> {
+  const r = await withPublication(fromPublication)
+  if (r.ok) return r.value
+  return offline(offlineCommerceClient())
+}
+
 /**
- * Commerce reads from the published `storefront_publication` snapshot (anon key).
- * Falls back to {@link seedCommerceClient} on the server and would use local catalog
- * in the browser when `VITE_SUPABASE_*` is unset — here we mirror CMS: when Supabase
- * is configured but the projection is missing or empty, we still fall back to seed
- * on the server and to seed on the client (localStorage path is selected in runtime.ts
- * only when Supabase env is absent).
+ * Commerce reads from `storefront_publication` when available.
+ * On failure or empty snapshot, falls back to seed (SSR) or local catalog (browser).
  */
 export const supabaseCommerceClient: CommerceClient = {
   async getProducts() {
-    const r = await withPublication((p) => buildStorefrontShopCatalogFromProjection(p).items)
-    return r.ok ? r.value : seedCommerceClient.getProducts()
+    return readWithOfflineFallback(
+      (p) => buildStorefrontShopCatalogFromProjection(p).items,
+      (c) => c.getProducts(),
+    )
   },
   async getHomeProducts() {
-    const r = await withPublication((p) => getStorefrontProductsForHomeFromProjection(p))
-    return r.ok ? r.value : seedCommerceClient.getHomeProducts()
+    return readWithOfflineFallback(
+      (p) => getStorefrontProductsForHomeFromProjection(p),
+      (c) => c.getHomeProducts(),
+    )
   },
   async getProductBySlug(slug: string) {
-    const r = await withPublication((p) => getStorefrontProductBySlugFromProjection(p, slug))
-    return r.ok ? r.value : seedCommerceClient.getProductBySlug(slug)
+    return readWithOfflineFallback(
+      (p) => getStorefrontProductBySlugFromProjection(p, slug),
+      (c) => c.getProductBySlug(slug),
+    )
   },
   async getRelatedProducts(slug: string) {
-    const r = await withPublication((p) =>
-      getRelatedStorefrontProductsFromProjection(p, slug, 4),
+    return readWithOfflineFallback(
+      (p) => getRelatedStorefrontProductsFromProjection(p, slug, 4),
+      (c) => c.getRelatedProducts(slug),
     )
-    return r.ok ? r.value : seedCommerceClient.getRelatedProducts(slug)
   },
   async getShopListingCatalog() {
-    const r = await withPublication((p) => buildStorefrontShopCatalogFromProjection(p))
-    return r.ok ? r.value : seedCommerceClient.getShopListingCatalog()
+    return readWithOfflineFallback(
+      (p) => buildStorefrontShopCatalogFromProjection(p),
+      (c) => c.getShopListingCatalog(),
+    )
   },
 }

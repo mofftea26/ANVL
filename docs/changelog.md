@@ -1,4 +1,12 @@
 ﻿
+## 2026-05-19 — Storefront: Supabase reads with local/seed offline fallback
+
+- **Reads:** `useLandingCms` and `useHomeProducts` prefer published Supabase data when `VITE_SUPABASE_*` is set, then SSR loader data, then the **existing** local/seed storefront (`storefrontReadFallback.ts`). Avoids replacing the live site with seed-only when the backend is down or unpublished.
+- **Commerce:** `commerceClient.supabase` falls back to `localStorageCommerceClient` in the browser and `seedCommerceClient` on SSR when publication fetch fails.
+- **Runtime:** Supabase CMS slice fallbacks use `getStorefrontOfflineLandingCms` / `getStorefrontOfflineActiveDrop` instead of seed-only on the client.
+- **Tests:** `storefrontReadFallback.test.ts`.
+- Tests / verify: **`pnpm verify`**.
+
 ## 2026-05-19 — Supabase: publish on activate + lock down cms_publish_drop RPC
 
 - **App:** **`publishStorefrontDropByClientId`** flushes debounced CMS sync, resolves **`anvl_drops.id`** by **`client_drop_id`**, then calls **`cms_publish_drop`** when an admin sets the active drop (storefront reads **`published_drop_snapshot`** immediately).

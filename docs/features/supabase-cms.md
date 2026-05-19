@@ -68,6 +68,12 @@ When **`VITE_SUPABASE_*`** is configured:
 3. **Sync:** Local saves to drops, products, layout, site SEO, and global brand **schedule a debounced push** to Supabase (`client_drop_id` matches app `Drop.id`; products keyed by `slug`). Remote rows removed locally are deleted on the server. Vitest skips this path (`import.meta.env.MODE === 'test'`).
 4. **Publish:** **Set active** in the drops list calls **`cms_publish_drop`** (after flush sync) so **`storefront_publication.published_drop_snapshot`** matches the activated campaign for anonymous SSR/CSR reads.
 
+### Storefront read priority (with `VITE_SUPABASE_*` set)
+
+1. **Published** `storefront_publication` row (SSR loaders + client TanStack Query).
+2. **SSR loader data** from the first paint when the fetch is still in flight.
+3. **Offline fallback** — same as the pre-Supabase storefront: seed on the server, local admin `localStorage` in the browser (`storefrontReadFallback.ts`, `useLandingCms`, `useHomeProducts`, `commerceClient.supabase`). Used when the network fails, the row has no `published_drop_snapshot`, or the home catalog snapshot is empty.
+
 Without Supabase env, admin keeps the **`VITE_ANVL_ADMIN_*`** gate only (no remote sync).
 
 Migration **`20260518220000_anvl_drops_client_id_admin_rls.sql`** adds **`anvl_drops.client_drop_id`**, ensures **`storefront_publication`** catalog columns exist (**`IF NOT EXISTS`**), replaces editor write policies with **admin-only** policies, and restricts **`cms_publish_drop`** to **admin**.
