@@ -11,6 +11,7 @@ import {
 } from '@/features/admin/auth/adminAuth.storage'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import { resetAllLocalCmsKeys } from '@/features/admin/drops/drops.service'
+import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
@@ -41,6 +42,8 @@ function SettingsPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
+  const supabaseMode = Boolean(getSupabasePublicEnv())
+
   const descId = useId()
   const passwordFieldId = useId()
   const confirmFieldId = useId()
@@ -56,7 +59,9 @@ function SettingsPage() {
     confirmPassword.length > 0 &&
     password === confirmPassword
 
-  const authMatches = passwordsMatch && verifyAdminPassword(password)
+  const authMatches = supabaseMode
+    ? passwordsMatch
+    : passwordsMatch && verifyAdminPassword(password)
 
   const matchError =
     confirmPassword.length > 0 && password !== confirmPassword
@@ -64,12 +69,20 @@ function SettingsPage() {
       : undefined
 
   const authError =
-    passwordsMatch && !verifyAdminPassword(password)
+    !supabaseMode && passwordsMatch && !verifyAdminPassword(password)
       ? 'Does not match the admin password for this workspace.'
       : undefined
 
-  const canSubmit =
-    isAdminLoginConfigured && Boolean(authMatches) && !matchError
+  const canSubmit = supabaseMode
+    ? passwordsMatch && !matchError
+    : isAdminLoginConfigured && Boolean(authMatches) && !matchError
+
+  const sessionUserLabel =
+    session == null
+      ? '—'
+      : session.kind === 'legacy'
+        ? session.username
+        : session.email
 
   return (
     <AdminLayout
@@ -81,7 +94,7 @@ function SettingsPage() {
           <div className="space-y-1 text-sm text-[var(--color-text-muted)]">
             <p>
               <span className="text-[var(--color-text)]">User:</span>{' '}
-              {session?.username ?? '—'}
+              {sessionUserLabel}
             </p>
             <p>
               <span className="text-[var(--color-text)]">Signed in:</span>{' '}
@@ -134,7 +147,13 @@ function SettingsPage() {
             </span>
           </p>
 
-          {!isAdminLoginConfigured ? (
+          {supabaseMode ? (
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Type the same value in both fields (for example your Supabase sign-in password) to
+              confirm. This only clears this browser’s cached CMS copy; remote data in Supabase is
+              unchanged.
+            </p>
+          ) : !isAdminLoginConfigured ? (
             <p className="rounded-lg border border-dashed border-[var(--color-line)] px-3 py-2 text-xs text-[var(--color-text-muted)]" role="alert">
               Admin password is not configured — cannot verify reset. Set{' '}
               <span className="font-mono text-[10px]">VITE_ANVL_ADMIN_PASSWORD</span> in{' '}
@@ -158,7 +177,11 @@ function SettingsPage() {
               closeResetModal()
             }}
           >
-            <FormField label="Admin password" htmlFor={passwordFieldId} error={authError}>
+            <FormField
+              label={supabaseMode ? 'Confirmation' : 'Admin password'}
+              htmlFor={passwordFieldId}
+              error={authError}
+            >
               <Input
                 id={passwordFieldId}
                 type="password"
@@ -166,12 +189,12 @@ function SettingsPage() {
                 name="admin-reset-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={!isAdminLoginConfigured}
+                disabled={!supabaseMode && !isAdminLoginConfigured}
                 aria-invalid={Boolean(authError)}
               />
             </FormField>
             <FormField
-              label="Confirm admin password"
+              label={supabaseMode ? 'Confirm' : 'Confirm admin password'}
               htmlFor={confirmFieldId}
               error={matchError}
             >
@@ -182,7 +205,7 @@ function SettingsPage() {
                 name="admin-reset-password-confirm"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={!isAdminLoginConfigured}
+                disabled={!supabaseMode && !isAdminLoginConfigured}
                 aria-invalid={Boolean(matchError)}
               />
             </FormField>

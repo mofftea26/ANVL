@@ -8,16 +8,16 @@ import { useAdminAuth } from './useAdminAuth'
  * region while hydration runs and redirect once auth is known.
  */
 export function ProtectedAdminRoute({ children }: PropsWithChildren) {
-  const { isAuthenticated, isHydrated } = useAdminAuth()
+  const { isAuthenticated, isHydrated, isRemoteCmsReady } = useAdminAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (isHydrated && !isAuthenticated) {
+    if (isHydrated && isRemoteCmsReady && !isAuthenticated) {
       void navigate({ to: '/admin/login', replace: true })
     }
-  }, [isAuthenticated, isHydrated, navigate])
+  }, [isAuthenticated, isHydrated, isRemoteCmsReady, navigate])
 
-  if (!isHydrated || !isAuthenticated) {
+  if (!isHydrated || !isRemoteCmsReady || !isAuthenticated) {
     return (
       <div
         role="status"

@@ -4,7 +4,7 @@
 
 - **Route:** `/admin/settings` (`src/routes/admin/-adminSettings.tsx`).
 - **Local CMS reset:** Primary control is **destructive**, **full-width** (max `max-w-xl` on wide layouts), **≥44px** touch height, **`focus-ring`**, with **no ellipsis** (labels wrap). Opening it shows the shared **`Modal`**: forged **inset rim + shadow** tokens aligned with **`AdminCard`**, **`aria-describedby`** on the summary copy.
-- **Gate:** Reset runs only after **two password fields** match each other **and** pass **`verifyAdminPassword`** (`src/features/admin/auth/adminAuth.storage.ts` — same comparison as login against build-time `VITE_ANVL_ADMIN_PASSWORD`). **Cancel**, backdrop, and **Escape** close without resetting. Wrong or non-matching input uses **inline** `FormField` errors; submit stays **disabled** until the gate passes.
+- **Gate:** When **Supabase env is set**, reset requires **two matching confirmation fields** (any shared secret — typically the same password used for Supabase sign-in); it does **not** use `VITE_ANVL_ADMIN_PASSWORD`. **Legacy (no Supabase):** reset runs only after two fields match **and** pass **`verifyAdminPassword`** (`src/features/admin/auth/adminAuth.storage.ts` — same comparison as login against build-time `VITE_ANVL_ADMIN_PASSWORD`). **Cancel**, backdrop, and **Escape** close without resetting. Wrong or non-matching input uses **inline** `FormField` errors; submit stays **disabled** until the gate passes.
 
 ## Global chrome (`AdminTopbar`, sidebar footer)
 

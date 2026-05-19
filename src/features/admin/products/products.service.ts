@@ -156,6 +156,11 @@ export function getAdminProductById(id: string): AdminProduct | undefined {
 export function saveAdminProducts(products: AdminProduct[]): ProductsPersistedState {
   const body: ProductsPersistedState = { products }
   writeProductsRaw(JSON.stringify(body))
+  if (typeof window !== 'undefined' && import.meta.env.MODE !== 'test') {
+    void import('@/features/admin/cmsRemote/adminCmsRemoteSync').then((m) =>
+      m.scheduleAdminCmsRemoteSync(),
+    )
+  }
   return body
 }
 

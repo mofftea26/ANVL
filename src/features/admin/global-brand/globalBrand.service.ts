@@ -48,5 +48,10 @@ export function saveGlobalBrandSettings(
 ): GlobalBrandSettings {
   const stamped = mergeStored(next)
   writeGlobalBrandRaw(JSON.stringify(stamped))
+  if (typeof window !== 'undefined' && import.meta.env.MODE !== 'test') {
+    void import('@/features/admin/cmsRemote/adminCmsRemoteSync').then((m) =>
+      m.scheduleAdminCmsRemoteSync(),
+    )
+  }
   return stamped
 }

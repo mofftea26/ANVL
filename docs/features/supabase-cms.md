@@ -57,13 +57,26 @@ Sources: [`supabase/functions/publish-storefront/index.ts`](../../supabase/funct
 
 ## App integration
 
-- [`src/app/config/runtime.ts`](../../src/app/config/runtime.ts) — when Supabase env is set, **public** CMS reads (`getLandingCmsContent`, `getActiveDrop`, layout, SEO) and **`commerce`** use [`publicStorefrontPublication.ts`](../../src/features/cms/api/publicStorefrontPublication.ts) + [`commerceClient.supabase.ts`](../../src/features/products/api/commerceClient.supabase.ts). Admin list/mutations may still use local adapters until fully wired to Supabase.
+- [`src/app/config/runtime.ts`](../../src/app/config/runtime.ts) — when Supabase env is set, **public** CMS reads (`getLandingCmsContent`, `getActiveDrop`, layout, SEO) and **`commerce`** use [`publicStorefrontPublication.ts`](../../src/features/cms/api/publicStorefrontPublication.ts) + [`commerceClient.supabase.ts`](../../src/features/products/api/commerceClient.supabase.ts).
+
+### Admin (Supabase Auth + remote persistence)
+
+When **`VITE_SUPABASE_*`** is configured:
+
+1. **Sign-in:** `/admin/login` uses Supabase **`signInWithPassword`**. Only **`cms_profiles.role = 'admin'`** may use `/admin` (other roles are rejected).
+2. **Hydration:** After sign-in (and on session restore), **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** (`website_layout`, `site_seo`, `global_brand` when present) are **pulled into localStorage** so existing editor code is unchanged.
+3. **Sync:** Local saves to drops, products, layout, site SEO, and global brand **schedule a debounced push** to Supabase (`client_drop_id` matches app `Drop.id`; products keyed by `slug`). Remote rows removed locally are deleted on the server. Vitest skips this path (`import.meta.env.MODE === 'test'`).
+
+Without Supabase env, admin keeps the **`VITE_ANVL_ADMIN_*`** gate only (no remote sync).
+
+Migration **`20260518220000_anvl_drops_client_id_admin_rls.sql`** adds **`anvl_drops.client_drop_id`**, ensures **`storefront_publication`** catalog columns exist (**`IF NOT EXISTS`**), replaces editor write policies with **admin-only** policies, and restricts **`cms_publish_drop`** to **admin**.
+
 - Compose pipeline unchanged: `composeLandingPageFromDrop(drop, layout)` after Zod parse.
 
 ## Ops checklist
 
-1. Migrations applied on project **`cptebkgyrfmokklwtrgp`** (`anvl_cms_core`, `anvl_cms_storage`); Edge Functions **`publish-storefront`** (JWT on) and **`medusa-webhook-stub`** (JWT off) deployed.
-2. In **Authentication**, create at least one user; with **SQL** (service role) or dashboard, insert `public.cms_profiles` (`user_id`, `role` = `admin` | `editor` | `viewer`).
+1. Migrations applied on project **`cptebkgyrfmokklwtrgp`** (including **`anvl_cms_core`**, **`anvl_cms_storage`**, **`20260518220000_anvl_drops_client_id_admin_rls`**); Edge Functions **`publish-storefront`** (JWT on) and **`medusa-webhook-stub`** (JWT off) deployed.
+2. In **Authentication**, create at least one user; with **SQL** (service role) or dashboard, insert `public.cms_profiles` (`user_id`, **`role = 'admin'`** for anyone who should open `/admin`).
 3. Seed `anvl_drops.draft_body` and either call **`cms_publish_drop`** from the SQL editor (as that user, using the REST client with JWT) or use the **`publish-storefront`** function so **`storefront_publication.published_drop_snapshot`** is populated (until then the app falls back to seed snapshots).
 4. In **Edge Function secrets**, set **`ANVL_MEDUSA_WEBHOOK_SECRET`** if you use the Medusa stub.
 5. App `.env`: **`VITE_SUPABASE_URL`** and anon/publishable key from **Project Settings → API** (never commit service role).
