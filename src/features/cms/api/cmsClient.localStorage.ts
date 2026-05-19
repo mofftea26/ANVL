@@ -94,6 +94,13 @@ export const localStorageCmsClient: CmsClient = {
   },
   async setAdminActiveDrop(id) {
     setActiveDrop(id)
+    const { publishStorefrontDropByClientId } = await import(
+      '@/features/admin/cmsRemote/adminCmsPublish'
+    )
+    const published = await publishStorefrontDropByClientId(id)
+    if (!published.ok) {
+      throw new Error(published.error)
+    }
   },
   async scheduleAdminDrop(id, activationIso) {
     scheduleDropActivation(id, activationIso)
