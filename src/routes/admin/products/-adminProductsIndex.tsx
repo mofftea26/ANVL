@@ -31,10 +31,10 @@ import type {
 } from '@/features/admin/products/products.types'
 import { effectiveSellableUnits } from '@/features/admin/products/products.matrix'
 import { detachProductFromAllDrops } from '@/features/admin/drops/drops.service'
-import { Input } from '@/shared/components/ui/Input'
+import { AdminInput } from '@/features/admin/components/AdminInput'
 import { cn } from '@/shared/lib/cn'
 import { Modal } from '@/shared/components/ui/Modal'
-import { Select } from '@/shared/components/ui/Select'
+import { AdminNativeSelect } from '@/features/admin/components/AdminNativeSelect'
 import { adminStackedFieldClass } from '@/shared/lib/cmsFieldStyles'
 
 export function AdminProductsIndexRoute() {
@@ -403,7 +403,7 @@ function ProductsIndex() {
       <AdminPanel variant="filters" className="mb-8 grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Search
-          <Input
+          <AdminInput
             className={fieldClass}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -413,7 +413,7 @@ function ProductsIndex() {
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Status
-          <Select
+          <AdminNativeSelect
             className={fieldClass}
             value={status}
             onChange={(e) =>
@@ -426,11 +426,11 @@ function ProductsIndex() {
                 {s === 'all' ? 'All statuses' : s}
               </option>
             ))}
-          </Select>
+          </AdminNativeSelect>
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Drop
-          <Select
+          <AdminNativeSelect
             className={fieldClass}
             value={dropFilter}
             onChange={(e) => setDropFilter(e.target.value)}
@@ -443,11 +443,11 @@ function ProductsIndex() {
                 {d.dropNumber} · {d.name}
               </option>
             ))}
-          </Select>
+          </AdminNativeSelect>
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Source
-          <Select
+          <AdminNativeSelect
             className={fieldClass}
             value={sourceType}
             onChange={(e) =>
@@ -458,11 +458,11 @@ function ProductsIndex() {
             <option value="all">All</option>
             <option value="drop">Drop release</option>
             <option value="individual">Individual</option>
-          </Select>
+          </AdminNativeSelect>
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Category contains
-          <Input
+          <AdminInput
             className={fieldClass}
             value={categoryQ}
             onChange={(e) => setCategoryQ(e.target.value)}
@@ -471,7 +471,7 @@ function ProductsIndex() {
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Color contains
-          <Input
+          <AdminInput
             className={fieldClass}
             value={colorQ}
             onChange={(e) => setColorQ(e.target.value)}
@@ -480,7 +480,7 @@ function ProductsIndex() {
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Stock availability
-          <Select
+          <AdminNativeSelect
             className={fieldClass}
             value={stockFilter}
             onChange={(e) => setStockFilter(e.target.value as StockFilter)}
@@ -489,7 +489,7 @@ function ProductsIndex() {
             <option value="all">Any</option>
             <option value="in_stock">Has sellable variant</option>
             <option value="out_of_stock">No sellable variant</option>
-          </Select>
+          </AdminNativeSelect>
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Updated from
@@ -513,7 +513,7 @@ function ProductsIndex() {
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Sort
-          <Select
+          <AdminNativeSelect
             className={fieldClass}
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
@@ -526,11 +526,11 @@ function ProductsIndex() {
             <option value="price_desc">Price (high)</option>
             <option value="price_asc">Price (low)</option>
             <option value="status">Status (A–Z)</option>
-          </Select>
+          </AdminNativeSelect>
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Grouping
-          <Select
+          <AdminNativeSelect
             className={fieldClass}
             value={groupMode}
             onChange={(e) => setGroupMode(e.target.value as GroupMode)}
@@ -538,7 +538,7 @@ function ProductsIndex() {
           >
             <option value="flat">Flat list</option>
             <option value="by_drop">By drop + individuals</option>
-          </Select>
+          </AdminNativeSelect>
         </label>
       </AdminPanel>
 

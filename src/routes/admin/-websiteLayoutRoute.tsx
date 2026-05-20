@@ -22,12 +22,12 @@ import type {
   WebsiteLayoutContent,
   WebsiteSocialLink,
 } from '@/features/admin/website-layout/websiteLayout.types'
-import { Button } from '@/shared/components/ui/Button'
-import { Checkbox } from '@/shared/components/ui/Checkbox'
-import { FormField } from '@/shared/components/ui/FormField'
+import { AdminButton } from '@/features/admin/components/AdminButton'
+import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
+import { AdminFormField } from '@/features/admin/components/AdminFormField'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
-import { Input } from '@/shared/components/ui/Input'
-import { Textarea } from '@/shared/components/ui/Textarea'
+import { AdminInput } from '@/features/admin/components/AdminInput'
+import { AdminTextarea } from '@/features/admin/components/AdminInput'
 
 export function WebsiteLayoutPageRoute() {
   return (
@@ -157,10 +157,10 @@ function WebsiteLayoutPage() {
         eyebrow="Global"
         title="Header & footer"
         actions={
-          <Button type="button" variant="primary" size="sm" onClick={save}>
+          <AdminButton type="button" variant="primary" size="sm" onClick={save}>
             <Save size={14} className="mr-1.5" aria-hidden="true" />
             Save layout
-          </Button>
+          </AdminButton>
         }
       />
 
@@ -176,31 +176,29 @@ function WebsiteLayoutPage() {
               fallback="crest"
             />
           </div>
-          <label className="flex items-center gap-3 text-sm text-[var(--color-text)] md:col-span-2">
-            <Checkbox
-              checked={layout.header.cartVisible}
-              onChange={(e) =>
-                patchHeader({ cartVisible: e.target.checked })
-              }
-            />
-            Show cart affordance in header
-          </label>
-          <label className="flex items-center gap-3 text-sm text-[var(--color-text)] md:col-span-2">
-            <Checkbox
-              checked={layout.header.announcement.enabled}
-              onChange={(e) =>
-                patchHeader({
-                  announcement: {
-                    ...layout.header.announcement,
-                    enabled: e.target.checked,
-                  },
-                })
-              }
-            />
-            Announcement bar visible
-          </label>
-          <FormField label="Announcement message">
-            <Input
+          <AdminCheckbox
+            className="md:col-span-2"
+            label="Show cart affordance in header"
+            checked={layout.header.cartVisible}
+            onChange={(e) =>
+              patchHeader({ cartVisible: e.target.checked })
+            }
+          />
+          <AdminCheckbox
+            className="md:col-span-2"
+            label="Announcement bar visible"
+            checked={layout.header.announcement.enabled}
+            onChange={(e) =>
+              patchHeader({
+                announcement: {
+                  ...layout.header.announcement,
+                  enabled: e.target.checked,
+                },
+              })
+            }
+          />
+          <AdminFormField label="Announcement message">
+            <AdminInput
               value={layout.header.announcement.message}
               onChange={(e) =>
                 patchHeader({
@@ -211,9 +209,9 @@ function WebsiteLayoutPage() {
                 })
               }
             />
-          </FormField>
-          <FormField label="Announcement link (optional)">
-            <Input
+          </AdminFormField>
+          <AdminFormField label="Announcement link (optional)">
+            <AdminInput
               value={layout.header.announcement.href ?? ''}
               placeholder="/drop/the-oath"
               onChange={(e) =>
@@ -225,7 +223,7 @@ function WebsiteLayoutPage() {
                 })
               }
             />
-          </FormField>
+          </AdminFormField>
         </div>
 
         <div className="mt-8 space-y-4">
@@ -243,7 +241,7 @@ function WebsiteLayoutPage() {
             </p>
             <div className="flex flex-wrap gap-2">
               {getWebsiteLayoutSaveError(layout) ? (
-                <Button
+                <AdminButton
                   type="button"
                   size="sm"
                   variant="secondary"
@@ -258,9 +256,9 @@ function WebsiteLayoutPage() {
                 >
                   <Plus size={14} className="mr-1" aria-hidden="true" />
                   Add /drop/ campaign slot
-                </Button>
+                </AdminButton>
               ) : null}
-              <Button
+              <AdminButton
                 type="button"
                 size="sm"
                 variant="secondary"
@@ -272,7 +270,7 @@ function WebsiteLayoutPage() {
               >
                 <Plus size={14} className="mr-1" aria-hidden="true" />
                 Add link
-              </Button>
+              </AdminButton>
             </div>
           </div>
           <div className="space-y-3">
@@ -299,34 +297,33 @@ function WebsiteLayoutPage() {
                     </div>
                   ) : (
                     <>
-                      <FormField label="Label">
-                        <Input
+                      <AdminFormField label="Label">
+                        <AdminInput
                           value={link.label}
                           onChange={(e) =>
                             updateHeaderLink(index, { label: e.target.value })
                           }
                         />
-                      </FormField>
-                      <FormField label="Href">
-                        <Input
+                      </AdminFormField>
+                      <AdminFormField label="Href">
+                        <AdminInput
                           value={link.href}
                           onChange={(e) =>
                             updateHeaderLink(index, { href: e.target.value })
                           }
                         />
-                      </FormField>
+                      </AdminFormField>
                     </>
                   )}
-                  <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                    <Checkbox
-                      checked={link.isVisible}
-                      onChange={(e) =>
-                        updateHeaderLink(index, { isVisible: e.target.checked })
-                      }
-                    />
-                    Visible
-                  </label>
-                  <Button
+                  <AdminCheckbox
+                    label="Visible"
+                    className="text-xs"
+                    checked={link.isVisible}
+                    onChange={(e) =>
+                      updateHeaderLink(index, { isVisible: e.target.checked })
+                    }
+                  />
+                  <AdminButton
                     type="button"
                     variant="ghost"
                     size="sm"
@@ -345,7 +342,7 @@ function WebsiteLayoutPage() {
                     }
                   >
                     <Trash2 size={14} aria-hidden="true" />
-                  </Button>
+                  </AdminButton>
                 </div>
               )
             })}
@@ -357,7 +354,7 @@ function WebsiteLayoutPage() {
             <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-text-muted)]">
               Mobile extras
             </p>
-            <Button
+            <AdminButton
               type="button"
               size="sm"
               variant="secondary"
@@ -372,7 +369,7 @@ function WebsiteLayoutPage() {
             >
               <Plus size={14} className="mr-1" aria-hidden="true" />
               Add mobile link
-            </Button>
+            </AdminButton>
           </div>
           <div className="space-y-3">
             {layout.header.mobileExtraLinks.map((link, index) => {
@@ -393,36 +390,35 @@ function WebsiteLayoutPage() {
                     </div>
                   ) : (
                     <>
-                      <FormField label="Label">
-                        <Input
+                      <AdminFormField label="Label">
+                        <AdminInput
                           value={link.label}
                           onChange={(e) =>
                             updateMobileLink(index, { label: e.target.value })
                           }
                         />
-                      </FormField>
-                      <FormField label="Href">
-                        <Input
+                      </AdminFormField>
+                      <AdminFormField label="Href">
+                        <AdminInput
                           value={link.href}
                           onChange={(e) =>
                             updateMobileLink(index, { href: e.target.value })
                           }
                         />
-                      </FormField>
+                      </AdminFormField>
                     </>
                   )}
-                  <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                    <Checkbox
-                      checked={link.isVisible}
-                      onChange={(e) =>
-                        updateMobileLink(index, {
-                          isVisible: e.target.checked,
-                        })
-                      }
-                    />
-                    Visible
-                  </label>
-                  <Button
+                  <AdminCheckbox
+                    label="Visible"
+                    className="text-xs"
+                    checked={link.isVisible}
+                    onChange={(e) =>
+                      updateMobileLink(index, {
+                        isVisible: e.target.checked,
+                      })
+                    }
+                  />
+                  <AdminButton
                     type="button"
                     variant="ghost"
                     size="sm"
@@ -436,7 +432,7 @@ function WebsiteLayoutPage() {
                     }
                   >
                     <Trash2 size={14} aria-hidden="true" />
-                  </Button>
+                  </AdminButton>
                 </div>
               )
             })}
@@ -456,8 +452,8 @@ function WebsiteLayoutPage() {
               fallback="crest"
             />
           </div>
-          <FormField label="Decorative emblem fallback">
-            <Input
+          <AdminFormField label="Decorative emblem fallback">
+            <AdminInput
               value={layout.footer.decorativeEmblemFallbackSrc ?? ''}
               onChange={(e) =>
                 patchFooter({
@@ -465,54 +461,54 @@ function WebsiteLayoutPage() {
                 })
               }
             />
-          </FormField>
-          <FormField label="Tagline">
-            <Textarea
+          </AdminFormField>
+          <AdminFormField label="Tagline">
+            <AdminTextarea
               rows={2}
               value={layout.footer.tagline}
               onChange={(e) => patchFooter({ tagline: e.target.value })}
             />
-          </FormField>
-          <FormField label="Micro caption">
-            <Input
+          </AdminFormField>
+          <AdminFormField label="Micro caption">
+            <AdminInput
               value={layout.footer.microCaption}
               onChange={(e) =>
                 patchFooter({ microCaption: e.target.value })
               }
             />
-          </FormField>
-          <FormField label="Newsletter title">
-            <Input
+          </AdminFormField>
+          <AdminFormField label="Newsletter title">
+            <AdminInput
               value={layout.footer.newsletterTitle}
               onChange={(e) =>
                 patchFooter({ newsletterTitle: e.target.value })
               }
             />
-          </FormField>
-          <FormField label="Newsletter placeholder">
-            <Input
+          </AdminFormField>
+          <AdminFormField label="Newsletter placeholder">
+            <AdminInput
               value={layout.footer.newsletterPlaceholder}
               onChange={(e) =>
                 patchFooter({ newsletterPlaceholder: e.target.value })
               }
             />
-          </FormField>
-          <FormField label="Newsletter button">
-            <Input
+          </AdminFormField>
+          <AdminFormField label="Newsletter button">
+            <AdminInput
               value={layout.footer.newsletterButtonText}
               onChange={(e) =>
                 patchFooter({ newsletterButtonText: e.target.value })
               }
             />
-          </FormField>
-          <FormField label="Copyright">
-            <Input
+          </AdminFormField>
+          <AdminFormField label="Copyright">
+            <AdminInput
               value={layout.footer.copyrightText ?? ''}
               onChange={(e) =>
                 patchFooter({ copyrightText: e.target.value })
               }
             />
-          </FormField>
+          </AdminFormField>
         </div>
 
         <div className="mt-10 space-y-4">
@@ -520,7 +516,7 @@ function WebsiteLayoutPage() {
             <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-text-muted)]">
               Footer groups
             </p>
-            <Button
+            <AdminButton
               type="button"
               size="sm"
               variant="secondary"
@@ -532,7 +528,7 @@ function WebsiteLayoutPage() {
             >
               <Plus size={14} className="mr-1" aria-hidden="true" />
               Add group
-            </Button>
+            </AdminButton>
           </div>
           {layout.footer.linkGroups.map((group, gi) => (
             <div
@@ -540,8 +536,8 @@ function WebsiteLayoutPage() {
               className="space-y-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-bg)]/30 p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <FormField label="Group title (optional)">
-                  <Input
+                <AdminFormField label="Group title (optional)">
+                  <AdminInput
                     value={group.title ?? ''}
                     onChange={(e) => {
                       const linkGroups = layout.footer.linkGroups.map((g, i) =>
@@ -550,8 +546,8 @@ function WebsiteLayoutPage() {
                       patchFooter({ linkGroups })
                     }}
                   />
-                </FormField>
-                <Button
+                </AdminFormField>
+                <AdminButton
                   type="button"
                   variant="ghost"
                   size="sm"
@@ -564,13 +560,13 @@ function WebsiteLayoutPage() {
                   }
                 >
                   Remove group
-                </Button>
+                </AdminButton>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
                   Links
                 </p>
-                <Button
+                <AdminButton
                   type="button"
                   size="sm"
                   variant="secondary"
@@ -584,7 +580,7 @@ function WebsiteLayoutPage() {
                   }}
                 >
                   Add link
-                </Button>
+                </AdminButton>
               </div>
               <div className="space-y-3">
                 {group.links.map((link, li) => {
@@ -606,8 +602,8 @@ function WebsiteLayoutPage() {
                         </div>
                       ) : (
                         <>
-                          <FormField label="Label">
-                            <Input
+                          <AdminFormField label="Label">
+                            <AdminInput
                               value={link.label}
                               onChange={(e) =>
                                 updateGroupLink(gi, li, {
@@ -615,9 +611,9 @@ function WebsiteLayoutPage() {
                                 })
                               }
                             />
-                          </FormField>
-                          <FormField label="Href">
-                            <Input
+                          </AdminFormField>
+                          <AdminFormField label="Href">
+                            <AdminInput
                               value={link.href}
                               onChange={(e) =>
                                 updateGroupLink(gi, li, {
@@ -625,21 +621,20 @@ function WebsiteLayoutPage() {
                                 })
                               }
                             />
-                          </FormField>
+                          </AdminFormField>
                         </>
                       )}
-                      <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                        <Checkbox
-                          checked={link.isVisible}
-                          onChange={(e) =>
-                            updateGroupLink(gi, li, {
-                              isVisible: e.target.checked,
-                            })
-                          }
-                        />
-                        Visible
-                      </label>
-                      <Button
+                      <AdminCheckbox
+                        label="Visible"
+                        className="text-xs"
+                        checked={link.isVisible}
+                        onChange={(e) =>
+                          updateGroupLink(gi, li, {
+                            isVisible: e.target.checked,
+                          })
+                        }
+                      />
+                      <AdminButton
                         type="button"
                         variant="ghost"
                         size="sm"
@@ -657,7 +652,7 @@ function WebsiteLayoutPage() {
                         }}
                       >
                         <Trash2 size={14} aria-hidden="true" />
-                      </Button>
+                      </AdminButton>
                     </div>
                   )
                 })}
@@ -671,7 +666,7 @@ function WebsiteLayoutPage() {
             <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-text-muted)]">
               Social links
             </p>
-            <Button
+            <AdminButton
               type="button"
               size="sm"
               variant="secondary"
@@ -682,30 +677,30 @@ function WebsiteLayoutPage() {
               }
             >
               Add social profile
-            </Button>
+            </AdminButton>
           </div>
           {layout.footer.socialLinks.map((soc, index) => (
             <div
               key={soc.id}
               className="grid gap-3 rounded-xl border border-[var(--color-line)] p-4 md:grid-cols-[1fr_1fr_auto]"
             >
-              <FormField label="Label">
-                <Input
+              <AdminFormField label="Label">
+                <AdminInput
                   value={soc.label}
                   onChange={(e) =>
                     updateSocial(index, { label: e.target.value })
                   }
                 />
-              </FormField>
-              <FormField label="Href">
-                <Input
+              </AdminFormField>
+              <AdminFormField label="Href">
+                <AdminInput
                   value={soc.href}
                   onChange={(e) =>
                     updateSocial(index, { href: e.target.value })
                   }
                 />
-              </FormField>
-              <Button
+              </AdminFormField>
+              <AdminButton
                 type="button"
                 variant="ghost"
                 size="sm"
@@ -718,7 +713,7 @@ function WebsiteLayoutPage() {
                 }
               >
                 Remove
-              </Button>
+              </AdminButton>
             </div>
           ))}
         </div>

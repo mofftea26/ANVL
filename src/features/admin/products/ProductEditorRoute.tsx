@@ -6,7 +6,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useEffect, useId, useMemo, useState } from 'react'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
@@ -32,15 +32,22 @@ import type {
   ProductStatus,
   ProductVariantAvailability,
 } from '@/features/admin/products/products.types'
+import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
+import { AdminFormField } from '@/features/admin/components/AdminFormField'
+import { AdminForgedLink } from '@/features/admin/components/AdminForgedLink'
+import { AdminInput } from '@/features/admin/components/AdminInput'
+import {
+  AdminSelect,
+  AdminSelectContent,
+  AdminSelectItem,
+  AdminSelectTrigger,
+  AdminSelectValue,
+} from '@/features/admin/components/AdminSelect'
+import { AdminTextarea } from '@/features/admin/components/AdminInput'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminDateTimeField } from '@/features/admin/components/AdminDateTimeField'
-import { Checkbox } from '@/shared/components/ui/Checkbox'
-import { FormField } from '@/shared/components/ui/FormField'
 import { ColorField } from '@/shared/components/ui/ColorField'
-import { Input } from '@/shared/components/ui/Input'
 import { Modal } from '@/shared/components/ui/Modal'
-import { Select } from '@/shared/components/ui/Select'
-import { Textarea } from '@/shared/components/ui/Textarea'
 import {
   cloneProduct,
   PRODUCT_STATUSES,
@@ -125,12 +132,13 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
         <p className="text-sm text-[var(--color-text-muted)]">
           Product not found. It may have been deleted.
         </p>
-        <Link
+        <AdminForgedLink
           to="/admin/products"
-          className="mt-4 inline-flex text-sm font-semibold text-[var(--color-accent)] no-underline"
+          variant="outline"
+          className="mt-4 text-sm font-semibold text-[var(--color-accent)]"
         >
           ← Back to catalog
-        </Link>
+        </AdminForgedLink>
       </AdminLayout>
     )
   }
@@ -150,13 +158,10 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
         title={draft.name}
         actions={
           <>
-            <Link
-              to="/admin/products"
-              className="focus-ring inline-flex h-10 items-center gap-2 rounded-md border border-[var(--color-line)] px-4 text-xs font-semibold text-[var(--color-heading)] no-underline"
-            >
+            <AdminForgedLink to="/admin/products" variant="outline">
               <ArrowLeft size={14} aria-hidden="true" />
               Catalog
-            </Link>
+            </AdminForgedLink>
             <AdminButton type="button" variant="primary" size="sm" onClick={saveProduct}>
               {showSuccess ? (
                 <>
@@ -209,24 +214,24 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_180px]">
           <AdminCard title="Listing" description="Core merchandising fields.">
             <div className="grid gap-4 md:grid-cols-2">
-              <FormField label="Name">
-                <Input
+              <AdminFormField label="Name">
+                <AdminInput
                   value={draft.name}
                   onChange={(e) =>
                     setDraft({ ...draft, name: e.target.value })
                   }
                 />
-              </FormField>
-              <FormField label="Slug">
-                <Input
+              </AdminFormField>
+              <AdminFormField label="Slug">
+                <AdminInput
                   value={draft.slug}
                   onChange={(e) =>
                     setDraft({ ...draft, slug: e.target.value })
                   }
                 />
-              </FormField>
-              <FormField label="Price">
-                <Input
+              </AdminFormField>
+              <AdminFormField label="Price">
+                <AdminInput
                   type="number"
                   min={0}
                   step={1}
@@ -238,9 +243,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="Currency (ISO)">
-                <Input
+              </AdminFormField>
+              <AdminFormField label="Currency (ISO)">
+                <AdminInput
                   value={draft.currency}
                   placeholder="USD"
                   onChange={(e) =>
@@ -250,11 +255,11 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="Listing source">
-                <Input readOnly value={listingSourceDisplay} />
-              </FormField>
-              <FormField label="Release date">
+              </AdminFormField>
+              <AdminFormField label="Listing source">
+                <AdminInput readOnly value={listingSourceDisplay} />
+              </AdminFormField>
+              <AdminFormField label="Release date">
                 <AdminDateTimeField
                   clear
                   className="mt-0"
@@ -266,8 +271,8 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="Sale starts">
+              </AdminFormField>
+              <AdminFormField label="Sale starts">
                 <AdminDateTimeField
                   clear
                   className="mt-0"
@@ -279,8 +284,8 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="Sale ends">
+              </AdminFormField>
+              <AdminFormField label="Sale ends">
                 <AdminDateTimeField
                   clear
                   className="mt-0"
@@ -292,9 +297,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="Video URL">
-                <Input
+              </AdminFormField>
+              <AdminFormField label="Video URL">
+                <AdminInput
                   value={draft.videoUrl ?? ''}
                   placeholder="https://"
                   onChange={(e) =>
@@ -304,9 +309,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="3D / AR model URL">
-                <Input
+              </AdminFormField>
+              <AdminFormField label="3D / AR model URL">
+                <AdminInput
                   value={draft.model3dUrl ?? ''}
                   placeholder="https://"
                   onChange={(e) =>
@@ -316,9 +321,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="Compare-at price">
-                <Input
+              </AdminFormField>
+              <AdminFormField label="Compare-at price">
+                <AdminInput
                   type="number"
                   min={0}
                   step={1}
@@ -333,65 +338,66 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="Status">
-                <Select
+              </AdminFormField>
+              <AdminFormField label="Status">
+                <AdminSelect
                   value={draft.status}
-                  onChange={(e) =>
+                  onValueChange={(value) =>
                     setDraft({
                       ...draft,
-                      status: e.target.value as ProductStatus,
+                      status: value as ProductStatus,
                     })
                   }
                 >
-                  {PRODUCT_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              <FormField label="Category">
-                <Input
+                  <AdminSelectTrigger aria-label="Product status">
+                    <AdminSelectValue placeholder="Status" />
+                  </AdminSelectTrigger>
+                  <AdminSelectContent>
+                    {PRODUCT_STATUSES.map((s) => (
+                      <AdminSelectItem key={s} value={s}>
+                        {s}
+                      </AdminSelectItem>
+                    ))}
+                  </AdminSelectContent>
+                </AdminSelect>
+              </AdminFormField>
+              <AdminFormField label="Category">
+                <AdminInput
                   value={draft.category}
                   onChange={(e) =>
                     setDraft({ ...draft, category: e.target.value })
                   }
                 />
-              </FormField>
+              </AdminFormField>
             </div>
             <div className="mt-4 grid gap-4">
-              <label className="flex items-center gap-3 text-sm text-[var(--color-text)]">
-                <Checkbox
-                  checked={draft.isActive}
-                  onChange={(e) =>
-                    setDraft({ ...draft, isActive: e.target.checked })
-                  }
-                />
-                Active on storefront filters
-              </label>
-              <label className="flex items-center gap-3 text-sm text-[var(--color-text)]">
-                <Checkbox
-                  checked={draft.isOnSale}
-                  onChange={(e) =>
-                    setDraft({ ...draft, isOnSale: e.target.checked })
-                  }
-                />
-                On sale
-              </label>
+              <AdminCheckbox
+                label="Active on storefront filters"
+                checked={draft.isActive}
+                onChange={(e) =>
+                  setDraft({ ...draft, isActive: e.target.checked })
+                }
+              />
+              <AdminCheckbox
+                label="On sale"
+                checked={draft.isOnSale}
+                onChange={(e) =>
+                  setDraft({ ...draft, isOnSale: e.target.checked })
+                }
+              />
               {draft.isOnSale ? (
-                <FormField label="Sale label">
-                  <Input
+                <AdminFormField label="Sale label">
+                  <AdminInput
                     value={draft.saleLabel ?? ''}
                     placeholder="Limited · Sale"
                     onChange={(e) =>
                       setDraft({ ...draft, saleLabel: e.target.value })
                     }
                   />
-                </FormField>
+                </AdminFormField>
               ) : null}
-              <FormField label="Tags (comma-separated)">
-                <Input
+              <AdminFormField label="Tags (comma-separated)">
+                <AdminInput
                   value={draft.tags.join(', ')}
                   onChange={(e) =>
                     setDraft({
@@ -403,9 +409,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="Short description">
-                <Textarea
+              </AdminFormField>
+              <AdminFormField label="Short description">
+                <AdminTextarea
                   rows={3}
                   value={draft.shortDescription}
                   onChange={(e) =>
@@ -415,16 +421,16 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="Full description">
-                <Textarea
+              </AdminFormField>
+              <AdminFormField label="Full description">
+                <AdminTextarea
                   rows={6}
                   value={draft.description}
                   onChange={(e) =>
                     setDraft({ ...draft, description: e.target.value })
                   }
                 />
-              </FormField>
+              </AdminFormField>
             </div>
           </AdminCard>
 
@@ -446,8 +452,8 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
 
           <AdminCard title="Details" description="Specs surfaced on PDP." className="lg:col-span-2">
             <div className="grid gap-4 md:grid-cols-2">
-              <FormField label="Fit">
-                <Input
+              <AdminFormField label="Fit">
+                <AdminInput
                   value={draft.details.fit ?? ''}
                   onChange={(e) =>
                     setDraft({
@@ -456,9 +462,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="Material / fabric">
-                <Input
+              </AdminFormField>
+              <AdminFormField label="Material / fabric">
+                <AdminInput
                   value={draft.details.fabric ?? ''}
                   onChange={(e) =>
                     setDraft({
@@ -467,9 +473,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="GSM">
-                <Input
+              </AdminFormField>
+              <AdminFormField label="GSM">
+                <AdminInput
                   value={draft.details.gsm ?? ''}
                   onChange={(e) =>
                     setDraft({
@@ -478,9 +484,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
-              <FormField label="Construction">
-                <Input
+              </AdminFormField>
+              <AdminFormField label="Construction">
+                <AdminInput
                   value={draft.details.construction ?? ''}
                   onChange={(e) =>
                     setDraft({
@@ -492,10 +498,10 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
+              </AdminFormField>
               <div className="md:col-span-2">
-                <FormField label="Care">
-                  <Textarea
+                <AdminFormField label="Care">
+                  <AdminTextarea
                     rows={3}
                     value={draft.details.care ?? ''}
                     onChange={(e) =>
@@ -505,11 +511,11 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                       })
                     }
                   />
-                </FormField>
+                </AdminFormField>
               </div>
               <div className="md:col-span-2">
-                <FormField label="Features (one per line)">
-                  <Textarea
+                <AdminFormField label="Features (one per line)">
+                  <AdminTextarea
                     rows={4}
                     value={(draft.details.features ?? []).join('\n')}
                     onChange={(e) =>
@@ -525,7 +531,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                       })
                     }
                   />
-                </FormField>
+                </AdminFormField>
               </div>
             </div>
           </AdminCard>
@@ -578,8 +584,8 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="grid flex-1 gap-3 md:grid-cols-3">
-                      <FormField label="Name">
-                        <Input
+                      <AdminFormField label="Name">
+                        <AdminInput
                           value={color.name}
                           onChange={(e) => {
                             const colors = [...draft.colors]
@@ -590,8 +596,8 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                             setDraft(rebuildAvailabilityMatrix({ ...draft, colors }))
                           }}
                         />
-                      </FormField>
-                      <FormField label="Swatch">
+                      </AdminFormField>
+                      <AdminFormField label="Swatch">
                         <ColorField
                           value={color.hex}
                           ariaLabel={`Pick swatch color for ${color.name}`}
@@ -606,7 +612,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                             setDraft(rebuildAvailabilityMatrix({ ...draft, colors }))
                           }}
                         />
-                      </FormField>
+                      </AdminFormField>
                     </div>
                     <AdminButton
                       type="button"
@@ -651,8 +657,8 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                         key={img.id}
                         className="grid gap-3 rounded-lg border border-[var(--color-line)]/70 p-3 md:grid-cols-[1fr_1fr_auto]"
                       >
-                        <FormField label="URL">
-                          <Input
+                        <AdminFormField label="URL">
+                          <AdminInput
                             value={img.url}
                             onChange={(e) => {
                               const colors = [...draft.colors]
@@ -662,9 +668,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                               setDraft({ ...draft, colors })
                             }}
                           />
-                        </FormField>
-                        <FormField label="Alt">
-                          <Input
+                        </AdminFormField>
+                        <AdminFormField label="Alt">
+                          <AdminInput
                             value={img.alt}
                             onChange={(e) => {
                               const colors = [...draft.colors]
@@ -674,23 +680,22 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                               setDraft({ ...draft, colors })
                             }}
                           />
-                        </FormField>
-                        <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                          <Checkbox
-                            checked={img.isPrimary}
-                            onChange={(e) => {
-                              const checked = e.target.checked
-                              const colors = [...draft.colors]
-                              const imgs = color.images.map((im, i) => ({
-                                ...im,
-                                isPrimary: i === imgIdx ? checked : false,
-                              })) as ProductImage[]
-                              colors[colorIdx] = { ...color, images: imgs }
-                              setDraft({ ...draft, colors })
-                            }}
-                          />
-                          Primary
-                        </label>
+                        </AdminFormField>
+                        <AdminCheckbox
+                          label="Primary image"
+                          className="text-xs"
+                          checked={img.isPrimary}
+                          onChange={(e) => {
+                            const checked = e.target.checked
+                            const colors = [...draft.colors]
+                            const imgs = color.images.map((im, i) => ({
+                              ...im,
+                              isPrimary: i === imgIdx ? checked : false,
+                            })) as ProductImage[]
+                            colors[colorIdx] = { ...color, images: imgs }
+                            setDraft({ ...draft, colors })
+                          }}
+                        />
                       </div>
                     ))}
                   </div>
@@ -732,8 +737,8 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                   className="flex flex-wrap items-end gap-3 rounded-lg border border-[var(--color-line)] p-3"
                 >
                   <div className="min-w-[120px] flex-1">
-                    <FormField label="Label">
-                      <Input
+                    <AdminFormField label="Label">
+                      <AdminInput
                         value={size.label}
                         onChange={(e) => {
                           const sizes = [...draft.sizes]
@@ -741,7 +746,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                           setDraft(rebuildAvailabilityMatrix({ ...draft, sizes }))
                         }}
                       />
-                    </FormField>
+                    </AdminFormField>
                   </div>
                   <AdminButton
                     type="button"
@@ -794,7 +799,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                         {labelForColor(row.colorId)} · {labelForSize(row.sizeId)}
                       </td>
                       <td className="py-3 pr-4">
-                        <Input
+                        <AdminInput
                           value={row.sku ?? ''}
                           onChange={(e) =>
                             updateAvailabilityRow(row.colorId, row.sizeId, {
@@ -804,7 +809,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                         />
                       </td>
                       <td className="py-3 pr-4">
-                        <Input
+                        <AdminInput
                           type="number"
                           min={0}
                           value={row.stockQuantity}
@@ -817,7 +822,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                         />
                       </td>
                       <td className="py-3 pr-4">
-                        <Input
+                        <AdminInput
                           type="number"
                           min={0}
                           value={row.reservedQuantity}
@@ -850,33 +855,32 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
             {drops.map((drop) => {
               const checked = draft.dropIds.includes(drop.id)
               return (
-                <label
+                <AdminCheckbox
                   key={drop.id}
-                  className="flex items-start gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]/40 p-4 text-sm text-[var(--color-text)]"
-                >
-                  <Checkbox
-                    checked={checked}
-                    onChange={(e) => {
-                      const next = e.target.checked
-                      const nextIds = next
-                        ? [...draft.dropIds, drop.id]
-                        : draft.dropIds.filter((id) => id !== drop.id)
-                      setDraft({
-                        ...draft,
-                        dropIds: nextIds,
-                        sourceType: deriveSourceType(nextIds),
-                      })
-                    }}
-                  />
-                  <span>
-                    <span className="block font-semibold text-[var(--color-heading)]">
-                      {drop.dropNumber} · {drop.name}
-                    </span>
-                    <span className="mt-1 block text-xs text-[var(--color-text-muted)]">
-                      /drop/{drop.slug}
-                    </span>
-                  </span>
-                </label>
+                  className="items-start rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]/40 p-4"
+                  label={
+                    <>
+                      <span className="block font-semibold text-[var(--color-heading)]">
+                        {drop.dropNumber} · {drop.name}
+                      </span>
+                      <span className="mt-1 block text-xs font-normal text-[var(--color-text-muted)]">
+                        /drop/{drop.slug}
+                      </span>
+                    </>
+                  }
+                  checked={checked}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                    const nextIds = next
+                      ? [...draft.dropIds, drop.id]
+                      : draft.dropIds.filter((id) => id !== drop.id)
+                    setDraft({
+                      ...draft,
+                      dropIds: nextIds,
+                      sourceType: deriveSourceType(nextIds),
+                    })
+                  }}
+                />
               )
             })}
           </div>
@@ -886,8 +890,8 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
       {tab === 'seo' ? (
         <AdminCard title="SEO" description="Overrides passed through commerce mocks.">
           <div className="grid gap-4 md:grid-cols-2">
-            <FormField label="Title">
-              <Input
+            <AdminFormField label="Title">
+              <AdminInput
                 value={draft.seo.title ?? ''}
                 onChange={(e) =>
                   setDraft({
@@ -896,9 +900,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                   })
                 }
               />
-            </FormField>
-            <FormField label="OG image URL">
-              <Input
+            </AdminFormField>
+            <AdminFormField label="OG image URL">
+              <AdminInput
                 value={draft.seo.ogImage ?? ''}
                 onChange={(e) =>
                   setDraft({
@@ -907,10 +911,10 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                   })
                 }
               />
-            </FormField>
+            </AdminFormField>
             <div className="md:col-span-2">
-              <FormField label="Meta description">
-                <Textarea
+              <AdminFormField label="Meta description">
+                <AdminTextarea
                   rows={4}
                   value={draft.seo.description ?? ''}
                   onChange={(e) =>
@@ -920,7 +924,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
                     })
                   }
                 />
-              </FormField>
+              </AdminFormField>
             </div>
           </div>
         </AdminCard>

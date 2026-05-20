@@ -12,9 +12,9 @@ import {
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import { resetAllLocalCmsKeys } from '@/features/admin/drops/drops.service'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import { Button } from '@/shared/components/ui/Button'
-import { FormField } from '@/shared/components/ui/FormField'
-import { Input } from '@/shared/components/ui/Input'
+import { AdminButton } from '@/features/admin/components/AdminButton'
+import { AdminFormField } from '@/features/admin/components/AdminFormField'
+import { AdminInput } from '@/features/admin/components/AdminInput'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
 
@@ -110,7 +110,7 @@ function SettingsPage() {
               title="Reset all local CMS data"
               description="Clears drops, products, layout keys, legacy landing JSON, and re-seeds The Oath defaults."
             />
-            <Button
+            <AdminButton
               type="button"
               variant="destructive"
               size="lg"
@@ -123,7 +123,7 @@ function SettingsPage() {
             >
               <RotateCcw size={18} className="mr-2 shrink-0" aria-hidden="true" />
               Reset all local CMS data…
-            </Button>
+            </AdminButton>
           </div>
         </AdminCard>
       </div>
@@ -177,12 +177,12 @@ function SettingsPage() {
               closeResetModal()
             }}
           >
-            <FormField
+            <AdminFormField
               label={supabaseMode ? 'Confirmation' : 'Admin password'}
               htmlFor={passwordFieldId}
               error={authError}
             >
-              <Input
+              <AdminInput
                 id={passwordFieldId}
                 type="password"
                 autoComplete="current-password"
@@ -192,13 +192,13 @@ function SettingsPage() {
                 disabled={!supabaseMode && !isAdminLoginConfigured}
                 aria-invalid={Boolean(authError)}
               />
-            </FormField>
-            <FormField
+            </AdminFormField>
+            <AdminFormField
               label={supabaseMode ? 'Confirm' : 'Confirm admin password'}
               htmlFor={confirmFieldId}
               error={matchError}
             >
-              <Input
+              <AdminInput
                 id={confirmFieldId}
                 type="password"
                 autoComplete="new-password"
@@ -208,13 +208,13 @@ function SettingsPage() {
                 disabled={!supabaseMode && !isAdminLoginConfigured}
                 aria-invalid={Boolean(matchError)}
               />
-            </FormField>
+            </AdminFormField>
 
             <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-              <Button type="button" variant="ghost" size="md" onClick={closeResetModal}>
+              <AdminButton type="button" variant="ghost" size="md" onClick={closeResetModal}>
                 Cancel
-              </Button>
-              <Button
+              </AdminButton>
+              <AdminButton
                 type="submit"
                 variant="destructive"
                 size="lg"
@@ -226,7 +226,7 @@ function SettingsPage() {
                 )}
               >
                 Reset everything
-              </Button>
+              </AdminButton>
             </div>
           </form>
         </div>
