@@ -1,9 +1,9 @@
 import { Plus, Save, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
-import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
+import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
 import {
   ensureDropSystemHydrated,
@@ -132,7 +132,7 @@ function WebsiteLayoutPage() {
     patchFooter({ socialLinks })
   }
 
-  const save = () => {
+  const save = useCallback(() => {
     const err = getWebsiteLayoutSaveError(layout)
     if (err) {
       toast.error(err)
@@ -146,24 +146,29 @@ function WebsiteLayoutPage() {
       const message = e instanceof Error ? e.message : 'Could not save layout.'
       toast.error(message)
     }
-  }
+  }, [layout])
+
+  const layoutToolbarActions = useMemo(
+    () => (
+      <Fragment>
+        <AdminButton type="button" variant="primary" size="sm" onClick={save}>
+          <Save size={14} className="mr-1.5" aria-hidden="true" />
+          Save layout
+        </AdminButton>
+      </Fragment>
+    ),
+    [save],
+  )
+
+  const setPageActions = useAdminPageActions()
+
+  useEffect(() => {
+    setPageActions(layoutToolbarActions)
+    return () => setPageActions(null)
+  }, [layoutToolbarActions, setPageActions])
 
   return (
-    <AdminLayout
-      title="Website layout"
-      description="Global chrome — palettes still follow whichever drop is active."
-    >
-      <AdminSectionHeader
-        eyebrow="Global"
-        title="Header & footer"
-        actions={
-          <AdminButton type="button" variant="primary" size="sm" onClick={save}>
-            <Save size={14} className="mr-1.5" aria-hidden="true" />
-            Save layout
-          </AdminButton>
-        }
-      />
-
+    <AdminLayout title="Website layout">
       <AdminCard title="Header & announcement">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">

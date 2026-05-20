@@ -14,7 +14,6 @@ import { AdminForgedLink } from '@/features/admin/components/AdminForgedLink'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminMediaThumbPlaceholder } from '@/features/admin/components/AdminEmptyState'
 import { AdminPanel } from '@/features/admin/components/AdminPanel'
-import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
 import type { Drop } from '@/features/admin/drops/drops.types'
 import { useDropsList } from '@/features/admin/drops/useDrops'
@@ -384,7 +383,7 @@ function ProductsIndex() {
   return (
     <AdminLayout
       title="Catalog"
-      description="Search, filter, and group global SKUs. Drop assignments stay in sync with the Drops editor."
+      description="Search, filter, and group global SKUs."
     >
       <div className="mb-6 flex flex-wrap justify-end gap-2">
         <AdminForgedLink to="/admin/products/new">New product</AdminForgedLink>

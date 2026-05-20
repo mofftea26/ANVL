@@ -36,6 +36,9 @@ Consolidated UI building blocks live under `src/features/admin/components/`:
 | **`AdminLoadingState`** | `AdminSpinner` + message (auth gate, list loading). |
 | **`AdminEmptyState`** | Empty list card + optional forged CTA; **`AdminMediaThumbPlaceholder`** for catalog thumbs. |
 | **`AdminMicroHeading`** | Uppercase sub-section labels in editor panels. |
+| **`AdminNativeSelect`** | Native `<select>` with `adminStackedFieldClass` for long/dynamic option lists (catalog filters). |
+
+**Page actions:** Product editor and website layout register Save / navigation in **`AdminTopbar`** via **`useAdminPageActions()`** (same pattern as drop editor) — no duplicate section-header action rows.
 
 **No shadcn registry** — keep CVA + Radix wrappers (`AdminSelect`, `AdminDropdownMenu`, `AdminPopover`). Style new controls to match `AdminCard` rim/shadow tokens.
 

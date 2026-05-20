@@ -735,8 +735,7 @@ function NatureContentFields({
 
   return (
     <p className="mt-2 text-[10px] text-[var(--color-text-muted)]">
-      Nature-specific fields for &ldquo;{nature}&rdquo; can be added later;
-      content JSON is still validated on save paths.
+      No extra fields for this act type yet — content JSON is still validated on save.
     </p>
   )
 }

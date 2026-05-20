@@ -3,7 +3,6 @@ import { useId, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
-import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
 import {
   isAdminLoginConfigured,
@@ -103,7 +102,10 @@ function SettingsPage() {
           </div>
         </AdminCard>
 
-        <AdminCard title="Danger zone" description="Irreversible for this browser’s CMS storage.">
+        <AdminCard
+          title="Danger zone"
+          description="Clears drops, products, layout keys, legacy landing JSON, and re-seeds The Oath defaults in this browser."
+        >
           <div className="space-y-4">
             <AdminButton
               type="button"

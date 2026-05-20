@@ -5,12 +5,12 @@ import {
   Save,
   Trash2,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
-import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
+import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import {
   detachProductFromAllDrops,
@@ -55,6 +55,7 @@ import {
 
 export function ProductEditorRoute({ productId }: { productId: string }) {
   const navigate = useNavigate()
+  const setPageActions = useAdminPageActions()
   const remote = useAdminProductById(productId)
   const drops = useDropsList()
   const { showSuccess, flashSuccess } = useSaveSuccessFlash()
@@ -98,7 +99,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
     return { src: url, alt }
   }, [draft])
 
-  const saveProduct = () => {
+  const saveProduct = useCallback(() => {
     if (!draft) return
     const rebuilt = rebuildAvailabilityMatrix(draft)
     upsertAdminProduct(rebuilt)
@@ -106,7 +107,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
     toast.success('Product saved.')
     flashSuccess()
     setDraft(cloneProduct(rebuilt))
-  }
+  }, [draft, flashSuccess])
 
   const updateAvailabilityRow = (
     colorId: string,
@@ -123,6 +124,45 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
       rebuildAvailabilityMatrix({ ...draft, availability: nextAvailability }),
     )
   }
+
+  const productToolbarActions = useMemo(
+    () =>
+      draft ? (
+        <Fragment>
+          <AdminForgedLink to="/admin/products" variant="outline">
+            <ArrowLeft size={14} aria-hidden="true" />
+            Catalog
+          </AdminForgedLink>
+          <AdminButton type="button" variant="primary" size="sm" onClick={saveProduct}>
+            {showSuccess ? (
+              <>
+                <Check size={14} className="mr-1.5" aria-hidden="true" />
+                Saved
+              </>
+            ) : (
+              <>
+                <Save size={14} className="mr-1.5" aria-hidden="true" />
+                Save
+              </>
+            )}
+          </AdminButton>
+          <AdminButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setConfirmDelete(true)}
+          >
+            <Trash2 size={14} aria-hidden="true" />
+          </AdminButton>
+        </Fragment>
+      ) : null,
+    [draft, showSuccess, saveProduct],
+  )
+
+  useEffect(() => {
+    setPageActions(productToolbarActions)
+    return () => setPageActions(null)
+  }, [productToolbarActions, setPageActions])
 
   if (!draft) {
     return (
@@ -147,44 +187,7 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
     draft.sizes.find((s) => s.id === id)?.label ?? id
 
   return (
-    <AdminLayout
-      title={draft.name || 'Untitled product'}
-      description="Inventory, variants, and drop assignments sync bidirectionally."
-    >
-      <AdminSectionHeader
-        eyebrow="Catalog"
-        title={draft.name}
-        actions={
-          <>
-            <AdminForgedLink to="/admin/products" variant="outline">
-              <ArrowLeft size={14} aria-hidden="true" />
-              Catalog
-            </AdminForgedLink>
-            <AdminButton type="button" variant="primary" size="sm" onClick={saveProduct}>
-              {showSuccess ? (
-                <>
-                  <Check size={14} className="mr-1.5" aria-hidden="true" />
-                  Saved
-                </>
-              ) : (
-                <>
-                  <Save size={14} className="mr-1.5" aria-hidden="true" />
-                  Save product
-                </>
-              )}
-            </AdminButton>
-            <AdminButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setConfirmDelete(true)}
-            >
-              <Trash2 size={14} aria-hidden="true" />
-            </AdminButton>
-          </>
-        }
-      />
-
+    <AdminLayout title={draft.name || 'Untitled product'}>
       <div className="mb-8 flex flex-wrap gap-2 border-b border-[var(--color-line)] pb-4">
         {(
           [
