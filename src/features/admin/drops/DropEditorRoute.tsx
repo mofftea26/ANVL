@@ -67,6 +67,7 @@ import { DropThemePaletteCard } from '@/features/admin/drops/DropThemePaletteCar
 import { DebouncedColorField } from '@/features/admin/drops/DebouncedColorField'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 import { IconButton } from '@/shared/components/ui/IconButton'
+import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
 import {
@@ -1206,19 +1207,15 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </section>
       </div>
 
-      <Modal
+      <AdminConfirmDialog
         open={confirmSave}
         onClose={() => {
           if (!saveInFlight) setConfirmSave(false)
         }}
         title="Commit changes to storage?"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            {getSupabasePublicEnv()
-              ? 'Saves the drop draft to Supabase. Live storefront updates when this drop is active (or you check activate below).'
-              : 'Updates persist in this browser until Supabase is configured.'}
-          </p>
+        confirmLabel="Save"
+        confirmLoading={saveInFlight}
+        footerBefore={
           <AdminCheckbox
             className="max-w-xl border border-[var(--color-line)]/80 bg-[var(--color-bg)]/25 px-3 py-2"
             checked={saveModalActivateAfterSave}
@@ -1227,143 +1224,103 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             description="Makes this campaign active in the storefront and deactivates any other active drop."
             disabled={saveInFlight}
           />
-          <div className="flex justify-end gap-2">
-            <AdminButton
-              variant="ghost"
-              size="sm"
-              disabled={saveInFlight}
-              onClick={() => setConfirmSave(false)}
-            >
-              Cancel
-            </AdminButton>
-            <AdminButton
-              variant="primary"
-              size="sm"
-              loading={saveInFlight}
-              onClick={() => {
-                void (async () => {
-                  setSaveInFlight(true)
-                  try {
-                    const activate = saveModalActivateAfterSave
-                    saveDrop(draft, { makeActive: activate })
-                    setPersistedActivateAfterSave(activate)
+        }
+        onConfirm={() => {
+          void (async () => {
+            setSaveInFlight(true)
+            try {
+              const activate = saveModalActivateAfterSave
+              saveDrop(draft, { makeActive: activate })
+              setPersistedActivateAfterSave(activate)
 
-                    if (getSupabasePublicEnv()) {
-                      const flushed = await flushAdminCmsRemoteSync()
-                      if (!flushed.ok) {
-                        toast.error(flushed.error)
-                        return
-                      }
-                      const shouldPublish =
-                        activate || isLiveOnStorefront || draft.isActive
-                      if (shouldPublish) {
-                        const published = await publishStorefrontDropByClientId(
-                          draft.id,
-                        )
-                        if (!published.ok) {
-                          toast.error(published.error)
-                          return
-                        }
-                        await rehydrateAdminCmsFromRemote()
-                        await notifyStorefrontPublicationChanged()
-                        toast.success('Drop saved and storefront updated.')
-                      } else {
-                        toast.success('Drop saved.')
-                      }
-                      await notifyAdminDropsListChanged()
-                    } else {
-                      toast.success('Drop saved.')
-                    }
-
-                    flashSuccess()
-                    setConfirmSave(false)
-                  } finally {
-                    setSaveInFlight(false)
+              if (getSupabasePublicEnv()) {
+                const flushed = await flushAdminCmsRemoteSync()
+                if (!flushed.ok) {
+                  toast.error(flushed.error)
+                  return
+                }
+                const shouldPublish =
+                  activate || isLiveOnStorefront || draft.isActive
+                if (shouldPublish) {
+                  const published = await publishStorefrontDropByClientId(
+                    draft.id,
+                  )
+                  if (!published.ok) {
+                    toast.error(published.error)
+                    return
                   }
-                })()
-              }}
-            >
-              Save
-            </AdminButton>
-          </div>
-        </div>
-      </Modal>
+                  await rehydrateAdminCmsFromRemote()
+                  await notifyStorefrontPublicationChanged()
+                  toast.success('Drop saved and storefront updated.')
+                } else {
+                  toast.success('Drop saved.')
+                }
+                await notifyAdminDropsListChanged()
+              } else {
+                toast.success('Drop saved.')
+              }
 
-      <Modal
+              flashSuccess()
+              setConfirmSave(false)
+            } finally {
+              setSaveInFlight(false)
+            }
+          })()
+        }}
+      >
+        {getSupabasePublicEnv()
+          ? 'Saves the drop draft to Supabase. Live storefront updates when this drop is active (or you check activate below).'
+          : 'Updates persist in this browser until Supabase is configured.'}
+      </AdminConfirmDialog>
+
+      <AdminConfirmDialog
         open={confirmReset}
         onClose={() => setConfirmReset(false)}
         title="Discard unsaved changes?"
+        confirmLabel="Reset"
+        onConfirm={() => {
+          void (async () => {
+            const wasActive = draft.isActive
+            const next = resetDropToDefaults(draft.id)
+            if (next) {
+              setDraft(next)
+              if (wasActive && getSupabasePublicEnv()) {
+                const published = await publishStorefrontDropByClientId(
+                  next.id,
+                )
+                if (!published.ok) {
+                  toast.error(published.error)
+                } else {
+                  await notifyStorefrontPublicationChanged()
+                  toast.success('Drop reset and storefront updated.')
+                }
+              } else {
+                toast.success('Drop reset to defaults.')
+              }
+            }
+            setConfirmReset(false)
+          })()
+        }}
       >
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Restores landing defaults while keeping this drop&apos;s id and slug. Anything not saved is
-            lost.
-          </p>
-          <div className="flex justify-end gap-2">
-            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmReset(false)}>
-              Cancel
-            </AdminButton>
-            <AdminButton
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                void (async () => {
-                  const wasActive = draft.isActive
-                  const next = resetDropToDefaults(draft.id)
-                  if (next) {
-                    setDraft(next)
-                    if (wasActive && getSupabasePublicEnv()) {
-                      const published = await publishStorefrontDropByClientId(
-                        next.id,
-                      )
-                      if (!published.ok) {
-                        toast.error(published.error)
-                      } else {
-                        await notifyStorefrontPublicationChanged()
-                        toast.success('Drop reset and storefront updated.')
-                      }
-                    } else {
-                      toast.success('Drop reset to defaults.')
-                    }
-                  }
-                  setConfirmReset(false)
-                })()
-              }}
-            >
-              Reset
-            </AdminButton>
-          </div>
-        </div>
-      </Modal>
+        Restores landing defaults while keeping this drop&apos;s id and slug. Anything not saved is
+        lost.
+      </AdminConfirmDialog>
 
-      <Modal
+      <AdminConfirmDialog
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         title="Delete this drop?"
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={() => {
+          deleteDrop(draft.id)
+          toast.success('Drop removed.')
+          setConfirmDelete(false)
+          navigate({ to: '/admin/drops' })
+        }}
       >
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Removes the drop locally. At least one drop always remains — defaults will respawn if needed.
-          </p>
-          <div className="flex justify-end gap-2">
-            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
-              Cancel
-            </AdminButton>
-            <AdminButton
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                deleteDrop(draft.id)
-                toast.success('Drop removed.')
-                setConfirmDelete(false)
-                navigate({ to: '/admin/drops' })
-              }}
-            >
-              Delete
-            </AdminButton>
-          </div>
-        </div>
-      </Modal>
+        Removes the drop locally. At least one drop always remains — defaults will respawn if needed.
+      </AdminConfirmDialog>
 
       <Modal
         open={quickProductOpen}

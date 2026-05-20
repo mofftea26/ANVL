@@ -5,7 +5,7 @@ import {
   Save,
   Trash2,
 } from 'lucide-react'
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
@@ -47,7 +47,7 @@ import { AdminTextarea } from '@/features/admin/components/AdminInput'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminDateTimeField } from '@/features/admin/components/AdminDateTimeField'
 import { ColorField } from '@/shared/components/ui/ColorField'
-import { Modal } from '@/shared/components/ui/Modal'
+import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import {
   cloneProduct,
   PRODUCT_STATUSES,
@@ -63,8 +63,6 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
     'basics' | 'variants' | 'drops' | 'seo'
   >('basics')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const deleteModalTitleId = useId()
-
   useEffect(() => {
     if (!remote) {
       setDraft(null)
@@ -930,38 +928,22 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
         </AdminCard>
       ) : null}
 
-      <Modal
+      <AdminConfirmDialog
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
-        aria-labelledby={deleteModalTitleId}
+        title="Delete product?"
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={() => {
+          detachProductFromAllDrops(draft.id)
+          deleteAdminProduct(draft.id)
+          toast.success('Product deleted.')
+          setConfirmDelete(false)
+          navigate({ to: '/admin/products' })
+        }}
       >
-        <div className="space-y-4">
-          <h3 id={deleteModalTitleId} className="anvl-heading text-xl font-normal">
-            Delete product?
-          </h3>
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Removes this SKU everywhere and strips it from every drop roster.
-          </p>
-          <div className="flex justify-end gap-2">
-            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
-              Cancel
-            </AdminButton>
-            <AdminButton
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                detachProductFromAllDrops(draft.id)
-                deleteAdminProduct(draft.id)
-                toast.success('Product deleted.')
-                setConfirmDelete(false)
-                navigate({ to: '/admin/products' })
-              }}
-            >
-              Delete
-            </AdminButton>
-          </div>
-        </div>
-      </Modal>
+        Removes this SKU everywhere and strips it from every drop roster.
+      </AdminConfirmDialog>
     </AdminLayout>
   )
 }
