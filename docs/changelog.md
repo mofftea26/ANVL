@@ -1,4 +1,11 @@
 ﻿
+## 2026-05-20 — Site SEO editor + structured data (PR-5 / MAINT-21)
+
+- **`SiteSeoEditor`:** Defaults / Pages tabs, char-count meta fields, live Google + Twitter preview, sticky **`AdminSaveBar`**.
+- **Persistence:** **`saveSiteSeoContentAsync`** write-through to **`storefront_publication.site_seo`**.
+- **Storefront:** **`buildSeoHeadForSiteStaticPath`** merges **`site_seo.staticPages`** on `/`, `/shop`, `/about`, `/size-guide`.
+- **JSON-LD:** **`dropStructuredDataJsonLd`** on homepage (when active drop sets type) and drop route.
+
 ## 2026-05-20 — Brand fallbacks editor redesign (PR-4 / MAINT-21)
 
 - **`SiteThemeEditor`:** hero strip, side-by-side emblem tiles, read-only active drop palette swatches, sticky **`AdminSaveBar`**.

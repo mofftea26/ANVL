@@ -1,6 +1,7 @@
 ﻿import { createFileRoute, Link } from '@tanstack/react-router'
 import { BRAND } from '@/shared/constants/brand'
 import {
+  buildSeoHeadForSiteStaticPath,
   buildSeoMetaFromCmsSource,
   seoContentToMetaSource,
 } from '@/features/cms/seoMeta'
@@ -56,10 +57,7 @@ export const Route = createFileRoute('/about')({
         fb,
       )
     }
-    return buildSeoMetaFromCmsSource(
-      seoContentToMetaSource(doc, site.globalDefaults),
-      site.globalDefaults,
-    )
+    return buildSeoHeadForSiteStaticPath('/about', doc, site)
   },
   component: AboutPage,
 })

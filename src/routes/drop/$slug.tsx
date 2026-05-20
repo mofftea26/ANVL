@@ -7,6 +7,8 @@ import {
 } from '@/features/cms/seoMeta'
 import { runtimeClients } from '@/app/config/runtime'
 import { DropActivePageView } from '@/features/drops/public/DropActivePageView'
+import { JsonLd } from '@/shared/components/seo/JsonLd'
+import { dropStructuredDataJsonLd } from '@/shared/components/seo/structuredData'
 
 export const Route = createFileRoute('/drop/$slug')({
   loader: async ({ params }) => {
@@ -57,5 +59,14 @@ export const Route = createFileRoute('/drop/$slug')({
 
 function DropRoutePage() {
   const { drop, products } = Route.useLoaderData()
-  return <DropActivePageView drop={drop} products={products} />
+  const structuredData = drop.seo.structuredDataType
+    ? dropStructuredDataJsonLd(drop.seo.structuredDataType, drop)
+    : null
+
+  return (
+    <>
+      {structuredData ? <JsonLd data={structuredData} /> : null}
+      <DropActivePageView drop={drop} products={products} />
+    </>
+  )
 }
