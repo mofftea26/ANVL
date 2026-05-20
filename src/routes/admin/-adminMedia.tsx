@@ -5,49 +5,26 @@ import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHead
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
 
 const destinations = [
-  {
-    title: 'Drops',
-    href: '/admin/drops',
-    body: 'Hero imagery, emblems, and drop-page visuals live on each drop.',
-  },
-  {
-    title: 'Products',
-    href: '/admin/products',
-    body: 'Colorway galleries and primary images are edited per SKU in the catalog.',
-  },
-  {
-    title: 'Website layout',
-    href: '/admin/website-layout',
-    body: 'Header logo stack, footer marks, and layout imagery are global.',
-  },
-  {
-    title: 'SEO',
-    href: '/admin/seo',
-    body: 'Open Graph and Twitter image URLs are part of SEO documents.',
-  },
+  { title: 'Drops', href: '/admin/drops' },
+  { title: 'Products', href: '/admin/products' },
+  { title: 'Website layout', href: '/admin/website-layout' },
+  { title: 'SEO', href: '/admin/seo' },
 ] as const
 
 export function AdminMediaPageRoute() {
   return (
     <ProtectedAdminRoute>
-      <AdminLayout
-        title="Media"
-        description="There is no standalone asset library yet — imagery is authored where it is used."
-      >
-        <AdminSectionHeader
-          eyebrow="Guide"
-          title="Where images live in the CMS"
-          description="Use these editors to attach URLs or uploads. A centralized media library can replace this flow later without changing public routes."
-        />
+      <AdminLayout title="Media">
+        <AdminSectionHeader eyebrow="Guide" title="Where images live" />
 
         <div className="grid gap-6 md:grid-cols-2">
           {destinations.map((d) => (
-            <AdminCard key={d.href} title={d.title} description={d.body}>
+            <AdminCard key={d.href} title={d.title}>
               <Link
                 to={d.href}
-                className="inline-flex h-10 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-xs font-semibold text-[var(--color-bg)] no-underline transition hover:-translate-y-0.5"
+                className="inline-flex h-10 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-xs font-semibold text-[var(--color-bg)] no-underline"
               >
-                Open {d.title.toLowerCase()}
+                Open
               </Link>
             </AdminCard>
           ))}

@@ -1,4 +1,10 @@
 ﻿
+## 2026-05-20 — Admin topbar + CMS copy trim (PR-2 / MAINT-21)
+
+- **`AdminTopbarSessionChip`:** compact account pill with menu (storefront, settings, logout).
+- **Topbar:** single-line title, no duplicate “ANVL Admin” + username row; description only on Dashboard.
+- **Copy:** shortened nav descriptions, trimmed site route helper text (SEO, Media, Theme, Settings, Drops list).
+
 ## 2026-05-20 — Supabase CMS single source of truth (PR-1 / MAINT-20)
 
 - **`cmsPersistenceMode`:** `shouldStorefrontUseLocalCmsFallback()` — public site never reads admin `localStorage` when `VITE_SUPABASE_*` is set; sync helpers use `canWriteCmsDraftsToSupabase` (`editor` + `admin`).

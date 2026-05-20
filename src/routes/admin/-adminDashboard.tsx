@@ -20,7 +20,7 @@ function DashboardContent() {
   return (
     <AdminLayout
       title="Dashboard"
-      description="A calmer surface for orchestrating cinematic drops without losing the forged ANVL aesthetic."
+      description="Campaign drops, catalog, and site chrome."
     >
       <div className="grid items-stretch gap-6 sm:grid-cols-2 xl:grid-cols-3">
         {dashboardCards.map((card) => (

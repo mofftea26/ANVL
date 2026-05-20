@@ -84,10 +84,7 @@ function SettingsPage() {
         : `${session.displayName} (${session.email})`
 
   return (
-    <AdminLayout
-      title="Settings"
-      description="Workspace session and local-only CMS tools for this browser."
-    >
+    <AdminLayout title="Settings">
       <div className="space-y-8">
         <AdminCard title="Session">
           <div className="space-y-1 text-sm text-[var(--color-text-muted)]">
@@ -102,10 +99,7 @@ function SettingsPage() {
           </div>
         </AdminCard>
 
-        <AdminCard
-          title="Danger zone"
-          description="Clears drops, products, layout keys, legacy landing JSON, and re-seeds The Oath defaults in this browser."
-        >
+        <AdminCard title="Danger zone">
           <div className="space-y-4">
             <AdminButton
               type="button"

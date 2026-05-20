@@ -381,10 +381,7 @@ function ProductsIndex() {
   }
 
   return (
-    <AdminLayout
-      title="Catalog"
-      description="Search, filter, and group global SKUs."
-    >
+    <AdminLayout title="Catalog">
       <div className="mb-6 flex flex-wrap justify-end gap-2">
         <AdminForgedLink to="/admin/products/new">New product</AdminForgedLink>
         <AdminForgedLink href="/shop" variant="outline" target="_blank" rel="noreferrer">

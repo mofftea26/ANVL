@@ -28,7 +28,7 @@ export function AdminLayout({
           aria-live="polite"
           className="border-b border-[var(--color-line)] bg-[var(--color-surface-soft)] px-4 py-2 text-center text-[11px] text-[var(--color-text-muted)]"
         >
-          Syncing workspace from Supabase…
+          Syncing from Supabase…
         </p>
       ) : null}
       {remoteHydrateError ? (

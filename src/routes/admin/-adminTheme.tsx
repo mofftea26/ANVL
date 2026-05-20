@@ -44,21 +44,18 @@ function ThemeSettingsPage() {
   }
 
   return (
-    <AdminLayout
-      title="Theme & brand"
-      description="Fallback crests when a drop omits loader paths. Live palettes always follow the active drop."
-    >
+    <AdminLayout title="Theme & brand">
       <AdminSectionHeader
         eyebrow="Fallbacks"
         title="Emblems before hydration"
         actions={
           <Button type="button" variant="primary" size="sm" onClick={save}>
-            Save fallbacks
+            Save
           </Button>
         }
       />
 
-      <AdminCard title="Crest fallbacks" description="Used while an active drop hydrates, or when a drop omits emblem paths. Empty fields default to the bundled ANVL crest.">
+      <AdminCard title="Crest fallbacks">
         <div className="grid gap-5 md:grid-cols-2">
           <MediaPickerField
             label="Default emblem"
@@ -87,16 +84,12 @@ function ThemeSettingsPage() {
             fallback="crest"
           />
         </div>
-        <p className="mt-4 text-sm text-[var(--color-text-muted)]">
-          Tip: Active drop visuals override these automatically. Adjust drop-level
-          emblems inside each drop&apos;s Visuals tab.
-        </p>
         <p className="mt-4 text-sm">
           <Link
             to="/admin/drops"
             className="font-semibold text-[var(--color-accent)] no-underline"
           >
-            Go to Drops →
+            Drop visuals →
           </Link>
         </p>
       </AdminCard>
