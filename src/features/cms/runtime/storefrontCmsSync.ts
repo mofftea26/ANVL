@@ -10,42 +10,56 @@ import {
 } from '@/features/cms/read/landingCmsRuntime'
 import { ensureDropSystemHydrated } from '@/features/cms/read/dropRuntime'
 import { SEED_DROP, SEED_WEBSITE_LAYOUT } from '@/features/cms/api/seedSnapshots'
+import { shouldStorefrontUseLocalCmsFallback } from '@/features/cms/api/cmsPersistenceMode'
+
+function seedLandingSnapshot(): LandingPageCmsContent {
+  return composeLandingPageFromDrop(
+    structuredClone(SEED_DROP),
+    structuredClone(SEED_WEBSITE_LAYOUT),
+  )
+}
 
 /**
- * Single resolver for “which drop powers the public storefront” — matches
- * {@link seedCmsClient} on SSR (`SEED_DROP`) and persisted CMS state in the browser.
+ * Single resolver for “which drop powers the public storefront”.
+ * SSR + Supabase-configured browser: seed snapshot until publication loaders/hooks resolve.
+ * Local-only CMS: persisted admin active drop.
  */
 export function resolveStorefrontActiveDrop(): Drop | null {
   if (typeof window === 'undefined') {
+    return structuredClone(SEED_DROP)
+  }
+  if (!shouldStorefrontUseLocalCmsFallback()) {
     return structuredClone(SEED_DROP)
   }
   ensureDropSystemHydrated()
   return getActiveDrop()
 }
 
-/** Website layout paired with {@link resolveStorefrontActiveDrop} (SSR uses seed layout). */
+/** Website layout paired with {@link resolveStorefrontActiveDrop}. */
 export function resolveStorefrontWebsiteLayout(): WebsiteLayoutContent {
   if (typeof window === 'undefined') {
+    return structuredClone(SEED_WEBSITE_LAYOUT)
+  }
+  if (!shouldStorefrontUseLocalCmsFallback()) {
     return structuredClone(SEED_WEBSITE_LAYOUT)
   }
   return getWebsiteLayoutContent()
 }
 
 /**
- * Canonical composed landing CMS — used by loaders, hooks, and the seed CMS adapter.
+ * Canonical composed landing CMS — used by loaders, hooks, and offline fallbacks.
  * Pass `forceSsrSnapshot` in Vitest to assert parity with the SSR/seed pipeline under jsdom.
  */
 export function getResolvedStorefrontLandingCmsSync(options?: {
   forceSsrSnapshot?: boolean
 }): LandingPageCmsContent {
   const useSeed =
-    options?.forceSsrSnapshot === true || typeof window === 'undefined'
+    options?.forceSsrSnapshot === true ||
+    typeof window === 'undefined' ||
+    !shouldStorefrontUseLocalCmsFallback()
 
   if (useSeed) {
-    return composeLandingPageFromDrop(
-      structuredClone(SEED_DROP),
-      structuredClone(SEED_WEBSITE_LAYOUT),
-    )
+    return seedLandingSnapshot()
   }
 
   ensureDropSystemHydrated()

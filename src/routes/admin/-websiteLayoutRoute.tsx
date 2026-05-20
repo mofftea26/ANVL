@@ -15,7 +15,7 @@ import { isActiveDropNavTemplateHref } from '@/features/admin/website-layout/web
 import {
   getWebsiteLayoutContent,
   getWebsiteLayoutSaveError,
-  saveWebsiteLayoutContent,
+  saveWebsiteLayoutContentAsync,
 } from '@/features/admin/website-layout/websiteLayout.service'
 import type {
   WebsiteFooterLinkGroup,
@@ -138,14 +138,16 @@ function WebsiteLayoutPage() {
       toast.error(err)
       return
     }
-    try {
-      saveWebsiteLayoutContent(layout)
-      toast.success('Website layout saved.')
-      setLayout(getWebsiteLayoutContent())
-    } catch (e) {
-      const message = e instanceof Error ? e.message : 'Could not save layout.'
-      toast.error(message)
-    }
+    void (async () => {
+      try {
+        await saveWebsiteLayoutContentAsync(layout)
+        toast.success('Website layout saved.')
+        setLayout(getWebsiteLayoutContent())
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Could not save layout.'
+        toast.error(message)
+      }
+    })()
   }, [layout])
 
   const layoutToolbarActions = useMemo(

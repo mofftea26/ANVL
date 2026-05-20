@@ -29,8 +29,8 @@ import { supabaseCommerceClient } from '@/features/products/api/commerceClient.s
  * unless `VITE_SUPABASE_URL` + anon key are set — then **published** CMS projection is read
  * from Supabase so SSR matches all visitors (including commerce catalog snapshots).
  *
- * Browser uses persisted admin state for **admin-only** CMS mutations; public reads + commerce
- * still prefer Supabase when configured so the storefront matches SSR.
+ * Browser: admin mutations use localStorage as working copy with Supabase write-through
+ * when configured; **public** CMS/commerce reads prefer Supabase publication (never admin drafts).
  *
  * TODO: add Medusa-backed factories and branch on env when the commerce backend ships.
  */

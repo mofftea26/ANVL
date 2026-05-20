@@ -7,7 +7,7 @@ import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHead
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
 import {
   getGlobalBrandSettings,
-  saveGlobalBrandSettings,
+  saveGlobalBrandSettingsAsync,
 } from '@/features/admin/global-brand/globalBrand.service'
 import { subscribeGlobalBrandChange } from '@/features/admin/global-brand/globalBrand.storage'
 import { Button } from '@/shared/components/ui/Button'
@@ -31,8 +31,16 @@ function ThemeSettingsPage() {
   }, [])
 
   const save = () => {
-    saveGlobalBrandSettings(settings)
-    toast.success('Global emblem fallbacks saved.')
+    void (async () => {
+      try {
+        await saveGlobalBrandSettingsAsync(settings)
+        toast.success('Global emblem fallbacks saved.')
+      } catch (e) {
+        const message =
+          e instanceof Error ? e.message : 'Could not save brand fallbacks.'
+        toast.error(message)
+      }
+    })()
   }
 
   return (

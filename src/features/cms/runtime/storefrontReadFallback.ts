@@ -6,17 +6,15 @@ import {
 } from '@/features/cms/runtime/storefrontCmsSync'
 
 /**
- * Storefront CMS when Supabase is unset, offline, or has no published snapshot.
- * Browser: active drop + layout from local admin persistence (same as pre-Supabase).
- * SSR: deterministic seed snapshot.
+ * Fallback landing CMS when Supabase fetch fails or env is unset.
+ * With Supabase configured: seed snapshot (never admin localStorage drafts).
+ * Local-only CMS: active drop + layout from admin persistence.
  */
 export function getStorefrontOfflineLandingCms(): LandingPageCmsContent {
-  return getResolvedStorefrontLandingCmsSync(
-    typeof window === 'undefined' ? { forceSsrSnapshot: true } : undefined,
-  )
+  return getResolvedStorefrontLandingCmsSync()
 }
 
-/** Active drop for offline / unpublished fallback — seed on SSR, localStorage in browser. */
+/** Active drop for publication fetch fallbacks — see {@link resolveStorefrontActiveDrop}. */
 export function getStorefrontOfflineActiveDrop(): Drop | null {
   return resolveStorefrontActiveDrop()
 }

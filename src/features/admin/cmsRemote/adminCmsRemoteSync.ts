@@ -1,4 +1,5 @@
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import { canWriteCmsDraftsToSupabase } from '@/features/cms/api/cmsPersistenceMode'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { fetchCmsProfileRole } from '@/features/admin/auth/adminCmsProfileRole'
 import { readDropsArray } from '@/features/admin/drops/drops.service'
@@ -45,7 +46,7 @@ export async function flushAdminCmsRemoteSync(): Promise<
   if (!sessionData.session) return { ok: true }
 
   const { role } = await fetchCmsProfileRole(client)
-  if (role !== 'admin') return { ok: true }
+  if (!canWriteCmsDraftsToSupabase(role)) return { ok: true }
 
   const drops = readDropsArray()
   const activeClientId = readActiveDropIdRaw()

@@ -1,4 +1,12 @@
 ﻿
+## 2026-05-20 — Supabase CMS single source of truth (PR-1 / MAINT-20)
+
+- **`cmsPersistenceMode`:** `shouldStorefrontUseLocalCmsFallback()` — public site never reads admin `localStorage` when `VITE_SUPABASE_*` is set; sync helpers use `canWriteCmsDraftsToSupabase` (`editor` + `admin`).
+- **Write-through:** `cmsWriteThrough.afterLocalCmsMutation()` + `saveWebsiteLayoutContentAsync` / `saveGlobalBrandSettingsAsync` flush to Supabase on explicit Save (layout + brand fallbacks).
+- **Storefront sync:** `storefrontCmsSync` returns seed snapshot on Supabase-configured browsers until publication hooks resolve (no draft leakage).
+- **Admin:** Re-hydrates CMS from Supabase on window focus / tab visible when signed in.
+- **DB:** Migration **`20260620100000_storefront_site_drafts.sql`** — `storefront_publication.media_index` placeholder for Media library (PR-6).
+
 ## 2026-05-20 — Admin CMS UI primitives consolidation (full pass)
 
 - Summary: Added reusable admin UI primitives and completed a five-step CMS UI pass: (1) migrated `ProductEditorRoute`, website layout, settings, login, and products filters to `AdminFormField` / `AdminInput` / `AdminSelect` / `AdminNativeSelect` / `AdminCheckbox`; (2) `AdminConfirmDialog` on drop editor save/reset/delete and product delete; (3) `DropActsBuilderPanel` uses `AdminPanel`, `AdminFieldLabel`, `AdminMicroHeading`; (4) `motion-safe` transitions on `AdminPanel`, `Modal`, `AdminConfirmDialog`; (5) trimmed redundant `AdminSectionHeader` strips — product/website editors register actions in `AdminTopbar` via `useAdminPageActions`. Vitest coverage for core primitives. See `docs/features/admin-ui.md`.
