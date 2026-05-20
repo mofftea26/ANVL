@@ -42,12 +42,12 @@ export const adminNavItems: AdminNavItem[] = [
     badge: 'Global',
   },
   {
-    label: 'Theme & brand',
+    label: 'Brand fallbacks',
     href: '/admin/theme',
-    description: 'Global emblem fallbacks.',
+    description: 'Emblems before drop loads.',
     cluster: 'Site',
     cta: 'Edit',
-    badge: 'Fallback',
+    badge: 'Global',
   },
   {
     label: 'SEO',

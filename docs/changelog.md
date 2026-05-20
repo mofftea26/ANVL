@@ -1,4 +1,11 @@
 ﻿
+## 2026-05-20 — Brand fallbacks editor redesign (PR-4 / MAINT-21)
+
+- **`SiteThemeEditor`:** hero strip, side-by-side emblem tiles, read-only active drop palette swatches, sticky **`AdminSaveBar`**.
+- **Nav:** Site item renamed **Brand fallbacks** (badge **Global**).
+- **Route shell:** `-adminTheme.tsx` delegates to `src/features/admin/site-theme/`.
+- **Storefront:** `previewLoadingSrc` test confirms drop emblems win over global fallbacks.
+
 ## 2026-05-20 — Site Layout editor redesign (PR-3 / RESP-15)
 
 - **`SiteLayoutEditor`:** tabbed Header / Footer / Announcement panels; sticky **`AdminSaveBar`**; live **`SiteLayoutPreview`** (lg+ column, mobile `<details>`).
