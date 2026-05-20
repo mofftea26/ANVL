@@ -386,19 +386,13 @@ function ProductsIndex() {
       title="Catalog"
       description="Search, filter, and group global SKUs. Drop assignments stay in sync with the Drops editor."
     >
-      <AdminSectionHeader
-        eyebrow="Products"
-        title="Inventory"
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <AdminForgedLink to="/admin/products/new">New product</AdminForgedLink>
-            <AdminForgedLink href="/shop" variant="outline" target="_blank" rel="noreferrer">
-              Shop preview
-              <ExternalLink size={14} aria-hidden="true" />
-            </AdminForgedLink>
-          </div>
-        }
-      />
+      <div className="mb-6 flex flex-wrap justify-end gap-2">
+        <AdminForgedLink to="/admin/products/new">New product</AdminForgedLink>
+        <AdminForgedLink href="/shop" variant="outline" target="_blank" rel="noreferrer">
+          Shop preview
+          <ExternalLink size={14} aria-hidden="true" />
+        </AdminForgedLink>
+      </div>
 
       <AdminPanel variant="filters" className="mb-8 grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">

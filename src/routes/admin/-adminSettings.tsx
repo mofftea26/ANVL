@@ -105,11 +105,6 @@ function SettingsPage() {
 
         <AdminCard title="Danger zone" description="Irreversible for this browser’s CMS storage.">
           <div className="space-y-4">
-            <AdminSectionHeader
-              eyebrow="Local dev"
-              title="Reset all local CMS data"
-              description="Clears drops, products, layout keys, legacy landing JSON, and re-seeds The Oath defaults."
-            />
             <AdminButton
               type="button"
               variant="destructive"
