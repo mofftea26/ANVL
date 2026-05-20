@@ -22,6 +22,23 @@
 - **Page actions API:** `AdminPageActionsProvider` wraps the **`/admin`** route **`Outlet`** (`src/routes/admin/route.tsx`). Routes call **`useAdminPageActions()`** and **`useEffect`** (`setActions(<Fragment/>)` + cleanup `setActions(null)`). **`useAdminPageActionsSlot()`** is read-only for layout/tests.
 - **Sidebar footer:** **`AdminSidebar`** anchors **View storefront** (opens `/` in a new tab, **`focus-ring`**, **≥44px** height) and **Logout** (same **`useAdminAuth`** `logout` as before) under **`border-t`**, freeing the top bar’s trailing cluster for route actions only.
 
+## Shared admin primitives (2026-05)
+
+Consolidated UI building blocks live under `src/features/admin/components/`:
+
+| Primitive | Role |
+|-----------|------|
+| **`AdminForgedLink`** | Router or external links with forged CTA / outline / icon variants (`adminForgedLinkStyles.ts`). Replaces duplicated `Link` + long `className` strings on dashboard, drops list, products index. |
+| **`AdminStatusBadge`** | CVA status chips (`dropStatusBadgeTone` for drop lifecycle). |
+| **`AdminFormField`** / **`AdminFieldLabel`** | Oath-dark label rhythm (`stacked`, `filter`, `micro`). Prefer over storefront `FormField` in `/admin`. |
+| **`AdminConfirmDialog`** | `Modal` + title + body + Cancel/Confirm footer (drops list lifecycle modals). |
+| **`AdminPanel`** | Toolbar / inset / filter shells (lighter than full `AdminCard`). |
+| **`AdminLoadingState`** | `AdminSpinner` + message (auth gate, list loading). |
+| **`AdminEmptyState`** | Empty list card + optional forged CTA; **`AdminMediaThumbPlaceholder`** for catalog thumbs. |
+| **`AdminMicroHeading`** | Uppercase sub-section labels in editor panels. |
+
+**No shadcn registry** — keep CVA + Radix wrappers (`AdminSelect`, `AdminDropdownMenu`, `AdminPopover`). Style new controls to match `AdminCard` rim/shadow tokens.
+
 ## Buttons
 
 - **Implementation:** `src/shared/components/ui/Button.tsx` (CVA + `forwardRef`) is the canonical control. **`AdminButton`** in `src/features/admin/components/AdminButton.tsx` re-exports it so admin routes import from the feature boundary.

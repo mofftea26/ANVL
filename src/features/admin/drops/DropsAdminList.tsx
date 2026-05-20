@@ -7,17 +7,29 @@ import {
   type SortingState,
   useReactTable,
 } from '@tanstack/react-table'
-import { Link } from '@tanstack/react-router'
 import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Plus } from 'lucide-react'
 import { useCallback, useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { AdminButton, adminButtonVariants } from '@/features/admin/components/AdminButton'
+import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminCard } from '@/features/admin/components/AdminCard'
+import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import { AdminDateTimeField } from '@/features/admin/components/AdminDateTimeField'
+import {
+  AdminEmptyState,
+  AdminSecondaryExternalLink,
+} from '@/features/admin/components/AdminEmptyState'
+import { AdminForgedLink } from '@/features/admin/components/AdminForgedLink'
+import { AdminFormField } from '@/features/admin/components/AdminFormField'
+import { AdminInput } from '@/features/admin/components/AdminInput'
+import { AdminLoadingState } from '@/features/admin/components/AdminLoadingState'
+import { AdminPanel } from '@/features/admin/components/AdminPanel'
+import {
+  AdminStatusBadge,
+  dropStatusBadgeTone,
+} from '@/features/admin/components/AdminStatusBadge'
 import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import type { DropStatus } from '@/features/drops/drop.types'
 import { coerceToDate } from '@/features/admin/lib/adminDateTime'
-import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
 import {
   useAdminDropsListQuery,
@@ -66,26 +78,6 @@ function parseOptionalTime(iso?: string): number {
 function compareDropStatus(a: AdminDropListItem, b: AdminDropListItem): number {
   if (a.isActive !== b.isActive) return a.isActive ? -1 : 1
   return STATUS_SORT_RANK[a.status] - STATUS_SORT_RANK[b.status]
-}
-
-function statusBadgeClass(status: DropStatus, isActive: boolean) {
-  if (isActive) {
-    return 'border-emerald-400/50 bg-emerald-500/15 text-emerald-100'
-  }
-  switch (status) {
-    case 'draft':
-      return 'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-text-muted)]'
-    case 'scheduled':
-      return 'border-amber-400/40 bg-amber-400/10 text-amber-100'
-    case 'archived':
-      return 'border-zinc-600 bg-zinc-900/40 text-zinc-400'
-    case 'inactive':
-      return 'border-[var(--color-line)] text-[var(--color-text-muted)]'
-    case 'active':
-      return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100'
-    default:
-      return 'border-[var(--color-line)] text-[var(--color-text-muted)]'
-  }
 }
 
 function filterRows(
@@ -158,11 +150,7 @@ export function DropsAdminList() {
 
   const [modal, setModal] = useState<ModalMode | null>(null)
   const [sorting, setSorting] = useState<SortingState>([{ id: 'updatedAt', desc: true }])
-  const activateTitleId = useId()
-  const scheduleTitleId = useId()
   const scheduleFieldLabelId = useId()
-  const archiveTitleId = useId()
-  const deleteTitleId = useId()
   const searchFieldId = useId()
   const [scheduleIso, setScheduleIso] = useState(
     () => new Date(Date.now() + 60 * 60 * 1000).toISOString(),
@@ -259,14 +247,12 @@ export function DropsAdminList() {
         header: ({ column }) => <DropsSortHeader column={column} label="Status" />,
         cell: ({ row }) => (
           <div className="space-y-1">
-            <span
-              className={cn(
-                'inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
-                statusBadgeClass(row.original.status, row.original.isActive),
-              )}
+            <AdminStatusBadge
+              tone={dropStatusBadgeTone(row.original.status, row.original.isActive)}
+              className="px-2.5 tracking-[0.14em]"
             >
               {row.original.isActive ? 'Live' : row.original.status}
-            </span>
+            </AdminStatusBadge>
             {row.original.isActive ? (
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
                 Active on site
@@ -345,58 +331,38 @@ export function DropsAdminList() {
   return (
     <>
       <div className="min-w-0 space-y-5">
-        <div className="min-w-0 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-soft)]/40 px-3 py-4 sm:px-5">
+        <AdminPanel>
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between xl:gap-6">
-            <div className="min-w-0 flex-1 space-y-2">
-              <label
-                htmlFor={searchFieldId}
-                className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]"
-              >
-                Search drops
-              </label>
-              <input
+            <AdminFormField
+              label="Search drops"
+              htmlFor={searchFieldId}
+              labelStyle="micro"
+              className="min-w-0 flex-1"
+              hint="Search and filter below; manage lifecycle from each row's overflow menu (⋯)."
+            >
+              <AdminInput
                 id={searchFieldId}
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Title, internal name, slug, or drop #"
-                className="focus-ring w-full max-w-xl rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]"
+                className="max-w-xl"
                 autoComplete="off"
               />
-              <p className="max-w-xl text-xs leading-relaxed text-[var(--color-text-muted)]">
-                Search and filter below; manage lifecycle from each row&apos;s overflow menu (⋯).
-              </p>
-            </div>
+            </AdminFormField>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <Link
+              <AdminForgedLink
                 to="/admin/drops/new"
+                variant="icon"
                 aria-label="Create new drop"
                 title="Create new drop"
-                className={cn(
-                  'focus-ring relative inline-flex h-11 min-h-11 min-w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg px-0 no-underline',
-                  'border border-[color-mix(in_oklab,var(--color-accent)_48%,transparent)]',
-                  'bg-[var(--color-surface)] text-[var(--color-heading)]',
-                  'shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.26),0_2px_8px_-2px_rgba(0,0,0,0.48)]',
-                  'hover:border-[var(--color-accent)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-accent)]',
-                  'hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.11),inset_0_-1px_0_rgba(0,0,0,0.26),0_12px_28px_-14px_rgba(0,0,0,0.6)]',
-                  'active:border-[color-mix(in_oklab,var(--color-accent)_65%,transparent)] active:bg-[var(--color-surface)] active:text-[var(--color-heading)]',
-                  'active:shadow-[inset_0_2px_6px_rgba(0,0,0,0.38)]',
-                )}
               >
                 <Plus className="size-[18px]" aria-hidden />
-              </Link>
-              <a
-                href="/"
-                target="_blank"
-                rel="noreferrer"
-                className={cn(
-                  adminButtonVariants({ variant: 'secondary', size: 'md' }),
-                  'focus-ring inline-flex h-10 shrink-0 gap-2 px-4 no-underline',
-                )}
-              >
+              </AdminForgedLink>
+              <AdminSecondaryExternalLink href="/">
                 View site
                 <ExternalLink size={14} aria-hidden />
-              </a>
+              </AdminSecondaryExternalLink>
             </div>
           </div>
 
@@ -419,7 +385,7 @@ export function DropsAdminList() {
               </AdminButton>
             ))}
           </div>
-        </div>
+        </AdminPanel>
 
         {isError ? (
           <AdminCard title="Could not load drops">
@@ -432,23 +398,15 @@ export function DropsAdminList() {
           </AdminCard>
         ) : null}
 
-        {isLoading ? <p className="text-sm text-[var(--color-text-muted)]">Loading drops…</p> : null}
+        {isLoading ? <AdminLoadingState message="Loading drops…" /> : null}
 
         {!isLoading && !isError && totalDrops === 0 ? (
-          <AdminCard
+          <AdminEmptyState
             title="No drops yet"
             description="Create your first campaign drop to configure the landing story, palette, and catalog slice."
-          >
-            <Link
-              to="/admin/drops/new"
-              className={cn(
-                adminButtonVariants({ variant: 'primary', size: 'md' }),
-                'focus-ring inline-flex no-underline',
-              )}
-            >
-              Create a drop
-            </Link>
-          </AdminCard>
+            actionTo="/admin/drops/new"
+            actionLabel="Create a drop"
+          />
         ) : null}
 
         {!isLoading && !isError && totalDrops > 0 ? (
@@ -510,14 +468,12 @@ export function DropsAdminList() {
                     >
                       <div className="space-y-3 text-sm">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={cn(
-                              'rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
-                              statusBadgeClass(row.status, row.isActive),
-                            )}
+                          <AdminStatusBadge
+                            tone={dropStatusBadgeTone(row.status, row.isActive)}
+                            className="px-2.5 tracking-[0.14em]"
                           >
                             {row.isActive ? 'Live (active)' : row.status}
-                          </span>
+                          </AdminStatusBadge>
                           {row.isActive ? (
                             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
                               Storefront drop
@@ -611,50 +567,35 @@ export function DropsAdminList() {
         ) : null}
       </div>
 
-      <Modal open={modal?.kind === 'activate'} onClose={() => setModal(null)} aria-labelledby={activateTitleId}>
-        <div className="space-y-4">
-          <h3 id={activateTitleId} className="anvl-heading text-xl font-normal">
-            Make drop active?
-          </h3>
-          <p className="text-sm text-[var(--color-text-muted)]">
-            <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will power the public landing page and theme.
-            The current active drop will be set to inactive.
-            When Supabase is configured, activating also publishes the drop to the live storefront snapshot.
-          </p>
-          <div className="flex justify-end gap-2">
-            <AdminButton variant="ghost" size="sm" onClick={() => setModal(null)}>
-              Cancel
-            </AdminButton>
-            <AdminButton
-              variant="primary"
-              size="sm"
-              disabled={busy}
-              onClick={() => {
-                if (modal?.kind !== 'activate') return
-                setActiveMut.mutate(modal.id, {
-                  onSuccess: () => {
-                    toast.success('Active drop updated.')
-                    setModal(null)
-                  },
-                  onError: () => toast.error('Could not activate drop.'),
-                })
-              }}
-            >
-              Activate
-            </AdminButton>
-          </div>
-        </div>
-      </Modal>
+      <AdminConfirmDialog
+        open={modal?.kind === 'activate'}
+        onClose={() => setModal(null)}
+        title="Make drop active?"
+        confirmLabel="Activate"
+        confirmDisabled={busy}
+        onConfirm={() => {
+          if (modal?.kind !== 'activate') return
+          setActiveMut.mutate(modal.id, {
+            onSuccess: () => {
+              toast.success('Active drop updated.')
+              setModal(null)
+            },
+            onError: () => toast.error('Could not activate drop.'),
+          })
+        }}
+      >
+        <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will power the
+        public landing page and theme. The current active drop will be set to inactive. When
+        Supabase is configured, activating also publishes the drop to the live storefront snapshot.
+      </AdminConfirmDialog>
 
-      <Modal open={modal?.kind === 'schedule'} onClose={() => setModal(null)} aria-labelledby={scheduleTitleId}>
-        <div className="space-y-4">
-          <h3 id={scheduleTitleId} className="anvl-heading text-xl font-normal">
-            Schedule activation
-          </h3>
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Set a planned activation time for{' '}
-            <span className="font-medium text-[var(--color-text)]">{modal?.label}</span>. This does not auto-publish yet; it records intent in the CMS.
-          </p>
+      <AdminConfirmDialog
+        open={modal?.kind === 'schedule'}
+        onClose={() => setModal(null)}
+        title="Schedule activation"
+        confirmLabel="Save schedule"
+        confirmDisabled={busy || !coerceToDate(scheduleIso)}
+        footerBefore={
           <label className="block text-xs text-[var(--color-text-muted)]">
             <span className="mb-1 block" id={scheduleFieldLabelId}>
               Activation (local time — stored as UTC ISO in CMS)
@@ -668,104 +609,68 @@ export function DropsAdminList() {
               }}
             />
           </label>
-          <div className="flex justify-end gap-2">
-            <AdminButton variant="ghost" size="sm" onClick={() => setModal(null)}>
-              Cancel
-            </AdminButton>
-            <AdminButton
-              variant="primary"
-              size="sm"
-              disabled={
-                busy ||
-                !coerceToDate(scheduleIso)
-              }
-              onClick={() => {
-                if (modal?.kind !== 'schedule' || !coerceToDate(scheduleIso)) return
-                const iso = scheduleIso
-                scheduleMut.mutate(
-                  { id: modal.id, activationIso: iso },
-                  {
-                    onSuccess: () => {
-                      toast.success('Schedule saved.')
-                      setModal(null)
-                    },
-                    onError: () => toast.error('Could not save schedule.'),
-                  },
-                )
-              }}
-            >
-              Save schedule
-            </AdminButton>
-          </div>
-        </div>
-      </Modal>
+        }
+        onConfirm={() => {
+          if (modal?.kind !== 'schedule' || !coerceToDate(scheduleIso)) return
+          const iso = scheduleIso
+          scheduleMut.mutate(
+            { id: modal.id, activationIso: iso },
+            {
+              onSuccess: () => {
+                toast.success('Schedule saved.')
+                setModal(null)
+              },
+              onError: () => toast.error('Could not save schedule.'),
+            },
+          )
+        }}
+      >
+        Set a planned activation time for{' '}
+        <span className="font-medium text-[var(--color-text)]">{modal?.label}</span>. This does not
+        auto-publish yet; it records intent in the CMS.
+      </AdminConfirmDialog>
 
-      <Modal open={modal?.kind === 'archive'} onClose={() => setModal(null)} aria-labelledby={archiveTitleId}>
-        <div className="space-y-4">
-          <h3 id={archiveTitleId} className="anvl-heading text-xl font-normal">
-            Archive drop?
-          </h3>
-          <p className="text-sm text-[var(--color-text-muted)]">
-            <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will be hidden from activation and scheduling.
-          </p>
-          <div className="flex justify-end gap-2">
-            <AdminButton variant="ghost" size="sm" onClick={() => setModal(null)}>
-              Cancel
-            </AdminButton>
-            <AdminButton
-              variant="primary"
-              size="sm"
-              disabled={busy}
-              onClick={() => {
-                if (modal?.kind !== 'archive') return
-                archiveMut.mutate(modal.id, {
-                  onSuccess: () => {
-                    toast.success('Drop archived.')
-                    setModal(null)
-                  },
-                  onError: () => toast.error('Archive failed.'),
-                })
-              }}
-            >
-              Archive
-            </AdminButton>
-          </div>
-        </div>
-      </Modal>
+      <AdminConfirmDialog
+        open={modal?.kind === 'archive'}
+        onClose={() => setModal(null)}
+        title="Archive drop?"
+        confirmLabel="Archive"
+        confirmDisabled={busy}
+        onConfirm={() => {
+          if (modal?.kind !== 'archive') return
+          archiveMut.mutate(modal.id, {
+            onSuccess: () => {
+              toast.success('Drop archived.')
+              setModal(null)
+            },
+            onError: () => toast.error('Archive failed.'),
+          })
+        }}
+      >
+        <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will be hidden
+        from activation and scheduling.
+      </AdminConfirmDialog>
 
-      <Modal open={modal?.kind === 'delete'} onClose={() => setModal(null)} aria-labelledby={deleteTitleId}>
-        <div className="space-y-4">
-          <h3 id={deleteTitleId} className="anvl-heading text-xl font-normal">
-            Delete drop?
-          </h3>
-          <p className="text-sm text-[var(--color-text-muted)]">
-            This removes <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> from local storage.
-            If it was the only drop, a fresh default drop is recreated.
-          </p>
-          <div className="flex justify-end gap-2">
-            <AdminButton variant="ghost" size="sm" onClick={() => setModal(null)}>
-              Cancel
-            </AdminButton>
-            <AdminButton
-              variant="primary"
-              size="sm"
-              disabled={busy}
-              onClick={() => {
-                if (modal?.kind !== 'delete') return
-                deleteMut.mutate(modal.id, {
-                  onSuccess: () => {
-                    toast.success('Drop deleted.')
-                    setModal(null)
-                  },
-                  onError: () => toast.error('Delete failed.'),
-                })
-              }}
-            >
-              Delete
-            </AdminButton>
-          </div>
-        </div>
-      </Modal>
+      <AdminConfirmDialog
+        open={modal?.kind === 'delete'}
+        onClose={() => setModal(null)}
+        title="Delete drop?"
+        confirmLabel="Delete"
+        confirmDisabled={busy}
+        onConfirm={() => {
+          if (modal?.kind !== 'delete') return
+          deleteMut.mutate(modal.id, {
+            onSuccess: () => {
+              toast.success('Drop deleted.')
+              setModal(null)
+            },
+            onError: () => toast.error('Delete failed.'),
+          })
+        }}
+      >
+        This removes <span className="font-medium text-[var(--color-text)]">{modal?.label}</span>{' '}
+        from local storage. If it was the only drop, a fresh default drop is recreated.
+      </AdminConfirmDialog>
     </>
   )
 }

@@ -1,7 +1,7 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { ExternalLink, LogOut } from 'lucide-react'
 import { AnvlCompactMark } from '@/shared/assets/brand'
-import { Button } from '@/shared/components/ui/Button'
+import { AdminButton } from '@/features/admin/components/AdminButton'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import { cn } from '@/shared/lib/cn'
 import { adminNavItemsByCluster } from './adminNav'
@@ -156,7 +156,7 @@ export function AdminSidebar({
           View storefront
           <ExternalLink size={14} aria-hidden="true" />
         </Link>
-        <Button
+        <AdminButton
           type="button"
           variant="secondary"
           className="h-11 w-full uppercase tracking-[0.14em]"
@@ -164,7 +164,7 @@ export function AdminSidebar({
         >
           <LogOut size={14} aria-hidden="true" className="mr-2" />
           Logout
-        </Button>
+        </AdminButton>
       </footer>
     </aside>
   )

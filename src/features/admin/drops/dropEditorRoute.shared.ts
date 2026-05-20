@@ -1,4 +1,4 @@
-import { adminFieldControlClass } from '@/shared/lib/cmsFieldStyles'
+import { adminStackedFieldClass } from '@/shared/lib/cmsFieldStyles'
 
 /** Shared form styling + tab model for the drop editor route. */
 
@@ -25,7 +25,7 @@ export { pad2 as padDt } from '@/features/admin/lib/adminDateTime'
 export { adminFieldControlClass, adminCheckboxControlClass } from '@/shared/lib/cmsFieldStyles'
 
 /** Shared control chrome (width, border, typography). Pair with `mt-1` under stacked labels. */
-export const fieldClass = `mt-1 ${adminFieldControlClass}`
+export const fieldClass = adminStackedFieldClass
 
 export const fieldErrorClass = 'border-red-500/60 bg-red-500/5'
 

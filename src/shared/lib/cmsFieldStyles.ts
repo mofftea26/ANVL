@@ -10,3 +10,6 @@ export const adminFieldControlClass =
 /** Native checkbox inside `AdminCheckbox` and MediaPicker “leave empty” toggle. */
 export const adminCheckboxControlClass =
   'focus-ring mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--color-line)] bg-[var(--color-bg)] text-[var(--color-accent)] accent-[var(--color-accent)]'
+
+/** Stacked label + control spacing for admin forms. */
+export const adminStackedFieldClass = `mt-1 ${adminFieldControlClass}`

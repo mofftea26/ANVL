@@ -5,6 +5,9 @@ import { toast } from 'sonner'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
+import { AdminPanel } from '@/features/admin/components/AdminPanel'
+import { AdminStatusBadge } from '@/features/admin/components/AdminStatusBadge'
+import { AdminMicroHeading } from '@/features/admin/components/AdminMicroHeading'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { DROP_THEME_PRESETS } from '@/features/admin/drops/drops.presets'
 import { DropEditorLivePreview } from '@/features/admin/drops/DropEditorLivePreview'
@@ -471,11 +474,6 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
     draft.visuals.emblemImageUrl?.trim() ||
     globalBrand.emblemFallbackUrl.trim() ||
     ''
-  const visualsShellClass =
-    'space-y-3 rounded-xl border border-[var(--color-line)]/55 bg-[var(--color-bg)]/30 p-4 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--anvl-bone)_8%,transparent)]'
-  const visualsSubheadingClass =
-    'text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]'
-
   const headerTitle = draft.name.trim() || 'Untitled'
 
   return (
@@ -484,18 +482,14 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
       title={headerTitle}
       description={
         <span className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-[var(--color-line)] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-            {draft.status}
-          </span>
+          <AdminStatusBadge tone="neutral">{draft.status}</AdminStatusBadge>
           {isLiveOnStorefront ? (
-            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-emerald-200">
-              Active drop
-            </span>
+            <AdminStatusBadge tone="live">Active drop</AdminStatusBadge>
           ) : null}
           {hasErrors ? (
-            <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-red-200">
+            <AdminStatusBadge tone="danger">
               {errors.summary.length} validation issue(s)
-            </span>
+            </AdminStatusBadge>
           ) : null}
         </span>
       }
@@ -790,8 +784,8 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               description="Campaign imagery for this drop: emblem, wordmark, and hero, plus optional campaign lockups. Inline ANVL marks replace broken or empty previews; use “Hide fallback preview” to QA a cleared slot."
             >
               <div className="space-y-6">
-                <section className={visualsShellClass}>
-                  <h3 className={visualsSubheadingClass}>Drop emblem</h3>
+                <AdminPanel variant="inset" className="space-y-3">
+                  <AdminMicroHeading as="h3">Drop emblem</AdminMicroHeading>
                       <p className="text-xs text-[var(--color-text-muted)]">
                         Mark used in hero / manifesto / join surfaces.
                       </p>
@@ -829,10 +823,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         />
                         <DropEditorFieldError message={errors.fields['visuals.emblemAlt']} />
                       </label>
-                    </section>
+                    </AdminPanel>
 
-                    <section className={visualsShellClass}>
-                      <h3 className={visualsSubheadingClass}>Wordmark</h3>
+                    <AdminPanel variant="inset" className="space-y-3">
+                      <AdminMicroHeading as="h3">Wordmark</AdminMicroHeading>
                       <p className="text-xs text-[var(--color-text-muted)]">
                         Wide lockup for marquee surfaces. Empty or broken picks fall back to the bundled ANVL wordmark; chained preview tries campaign logo then emblem.
                       </p>
@@ -859,10 +853,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         fallback="wordmark"
                         fallbackPreviewSrc={wordmarkChainPreview}
                       />
-                    </section>
+                    </AdminPanel>
 
-                    <section className={visualsShellClass}>
-                      <h3 className={visualsSubheadingClass}>Hero backdrop</h3>
+                    <AdminPanel variant="inset" className="space-y-3">
+                      <AdminMicroHeading as="h3">Hero backdrop</AdminMicroHeading>
                       <p className="text-xs text-[var(--color-text-muted)]">
                         Large mood image or loop behind the drop landing hero.
                       </p>
@@ -888,12 +882,12 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         error={errors.fields['visuals.heroImageUrl']}
                         fallback="none"
                       />
-                    </section>
+                    </AdminPanel>
 
                     <div className="space-y-6 border-t border-[var(--color-line)]/55 pt-6">
-                      <h3 className={visualsSubheadingClass}>Additional lockups</h3>
+                      <AdminMicroHeading as="h3">Additional lockups</AdminMicroHeading>
 
-                      <section className={visualsShellClass}>
+                      <AdminPanel variant="inset" className="space-y-3">
                         <h4 className="text-xs font-semibold text-[var(--color-heading)]">
                           Campaign logo
                         </h4>
@@ -919,9 +913,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                           error={errors.fields['visuals.logoImageUrl']}
                           fallback="crest"
                         />
-                      </section>
+                      </AdminPanel>
 
-                      <section className={visualsShellClass}>
+                      <AdminPanel variant="inset" className="space-y-3">
                         <h4 className="text-xs font-semibold text-[var(--color-heading)]">
                           Loading emblem
                         </h4>
@@ -948,7 +942,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                           fallback="crest"
                           fallbackPreviewSrc={draft.visuals.emblemImageUrl ?? ''}
                         />
-                      </section>
+                      </AdminPanel>
                     </div>
               </div>
             </AdminCard>

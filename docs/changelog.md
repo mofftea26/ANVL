@@ -1,4 +1,8 @@
 ﻿
+## 2026-05-20 — Admin CMS UI primitives consolidation
+
+- Summary: Added reusable admin UI primitives (`AdminForgedLink`, `AdminStatusBadge`, `AdminFormField`, `AdminConfirmDialog`, `AdminPanel`, `AdminLoadingState`, `AdminEmptyState`, `AdminMicroHeading`) and migrated drops list, dashboard, products index (partial), drop editor visuals/status, auth loading gate, and sidebar logout to use them. Centralized `adminStackedFieldClass` in `cmsFieldStyles.ts`. Vitest coverage for new primitives. See `docs/features/admin-ui.md`.
+
 ## 2026-05-19 — Storefront acts + drop theme follow published snapshot
 
 - **Landing acts:** Public `composeLandingPageFromDrop` prefers **`Drop.acts`** (acts builder) when non-empty, then falls back to **`landingActSequence`**. **`LandingPageCmsContent.dropActs`** carries full act rows so **`PublicLandingActs`** overlays copy on `/` (same path as drop editor **`draftActs`**).

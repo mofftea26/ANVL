@@ -1,4 +1,4 @@
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { Copy, ExternalLink, Trash2 } from 'lucide-react'
 import {
   useDeferredValue,
@@ -7,9 +7,13 @@ import {
   useState,
 } from 'react'
 import { toast } from 'sonner'
+import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminDateField } from '@/features/admin/components/AdminDateField'
+import { AdminForgedLink } from '@/features/admin/components/AdminForgedLink'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
+import { AdminMediaThumbPlaceholder } from '@/features/admin/components/AdminEmptyState'
+import { AdminPanel } from '@/features/admin/components/AdminPanel'
 import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
 import type { Drop } from '@/features/admin/drops/drops.types'
@@ -27,11 +31,11 @@ import type {
 } from '@/features/admin/products/products.types'
 import { effectiveSellableUnits } from '@/features/admin/products/products.matrix'
 import { detachProductFromAllDrops } from '@/features/admin/drops/drops.service'
-import { Button } from '@/shared/components/ui/Button'
 import { Input } from '@/shared/components/ui/Input'
+import { cn } from '@/shared/lib/cn'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Select } from '@/shared/components/ui/Select'
-import { cn } from '@/shared/lib/cn'
+import { adminStackedFieldClass } from '@/shared/lib/cmsFieldStyles'
 
 export function AdminProductsIndexRoute() {
   return (
@@ -257,8 +261,7 @@ function ProductsIndex() {
     return { byDrop, individuals }
   }, [groupMode, sorted, drops])
 
-  const fieldClass =
-    'mt-1 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-3 py-2 text-sm'
+  const fieldClass = adminStackedFieldClass
 
   const handleDuplicate = (p: AdminProduct) => {
     const copy = duplicateAdminProduct(p)
@@ -294,9 +297,7 @@ function ProductsIndex() {
                 decoding="async"
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-[10px] text-[var(--color-text-muted)]">
-                No image
-              </div>
+              <AdminMediaThumbPlaceholder />
             )}
           </div>
           <div className="grid flex-1 gap-3 text-sm md:grid-cols-3">
@@ -334,14 +335,14 @@ function ProductsIndex() {
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            <Link
+            <AdminForgedLink
               to="/admin/products/$productId"
               params={{ productId: p.id }}
-              className="inline-flex h-10 items-center justify-center rounded-md border border-[var(--color-line)] px-4 text-xs font-semibold text-[var(--color-heading)] no-underline hover:bg-[var(--color-surface-elevated)]"
+              variant="outline"
             >
               Edit
-            </Link>
-            <Button
+            </AdminForgedLink>
+            <AdminButton
               type="button"
               variant="secondary"
               size="sm"
@@ -350,8 +351,8 @@ function ProductsIndex() {
             >
               <Copy size={14} className="mr-1" aria-hidden="true" />
               Duplicate
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               type="button"
               variant="secondary"
               size="sm"
@@ -360,17 +361,12 @@ function ProductsIndex() {
               disabled={p.status === 'archived'}
             >
               Archive
-            </Button>
-            <a
-              href={`/shop/${p.slug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="focus-ring inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--color-line)] px-4 text-xs font-semibold text-[var(--color-heading)] no-underline hover:bg-[var(--color-surface-elevated)]"
-            >
+            </AdminButton>
+            <AdminForgedLink href={`/shop/${p.slug}`} variant="outline" target="_blank" rel="noreferrer">
               Preview
               <ExternalLink size={14} aria-hidden="true" />
-            </a>
-            <Button
+            </AdminForgedLink>
+            <AdminButton
               type="button"
               variant="ghost"
               size="sm"
@@ -378,7 +374,7 @@ function ProductsIndex() {
               onClick={() => setPendingDelete(p)}
             >
               <Trash2 size={14} aria-hidden="true" />
-            </Button>
+            </AdminButton>
           </div>
         </div>
       </AdminCard>
@@ -395,26 +391,16 @@ function ProductsIndex() {
         title="Inventory"
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link
-              to="/admin/products/new"
-              className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 text-xs font-semibold text-[var(--color-bg)] no-underline"
-            >
-              New product
-            </Link>
-            <a
-              href="/shop"
-              target="_blank"
-              rel="noreferrer"
-              className="focus-ring inline-flex h-10 items-center gap-2 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-text)] no-underline"
-            >
+            <AdminForgedLink to="/admin/products/new">New product</AdminForgedLink>
+            <AdminForgedLink href="/shop" variant="outline" target="_blank" rel="noreferrer">
               Shop preview
               <ExternalLink size={14} aria-hidden="true" />
-            </a>
+            </AdminForgedLink>
           </div>
         }
       />
 
-      <div className="mb-8 grid gap-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)]/40 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <AdminPanel variant="filters" className="mb-8 grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Search
           <Input
@@ -554,7 +540,7 @@ function ProductsIndex() {
             <option value="by_drop">By drop + individuals</option>
           </Select>
         </label>
-      </div>
+      </AdminPanel>
 
       <p className="mb-6 text-sm text-[var(--color-text-muted)]">
         Showing {sorted.length} of {products.length} products
@@ -606,10 +592,10 @@ function ProductsIndex() {
             every drop roster.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setPendingDelete(null)}>
+            <AdminButton variant="ghost" size="sm" onClick={() => setPendingDelete(null)}>
               Cancel
-            </Button>
-            <Button
+            </AdminButton>
+            <AdminButton
               variant="primary"
               size="sm"
               onClick={() => {
@@ -621,7 +607,7 @@ function ProductsIndex() {
               }}
             >
               Delete
-            </Button>
+            </AdminButton>
           </div>
         </div>
       </Modal>
