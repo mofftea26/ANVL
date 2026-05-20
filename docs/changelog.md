@@ -1,4 +1,10 @@
 ﻿
+## 2026-05-20 — Site Layout editor redesign (PR-3 / RESP-15)
+
+- **`SiteLayoutEditor`:** tabbed Header / Footer / Announcement panels; sticky **`AdminSaveBar`**; live **`SiteLayoutPreview`** (lg+ column, mobile `<details>`).
+- **Route shell:** `-websiteLayoutRoute.tsx` delegates to feature module under `src/features/admin/site-layout/`.
+- **Copy:** trimmed `/drop/` campaign slot helper text; save moved off topbar page actions.
+
 ## 2026-05-20 — Admin topbar + CMS copy trim (PR-2 / MAINT-21)
 
 - **`AdminTopbarSessionChip`:** compact account pill with menu (storefront, settings, logout).
