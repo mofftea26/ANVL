@@ -1,5 +1,14 @@
 ﻿
-## 2026-05-20 — Media library (PR-6 / MAINT-21)
+## 2026-05-20 — Admin mobile nav control styling
+
+- **`AdminTopbar`:** Mobile menu button matches session chip — `h-9`, `rounded-full`, `bg-[var(--color-surface-soft)]`, muted 14px icon (replaces square `IconButton`).
+
+## 2026-05-20 — Drop functional gaps (PR-7 / MAINT-20)
+
+- **DB:** Migration **`20260620130000_cms_scheduled_activation.sql`** — `_cms_publish_drop_core`, **`cms_process_scheduled_drops()`** (service_role; Edge/cron — pg_cron not used); refactors **`cms_publish_drop`** to delegate to core.
+- **Admin sync:** **`scheduleDropActivation`** already writes **`status: scheduled`** + **`scheduled_activation_at`** via **`buildAnvlDropRemoteRow`** (Vitest coverage added).
+- **Storefront:** **`PublicLandingActs`** product showcase uses act **`productIds`** when set; otherwise first six products.
+
 
 - **DB:** Migration **`20260620120000_cms_media_assets.sql`** — `cms_media_assets` catalog with RLS (CMS read; editor/admin write).
 - **Admin:** `MediaLibraryPage` grid (search, mime filters, inline alt, copy URL, delete confirm), drag-drop upload to `cms-media` + catalog row.

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Check, Eye, EyeOff, Plus, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { Check, Eye, EyeOff, Plus, Power, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { toast } from 'sonner'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
@@ -9,6 +9,7 @@ import { AdminPanel } from '@/features/admin/components/AdminPanel'
 import { AdminStatusBadge } from '@/features/admin/components/AdminStatusBadge'
 import { AdminMicroHeading } from '@/features/admin/components/AdminMicroHeading'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
+import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { DROP_THEME_PRESETS } from '@/features/admin/drops/drops.presets'
 import { DropEditorLivePreview } from '@/features/admin/drops/DropEditorLivePreview'
 import type { DropStatus } from '@/features/admin/drops/drops.types'
@@ -23,6 +24,10 @@ import {
   type DropFieldErrors,
 } from '@/features/admin/drops/drops.editor.validation'
 import { useDropsList } from '@/features/admin/drops/useDrops'
+import {
+  useDeactivateAdminDropMutation,
+  useSetActiveAdminDropMutation,
+} from '@/features/admin/drops/useAdminDropsListQuery'
 import {
   adminProductIsPubliclyVisible,
   adminProductPrimaryPreviewImage,

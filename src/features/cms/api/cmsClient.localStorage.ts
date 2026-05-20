@@ -6,6 +6,7 @@ import {
   duplicateDrop,
   readDropsArray,
   scheduleDropActivation,
+  deactivateDrop,
   setActiveDrop,
 } from '@/features/admin/drops/drops.service'
 import { getLandingCmsContent } from '@/features/admin/landing-cms/landingCms.service'
@@ -117,6 +118,20 @@ export const localStorageCmsClient: CmsClient = {
     const published = await publishStorefrontDropByClientId(id)
     if (!published.ok) {
       throw new Error(published.error)
+    }
+    const { rehydrateAdminCmsFromRemote } = await import(
+      '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'
+    )
+    await rehydrateAdminCmsFromRemote()
+  },
+  async deactivateAdminDrop(id) {
+    deactivateDrop(id)
+    const { clearStorefrontActiveDrop } = await import(
+      '@/features/admin/cmsRemote/adminCmsPublish'
+    )
+    const cleared = await clearStorefrontActiveDrop()
+    if (!cleared.ok) {
+      throw new Error(cleared.error)
     }
     const { rehydrateAdminCmsFromRemote } = await import(
       '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'

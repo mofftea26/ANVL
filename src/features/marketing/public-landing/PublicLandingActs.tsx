@@ -106,6 +106,17 @@ function wrapLazy(key: string, label: string, node: ReactNode) {
   )
 }
 
+/** Act-level productIds override the default first-six storefront slice. */
+export function resolveProductShowcaseProducts(
+  products: Product[],
+  productIds?: string[],
+): Product[] {
+  if (!productIds?.length) return products.slice(0, 6)
+  return productIds
+    .map((id) => products.find((product) => product.id === id))
+    .filter((product): product is Product => product != null)
+}
+
 export type PublicLandingActsProps = {
   landing: LandingPageCmsContent
   products: Product[]
@@ -221,11 +232,15 @@ export function PublicLandingActs({
           }
           case 'productShowcase': {
             const p = previewPiecesFields(landing.pieces, row)
+            const showcaseProducts = resolveProductShowcaseProducts(
+              products,
+              row?.productIds,
+            )
             return wrapLazy(
               act.id,
               'Loading pieces',
               <PiecesGrid
-                products={products.slice(0, 6)}
+                products={showcaseProducts}
                 actLabel={p.actLabel}
                 headingLineOne={p.headingLineOne}
                 headingLineTwo={p.headingLineTwo}

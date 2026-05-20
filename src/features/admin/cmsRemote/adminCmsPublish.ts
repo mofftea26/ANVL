@@ -77,3 +77,35 @@ export async function publishStorefrontDropByClientId(
 
   return { ok: true, revision }
 }
+
+export type ClearStorefrontActiveDropResult =
+  | { ok: true }
+  | { ok: false; error: string }
+
+/** Clears `storefront_publication.active_drop_id` so no campaign is live. */
+export async function clearStorefrontActiveDrop(): Promise<ClearStorefrontActiveDropResult> {
+  if (!getSupabasePublicEnv()) {
+    return { ok: true }
+  }
+
+  const flush = await flushAdminCmsRemoteSync()
+  if (!flush.ok) return flush
+
+  const client = getAdminSupabaseBrowserClient()
+  if (!client) {
+    return { ok: false, error: 'Supabase client is not available.' }
+  }
+
+  const { role } = await fetchCmsProfileRole(client)
+  if (role !== 'admin') {
+    return { ok: false, error: 'Only CMS admins can update the live storefront.' }
+  }
+
+  const { error } = await client
+    .from('storefront_publication')
+    .update({ active_drop_id: null })
+    .eq('id', 1)
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}

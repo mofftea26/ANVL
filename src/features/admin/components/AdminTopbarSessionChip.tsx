@@ -7,6 +7,7 @@ import {
   AdminPopoverContent,
   AdminPopoverTrigger,
 } from '@/features/admin/components/AdminPopover'
+import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { cn } from '@/shared/lib/cn'
 
 function sessionLabel(session: NonNullable<ReturnType<typeof useAdminAuth>['session']>): string {
@@ -36,18 +37,14 @@ export function AdminTopbarSessionChip({ className }: { className?: string }) {
   return (
     <AdminPopover>
       <AdminPopoverTrigger asChild>
-        <button
-          type="button"
+        <AdminTopbarChipButton
           title={tooltip}
           aria-label={`Account menu for ${tooltip}`}
-          className={cn(
-            'focus-ring inline-flex h-9 max-w-[9.5rem] items-center gap-2 rounded-full border border-[var(--color-line)] bg-[var(--color-surface-soft)] px-2.5 text-xs font-medium text-[var(--color-text)] sm:max-w-[11rem]',
-            className,
-          )}
+          icon={<User size={14} />}
+          className={cn('max-w-[9.5rem] sm:max-w-[11rem]', className)}
         >
-          <User size={14} aria-hidden="true" className="shrink-0 text-[var(--color-text-muted)]" />
-          <span className="truncate">{label}</span>
-        </button>
+          {label}
+        </AdminTopbarChipButton>
       </AdminPopoverTrigger>
       <AdminPopoverContent align="end" className="w-52 p-2">
         <p className="truncate px-2 py-1 text-[10px] text-[var(--color-text-muted)]" title={tooltip}>
