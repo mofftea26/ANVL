@@ -182,6 +182,10 @@ export async function flushAdminCmsRemoteSync(): Promise<
   const layout = getWebsiteLayoutContent()
   const siteSeo = getSiteSeoContent()
   const globalBrand = getGlobalBrandSettings()
+  const { getSiteHomeExtrasContent } = await import(
+    '@/features/admin/site-home/siteHome.service'
+  )
+  const homeExtras = getSiteHomeExtrasContent()
 
   const mediaList = await listMediaAssets(client)
   const mediaIndex = mediaList.ok ? buildMediaIndex(mediaList.assets) : []
@@ -191,6 +195,8 @@ export async function flushAdminCmsRemoteSync(): Promise<
     site_seo: siteSeo,
     global_brand: globalBrand,
     media_index: mediaIndex,
+    campaigns: homeExtras.campaigns,
+    lookbook: homeExtras.lookbook,
   }
 
   const { error: pubErr } = await client

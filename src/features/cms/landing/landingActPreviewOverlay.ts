@@ -186,6 +186,117 @@ export function previewMaterialsFields(
   }
 }
 
+export type LookbookGalleryItem = {
+  src: string
+  caption?: string
+  mediaType?: 'image' | 'video'
+}
+
+export function previewLookbookFields(row: LandingAct | undefined): {
+  actLabel: string
+  heading: string
+  intro: string
+  layout: 'masonry' | 'carousel' | 'editorial'
+  items: LookbookGalleryItem[]
+} {
+  const c = (row?.content ?? {}) as Record<string, unknown>
+  const rawItems = Array.isArray(c.galleryItems) ? c.galleryItems : []
+  const items: LookbookGalleryItem[] = rawItems
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null
+      const o = item as Record<string, unknown>
+      const src = typeof o.src === 'string' ? o.src.trim() : ''
+      if (!src) return null
+      return {
+        src,
+        caption: typeof o.caption === 'string' ? o.caption : undefined,
+        mediaType:
+          o.mediaType === 'video' || o.mediaType === 'image'
+            ? o.mediaType
+            : undefined,
+      }
+    })
+    .filter(Boolean) as LookbookGalleryItem[]
+
+  const layoutRaw = readActStr(c, 'layout')
+  const layout =
+    layoutRaw === 'carousel' || layoutRaw === 'editorial' || layoutRaw === 'masonry'
+      ? layoutRaw
+      : 'masonry'
+
+  return {
+    actLabel: row?.eyebrow?.trim() || 'Lookbook',
+    heading: row?.title?.trim() || 'Forged in motion',
+    intro: row?.body?.trim() || row?.subtitle?.trim() || '',
+    layout,
+    items,
+  }
+}
+
+export function previewSpecialEventFields(row: LandingAct | undefined): {
+  actLabel: string
+  heading: string
+  intro: string
+  eventTitle: string
+  startsAtIso: string
+  endsAtIso: string
+  location: string
+  linkHref: string
+  rules: string
+  cta: CmsCta
+} {
+  const c = (row?.content ?? {}) as Record<string, unknown>
+  const ctaPartial = readActCta(c, 'cta')
+  return {
+    actLabel: row?.eyebrow?.trim() || 'Special event',
+    heading: row?.title?.trim() || readActStr(c, 'eventTitle') || 'ANVL event',
+    intro: row?.body?.trim() || row?.subtitle?.trim() || '',
+    eventTitle: readActStr(c, 'eventTitle') || row?.title?.trim() || '',
+    startsAtIso: readActStr(c, 'startsAtIso'),
+    endsAtIso: readActStr(c, 'endsAtIso'),
+    location: readActStr(c, 'location'),
+    linkHref: readActStr(c, 'linkHref'),
+    rules: readActStr(c, 'rules'),
+    cta: {
+      label: ctaPartial.label ?? 'Learn more',
+      href: ctaPartial.href ?? (readActStr(c, 'linkHref') || '#'),
+    },
+  }
+}
+
+export function previewFinalCtaFields(row: LandingAct | undefined): {
+  actLabel: string
+  heading: string
+  intro: string
+  backgroundImageUrl: string
+  primaryCta: CmsCta
+  secondaryCta: CmsCta
+  tertiaryCta: CmsCta
+} {
+  const c = (row?.content ?? {}) as Record<string, unknown>
+  const primary = readActCta(c, 'primaryCta')
+  const secondary = readActCta(c, 'secondaryCta')
+  const tertiary = readActCta(c, 'tertiaryCta')
+  return {
+    actLabel: row?.eyebrow?.trim() || 'Final call',
+    heading: row?.title?.trim() || 'Take the oath',
+    intro: row?.body?.trim() || row?.subtitle?.trim() || '',
+    backgroundImageUrl: readActStr(c, 'backgroundImageUrl'),
+    primaryCta: {
+      label: primary.label ?? 'Shop drop',
+      href: primary.href ?? '/shop',
+    },
+    secondaryCta: {
+      label: secondary.label ?? 'Join waitlist',
+      href: secondary.href ?? '#waitlist',
+    },
+    tertiaryCta: {
+      label: tertiary.label ?? '',
+      href: tertiary.href ?? '#',
+    },
+  }
+}
+
 export function previewWaitlistFields(
   landing: LandingPageCmsContent['waitlist'],
   row: LandingAct | undefined,

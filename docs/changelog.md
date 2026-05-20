@@ -1,4 +1,16 @@
-﻿## 2026-05-20 — Admin nav drawer at all breakpoints
+﻿## 2026-05-20 — Admin sidebar nav revert + footer actions
+
+- **`AdminSidebar`:** Nav links restored to pre-chip bordered blocks (accent border when active); badge pills and chip nav removed. Footer only: bone-outline “View storefront” and red-tint Logout with leading icons on one line (`inline-flex`, `whitespace-nowrap`).
+- **`AdminLayout`:** Drawer-only nav at all breakpoints (removed persistent `lg:` rail and `lg:hidden` on drawer).
+
+## 2026-05-20 — New act natures + homepage extras (PR-9 / MAINT-21)
+
+- **`act-presets/`:** Storefront renderers for **`lookbook`**, **`specialEvent`**, and **`finalCTA`** (nine presets total) registered in `registry.ts` with defaults matching the Acts builder keys; GSAP via **`useActScrollReveal`** (desktop + reduced-motion gated).
+- **`PublicLandingActs`:** Resolves the three new natures through the registry (no unsupported-act skip for these types).
+- **Homepage:** **`CampaignCardsSection`** and **`LookbookStripSection`** render on `/` when **`storefront_publication.campaigns`** / **`lookbook`** (or local **`siteHome`** storage) are non-empty.
+- **Admin:** **Home extras** tab on **Website layout** edits campaign cards + lookbook strip; **`adminCmsRemoteSync`** syncs both arrays to **`storefront_publication`**.
+
+## 2026-05-20 — Admin nav drawer at all breakpoints
 
 - **`AdminLayout`:** Removed persistent `lg:grid-cols-[280px_1fr]` sidebar column; main content is full width at every breakpoint. Nav opens via the shared left `Drawer` (focus trap, Escape, backdrop click, route-change close via `onNavigate`).
 - **`AdminTopbar`:** Burger menu button is always visible (removed `lg:hidden`).
@@ -9,7 +21,7 @@
 
 - **`AdminSidebar`:** Nav links use shared `adminChipButtonVariants` pills (`primary` when active); removed secondary badge pills (Overview, System, …) and desktop-only descriptions.
 - **Footer:** “View storefront” and Logout both use chip styling (`AdminTopbarChipButton` / chip link classes).
-- **Layout:** Persistent `lg:` sidebar and mobile drawer share the same compact nav chrome; section cluster labels stay muted uppercase.
+- **Layout:** Persistent `lg:` sidebar and mobile drawer share the same compact nav chrome; drawer hidden on `lg:`; section cluster labels stay muted uppercase.
 - **Tests:** `AdminSidebar` asserts badge pills are absent and active route uses `aria-current="page"`.
 
 ## 2026-05-20 — Admin CMS chip field controls (shared `cmsFieldStyles`)

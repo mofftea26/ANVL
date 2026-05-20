@@ -13,19 +13,24 @@ import {
 } from "@/shared/components/seo/structuredData";
 import { useLenisScroll } from "@/shared/hooks/useLenisScroll";
 import { PublicLandingActs } from "@/features/marketing/public-landing/PublicLandingActs";
+import { CampaignCardsSection } from "@/features/marketing/home/CampaignCardsSection";
+import { LookbookStripSection } from "@/features/marketing/home/LookbookStripSection";
 import { useLandingCms } from "@/features/cms/hooks/useLandingCms";
 import { useHomeProducts } from "@/features/products/hooks/useHomeProducts";
 
 export const Route = createFileRoute("/")({
   loader: async () => {
-    const [products, landing, siteSeo, seoDoc, activeDrop] = await Promise.all([
+    const [products, landing, siteSeo, seoDoc, activeDrop, campaigns, lookbook] =
+      await Promise.all([
       runtimeClients.commerce.getHomeProducts(),
       runtimeClients.cms.getLandingCmsContent(),
       runtimeClients.seo.getSiteSeo(),
       runtimeClients.seo.getSeoByPath("/"),
       runtimeClients.cms.getActiveDrop(),
+      runtimeClients.cms.getCampaigns(),
+      runtimeClients.cms.getLookbook(),
     ]);
-    return { products, landing, siteSeo, seoDoc, activeDrop };
+    return { products, landing, siteSeo, seoDoc, activeDrop, campaigns, lookbook };
   },
   head: ({ loaderData }) => {
     const site = loaderData?.siteSeo;
@@ -59,8 +64,13 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   useLenisScroll(true);
-  const { products: initialProducts, landing: ssrLanding, activeDrop } =
-    Route.useLoaderData();
+  const {
+    products: initialProducts,
+    landing: ssrLanding,
+    activeDrop,
+    campaigns,
+    lookbook,
+  } = Route.useLoaderData();
   const landing = useLandingCms(ssrLanding);
   const products = useHomeProducts(initialProducts);
 
@@ -78,6 +88,8 @@ function HomePage() {
         products={products}
         emblemSrc={emblemSrc}
       />
+      <CampaignCardsSection campaigns={campaigns} />
+      <LookbookStripSection items={lookbook} />
     </div>
   );
 }

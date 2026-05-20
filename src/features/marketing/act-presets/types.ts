@@ -3,7 +3,7 @@ import type { LandingAct, PublicLandingAct } from '@/features/cms/landing/landin
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import type { Product } from '@/features/products/types/product.types'
 
-/** Act natures wired in PR-8 (storefront preset registry). */
+/** Act natures wired in the storefront preset registry (PR-8 + PR-9). */
 export type LandingActNature =
   | 'hero'
   | 'manifesto'
@@ -11,7 +11,10 @@ export type LandingActNature =
   | 'dropReveal'
   | 'productShowcase'
   | 'materialShowcase'
+  | 'specialEvent'
+  | 'lookbook'
   | 'newsletterWaitlist'
+  | 'finalCTA'
 
 export const LANDING_ACT_NATURES: readonly LandingActNature[] = [
   'hero',
@@ -20,7 +23,10 @@ export const LANDING_ACT_NATURES: readonly LandingActNature[] = [
   'dropReveal',
   'productShowcase',
   'materialShowcase',
+  'specialEvent',
+  'lookbook',
   'newsletterWaitlist',
+  'finalCTA',
 ] as const
 
 export type ActPresetProps = {
@@ -36,5 +42,5 @@ export type ActPresetEntry = {
   nature: LandingActNature
   preset: string
   label: string
-  component: LazyExoticComponent<(props: ActPresetProps) => JSX.Element>
+  component: LazyExoticComponent<(props: ActPresetProps) => JSX.Element | null>
 }

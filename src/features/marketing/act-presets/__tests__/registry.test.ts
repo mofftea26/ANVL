@@ -24,9 +24,10 @@ describe('act preset registry', () => {
     expect(entry?.preset).toBe('theOathCinematic')
   })
 
-  it('returns null for unsupported natures', () => {
-    expect(resolveActPreset('lookbook', 'masonry')).toBeNull()
-    expect(resolveActPreset('finalCTA', 'centered')).toBeNull()
+  it('resolves PR-9 nature presets', () => {
+    expect(resolveActPreset('lookbook', 'masonry')?.preset).toBe('masonry')
+    expect(resolveActPreset('specialEvent', 'eventCard')?.preset).toBe('eventCard')
+    expect(resolveActPreset('finalCTA', 'centered')?.preset).toBe('centered')
   })
 
   it('registers all CMS builder preset keys for PR-8 natures', () => {
@@ -38,6 +39,9 @@ describe('act preset registry', () => {
       productShowcase: ['threeCardEditorial', 'carousel', 'productStory'],
       materialShowcase: ['fabricRunway', 'specsGrid', 'splitDetail'],
       newsletterWaitlist: ['oathFullWidthForm', 'minimalForm', 'splitForm'],
+      lookbook: ['masonry', 'carousel', 'editorial'],
+      specialEvent: ['eventCard', 'countdownEvent', 'locationSplit'],
+      finalCTA: ['centered', 'footerOverlap', 'productCta'],
     }
 
     for (const [nature, presets] of Object.entries(builderPresets)) {

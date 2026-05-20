@@ -35,6 +35,17 @@ vi.mock('@/features/admin/website-layout/websiteLayout.service', () => ({
   saveWebsiteLayoutContentAsync: (...args: unknown[]) => saveAsync(...args),
 }))
 
+const saveHomeExtrasAsync = vi.fn()
+
+vi.mock('@/features/admin/site-home/siteHome.service', () => ({
+  getSiteHomeExtrasContent: () => ({
+    campaigns: [],
+    lookbook: [],
+    updatedAt: '2026-05-20T00:00:00.000Z',
+  }),
+  saveSiteHomeExtrasContentAsync: (...args: unknown[]) => saveHomeExtrasAsync(...args),
+}))
+
 vi.mock('@/shared/components/ui/MediaPickerField', () => ({
   MediaPickerField: ({ label }: { label: string }) => (
     <div data-testid={`media-${label}`} />
@@ -59,6 +70,12 @@ describe('SiteLayoutEditor', () => {
   beforeEach(() => {
     saveAsync.mockReset()
     saveAsync.mockResolvedValue(layout)
+    saveHomeExtrasAsync.mockReset()
+    saveHomeExtrasAsync.mockResolvedValue({
+      campaigns: [],
+      lookbook: [],
+      updatedAt: '2026-05-20T00:00:00.000Z',
+    })
     getSaveError.mockReturnValue(null)
   })
 
@@ -69,6 +86,7 @@ describe('SiteLayoutEditor', () => {
     expect(screen.getByRole('tab', { name: 'Header' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Footer' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Announcement' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Home extras' })).toBeTruthy()
 
     expect(screen.getByText('Header & navigation')).toBeTruthy()
 
@@ -95,6 +113,15 @@ describe('SiteLayoutEditor', () => {
 
     await user.click(saveBtn)
     expect(saveAsync).toHaveBeenCalledWith(layout)
+    expect(saveHomeExtrasAsync).toHaveBeenCalled()
+  })
+
+  it('shows home extras editor on Home extras tab', async () => {
+    const user = userEvent.setup()
+    renderEditor()
+
+    await user.click(screen.getByRole('tab', { name: 'Home extras' }))
+    expect(screen.getByTestId('site-home-extras-editor')).toBeTruthy()
   })
 
   it('shows inline validation error and disables topbar save', () => {

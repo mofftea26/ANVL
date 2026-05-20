@@ -98,10 +98,16 @@ export const localStorageCmsClient: CmsClient = {
       .map((link) => ({ label: link.label, href: link.href }))
   },
   async getCampaigns() {
-    return cmsMockData.campaigns
+    const { getSiteHomeCampaigns } = await import(
+      '@/features/admin/site-home/siteHome.service'
+    )
+    return getSiteHomeCampaigns()
   },
   async getLookbook() {
-    return cmsMockData.lookbook
+    const { getSiteHomeLookbook } = await import(
+      '@/features/admin/site-home/siteHome.service'
+    )
+    return getSiteHomeLookbook()
   },
   async getAdminDropsList() {
     return readDropsArray().map(dropToAdminListItem)

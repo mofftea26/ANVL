@@ -2,9 +2,9 @@ import { lazy, type JSX, type LazyExoticComponent } from 'react'
 import type { ActPresetEntry, ActPresetProps, LandingActNature } from './types'
 
 function lazyPreset(
-  loader: () => Promise<{ [key: string]: (props: ActPresetProps) => JSX.Element }>,
+  loader: () => Promise<{ [key: string]: (props: ActPresetProps) => JSX.Element | null }>,
   exportName: string,
-): LazyExoticComponent<(props: ActPresetProps) => JSX.Element> {
+): LazyExoticComponent<(props: ActPresetProps) => JSX.Element | null> {
   return lazy(async () => {
     const mod = await loader()
     const Component = mod[exportName]
@@ -23,7 +23,10 @@ export const DEFAULT_ACT_PRESETS: Record<LandingActNature, string> = {
   dropReveal: 'monolithReveal',
   productShowcase: 'threeCardEditorial',
   materialShowcase: 'fabricRunway',
+  specialEvent: 'eventCard',
+  lookbook: 'masonry',
   newsletterWaitlist: 'oathFullWidthForm',
+  finalCTA: 'centered',
 }
 
 const ENTRIES: ActPresetEntry[] = [
@@ -223,6 +226,87 @@ const ENTRIES: ActPresetEntry[] = [
     component: lazyPreset(
       () => import('./newsletterWaitlist/SplitWaitlistForm'),
       'SplitWaitlistFormPreset',
+    ),
+  },
+  {
+    nature: 'lookbook',
+    preset: 'masonry',
+    label: 'Masonry lookbook',
+    component: lazyPreset(
+      () => import('./lookbook/MasonryLookbook'),
+      'MasonryLookbookPreset',
+    ),
+  },
+  {
+    nature: 'lookbook',
+    preset: 'carousel',
+    label: 'Carousel lookbook',
+    component: lazyPreset(
+      () => import('./lookbook/CarouselLookbook'),
+      'CarouselLookbookPreset',
+    ),
+  },
+  {
+    nature: 'lookbook',
+    preset: 'editorial',
+    label: 'Editorial lookbook',
+    component: lazyPreset(
+      () => import('./lookbook/EditorialLookbook'),
+      'EditorialLookbookPreset',
+    ),
+  },
+  {
+    nature: 'specialEvent',
+    preset: 'eventCard',
+    label: 'Event card',
+    component: lazyPreset(
+      () => import('./specialEvent/EventCard'),
+      'EventCardPreset',
+    ),
+  },
+  {
+    nature: 'specialEvent',
+    preset: 'countdownEvent',
+    label: 'Countdown event',
+    component: lazyPreset(
+      () => import('./specialEvent/CountdownEvent'),
+      'CountdownEventPreset',
+    ),
+  },
+  {
+    nature: 'specialEvent',
+    preset: 'locationSplit',
+    label: 'Location split',
+    component: lazyPreset(
+      () => import('./specialEvent/LocationSplit'),
+      'LocationSplitPreset',
+    ),
+  },
+  {
+    nature: 'finalCTA',
+    preset: 'centered',
+    label: 'Centered CTA',
+    component: lazyPreset(
+      () => import('./finalCTA/CenteredCta'),
+      'CenteredCtaPreset',
+    ),
+  },
+  {
+    nature: 'finalCTA',
+    preset: 'footerOverlap',
+    label: 'Footer overlap CTA',
+    component: lazyPreset(
+      () => import('./finalCTA/FooterOverlapCta'),
+      'FooterOverlapCtaPreset',
+    ),
+  },
+  {
+    nature: 'finalCTA',
+    preset: 'productCta',
+    label: 'Product CTA',
+    component: lazyPreset(
+      () => import('./finalCTA/ProductCta'),
+      'ProductCtaPreset',
     ),
   },
 ]

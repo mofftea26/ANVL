@@ -34,11 +34,18 @@ import {
   emptySocial,
 } from './siteLayoutEditor.helpers'
 import { SiteLayoutPreview } from './SiteLayoutPreview'
+import { SiteHomeExtrasEditor } from '@/features/admin/site-home/SiteHomeExtrasEditor'
+import {
+  getSiteHomeExtrasContent,
+  saveSiteHomeExtrasContentAsync,
+} from '@/features/admin/site-home/siteHome.service'
+import type { SiteHomeExtrasContent } from '@/features/admin/site-home/siteHome.types'
 
 const LAYOUT_TABS = [
   { id: 'header' as const, label: 'Header' },
   { id: 'footer' as const, label: 'Footer' },
   { id: 'announcement' as const, label: 'Announcement' },
+  { id: 'homeExtras' as const, label: 'Home extras' },
 ]
 
 type LayoutTabId = (typeof LAYOUT_TABS)[number]['id']
@@ -55,6 +62,9 @@ export function SiteLayoutEditor() {
   const [activeDropTitle, setActiveDropTitle] = useState('')
   const [activeTab, setActiveTab] = useState<LayoutTabId>('header')
   const [saving, setSaving] = useState(false)
+  const [homeExtras, setHomeExtras] = useState<SiteHomeExtrasContent>(() =>
+    getSiteHomeExtrasContent(),
+  )
 
   useEffect(() => {
     ensureDropSystemHydrated()
@@ -123,8 +133,10 @@ export function SiteLayoutEditor() {
       setSaving(true)
       try {
         await saveWebsiteLayoutContentAsync(layout)
+        await saveSiteHomeExtrasContentAsync(homeExtras)
         toast.success('Website layout saved.')
         setLayout(getWebsiteLayoutContent())
+        setHomeExtras(getSiteHomeExtrasContent())
         flashSuccess()
       } catch (e) {
         const message =
@@ -134,7 +146,7 @@ export function SiteLayoutEditor() {
         setSaving(false)
       }
     })()
-  }, [layout, flashSuccess])
+  }, [layout, homeExtras, flashSuccess])
 
   const layoutToolbarActions = useMemo(
     () => (
@@ -509,6 +521,10 @@ export function SiteLayoutEditor() {
               </AdminFormField>
             </div>
           </AdminCard>
+        ) : null}
+
+        {activeTab === 'homeExtras' ? (
+          <SiteHomeExtrasEditor value={homeExtras} onChange={setHomeExtras} />
         ) : null}
 
         {saveError ? (
