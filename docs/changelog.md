@@ -1,4 +1,10 @@
-﻿## 2026-05-20 — Admin sidebar nav revert + footer actions
+﻿## 2026-05-20 — Production follow-ups: migrations, scheduler cron, bundle split
+
+- **Supabase (project `cptebkgyrfmokklwtrgp`):** applied migrations **`storefront_site_drafts`**, **`cms_media_assets`**, **`cms_scheduled_activation`** (`media_index`, catalog table, `cms_process_scheduled_drops`).
+- **Edge Function:** **`process-scheduled-drops`** deployed (`CRON_SECRET` auth, calls RPC with service role). Schedule in Dashboard every 1–5 min after setting secrets.
+- **Bundle:** `vite.config.ts` splits act presets per nature (`act-presets-hero`, `act-presets-lookbook`, …) instead of one monolithic chunk (`PERF-12`).
+
+## 2026-05-20 — Admin sidebar nav revert + footer actions
 
 - **`AdminSidebar`:** Nav links restored to pre-chip bordered blocks (accent border when active); badge pills and chip nav removed. Footer only: bone-outline “View storefront” and red-tint Logout with leading icons on one line (`inline-flex`, `whitespace-nowrap`).
 - **`AdminLayout`:** Drawer-only nav at all breakpoints (removed persistent `lg:` rail and `lg:hidden` on drawer).

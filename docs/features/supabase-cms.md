@@ -34,15 +34,17 @@ Object paths should stay unguessable (UUID prefixes) for defense in depth.
 - **`anon`:** `SELECT` on `storefront_publication` only. Cannot read `anvl_drops` or drafts.
 - **`authenticated`** with `cms_profiles`: `SELECT` drops/products as role allows; **`editor` / `admin`:** insert/update/delete drops and products; update publication layout/SEO.
 - **`cms_publish_drop(uuid)`:** `SECURITY DEFINER` RPC; **`admin` only**; demotes other active drops, writes snapshot + bumps `revision`. **`anon`** cannot execute (see migration **`20260519120000_revoke_anon_cms_publish_drop.sql`**). Product **`dropIds`** in **`cms_admin_products.body`** are app ids (`drop_the-oath`) — migration **`20260519230000_cms_publish_drop_client_drop_ids.sql`** matches them via **`client_drop_id`** when building **`catalog_drop_index`**.
+- **`cms_process_scheduled_drops()`:** `SECURITY DEFINER`; **`service_role` only**; promotes rows with `status = 'scheduled'` and `scheduled_activation_at <= now()`. Invoked by Edge Function **`process-scheduled-drops`** on a cron schedule.
 
 ## Edge Functions
 
 | Function | I/O |
 |----------|-----|
 | `publish-storefront` | `POST` + `Authorization: Bearer <user JWT>`, body `{ dropId }`. Calls `cms_publish_drop`. |
+| `process-scheduled-drops` | `POST` + `Authorization: Bearer <CRON_SECRET>`. Calls `cms_process_scheduled_drops` with service role. Schedule every 1–5 min (Dashboard → Edge Functions → Schedules). |
 | `medusa-webhook-stub` | `POST` with `x-anvl-medusa-secret` — placeholder for future Medusa sync (no orders/carts in CMS). |
 
-Sources: [`supabase/functions/publish-storefront/index.ts`](../../supabase/functions/publish-storefront/index.ts), [`supabase/functions/medusa-webhook-stub/index.ts`](../../supabase/functions/medusa-webhook-stub/index.ts).
+Sources: [`supabase/functions/publish-storefront/index.ts`](../../supabase/functions/publish-storefront/index.ts), [`supabase/functions/process-scheduled-drops/index.ts`](../../supabase/functions/process-scheduled-drops/index.ts), [`supabase/functions/medusa-webhook-stub/index.ts`](../../supabase/functions/medusa-webhook-stub/index.ts).
 
 ## Env vars
 
@@ -52,6 +54,7 @@ Sources: [`supabase/functions/publish-storefront/index.ts`](../../supabase/funct
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | App | **Required** browser key (`sb_publishable_…`) from Dashboard → API. |
 | `VITE_SUPABASE_ANON_KEY` | App | Optional legacy anon JWT if publishable key is unset. |
 | `ANVL_MEDUSA_WEBHOOK_SECRET` | **Dashboard → Project Settings → Edge Functions → Secrets** | Set for `medusa-webhook-stub` (header auth; function has **`verify_jwt` disabled**). |
+| `CRON_SECRET` | **Edge Functions → Secrets** | Random string; used as `Authorization: Bearer …` when invoking **`process-scheduled-drops`**. Also set **`SUPABASE_SERVICE_ROLE_KEY`** (auto-injected on hosted Supabase). |
 
 **Project (ANVL):** `https://cptebkgyrfmokklwtrgp.supabase.co` (ref `cptebkgyrfmokklwtrgp`).
 
@@ -84,8 +87,8 @@ Migration **`20260518220000_anvl_drops_client_id_admin_rls.sql`** adds **`anvl_d
 
 ## Ops checklist
 
-1. Migrations applied on project **`cptebkgyrfmokklwtrgp`** (including **`anvl_cms_core`**, **`anvl_cms_storage`**, **`20260518220000_anvl_drops_client_id_admin_rls`**); Edge Functions **`publish-storefront`** (JWT on) and **`medusa-webhook-stub`** (JWT off) deployed.
+1. Migrations applied on project **`cptebkgyrfmokklwtrgp`** (including **`anvl_cms_core`**, **`anvl_cms_storage`**, **`20260518220000_anvl_drops_client_id_admin_rls`**, **`storefront_site_drafts`**, **`cms_media_assets`**, **`cms_scheduled_activation`**); Edge Functions **`publish-storefront`** (JWT on), **`process-scheduled-drops`** (JWT off, `CRON_SECRET`), and **`medusa-webhook-stub`** (JWT off) deployed.
 2. In **Authentication**, create at least one user; with **SQL** (service role) or dashboard, insert `public.cms_profiles` (`user_id`, **`role = 'admin'`** for anyone who should open `/admin`).
 3. Seed `anvl_drops.draft_body` and either call **`cms_publish_drop`** from the SQL editor (as that user, using the REST client with JWT) or use the **`publish-storefront`** function so **`storefront_publication.published_drop_snapshot`** is populated (until then the app falls back to seed snapshots).
-4. In **Edge Function secrets**, set **`ANVL_MEDUSA_WEBHOOK_SECRET`** if you use the Medusa stub.
+4. In **Edge Function secrets**, set **`ANVL_MEDUSA_WEBHOOK_SECRET`** if you use the Medusa stub; set **`CRON_SECRET`** and schedule **`process-scheduled-drops`** (POST every 1–5 min with `Authorization: Bearer <CRON_SECRET>`).
 5. App `.env`: **`VITE_SUPABASE_URL`** + **`VITE_SUPABASE_PUBLISHABLE_KEY`** from **Project Settings → API**.
