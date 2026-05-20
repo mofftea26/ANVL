@@ -2,7 +2,9 @@ import type { PropsWithChildren } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/shared/lib/cn'
 
-export const adminPanelVariants = cva('min-w-0 rounded-xl border border-[var(--color-line)]', {
+export const adminPanelVariants = cva(
+  'min-w-0 rounded-xl border border-[var(--color-line)] motion-safe:transition-[border-color,box-shadow,background-color] motion-safe:duration-300 motion-reduce:transition-none',
+  {
   variants: {
     variant: {
       /** Drops list / products filter toolbar. */
@@ -12,6 +14,8 @@ export const adminPanelVariants = cva('min-w-0 rounded-xl border border-[var(--c
         'border-[color:color-mix(in_srgb,var(--color-line)_55%,transparent)] bg-[var(--color-bg)]/30 p-4 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--anvl-bone)_8%,transparent)]',
       /** Filter grids on catalog pages. */
       filters: 'bg-[var(--color-surface)]/40 p-4',
+      /** Acts builder row card. */
+      actRow: 'border border-[var(--color-line)] bg-[var(--color-surface)]/30 p-4',
     },
   },
   defaultVariants: {

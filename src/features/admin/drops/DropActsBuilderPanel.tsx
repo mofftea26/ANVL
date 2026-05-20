@@ -12,6 +12,9 @@ import { dropLandingContentSchema } from '@/features/admin/drops/drops.persisten
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
 import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
+import { AdminFieldLabel } from '@/features/admin/components/AdminFieldLabel'
+import { AdminMicroHeading } from '@/features/admin/components/AdminMicroHeading'
+import { AdminPanel } from '@/features/admin/components/AdminPanel'
 import {
   AdminSelect,
   AdminSelectContent,
@@ -130,7 +133,7 @@ function NatureContentFields({
     const s = readCta(c, 'secondaryCta')
     return (
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Countdown target (ISO datetime)
           <AdminInput
                         value={readStr(c, 'countdownTargetIso')}
@@ -138,7 +141,7 @@ function NatureContentFields({
               patchContent({ countdownTargetIso: e.target.value || undefined })
             }
           />
-        </label>
+        </AdminFieldLabel>
         <div className="md:col-span-2">
           <MediaPickerField
             label="Background image"
@@ -163,7 +166,7 @@ function NatureContentFields({
             fallback="crest"
           />
         </div>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Primary CTA label
           <AdminInput
                         value={p.label}
@@ -173,8 +176,8 @@ function NatureContentFields({
               })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Primary CTA href
           <AdminInput
                         value={p.href}
@@ -184,8 +187,8 @@ function NatureContentFields({
               })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Secondary CTA label
           <AdminInput
                         value={s.label}
@@ -195,8 +198,8 @@ function NatureContentFields({
               })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Secondary CTA href
           <AdminInput
                         value={s.href}
@@ -206,7 +209,7 @@ function NatureContentFields({
               })
             }
           />
-        </label>
+        </AdminFieldLabel>
       </div>
     )
   }
@@ -214,14 +217,14 @@ function NatureContentFields({
   if (nature === 'manifesto') {
     return (
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <label className="text-xs text-[var(--color-text-muted)]">
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Quote
           <AdminInput
                         value={readStr(c, 'quote')}
             onChange={(e) => patchContent({ quote: e.target.value || undefined })}
           />
-        </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Story paragraphs
           <AdminTextarea
             className="min-h-[72px]"
@@ -230,7 +233,7 @@ function NatureContentFields({
               patchContent({ storyParagraphs: e.target.value || undefined })
             }
           />
-        </label>
+        </AdminFieldLabel>
       </div>
     )
   }
@@ -238,7 +241,7 @@ function NatureContentFields({
   if (nature === 'storytelling') {
     return (
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <label className="text-xs text-[var(--color-text-muted)]">
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Chapter title
           <AdminInput
                         value={readStr(c, 'chapterTitle')}
@@ -246,8 +249,8 @@ function NatureContentFields({
               patchContent({ chapterTitle: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Chapter body
           <AdminTextarea
             className="min-h-[72px]"
@@ -256,7 +259,7 @@ function NatureContentFields({
               patchContent({ chapterBody: e.target.value || undefined })
             }
           />
-        </label>
+        </AdminFieldLabel>
       </div>
     )
   }
@@ -266,7 +269,7 @@ function NatureContentFields({
     const s = readCta(c, 'secondaryCta')
     return (
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Release date (ISO)
           <AdminInput
                         value={readStr(c, 'releaseDateIso')}
@@ -274,7 +277,7 @@ function NatureContentFields({
               patchContent({ releaseDateIso: e.target.value || undefined })
             }
           />
-        </label>
+        </AdminFieldLabel>
         <div className="md:col-span-2">
           <MediaPickerField
             label="Drop visual"
@@ -287,7 +290,7 @@ function NatureContentFields({
             fallback="crest"
           />
         </div>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Primary CTA label
           <AdminInput
                         value={p.label}
@@ -295,8 +298,8 @@ function NatureContentFields({
               patchContent({ primaryCta: { ...p, label: e.target.value } })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Primary CTA href
           <AdminInput
                         value={p.href}
@@ -304,8 +307,8 @@ function NatureContentFields({
               patchContent({ primaryCta: { ...p, href: e.target.value } })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Secondary CTA label
           <AdminInput
                         value={s.label}
@@ -313,8 +316,8 @@ function NatureContentFields({
               patchContent({ secondaryCta: { ...s, label: e.target.value } })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Secondary CTA href
           <AdminInput
                         value={s.href}
@@ -322,7 +325,7 @@ function NatureContentFields({
               patchContent({ secondaryCta: { ...s, href: e.target.value } })
             }
           />
-        </label>
+        </AdminFieldLabel>
       </div>
     )
   }
@@ -367,7 +370,7 @@ function NatureContentFields({
             </AdminSelectContent>
           </AdminSelect>
         </div>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        <AdminFieldLabel labelStyle="stacked" className="block">
           View all label
           <AdminInput
                         value={readStr(c, 'viewAllLabel')}
@@ -375,8 +378,8 @@ function NatureContentFields({
               patchContent({ viewAllLabel: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           View all href
           <AdminInput
                         value={readStr(c, 'viewAllHref')}
@@ -384,7 +387,7 @@ function NatureContentFields({
               patchContent({ viewAllHref: e.target.value || undefined })
             }
           />
-        </label>
+        </AdminFieldLabel>
       </div>
     )
   }
@@ -392,7 +395,7 @@ function NatureContentFields({
   if (nature === 'materialShowcase') {
     return (
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Material name
           <AdminInput
                         value={readStr(c, 'materialName')}
@@ -400,15 +403,15 @@ function NatureContentFields({
               patchContent({ materialName: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           GSM
           <AdminInput
                         value={readStr(c, 'gsm')}
             onChange={(e) => patchContent({ gsm: e.target.value || undefined })}
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Composition
           <AdminInput
                         value={readStr(c, 'composition')}
@@ -416,8 +419,8 @@ function NatureContentFields({
               patchContent({ composition: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Fit notes
           <AdminTextarea
             className="min-h-[56px]"
@@ -426,8 +429,8 @@ function NatureContentFields({
               patchContent({ fitNotes: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Construction notes
           <AdminTextarea
             className="min-h-[56px]"
@@ -436,7 +439,7 @@ function NatureContentFields({
               patchContent({ constructionNotes: e.target.value || undefined })
             }
           />
-        </label>
+        </AdminFieldLabel>
       </div>
     )
   }
@@ -445,7 +448,7 @@ function NatureContentFields({
     const ct = readCta(c, 'cta')
     return (
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Event title
           <AdminInput
                         value={readStr(c, 'eventTitle')}
@@ -453,8 +456,8 @@ function NatureContentFields({
               patchContent({ eventTitle: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Starts (ISO)
           <AdminInput
                         value={readStr(c, 'startsAtIso')}
@@ -462,8 +465,8 @@ function NatureContentFields({
               patchContent({ startsAtIso: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Ends (ISO)
           <AdminInput
                         value={readStr(c, 'endsAtIso')}
@@ -471,8 +474,8 @@ function NatureContentFields({
               patchContent({ endsAtIso: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Location
           <AdminInput
                         value={readStr(c, 'location')}
@@ -480,8 +483,8 @@ function NatureContentFields({
               patchContent({ location: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Link href
           <AdminInput
                         value={readStr(c, 'linkHref')}
@@ -489,16 +492,16 @@ function NatureContentFields({
               patchContent({ linkHref: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Rules
           <AdminTextarea
             className="min-h-[56px]"
             value={readStr(c, 'rules')}
             onChange={(e) => patchContent({ rules: e.target.value || undefined })}
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           CTA label
           <AdminInput
                         value={ct.label}
@@ -506,8 +509,8 @@ function NatureContentFields({
               patchContent({ cta: { ...ct, label: e.target.value } })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           CTA href
           <AdminInput
                         value={ct.href}
@@ -515,7 +518,7 @@ function NatureContentFields({
               patchContent({ cta: { ...ct, href: e.target.value } })
             }
           />
-        </label>
+        </AdminFieldLabel>
       </div>
     )
   }
@@ -596,13 +599,13 @@ function NatureContentFields({
               }
               fallback="none"
             />
-            <label className="text-[10px] text-[var(--color-text-muted)]">
+            <AdminFieldLabel labelStyle="micro">
               Caption {i + 1}
               <AdminInput
                                 value={pad(i).caption ?? ''}
                 onChange={(e) => setItem(i, { src: pad(i).src, caption: e.target.value })}
               />
-            </label>
+            </AdminFieldLabel>
           </div>
         ))}
       </div>
@@ -614,7 +617,7 @@ function NatureContentFields({
     const optLine = opts.join('\n')
     return (
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Form intro
           <AdminTextarea
             className="min-h-[56px]"
@@ -623,8 +626,8 @@ function NatureContentFields({
               patchContent({ formIntro: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Consent copy
           <AdminTextarea
             className="min-h-[56px]"
@@ -633,8 +636,8 @@ function NatureContentFields({
               patchContent({ consentCopy: e.target.value || undefined })
             }
           />
-        </label>
-        <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
           Preferred product options (one per line)
           <AdminTextarea
             className="min-h-[72px]"
@@ -649,7 +652,7 @@ function NatureContentFields({
               })
             }}
           />
-        </label>
+        </AdminFieldLabel>
       </div>
     )
   }
@@ -672,7 +675,7 @@ function NatureContentFields({
             fallback="crest"
           />
         </div>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Primary CTA label
           <AdminInput
                         value={p.label}
@@ -680,8 +683,8 @@ function NatureContentFields({
               patchContent({ primaryCta: { ...p, label: e.target.value } })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Primary CTA href
           <AdminInput
                         value={p.href}
@@ -689,8 +692,8 @@ function NatureContentFields({
               patchContent({ primaryCta: { ...p, href: e.target.value } })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Secondary CTA label
           <AdminInput
                         value={s.label}
@@ -698,8 +701,8 @@ function NatureContentFields({
               patchContent({ secondaryCta: { ...s, label: e.target.value } })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Secondary CTA href
           <AdminInput
                         value={s.href}
@@ -707,8 +710,8 @@ function NatureContentFields({
               patchContent({ secondaryCta: { ...s, href: e.target.value } })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Tertiary CTA label
           <AdminInput
                         value={t.label}
@@ -716,8 +719,8 @@ function NatureContentFields({
               patchContent({ tertiaryCta: { ...t, label: e.target.value } })
             }
           />
-        </label>
-        <label className="text-xs text-[var(--color-text-muted)]">
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
           Tertiary CTA href
           <AdminInput
                         value={t.href}
@@ -725,7 +728,7 @@ function NatureContentFields({
               patchContent({ tertiaryCta: { ...t, href: e.target.value } })
             }
           />
-        </label>
+        </AdminFieldLabel>
       </div>
     )
   }
@@ -748,9 +751,7 @@ function ActMediaBlock({
   const m = media ?? {}
   return (
     <div className="mt-3 space-y-3 border-t border-[var(--color-line)]/60 pt-3">
-      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-heading)]">
-        Act media
-      </p>
+      <AdminMicroHeading as="p" className="text-[10px] tracking-[0.14em] text-[var(--color-heading)]">Act media</AdminMicroHeading>
       <MediaPickerField
         label="Act image (optional)"
         kind="image"
@@ -781,7 +782,7 @@ function ActMediaBlock({
         }
         fallback="none"
       />
-      <label className="block text-xs text-[var(--color-text-muted)]">
+      <AdminFieldLabel labelStyle="stacked" className="block">
         Alt text
         <AdminInput
           value={m.alt ?? ''}
@@ -794,7 +795,7 @@ function ActMediaBlock({
             })
           }
         />
-      </label>
+      </AdminFieldLabel>
     </div>
   )
 }
@@ -926,10 +927,7 @@ export function DropActsBuilderPanel({
             updateAct(act.id, { content: merged })
           }
           return (
-            <div
-              key={act.id}
-              className="rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]/30 p-4"
-            >
+            <AdminPanel key={act.id} variant="actRow">
               <div className="flex flex-wrap items-center gap-3">
                 <AdminCheckbox
                   className="py-0"
@@ -1057,7 +1055,7 @@ export function DropActsBuilderPanel({
                     </AdminSelectContent>
                   </AdminSelect>
                 </div>
-                <label className="text-xs text-[var(--color-text-muted)]">
+                <AdminFieldLabel labelStyle="stacked" className="block">
                   Eyebrow
                   <AdminInput
                                         value={act.eyebrow ?? ''}
@@ -1065,8 +1063,8 @@ export function DropActsBuilderPanel({
                       updateAct(act.id, { eyebrow: e.target.value })
                     }
                   />
-                </label>
-                <label className="text-xs text-[var(--color-text-muted)]">
+                </AdminFieldLabel>
+                <AdminFieldLabel labelStyle="stacked" className="block">
                   Title
                   <AdminInput
                                         value={act.title ?? ''}
@@ -1074,8 +1072,8 @@ export function DropActsBuilderPanel({
                       updateAct(act.id, { title: e.target.value })
                     }
                   />
-                </label>
-                <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+                </AdminFieldLabel>
+                <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
                   Subtitle
                   <AdminInput
                                         value={act.subtitle ?? ''}
@@ -1083,8 +1081,8 @@ export function DropActsBuilderPanel({
                       updateAct(act.id, { subtitle: e.target.value })
                     }
                   />
-                </label>
-                <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+                </AdminFieldLabel>
+                <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
                   Body
                   <AdminTextarea
                     className="min-h-[72px]"
@@ -1093,7 +1091,7 @@ export function DropActsBuilderPanel({
                       updateAct(act.id, { body: e.target.value })
                     }
                   />
-                </label>
+                </AdminFieldLabel>
               </div>
 
               <ActMediaBlock
@@ -1102,9 +1100,7 @@ export function DropActsBuilderPanel({
               />
 
               <div className="mt-3 space-y-2 border-t border-[var(--color-line)]/60 pt-3">
-                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-heading)]">
-                  Animation
-                </p>
+                <AdminMicroHeading as="p" className="text-[10px] tracking-[0.14em] text-[var(--color-heading)]">Animation</AdminMicroHeading>
                 <div className="flex flex-wrap gap-4 text-xs text-[var(--color-text-muted)]">
                   <AdminCheckbox
                     className="py-0"
@@ -1134,7 +1130,7 @@ export function DropActsBuilderPanel({
                   />
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <label className="text-xs text-[var(--color-text-muted)]">
+                  <AdminFieldLabel labelStyle="stacked" className="block">
                     Motion type key
                     <AdminInput
                       placeholder="fadeUp, parallax, none…"
@@ -1148,7 +1144,7 @@ export function DropActsBuilderPanel({
                         })
                       }
                     />
-                  </label>
+                  </AdminFieldLabel>
                   <div className="text-xs text-[var(--color-text-muted)]">
                     <span
                       className="block"
@@ -1227,7 +1223,7 @@ export function DropActsBuilderPanel({
                   )}
                 </div>
               ) : null}
-            </div>
+            </AdminPanel>
           )
         })}
       </div>

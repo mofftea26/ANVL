@@ -35,7 +35,7 @@ export function AdminConfirmDialog({
 }: AdminConfirmDialogProps) {
   return (
     <Modal open={open} onClose={onClose} title={title}>
-      <div className="space-y-4">
+      <div className="space-y-4 motion-safe:transition-opacity motion-safe:duration-300 motion-reduce:transition-none">
         <div className="text-sm text-[var(--color-text-muted)]">{children}</div>
         {footerBefore}
         <div className="flex justify-end gap-2">
