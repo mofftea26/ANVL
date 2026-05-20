@@ -70,8 +70,7 @@ export function AdminTopbarSessionChip({ className }: { className?: string }) {
           <AdminButton
             type="button"
             variant="secondary"
-            size="sm"
-            className="h-9 w-full justify-start gap-2 px-2 text-xs"
+            className="h-9 w-full justify-start gap-2 px-2.5"
             onClick={() => void logout()}
           >
             <LogOut size={14} aria-hidden="true" />

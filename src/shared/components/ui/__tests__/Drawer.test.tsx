@@ -27,6 +27,7 @@ describe('Drawer', () => {
     expect(panel.className).toContain('left-0')
     expect(panel.className).toContain('border-r')
     expect(panel.className).toContain('max-h-[100dvh]')
+    expect(panel.className).toContain('anvl-drawer-panel-left')
     expect(panel.className).not.toContain('right-0')
   })
 })

@@ -502,7 +502,7 @@ export function MediaPickerField({
                     ? 'https://… or /media/video.mp4'
                     : '/brand/stacked.svg'
                 }
-                className={cn('mt-2 h-9 py-1.5 text-xs', adminFieldControlClass)}
+                className={cn('mt-2', adminFieldControlClass)}
                 spellCheck={false}
               />
               <p className="mt-1 text-[10px] text-[var(--color-text-muted)]">

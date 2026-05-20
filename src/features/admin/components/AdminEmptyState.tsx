@@ -1,6 +1,7 @@
 import type { LinkProps } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
-import { AdminButton, adminButtonVariants } from '@/features/admin/components/AdminButton'
+import { AdminButton } from '@/features/admin/components/AdminButton'
+import { adminTopbarChipButtonClassName } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminForgedLink } from '@/features/admin/components/AdminForgedLink'
 import { cn } from '@/shared/lib/cn'
@@ -30,7 +31,7 @@ export function AdminEmptyState({
         <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">{description}</p>
       ) : null}
       {actionTo && actionLabel ? (
-        <AdminForgedLink to={actionTo} className="mt-4">
+        <AdminForgedLink to={actionTo} variant="cta" className="mt-4">
           {actionLabel}
         </AdminForgedLink>
       ) : null}
@@ -91,11 +92,7 @@ export function AdminSecondaryExternalLink({
       href={href}
       target="_blank"
       rel="noreferrer"
-      className={cn(
-        adminButtonVariants({ variant: 'secondary', size: 'md' }),
-        'focus-ring inline-flex h-10 shrink-0 gap-2 px-4 no-underline',
-        className,
-      )}
+      className={cn(adminTopbarChipButtonClassName, 'shrink-0 gap-2 no-underline', className)}
     >
       {children}
     </a>

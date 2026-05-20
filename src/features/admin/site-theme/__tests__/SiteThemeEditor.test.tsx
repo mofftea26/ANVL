@@ -3,14 +3,19 @@
  */
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  AdminPageActionsProvider,
+  useAdminPageActionsSlot,
+} from '@/features/admin/components/AdminPageActionsContext'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
 import { SiteThemeEditor } from '../SiteThemeEditor'
 
 const saveAsync = vi.fn()
 const defaultSettings = createDefaultGlobalBrandSettings()
+const flashSuccessMock = vi.fn()
 const oathPalette = {
   id: 'oath-dark',
   name: 'The Oath',
@@ -48,6 +53,10 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }))
 
+vi.mock('@/features/admin/hooks/useSaveSuccessFlash', () => ({
+  useSaveSuccessFlash: () => ({ showSuccess: false, flashSuccess: flashSuccessMock }),
+}))
+
 vi.mock('@/features/cms/api/supabasePublicEnv', () => ({
   getSupabasePublicEnv: () => null,
 }))
@@ -76,13 +85,21 @@ vi.mock('@/shared/components/ui/MediaPickerField', () => ({
   ),
 }))
 
+function TopbarActionsProbe() {
+  const actions = useAdminPageActionsSlot()
+  return <div data-testid="admin-page-actions">{actions}</div>
+}
+
 function renderEditor() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
   return render(
     <QueryClientProvider client={client}>
-      <SiteThemeEditor />
+      <AdminPageActionsProvider>
+        <TopbarActionsProbe />
+        <SiteThemeEditor />
+      </AdminPageActionsProvider>
     </QueryClientProvider>,
   )
 }
@@ -107,13 +124,16 @@ describe('SiteThemeEditor', () => {
     expect(screen.getByRole('link', { name: /edit drop theme/i })).toBeTruthy()
   })
 
-  it('saves brand fallbacks via saveGlobalBrandSettingsAsync', async () => {
+  it('registers Save fallbacks in the admin topbar actions slot', async () => {
     const user = userEvent.setup()
     renderEditor()
 
-    await user.click(
-      screen.getByRole('button', { name: /save brand fallbacks/i }),
-    )
+    const actions = within(screen.getByTestId('admin-page-actions'))
+    const saveBtn = actions.getByRole('button', { name: /save brand fallbacks/i })
+    expect(saveBtn).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /save fallbacks/i })).toBeNull()
+
+    await user.click(saveBtn)
     expect(saveAsync).toHaveBeenCalledWith(defaultSettings)
   })
 })

@@ -16,7 +16,7 @@ function forgedClass(variant: ForgedVariant, className?: string) {
       : variant === 'outline'
         ? adminOutlineLinkClass
         : adminForgedCtaLinkClass
-  return cn(base, variant === 'cta' && 'h-11 px-6', className)
+  return cn(base, className)
 }
 
 type AdminForgedLinkBase = {

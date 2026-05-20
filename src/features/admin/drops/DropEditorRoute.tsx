@@ -6,7 +6,11 @@ import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminPanel } from '@/features/admin/components/AdminPanel'
-import { AdminStatusBadge } from '@/features/admin/components/AdminStatusBadge'
+import {
+  AdminStatusBadge,
+  dropStatusBadgeLabel,
+  dropStatusBadgeTone,
+} from '@/features/admin/components/AdminStatusBadge'
 import { AdminMicroHeading } from '@/features/admin/components/AdminMicroHeading'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
@@ -147,6 +151,12 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const [saveInFlight, setSaveInFlight] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmActivateToggle, setConfirmActivateToggle] = useState<
+    'activate' | 'deactivate' | null
+  >(null)
+  const setActiveMut = useSetActiveAdminDropMutation()
+  const deactivateMut = useDeactivateAdminDropMutation()
+  const activateToggleBusy = setActiveMut.isPending || deactivateMut.isPending
   const [previewCollapsed, setPreviewCollapsed] = useState(false)
   const [quickProductOpen, setQuickProductOpen] = useState(false)
   const [quickProductSlug, setQuickProductSlug] = useState('')
@@ -294,26 +304,52 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
 
   const dropToolbarActions = useMemo(() => {
     if (!editorReady || !draft) return null
+    const canToggleActive = draft.status !== 'archived'
     return (
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <IconButton
+        {canToggleActive ? (
+          <AdminTopbarChipButton
+            type="button"
+            disabled={activateToggleBusy}
+            aria-label={
+              isLiveOnStorefront
+                ? 'Deactivate drop on storefront'
+                : 'Activate drop on storefront'
+            }
+            title={
+              isLiveOnStorefront
+                ? 'Remove this drop from the live storefront'
+                : 'Make this drop the live storefront campaign'
+            }
+            variant={isLiveOnStorefront ? 'success' : 'default'}
+            icon={<Power size={14} />}
+            onClick={() =>
+              setConfirmActivateToggle(isLiveOnStorefront ? 'deactivate' : 'activate')
+            }
+          >
+            {isLiveOnStorefront ? 'Deactivate' : 'Activate'}
+          </AdminTopbarChipButton>
+        ) : null}
+        <AdminTopbarChipButton
           type="button"
-          aria-label="Discard unsaved changes and reset drop to defaults"
-          title="Reset drop"
+          aria-label="Reset drop"
+          title="Discard unsaved changes and reset drop to defaults"
+          icon={<RotateCcw size={14} />}
           onClick={() => setConfirmReset(true)}
         >
-          <RotateCcw size={18} aria-hidden="true" />
-        </IconButton>
-        <IconButton
+          Reset
+        </AdminTopbarChipButton>
+        <AdminTopbarChipButton
           type="button"
-          aria-label="Delete this drop"
-          title="Delete drop"
-          className="border-red-500/40 bg-red-500/10 text-red-100 hover:bg-red-500/20"
+          aria-label="Delete drop"
+          title="Delete this drop"
+          icon={<Trash2 size={14} />}
+          variant="destructive"
           onClick={() => setConfirmDelete(true)}
         >
-          <Trash2 size={18} aria-hidden="true" />
-        </IconButton>
-        <IconButton
+          Delete
+        </AdminTopbarChipButton>
+        <AdminTopbarChipButton
           type="button"
           aria-label={
             showSuccess ? 'Drop saved' : hasErrors ? 'Save blocked by validation errors' : 'Save drop'
@@ -322,26 +358,22 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             hasErrors ? errors.summary.join('\n') : showSuccess ? 'Saved' : 'Save drop'
           }
           disabled={hasErrors}
-          className={cn(
-            !hasErrors &&
-              'border-[var(--color-accent)]/55 bg-[var(--color-accent)]/15 text-[var(--color-heading)] hover:bg-[var(--color-accent)]/25',
-          )}
+          icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
+          variant={hasErrors ? 'default' : 'primary'}
           onClick={attemptSave}
         >
-          {showSuccess ? (
-            <Check size={18} aria-hidden="true" />
-          ) : (
-            <Save size={18} aria-hidden="true" />
-          )}
-        </IconButton>
+          {showSuccess ? 'Saved' : 'Save'}
+        </AdminTopbarChipButton>
       </div>
     )
   }, [
+    activateToggleBusy,
     attemptSave,
     draft,
     editorReady,
     errors.summary,
     hasErrors,
+    isLiveOnStorefront,
     showSuccess,
   ])
 
@@ -488,12 +520,14 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
       title={headerTitle}
       description={
         <span className="flex flex-wrap items-center gap-2">
-          <AdminStatusBadge tone="neutral">{draft.status}</AdminStatusBadge>
-          {isLiveOnStorefront ? (
-            <AdminStatusBadge tone="live">Active drop</AdminStatusBadge>
-          ) : null}
+          <AdminStatusBadge
+            tone={dropStatusBadgeTone(draft.status, isLiveOnStorefront)}
+            size="chip"
+          >
+            {dropStatusBadgeLabel(draft.status, isLiveOnStorefront)}
+          </AdminStatusBadge>
           {hasErrors ? (
-            <AdminStatusBadge tone="danger">
+            <AdminStatusBadge tone="danger" size="chip">
               {errors.summary.length} validation issue(s)
             </AdminStatusBadge>
           ) : null}
@@ -1276,6 +1310,50 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         {getSupabasePublicEnv()
           ? 'Saves the drop draft to Supabase. Live storefront updates when this drop is active (or you check activate below).'
           : 'Updates persist in this browser until Supabase is configured.'}
+      </AdminConfirmDialog>
+
+      <AdminConfirmDialog
+        open={confirmActivateToggle === 'activate'}
+        onClose={() => setConfirmActivateToggle(null)}
+        title="Make drop active?"
+        confirmLabel="Activate"
+        confirmDisabled={activateToggleBusy}
+        onConfirm={() => {
+          if (!draft || confirmActivateToggle !== 'activate') return
+          setActiveMut.mutate(draft.id, {
+            onSuccess: () => {
+              toast.success('Active drop updated.')
+              setConfirmActivateToggle(null)
+            },
+            onError: () => toast.error('Could not activate drop.'),
+          })
+        }}
+      >
+        <span className="font-medium text-[var(--color-text)]">{draft.name}</span> will power the
+        public landing page and theme. The current active drop will be set to inactive. When
+        Supabase is configured, activating also publishes the drop to the live storefront snapshot.
+      </AdminConfirmDialog>
+
+      <AdminConfirmDialog
+        open={confirmActivateToggle === 'deactivate'}
+        onClose={() => setConfirmActivateToggle(null)}
+        title="Deactivate drop?"
+        confirmLabel="Deactivate"
+        confirmDisabled={activateToggleBusy}
+        onConfirm={() => {
+          if (!draft || confirmActivateToggle !== 'deactivate') return
+          deactivateMut.mutate(draft.id, {
+            onSuccess: () => {
+              toast.success('Drop deactivated on storefront.')
+              setConfirmActivateToggle(null)
+            },
+            onError: () => toast.error('Could not deactivate drop.'),
+          })
+        }}
+      >
+        <span className="font-medium text-[var(--color-text)]">{draft.name}</span> will no longer
+        be the live storefront campaign. Visitors will not see this drop as active until you
+        activate it again.
       </AdminConfirmDialog>
 
       <AdminConfirmDialog

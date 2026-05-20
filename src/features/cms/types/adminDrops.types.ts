@@ -14,4 +14,8 @@ export type AdminDropListItem = {
   productCount: number
   updatedAt: string
   createdAt: string
+  /** Trimmed emblem URL for mobile list card watermark (omit when empty). */
+  emblemImageUrl?: string
+  /** Sanitized campaign accent for list card edge glow. */
+  themeAccent?: string
 }

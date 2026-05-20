@@ -1,5 +1,5 @@
 import { Save } from 'lucide-react'
-import { AdminButton } from '@/features/admin/components/AdminButton'
+import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { cn } from '@/shared/lib/cn'
 
 export type AdminSaveBarProps = {
@@ -33,16 +33,15 @@ export function AdminSaveBar({
           {error}
         </p>
       ) : null}
-      <AdminButton
+      <AdminTopbarChipButton
         type="button"
         variant="primary"
-        size="sm"
         loading={saving}
+        icon={<Save size={14} />}
         onClick={onSave}
       >
-        <Save size={14} className="mr-1.5" aria-hidden="true" />
         {saveLabel}
-      </AdminButton>
+      </AdminTopbarChipButton>
     </div>
   )
 }

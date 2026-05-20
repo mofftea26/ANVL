@@ -14,6 +14,7 @@ import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { HomePageContent } from '@/features/cms/types/cms.types'
 import { resolveStorefrontActiveDrop } from '@/features/cms/runtime/storefrontCmsSync'
+import { adminDropListVisualsFromDrop } from '@/features/admin/drops/adminDropListItemVisuals'
 
 function dropToAdminListItem(d: Drop): AdminDropListItem {
   return {
@@ -29,6 +30,7 @@ function dropToAdminListItem(d: Drop): AdminDropListItem {
     productCount: d.productIds.length,
     updatedAt: d.updatedAt,
     createdAt: d.createdAt,
+    ...adminDropListVisualsFromDrop(d),
   }
 }
 

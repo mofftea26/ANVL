@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { Check, Plus, Save, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminButton } from '@/features/admin/components/AdminButton'
@@ -6,7 +6,9 @@ import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'
 import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
-import { AdminSaveBar } from '@/features/admin/components/AdminSaveBar'
+import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
+import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
+import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import {
   ensureDropSystemHydrated,
   getActiveDrop,
@@ -45,6 +47,8 @@ const DROP_SLOT_NOTE =
   'Active campaign slot — live site uses the active drop title and /drop/<slug>.'
 
 export function SiteLayoutEditor() {
+  const setPageActions = useAdminPageActions()
+  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const [layout, setLayout] = useState<WebsiteLayoutContent>(() =>
     getWebsiteLayoutContent(),
   )
@@ -121,6 +125,7 @@ export function SiteLayoutEditor() {
         await saveWebsiteLayoutContentAsync(layout)
         toast.success('Website layout saved.')
         setLayout(getWebsiteLayoutContent())
+        flashSuccess()
       } catch (e) {
         const message =
           e instanceof Error ? e.message : 'Could not save layout.'
@@ -129,7 +134,40 @@ export function SiteLayoutEditor() {
         setSaving(false)
       }
     })()
-  }, [layout])
+  }, [layout, flashSuccess])
+
+  const layoutToolbarActions = useMemo(
+    () => (
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <AdminTopbarChipButton
+          type="button"
+          aria-label={
+            saving
+              ? 'Saving website layout'
+              : saveError
+                ? 'Save blocked by validation errors'
+                : showSuccess
+                  ? 'Website layout saved'
+                  : 'Save website layout'
+          }
+          title={saveError ?? undefined}
+          disabled={Boolean(saveError) || saving}
+          icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
+          variant={saveError ? 'default' : 'primary'}
+          loading={saving}
+          onClick={save}
+        >
+          {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save layout'}
+        </AdminTopbarChipButton>
+      </div>
+    ),
+    [save, saveError, saving, showSuccess],
+  )
+
+  useEffect(() => {
+    setPageActions(layoutToolbarActions)
+    return () => setPageActions(null)
+  }, [layoutToolbarActions, setPageActions])
 
   return (
     <div
@@ -473,12 +511,15 @@ export function SiteLayoutEditor() {
           </AdminCard>
         ) : null}
 
-        <AdminSaveBar
-          saveLabel="Save layout"
-          error={saveError}
-          saving={saving}
-          onSave={save}
-        />
+        {saveError ? (
+          <p
+            role="alert"
+            className="text-xs text-red-300/90"
+            data-testid="site-layout-save-error"
+          >
+            {saveError}
+          </p>
+        ) : null}
       </div>
 
       <div

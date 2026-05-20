@@ -10,7 +10,7 @@ export const AdminNativeSelect = forwardRef<
   return (
     <select
       ref={ref}
-      className={cn(adminStackedFieldClass, 'h-10', className)}
+      className={cn(adminStackedFieldClass, className)}
       {...props}
     >
       {children}

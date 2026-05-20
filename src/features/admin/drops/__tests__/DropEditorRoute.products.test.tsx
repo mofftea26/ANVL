@@ -35,6 +35,17 @@ vi.mock('@/features/admin/drops/useDropLiveOnStorefront', () => ({
   ) => localIsActive,
 }))
 
+vi.mock('@/features/admin/drops/useAdminDropsListQuery', () => ({
+  useSetActiveAdminDropMutation: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+  useDeactivateAdminDropMutation: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+}))
+
 vi.mock('@/features/admin/products/useAdminProducts', () => ({
   useAdminProductsList: () => mockCatalogState.products,
 }))

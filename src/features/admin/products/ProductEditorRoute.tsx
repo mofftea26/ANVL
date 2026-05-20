@@ -5,7 +5,7 @@ import {
   Save,
   Trash2,
 } from 'lucide-react'
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
@@ -45,6 +45,10 @@ import {
 } from '@/features/admin/components/AdminSelect'
 import { AdminTextarea } from '@/features/admin/components/AdminInput'
 import { AdminButton } from '@/features/admin/components/AdminButton'
+import {
+  AdminTopbarChipButton,
+  adminTopbarChipButtonClassName,
+} from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminDateTimeField } from '@/features/admin/components/AdminDateTimeField'
 import { ColorField } from '@/shared/components/ui/ColorField'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
@@ -128,33 +132,34 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
   const productToolbarActions = useMemo(
     () =>
       draft ? (
-        <Fragment>
-          <AdminForgedLink to="/admin/products" variant="outline">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <AdminForgedLink
+            to="/admin/products"
+            variant="outline"
+            className={adminTopbarChipButtonClassName}
+          >
             <ArrowLeft size={14} aria-hidden="true" />
             Catalog
           </AdminForgedLink>
-          <AdminButton type="button" variant="primary" size="sm" onClick={saveProduct}>
-            {showSuccess ? (
-              <>
-                <Check size={14} className="mr-1.5" aria-hidden="true" />
-                Saved
-              </>
-            ) : (
-              <>
-                <Save size={14} className="mr-1.5" aria-hidden="true" />
-                Save
-              </>
-            )}
-          </AdminButton>
-          <AdminButton
+          <AdminTopbarChipButton
             type="button"
-            variant="ghost"
-            size="sm"
+            aria-label={showSuccess ? 'Product saved' : 'Save product'}
+            icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
+            variant="primary"
+            onClick={saveProduct}
+          >
+            {showSuccess ? 'Saved' : 'Save'}
+          </AdminTopbarChipButton>
+          <AdminTopbarChipButton
+            type="button"
+            aria-label="Delete product"
+            icon={<Trash2 size={14} />}
+            variant="destructive"
             onClick={() => setConfirmDelete(true)}
           >
-            <Trash2 size={14} aria-hidden="true" />
-          </AdminButton>
-        </Fragment>
+            Delete
+          </AdminTopbarChipButton>
+        </div>
       ) : null,
     [draft, showSuccess, saveProduct],
   )

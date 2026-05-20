@@ -2,6 +2,7 @@ import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import type { DropStatus } from '@/features/drops/drop.types'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
+import { adminDropListVisualsFromPersistedBody } from '@/features/admin/drops/adminDropListItemVisuals'
 import { persistedDropSchema } from '@/features/admin/drops/drops.persistence.zod'
 
 type AnvlDropListRow = {
@@ -55,6 +56,7 @@ function rowToAdminListItem(
     productCount: Array.isArray(body.productIds) ? body.productIds.length : 0,
     updatedAt: body.updatedAt,
     createdAt: body.createdAt,
+    ...adminDropListVisualsFromPersistedBody(body),
   }
 }
 

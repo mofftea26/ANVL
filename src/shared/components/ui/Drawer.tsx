@@ -50,10 +50,16 @@ export function Drawer({
     ariaLabelledBy && ariaLabelledBy.trim() ? ariaLabelledBy.trim() : undefined
   const titleHeadingId = hasTitle ? generatedTitleId : undefined
 
+  const panelMotionClass = isBottom
+    ? 'anvl-drawer-panel-bottom'
+    : isLeft
+      ? 'anvl-drawer-panel-left'
+      : 'anvl-drawer-panel-right'
+
   return (
     <div className="fixed inset-0 z-50">
       <div
-        className="absolute inset-0 cursor-pointer bg-black/70"
+        className="anvl-drawer-backdrop absolute inset-0 cursor-pointer bg-black/70"
         onClick={() => onClose()}
         aria-hidden="true"
       />
@@ -62,6 +68,7 @@ export function Drawer({
         tabIndex={-1}
         className={cn(
           'absolute flex min-h-0 flex-col border-[var(--color-line)] bg-[var(--color-surface)] p-6 outline-none',
+          panelMotionClass,
           isBottom
             ? 'bottom-0 left-0 right-0 max-h-[88vh] overflow-y-auto rounded-t-2xl border-t'
             : isLeft

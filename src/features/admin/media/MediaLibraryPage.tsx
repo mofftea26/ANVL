@@ -41,7 +41,7 @@ export function MediaLibraryPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search filename, alt, tags…"
-          className={cn('h-9 max-w-md flex-1 text-sm', adminFieldControlClass)}
+          className={cn('max-w-md flex-1', adminFieldControlClass)}
           aria-label="Search media"
         />
         <div className="flex flex-wrap gap-1" role="group" aria-label="Filter by type">

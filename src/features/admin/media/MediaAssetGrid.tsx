@@ -4,7 +4,7 @@ import { Copy, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
-import { adminFieldControlClass } from '@/shared/lib/cmsFieldStyles'
+import { adminFieldControlFineClass } from '@/shared/lib/cmsFieldStyles'
 import { cn } from '@/shared/lib/cn'
 import { isLikelySafeMediaSrc } from '@/shared/lib/url'
 import {
@@ -100,7 +100,7 @@ function MediaAssetCard({
                 e.currentTarget.blur()
               }
             }}
-            className={cn('mt-1 h-8 text-xs', adminFieldControlClass)}
+            className={cn('mt-1 w-full', adminFieldControlFineClass)}
           />
         </label>
         <div className="flex flex-wrap gap-1">

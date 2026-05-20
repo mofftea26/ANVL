@@ -51,11 +51,7 @@ export function DropRowOverflowMenu({
           aria-haspopup="menu"
           aria-label={menuLabel}
           title={menuLabel}
-          className={cn(
-            'h-10 w-10 shrink-0 rounded-md px-0 text-[var(--color-heading)]',
-            triggerClassName,
-            className,
-          )}
+          className={cn('shrink-0', triggerClassName, className)}
         >
           <MoreVertical className="size-[18px]" aria-hidden />
         </AdminButton>

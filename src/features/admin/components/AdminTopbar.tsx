@@ -31,7 +31,7 @@ export function AdminTopbar({
           onClick={onOpenMenu}
           aria-label="Open admin navigation"
           className={cn(
-            'focus-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-text)] lg:hidden',
+            'focus-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-text)]',
           )}
         >
           <Menu size={14} aria-hidden="true" className="text-[var(--color-text-muted)]" />

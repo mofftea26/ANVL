@@ -5,6 +5,11 @@ import {
   type ComponentPropsWithoutRef,
   type ElementRef,
 } from 'react'
+import {
+  adminSelectContentClass,
+  adminSelectItemClass,
+  adminSelectTriggerClass,
+} from '@/shared/lib/cmsFieldStyles'
 import { cn } from '@/shared/lib/cn'
 
 export const AdminSelect = SelectPrimitive.Root
@@ -29,18 +34,12 @@ export const AdminSelectTrigger = forwardRef<
       <SelectPrimitive.Trigger
         ref={ref}
         disabled={disabled}
-        className={cn(
-          'focus-ring flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] px-3 text-left text-sm text-[var(--color-text)] outline-none transition-colors',
-          'hover:border-[color:color-mix(in_srgb,var(--anvl-bone)_22%,transparent)]',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-          'data-[placeholder]:text-[var(--color-text-muted)]',
-          className,
-        )}
+        className={cn(adminSelectTriggerClass, className)}
         {...props}
       >
         {children}
         <SelectPrimitive.Icon asChild>
-          <ChevronDown size={16} className="shrink-0 opacity-70" aria-hidden="true" />
+          <ChevronDown size={14} className="shrink-0 opacity-70" aria-hidden="true" />
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
     </div>
@@ -59,7 +58,7 @@ export const AdminSelectContent = forwardRef<
         sideOffset={6}
         collisionPadding={8}
         className={cn(
-          'z-[85] max-h-[min(360px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] shadow-[inset_0_1px_0_rgba(231,228,223,0.06),0_16px_42px_rgba(0,0,0,0.55)] outline-none',
+          adminSelectContentClass,
           position === 'popper' &&
             'w-[var(--radix-select-trigger-width)] data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
           className,
@@ -83,12 +82,7 @@ export const AdminSelectItem = forwardRef<
   return (
     <SelectPrimitive.Item
       ref={ref}
-      className={cn(
-        'relative flex cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-2 text-sm outline-none transition-colors',
-        'focus:bg-[var(--color-chip)] focus:text-[var(--color-text)]',
-        'data-[disabled]:pointer-events-none data-[disabled]:opacity-40',
-        className,
-      )}
+      className={cn(adminSelectItemClass, className)}
       {...props}
     >
       <span className="absolute left-2 flex h-4 w-4 items-center justify-center">

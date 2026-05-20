@@ -48,7 +48,7 @@ export function MediaLibraryPickerModal({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search…"
-          className={cn('h-9 w-full text-sm', adminFieldControlClass)}
+          className={cn('w-full', adminFieldControlClass)}
           aria-label="Search library"
         />
         {query.isLoading ? (

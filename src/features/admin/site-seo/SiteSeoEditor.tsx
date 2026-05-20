@@ -1,14 +1,17 @@
-import { useCallback, useMemo, useState } from 'react'
+import { Check, Save } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminButton } from '@/features/admin/components/AdminButton'
-import { AdminSaveBar } from '@/features/admin/components/AdminSaveBar'
+import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
+import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
+import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
+import { cn } from '@/shared/lib/cn'
 import {
   getSiteSeoContent,
   saveSiteSeoContentAsync,
   type SiteSeoContent,
   type SiteStaticSeoPath,
 } from '@/features/cms/siteSeo.local'
-import { cn } from '@/shared/lib/cn'
 import { SiteSeoGlobalPanel } from './SiteSeoGlobalPanel'
 import { SiteSeoPreviewPanel, type SiteSeoPreviewState } from './SiteSeoPreviewPanel'
 import { SiteSeoStaticPagesPanel } from './SiteSeoStaticPagesPanel'
@@ -21,6 +24,8 @@ const SEO_TABS = [
 type SeoTabId = (typeof SEO_TABS)[number]['id']
 
 export function SiteSeoEditor() {
+  const setPageActions = useAdminPageActions()
+  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const [content, setContent] = useState<SiteSeoContent>(() => getSiteSeoContent())
   const [activeTab, setActiveTab] = useState<SeoTabId>('defaults')
   const [activePath, setActivePath] = useState<SiteStaticSeoPath>('/')
@@ -86,6 +91,7 @@ export function SiteSeoEditor() {
         await saveSiteSeoContentAsync(content)
         toast.success('Site SEO saved.')
         setContent(getSiteSeoContent())
+        flashSuccess()
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Could not save site SEO.'
         toast.error(message)
@@ -93,7 +99,37 @@ export function SiteSeoEditor() {
         setSaving(false)
       }
     })()
-  }, [content])
+  }, [content, flashSuccess])
+
+  const seoToolbarActions = useMemo(
+    () => (
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <AdminTopbarChipButton
+          type="button"
+          aria-label={
+            saving
+              ? 'Saving site SEO'
+              : showSuccess
+                ? 'Site SEO saved'
+                : 'Save site SEO'
+          }
+          disabled={saving}
+          icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
+          variant="primary"
+          loading={saving}
+          onClick={save}
+        >
+          {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save SEO'}
+        </AdminTopbarChipButton>
+      </div>
+    ),
+    [save, saving, showSuccess],
+  )
+
+  useEffect(() => {
+    setPageActions(seoToolbarActions)
+    return () => setPageActions(null)
+  }, [seoToolbarActions, setPageActions])
 
   return (
     <div
@@ -131,8 +167,6 @@ export function SiteSeoEditor() {
             onChange={patchStaticPage}
           />
         )}
-
-        <AdminSaveBar saveLabel="Save SEO" saving={saving} onSave={save} />
       </div>
 
       <div

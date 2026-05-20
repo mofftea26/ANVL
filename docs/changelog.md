@@ -1,4 +1,70 @@
-﻿
+﻿## 2026-05-20 — Admin nav drawer at all breakpoints
+
+- **`AdminLayout`:** Removed persistent `lg:grid-cols-[280px_1fr]` sidebar column; main content is full width at every breakpoint. Nav opens via the shared left `Drawer` (focus trap, Escape, backdrop click, route-change close via `onNavigate`).
+- **`AdminTopbar`:** Burger menu button is always visible (removed `lg:hidden`).
+- **`Drawer` / `styles.css`:** Slide-in + backdrop fade animations gated on `prefers-reduced-motion: no-preference`.
+- **Tests:** `AdminLayout` (no persistent aside, burger opens drawer, nav link closes), `AdminTopbar` (burger not `lg:hidden`).
+
+## 2026-05-20 — Admin sidebar chip nav (desktop / drawer parity)
+
+- **`AdminSidebar`:** Nav links use shared `adminChipButtonVariants` pills (`primary` when active); removed secondary badge pills (Overview, System, …) and desktop-only descriptions.
+- **Footer:** “View storefront” and Logout both use chip styling (`AdminTopbarChipButton` / chip link classes).
+- **Layout:** Persistent `lg:` sidebar and mobile drawer share the same compact nav chrome; section cluster labels stay muted uppercase.
+- **Tests:** `AdminSidebar` asserts badge pills are absent and active route uses `aria-current="page"`.
+
+## 2026-05-20 — Admin CMS chip field controls (shared `cmsFieldStyles`)
+
+- **`cmsFieldStyles`:** Pill / soft-surface tokens aligned with `adminChipButtonVariants` — `adminFieldControlClass`, `adminFieldTextareaClass`, `adminSelectTriggerClass`, clear-button + compact row helpers.
+- **Primitives:** `AdminInput`, `AdminTextarea`, `AdminSelect`, `AdminNativeSelect`, `AdminCheckbox`, `AdminDateField`, `AdminDateTimeField` use shared classes; dropdown panels stay elevated/readable.
+- **Pickers:** `ColorField` compact row + fine inputs, `MediaPickerField` URL row, media library search inherit chip chrome.
+- **Tests:** `cmsFieldStyles`, `AdminSelect` trigger chrome, updated `ColorField` / `MediaPickerField` class assertions.
+
+## 2026-05-20 — Drop editor status badge dedupe
+
+- **`DropEditorRoute`:** One emerald **Live** chip when the drop is storefront-active; otherwise CMS status only (Draft, Scheduled, …). Removed redundant **ACTIVE** + **Active drop** pair.
+- **`DropAdminListCard`:** Same single-badge rule; removed extra **Storefront drop** label.
+- **`AdminStatusBadge`:** `size="chip"` (`h-9`) for topbar alignment; shared `dropStatusBadgeLabel` helper; live tone tokens aligned with chip `success` variant.
+
+## 2026-05-20 — Admin CMS pill chip buttons (shared variants)
+
+- **`adminChipButtonStyles`:** CVA tokens (`default`, `primary`, `destructive`, `ghost`, `success`) + `icon` size for overflow/menu triggers.
+- **`AdminTopbarChipButton`:** `variant`, `size`, `loading`; re-exports class helpers.
+- **`AdminButton`:** `primary` / `secondary` / `ghost` / `destructive` render as chips; tab variants still use shared `Button`.
+- **Migrated:** Editor topbars (variant props), `AdminSaveBar`, `AdminConfirmDialog` footers (via `AdminButton`), drops overflow trigger, forged/outline/icon links, `AdminSecondaryExternalLink`.
+- **Tests:** Chip variant coverage on `AdminTopbarChipButton`, `AdminButton`, `adminChipButtonStyles`.
+
+## 2026-05-20 — Act preset registry + GSAP scroll animations (PR-8 / PERF-12 RESP-15)
+
+- **`act-presets/`:** Registry maps `nature × preset` → lazy storefront renderers for all seven existing act natures; defaults align with CMS builder seeds.
+- **`useActScrollReveal`:** Shared ScrollTrigger helper gated on `(min-width: 768px) and (prefers-reduced-motion: no-preference)`; mobile shows static final state.
+- **Presets:** Default wrappers for legacy sections (`HeroForgeSequence`, `OathStampSequence`, etc.) plus alternate layouts (`splitProduct`, `splitText`, carousel, specs grid, split waitlist, …).
+- **`PublicLandingActs`:** Registry lookup by `act.nature` + `act.preset` (fallback to nature default); `vite.config.ts` **`act-presets`** manual chunk.
+
+## 2026-05-20 — Admin drops list card grid (all breakpoints)
+
+- **`DropsAdminList`:** Removed desktop TanStack Table; drop cards render in a responsive grid (`1` / `sm:2` / `xl:3` columns) at every breakpoint.
+- **Sort:** Column-header sorting replaced with a **Sort by** dropdown (default **Last edited (newest)**); logic extracted to **`dropsListSort.ts`**.
+- **`DropAdminListCard`:** Card UI extracted from the list page; active drops keep a subtle emerald border tint.
+
+## 2026-05-20 — Admin topbar chip actions + drop activate toggle
+
+- **`AdminTopbarChipButton`:** Shared pill control (`h-9`, `rounded-full`, `surface-soft`) for topbar actions and session chip.
+- **`DropEditorRoute`:** Reset / Delete / Save / Activate|Deactivate use chip buttons; activate toggle calls `setAdminActiveDrop` / `deactivateAdminDrop` with confirm dialogs.
+- **`ProductEditorRoute`:** Catalog / Save / Delete topbar actions use chip styling.
+- **Backend:** `deactivateDrop`, `clearStorefrontActiveDrop`, `deactivateAdminDrop` on CMS client + `useDeactivateAdminDropMutation`.
+
+## 2026-05-20 — Admin drops list card redesign
+
+- **`DropAdminListCard`:** Campaign grid cards with right-aligned emblem watermark (gradient scrim), optional theme-accent wash, live storefront styling, and preserved overflow menu + metadata.
+- **`AdminDropListItem`:** List mappers now include `emblemImageUrl` and `themeAccent` from drop visuals/theme (localStorage + Supabase).
+
+## 2026-05-20 — CMS editor actions in admin topbar
+
+- **Pattern:** All CMS editors register Save / Reset / Delete via `useAdminPageActions()` + `AdminTopbarChipButton` pills in the `admin-page-actions` slot (reference: `DropEditorRoute`).
+- **Migrated:** `ProductEditorRoute` (Catalog, Save, Delete), `SiteSeoEditor`, `SiteLayoutEditor` (inline validation alert when save blocked), `SiteThemeEditor`.
+- **Removed:** Sticky bottom `AdminSaveBar` from site SEO, layout, and brand-fallbacks editors.
+- **Tests:** Topbar slot coverage for product + site editors; layout validation error + disabled save.
+
 ## 2026-05-20 — Admin mobile nav control styling
 
 - **`AdminTopbar`:** Mobile menu button matches session chip — `h-9`, `rounded-full`, `bg-[var(--color-surface-soft)]`, muted 14px icon (replaces square `IconButton`).

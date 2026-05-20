@@ -4,14 +4,24 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  AdminPageActionsProvider,
+  useAdminPageActionsSlot,
+} from '@/features/admin/components/AdminPageActionsContext'
 import { createDefaultWebsiteLayout } from '@/features/admin/website-layout/websiteLayout.defaults'
 import { SiteLayoutEditor } from '../SiteLayoutEditor'
 
 const saveAsync = vi.fn()
 const layout = createDefaultWebsiteLayout()
+const getSaveError = vi.fn(() => null as string | null)
+const flashSuccessMock = vi.fn()
 
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
+}))
+
+vi.mock('@/features/admin/hooks/useSaveSuccessFlash', () => ({
+  useSaveSuccessFlash: () => ({ showSuccess: false, flashSuccess: flashSuccessMock }),
 }))
 
 vi.mock('@/features/admin/drops/drops.service', () => ({
@@ -21,7 +31,7 @@ vi.mock('@/features/admin/drops/drops.service', () => ({
 
 vi.mock('@/features/admin/website-layout/websiteLayout.service', () => ({
   getWebsiteLayoutContent: () => layout,
-  getWebsiteLayoutSaveError: () => null,
+  getWebsiteLayoutSaveError: () => getSaveError(),
   saveWebsiteLayoutContentAsync: (...args: unknown[]) => saveAsync(...args),
 }))
 
@@ -31,15 +41,30 @@ vi.mock('@/shared/components/ui/MediaPickerField', () => ({
   ),
 }))
 
+function TopbarActionsProbe() {
+  const actions = useAdminPageActionsSlot()
+  return <div data-testid="admin-page-actions">{actions}</div>
+}
+
+function renderEditor() {
+  return render(
+    <AdminPageActionsProvider>
+      <TopbarActionsProbe />
+      <SiteLayoutEditor />
+    </AdminPageActionsProvider>,
+  )
+}
+
 describe('SiteLayoutEditor', () => {
   beforeEach(() => {
     saveAsync.mockReset()
     saveAsync.mockResolvedValue(layout)
+    getSaveError.mockReturnValue(null)
   })
 
   it('renders layout tabs and switches active panel', async () => {
     const user = userEvent.setup()
-    render(<SiteLayoutEditor />)
+    renderEditor()
 
     expect(screen.getByRole('tab', { name: 'Header' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Footer' })).toBeTruthy()
@@ -55,15 +80,34 @@ describe('SiteLayoutEditor', () => {
     expect(screen.getByText('Announcement bar')).toBeTruthy()
   })
 
-  it('shows preview nav labels and saves layout', async () => {
+  it('registers Save layout in the admin topbar and saves', async () => {
     const user = userEvent.setup()
-    render(<SiteLayoutEditor />)
+    renderEditor()
 
     const preview = screen.getByTestId('site-layout-preview')
     const nav = within(preview).getByTestId('site-layout-preview-nav')
     expect(within(nav).getByText('The Oath')).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: /save layout/i }))
+    const actions = within(screen.getByTestId('admin-page-actions'))
+    const saveBtn = actions.getByRole('button', { name: /save website layout/i })
+    expect(saveBtn).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^save layout$/i })).toBeNull()
+
+    await user.click(saveBtn)
     expect(saveAsync).toHaveBeenCalledWith(layout)
+  })
+
+  it('shows inline validation error and disables topbar save', () => {
+    getSaveError.mockReturnValue('Header needs at least one link.')
+    renderEditor()
+
+    expect(screen.getByTestId('site-layout-save-error')).toHaveTextContent(
+      'Header needs at least one link.',
+    )
+
+    const actions = within(screen.getByTestId('admin-page-actions'))
+    expect(
+      actions.getByRole('button', { name: /save blocked by validation errors/i }),
+    ).toBeDisabled()
   })
 })

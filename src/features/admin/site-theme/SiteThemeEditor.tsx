@@ -1,10 +1,13 @@
+import { Check, Save } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { adminButtonVariants } from '@/features/admin/components/AdminButton'
 import { AdminCard } from '@/features/admin/components/AdminCard'
-import { AdminSaveBar } from '@/features/admin/components/AdminSaveBar'
+import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
+import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
+import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import {
   ensureDropSystemHydrated,
   getActiveDrop,
@@ -26,6 +29,8 @@ import { cn } from '@/shared/lib/cn'
 import { isValidColor, parseColor, rgbaToCss } from '@/shared/lib/color'
 
 export function SiteThemeEditor() {
+  const setPageActions = useAdminPageActions()
+  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const [settings, setSettings] = useState<GlobalBrandSettings>(() =>
     getGlobalBrandSettings(),
   )
@@ -74,6 +79,7 @@ export function SiteThemeEditor() {
         await saveGlobalBrandSettingsAsync(settings)
         toast.success('Brand fallbacks saved.')
         setSettings(getGlobalBrandSettings())
+        flashSuccess()
       } catch (e) {
         const message =
           e instanceof Error ? e.message : 'Could not save brand fallbacks.'
@@ -82,7 +88,37 @@ export function SiteThemeEditor() {
         setSaving(false)
       }
     })()
-  }, [settings])
+  }, [settings, flashSuccess])
+
+  const themeToolbarActions = useMemo(
+    () => (
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <AdminTopbarChipButton
+          type="button"
+          aria-label={
+            saving
+              ? 'Saving brand fallbacks'
+              : showSuccess
+                ? 'Brand fallbacks saved'
+                : 'Save brand fallbacks'
+          }
+          disabled={saving}
+          icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
+          variant="primary"
+          loading={saving}
+          onClick={save}
+        >
+          {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save fallbacks'}
+        </AdminTopbarChipButton>
+      </div>
+    ),
+    [save, saving, showSuccess],
+  )
+
+  useEffect(() => {
+    setPageActions(themeToolbarActions)
+    return () => setPageActions(null)
+  }, [themeToolbarActions, setPageActions])
 
   return (
     <div className="space-y-6" data-testid="site-theme-editor">
@@ -148,12 +184,6 @@ export function SiteThemeEditor() {
           Edit drop theme
         </Link>
       </AdminCard>
-
-      <AdminSaveBar
-        saveLabel="Save brand fallbacks"
-        saving={saving}
-        onSave={save}
-      />
     </div>
   )
 }

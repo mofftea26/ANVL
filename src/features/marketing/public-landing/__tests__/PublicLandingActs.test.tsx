@@ -12,40 +12,43 @@ import {
 } from '@/features/marketing/public-landing/PublicLandingActs'
 import type { Product } from '@/features/products/types/product.types'
 
-vi.mock('@/features/marketing/components/HeroForgeSequence', () => ({
-  HeroForgeSequence: ({
-    title,
-    badgeText,
+vi.mock('@/features/marketing/act-presets/hero/TheOathCinematic', () => ({
+  TheOathCinematicPreset: ({
+    landing,
+    row,
   }: {
-    title: string
-    badgeText: string
-  }) => (
-    <div data-testid="hero">
-      {badgeText} — {title}
-    </div>
-  ),
-}))
-
-vi.mock('@/features/marketing/components/OathStampSequence', () => ({
-  OathStampSequence: () => <div data-testid="manifesto" />,
-}))
-vi.mock('@/features/marketing/components/DropRevealSection', () => ({
-  DropRevealSection: () => null,
-}))
-const piecesGridProducts = vi.fn()
-
-vi.mock('@/features/marketing/components/PiecesGrid', () => ({
-  PiecesGrid: ({ products }: { products: { id: string }[] }) => {
-    piecesGridProducts(products)
-    return <div data-testid="pieces" />
+    landing: LandingPageCmsContent
+    row?: LandingAct
+  }) => {
+    const hero = row?.eyebrow ?? landing.hero.badgeText
+    const title = row?.title ?? landing.hero.title
+    return (
+      <div data-testid="hero">
+        {hero} — {title}
+      </div>
+    )
   },
 }))
-vi.mock('@/features/marketing/components/MaterialsMarquee', () => ({
-  MaterialsMarquee: () => null,
-}))
-vi.mock('@/features/marketing/components/WaitlistSection', () => ({
-  WaitlistSection: () => null,
-}))
+
+const piecesGridProducts = vi.hoisted(() => vi.fn())
+
+vi.mock('@/features/marketing/act-presets/productShowcase/ThreeCardEditorial', async () => {
+  const { resolveProductShowcaseProducts } = await import(
+    '@/features/marketing/act-presets/resolveProductShowcaseProducts'
+  )
+  return {
+    ThreeCardEditorialPreset: ({
+      products,
+      row,
+    }: {
+      products: Product[]
+      row?: LandingAct
+    }) => {
+      piecesGridProducts(resolveProductShowcaseProducts(products, row?.productIds))
+      return <div data-testid="pieces" />
+    },
+  }
+})
 
 function minimalLanding(
   overrides: Partial<LandingPageCmsContent> = {},

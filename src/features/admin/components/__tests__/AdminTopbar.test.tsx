@@ -49,11 +49,15 @@ describe('AdminTopbar', () => {
     expect(screen.getByLabelText(/Account menu for george@gmail.com/i)).toBeTruthy()
   })
 
-  it('calls onOpenMenu when the mobile nav control is activated', async () => {
+  it('calls onOpenMenu when the nav burger is activated', async () => {
     const user = userEvent.setup()
     const onOpenMenu = vi.fn()
     render(<AdminTopbar title="Drops" onOpenMenu={onOpenMenu} />)
-    await user.click(screen.getByRole('button', { name: 'Open admin navigation' }))
+
+    const menuButton = screen.getByRole('button', { name: 'Open admin navigation' })
+    expect(menuButton.className).not.toContain('lg:hidden')
+
+    await user.click(menuButton)
     expect(onOpenMenu).toHaveBeenCalledTimes(1)
   })
 

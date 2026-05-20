@@ -1,56 +1,15 @@
 import type { ReactNode } from 'react'
-import { lazy, Suspense, useMemo } from 'react'
+import { Suspense, useMemo } from 'react'
 import type { LandingAct } from '@/features/cms/landing/landingActs.types'
-import {
-  previewDropRevealFields,
-  previewHeroFields,
-  previewManifestoFields,
-  previewMaterialsFields,
-  previewPiecesFields,
-  previewWaitlistFields,
-} from '@/features/cms/landing/landingActPreviewOverlay'
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import type { Product } from '@/features/products/types/product.types'
 import { defaultLandingActSequence } from '@/features/drops/drops.actSequence'
 import { publicLandingActsFromSequence } from '@/features/cms/landing/landingActs.normalize'
+import { resolveActPreset } from '@/features/marketing/act-presets/registry'
 import { Container } from '@/shared/components/ui'
 import { DropLoadingIndicator } from '@/shared/components/ui/DropLoadingIndicator'
 
-const HeroForgeSequence = lazy(() =>
-  import('@/features/marketing/components/HeroForgeSequence').then((m) => ({
-    default: m.HeroForgeSequence,
-  })),
-)
-
-const OathStampSequence = lazy(() =>
-  import('@/features/marketing/components/OathStampSequence').then((m) => ({
-    default: m.OathStampSequence,
-  })),
-)
-
-const DropRevealSection = lazy(() =>
-  import('@/features/marketing/components/DropRevealSection').then((m) => ({
-    default: m.DropRevealSection,
-  })),
-)
-
-const PiecesGrid = lazy(() =>
-  import('@/features/marketing/components/PiecesGrid').then((m) => ({
-    default: m.PiecesGrid,
-  })),
-)
-
-const MaterialsMarquee = lazy(() =>
-  import('@/features/marketing/components/MaterialsMarquee').then((m) => ({
-    default: m.MaterialsMarquee,
-  })),
-)
-
-const WaitlistSection = lazy(() =>
-  import('@/features/marketing/components/WaitlistSection').then((m) => ({
-    default: m.WaitlistSection,
-  })),
-)
+export { resolveProductShowcaseProducts } from '@/features/marketing/act-presets/resolveProductShowcaseProducts'
 
 function SectionFallback({ label }: { label: string }) {
   return (
@@ -104,17 +63,6 @@ function wrapLazy(key: string, label: string, node: ReactNode) {
       {node}
     </Suspense>
   )
-}
-
-/** Act-level productIds override the default first-six storefront slice. */
-export function resolveProductShowcaseProducts(
-  products: Product[],
-  productIds?: string[],
-): Product[] {
-  if (!productIds?.length) return products.slice(0, 6)
-  return productIds
-    .map((id) => products.find((product) => product.id === id))
-    .filter((product): product is Product => product != null)
 }
 
 export type PublicLandingActsProps = {
@@ -174,113 +122,29 @@ export function PublicLandingActs({
     <>
       {acts.map((act) => {
         if (act.enabled === false) return null
-        const row = rowFor(act.id)
-        switch (act.nature) {
-          case 'hero': {
-            const hero = previewHeroFields(landing.hero, row)
-            return wrapLazy(
-              act.id,
-              'Loading hero',
-              <HeroForgeSequence
-                badgeText={hero.badgeText}
-                title={hero.title}
-                subtitle={hero.subtitle}
-                primaryCta={hero.primaryCta}
-                secondaryCta={hero.secondaryCta}
-                meta={landing.hero.meta}
-                emblemSrc={emblemSrc}
-              />,
-            )
-          }
-          case 'manifesto':
-          case 'storytelling': {
-            const m = previewManifestoFields(
-              landing.manifesto,
-              row,
-              act.nature === 'storytelling' ? 'storytelling' : 'manifesto',
-            )
-            return wrapLazy(
-              act.id,
-              'Loading manifesto',
-              <OathStampSequence
-                actLabel={m.actLabel}
-                counterLabel={m.counterLabel}
-                heading={m.heading}
-                intro={m.intro}
-                tenets={m.tenets}
-                emblemSrc={emblemSrc}
-              />,
-            )
-          }
-          case 'dropReveal': {
-            const d = previewDropRevealFields(landing.dropReveal, row)
-            return wrapLazy(
-              act.id,
-              'Loading drop',
-              <DropRevealSection
-                products={products}
-                actLabel={d.actLabel}
-                counterLabel={d.counterLabel}
-                words={d.words}
-                tagline={d.tagline}
-                stats={landing.dropReveal.stats}
-                primaryCta={d.primaryCta}
-                secondaryCta={d.secondaryCta}
-                dropIcon={d.dropIcon}
-              />,
-            )
-          }
-          case 'productShowcase': {
-            const p = previewPiecesFields(landing.pieces, row)
-            const showcaseProducts = resolveProductShowcaseProducts(
-              products,
-              row?.productIds,
-            )
-            return wrapLazy(
-              act.id,
-              'Loading pieces',
-              <PiecesGrid
-                products={showcaseProducts}
-                actLabel={p.actLabel}
-                headingLineOne={p.headingLineOne}
-                headingLineTwo={p.headingLineTwo}
-                viewAllLabel={p.viewAllLabel}
-                viewAllHref={p.viewAllHref}
-                footerLeftText={p.footerLeftText}
-                footerLinkLabel={p.footerLinkLabel}
-                footerLinkHref={p.footerLinkHref}
-              />,
-            )
-          }
-          case 'materialShowcase': {
-            const mat = previewMaterialsFields(landing.materials, row)
-            return wrapLazy(
-              act.id,
-              'Loading materials',
-              <MaterialsMarquee
-                actLabel={mat.actLabel}
-                counterSuffix={mat.counterSuffix}
-                heading={mat.heading}
-                intro={mat.intro}
-                materials={mat.materials}
-              />,
-            )
-          }
-          case 'newsletterWaitlist':
-            return wrapLazy(
-              act.id,
-              'Loading waitlist',
-              <WaitlistSection
-                content={previewWaitlistFields(landing.waitlist, row)}
-                products={products}
-                emblemSrc={emblemSrc}
-              />,
-            )
-          default:
-            return (
-              <UnknownActNotice key={act.id} nature={act.nature} cmsPreview={cmsPreview} />
-            )
+
+        const entry = resolveActPreset(act.nature, act.preset)
+        if (!entry) {
+          return (
+            <UnknownActNotice key={act.id} nature={act.nature} cmsPreview={cmsPreview} />
+          )
         }
+
+        const Preset = entry.component
+        const row = rowFor(act.id)
+        const loadingLabel = `Loading ${entry.label}`
+
+        return wrapLazy(
+          act.id,
+          loadingLabel,
+          <Preset
+            act={act}
+            landing={landing}
+            products={products}
+            emblemSrc={emblemSrc}
+            row={row}
+          />,
+        )
       })}
     </>
   )

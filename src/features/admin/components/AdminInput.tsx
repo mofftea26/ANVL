@@ -3,7 +3,10 @@ import {
   type InputHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react'
-import { adminFieldControlClass } from '@/shared/lib/cmsFieldStyles'
+import {
+  adminFieldControlClass,
+  adminFieldTextareaClass,
+} from '@/shared/lib/cmsFieldStyles'
 import { cn } from '@/shared/lib/cn'
 
 export const AdminInput = forwardRef<
@@ -26,7 +29,7 @@ export const AdminTextarea = forwardRef<
   return (
     <textarea
       ref={ref}
-      className={cn('mt-1', adminFieldControlClass, className)}
+      className={cn('mt-1', adminFieldTextareaClass, className)}
       {...props}
     />
   )

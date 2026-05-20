@@ -20,6 +20,7 @@ import {
   type RgbaColor,
 } from '@/shared/lib/color'
 import { IconButton } from '@/shared/components/ui/IconButton'
+import { adminFieldCompactRowClass, adminFieldControlFineClass } from '@/shared/lib/cmsFieldStyles'
 import { cn } from '@/shared/lib/cn'
 
 const CHECKERBOARD_STYLE: CSSProperties = {
@@ -30,7 +31,20 @@ const CHECKERBOARD_STYLE: CSSProperties = {
 }
 
 const colorPopoverContentClass =
-  'z-[85] flex w-[min(22rem,92vw)] max-h-none flex-col gap-4 overflow-visible rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] p-4 shadow-[inset_0_1px_0_rgba(231,228,223,0.06),0_16px_42px_rgba(0,0,0,0.55)] outline-none'
+  'z-[85] flex w-[min(22rem,92vw)] max-h-none flex-col gap-4 overflow-visible rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-4 shadow-[inset_0_1px_0_rgba(231,228,223,0.06),0_16px_42px_rgba(0,0,0,0.55)] outline-none'
+
+function fineInputClassName(
+  fineInputControlClass: string | undefined,
+  extra: string,
+  invalid?: boolean,
+) {
+  return cn(
+    fineInputControlClass ?? adminFieldControlFineClass,
+    'focus-ring w-full font-mono',
+    extra,
+    invalid && 'border-red-500/60',
+  )
+}
 
 export type ColorFieldPopoverFormProps = {
   idPrefix: string
@@ -107,7 +121,7 @@ export function ColorFieldPopoverForm({
           }}
         />
       </div>
-      <div className="flex min-h-10 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-2 py-1.5">
+      <div className="flex min-h-10 items-center rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-soft)] px-2 py-1.5">
         <span
           className="relative block h-6 w-6 shrink-0 overflow-hidden rounded border border-[var(--color-line)]"
           aria-hidden="true"
@@ -150,10 +164,10 @@ export function ColorFieldPopoverForm({
           }
         }}
         aria-invalid={isInvalid || undefined}
-        className={cn(
+        className={fineInputClassName(
           fineInputControlClass,
-          'focus-ring h-8 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-2 font-mono text-[12px] uppercase tracking-tight text-[var(--color-text)]',
-          isInvalid && 'border-red-500/60',
+          'uppercase tracking-tight',
+          isInvalid,
         )}
       />
 
@@ -169,9 +183,9 @@ export function ColorFieldPopoverForm({
             disabled={disabled}
             onChange={(e) => onChannel(channel, e.target.value)}
             aria-label={`${channel.toUpperCase()} channel (0-255)`}
-            className={cn(
+            className={fineInputClassName(
               fineInputControlClass,
-              'focus-ring h-8 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-2 font-mono text-[12px] tabular-nums text-[var(--color-text)]',
+              'tabular-nums',
             )}
           />
         ))}
@@ -201,9 +215,9 @@ export function ColorFieldPopoverForm({
               disabled={disabled}
               onChange={(e) => onAlpha(e.target.value)}
               aria-label="Opacity numeric"
-              className={cn(
+              className={fineInputClassName(
                 fineInputControlClass,
-                'focus-ring h-8 w-16 rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] px-2 font-mono text-[12px] tabular-nums text-[var(--color-text)]',
+                'w-16 tabular-nums',
               )}
             />
           </div>
@@ -249,8 +263,10 @@ type ColorFieldProps = {
   withAlpha?: boolean
   /** Allow `--color-line` style transparent palette entries. Default true. */
   allowEmpty?: boolean
-  /** Merged into HEX / numeric channel inputs (e.g. shared `adminFieldControlClass`). */
+  /** Merged into HEX / numeric channel inputs (e.g. shared `adminFieldControlFineClass`). */
   fineInputControlClass?: string
+  /** Compact row shell (defaults to admin chip row when unset in admin wrappers). */
+  compactContainerClassName?: string
 }
 
 /**
@@ -275,6 +291,7 @@ export function ColorField({
   withAlpha = true,
   allowEmpty = true,
   fineInputControlClass,
+  compactContainerClassName,
 }: ColorFieldProps) {
   const id = useId()
   const parsed = useMemo(
@@ -410,7 +427,7 @@ export function ColorField({
             {isCompact ? (
               <div
                 className={cn(
-                  'relative flex h-10 w-full max-w-full items-center overflow-hidden rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]',
+                  compactContainerClassName ?? adminFieldCompactRowClass,
                 )}
                 data-anvl-color-field-density={density}
               >
@@ -425,7 +442,7 @@ export function ColorField({
                     if (!disabled) setPopoverOpen(true)
                   }}
                   className={cn(
-                    'focus-ring absolute inset-0 z-0 rounded-md outline-offset-[-1px]',
+                    'focus-ring absolute inset-0 z-0 rounded-full outline-offset-[-1px]',
                     'transition-[box-shadow,border-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
                     'disabled:cursor-not-allowed disabled:opacity-50',
                   )}
