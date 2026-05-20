@@ -1,6 +1,5 @@
 import { Menu } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { IconButton } from '@/shared/components/ui/IconButton'
 import { useAdminPageActionsSlot } from '@/features/admin/components/AdminPageActionsContext'
 import { AdminTopbarSessionChip } from '@/features/admin/components/AdminTopbarSessionChip'
 import { cn } from '@/shared/lib/cn'
@@ -27,13 +26,16 @@ export function AdminTopbar({
       )}
     >
       <div className="flex min-h-[3.25rem] items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-10">
-        <IconButton
-          className="lg:hidden"
+        <button
+          type="button"
           onClick={onOpenMenu}
           aria-label="Open admin navigation"
+          className={cn(
+            'focus-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-text)] lg:hidden',
+          )}
         >
-          <Menu size={16} />
-        </IconButton>
+          <Menu size={14} aria-hidden="true" className="text-[var(--color-text-muted)]" />
+        </button>
 
         <div className="min-w-0 flex-1">
           <h1 className="anvl-heading truncate text-lg font-normal leading-tight sm:text-xl">

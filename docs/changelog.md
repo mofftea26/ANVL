@@ -1,4 +1,11 @@
 ﻿
+## 2026-05-20 — Media library (PR-6 / MAINT-21)
+
+- **DB:** Migration **`20260620120000_cms_media_assets.sql`** — `cms_media_assets` catalog with RLS (CMS read; editor/admin write).
+- **Admin:** `MediaLibraryPage` grid (search, mime filters, inline alt, copy URL, delete confirm), drag-drop upload to `cms-media` + catalog row.
+- **Sync:** `flushAdminCmsRemoteSync` patches **`storefront_publication.media_index`** from the catalog.
+- **Picker:** `MediaPickerField` optional **Browse library** modal; `uploadCmsMediaFile` supports `registerInCatalog`.
+
 ## 2026-05-20 — Site SEO editor + structured data (PR-5 / MAINT-21)
 
 - **`SiteSeoEditor`:** Defaults / Pages tabs, char-count meta fields, live Google + Twitter preview, sticky **`AdminSaveBar`**.

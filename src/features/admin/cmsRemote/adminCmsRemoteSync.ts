@@ -14,6 +14,10 @@ import {
   orderDropsForRemoteSync,
 } from '@/features/admin/cmsRemote/adminCmsRemoteSyncOrder'
 import { buildAnvlDropRemoteRow } from '@/features/admin/cmsRemote/adminCmsDropRemoteRow'
+import {
+  buildMediaIndex,
+  listMediaAssets,
+} from '@/features/admin/media/mediaAssets.service'
 
 const isTestRunner = import.meta.env.MODE === 'test'
 
@@ -179,10 +183,14 @@ export async function flushAdminCmsRemoteSync(): Promise<
   const siteSeo = getSiteSeoContent()
   const globalBrand = getGlobalBrandSettings()
 
+  const mediaList = await listMediaAssets(client)
+  const mediaIndex = mediaList.ok ? buildMediaIndex(mediaList.assets) : []
+
   const pubPatch: Record<string, unknown> = {
     website_layout: layout,
     site_seo: siteSeo,
     global_brand: globalBrand,
+    media_index: mediaIndex,
   }
 
   const { error: pubErr } = await client

@@ -49,6 +49,14 @@ describe('AdminTopbar', () => {
     expect(screen.getByLabelText(/Account menu for george@gmail.com/i)).toBeTruthy()
   })
 
+  it('calls onOpenMenu when the mobile nav control is activated', async () => {
+    const user = userEvent.setup()
+    const onOpenMenu = vi.fn()
+    render(<AdminTopbar title="Drops" onOpenMenu={onOpenMenu} />)
+    await user.click(screen.getByRole('button', { name: 'Open admin navigation' }))
+    expect(onOpenMenu).toHaveBeenCalledTimes(1)
+  })
+
   it('opens account menu with settings link', async () => {
     const user = userEvent.setup()
     render(<AdminTopbar title="Drops" onOpenMenu={() => {}} />)

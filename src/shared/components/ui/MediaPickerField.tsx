@@ -22,6 +22,7 @@ import {
   uploadCmsMediaFile,
   type CmsDropVisualAssetRole,
 } from '@/features/admin/cmsRemote/uploadCmsMedia'
+import { MediaLibraryPickerModal } from '@/features/admin/media/MediaLibraryPickerModal'
 
 /** Stay under typical localStorage quotas when embedding picks as data URLs. */
 const DEFAULT_MAX_BYTES = 2_500_000
@@ -75,6 +76,8 @@ type MediaPickerFieldProps = {
     dropSlug: string
     role: CmsDropVisualAssetRole
   }
+  /** Opens the Supabase media library picker when env is configured. */
+  enableLibraryBrowse?: boolean
 }
 
 function isImageHref(value: string): boolean {
@@ -149,6 +152,7 @@ export function MediaPickerField({
   className,
   pickerLabel,
   supabaseUpload,
+  enableLibraryBrowse = false,
 }: MediaPickerFieldProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [isOver, setIsOver] = useState(false)
@@ -156,6 +160,9 @@ export function MediaPickerField({
   const [isEmbeddingFile, setIsEmbeddingFile] = useState(false)
   const [mainImageFailed, setMainImageFailed] = useState(false)
   const [chainImageFailed, setChainImageFailed] = useState(false)
+  const [libraryOpen, setLibraryOpen] = useState(false)
+  const showLibraryBrowse =
+    enableLibraryBrowse && Boolean(getSupabasePublicEnv())
   const limit = useMemo(
     () => maxBytes ?? (kind === 'video' ? DEFAULT_VIDEO_MAX_BYTES : DEFAULT_MAX_BYTES),
     [kind, maxBytes],
@@ -449,6 +456,17 @@ export function MediaPickerField({
               <Upload size={14} className="mr-1.5" aria-hidden="true" />
               Choose file
             </Button>
+            {showLibraryBrowse ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={dropzoneDisabled}
+                onClick={() => setLibraryOpen(true)}
+              >
+                Browse library
+              </Button>
+            ) : null}
             {supportsDragDrop ? (
               <span className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                 or drag &amp; drop
@@ -509,6 +527,15 @@ export function MediaPickerField({
         <p role="alert" className="text-xs text-red-300">
           {error}
         </p>
+      ) : null}
+
+      {showLibraryBrowse ? (
+        <MediaLibraryPickerModal
+          open={libraryOpen}
+          onClose={() => setLibraryOpen(false)}
+          onSelect={(url) => onChange(url)}
+          kind={kind}
+        />
       ) : null}
     </div>
   )

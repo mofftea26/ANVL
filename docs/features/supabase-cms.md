@@ -10,10 +10,11 @@ When **`VITE_SUPABASE_*`** is unset, local/demo admin (`VITE_ANVL_ADMIN_*`) and 
 
 | Object | Role |
 |--------|------|
-| `storefront_publication` | Singleton row (`id = 1`): **`published_drop_snapshot`**, **`website_layout`**, **`site_seo`**, **`revision`**, **`published_at`**, **`active_drop_id`**, **`products_snapshot`** (jsonb catalog), **`catalog_drop_index`** (minimal drop rows for shop filters), **`global_brand`**, **`campaigns`**, **`lookbook`**, optional **`legacy_landing_cms`**, **`published_manifest`**. **Readable by `anon`** for storefront loaders only (no draft bodies). |
+| `storefront_publication` | Singleton row (`id = 1`): **`published_drop_snapshot`**, **`website_layout`**, **`site_seo`**, **`media_index`**, **`revision`**, **`published_at`**, **`active_drop_id`**, **`products_snapshot`** (jsonb catalog), **`catalog_drop_index`** (minimal drop rows for shop filters), **`global_brand`**, **`campaigns`**, **`lookbook`**, optional **`legacy_landing_cms`**, **`published_manifest`**. **Readable by `anon`** for storefront loaders only (no draft bodies). |
 | `anvl_drops` | `draft_body` / `published_body` JSON (`Drop` shape, Zod-validated in app). **No `anon` access** — RLS + authenticated CMS roles only. |
 | `cms_profiles` | `user_id` → `auth.users`, `role` in `viewer \| editor \| admin`. Bootstrap rows via service role. |
 | `cms_admin_products` | Editorial catalog JSON + nullable `medusa_product_id` (no commerce truth here). |
+| `cms_media_assets` | Catalog of `cms-media` bucket objects (`storage_path`, `filename`, `alt`, dimensions). Synced to **`storefront_publication.media_index`** on admin flush. |
 
 Tracked DDL: [`supabase/migrations/20260518120000_anvl_cms_core.sql`](../../supabase/migrations/20260518120000_anvl_cms_core.sql), [`supabase/migrations/20260518120001_anvl_cms_storage.sql`](../../supabase/migrations/20260518120001_anvl_cms_storage.sql), [`supabase/migrations/20260518140000_storefront_publication_catalog.sql`](../../supabase/migrations/20260518140000_storefront_publication_catalog.sql).
 
@@ -64,7 +65,7 @@ When **`VITE_SUPABASE_*`** is configured:
 
 1. **Sign-in:** `/admin/login` uses Supabase **`signInWithPassword`**, waits for the session to attach on the admin client (**`waitForSupabaseClientSession`**), then reads **`public.cms_profiles`** with retries (**`adminSupabaseAuthFlow.ts`** → **`fetchCmsProfileRoleWhenReady`**). Only **`role = 'admin'`** may use `/admin` (viewer/editor or missing row → inline error with your Auth **`user_id`** and sample SQL). **Logout** (sidebar) runs **`signOut`** + disposes the admin client. Sessions persist across reload via **`anvl.supabase.admin.v1`**.
 2. **Hydration:** After sign-in (and on session restore), **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** are **pulled into localStorage in the background** — the admin shell opens as soon as auth + role check pass; **`AdminLayout`** shows sync status.
-3. **Sync:** Local saves to drops, products, layout, site SEO, and global brand **schedule a debounced push** to Supabase (`client_drop_id` matches app `Drop.id`; products keyed by `slug`). Remote rows removed locally are deleted on the server. Vitest skips this path (`import.meta.env.MODE === 'test'`). **`site_seo.staticPages`** is normalized on read/write so placeholder keys do not fail validation during hydration.
+3. **Sync:** Local saves to drops, products, layout, site SEO, global brand, and the **media catalog** **schedule a debounced push** to Supabase (`client_drop_id` matches app `Drop.id`; products keyed by `slug`). Remote rows removed locally are deleted on the server. Vitest skips this path (`import.meta.env.MODE === 'test'`). **`site_seo.staticPages`** is normalized on read/write so placeholder keys do not fail validation during hydration.
 4. **Publish:** **Set active** in the drops list calls **`cms_publish_drop`** (after flush sync) so **`storefront_publication.published_drop_snapshot`** matches the activated campaign for anonymous SSR/CSR reads.
 
 **First admin user:** After creating a user in **Authentication**, add a row in **`public.cms_profiles`** with **`role = 'admin'`** and **`user_id`** = that user's UUID (Supabase Dashboard → SQL Editor as project owner). Direct Table Editor insert hits RLS (`42501`).
