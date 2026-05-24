@@ -8,25 +8,36 @@ import { useAdminAuth } from './useAdminAuth'
  * region while hydration runs and redirect once auth is known.
  */
 export function ProtectedAdminRoute({ children }: PropsWithChildren) {
-  const { isAuthenticated, isHydrated, isRemoteCmsReady } = useAdminAuth()
+  const { isAuthenticated, isHydrated } = useAdminAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (isHydrated && isRemoteCmsReady && !isAuthenticated) {
+    if (isHydrated && !isAuthenticated) {
       void navigate({ to: '/admin/login', replace: true })
     }
-  }, [isAuthenticated, isHydrated, isRemoteCmsReady, navigate])
+  }, [isAuthenticated, isHydrated, navigate])
 
-  if (!isHydrated || !isRemoteCmsReady || !isAuthenticated) {
+  if (!isHydrated || !isAuthenticated) {
+    const message = !isHydrated
+      ? 'Loading admin…'
+      : 'Redirecting to admin login…'
+
     return (
       <div
         role="status"
         aria-live="polite"
-        className="flex min-h-screen items-center justify-center bg-[var(--color-bg)]"
+        className="flex min-h-screen flex-col items-center justify-center gap-2 bg-[var(--color-bg)] px-4"
       >
-        <p className="anvl-micro text-[var(--color-text-muted)]">
-          {isHydrated ? 'Redirecting to admin login…' : 'Loading admin…'}
+        <p className="anvl-micro text-center text-[var(--color-text-muted)]">
+          {message}
         </p>
+        {!isHydrated ? (
+          <p className="max-w-sm text-center text-[11px] text-[var(--color-text-muted)]">
+            If this does not finish within a minute, reload the page or check your
+            network and Supabase project keys in{' '}
+            <span className="font-mono text-[10px]">.env</span>.
+          </p>
+        ) : null}
       </div>
     )
   }

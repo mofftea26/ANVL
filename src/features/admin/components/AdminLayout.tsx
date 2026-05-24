@@ -1,4 +1,5 @@
 import { useState, type PropsWithChildren, type ReactNode } from 'react'
+import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import { Drawer } from '@/shared/components/ui/Drawer'
 import { cn } from '@/shared/lib/cn'
 import { AdminSidebar } from './AdminSidebar'
@@ -17,9 +18,27 @@ export function AdminLayout({
   children,
 }: PropsWithChildren<AdminLayoutProps>) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { isRemoteCmsReady, remoteHydrateError } = useAdminAuth()
 
   return (
     <div className="min-h-[100dvh] bg-[var(--color-bg)] text-[var(--color-text)]">
+      {!isRemoteCmsReady ? (
+        <p
+          role="status"
+          aria-live="polite"
+          className="border-b border-[var(--color-line)] bg-[var(--color-surface-soft)] px-4 py-2 text-center text-[11px] text-[var(--color-text-muted)]"
+        >
+          Syncing workspace from Supabase…
+        </p>
+      ) : null}
+      {remoteHydrateError ? (
+        <p
+          role="alert"
+          className="border-b border-[var(--color-line)] bg-[var(--color-bg)] px-4 py-2 text-center text-[11px] text-[var(--color-text-muted)]"
+        >
+          {remoteHydrateError}
+        </p>
+      ) : null}
       <div className="grid min-h-[100dvh] lg:grid-cols-[280px_1fr]">
         <AdminSidebar className="hidden lg:flex" />
 

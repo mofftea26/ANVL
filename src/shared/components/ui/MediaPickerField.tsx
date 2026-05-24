@@ -7,10 +7,9 @@ import {
   useRef,
   useState,
 } from 'react'
-import { Upload, X } from 'lucide-react'
+import { Upload, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AnvlCrest, AnvlWordmark } from '@/shared/assets/brand'
-import { AdminSpinner } from '@/shared/components/ui/AdminSpinner'
 import { Button } from '@/shared/components/ui/Button'
 import {
   adminCheckboxControlClass,
@@ -18,6 +17,11 @@ import {
 } from '@/shared/lib/cmsFieldStyles'
 import { cn } from '@/shared/lib/cn'
 import { isLikelySafeMediaSrc } from '@/shared/lib/url'
+import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import {
+  uploadCmsMediaFile,
+  type CmsDropVisualAssetRole,
+} from '@/features/admin/cmsRemote/uploadCmsMedia'
 
 /** Stay under typical localStorage quotas when embedding picks as data URLs. */
 const DEFAULT_MAX_BYTES = 2_500_000
@@ -66,6 +70,11 @@ type MediaPickerFieldProps = {
   className?: string
   /** Aria label for the file picker button. */
   pickerLabel?: string
+  /** When set + Supabase configured, uploads to `cms-media` instead of embedding data URLs. */
+  supabaseUpload?: {
+    dropSlug: string
+    role: CmsDropVisualAssetRole
+  }
 }
 
 function isImageHref(value: string): boolean {
@@ -139,6 +148,7 @@ export function MediaPickerField({
   hideUrlInput,
   className,
   pickerLabel,
+  supabaseUpload,
 }: MediaPickerFieldProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [isOver, setIsOver] = useState(false)
@@ -190,6 +200,26 @@ export function MediaPickerField({
       toast.error(err)
       return
     }
+
+    if (supabaseUpload && getSupabasePublicEnv()) {
+      setIsEmbeddingFile(true)
+      void (async () => {
+        const uploaded = await uploadCmsMediaFile({
+          file,
+          dropSlug: supabaseUpload.dropSlug,
+          role: supabaseUpload.role,
+        })
+        setIsEmbeddingFile(false)
+        if (uploaded.ok) {
+          onChange(uploaded.publicUrl)
+          toast.success('Uploaded to Supabase.')
+          return
+        }
+        toast.error(uploaded.error)
+      })()
+      return
+    }
+
     const reader = new FileReader()
     setIsEmbeddingFile(true)
     reader.onload = () => {
@@ -262,13 +292,15 @@ export function MediaPickerField({
         <div
           className="flex flex-col items-center justify-center gap-2 px-2 text-center"
           aria-live="polite"
+          aria-busy="true"
         >
-          <AdminSpinner label="Embedding file" />
-          <span
-            className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]"
-            aria-hidden
-          >
-            Embedding…
+          <Loader2
+            size={24}
+            aria-hidden="true"
+            className="animate-spin text-[var(--color-text-muted)]"
+          />
+          <span className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+            {supabaseUpload && getSupabasePublicEnv() ? 'Uploading…' : 'Embedding…'}
           </span>
         </div>
       )

@@ -55,11 +55,43 @@ const globalDefaultsSchema = patchSchema.extend({
   defaultShareImage: z.string().optional(),
 })
 
-const staticPathKey = z.enum(['/', '/shop', '/about', '/size-guide'])
-const siteSeoSchema = z.object({
-  globalDefaults: globalDefaultsSchema,
-  staticPages: z.record(staticPathKey, patchSchema).optional(),
-})
+const STATIC_SEO_PATHS: SiteStaticSeoPath[] = [
+  '/',
+  '/shop',
+  '/about',
+  '/size-guide',
+]
+
+/**
+ * `storefront_publication.site_seo` (and older localStorage blobs) sometimes
+ * contain `staticPages` keys with `null` / `undefined` placeholders. Strip
+ * those so Zod `z.record` validation does not throw during admin hydration.
+ */
+export function sanitizeStaticPagesLoose(
+  raw: unknown,
+): Partial<Record<SiteStaticSeoPath, SeoFieldPatch>> {
+  if (raw == null || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const src = raw as Record<string, unknown>
+  const out: Partial<Record<SiteStaticSeoPath, SeoFieldPatch>> = {}
+  for (const p of STATIC_SEO_PATHS) {
+    const v = src[p]
+    if (v != null && typeof v === 'object' && !Array.isArray(v)) {
+      const parsed = patchSchema.safeParse(v)
+      if (parsed.success) out[p] = parsed.data
+    }
+  }
+  return out
+}
+
+const siteSeoSchema = z
+  .object({
+    globalDefaults: globalDefaultsSchema,
+    staticPages: z.unknown().optional(),
+  })
+  .transform((data) => ({
+    globalDefaults: data.globalDefaults,
+    staticPages: sanitizeStaticPagesLoose(data.staticPages),
+  }))
 
 function isBrowser(): boolean {
   return typeof window !== 'undefined'
@@ -88,7 +120,7 @@ export function parseSiteSeoUnknown(raw: unknown): SiteSeoContent {
   if (!r.success) return defaultSiteSeoContent()
   return {
     globalDefaults: r.data.globalDefaults,
-    staticPages: r.data.staticPages ?? {},
+    staticPages: r.data.staticPages,
   }
 }
 
@@ -96,7 +128,7 @@ function parseStored(raw: string | null): SiteSeoContent {
   if (!raw) return defaultSiteSeoContent()
   try {
     const v = siteSeoSchema.parse(JSON.parse(raw))
-    return { globalDefaults: v.globalDefaults, staticPages: v.staticPages ?? {} }
+    return { globalDefaults: v.globalDefaults, staticPages: v.staticPages }
   } catch {
     return defaultSiteSeoContent()
   }
@@ -114,11 +146,11 @@ export function getSiteSeoContent(): SiteSeoContent {
 export function saveSiteSeoContent(next: SiteSeoContent): SiteSeoContent {
   const parsed = siteSeoSchema.parse({
     globalDefaults: next.globalDefaults,
-    staticPages: next.staticPages ?? {},
+    staticPages: sanitizeStaticPagesLoose(next.staticPages),
   })
   const safe: SiteSeoContent = {
     globalDefaults: parsed.globalDefaults,
-    staticPages: parsed.staticPages ?? {},
+    staticPages: parsed.staticPages,
   }
   if (!isBrowser()) return safe
   try {

@@ -131,6 +131,7 @@ export function composeLandingPageFromDrop(
     },
     materials: lc.materials,
     waitlist: lc.waitlist,
+    dropActs: [...drop.acts],
     landingActs: (() => {
       if (options?.editorActsPreview) {
         const acts = publicLandingActsFromDraftActs(drop.acts) ?? []
@@ -143,10 +144,8 @@ export function composeLandingPageFromDrop(
         }
         return acts
       }
-      if (options?.useDraftActsPipeline) {
-        const fromActs = publicLandingActsFromDraftActs(drop.acts)
-        if (fromActs && fromActs.length > 0) return fromActs
-      }
+      const fromActs = publicLandingActsFromDraftActs(drop.acts)
+      if (fromActs && fromActs.length > 0) return fromActs
       return publicLandingActsFromSequence(drop.landingActSequence)
     })(),
   }

@@ -10,6 +10,8 @@ export type AdminSession =
       kind: 'supabase'
       email: string
       userId: string
+      /** From Auth `user_metadata` or email local-part — see `supabaseUserDisplayLabel`. */
+      displayName: string
       loggedInAt: string
     }
 

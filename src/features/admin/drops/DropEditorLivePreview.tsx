@@ -63,6 +63,19 @@ body {
   color: var(--color-text, #e7e4df);
   font-family: var(--font-sans, "Manrope", system-ui, sans-serif);
   overflow-x: hidden;
+  min-height: auto !important;
+  height: auto !important;
+  overflow-y: auto !important;
+}
+.anvl-screen-section,
+.anvl-screen-section-fixed {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  max-height: none !important;
+}
+.anvl-screen-section-fixed {
+  min-height: var(--anvl-section-h, 100svh) !important;
+  height: var(--anvl-section-h, 100svh) !important;
 }
 /* Cancel GSAP intro states so the preview always shows the final layout. */
 [data-hero-word],
@@ -115,7 +128,6 @@ body {
 /* Never let anchor clicks navigate the parent inside the preview. */
 a { pointer-events: none; }
 /* Tight scroll inside the iframe so the section heights breathe correctly. */
-.anvl-screen-section-fixed { height: var(--anvl-section-h, 100svh) !important; }
 `.trim()
 
 type BoundaryProps = { children: ReactNode }
@@ -401,7 +413,7 @@ function ViewportIframe({
       <div
         data-testid="drop-editor-viewport-iframe-shell"
         className={cn(
-          'flex min-h-0 min-w-0 flex-1 flex-col justify-start overflow-hidden self-stretch',
+          'flex min-h-0 min-w-0 flex-1 flex-col justify-start overflow-hidden self-start',
           fill ? 'w-full' : 'items-center',
         )}
       >
@@ -416,7 +428,8 @@ function ViewportIframe({
             transition: 'width 380ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
           className={cn(
-            'mx-auto min-h-0 min-w-0 h-full flex-1 w-full max-w-full border-0 bg-[var(--color-bg)] shadow-[0_18px_60px_-30px_rgba(0,0,0,0.85)]',
+            'mx-auto min-h-0 min-w-0 w-full max-w-full border-0 bg-[var(--color-bg)] shadow-[0_18px_60px_-30px_rgba(0,0,0,0.85)]',
+            fill ? 'h-[min(720px,calc(100dvh-var(--admin-topbar-height)-10rem))]' : 'h-[min(720px,calc(100dvh-var(--admin-topbar-height)-10rem))] flex-none',
             className,
           )}
         />

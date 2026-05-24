@@ -82,7 +82,7 @@ function SettingsPage() {
       ? '—'
       : session.kind === 'legacy'
         ? session.username
-        : session.email
+        : `${session.displayName} (${session.email})`
 
   return (
     <AdminLayout

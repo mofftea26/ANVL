@@ -31,6 +31,21 @@ function dropToAdminListItem(d: Drop): AdminDropListItem {
   }
 }
 
+/** Push local drop mutations to Supabase before the list refetches remote rows. */
+async function flushAdminCmsToSupabaseIfConfigured(): Promise<void> {
+  const { getSupabasePublicEnv } = await import(
+    '@/features/cms/api/supabasePublicEnv'
+  )
+  if (!getSupabasePublicEnv()) return
+  const { flushAdminCmsRemoteSync } = await import(
+    '@/features/admin/cmsRemote/adminCmsRemoteSync'
+  )
+  const result = await flushAdminCmsRemoteSync()
+  if (!result.ok) {
+    throw new Error(result.error)
+  }
+}
+
 function toLegacyHomepage(): HomePageContent {
   const landing = getLandingCmsContent()
   return {
@@ -90,18 +105,34 @@ export const localStorageCmsClient: CmsClient = {
   },
   async duplicateAdminDrop(id) {
     const created = duplicateDrop(id)
-    return created ? dropToAdminListItem(created) : null
+    if (!created) return null
+    await flushAdminCmsToSupabaseIfConfigured()
+    return dropToAdminListItem(created)
   },
   async setAdminActiveDrop(id) {
     setActiveDrop(id)
+    const { publishStorefrontDropByClientId } = await import(
+      '@/features/admin/cmsRemote/adminCmsPublish'
+    )
+    const published = await publishStorefrontDropByClientId(id)
+    if (!published.ok) {
+      throw new Error(published.error)
+    }
+    const { rehydrateAdminCmsFromRemote } = await import(
+      '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'
+    )
+    await rehydrateAdminCmsFromRemote()
   },
   async scheduleAdminDrop(id, activationIso) {
     scheduleDropActivation(id, activationIso)
+    await flushAdminCmsToSupabaseIfConfigured()
   },
   async archiveAdminDrop(id) {
     archiveDrop(id)
+    await flushAdminCmsToSupabaseIfConfigured()
   },
   async deleteAdminDrop(id) {
     deleteDrop(id)
+    await flushAdminCmsToSupabaseIfConfigured()
   },
 }

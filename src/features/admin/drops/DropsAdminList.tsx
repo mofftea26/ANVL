@@ -619,6 +619,7 @@ export function DropsAdminList() {
           <p className="text-sm text-[var(--color-text-muted)]">
             <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will power the public landing page and theme.
             The current active drop will be set to inactive.
+            When Supabase is configured, activating also publishes the drop to the live storefront snapshot.
           </p>
           <div className="flex justify-end gap-2">
             <AdminButton variant="ghost" size="sm" onClick={() => setModal(null)}>

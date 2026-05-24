@@ -2,11 +2,17 @@ import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { fetchCmsProfileRole } from '@/features/admin/auth/adminCmsProfileRole'
 import { readDropsArray } from '@/features/admin/drops/drops.service'
+import { readActiveDropIdRaw } from '@/features/admin/drops/drops.storage'
 import { getAdminProducts } from '@/features/admin/products/products.service'
 import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
 import { getSiteSeoContent } from '@/features/cms/siteSeo.local'
 import { getGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.service'
 import { isAdminCmsRemoteHydrationLocked } from '@/features/admin/cmsRemote/adminCmsRemoteGate'
+import {
+  demoteDropDraftBody,
+  orderDropsForRemoteSync,
+} from '@/features/admin/cmsRemote/adminCmsRemoteSyncOrder'
+import { buildAnvlDropRemoteRow } from '@/features/admin/cmsRemote/adminCmsDropRemoteRow'
 
 const isTestRunner = import.meta.env.MODE === 'test'
 
@@ -38,21 +44,50 @@ export async function flushAdminCmsRemoteSync(): Promise<
   const { data: sessionData } = await client.auth.getSession()
   if (!sessionData.session) return { ok: true }
 
-  const role = await fetchCmsProfileRole(client)
+  const { role } = await fetchCmsProfileRole(client)
   if (role !== 'admin') return { ok: true }
 
   const drops = readDropsArray()
+  const activeClientId = readActiveDropIdRaw()
   const products = getAdminProducts()
 
-  for (const drop of drops) {
-    const row = {
-      slug: drop.slug,
-      status: drop.status,
-      draft_body: JSON.parse(JSON.stringify(drop)) as Record<string, unknown>,
-      client_drop_id: drop.id,
-      release_date: drop.releaseDate ?? null,
-      scheduled_activation_at: drop.scheduledActivationAt ?? null,
-    }
+  const { data: dbActiveRows, error: activeListErr } = await client
+    .from('anvl_drops')
+    .select('id, client_drop_id, draft_body')
+    .eq('status', 'active')
+
+  if (activeListErr) {
+    return { ok: false, error: activeListErr.message }
+  }
+
+  for (const row of dbActiveRows ?? []) {
+    const cid =
+      typeof row.client_drop_id === 'string' ? row.client_drop_id.trim() : ''
+    const shouldStayActive =
+      activeClientId !== null && cid === activeClientId
+    if (shouldStayActive) continue
+
+    const draftRaw = row.draft_body
+    const draft =
+      typeof draftRaw === 'object' && draftRaw !== null
+        ? (draftRaw as Record<string, unknown>)
+        : {}
+
+    const { error: demoteErr } = await client
+      .from('anvl_drops')
+      .update({
+        status: 'inactive',
+        draft_body: demoteDropDraftBody(draft),
+      })
+      .eq('id', row.id)
+
+    if (demoteErr) return { ok: false, error: demoteErr.message }
+  }
+
+  const orderedDrops = orderDropsForRemoteSync(drops, activeClientId)
+
+  for (const drop of orderedDrops) {
+    const row = buildAnvlDropRemoteRow(drop)
 
     const { data: existing, error: selErr } = await client
       .from('anvl_drops')

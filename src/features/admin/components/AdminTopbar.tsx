@@ -1,5 +1,6 @@
 import { Menu } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import { IconButton } from '@/shared/components/ui/IconButton'
 import { useAdminPageActionsSlot } from '@/features/admin/components/AdminPageActionsContext'
 
@@ -15,6 +16,13 @@ export function AdminTopbar({
   onOpenMenu,
 }: AdminTopbarProps) {
   const pageActions = useAdminPageActionsSlot()
+  const { session } = useAdminAuth()
+  const signedInAs =
+    session?.kind === 'supabase'
+      ? session.displayName
+      : session?.kind === 'legacy'
+        ? session.username
+        : null
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--color-line)] bg-[var(--color-bg)]/85 backdrop-blur">
@@ -28,9 +36,19 @@ export function AdminTopbar({
         </IconButton>
 
         <div className="min-w-0 flex-1">
-          <p className="anvl-micro text-[10px] text-[var(--color-text-muted)]">
-            ANVL Admin
-          </p>
+          <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+            <p className="anvl-micro text-[10px] text-[var(--color-text-muted)]">
+              ANVL Admin
+            </p>
+            {signedInAs ? (
+              <p
+                className="anvl-micro max-w-[min(12rem,40vw)] truncate text-end text-[10px] text-[var(--color-text-muted)] sm:max-w-xs"
+                title={session?.kind === 'supabase' ? session.email : undefined}
+              >
+                {signedInAs}
+              </p>
+            ) : null}
+          </div>
           <h1 className="anvl-heading mt-0.5 truncate text-xl font-normal leading-tight sm:text-2xl">
             {title}
           </h1>

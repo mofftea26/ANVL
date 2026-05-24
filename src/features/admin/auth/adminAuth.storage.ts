@@ -51,14 +51,23 @@ function normalizeStoredAdminSession(
     loggedInAt?: unknown
     email?: unknown
     userId?: unknown
+    displayName?: unknown
   }
   if (typeof o.loggedInAt !== 'string') return null
   if (o.kind === 'supabase') {
     if (typeof o.email === 'string' && typeof o.userId === 'string') {
+      const email = o.email.trim()
+      const at = email.indexOf('@')
+      const fallbackName = at > 0 ? email.slice(0, at) : email || 'Admin'
+      const displayName =
+        typeof o.displayName === 'string' && o.displayName.trim()
+          ? o.displayName.trim()
+          : fallbackName
       return {
         kind: 'supabase',
-        email: o.email,
+        email,
         userId: o.userId,
+        displayName,
         loggedInAt: o.loggedInAt,
       }
     }
