@@ -1,13 +1,9 @@
-import { useQuery } from '@tanstack/react-query'
-import {
-  createContext,
-  useContext,
-  type PropsWithChildren,
-} from 'react'
+import { createContext, useContext, type PropsWithChildren } from 'react'
 import {
   ACTIVE_DROP_THEME_STYLE_ID,
   serializeDropPaletteForRootStyle,
 } from '@/features/cms/theme/dropPaletteStyle'
+import { useActiveDrop } from '@/features/drops/hooks/useActiveDrop'
 import type { Drop } from '@/features/drops/drop.types'
 import type { GlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.types'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
@@ -41,19 +37,8 @@ export function ActiveDropThemeProvider({
   initialGlobalBrand,
   children,
 }: Props) {
-  const drop = useStorefrontActiveDrop(initialDrop)
-  const publicationBrand = useQuery({
-    queryKey: STOREFRONT_PUBLICATION_QUERY_KEY,
-    queryFn: fetchStorefrontPublicationView,
-    select: (view) => view?.projection.globalBrand ?? null,
-    enabled: Boolean(getSupabasePublicEnv()),
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
-  })
-  const globalBrand =
-    publicationBrand.data ??
-    initialGlobalBrand ??
-    createDefaultGlobalBrandSettings()
+  const drop = useActiveDrop(initialDrop)
+  const globalBrand = initialGlobalBrand ?? createDefaultGlobalBrandSettings()
 
   const themeCss =
     drop?.theme != null ? serializeDropPaletteForRootStyle(drop.theme) : null

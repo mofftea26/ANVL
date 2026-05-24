@@ -29,7 +29,8 @@ export const adminNavItems: AdminNavItem[] = [
   {
     label: 'Products',
     href: '/admin/products',
-    description: 'Global catalog, variants, availability, and drop assignments.',
+    description:
+      'Catalog in Shopify when Storefront API is configured; otherwise local admin matrix.',
     cluster: 'Catalog',
     cta: 'Open catalog',
     badge: 'Catalog',

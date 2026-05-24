@@ -23,6 +23,8 @@ export interface ProductShopMeta {
   storefrontStatus: StorefrontProductStatus
   sourceType: 'drop' | 'individual'
   dropId: string | null
+  /** All ANVL drop client ids linked via Shopify `anvl.drop_ids` metafield. */
+  dropIds?: string[]
   dropSlug: string | null
   compareAtPrice: number | null
   listPrice: number

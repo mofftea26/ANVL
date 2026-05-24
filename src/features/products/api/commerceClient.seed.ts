@@ -8,7 +8,7 @@ import {
 /**
  * Storefront commerce — on the server, admin services resolve to in-memory seed catalog
  * and default oath drop (storage reads short-circuit when `window` is undefined).
- * TODO: replace with Medusa-backed `CommerceClient` when commerce API is available.
+ * SSR seed catalog when neither Shopify nor Supabase commerce is configured.
  */
 export const seedCommerceClient: CommerceClient = {
   async getProducts() {

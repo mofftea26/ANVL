@@ -23,7 +23,7 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 - TanStack Query for server state
 - Zustand for local/client UI state
 - GSAP for desktop/tablet animation only
-- Future commerce backend: likely MedusaJS v2
+- Commerce backend: **Shopify** (Storefront API) when `VITE_SHOPIFY_*` is set; see `docs/features/shopify-commerce.md`
 - Current phase may use local/mock CMS adapters, but code must be written so a real backend can replace the adapter later.
 
 ## Non-negotiable engineering rules
