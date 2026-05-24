@@ -56,6 +56,23 @@ describe('buildAnvlDropRemoteRow', () => {
       scheduled_activation_at: null,
     })
   })
+
+  it('maps scheduled activation to anvl_drops.status and scheduled_activation_at', () => {
+    const drop: Drop = {
+      ...sampleDrop(),
+      status: 'scheduled',
+      isActive: false,
+      scheduledActivationAt: '2026-06-01T12:00:00.000Z',
+    }
+    expect(buildAnvlDropRemoteRow(drop)).toEqual({
+      slug: 'test-1',
+      status: 'scheduled',
+      draft_body: drop,
+      client_drop_id: 'drop-test-1',
+      release_date: null,
+      scheduled_activation_at: '2026-06-01T12:00:00.000Z',
+    })
+  })
 })
 
 describe('insertAnvlDropToSupabase', () => {

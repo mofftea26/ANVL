@@ -32,6 +32,7 @@ import {
   AdminSelectValue,
 } from '@/features/admin/components/AdminSelect'
 import {
+  adminFieldClearButtonClass,
   adminFieldControlClass,
   fieldErrorClass,
 } from '@/features/admin/drops/dropEditorRoute.shared'
@@ -203,9 +204,7 @@ export const AdminDateTimeField = memo(function AdminDateTimeField({
             type="button"
             tabIndex={-1}
             className={cn(
-              'focus-ring mt-1 flex shrink-0 items-center rounded-md border border-[var(--color-line)] px-2 text-[var(--color-text-muted)]',
-              'hover:border-[color:color-mix(in_srgb,var(--anvl-bone)_22%,transparent)] hover:text-[var(--color-text)]',
-              'disabled:pointer-events-none disabled:opacity-40',
+              adminFieldClearButtonClass,
               !selected ? 'pointer-events-none opacity-30' : null,
             )}
             disabled={disabled || !selected}

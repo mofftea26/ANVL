@@ -1,4 +1,5 @@
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import { canWriteCmsDraftsToSupabase } from '@/features/cms/api/cmsPersistenceMode'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { fetchCmsProfileRole } from '@/features/admin/auth/adminCmsProfileRole'
 import { readDropsArray } from '@/features/admin/drops/drops.service'
@@ -8,7 +9,15 @@ import { getWebsiteLayoutContent } from '@/features/admin/website-layout/website
 import { getSiteSeoContent } from '@/features/cms/siteSeo.local'
 import { getGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.service'
 import { isAdminCmsRemoteHydrationLocked } from '@/features/admin/cmsRemote/adminCmsRemoteGate'
-import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
+import {
+  demoteDropDraftBody,
+  orderDropsForRemoteSync,
+} from '@/features/admin/cmsRemote/adminCmsRemoteSyncOrder'
+import { buildAnvlDropRemoteRow } from '@/features/admin/cmsRemote/adminCmsDropRemoteRow'
+import {
+  buildMediaIndex,
+  listMediaAssets,
+} from '@/features/admin/media/mediaAssets.service'
 
 const isTestRunner = import.meta.env.MODE === 'test'
 
@@ -41,7 +50,7 @@ export async function flushAdminCmsRemoteSync(): Promise<
   if (!sessionData.session) return { ok: true }
 
   const { role } = await fetchCmsProfileRole(client)
-  if (role !== 'admin') return { ok: true }
+  if (!canWriteCmsDraftsToSupabase(role)) return { ok: true }
 
   const drops = readDropsArray()
   const syncProductsToSupabase = !getShopifyPublicEnv()
@@ -174,11 +183,21 @@ export async function flushAdminCmsRemoteSync(): Promise<
   const layout = getWebsiteLayoutContent()
   const siteSeo = getSiteSeoContent()
   const globalBrand = getGlobalBrandSettings()
+  const { getSiteHomeExtrasContent } = await import(
+    '@/features/admin/site-home/siteHome.service'
+  )
+  const homeExtras = getSiteHomeExtrasContent()
+
+  const mediaList = await listMediaAssets(client)
+  const mediaIndex = mediaList.ok ? buildMediaIndex(mediaList.assets) : []
 
   const pubPatch: Record<string, unknown> = {
     website_layout: layout,
     site_seo: siteSeo,
     global_brand: globalBrand,
+    media_index: mediaIndex,
+    campaigns: homeExtras.campaigns,
+    lookbook: homeExtras.lookbook,
   }
 
   const { error: pubErr } = await client

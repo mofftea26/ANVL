@@ -1,11 +1,12 @@
 import { Menu } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
-import { IconButton } from '@/shared/components/ui/IconButton'
 import { useAdminPageActionsSlot } from '@/features/admin/components/AdminPageActionsContext'
+import { AdminTopbarSessionChip } from '@/features/admin/components/AdminTopbarSessionChip'
+import { cn } from '@/shared/lib/cn'
 
 interface AdminTopbarProps {
   title: string
+  /** Shown under the title — dashboard only. */
   description?: ReactNode
   onOpenMenu: () => void
 }
@@ -16,44 +17,32 @@ export function AdminTopbar({
   onOpenMenu,
 }: AdminTopbarProps) {
   const pageActions = useAdminPageActionsSlot()
-  const { session } = useAdminAuth()
-  const signedInAs =
-    session?.kind === 'supabase'
-      ? session.displayName
-      : session?.kind === 'legacy'
-        ? session.username
-        : null
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[var(--color-line)] bg-[var(--color-bg)]/85 backdrop-blur">
-      <div className="flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-10">
-        <IconButton
-          className="lg:hidden"
+    <header
+      className={cn(
+        'sticky top-0 z-30 border-b border-[var(--color-line)] bg-[var(--color-bg)]',
+        'lg:bg-[var(--color-bg)]/92 lg:backdrop-blur-sm',
+      )}
+    >
+      <div className="flex min-h-[3.25rem] items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-10">
+        <button
+          type="button"
           onClick={onOpenMenu}
           aria-label="Open admin navigation"
+          className={cn(
+            'focus-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-text)]',
+          )}
         >
-          <Menu size={16} />
-        </IconButton>
+          <Menu size={14} aria-hidden="true" className="text-[var(--color-text-muted)]" />
+        </button>
 
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-            <p className="anvl-micro text-[10px] text-[var(--color-text-muted)]">
-              ANVL Admin
-            </p>
-            {signedInAs ? (
-              <p
-                className="anvl-micro max-w-[min(12rem,40vw)] truncate text-end text-[10px] text-[var(--color-text-muted)] sm:max-w-xs"
-                title={session?.kind === 'supabase' ? session.email : undefined}
-              >
-                {signedInAs}
-              </p>
-            ) : null}
-          </div>
-          <h1 className="anvl-heading mt-0.5 truncate text-xl font-normal leading-tight sm:text-2xl">
+          <h1 className="anvl-heading truncate text-lg font-normal leading-tight sm:text-xl">
             {title}
           </h1>
           {description ? (
-            <p className="mt-1 line-clamp-2 max-w-2xl text-xs text-[var(--color-text-muted)] sm:text-sm">
+            <p className="mt-0.5 line-clamp-2 max-w-2xl text-xs text-[var(--color-text-muted)]">
               {description}
             </p>
           ) : null}
@@ -67,6 +56,8 @@ export function AdminTopbar({
             {pageActions}
           </div>
         ) : null}
+
+        <AdminTopbarSessionChip className="shrink-0" />
       </div>
     </header>
   )

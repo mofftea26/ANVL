@@ -264,6 +264,26 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
     }
   }, [authMode, startRemoteCmsPull])
 
+  useEffect(() => {
+    if (authMode !== 'supabase' || !session) return
+
+    const refreshRemoteCms = () => {
+      const client = getAdminSupabaseBrowserClient()
+      if (client) startRemoteCmsPull(client)
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refreshRemoteCms()
+    }
+
+    window.addEventListener('focus', refreshRemoteCms)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      window.removeEventListener('focus', refreshRemoteCms)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [authMode, session, startRemoteCmsPull])
+
   const login = useCallback(
     async (credentials: AdminCredentials) => {
       if (authMode === 'supabase') {

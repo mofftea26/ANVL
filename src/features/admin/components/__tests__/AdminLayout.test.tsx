@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -29,12 +29,15 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 vi.mock('@/features/admin/auth/useAdminAuth', () => ({
-  useAdminAuth: () => ({ logout: vi.fn() }),
+  useAdminAuth: () => ({
+    logout: vi.fn(),
+    isRemoteCmsReady: true,
+    remoteHydrateError: null,
+  }),
 }))
 
 describe('AdminLayout', () => {
-  it('renders children in main and opens the mobile nav drawer', async () => {
-    const user = userEvent.setup()
+  it('renders children in main with topbar navigation affordance', () => {
     render(
       <AdminLayout title="Drops" description="Manage campaigns">
         <p>Editor body</p>
@@ -43,8 +46,35 @@ describe('AdminLayout', () => {
 
     expect(screen.getByRole('heading', { name: 'Drops' })).toBeInTheDocument()
     expect(screen.getByText('Editor body')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /open admin navigation/i })).toBeInTheDocument()
+  })
+
+  it('opens the nav drawer from the topbar burger', async () => {
+    const user = userEvent.setup()
+    render(
+      <AdminLayout title="Drops" description="Manage campaigns">
+        <p>Editor body</p>
+      </AdminLayout>,
+    )
 
     await user.click(screen.getByRole('button', { name: /open admin navigation/i }))
-    expect(screen.getByRole('dialog', { name: 'Admin navigation' })).toBeInTheDocument()
+    const dialog = screen.getByRole('dialog', { name: 'Admin navigation' })
+    expect(dialog).toBeInTheDocument()
+    expect(within(dialog).getByText('ANVL Admin')).toBeInTheDocument()
+  })
+
+  it('closes the nav drawer when a sidebar link is activated', async () => {
+    const user = userEvent.setup()
+    render(
+      <AdminLayout title="Drops">
+        <p>Editor body</p>
+      </AdminLayout>,
+    )
+
+    await user.click(screen.getByRole('button', { name: /open admin navigation/i }))
+    const dialog = screen.getByRole('dialog', { name: 'Admin navigation' })
+    await user.click(within(dialog).getByRole('link', { name: 'Dashboard' }))
+
+    expect(screen.queryByRole('dialog', { name: 'Admin navigation' })).not.toBeInTheDocument()
   })
 })

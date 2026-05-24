@@ -22,7 +22,8 @@ export function AdminCheckbox({
   return (
     <label
       className={cn(
-        'flex cursor-pointer gap-3 rounded-lg border border-transparent py-1 text-sm text-[var(--color-text)]',
+        'flex cursor-pointer gap-3 rounded-xl border border-transparent px-2 py-1.5 text-xs text-[var(--color-text)] transition-colors',
+        'hover:border-[var(--color-line)] hover:bg-[var(--color-surface-soft)]',
         disabled && 'cursor-not-allowed opacity-60',
         className,
       )}

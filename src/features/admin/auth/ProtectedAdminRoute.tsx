@@ -1,5 +1,6 @@
 import { useEffect, type PropsWithChildren } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { AdminLoadingState } from '@/features/admin/components/AdminLoadingState'
 import { useAdminAuth } from './useAdminAuth'
 
 /**
@@ -23,16 +24,10 @@ export function ProtectedAdminRoute({ children }: PropsWithChildren) {
       : 'Redirecting to admin login…'
 
     return (
-      <div
-        role="status"
-        aria-live="polite"
-        className="flex min-h-screen flex-col items-center justify-center gap-2 bg-[var(--color-bg)] px-4"
-      >
-        <p className="anvl-micro text-center text-[var(--color-text-muted)]">
-          {message}
-        </p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--color-bg)] px-4">
+        <AdminLoadingState message={message} />
         {!isHydrated ? (
-          <p className="max-w-sm text-center text-[11px] text-[var(--color-text-muted)]">
+          <p className="mt-4 max-w-sm text-center text-[11px] text-[var(--color-text-muted)]">
             If this does not finish within a minute, reload the page or check your
             network and Supabase project keys in{' '}
             <span className="font-mono text-[10px]">.env</span>.

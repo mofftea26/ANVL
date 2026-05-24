@@ -59,6 +59,19 @@ export function useSetActiveAdminDropMutation() {
   })
 }
 
+export function useDeactivateAdminDropMutation() {
+  const invalidate = useInvalidateAdminDropsList()
+  return useMutation({
+    mutationFn: (id: string) => runtimeClients.cms.deactivateAdminDrop(id),
+    onSuccess: async () => {
+      invalidate()
+      await rehydrateAdminCmsFromRemote()
+      await notifyStorefrontPublicationChanged()
+      await notifyAdminDropsListChanged()
+    },
+  })
+}
+
 export function useScheduleAdminDropMutation() {
   const invalidate = useInvalidateAdminDropsList()
   return useMutation({

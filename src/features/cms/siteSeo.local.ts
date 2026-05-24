@@ -143,19 +143,28 @@ export function getSiteSeoContent(): SiteSeoContent {
   }
 }
 
-export function saveSiteSeoContent(next: SiteSeoContent): SiteSeoContent {
+function stampSiteSeoForPersist(next: SiteSeoContent): SiteSeoContent {
   const parsed = siteSeoSchema.parse({
     globalDefaults: next.globalDefaults,
     staticPages: sanitizeStaticPagesLoose(next.staticPages),
   })
-  const safe: SiteSeoContent = {
+  return {
     globalDefaults: parsed.globalDefaults,
     staticPages: parsed.staticPages,
   }
+}
+
+function writeSiteSeoRaw(json: string): void {
+  if (!isBrowser()) return
+  window.localStorage.setItem(SITE_SEO_STORAGE_KEY, json)
+  notifySiteSeoChange()
+}
+
+export function saveSiteSeoContent(next: SiteSeoContent): SiteSeoContent {
+  const safe = stampSiteSeoForPersist(next)
   if (!isBrowser()) return safe
   try {
-    window.localStorage.setItem(SITE_SEO_STORAGE_KEY, JSON.stringify(safe))
-    notifySiteSeoChange()
+    writeSiteSeoRaw(JSON.stringify(safe))
     if (import.meta.env.MODE !== 'test') {
       void import('@/features/admin/cmsRemote/adminCmsRemoteSync').then((m) =>
         m.scheduleAdminCmsRemoteSync(),
@@ -163,6 +172,26 @@ export function saveSiteSeoContent(next: SiteSeoContent): SiteSeoContent {
     }
   } catch {
     /* */
+  }
+  return safe
+}
+
+/** Persist site SEO locally, then immediately flush to Supabase when configured. */
+export async function saveSiteSeoContentAsync(
+  next: SiteSeoContent,
+): Promise<SiteSeoContent> {
+  const safe = stampSiteSeoForPersist(next)
+  try {
+    writeSiteSeoRaw(JSON.stringify(safe))
+  } catch {
+    /* */
+  }
+  const { afterLocalCmsMutation } = await import(
+    '@/features/admin/cmsRemote/cmsWriteThrough'
+  )
+  const sync = await afterLocalCmsMutation()
+  if (!sync.ok) {
+    throw new Error(sync.error)
   }
   return safe
 }

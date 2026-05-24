@@ -163,7 +163,8 @@ When a drop becomes active:
 - `landingActSequence` on each drop is the ordered list of six canonical slots (`hero`, `manifesto`, `dropReveal`, `pieces`, `materials`, `waitlist`) with an `enabled` flag per slot.
 - `composeLandingPageFromDrop` adds `landingActs` to `LandingPageCmsContent`: public descriptors with `nature` (e.g. `productShowcase`), `preset`, `sortOrder`, `slotKey` (legacy homepage section id), `enabled`, and `animation` defaults for future GSAP gating.
 - The Drop Editor **Landing acts** tab includes `DropActsBuilderPanel` (add/remove/reorder, nature and preset selectors, eyebrow/title/subtitle/body) plus the legacy per-section forms. `Drop.acts` is persisted with the drop; `landingActSequence` toggles are synced when mapped slots have at least one enabled act.
-- The public `/` route renders `PublicLandingActs`, which switches on `nature` to existing section components (Act III onward lazy-loaded), respects `enabled === false`, and degrades unknown types to a small on-page notice.
+- The public `/` route renders `PublicLandingActs`, which resolves `act.nature` + `act.preset` through the act preset registry (lazy chunks), respects `enabled === false`, and degrades unknown types to a small on-page notice. **PR-9** adds storefront renderers for **`lookbook`**, **`specialEvent`**, and **`finalCTA`** (builder fields in `DropActsBuilderPanel`; presets under `src/features/marketing/act-presets/`).
+- Optional homepage **`campaigns`** and **`lookbook`** strips render below landing acts when **`storefront_publication`** (or local **Home extras** in Website layout) has non-empty arrays — see **`CampaignCardsSection`** / **`LookbookStripSection`** on `src/routes/index.tsx`.
 - Hero GSAP runs only at `min-width: 768px` with `prefers-reduced-motion: no-preference`; mobile and reduced-motion users see a static hero layout for speed and accessibility.
 
 ## Website layout (global chrome)

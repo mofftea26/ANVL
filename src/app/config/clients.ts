@@ -41,6 +41,7 @@ export interface CmsClient {
   getAdminDropsList(): Promise<AdminDropListItem[]>
   duplicateAdminDrop(id: string): Promise<AdminDropListItem | null>
   setAdminActiveDrop(id: string): Promise<void>
+  deactivateAdminDrop(id: string): Promise<void>
   scheduleAdminDrop(id: string, activationIso: string): Promise<void>
   archiveAdminDrop(id: string): Promise<void>
   deleteAdminDrop(id: string): Promise<void>

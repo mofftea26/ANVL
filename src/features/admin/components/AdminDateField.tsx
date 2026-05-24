@@ -14,6 +14,7 @@ import {
 } from '@/features/admin/components/adminDayPickerChrome'
 import { AdminPopover, AdminPopoverContent, AdminPopoverTrigger } from '@/features/admin/components/AdminPopover'
 import {
+  adminFieldClearButtonClass,
   adminFieldControlClass,
   fieldErrorClass,
 } from '@/features/admin/drops/dropEditorRoute.shared'
@@ -114,7 +115,7 @@ export const AdminDateField = memo(function AdminDateField({
               className="shrink-0 self-center opacity-70"
               aria-hidden
             />
-            <span className="min-w-0 flex-1 truncate font-mono text-[var(--color-text)] text-sm tracking-tight">
+            <span className="min-w-0 flex-1 truncate font-mono text-xs text-[var(--color-text)] tracking-tight">
               {display ? (
                 display
               ) : (
@@ -135,9 +136,7 @@ export const AdminDateField = memo(function AdminDateField({
             type="button"
             tabIndex={-1}
             className={cn(
-              'focus-ring mt-1 flex shrink-0 items-center rounded-md border border-[var(--color-line)] px-2 text-[var(--color-text-muted)]',
-              'hover:border-[color:color-mix(in_srgb,var(--anvl-bone)_22%,transparent)] hover:text-[var(--color-text)]',
-              'disabled:pointer-events-none disabled:opacity-40',
+              adminFieldClearButtonClass,
               !display ? 'pointer-events-none opacity-30' : null,
             )}
             disabled={disabled || !display}

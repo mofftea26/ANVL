@@ -7,11 +7,11 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 import { getSupabaseEnvIssue, isSupabaseAuthTarget } from '@/features/cms/api/supabasePublicEnv'
 import { AnvlCompactMark } from '@/shared/assets/brand'
-import { Button } from '@/shared/components/ui/Button'
+import { AdminButton } from '@/features/admin/components/AdminButton'
 import { Container } from '@/shared/components/ui/Container'
-import { FormField } from '@/shared/components/ui/FormField'
+import { AdminFormField } from '@/features/admin/components/AdminFormField'
 import { IconButton } from '@/shared/components/ui/IconButton'
-import { Input } from '@/shared/components/ui/Input'
+import { AdminInput } from '@/features/admin/components/AdminInput'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 
 const schema = z.object({
@@ -98,24 +98,24 @@ export function AdminLoginPageRoute() {
           ) : null}
 
           <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
-            <FormField
+            <AdminFormField
               label={idLabel}
               error={form.formState.errors.username?.message}
             >
-              <Input
+              <AdminInput
                 type={supabaseConfigured ? 'email' : 'text'}
                 autoComplete={idAutoComplete}
                 placeholder={idPlaceholder}
                 {...form.register('username')}
               />
-            </FormField>
-            <FormField
+            </AdminFormField>
+            <AdminFormField
               label="Password"
               htmlFor={ADMIN_LOGIN_PASSWORD_ID}
               error={form.formState.errors.password?.message}
             >
               <div className="relative">
-                <Input
+                <AdminInput
                   id={ADMIN_LOGIN_PASSWORD_ID}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
@@ -138,15 +138,15 @@ export function AdminLoginPageRoute() {
                   )}
                 </IconButton>
               </div>
-            </FormField>
-            <Button
+            </AdminFormField>
+            <AdminButton
               type="submit"
               className="w-full"
               loading={signingIn}
               disabled={signingIn}
             >
               Sign in
-            </Button>
+            </AdminButton>
           </form>
 
           <p className="mt-5 rounded-lg border border-dashed border-[var(--color-line)] px-3 py-2 text-[11px] leading-relaxed text-[var(--color-text-muted)]">

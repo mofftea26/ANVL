@@ -71,3 +71,26 @@ A task is done only when:
 - `/docs/changelog.md` is updated.
 - `/docs/audit-2026-05-17.md` task statuses are updated where applicable.
 - For UI changes, a manual test note + screenshot/video is included in the PR.
+
+## Cursor Cloud specific instructions
+
+### Overview
+
+ANVL Athletics Storefront — SSR e-commerce + admin CMS (TanStack Start, TypeScript, Vite). With **`VITE_SUPABASE_*`** set, published storefront state and admin auth come from Supabase; without it, mock/local CMS adapters apply.
+
+### Commands
+
+| Task | Command |
+|------|---------|
+| Install deps | `pnpm install` |
+| Dev server | `pnpm dev` (port 3000) |
+| Verify (DoD) | `pnpm verify` (`typecheck` + `test` + `build`) |
+| Typecheck | `pnpm typecheck` |
+| Tests | `pnpm test` |
+| Build | `pnpm build` |
+
+### Notes
+
+- **pnpm version**: pinned via `packageManager` in `package.json`. Corepack handles this (`corepack enable` once).
+- **Supabase (optional):** set `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` for remote CMS. See `docs/features/supabase-cms.md`.
+- **No dedicated lint script:** use `pnpm typecheck` for static analysis.

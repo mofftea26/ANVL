@@ -60,6 +60,8 @@ export async function uploadCmsMediaFile(input: {
   file: File
   dropSlug: string
   role: CmsDropVisualAssetRole
+  /** When true, also inserts a `cms_media_assets` catalog row. */
+  registerInCatalog?: boolean
 }): Promise<UploadCmsMediaResult> {
   const env = getSupabasePublicEnv()
   if (!env) {
@@ -95,6 +97,26 @@ export async function uploadCmsMediaFile(input: {
   const publicUrl = publicCmsMediaUrl(objectPath)
   if (!publicUrl) {
     return { ok: false, error: 'Could not resolve public media URL.' }
+  }
+
+  if (input.registerInCatalog) {
+    const { registerUploadedCmsMedia, readImageDimensions } = await import(
+      '@/features/admin/media/mediaAssets.service'
+    )
+    const dims = await readImageDimensions(input.file)
+    const registered = await registerUploadedCmsMedia({
+      objectPath,
+      file: input.file,
+      width: dims.width,
+      height: dims.height,
+    })
+    if (!registered.ok) {
+      return { ok: false, error: registered.error }
+    }
+    const { scheduleAdminCmsRemoteSync } = await import(
+      '@/features/admin/cmsRemote/adminCmsRemoteSync'
+    )
+    scheduleAdminCmsRemoteSync()
   }
 
   return { ok: true, publicUrl, objectPath }

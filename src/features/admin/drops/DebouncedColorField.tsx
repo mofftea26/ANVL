@@ -7,7 +7,7 @@ import {
   type ComponentProps,
 } from 'react'
 import { ColorField } from '@/shared/components/ui/ColorField'
-import { adminFieldControlClass } from '@/features/admin/drops/dropEditorRoute.shared'
+import { adminFieldControlFineClass } from '@/features/admin/drops/dropEditorRoute.shared'
 
 type DebouncedColorFieldProps = ComponentProps<typeof ColorField> & {
   /** Debounce commits to parent state (reduces editor jank while dragging sliders). */
@@ -51,7 +51,7 @@ export function DebouncedColorField({
   return (
     <ColorField
       {...rest}
-      fineInputControlClass={adminFieldControlClass}
+      fineInputControlClass={adminFieldControlFineClass}
       value={draft}
       onChange={(next) => {
         setDraft(next)

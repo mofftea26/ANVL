@@ -6,6 +6,7 @@ import {
   duplicateDrop,
   readDropsArray,
   scheduleDropActivation,
+  deactivateDrop,
   setActiveDrop,
 } from '@/features/admin/drops/drops.service'
 import { getLandingCmsContent } from '@/features/admin/landing-cms/landingCms.service'
@@ -13,6 +14,7 @@ import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { HomePageContent } from '@/features/cms/types/cms.types'
 import { resolveStorefrontActiveDrop } from '@/features/cms/runtime/storefrontCmsSync'
+import { adminDropListVisualsFromDrop } from '@/features/admin/drops/adminDropListItemVisuals'
 
 function dropToAdminListItem(d: Drop): AdminDropListItem {
   return {
@@ -28,6 +30,7 @@ function dropToAdminListItem(d: Drop): AdminDropListItem {
     productCount: d.productIds.length,
     updatedAt: d.updatedAt,
     createdAt: d.createdAt,
+    ...adminDropListVisualsFromDrop(d),
   }
 }
 
@@ -95,10 +98,16 @@ export const localStorageCmsClient: CmsClient = {
       .map((link) => ({ label: link.label, href: link.href }))
   },
   async getCampaigns() {
-    return cmsMockData.campaigns
+    const { getSiteHomeCampaigns } = await import(
+      '@/features/admin/site-home/siteHome.service'
+    )
+    return getSiteHomeCampaigns()
   },
   async getLookbook() {
-    return cmsMockData.lookbook
+    const { getSiteHomeLookbook } = await import(
+      '@/features/admin/site-home/siteHome.service'
+    )
+    return getSiteHomeLookbook()
   },
   async getAdminDropsList() {
     return readDropsArray().map(dropToAdminListItem)
@@ -117,6 +126,20 @@ export const localStorageCmsClient: CmsClient = {
     const published = await publishStorefrontDropByClientId(id)
     if (!published.ok) {
       throw new Error(published.error)
+    }
+    const { rehydrateAdminCmsFromRemote } = await import(
+      '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'
+    )
+    await rehydrateAdminCmsFromRemote()
+  },
+  async deactivateAdminDrop(id) {
+    deactivateDrop(id)
+    const { clearStorefrontActiveDrop } = await import(
+      '@/features/admin/cmsRemote/adminCmsPublish'
+    )
+    const cleared = await clearStorefrontActiveDrop()
+    if (!cleared.ok) {
+      throw new Error(cleared.error)
     }
     const { rehydrateAdminCmsFromRemote } = await import(
       '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'

@@ -314,6 +314,15 @@ export function setActiveDrop(dropId: string): void {
   persistDropsState(drops, dropId)
 }
 
+/** Clears the active campaign when `dropId` is the current active drop. */
+export function deactivateDrop(dropId: string): void {
+  ensureDropSystemHydrated()
+  const activeId = readActiveDropIdRaw()
+  if (activeId !== dropId) return
+  const drops = readDropsArray()
+  persistDropsState(drops, null)
+}
+
 export function deleteDrop(dropId: string): void {
   ensureDropSystemHydrated()
   const drops = readDropsArray().filter((d) => d.id !== dropId)

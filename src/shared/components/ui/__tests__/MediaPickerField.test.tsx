@@ -95,7 +95,8 @@ describe('MediaPickerField (Phase B4 / SEC-20)', () => {
     expect(details).not.toBeNull()
     const urlInput = details?.querySelector('input[type="url"]') as HTMLInputElement | null
     expect(urlInput).not.toBeNull()
-    expect(urlInput?.className).toMatch(/rounded-md/)
+    expect(urlInput?.className).toMatch(/rounded-full/)
+    expect(urlInput?.className).toMatch(/surface-soft/)
   })
 
   it('uses fallbackPreviewSrc when main value empty', () => {
