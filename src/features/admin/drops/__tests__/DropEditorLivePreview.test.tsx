@@ -63,8 +63,8 @@ describe('DropEditorLivePreview below-xl collapse', () => {
       expect(frame.getAttribute('srcdoc')).toContain('data-anvl-drop-editor-live-preview')
       expect(frame.getAttribute('srcdoc')).toMatch(/<\s*html[^>]*\blang\s*=\s*["']en["']/i)
       expect(frame.style.width).toBe('820px')
-      expect(frame.className).toMatch(/\bflex-1\b/)
-      expect(frame.className).toMatch(/\bh-full\b/)
+      expect(frame.className).toMatch(/min\(720px/)
+      expect(frame.className).toMatch(/\bflex-none\b/)
     })
   })
 
@@ -77,8 +77,7 @@ describe('DropEditorLivePreview below-xl collapse', () => {
     const frame = screen.getByTitle('Drop preview')
     expect(frame.style.width).toBe('100%')
     expect(frame.style.maxWidth).toBe('100%')
-    expect(frame.className).toMatch(/\bflex-1\b/)
-    expect(frame.className).toMatch(/\bh-full\b/)
+    expect(frame.className).toMatch(/min\(720px/)
   })
 
   it('wraps the iframe in a flex stretch shell (avoids default 150px iframe height in flex rows)', async () => {
@@ -88,7 +87,7 @@ describe('DropEditorLivePreview below-xl collapse', () => {
     })
     const shell = screen.getByTestId('drop-editor-viewport-iframe-shell')
     expect(shell.className.includes('flex-1')).toBe(true)
-    expect(shell.className.includes('self-stretch')).toBe(true)
+    expect(shell.className.includes('self-start')).toBe(true)
     expect(shell.className.includes('justify-start')).toBe(true)
     expect(shell.className.includes('overflow-hidden')).toBe(true)
   })

@@ -1,10 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
-import {
-  createDraftDrop,
-  getDropById,
-} from '@/features/admin/drops/drops.service'
+import { createDraftDropAsync } from '@/features/admin/drops/drops.service'
 import { AdminSpinner } from '@/shared/components/ui/AdminSpinner'
 
 export function AdminNewDropPageRoute() {
@@ -18,20 +15,24 @@ export function AdminNewDropPageRoute() {
 function NewDropBootstrap() {
   const navigate = useNavigate()
   const [persistError, setPersistError] = useState<string | null>(null)
+  const startedRef = useRef(false)
 
   useEffect(() => {
-    const drop = createDraftDrop()
-    if (!getDropById(drop.id)) {
-      setPersistError(
-        'The new drop did not appear in storage. Try again or return to the list.',
-      )
-      return
-    }
-    navigate({
-      to: '/admin/drops/$dropId',
-      params: { dropId: drop.id },
-      replace: true,
-    })
+    if (startedRef.current) return
+    startedRef.current = true
+
+    void (async () => {
+      const result = await createDraftDropAsync()
+      if (!result.ok) {
+        setPersistError(result.error)
+        return
+      }
+      navigate({
+        to: '/admin/drops/$dropId',
+        params: { dropId: result.drop.id },
+        replace: true,
+      })
+    })()
   }, [navigate])
 
   if (persistError) {

@@ -54,7 +54,7 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 
 ## Admin auth
 
-- **When `VITE_SUPABASE_URL` + anon/publishable key are set:** the admin app uses **Supabase Auth** (email + password). Only users with **`public.cms_profiles.role = 'admin'`** may access `/admin` (editors/viewers are rejected at sign-in). The browser Supabase client uses storage key **`anvl.supabase.admin.v1`**. Authenticated saves are pushed to **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** (debounced) while the editor continues to use localStorage as its working copy.
+- **When `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` are set:** the admin app uses **Supabase Auth** (email + password). Only users with **`public.cms_profiles.role = 'admin'`** may access `/admin` (editors/viewers are rejected at sign-in). The browser Supabase client uses storage key **`anvl.supabase.admin.v1`**. Authenticated saves are pushed to **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** (debounced) while the editor continues to use localStorage as its working copy.
 
 - **When Supabase env is unset (local CMS only):** the temporary static **`VITE_ANVL_ADMIN_*`** gate remains. It is still not production-grade security (see **`docs/technical-debt.md`**, SEC-01 / SEC-02 / SEC-03 / SEC-11 and Phase J).
 

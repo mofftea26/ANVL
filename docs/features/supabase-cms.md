@@ -32,7 +32,7 @@ Object paths should stay unguessable (UUID prefixes) for defense in depth.
 
 - **`anon`:** `SELECT` on `storefront_publication` only. Cannot read `anvl_drops` or drafts.
 - **`authenticated`** with `cms_profiles`: `SELECT` drops/products as role allows; **`editor` / `admin`:** insert/update/delete drops and products; update publication layout/SEO.
-- **`cms_publish_drop(uuid)`:** `SECURITY DEFINER` RPC; **`admin` only**; demotes other active drops, writes snapshot + bumps `revision`. **`anon`** cannot execute (see migration **`20260519120000_revoke_anon_cms_publish_drop.sql`**).
+- **`cms_publish_drop(uuid)`:** `SECURITY DEFINER` RPC; **`admin` only**; demotes other active drops, writes snapshot + bumps `revision`. **`anon`** cannot execute (see migration **`20260519120000_revoke_anon_cms_publish_drop.sql`**). Product **`dropIds`** in **`cms_admin_products.body`** are app ids (`drop_the-oath`) — migration **`20260519230000_cms_publish_drop_client_drop_ids.sql`** matches them via **`client_drop_id`** when building **`catalog_drop_index`**.
 
 ## Edge Functions
 
@@ -48,25 +48,26 @@ Sources: [`supabase/functions/publish-storefront/index.ts`](../../supabase/funct
 | Name | Where | Notes |
 |------|-------|------|
 | `VITE_SUPABASE_URL` | App | Project URL. |
-| `VITE_SUPABASE_ANON_KEY` | App | Preferred name for anon / publishable key (safe in browser). |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | App | Alias supported by [`supabasePublicEnv.ts`](../../src/features/cms/api/supabasePublicEnv.ts). |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server / CI / Edge only | Never `VITE_*`; never import into client bundles. |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | App | **Required** browser key (`sb_publishable_…`) from Dashboard → API. |
+| `VITE_SUPABASE_ANON_KEY` | App | Optional legacy anon JWT if publishable key is unset. |
 | `ANVL_MEDUSA_WEBHOOK_SECRET` | **Dashboard → Project Settings → Edge Functions → Secrets** | Set for `medusa-webhook-stub` (header auth; function has **`verify_jwt` disabled**). |
 
 **Project (ANVL):** `https://cptebkgyrfmokklwtrgp.supabase.co` (ref `cptebkgyrfmokklwtrgp`).
 
 ## App integration
 
-- [`src/app/config/runtime.ts`](../../src/app/config/runtime.ts) — when Supabase env is set, **public** CMS reads (`getLandingCmsContent`, `getActiveDrop`, layout, SEO) and **`commerce`** use [`publicStorefrontPublication.ts`](../../src/features/cms/api/publicStorefrontPublication.ts) + [`commerceClient.supabase.ts`](../../src/features/products/api/commerceClient.supabase.ts).
+- [`src/app/config/runtime.ts`](../../src/app/config/runtime.ts) — when Supabase env is set, **public** CMS reads (`getLandingCmsContent`, `getActiveDrop`, layout, SEO) and **`commerce`** use [`publicStorefrontPublication.ts`](../../src/features/cms/api/publicStorefrontPublication.ts) + [`commerceClient.supabase.ts`](../../src/features/products/api/commerceClient.supabase.ts). **Browser:** published-row fetch reuses one anon Supabase client per project URL (**`getSupabasePublicationAnonClient`**) with **`auth.storageKey` `anvl.supabase.storefront-public.v1`** so it does not collide with the admin client (`anvl.supabase.admin.v1`) or GoTrue’s default `sb-*-auth-token` key (avoids multiple `GoTrueClient` warnings).
 
 ### Admin (Supabase Auth + remote persistence)
 
 When **`VITE_SUPABASE_*`** is configured:
 
-1. **Sign-in:** `/admin/login` uses Supabase **`signInWithPassword`**. Only **`cms_profiles.role = 'admin'`** may use `/admin` (other roles are rejected).
-2. **Hydration:** After sign-in (and on session restore), **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** (`website_layout`, `site_seo`, `global_brand` when present) are **pulled into localStorage** so existing editor code is unchanged.
-3. **Sync:** Local saves to drops, products, layout, site SEO, and global brand **schedule a debounced push** to Supabase (`client_drop_id` matches app `Drop.id`; products keyed by `slug`). Remote rows removed locally are deleted on the server. Vitest skips this path (`import.meta.env.MODE === 'test'`).
+1. **Sign-in:** `/admin/login` uses Supabase **`signInWithPassword`**, waits for the session to attach on the admin client (**`waitForSupabaseClientSession`**), then reads **`public.cms_profiles`** with retries (**`adminSupabaseAuthFlow.ts`** → **`fetchCmsProfileRoleWhenReady`**). Only **`role = 'admin'`** may use `/admin` (viewer/editor or missing row → inline error with your Auth **`user_id`** and sample SQL). **Logout** (sidebar) runs **`signOut`** + disposes the admin client. Sessions persist across reload via **`anvl.supabase.admin.v1`**.
+2. **Hydration:** After sign-in (and on session restore), **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** are **pulled into localStorage in the background** — the admin shell opens as soon as auth + role check pass; **`AdminLayout`** shows sync status.
+3. **Sync:** Local saves to drops, products, layout, site SEO, and global brand **schedule a debounced push** to Supabase (`client_drop_id` matches app `Drop.id`; products keyed by `slug`). Remote rows removed locally are deleted on the server. Vitest skips this path (`import.meta.env.MODE === 'test'`). **`site_seo.staticPages`** is normalized on read/write so placeholder keys do not fail validation during hydration.
 4. **Publish:** **Set active** in the drops list calls **`cms_publish_drop`** (after flush sync) so **`storefront_publication.published_drop_snapshot`** matches the activated campaign for anonymous SSR/CSR reads.
+
+**First admin user:** After creating a user in **Authentication**, add a row in **`public.cms_profiles`** with **`role = 'admin'`** and **`user_id`** = that user's UUID (Supabase Dashboard → SQL Editor as project owner). Direct Table Editor insert hits RLS (`42501`).
 
 ### Storefront read priority (with `VITE_SUPABASE_*` set)
 
@@ -86,4 +87,4 @@ Migration **`20260518220000_anvl_drops_client_id_admin_rls.sql`** adds **`anvl_d
 2. In **Authentication**, create at least one user; with **SQL** (service role) or dashboard, insert `public.cms_profiles` (`user_id`, **`role = 'admin'`** for anyone who should open `/admin`).
 3. Seed `anvl_drops.draft_body` and either call **`cms_publish_drop`** from the SQL editor (as that user, using the REST client with JWT) or use the **`publish-storefront`** function so **`storefront_publication.published_drop_snapshot`** is populated (until then the app falls back to seed snapshots).
 4. In **Edge Function secrets**, set **`ANVL_MEDUSA_WEBHOOK_SECRET`** if you use the Medusa stub.
-5. App `.env`: **`VITE_SUPABASE_URL`** and anon/publishable key from **Project Settings → API** (never commit service role).
+5. App `.env`: **`VITE_SUPABASE_URL`** + **`VITE_SUPABASE_PUBLISHABLE_KEY`** from **Project Settings → API**.

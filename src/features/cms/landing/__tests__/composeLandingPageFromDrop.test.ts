@@ -77,14 +77,13 @@ describe('composeLandingPageFromDrop', () => {
     expect(composed.landingActs.length).toBeGreaterThan(0)
   })
 
-  it('useDraftActsPipeline prefers acts when non-empty before sequence', () => {
+  it('storefront compose prefers Drop.acts when non-empty before sequence', () => {
     const drop = createDefaultTheOathDrop()
     const layout = createDefaultWebsiteLayout(drop.updatedAt)
-    const composed = composeLandingPageFromDrop(drop, layout, {
-      useDraftActsPipeline: true,
-    })
+    const composed = composeLandingPageFromDrop(drop, layout)
     expect(composed.landingActs).toEqual(
       publicLandingActsFromDraftActs(drop.acts) ?? [],
     )
+    expect(composed.dropActs).toEqual(drop.acts)
   })
 })

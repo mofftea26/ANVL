@@ -1,6 +1,14 @@
-import { useState, type PropsWithChildren } from 'react'
+import { useEffect, useState, type PropsWithChildren } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
+import {
+  invalidateStorefrontPublication,
+  registerStorefrontPublicationInvalidator,
+} from '@/features/cms/hooks/invalidateStorefrontPublication'
+import {
+  invalidateAdminDropsList,
+  registerAdminDropsListInvalidator,
+} from '@/features/admin/cmsRemote/invalidateAdminDropsList'
 
 export function AppProviders({ children }: PropsWithChildren) {
   const [queryClient] = useState(
@@ -14,6 +22,19 @@ export function AppProviders({ children }: PropsWithChildren) {
         },
       }),
   )
+
+  useEffect(() => {
+    const unregStorefront = registerStorefrontPublicationInvalidator(() =>
+      invalidateStorefrontPublication(queryClient),
+    )
+    const unregDrops = registerAdminDropsListInvalidator(() =>
+      invalidateAdminDropsList(queryClient),
+    )
+    return () => {
+      unregStorefront()
+      unregDrops()
+    }
+  }, [queryClient])
 
   return (
     <QueryClientProvider client={queryClient}>

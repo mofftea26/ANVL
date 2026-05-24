@@ -37,6 +37,10 @@ vi.mock('@/features/admin/drops/drops.service', () => ({
   resetAllLocalCmsKeys: () => resetKeys(),
 }))
 
+vi.mock('@/features/cms/api/supabasePublicEnv', () => ({
+  getSupabasePublicEnv: () => null,
+}))
+
 vi.mock('@/features/admin/auth/useAdminAuth', () => ({
   useAdminAuth: () => ({
     session: { username: 'admin', loggedInAt: '2026-01-01T00:00:00.000Z' },

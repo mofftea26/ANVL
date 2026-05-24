@@ -6,7 +6,6 @@ import {
   resetDropSystemHydrationGate,
 } from '@/features/admin/drops/drops.service'
 import { persistedDropSchema } from '@/features/admin/drops/drops.persistence.zod'
-import { writeActiveDropId, writeDropsRaw } from '@/features/admin/drops/drops.storage'
 import { writeProductsRaw } from '@/features/admin/products/products.storage'
 import type { AdminProduct } from '@/features/admin/products/products.types'
 import { persistedProductSchema } from '@/features/admin/products/products.persistence.zod'
@@ -26,12 +25,42 @@ import {
 import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
 
 type AnvlDropRow = {
+  id: string
   draft_body: unknown
   status: string
   slug: string
   client_drop_id?: string | null
   release_date?: string | null
   scheduled_activation_at?: string | null
+}
+
+function resolveActiveClientDropId(
+  rows: AnvlDropRow[],
+  activeDbDropId: string | null,
+): string | null {
+  if (activeDbDropId) {
+    const activeRow = rows.find((r) => r.id === activeDbDropId)
+    if (activeRow) {
+      const cid =
+        typeof activeRow.client_drop_id === 'string'
+          ? activeRow.client_drop_id.trim()
+          : ''
+      if (cid) return cid
+      const parsed = persistedDropSchema.safeParse(activeRow.draft_body)
+      if (parsed.success) return parsed.data.id
+    }
+  }
+  const byStatus = rows.find((r) => r.status === 'active')
+  if (byStatus) {
+    const cid =
+      typeof byStatus.client_drop_id === 'string'
+        ? byStatus.client_drop_id.trim()
+        : ''
+    if (cid) return cid
+    const parsed = persistedDropSchema.safeParse(byStatus.draft_body)
+    if (parsed.success) return parsed.data.id
+  }
+  return null
 }
 
 function mapDbDropRow(row: AnvlDropRow): Drop | null {
@@ -61,37 +90,48 @@ export async function hydrateAdminCmsFromSupabase(
 ): Promise<void> {
   beginAdminCmsRemoteHydration()
   try {
-    const { data: dropRows, error: dropErr } = await client
-      .from('anvl_drops')
-      .select(
-        'draft_body, status, slug, client_drop_id, release_date, scheduled_activation_at',
-      )
-      .order('slug')
+    const [dropsRes, pubRes] = await Promise.all([
+      client
+        .from('anvl_drops')
+        .select(
+          'id, draft_body, status, slug, client_drop_id, release_date, scheduled_activation_at',
+        )
+        .order('slug'),
+      client
+        .from('storefront_publication')
+        .select('website_layout, site_seo, global_brand, active_drop_id')
+        .eq('id', 1)
+        .maybeSingle(),
+    ])
 
-    if (dropErr) {
-      throw new Error(dropErr.message)
+    if (dropsRes.error) {
+      throw new Error(dropsRes.error.message)
     }
 
+    const dropRows = (dropsRes.data ?? []) as AnvlDropRow[]
+    const activeDbDropId =
+      typeof pubRes.data?.active_drop_id === 'string'
+        ? pubRes.data.active_drop_id
+        : null
+
     const drops: Drop[] = []
-    for (const row of (dropRows ?? []) as AnvlDropRow[]) {
+    for (const row of dropRows) {
       const d = mapDbDropRow(row)
       if (d) drops.push(d)
     }
 
+    resetDropSystemHydrationGate()
+
     if (drops.length === 0) {
       const oath = createDefaultTheOathDrop()
-      resetDropSystemHydrationGate()
-      writeDropsRaw(JSON.stringify({ drops: [oath] }))
-      writeActiveDropId(oath.id)
+      persistDropsState([oath], oath.id)
     } else {
-      const activeId =
-        drops.find((d) => d.isActive)?.id ??
-        drops.find((d) => d.status === 'active')?.id ??
-        drops[0]?.id ??
-        null
-      resetDropSystemHydrationGate()
-      writeDropsRaw(JSON.stringify({ drops }))
-      writeActiveDropId(activeId)
+      const activeClientId = resolveActiveClientDropId(dropRows, activeDbDropId)
+      persistDropsState(drops, activeClientId ?? drops[0]?.id ?? null)
+    }
+
+    if (pubRes.error) {
+      throw new Error(pubRes.error.message)
     }
 
     if (!getShopifyPublicEnv()) {
@@ -113,16 +153,6 @@ export async function hydrateAdminCmsFromSupabase(
         )
       }
       writeProductsRaw(JSON.stringify({ products }))
-    }
-
-    const { data: pub, error: pubErr } = await client
-      .from('storefront_publication')
-      .select('website_layout, site_seo, global_brand')
-      .eq('id', 1)
-      .maybeSingle()
-
-    if (pubErr) {
-      throw new Error(pubErr.message)
     }
 
     if (pub?.website_layout != null) {

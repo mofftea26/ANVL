@@ -9,9 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_ANVL_INTERNATIONAL_CHECKOUT?: string
   /** Supabase project URL (public). */
   readonly VITE_SUPABASE_URL?: string
-  /** Supabase anon / publishable key — safe for browsers; never use the service role here. */
-  readonly VITE_SUPABASE_ANON_KEY?: string
-  /** Alias some dashboards use for the anon key. */
+  /** Supabase publishable key (`sb_publishable_…`) — preferred browser key. */
   readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string
   /** Shopify store host, e.g. your-store.myshopify.com */
   readonly VITE_SHOPIFY_STORE_DOMAIN?: string

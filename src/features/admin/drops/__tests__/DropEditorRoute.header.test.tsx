@@ -21,6 +21,13 @@ vi.mock('@/features/admin/drops/useDrops', () => ({
   useDropsList: () => mockDropsState.drops,
 }))
 
+vi.mock('@/features/admin/drops/useDropLiveOnStorefront', () => ({
+  useDropLiveOnStorefront: (
+    _dropId: string | undefined,
+    localIsActive: boolean,
+  ) => localIsActive,
+}))
+
 vi.mock('@/features/admin/products/useAdminProducts', () => ({
   useAdminProductsList: () => [],
 }))

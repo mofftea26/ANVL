@@ -66,6 +66,18 @@ import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 import { IconButton } from '@/shared/components/ui/IconButton'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
+import {
+  resolveFirstValidationTarget,
+  scrollToDropEditorField,
+} from '@/features/admin/drops/dropEditorValidationNavigation'
+import { useDropLiveOnStorefront } from '@/features/admin/drops/useDropLiveOnStorefront'
+import type { CmsDropVisualAssetRole } from '@/features/admin/cmsRemote/uploadCmsMedia'
+import { publishStorefrontDropByClientId } from '@/features/admin/cmsRemote/adminCmsPublish'
+import { flushAdminCmsRemoteSync } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
+import { rehydrateAdminCmsFromRemote } from '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'
+import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import { notifyStorefrontPublicationChanged } from '@/features/cms/hooks/invalidateStorefrontPublication'
+import { notifyAdminDropsListChanged } from '@/features/admin/cmsRemote/invalidateAdminDropsList'
 
 const DropActsBuilderPanel = lazy(() =>
   import('@/features/admin/drops/DropActsBuilderPanel').then((m) => ({
@@ -123,6 +135,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const [leaveEmpty, setLeaveEmpty] = useState<LeaveEmptyMap>({})
 
   const [confirmSave, setConfirmSave] = useState(false)
+  const [saveInFlight, setSaveInFlight] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [previewCollapsed, setPreviewCollapsed] = useState(false)
@@ -229,6 +242,15 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   )
 
   const editorReady = Boolean(saved && draft && previewLanding)
+  const isLiveOnStorefront = useDropLiveOnStorefront(
+    draft?.id,
+    Boolean(draft?.isActive),
+  )
+  const dropMediaUpload = useCallback(
+    (role: CmsDropVisualAssetRole) =>
+      draft ? { dropSlug: draft.slug, role } : undefined,
+    [draft],
+  )
 
   const split = useDropEditorXlPreviewSplit(dropEditorSplitRef, editorReady)
 
@@ -251,13 +273,15 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const attemptSave = useCallback(() => {
     if (hasErrors) {
       toast.error(`${errors.summary.length} issue(s) to fix before saving.`)
-      const order: TabId[] = ['basics', 'theme', 'visuals', 'landing', 'products', 'seo']
-      const next = order.find((t) => tabWithErrors(t))
-      if (next) setTab(next)
+      const target = resolveFirstValidationTarget(errors)
+      if (target) {
+        setTab(target.tab)
+        scrollToDropEditorField(target.fieldKey)
+      }
       return
     }
     setConfirmSave(true)
-  }, [errors.summary.length, hasErrors, setTab, tabWithErrors])
+  }, [errors, hasErrors])
 
   const dropToolbarActions = useMemo(() => {
     if (!editorReady || !draft) return null
@@ -463,7 +487,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
           <span className="rounded-full border border-[var(--color-line)] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
             {draft.status}
           </span>
-          {draft.isActive ? (
+          {isLiveOnStorefront ? (
             <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-emerald-200">
               Active drop
             </span>
@@ -480,14 +504,14 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
       <div
         ref={dropEditorSplitRef}
         className={cn(
-          'mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-6 overscroll-x-contain xl:flex-row xl:flex-nowrap xl:items-stretch xl:gap-0 xl:overflow-x-hidden',
+          'mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-6 overscroll-x-contain xl:flex-row xl:flex-nowrap xl:items-start xl:gap-0 xl:overflow-x-hidden',
           DROP_EDITOR_SPLIT_XL_MIN_H_CLASS,
         )}
       >
         <section
           data-testid="drop-editor-preview-column"
           className={cn(
-            'order-1 flex w-full flex-col xl:order-1 xl:h-full xl:min-h-0 xl:shrink-0 xl:self-stretch',
+            'order-1 flex w-full flex-col xl:order-1 xl:min-h-0 xl:shrink-0 xl:self-start',
             DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS,
           )}
           style={
@@ -612,7 +636,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               description="Identity surfaced across admin and routing."
             >
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="text-xs text-[var(--color-text-muted)]">
+                <label
+                  data-drop-field="basics.name"
+                  className="text-xs text-[var(--color-text-muted)]"
+                >
                   Drop name (internal)
                   <AdminInput
                     className={errors.fields['basics.name'] ? fieldErrorClass : undefined}
@@ -630,7 +657,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     }
                   />
                 </label>
-                <label className="text-xs text-[var(--color-text-muted)] md:col-span-2">
+                <label
+                  data-drop-field="basics.slug"
+                  className="text-xs text-[var(--color-text-muted)] md:col-span-2"
+                >
                   <span className="block">Slug</span>
                   <span className="mt-1 block text-[11px] font-normal normal-case leading-snug text-[var(--color-text-muted)]">
                     URL-safe id for{' '}
@@ -702,7 +732,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                   />
                   <DropEditorFieldError message={errors.fields['basics.releaseDate']} />
                 </label>
-                <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+                <label
+                  data-drop-field="basics.title"
+                  className="md:col-span-2 text-xs text-[var(--color-text-muted)]"
+                >
                   Title (public)
                   <AdminInput
                     className={errors.fields['basics.title'] ? fieldErrorClass : undefined}
@@ -767,6 +800,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         kind="image"
                         hint="SVG or raster under /public — invalid URLs fall back to the ANVL crest preview."
                         value={draft.visuals.emblemImageUrl}
+                        supabaseUpload={dropMediaUpload('emblem')}
                         onChange={(next) =>
                           setDraft({
                             ...draft,
@@ -807,6 +841,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         kind="image"
                         hint="Optional — inherits campaign logo or emblem in preview when empty."
                         value={draft.visuals.wordmarkImageUrl ?? ''}
+                        supabaseUpload={dropMediaUpload('wordmark')}
                         leaveEmpty={leaveEmpty.wordmarkImageUrl}
                         onLeaveEmptyChange={(v) =>
                           setLeaveEmpty((prev) => ({ ...prev, wordmarkImageUrl: v }))
@@ -836,6 +871,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         kind="any"
                         hint="Optional large image or short clip — leave empty for a clean hero plate."
                         value={draft.visuals.heroImageUrl ?? ''}
+                        supabaseUpload={dropMediaUpload('hero')}
                         leaveEmpty={leaveEmpty.heroImageUrl}
                         onLeaveEmptyChange={(v) =>
                           setLeaveEmpty((prev) => ({ ...prev, heroImageUrl: v }))
@@ -866,6 +902,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                           kind="image"
                           hint="Campaign lockup — leave empty to inherit the official ANVL crest."
                           value={draft.visuals.logoImageUrl ?? ''}
+                          supabaseUpload={dropMediaUpload('logo')}
                           leaveEmpty={leaveEmpty.logoImageUrl}
                           onLeaveEmptyChange={(v) =>
                             setLeaveEmpty((prev) => ({ ...prev, logoImageUrl: v }))
@@ -893,6 +930,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                           kind="image"
                           hint="Crest shown during initial mark hydration. Default: ANVL crest preview."
                           value={draft.visuals.loadingEmblemUrl ?? ''}
+                          supabaseUpload={dropMediaUpload('loading-emblem')}
                           leaveEmpty={leaveEmpty.loadingEmblemUrl}
                           onLeaveEmptyChange={(v) =>
                             setLeaveEmpty((prev) => ({ ...prev, loadingEmblemUrl: v }))
@@ -1136,12 +1174,13 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         }
                       />
                     </label>
-                    <div className="md:col-span-2 lg:col-span-1">
+                    <div className="md:col-span-2 lg:col-span-1" data-drop-field="seo.ogImage">
                       <MediaPickerField
                         label="OG image"
                         kind="image"
                         hint="Used by social unfurls. Optional."
                         value={draft.seo.ogImage ?? ''}
+                        supabaseUpload={dropMediaUpload('og-image')}
                         onChange={(next) =>
                           setDraft({
                             ...draft,
@@ -1175,12 +1214,16 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
 
       <Modal
         open={confirmSave}
-        onClose={() => setConfirmSave(false)}
+        onClose={() => {
+          if (!saveInFlight) setConfirmSave(false)
+        }}
         title="Commit changes to storage?"
       >
         <div className="space-y-4">
           <p className="text-sm text-[var(--color-text-muted)]">
-            Updates persist only in this browser until a backend ships.
+            {getSupabasePublicEnv()
+              ? 'Saves the drop draft to Supabase. Live storefront updates when this drop is active (or you check activate below).'
+              : 'Updates persist in this browser until Supabase is configured.'}
           </p>
           <AdminCheckbox
             className="max-w-xl border border-[var(--color-line)]/80 bg-[var(--color-bg)]/25 px-3 py-2"
@@ -1188,20 +1231,62 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             onChange={(e) => setSaveModalActivateAfterSave(e.target.checked)}
             label="Activate this drop after saving"
             description="Makes this campaign active in the storefront and deactivates any other active drop."
+            disabled={saveInFlight}
           />
           <div className="flex justify-end gap-2">
-            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmSave(false)}>
+            <AdminButton
+              variant="ghost"
+              size="sm"
+              disabled={saveInFlight}
+              onClick={() => setConfirmSave(false)}
+            >
               Cancel
             </AdminButton>
             <AdminButton
               variant="primary"
               size="sm"
+              loading={saveInFlight}
               onClick={() => {
-                saveDrop(draft, { makeActive: saveModalActivateAfterSave })
-                setPersistedActivateAfterSave(saveModalActivateAfterSave)
-                toast.success('Drop saved.')
-                flashSuccess()
-                setConfirmSave(false)
+                void (async () => {
+                  setSaveInFlight(true)
+                  try {
+                    const activate = saveModalActivateAfterSave
+                    saveDrop(draft, { makeActive: activate })
+                    setPersistedActivateAfterSave(activate)
+
+                    if (getSupabasePublicEnv()) {
+                      const flushed = await flushAdminCmsRemoteSync()
+                      if (!flushed.ok) {
+                        toast.error(flushed.error)
+                        return
+                      }
+                      const shouldPublish =
+                        activate || isLiveOnStorefront || draft.isActive
+                      if (shouldPublish) {
+                        const published = await publishStorefrontDropByClientId(
+                          draft.id,
+                        )
+                        if (!published.ok) {
+                          toast.error(published.error)
+                          return
+                        }
+                        await rehydrateAdminCmsFromRemote()
+                        await notifyStorefrontPublicationChanged()
+                        toast.success('Drop saved and storefront updated.')
+                      } else {
+                        toast.success('Drop saved.')
+                      }
+                      await notifyAdminDropsListChanged()
+                    } else {
+                      toast.success('Drop saved.')
+                    }
+
+                    flashSuccess()
+                    setConfirmSave(false)
+                  } finally {
+                    setSaveInFlight(false)
+                  }
+                })()
               }}
             >
               Save
@@ -1228,12 +1313,27 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               variant="primary"
               size="sm"
               onClick={() => {
-                const next = resetDropToDefaults(draft.id)
-                if (next) {
-                  setDraft(next)
-                  toast.success('Drop reset to defaults.')
-                }
-                setConfirmReset(false)
+                void (async () => {
+                  const wasActive = draft.isActive
+                  const next = resetDropToDefaults(draft.id)
+                  if (next) {
+                    setDraft(next)
+                    if (wasActive && getSupabasePublicEnv()) {
+                      const published = await publishStorefrontDropByClientId(
+                        next.id,
+                      )
+                      if (!published.ok) {
+                        toast.error(published.error)
+                      } else {
+                        await notifyStorefrontPublicationChanged()
+                        toast.success('Drop reset and storefront updated.')
+                      }
+                    } else {
+                      toast.success('Drop reset to defaults.')
+                    }
+                  }
+                  setConfirmReset(false)
+                })()
               }}
             >
               Reset

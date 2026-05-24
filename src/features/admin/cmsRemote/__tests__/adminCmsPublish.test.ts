@@ -47,7 +47,7 @@ describe('publishStorefrontDropByClientId', () => {
       anonKey: 'anon',
     })
     getAdminSupabaseBrowserClient.mockReturnValue({})
-    fetchCmsProfileRole.mockResolvedValue('editor')
+    fetchCmsProfileRole.mockResolvedValue({ role: 'editor', selectError: null })
 
     await expect(
       publishStorefrontDropByClientId('drop-1'),
@@ -77,7 +77,7 @@ describe('publishStorefrontDropByClientId', () => {
       })),
     }))
     getAdminSupabaseBrowserClient.mockReturnValue({ from, rpc })
-    fetchCmsProfileRole.mockResolvedValue('admin')
+    fetchCmsProfileRole.mockResolvedValue({ role: 'admin', selectError: null })
 
     await expect(
       publishStorefrontDropByClientId('client-drop-id'),

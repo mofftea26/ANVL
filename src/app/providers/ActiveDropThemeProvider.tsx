@@ -7,7 +7,12 @@ import { useActiveDrop } from '@/features/drops/hooks/useActiveDrop'
 import type { Drop } from '@/features/drops/drop.types'
 import type { GlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.types'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
-
+import { useStorefrontActiveDrop } from '@/features/cms/hooks/useStorefrontActiveDrop'
+import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import {
+  fetchStorefrontPublicationView,
+  STOREFRONT_PUBLICATION_QUERY_KEY,
+} from '@/features/cms/hooks/storefrontPublicationQuery'
 const StorefrontGlobalBrandContext = createContext<GlobalBrandSettings | null>(
   null,
 )
@@ -24,8 +29,8 @@ type Props = PropsWithChildren<{
 }>
 
 /**
- * Owns the public `:root` palette `<style>` for the active drop and keeps it
- * in sync when local CMS drop storage changes (no reliance on parent loader re-runs).
+ * Owns the public `:root` palette `<style>` for the active drop. With Supabase,
+ * palette tracks the published snapshot (same source as the landing page).
  */
 export function ActiveDropThemeProvider({
   initialDrop,
@@ -40,9 +45,10 @@ export function ActiveDropThemeProvider({
 
   return (
     <StorefrontGlobalBrandContext.Provider value={globalBrand}>
-      {themeCss ? (
+      {themeCss && drop ? (
         <style
           id={ACTIVE_DROP_THEME_STYLE_ID}
+          key={`${drop.id}:${drop.updatedAt}`}
           dangerouslySetInnerHTML={{ __html: themeCss }}
         />
       ) : null}

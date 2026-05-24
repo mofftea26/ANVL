@@ -1,5 +1,13 @@
 # Admin UI primitives
 
+## Sign-in (`/admin/login`)
+
+- **Route:** `src/routes/admin/-adminLogin.tsx` (`AdminLoginPageRoute`).
+- **Password:** **`IconButton`** toggle (**`Eye` / `EyeOff`**, **`aria-pressed`**, **`aria-label`**) shows plain text vs masked input; **44×44** target matches **`IconButton`** defaults.
+- **Supabase Auth:** `/admin/login` uses **`signInWithPassword`**. After GoTrue returns a session, the app waits for the bearer token to attach, reads **`public.cms_profiles`** with retries (**`adminSupabaseAuthFlow.ts`**), and only then sets React session state. **Logout** (sidebar) calls **`signOut`**, disposes the admin browser client, and clears legacy keys. Sessions **persist across reload** (Supabase storage key **`anvl.supabase.admin.v1`**).
+- **First admin user:** Supabase Auth alone is not enough — an **`admin`** row in **`public.cms_profiles`** for that user's Auth **`user_id`** (create in Supabase Dashboard → SQL Editor while signed in as project owner).
+- **Remote CMS sync:** After sign-in, workspace data pulls in the **background**; **`AdminLayout`** shows a sync banner until localStorage hydration finishes. Auth bootstrap no longer blocks the admin shell on the full Supabase pull.
+
 ## Settings / danger zone
 
 - **Route:** `/admin/settings` (`src/routes/admin/-adminSettings.tsx`).
@@ -10,7 +18,7 @@
 
 - **`AdminLayout`** (`src/features/admin/components/AdminLayout.tsx`): shell, grid, and main column use **`min-h-[100dvh]`** (dynamic viewport height) so the admin floor matches mobile browser chrome; **`main`** uses modest **`pb-8`** (with **`lg:py-10`**) so the page doesn’t leave a tall empty band on desktop; toast clearance stays on the global **`sonner`** **`Toaster`** (**`AppProviders`**: `offset` / `mobileOffset`).
 - **`AdminSidebar`** (desktop **`lg:flex`** column): **`lg:self-start lg:sticky lg:top-0`** with **`h` / `min-h` / `max-h` `100dvh`** so the rail stays viewport-sized and does not stretch to match a very tall **`main`** row (grid default **`stretch`**). Nav links, footer actions, and auth are unchanged. Mobile **`Drawer`** copy still uses **`density="drawer"`**; the panel remains **`h-[100dvh]`** (`Drawer.tsx`).
-- **`AdminTopbar`** (`src/features/admin/components/AdminTopbar.tsx`): sticky document header with mobile nav trigger, **micro label + primary page title + optional description** from **`AdminLayout`** props, and a trailing **`admin-page-actions`** region fed by **`AdminPageActionsProvider`** / **`useAdminPageActions()`** (registered per route; starts empty on SSR until client effects run — matches hydration). **`--admin-topbar-height`** in **`src/styles.css`** approximates this block for layout math (e.g. drop editor live preview **`min-height`**).
+- **`AdminTopbar`** (`src/features/admin/components/AdminTopbar.tsx`): sticky document header with mobile nav trigger, **micro label `ANVL Admin`**, optional **signed-in label** (Supabase: **`session.displayName`** from Auth **`user_metadata`** keys such as `full_name` / `name` / `display_name`, else email local-part; legacy: **`username`**) on the row above the page title, **primary page title + optional description** from **`AdminLayout`**, and trailing **`admin-page-actions`** from **`AdminPageActionsProvider`**. **`--admin-topbar-height`** in **`src/styles.css`** approximates this block for layout math (e.g. drop editor live preview **`min-height`**).
 - **Page actions API:** `AdminPageActionsProvider` wraps the **`/admin`** route **`Outlet`** (`src/routes/admin/route.tsx`). Routes call **`useAdminPageActions()`** and **`useEffect`** (`setActions(<Fragment/>)` + cleanup `setActions(null)`). **`useAdminPageActionsSlot()`** is read-only for layout/tests.
 - **Sidebar footer:** **`AdminSidebar`** anchors **View storefront** (opens `/` in a new tab, **`focus-ring`**, **≥44px** height) and **Logout** (same **`useAdminAuth`** `logout` as before) under **`border-t`**, freeing the top bar’s trailing cluster for route actions only.
 

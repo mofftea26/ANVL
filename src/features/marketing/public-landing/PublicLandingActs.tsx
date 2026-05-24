@@ -126,10 +126,11 @@ export function PublicLandingActs({
   cmsPreview,
   draftActs,
 }: PublicLandingActsProps) {
+  const actRows = draftActs ?? landing.dropActs
   const rowById = useMemo(() => {
-    if (!draftActs?.length) return null
-    return new Map(draftActs.map((a) => [a.id, a]))
-  }, [draftActs])
+    if (!actRows?.length) return null
+    return new Map(actRows.map((a) => [a.id, a]))
+  }, [actRows])
 
   function rowFor(actId: string): LandingAct | undefined {
     return rowById?.get(actId)
