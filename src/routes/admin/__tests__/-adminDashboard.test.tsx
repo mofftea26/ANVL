@@ -39,22 +39,25 @@ describe('AdminDashboardPageRoute', () => {
     expect(screen.queryByRole('heading', { name: /welcome back/i })).toBeNull()
     expect(screen.queryByText(/everything persists in this browser/i)).toBeNull()
     expect(screen.queryByRole('link', { name: /view site/i })).toBeNull()
-    expect(screen.getByRole('link', { name: /manage drops/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /manage/i })).toBeTruthy()
   })
 
-  it('labels the settings tile CTA as Settings', () => {
+  it('labels the settings tile CTA from nav config', () => {
     render(<AdminDashboardPageRoute />)
 
-    const link = screen.getByRole('link', { name: 'Settings' })
-    expect(link.getAttribute('href')).toBe('/admin/settings')
+    const settingsLink = screen
+      .getAllByRole('link', { name: 'Open' })
+      .find((el) => el.getAttribute('href') === '/admin/settings')
+    expect(settingsLink).toBeTruthy()
   })
 
   it('exposes card CTAs as links with destinations for every dashboard tile', () => {
     render(<AdminDashboardPageRoute />)
 
     for (const card of dashboardCards) {
-      const link = screen.getByRole('link', { name: card.cta })
-      expect(link.getAttribute('href')).toBe(card.href)
+      const links = screen.getAllByRole('link', { name: card.cta })
+      const link = links.find((el) => el.getAttribute('href') === card.href)
+      expect(link).toBeTruthy()
     }
   })
 })

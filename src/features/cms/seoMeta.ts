@@ -7,7 +7,12 @@ import {
 import type { SeoContent } from '@/features/cms/types/cms.types'
 import type { DropSeo } from '@/features/drops/drop.types'
 import type { LandingSeoContent } from '@/features/cms/landing/landingPageCms.types'
-import type { SiteSeoGlobalDefaults } from '@/features/cms/siteSeo.local'
+import type {
+  SiteSeoContent,
+  SiteSeoGlobalDefaults,
+  SiteStaticSeoPath,
+} from '@/features/cms/siteSeo.local'
+import type { SeoFieldPatch } from '@/features/cms/types/cms.types'
 
 export type { SiteSeoGlobalDefaults } from '@/features/cms/siteSeo.local'
 
@@ -166,6 +171,42 @@ export function seoContentToMetaSource(
     twitterDescription: pickStr(doc.twitterDescription, g.twitterDescription),
     twitterImage: pickStr(doc.twitterImage, g.twitterImage),
   }
+}
+
+/** Merge a static-page SEO patch from `site_seo.staticPages` onto a base document. */
+export function mergeSeoWithStaticPagePatch(
+  base: SeoContent,
+  patch: SeoFieldPatch | undefined,
+): SeoContent {
+  if (!patch) return base
+  return {
+    title: pickStr(patch.title, base.title) ?? base.title,
+    description: pickStr(patch.description, base.description) ?? base.description,
+    canonicalPath: pickStr(patch.canonicalPath, base.canonicalPath) ?? base.canonicalPath,
+    metaTitle: patch.metaTitle ?? base.metaTitle,
+    metaDescription: patch.metaDescription ?? base.metaDescription,
+    canonicalUrl: patch.canonicalUrl ?? base.canonicalUrl,
+    noIndex: patch.noIndex ?? base.noIndex,
+    ogTitle: patch.ogTitle ?? base.ogTitle,
+    ogDescription: patch.ogDescription ?? base.ogDescription,
+    ogImage: patch.ogImage ?? base.ogImage,
+    twitterTitle: patch.twitterTitle ?? base.twitterTitle,
+    twitterDescription: patch.twitterDescription ?? base.twitterDescription,
+    twitterImage: patch.twitterImage ?? base.twitterImage,
+    structuredDataType: patch.structuredDataType ?? base.structuredDataType,
+  }
+}
+
+export function buildSeoHeadForSiteStaticPath(
+  path: SiteStaticSeoPath,
+  doc: SeoContent,
+  site: SiteSeoContent,
+): ReturnType<typeof buildSeoMeta> {
+  const merged = mergeSeoWithStaticPagePatch(doc, site.staticPages[path])
+  return buildSeoMetaFromCmsSource(
+    seoContentToMetaSource(merged, site.globalDefaults),
+    site.globalDefaults,
+  )
 }
 
 export function buildSeoMetaFromCmsSource(

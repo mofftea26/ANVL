@@ -1,6 +1,7 @@
 ﻿import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { buildSeoMeta } from '@/app/seo/meta'
+import { buildSeoHeadForSiteStaticPath } from '@/features/cms/seoMeta'
 import { runtimeClients } from '@/app/config/runtime'
 import { ShopFiltersForm } from '@/features/products/shop/ShopFiltersForm'
 import {
@@ -25,9 +26,10 @@ export const Route = createFileRoute('/shop/')({
   validateSearch: validateShopUrlSearch,
   loaderDeps: ({ search }) => ({ search }),
   loader: async ({ deps }) => {
-    const [{ items, drops }, seoDoc] = await Promise.all([
+    const [{ items, drops }, seoDoc, siteSeo] = await Promise.all([
       runtimeClients.commerce.getShopListingCatalog(),
       runtimeClients.seo.getSeoByPath('/shop'),
+      runtimeClients.seo.getSiteSeo(),
     ])
     return {
       drops,
@@ -36,10 +38,16 @@ export const Route = createFileRoute('/shop/')({
       colors: uniqueColorwayNames(items),
       sizes: uniqueSizeLabels(items),
       seoDoc,
+      siteSeo,
     }
   },
-  head: ({ loaderData }) =>
-    buildSeoMeta({
+  head: ({ loaderData }) => {
+    const site = loaderData?.siteSeo
+    const doc = loaderData?.seoDoc
+    if (site && doc) {
+      return buildSeoHeadForSiteStaticPath('/shop', doc, site)
+    }
+    return buildSeoMeta({
       title: loaderData?.seoDoc?.title ?? 'Shop | ANVL Athletics',
       description:
         loaderData?.seoDoc?.description ??
@@ -48,7 +56,8 @@ export const Route = createFileRoute('/shop/')({
       image: loaderData?.seoDoc?.ogImage,
       ogTitle: loaderData?.seoDoc?.ogTitle,
       ogDescription: loaderData?.seoDoc?.ogDescription,
-    }),
+    })
+  },
   component: ShopPage,
 })
 

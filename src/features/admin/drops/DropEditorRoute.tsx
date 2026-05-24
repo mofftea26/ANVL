@@ -1,11 +1,19 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Check, Eye, EyeOff, Plus, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { Check, Eye, EyeOff, Plus, Power, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { toast } from 'sonner'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
+import { AdminPanel } from '@/features/admin/components/AdminPanel'
+import {
+  AdminStatusBadge,
+  dropStatusBadgeLabel,
+  dropStatusBadgeTone,
+} from '@/features/admin/components/AdminStatusBadge'
+import { AdminMicroHeading } from '@/features/admin/components/AdminMicroHeading'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
+import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { DROP_THEME_PRESETS } from '@/features/admin/drops/drops.presets'
 import { DropEditorLivePreview } from '@/features/admin/drops/DropEditorLivePreview'
 import type { DropStatus } from '@/features/admin/drops/drops.types'
@@ -20,6 +28,10 @@ import {
   type DropFieldErrors,
 } from '@/features/admin/drops/drops.editor.validation'
 import { useDropsList } from '@/features/admin/drops/useDrops'
+import {
+  useDeactivateAdminDropMutation,
+  useSetActiveAdminDropMutation,
+} from '@/features/admin/drops/useAdminDropsListQuery'
 import {
   adminProductIsPubliclyVisible,
   adminProductPrimaryPreviewImage,
@@ -64,8 +76,21 @@ import { DropThemePaletteCard } from '@/features/admin/drops/DropThemePaletteCar
 import { DebouncedColorField } from '@/features/admin/drops/DebouncedColorField'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 import { IconButton } from '@/shared/components/ui/IconButton'
+import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
+import {
+  resolveFirstValidationTarget,
+  scrollToDropEditorField,
+} from '@/features/admin/drops/dropEditorValidationNavigation'
+import { useDropLiveOnStorefront } from '@/features/admin/drops/useDropLiveOnStorefront'
+import type { CmsDropVisualAssetRole } from '@/features/admin/cmsRemote/uploadCmsMedia'
+import { publishStorefrontDropByClientId } from '@/features/admin/cmsRemote/adminCmsPublish'
+import { flushAdminCmsRemoteSync } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
+import { rehydrateAdminCmsFromRemote } from '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'
+import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import { notifyStorefrontPublicationChanged } from '@/features/cms/hooks/invalidateStorefrontPublication'
+import { notifyAdminDropsListChanged } from '@/features/admin/cmsRemote/invalidateAdminDropsList'
 
 const DropActsBuilderPanel = lazy(() =>
   import('@/features/admin/drops/DropActsBuilderPanel').then((m) => ({
@@ -123,8 +148,15 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const [leaveEmpty, setLeaveEmpty] = useState<LeaveEmptyMap>({})
 
   const [confirmSave, setConfirmSave] = useState(false)
+  const [saveInFlight, setSaveInFlight] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmActivateToggle, setConfirmActivateToggle] = useState<
+    'activate' | 'deactivate' | null
+  >(null)
+  const setActiveMut = useSetActiveAdminDropMutation()
+  const deactivateMut = useDeactivateAdminDropMutation()
+  const activateToggleBusy = setActiveMut.isPending || deactivateMut.isPending
   const [previewCollapsed, setPreviewCollapsed] = useState(false)
   const [quickProductOpen, setQuickProductOpen] = useState(false)
   const [quickProductSlug, setQuickProductSlug] = useState('')
@@ -229,6 +261,15 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   )
 
   const editorReady = Boolean(saved && draft && previewLanding)
+  const isLiveOnStorefront = useDropLiveOnStorefront(
+    draft?.id,
+    Boolean(draft?.isActive),
+  )
+  const dropMediaUpload = useCallback(
+    (role: CmsDropVisualAssetRole) =>
+      draft ? { dropSlug: draft.slug, role } : undefined,
+    [draft],
+  )
 
   const split = useDropEditorXlPreviewSplit(dropEditorSplitRef, editorReady)
 
@@ -251,36 +292,64 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const attemptSave = useCallback(() => {
     if (hasErrors) {
       toast.error(`${errors.summary.length} issue(s) to fix before saving.`)
-      const order: TabId[] = ['basics', 'theme', 'visuals', 'landing', 'products', 'seo']
-      const next = order.find((t) => tabWithErrors(t))
-      if (next) setTab(next)
+      const target = resolveFirstValidationTarget(errors)
+      if (target) {
+        setTab(target.tab)
+        scrollToDropEditorField(target.fieldKey)
+      }
       return
     }
     setConfirmSave(true)
-  }, [errors.summary.length, hasErrors, setTab, tabWithErrors])
+  }, [errors, hasErrors])
 
   const dropToolbarActions = useMemo(() => {
     if (!editorReady || !draft) return null
+    const canToggleActive = draft.status !== 'archived'
     return (
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <IconButton
+        {canToggleActive ? (
+          <AdminTopbarChipButton
+            type="button"
+            disabled={activateToggleBusy}
+            aria-label={
+              isLiveOnStorefront
+                ? 'Deactivate drop on storefront'
+                : 'Activate drop on storefront'
+            }
+            title={
+              isLiveOnStorefront
+                ? 'Remove this drop from the live storefront'
+                : 'Make this drop the live storefront campaign'
+            }
+            variant={isLiveOnStorefront ? 'success' : 'default'}
+            icon={<Power size={14} />}
+            onClick={() =>
+              setConfirmActivateToggle(isLiveOnStorefront ? 'deactivate' : 'activate')
+            }
+          >
+            {isLiveOnStorefront ? 'Deactivate' : 'Activate'}
+          </AdminTopbarChipButton>
+        ) : null}
+        <AdminTopbarChipButton
           type="button"
-          aria-label="Discard unsaved changes and reset drop to defaults"
-          title="Reset drop"
+          aria-label="Reset drop"
+          title="Discard unsaved changes and reset drop to defaults"
+          icon={<RotateCcw size={14} />}
           onClick={() => setConfirmReset(true)}
         >
-          <RotateCcw size={18} aria-hidden="true" />
-        </IconButton>
-        <IconButton
+          Reset
+        </AdminTopbarChipButton>
+        <AdminTopbarChipButton
           type="button"
-          aria-label="Delete this drop"
-          title="Delete drop"
-          className="border-red-500/40 bg-red-500/10 text-red-100 hover:bg-red-500/20"
+          aria-label="Delete drop"
+          title="Delete this drop"
+          icon={<Trash2 size={14} />}
+          variant="destructive"
           onClick={() => setConfirmDelete(true)}
         >
-          <Trash2 size={18} aria-hidden="true" />
-        </IconButton>
-        <IconButton
+          Delete
+        </AdminTopbarChipButton>
+        <AdminTopbarChipButton
           type="button"
           aria-label={
             showSuccess ? 'Drop saved' : hasErrors ? 'Save blocked by validation errors' : 'Save drop'
@@ -289,26 +358,22 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             hasErrors ? errors.summary.join('\n') : showSuccess ? 'Saved' : 'Save drop'
           }
           disabled={hasErrors}
-          className={cn(
-            !hasErrors &&
-              'border-[var(--color-accent)]/55 bg-[var(--color-accent)]/15 text-[var(--color-heading)] hover:bg-[var(--color-accent)]/25',
-          )}
+          icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
+          variant={hasErrors ? 'default' : 'primary'}
           onClick={attemptSave}
         >
-          {showSuccess ? (
-            <Check size={18} aria-hidden="true" />
-          ) : (
-            <Save size={18} aria-hidden="true" />
-          )}
-        </IconButton>
+          {showSuccess ? 'Saved' : 'Save'}
+        </AdminTopbarChipButton>
       </div>
     )
   }, [
+    activateToggleBusy,
     attemptSave,
     draft,
     editorReady,
     errors.summary,
     hasErrors,
+    isLiveOnStorefront,
     showSuccess,
   ])
 
@@ -447,11 +512,6 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
     draft.visuals.emblemImageUrl?.trim() ||
     globalBrand.emblemFallbackUrl.trim() ||
     ''
-  const visualsShellClass =
-    'space-y-3 rounded-xl border border-[var(--color-line)]/55 bg-[var(--color-bg)]/30 p-4 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--anvl-bone)_8%,transparent)]'
-  const visualsSubheadingClass =
-    'text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]'
-
   const headerTitle = draft.name.trim() || 'Untitled'
 
   return (
@@ -460,18 +520,16 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
       title={headerTitle}
       description={
         <span className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-[var(--color-line)] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-            {draft.status}
-          </span>
-          {draft.isActive ? (
-            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-emerald-200">
-              Active drop
-            </span>
-          ) : null}
+          <AdminStatusBadge
+            tone={dropStatusBadgeTone(draft.status, isLiveOnStorefront)}
+            size="chip"
+          >
+            {dropStatusBadgeLabel(draft.status, isLiveOnStorefront)}
+          </AdminStatusBadge>
           {hasErrors ? (
-            <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-red-200">
+            <AdminStatusBadge tone="danger" size="chip">
               {errors.summary.length} validation issue(s)
-            </span>
+            </AdminStatusBadge>
           ) : null}
         </span>
       }
@@ -480,14 +538,14 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
       <div
         ref={dropEditorSplitRef}
         className={cn(
-          'mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-6 overscroll-x-contain xl:flex-row xl:flex-nowrap xl:items-stretch xl:gap-0 xl:overflow-x-hidden',
+          'mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-6 overscroll-x-contain xl:flex-row xl:flex-nowrap xl:items-start xl:gap-0 xl:overflow-x-hidden',
           DROP_EDITOR_SPLIT_XL_MIN_H_CLASS,
         )}
       >
         <section
           data-testid="drop-editor-preview-column"
           className={cn(
-            'order-1 flex w-full flex-col xl:order-1 xl:h-full xl:min-h-0 xl:shrink-0 xl:self-stretch',
+            'order-1 flex w-full flex-col xl:order-1 xl:min-h-0 xl:shrink-0 xl:self-start',
             DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS,
           )}
           style={
@@ -612,7 +670,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               description="Identity surfaced across admin and routing."
             >
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="text-xs text-[var(--color-text-muted)]">
+                <label
+                  data-drop-field="basics.name"
+                  className="text-xs text-[var(--color-text-muted)]"
+                >
                   Drop name (internal)
                   <AdminInput
                     className={errors.fields['basics.name'] ? fieldErrorClass : undefined}
@@ -630,7 +691,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     }
                   />
                 </label>
-                <label className="text-xs text-[var(--color-text-muted)] md:col-span-2">
+                <label
+                  data-drop-field="basics.slug"
+                  className="text-xs text-[var(--color-text-muted)] md:col-span-2"
+                >
                   <span className="block">Slug</span>
                   <span className="mt-1 block text-[11px] font-normal normal-case leading-snug text-[var(--color-text-muted)]">
                     URL-safe id for{' '}
@@ -702,7 +766,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                   />
                   <DropEditorFieldError message={errors.fields['basics.releaseDate']} />
                 </label>
-                <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+                <label
+                  data-drop-field="basics.title"
+                  className="md:col-span-2 text-xs text-[var(--color-text-muted)]"
+                >
                   Title (public)
                   <AdminInput
                     className={errors.fields['basics.title'] ? fieldErrorClass : undefined}
@@ -757,8 +824,8 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               description="Campaign imagery for this drop: emblem, wordmark, and hero, plus optional campaign lockups. Inline ANVL marks replace broken or empty previews; use “Hide fallback preview” to QA a cleared slot."
             >
               <div className="space-y-6">
-                <section className={visualsShellClass}>
-                  <h3 className={visualsSubheadingClass}>Drop emblem</h3>
+                <AdminPanel variant="inset" className="space-y-3">
+                  <AdminMicroHeading as="h3">Drop emblem</AdminMicroHeading>
                       <p className="text-xs text-[var(--color-text-muted)]">
                         Mark used in hero / manifesto / join surfaces.
                       </p>
@@ -767,6 +834,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         kind="image"
                         hint="SVG or raster under /public — invalid URLs fall back to the ANVL crest preview."
                         value={draft.visuals.emblemImageUrl}
+                        supabaseUpload={dropMediaUpload('emblem')}
                         onChange={(next) =>
                           setDraft({
                             ...draft,
@@ -795,10 +863,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         />
                         <DropEditorFieldError message={errors.fields['visuals.emblemAlt']} />
                       </label>
-                    </section>
+                    </AdminPanel>
 
-                    <section className={visualsShellClass}>
-                      <h3 className={visualsSubheadingClass}>Wordmark</h3>
+                    <AdminPanel variant="inset" className="space-y-3">
+                      <AdminMicroHeading as="h3">Wordmark</AdminMicroHeading>
                       <p className="text-xs text-[var(--color-text-muted)]">
                         Wide lockup for marquee surfaces. Empty or broken picks fall back to the bundled ANVL wordmark; chained preview tries campaign logo then emblem.
                       </p>
@@ -807,6 +875,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         kind="image"
                         hint="Optional — inherits campaign logo or emblem in preview when empty."
                         value={draft.visuals.wordmarkImageUrl ?? ''}
+                        supabaseUpload={dropMediaUpload('wordmark')}
                         leaveEmpty={leaveEmpty.wordmarkImageUrl}
                         onLeaveEmptyChange={(v) =>
                           setLeaveEmpty((prev) => ({ ...prev, wordmarkImageUrl: v }))
@@ -824,10 +893,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         fallback="wordmark"
                         fallbackPreviewSrc={wordmarkChainPreview}
                       />
-                    </section>
+                    </AdminPanel>
 
-                    <section className={visualsShellClass}>
-                      <h3 className={visualsSubheadingClass}>Hero backdrop</h3>
+                    <AdminPanel variant="inset" className="space-y-3">
+                      <AdminMicroHeading as="h3">Hero backdrop</AdminMicroHeading>
                       <p className="text-xs text-[var(--color-text-muted)]">
                         Large mood image or loop behind the drop landing hero.
                       </p>
@@ -836,6 +905,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         kind="any"
                         hint="Optional large image or short clip — leave empty for a clean hero plate."
                         value={draft.visuals.heroImageUrl ?? ''}
+                        supabaseUpload={dropMediaUpload('hero')}
                         leaveEmpty={leaveEmpty.heroImageUrl}
                         onLeaveEmptyChange={(v) =>
                           setLeaveEmpty((prev) => ({ ...prev, heroImageUrl: v }))
@@ -852,12 +922,12 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         error={errors.fields['visuals.heroImageUrl']}
                         fallback="none"
                       />
-                    </section>
+                    </AdminPanel>
 
                     <div className="space-y-6 border-t border-[var(--color-line)]/55 pt-6">
-                      <h3 className={visualsSubheadingClass}>Additional lockups</h3>
+                      <AdminMicroHeading as="h3">Additional lockups</AdminMicroHeading>
 
-                      <section className={visualsShellClass}>
+                      <AdminPanel variant="inset" className="space-y-3">
                         <h4 className="text-xs font-semibold text-[var(--color-heading)]">
                           Campaign logo
                         </h4>
@@ -866,6 +936,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                           kind="image"
                           hint="Campaign lockup — leave empty to inherit the official ANVL crest."
                           value={draft.visuals.logoImageUrl ?? ''}
+                          supabaseUpload={dropMediaUpload('logo')}
                           leaveEmpty={leaveEmpty.logoImageUrl}
                           onLeaveEmptyChange={(v) =>
                             setLeaveEmpty((prev) => ({ ...prev, logoImageUrl: v }))
@@ -882,9 +953,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                           error={errors.fields['visuals.logoImageUrl']}
                           fallback="crest"
                         />
-                      </section>
+                      </AdminPanel>
 
-                      <section className={visualsShellClass}>
+                      <AdminPanel variant="inset" className="space-y-3">
                         <h4 className="text-xs font-semibold text-[var(--color-heading)]">
                           Loading emblem
                         </h4>
@@ -893,6 +964,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                           kind="image"
                           hint="Crest shown during initial mark hydration. Default: ANVL crest preview."
                           value={draft.visuals.loadingEmblemUrl ?? ''}
+                          supabaseUpload={dropMediaUpload('loading-emblem')}
                           leaveEmpty={leaveEmpty.loadingEmblemUrl}
                           onLeaveEmptyChange={(v) =>
                             setLeaveEmpty((prev) => ({ ...prev, loadingEmblemUrl: v }))
@@ -910,7 +982,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                           fallback="crest"
                           fallbackPreviewSrc={draft.visuals.emblemImageUrl ?? ''}
                         />
-                      </section>
+                      </AdminPanel>
                     </div>
               </div>
             </AdminCard>
@@ -1136,12 +1208,13 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                         }
                       />
                     </label>
-                    <div className="md:col-span-2 lg:col-span-1">
+                    <div className="md:col-span-2 lg:col-span-1" data-drop-field="seo.ogImage">
                       <MediaPickerField
                         label="OG image"
                         kind="image"
                         hint="Used by social unfurls. Optional."
                         value={draft.seo.ogImage ?? ''}
+                        supabaseUpload={dropMediaUpload('og-image')}
                         onChange={(next) =>
                           setDraft({
                             ...draft,
@@ -1173,103 +1246,164 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </section>
       </div>
 
-      <Modal
+      <AdminConfirmDialog
         open={confirmSave}
-        onClose={() => setConfirmSave(false)}
+        onClose={() => {
+          if (!saveInFlight) setConfirmSave(false)
+        }}
         title="Commit changes to storage?"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Updates persist only in this browser until a backend ships.
-          </p>
+        confirmLabel="Save"
+        confirmLoading={saveInFlight}
+        footerBefore={
           <AdminCheckbox
             className="max-w-xl border border-[var(--color-line)]/80 bg-[var(--color-bg)]/25 px-3 py-2"
             checked={saveModalActivateAfterSave}
             onChange={(e) => setSaveModalActivateAfterSave(e.target.checked)}
             label="Activate this drop after saving"
             description="Makes this campaign active in the storefront and deactivates any other active drop."
+            disabled={saveInFlight}
           />
-          <div className="flex justify-end gap-2">
-            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmSave(false)}>
-              Cancel
-            </AdminButton>
-            <AdminButton
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                saveDrop(draft, { makeActive: saveModalActivateAfterSave })
-                setPersistedActivateAfterSave(saveModalActivateAfterSave)
-                toast.success('Drop saved.')
-                flashSuccess()
-                setConfirmSave(false)
-              }}
-            >
-              Save
-            </AdminButton>
-          </div>
-        </div>
-      </Modal>
+        }
+        onConfirm={() => {
+          void (async () => {
+            setSaveInFlight(true)
+            try {
+              const activate = saveModalActivateAfterSave
+              saveDrop(draft, { makeActive: activate })
+              setPersistedActivateAfterSave(activate)
 
-      <Modal
+              if (getSupabasePublicEnv()) {
+                const flushed = await flushAdminCmsRemoteSync()
+                if (!flushed.ok) {
+                  toast.error(flushed.error)
+                  return
+                }
+                const shouldPublish =
+                  activate || isLiveOnStorefront || draft.isActive
+                if (shouldPublish) {
+                  const published = await publishStorefrontDropByClientId(
+                    draft.id,
+                  )
+                  if (!published.ok) {
+                    toast.error(published.error)
+                    return
+                  }
+                  await rehydrateAdminCmsFromRemote()
+                  await notifyStorefrontPublicationChanged()
+                  toast.success('Drop saved and storefront updated.')
+                } else {
+                  toast.success('Drop saved.')
+                }
+                await notifyAdminDropsListChanged()
+              } else {
+                toast.success('Drop saved.')
+              }
+
+              flashSuccess()
+              setConfirmSave(false)
+            } finally {
+              setSaveInFlight(false)
+            }
+          })()
+        }}
+      >
+        {getSupabasePublicEnv()
+          ? 'Saves the drop draft to Supabase. Live storefront updates when this drop is active (or you check activate below).'
+          : 'Updates persist in this browser until Supabase is configured.'}
+      </AdminConfirmDialog>
+
+      <AdminConfirmDialog
+        open={confirmActivateToggle === 'activate'}
+        onClose={() => setConfirmActivateToggle(null)}
+        title="Make drop active?"
+        confirmLabel="Activate"
+        confirmDisabled={activateToggleBusy}
+        onConfirm={() => {
+          if (!draft || confirmActivateToggle !== 'activate') return
+          setActiveMut.mutate(draft.id, {
+            onSuccess: () => {
+              toast.success('Active drop updated.')
+              setConfirmActivateToggle(null)
+            },
+            onError: () => toast.error('Could not activate drop.'),
+          })
+        }}
+      >
+        <span className="font-medium text-[var(--color-text)]">{draft.name}</span> will power the
+        public landing page and theme. The current active drop will be set to inactive. When
+        Supabase is configured, activating also publishes the drop to the live storefront snapshot.
+      </AdminConfirmDialog>
+
+      <AdminConfirmDialog
+        open={confirmActivateToggle === 'deactivate'}
+        onClose={() => setConfirmActivateToggle(null)}
+        title="Deactivate drop?"
+        confirmLabel="Deactivate"
+        confirmDisabled={activateToggleBusy}
+        onConfirm={() => {
+          if (!draft || confirmActivateToggle !== 'deactivate') return
+          deactivateMut.mutate(draft.id, {
+            onSuccess: () => {
+              toast.success('Drop deactivated on storefront.')
+              setConfirmActivateToggle(null)
+            },
+            onError: () => toast.error('Could not deactivate drop.'),
+          })
+        }}
+      >
+        <span className="font-medium text-[var(--color-text)]">{draft.name}</span> will no longer
+        be the live storefront campaign. Visitors will not see this drop as active until you
+        activate it again.
+      </AdminConfirmDialog>
+
+      <AdminConfirmDialog
         open={confirmReset}
         onClose={() => setConfirmReset(false)}
         title="Discard unsaved changes?"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Restores landing defaults while keeping this drop&apos;s id and slug. Anything not saved is
-            lost.
-          </p>
-          <div className="flex justify-end gap-2">
-            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmReset(false)}>
-              Cancel
-            </AdminButton>
-            <AdminButton
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                const next = resetDropToDefaults(draft.id)
-                if (next) {
-                  setDraft(next)
-                  toast.success('Drop reset to defaults.')
+        confirmLabel="Reset"
+        onConfirm={() => {
+          void (async () => {
+            const wasActive = draft.isActive
+            const next = resetDropToDefaults(draft.id)
+            if (next) {
+              setDraft(next)
+              if (wasActive && getSupabasePublicEnv()) {
+                const published = await publishStorefrontDropByClientId(
+                  next.id,
+                )
+                if (!published.ok) {
+                  toast.error(published.error)
+                } else {
+                  await notifyStorefrontPublicationChanged()
+                  toast.success('Drop reset and storefront updated.')
                 }
-                setConfirmReset(false)
-              }}
-            >
-              Reset
-            </AdminButton>
-          </div>
-        </div>
-      </Modal>
+              } else {
+                toast.success('Drop reset to defaults.')
+              }
+            }
+            setConfirmReset(false)
+          })()
+        }}
+      >
+        Restores landing defaults while keeping this drop&apos;s id and slug. Anything not saved is
+        lost.
+      </AdminConfirmDialog>
 
-      <Modal
+      <AdminConfirmDialog
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         title="Delete this drop?"
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={() => {
+          deleteDrop(draft.id)
+          toast.success('Drop removed.')
+          setConfirmDelete(false)
+          navigate({ to: '/admin/drops' })
+        }}
       >
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Removes the drop locally. At least one drop always remains — defaults will respawn if needed.
-          </p>
-          <div className="flex justify-end gap-2">
-            <AdminButton variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
-              Cancel
-            </AdminButton>
-            <AdminButton
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                deleteDrop(draft.id)
-                toast.success('Drop removed.')
-                setConfirmDelete(false)
-                navigate({ to: '/admin/drops' })
-              }}
-            >
-              Delete
-            </AdminButton>
-          </div>
-        </div>
-      </Modal>
+        Removes the drop locally. At least one drop always remains — defaults will respawn if needed.
+      </AdminConfirmDialog>
 
       <Modal
         open={quickProductOpen}

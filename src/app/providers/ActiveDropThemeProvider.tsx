@@ -1,20 +1,18 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type PropsWithChildren,
-} from 'react'
-import { subscribeDropsChange } from '@/features/cms/read/cmsSubscriptions'
+import { createContext, useContext, type PropsWithChildren } from 'react'
 import {
   ACTIVE_DROP_THEME_STYLE_ID,
   serializeDropPaletteForRootStyle,
 } from '@/features/cms/theme/dropPaletteStyle'
-import { runtimeClients } from '@/app/config/runtime'
+import { useActiveDrop } from '@/features/drops/hooks/useActiveDrop'
 import type { Drop } from '@/features/drops/drop.types'
 import type { GlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.types'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
-
+import { useStorefrontActiveDrop } from '@/features/cms/hooks/useStorefrontActiveDrop'
+import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import {
+  fetchStorefrontPublicationView,
+  STOREFRONT_PUBLICATION_QUERY_KEY,
+} from '@/features/cms/hooks/storefrontPublicationQuery'
 const StorefrontGlobalBrandContext = createContext<GlobalBrandSettings | null>(
   null,
 )
@@ -31,37 +29,26 @@ type Props = PropsWithChildren<{
 }>
 
 /**
- * Owns the public `:root` palette `<style>` for the active drop and keeps it
- * in sync when local CMS drop storage changes (no reliance on parent loader re-runs).
+ * Owns the public `:root` palette `<style>` for the active drop. With Supabase,
+ * palette tracks the published snapshot (same source as the landing page).
  */
 export function ActiveDropThemeProvider({
   initialDrop,
   initialGlobalBrand,
   children,
 }: Props) {
-  const [drop, setDrop] = useState<Drop | null>(initialDrop)
-  const [globalBrand] = useState<GlobalBrandSettings>(() =>
-    initialGlobalBrand ?? createDefaultGlobalBrandSettings(),
-  )
-
-  useEffect(() => {
-    setDrop(initialDrop)
-  }, [initialDrop])
-
-  useEffect(() => {
-    return subscribeDropsChange(() => {
-      void runtimeClients.cms.getActiveDrop().then(setDrop)
-    })
-  }, [])
+  const drop = useActiveDrop(initialDrop)
+  const globalBrand = initialGlobalBrand ?? createDefaultGlobalBrandSettings()
 
   const themeCss =
     drop?.theme != null ? serializeDropPaletteForRootStyle(drop.theme) : null
 
   return (
     <StorefrontGlobalBrandContext.Provider value={globalBrand}>
-      {themeCss ? (
+      {themeCss && drop ? (
         <style
           id={ACTIVE_DROP_THEME_STYLE_ID}
+          key={`${drop.id}:${drop.updatedAt}`}
           dangerouslySetInnerHTML={{ __html: themeCss }}
         />
       ) : null}

@@ -21,6 +21,27 @@ vi.mock('@/features/admin/drops/useDrops', () => ({
   useDropsList: () => mockDropsState.drops,
 }))
 
+vi.mock('@/features/admin/drops/useDropLiveOnStorefront', () => ({
+  useDropLiveOnStorefront: (
+    _dropId: string | undefined,
+    localIsActive: boolean,
+  ) => localIsActive,
+}))
+
+const activateMutate = vi.fn()
+const deactivateMutate = vi.fn()
+
+vi.mock('@/features/admin/drops/useAdminDropsListQuery', () => ({
+  useSetActiveAdminDropMutation: () => ({
+    mutate: activateMutate,
+    isPending: false,
+  }),
+  useDeactivateAdminDropMutation: () => ({
+    mutate: deactivateMutate,
+    isPending: false,
+  }),
+}))
+
 vi.mock('@/features/admin/products/useAdminProducts', () => ({
   useAdminProductsList: () => [],
 }))
@@ -37,11 +58,18 @@ vi.mock('@/features/admin/components/AdminLayout', async () => {
   const { useAdminPageActionsSlot } = await import(
     '@/features/admin/components/AdminPageActionsContext'
   )
-  function LayoutProbe({ title }: { title?: string }) {
+  function LayoutProbe({
+    title,
+    description,
+  }: {
+    title?: string
+    description?: ReactNode
+  }) {
     const actions = useAdminPageActionsSlot()
     return (
       <header data-testid="layout-header-probe">
         <h1>{title}</h1>
+        {description ? <div data-testid="layout-description">{description}</div> : null}
         <div data-testid="admin-page-actions">{actions}</div>
       </header>
     )
@@ -50,12 +78,14 @@ vi.mock('@/features/admin/components/AdminLayout', async () => {
     AdminLayout: ({
       children,
       title,
+      description,
     }: {
       children?: ReactNode
       title?: string
+      description?: ReactNode
     }) => (
       <div data-testid="admin-layout-stub">
-        <LayoutProbe title={title} />
+        <LayoutProbe title={title} description={description} />
         {children}
       </div>
     ),
@@ -107,15 +137,44 @@ describe('DropEditorRoute top bar actions', () => {
   beforeEach(() => {
     mockDropsState.drops = [createDefaultTheOathDrop()]
     vi.mocked(saveDrop).mockClear()
+    activateMutate.mockClear()
+    deactivateMutate.mockClear()
   })
 
-  it('registers Reset / Delete / Save icon controls (no duplicate section header)', async () => {
+  it('shows a single Live badge when the drop is storefront-active (no duplicate status)', async () => {
+    renderDropEditor()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('layout-description')).toBeTruthy()
+    })
+
+    const description = screen.getByTestId('layout-description')
+    expect(within(description).getByText(/^live$/i)).toBeTruthy()
+    expect(within(description).queryByText(/^active drop$/i)).toBeNull()
+    expect(within(description).queryByText(/^active$/i)).toBeNull()
+  })
+
+  it('shows CMS status only when the drop is not live on storefront', async () => {
+    const drop = createDefaultTheOathDrop()
+    drop.isActive = false
+    drop.status = 'draft'
+    mockDropsState.drops = [drop]
+
+    renderDropEditor()
+
+    await waitFor(() => {
+      expect(within(screen.getByTestId('layout-description')).getByText(/^draft$/i)).toBeTruthy()
+    })
+    expect(within(screen.getByTestId('layout-description')).queryByText(/^live$/i)).toBeNull()
+  })
+
+  it('registers Activate / Reset / Delete / Save chip controls (no duplicate section header)', async () => {
     renderDropEditor()
 
     await waitFor(() => {
       expect(
         screen.getByTestId('admin-page-actions').querySelectorAll('button').length,
-      ).toBeGreaterThanOrEqual(3)
+      ).toBeGreaterThanOrEqual(4)
     })
 
     expect(
@@ -127,15 +186,31 @@ describe('DropEditorRoute top bar actions', () => {
 
     expect(
       screen.getByRole('button', {
-        name: /discard unsaved changes and reset drop to defaults/i,
+        name: /^(activate|deactivate) drop on storefront$/i,
       }),
     ).toBeTruthy()
-    expect(screen.getByRole('button', { name: /^delete this drop$/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^reset drop$/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^delete drop$/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^save drop$/i })).toBeTruthy()
 
     expect(screen.queryByText(/Preview-centric/i)).toBeNull()
     expect(screen.queryByRole('link', { name: /live route/i })).toBeNull()
-    expect(screen.queryByRole('button', { name: /make active/i })).toBeNull()
+  })
+
+  it('opens deactivate confirm dialog when the drop is live on storefront', async () => {
+    const user = userEvent.setup()
+    renderDropEditor()
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /^deactivate drop on storefront$/i }),
+      ).toBeTruthy()
+    })
+
+    await user.click(
+      screen.getByRole('button', { name: /^deactivate drop on storefront$/i }),
+    )
+    expect(screen.getByRole('dialog', { name: /deactivate drop/i })).toBeTruthy()
   })
 
   it('places below-xl live preview Hide/Show on the preview card header row', async () => {

@@ -23,7 +23,7 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 - TanStack Query for server state
 - Zustand for local/client UI state
 - GSAP for desktop/tablet animation only
-- Future commerce backend: likely MedusaJS v2
+- Commerce backend: **Shopify** (Storefront API) when `VITE_SHOPIFY_*` is set; see `docs/features/shopify-commerce.md`
 - Current phase may use local/mock CMS adapters, but code must be written so a real backend can replace the adapter later.
 
 ## Non-negotiable engineering rules
@@ -52,8 +52,13 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 - Backend/API work: read `/docs/backend-medusa-roadmap.md`
 - Performance/security/a11y: read `/docs/performance-accessibility-security.md` plus `/docs/audit-2026-05-17.md` §2–§5
 
-## Admin auth — locked
-The admin gate (`src/features/admin/auth/**`) is a **temporary static `VITE_ANVL_ADMIN_*` env-file gate**, intentionally retained until a real auth provider lands (Phase J1). Do **not** refactor its auth model, change its storage strategy, or expand the surface in this phase. UI polish (focus trap, copy, error messages) is fine; semantics must not change. Hosted-demo blockers `SEC-01` / `SEC-02` / `SEC-03` / `SEC-11` live in `/docs/technical-debt.md`.
+## Admin auth
+
+- **When `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` are set:** the admin app uses **Supabase Auth** (email + password). Only users with **`public.cms_profiles.role = 'admin'`** may access `/admin` (editors/viewers are rejected at sign-in). The browser Supabase client uses storage key **`anvl.supabase.admin.v1`**. Authenticated saves are pushed to **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** (debounced) while the editor continues to use localStorage as its working copy.
+
+- **When Supabase env is unset (local CMS only):** the temporary static **`VITE_ANVL_ADMIN_*`** gate remains. It is still not production-grade security (see **`docs/technical-debt.md`**, SEC-01 / SEC-02 / SEC-03 / SEC-11 and Phase J).
+
+- Never bundle **`SUPABASE_SERVICE_ROLE_KEY`** or other server-only secrets into client code.
 
 ## Definition of done
 A task is done only when:
@@ -66,3 +71,26 @@ A task is done only when:
 - `/docs/changelog.md` is updated.
 - `/docs/audit-2026-05-17.md` task statuses are updated where applicable.
 - For UI changes, a manual test note + screenshot/video is included in the PR.
+
+## Cursor Cloud specific instructions
+
+### Overview
+
+ANVL Athletics Storefront — SSR e-commerce + admin CMS (TanStack Start, TypeScript, Vite). With **`VITE_SUPABASE_*`** set, published storefront state and admin auth come from Supabase; without it, mock/local CMS adapters apply.
+
+### Commands
+
+| Task | Command |
+|------|---------|
+| Install deps | `pnpm install` |
+| Dev server | `pnpm dev` (port 3000) |
+| Verify (DoD) | `pnpm verify` (`typecheck` + `test` + `build`) |
+| Typecheck | `pnpm typecheck` |
+| Tests | `pnpm test` |
+| Build | `pnpm build` |
+
+### Notes
+
+- **pnpm version**: pinned via `packageManager` in `package.json`. Corepack handles this (`corepack enable` once).
+- **Supabase (optional):** set `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` for remote CMS. See `docs/features/supabase-cms.md`.
+- **No dedicated lint script:** use `pnpm typecheck` for static analysis.

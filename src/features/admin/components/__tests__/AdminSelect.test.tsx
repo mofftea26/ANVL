@@ -10,6 +10,23 @@ import {
 } from '@/features/admin/components/AdminSelect'
 
 describe('AdminSelect', () => {
+  it('trigger uses shared chip field chrome', () => {
+    render(
+      <AdminSelect value="usd" onValueChange={() => {}}>
+        <AdminSelectTrigger aria-label="Currency">
+          <AdminSelectValue placeholder="Pick" />
+        </AdminSelectTrigger>
+        <AdminSelectContent>
+          <AdminSelectItem value="usd">USD</AdminSelectItem>
+        </AdminSelectContent>
+      </AdminSelect>,
+    )
+
+    const trigger = screen.getByRole('combobox', { name: /currency/i })
+    expect(trigger.className).toMatch(/rounded-full/)
+    expect(trigger.className).toMatch(/surface-soft/)
+  })
+
   it('calls onValueChange when choosing an option', async () => {
     const user = userEvent.setup()
     const onValueChange = vi.fn()

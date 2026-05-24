@@ -74,6 +74,7 @@ export function Modal({
         tabIndex={-1}
         className={cn(
           'relative w-full max-w-lg rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-6 outline-none',
+          'motion-safe:transition-[border-color,box-shadow] motion-safe:duration-300 motion-reduce:transition-none',
           className,
         )}
         role="dialog"

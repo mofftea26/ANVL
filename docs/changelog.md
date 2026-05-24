@@ -1,4 +1,332 @@
-﻿
+﻿## 2026-05-20 — Production follow-ups: migrations, scheduler cron, bundle split
+
+- **Supabase (project `cptebkgyrfmokklwtrgp`):** applied migrations **`storefront_site_drafts`**, **`cms_media_assets`**, **`cms_scheduled_activation`** (`media_index`, catalog table, `cms_process_scheduled_drops`).
+- **Edge Function:** **`process-scheduled-drops`** deployed (`CRON_SECRET` auth, calls RPC with service role). Schedule in Dashboard every 1–5 min after setting secrets.
+- **Bundle:** `vite.config.ts` splits act presets per nature (`act-presets-hero`, `act-presets-lookbook`, …) instead of one monolithic chunk (`PERF-12`).
+
+## 2026-05-20 — Admin sidebar nav revert + footer actions
+
+- **`AdminSidebar`:** Nav links restored to pre-chip bordered blocks (accent border when active); badge pills and chip nav removed. Footer only: bone-outline “View storefront” and red-tint Logout with leading icons on one line (`inline-flex`, `whitespace-nowrap`).
+- **`AdminLayout`:** Drawer-only nav at all breakpoints (removed persistent `lg:` rail and `lg:hidden` on drawer).
+
+## 2026-05-20 — New act natures + homepage extras (PR-9 / MAINT-21)
+
+- **`act-presets/`:** Storefront renderers for **`lookbook`**, **`specialEvent`**, and **`finalCTA`** (nine presets total) registered in `registry.ts` with defaults matching the Acts builder keys; GSAP via **`useActScrollReveal`** (desktop + reduced-motion gated).
+- **`PublicLandingActs`:** Resolves the three new natures through the registry (no unsupported-act skip for these types).
+- **Homepage:** **`CampaignCardsSection`** and **`LookbookStripSection`** render on `/` when **`storefront_publication.campaigns`** / **`lookbook`** (or local **`siteHome`** storage) are non-empty.
+- **Admin:** **Home extras** tab on **Website layout** edits campaign cards + lookbook strip; **`adminCmsRemoteSync`** syncs both arrays to **`storefront_publication`**.
+
+## 2026-05-20 — Admin nav drawer at all breakpoints
+
+- **`AdminLayout`:** Removed persistent `lg:grid-cols-[280px_1fr]` sidebar column; main content is full width at every breakpoint. Nav opens via the shared left `Drawer` (focus trap, Escape, backdrop click, route-change close via `onNavigate`).
+- **`AdminTopbar`:** Burger menu button is always visible (removed `lg:hidden`).
+- **`Drawer` / `styles.css`:** Slide-in + backdrop fade animations gated on `prefers-reduced-motion: no-preference`.
+- **Tests:** `AdminLayout` (no persistent aside, burger opens drawer, nav link closes), `AdminTopbar` (burger not `lg:hidden`).
+
+## 2026-05-20 — Admin sidebar chip nav (desktop / drawer parity)
+
+- **`AdminSidebar`:** Nav links use shared `adminChipButtonVariants` pills (`primary` when active); removed secondary badge pills (Overview, System, …) and desktop-only descriptions.
+- **Footer:** “View storefront” and Logout both use chip styling (`AdminTopbarChipButton` / chip link classes).
+- **Layout:** Persistent `lg:` sidebar and mobile drawer share the same compact nav chrome; drawer hidden on `lg:`; section cluster labels stay muted uppercase.
+- **Tests:** `AdminSidebar` asserts badge pills are absent and active route uses `aria-current="page"`.
+
+## 2026-05-20 — Admin CMS chip field controls (shared `cmsFieldStyles`)
+
+- **`cmsFieldStyles`:** Pill / soft-surface tokens aligned with `adminChipButtonVariants` — `adminFieldControlClass`, `adminFieldTextareaClass`, `adminSelectTriggerClass`, clear-button + compact row helpers.
+- **Primitives:** `AdminInput`, `AdminTextarea`, `AdminSelect`, `AdminNativeSelect`, `AdminCheckbox`, `AdminDateField`, `AdminDateTimeField` use shared classes; dropdown panels stay elevated/readable.
+- **Pickers:** `ColorField` compact row + fine inputs, `MediaPickerField` URL row, media library search inherit chip chrome.
+- **Tests:** `cmsFieldStyles`, `AdminSelect` trigger chrome, updated `ColorField` / `MediaPickerField` class assertions.
+
+## 2026-05-20 — Drop editor status badge dedupe
+
+- **`DropEditorRoute`:** One emerald **Live** chip when the drop is storefront-active; otherwise CMS status only (Draft, Scheduled, …). Removed redundant **ACTIVE** + **Active drop** pair.
+- **`DropAdminListCard`:** Same single-badge rule; removed extra **Storefront drop** label.
+- **`AdminStatusBadge`:** `size="chip"` (`h-9`) for topbar alignment; shared `dropStatusBadgeLabel` helper; live tone tokens aligned with chip `success` variant.
+
+## 2026-05-20 — Admin CMS pill chip buttons (shared variants)
+
+- **`adminChipButtonStyles`:** CVA tokens (`default`, `primary`, `destructive`, `ghost`, `success`) + `icon` size for overflow/menu triggers.
+- **`AdminTopbarChipButton`:** `variant`, `size`, `loading`; re-exports class helpers.
+- **`AdminButton`:** `primary` / `secondary` / `ghost` / `destructive` render as chips; tab variants still use shared `Button`.
+- **Migrated:** Editor topbars (variant props), `AdminSaveBar`, `AdminConfirmDialog` footers (via `AdminButton`), drops overflow trigger, forged/outline/icon links, `AdminSecondaryExternalLink`.
+- **Tests:** Chip variant coverage on `AdminTopbarChipButton`, `AdminButton`, `adminChipButtonStyles`.
+
+## 2026-05-20 — Act preset registry + GSAP scroll animations (PR-8 / PERF-12 RESP-15)
+
+- **`act-presets/`:** Registry maps `nature × preset` → lazy storefront renderers for all seven existing act natures; defaults align with CMS builder seeds.
+- **`useActScrollReveal`:** Shared ScrollTrigger helper gated on `(min-width: 768px) and (prefers-reduced-motion: no-preference)`; mobile shows static final state.
+- **Presets:** Default wrappers for legacy sections (`HeroForgeSequence`, `OathStampSequence`, etc.) plus alternate layouts (`splitProduct`, `splitText`, carousel, specs grid, split waitlist, …).
+- **`PublicLandingActs`:** Registry lookup by `act.nature` + `act.preset` (fallback to nature default); `vite.config.ts` **`act-presets`** manual chunk.
+
+## 2026-05-20 — Admin drops list card grid (all breakpoints)
+
+- **`DropsAdminList`:** Removed desktop TanStack Table; drop cards render in a responsive grid (`1` / `sm:2` / `xl:3` columns) at every breakpoint.
+- **Sort:** Column-header sorting replaced with a **Sort by** dropdown (default **Last edited (newest)**); logic extracted to **`dropsListSort.ts`**.
+- **`DropAdminListCard`:** Card UI extracted from the list page; active drops keep a subtle emerald border tint.
+
+## 2026-05-20 — Admin topbar chip actions + drop activate toggle
+
+- **`AdminTopbarChipButton`:** Shared pill control (`h-9`, `rounded-full`, `surface-soft`) for topbar actions and session chip.
+- **`DropEditorRoute`:** Reset / Delete / Save / Activate|Deactivate use chip buttons; activate toggle calls `setAdminActiveDrop` / `deactivateAdminDrop` with confirm dialogs.
+- **`ProductEditorRoute`:** Catalog / Save / Delete topbar actions use chip styling.
+- **Backend:** `deactivateDrop`, `clearStorefrontActiveDrop`, `deactivateAdminDrop` on CMS client + `useDeactivateAdminDropMutation`.
+
+## 2026-05-20 — Admin drops list card redesign
+
+- **`DropAdminListCard`:** Campaign grid cards with right-aligned emblem watermark (gradient scrim), optional theme-accent wash, live storefront styling, and preserved overflow menu + metadata.
+- **`AdminDropListItem`:** List mappers now include `emblemImageUrl` and `themeAccent` from drop visuals/theme (localStorage + Supabase).
+
+## 2026-05-20 — CMS editor actions in admin topbar
+
+- **Pattern:** All CMS editors register Save / Reset / Delete via `useAdminPageActions()` + `AdminTopbarChipButton` pills in the `admin-page-actions` slot (reference: `DropEditorRoute`).
+- **Migrated:** `ProductEditorRoute` (Catalog, Save, Delete), `SiteSeoEditor`, `SiteLayoutEditor` (inline validation alert when save blocked), `SiteThemeEditor`.
+- **Removed:** Sticky bottom `AdminSaveBar` from site SEO, layout, and brand-fallbacks editors.
+- **Tests:** Topbar slot coverage for product + site editors; layout validation error + disabled save.
+
+## 2026-05-20 — Admin mobile nav control styling
+
+- **`AdminTopbar`:** Mobile menu button matches session chip — `h-9`, `rounded-full`, `bg-[var(--color-surface-soft)]`, muted 14px icon (replaces square `IconButton`).
+
+## 2026-05-20 — Drop functional gaps (PR-7 / MAINT-20)
+
+- **DB:** Migration **`20260620130000_cms_scheduled_activation.sql`** — `_cms_publish_drop_core`, **`cms_process_scheduled_drops()`** (service_role; Edge/cron — pg_cron not used); refactors **`cms_publish_drop`** to delegate to core.
+- **Admin sync:** **`scheduleDropActivation`** already writes **`status: scheduled`** + **`scheduled_activation_at`** via **`buildAnvlDropRemoteRow`** (Vitest coverage added).
+- **Storefront:** **`PublicLandingActs`** product showcase uses act **`productIds`** when set; otherwise first six products.
+
+
+- **DB:** Migration **`20260620120000_cms_media_assets.sql`** — `cms_media_assets` catalog with RLS (CMS read; editor/admin write).
+- **Admin:** `MediaLibraryPage` grid (search, mime filters, inline alt, copy URL, delete confirm), drag-drop upload to `cms-media` + catalog row.
+- **Sync:** `flushAdminCmsRemoteSync` patches **`storefront_publication.media_index`** from the catalog.
+- **Picker:** `MediaPickerField` optional **Browse library** modal; `uploadCmsMediaFile` supports `registerInCatalog`.
+
+## 2026-05-20 — Site SEO editor + structured data (PR-5 / MAINT-21)
+
+- **`SiteSeoEditor`:** Defaults / Pages tabs, char-count meta fields, live Google + Twitter preview, sticky **`AdminSaveBar`**.
+- **Persistence:** **`saveSiteSeoContentAsync`** write-through to **`storefront_publication.site_seo`**.
+- **Storefront:** **`buildSeoHeadForSiteStaticPath`** merges **`site_seo.staticPages`** on `/`, `/shop`, `/about`, `/size-guide`.
+- **JSON-LD:** **`dropStructuredDataJsonLd`** on homepage (when active drop sets type) and drop route.
+
+## 2026-05-20 — Brand fallbacks editor redesign (PR-4 / MAINT-21)
+
+- **`SiteThemeEditor`:** hero strip, side-by-side emblem tiles, read-only active drop palette swatches, sticky **`AdminSaveBar`**.
+- **Nav:** Site item renamed **Brand fallbacks** (badge **Global**).
+- **Route shell:** `-adminTheme.tsx` delegates to `src/features/admin/site-theme/`.
+- **Storefront:** `previewLoadingSrc` test confirms drop emblems win over global fallbacks.
+
+## 2026-05-20 — Site Layout editor redesign (PR-3 / RESP-15)
+
+- **`SiteLayoutEditor`:** tabbed Header / Footer / Announcement panels; sticky **`AdminSaveBar`**; live **`SiteLayoutPreview`** (lg+ column, mobile `<details>`).
+- **Route shell:** `-websiteLayoutRoute.tsx` delegates to feature module under `src/features/admin/site-layout/`.
+- **Copy:** trimmed `/drop/` campaign slot helper text; save moved off topbar page actions.
+
+## 2026-05-20 — Admin topbar + CMS copy trim (PR-2 / MAINT-21)
+
+- **`AdminTopbarSessionChip`:** compact account pill with menu (storefront, settings, logout).
+- **Topbar:** single-line title, no duplicate “ANVL Admin” + username row; description only on Dashboard.
+- **Copy:** shortened nav descriptions, trimmed site route helper text (SEO, Media, Theme, Settings, Drops list).
+
+## 2026-05-20 — Supabase CMS single source of truth (PR-1 / MAINT-20)
+
+- **`cmsPersistenceMode`:** `shouldStorefrontUseLocalCmsFallback()` — public site never reads admin `localStorage` when `VITE_SUPABASE_*` is set; sync helpers use `canWriteCmsDraftsToSupabase` (`editor` + `admin`).
+- **Write-through:** `cmsWriteThrough.afterLocalCmsMutation()` + `saveWebsiteLayoutContentAsync` / `saveGlobalBrandSettingsAsync` flush to Supabase on explicit Save (layout + brand fallbacks).
+- **Storefront sync:** `storefrontCmsSync` returns seed snapshot on Supabase-configured browsers until publication hooks resolve (no draft leakage).
+- **Admin:** Re-hydrates CMS from Supabase on window focus / tab visible when signed in.
+- **DB:** Migration **`20260620100000_storefront_site_drafts.sql`** — `storefront_publication.media_index` placeholder for Media library (PR-6).
+
+## 2026-05-20 — Admin CMS UI primitives consolidation (full pass)
+
+- Summary: Added reusable admin UI primitives and completed a five-step CMS UI pass: (1) migrated `ProductEditorRoute`, website layout, settings, login, and products filters to `AdminFormField` / `AdminInput` / `AdminSelect` / `AdminNativeSelect` / `AdminCheckbox`; (2) `AdminConfirmDialog` on drop editor save/reset/delete and product delete; (3) `DropActsBuilderPanel` uses `AdminPanel`, `AdminFieldLabel`, `AdminMicroHeading`; (4) `motion-safe` transitions on `AdminPanel`, `Modal`, `AdminConfirmDialog`; (5) trimmed redundant `AdminSectionHeader` strips — product/website editors register actions in `AdminTopbar` via `useAdminPageActions`. Vitest coverage for core primitives. See `docs/features/admin-ui.md`.
+
+## 2026-05-19 — Storefront acts + drop theme follow published snapshot
+
+- **Landing acts:** Public `composeLandingPageFromDrop` prefers **`Drop.acts`** (acts builder) when non-empty, then falls back to **`landingActSequence`**. **`LandingPageCmsContent.dropActs`** carries full act rows so **`PublicLandingActs`** overlays copy on `/` (same path as drop editor **`draftActs`**).
+- **Theme/colors:** Published drop palette CSS targets `:root[data-theme="oath-dark"]` so it overrides static defaults in `styles.css`; theme style tag keys off drop id + `updatedAt` for reliable updates after publish.
+
+## 2026-05-19 — Fix cms_publish_drop UUID error + sync drops table actions
+
+- **DB:** Migration **`20260519230000_cms_publish_drop_client_drop_ids.sql`** — `cms_publish_drop` resolves product **`dropIds`** via **`anvl_drops.client_drop_id`** (fixes `invalid input syntax for type uuid: "drop_the-oath"` on save/activate when products link to drops).
+- **Drops list:** Duplicate, schedule, archive, and delete now **`flushAdminCmsRemoteSync`** before the list refetches Supabase (actions were local-only until debounced sync).
+- **Edge:** **`publish-storefront`** accepts app **`Drop.id`** (`client_drop_id`) or UUID PK.
+
+## 2026-05-19 — Create new drop inserts `anvl_drops` row before editor
+
+- **`/admin/drops/new`:** **`createDraftDropAsync`** saves default draft values locally, inserts into **`public.anvl_drops`** immediately when Supabase is configured, invalidates the admin drops list, then redirects to **`/admin/drops/:dropId`**. Remote insert failure rolls back the local draft and shows an error.
+
+## 2026-05-19 — Fix cms_profiles timeout on admin sign-in
+
+- **Role read:** After `signInWithPassword`, `cms_profiles.role` is fetched via PostgREST with the sign-in **access token** (bypasses GoTrue `getSession` lock when bootstrap is still running on the same storage key).
+- **Session:** Calls `setSession` from the sign-in response before CMS hydration; stale bootstrap work aborts when the admin client is disposed.
+- **Supabase setup:** If sign-in succeeds but access is still denied, ensure a row exists: `INSERT INTO public.cms_profiles (user_id, role) VALUES ('<auth-user-id>', 'admin') ON CONFLICT (user_id) DO UPDATE SET role = EXCLUDED.role;` — RLS policy `cms_profiles_select_self` already allows `SELECT` where `auth.uid() = user_id`.
+
+## 2026-05-19 — Fix admin sign-in spinner stuck (auth client lock)
+
+- **Login:** Disposes in-memory Supabase client before sign-in so a hung bootstrap `getSession` cannot block `signInWithPassword`. Sign-in and `cms_profiles` role read use **20s / 12s timeouts**; errors surface instead of infinite loading.
+- **Bootstrap:** When `getSession` times out, drops the in-memory client and recreates it for subsequent login.
+
+## 2026-05-19 — Fix Supabase "No API key found in request"
+
+- **Clients:** All browser Supabase clients set an explicit **`apikey`** header via **`createAnvlSupabaseClient`**. Admin singleton recreates when URL/key changes.
+- **Env:** Rejects placeholder keys (`sb_publishable_...`); **`getSupabaseEnvIssue()`** shows setup instructions on admin login when URL is set but the key is missing/invalid.
+- **`.env.example`:** Removed misleading placeholder publishable key.
+
+## 2026-05-19 — Fix admin sign-in hang + persist session across reload
+
+- **Auth:** `onAuthStateChange` clears session only on **`SIGNED_OUT`** (not every null session event). Login skips slow **`getSession`** retries when **`signInWithPassword`** already returned a user; role check is single-shot on login.
+- **Bootstrap:** When **`getSession`** times out but **`anvl.supabase.admin.v1`** has tokens, falls back to **`getUser()`** to restore the session without clearing storage.
+- **Tab close:** No **`pagehide`** / tab-close logout — session persists until explicit sidebar logout.
+
+## 2026-05-19 — Admin UX: session persistence, publish-on-save, media upload, button loading
+
+- **Auth:** Bootstrap **`getSession`** waits up to **20s** without clearing **`anvl.supabase.admin.v1`** on timeout; provider watchdog **120s** disposes in-memory client only (session tokens preserved for refresh).
+- **Drop editor:** Header **Active** badge reads **`storefront_publication.active_drop_id`** via **`useDropLiveOnStorefront`**. Save publishes when the drop is already live (not only “Activate after saving”). Validation errors switch tab + scroll to **`data-drop-field`** targets.
+- **Preview:** Live preview iframe uses fixed max height so acts do not stretch when the builder column is tall.
+- **Media:** Visual + OG pickers upload to Supabase **`cms-media`** at **`drops/{slug}/{role}-{timestamp}.{ext}`** when configured.
+- **UI:** Shared **`Button`** **`loading`** prop (inline spinner) on login + save modal; media picker uses inline loader during upload/embed.
+- **Tests:** **`uploadCmsMedia`**, **`Button`**, **`dropEditorValidationNavigation`**, auth bootstrap + preview layout expectations updated.
+
+## 2026-05-19 — Fix `anvl_drops_single_active` on CMS sync / activate
+
+- **Sync:** Before upserting drops, demote stale **`status = 'active'`** rows in Supabase, then upsert **non-active first, active last** so the partial unique index is never violated.
+- **Tests:** **`adminCmsRemoteSyncOrder`**.
+
+## 2026-05-19 — Admin drops: backend live status + save loading
+
+- **Drops list:** When Supabase is configured, **Live/active** badge reads **`storefront_publication.active_drop_id`** (not localStorage). Hydration normalizes **`isActive`** for all drops from that row.
+- **Activate / save+activate:** **`cms_publish_drop`** demotes other actives on the server; local storage rehydrates after publish so only one drop stays active.
+- **Drop editor save modal:** Shows **Saving…** spinner, awaits **flush + publish**, then closes the modal.
+- **Tests:** **`adminCmsDropsList`**.
+
+## 2026-05-19 — Admin + storefront: drop publish path + stale session UX
+
+- **Auth:** Stale-session banner only when **`anvl.supabase.admin.v1`** had tokens before GoTrue timed out (avoids false alarm on cold login).
+- **Admin drops:** Save with **Activate after saving** and reset of the active drop call **`cms_publish_drop`**; activate mutation invalidates storefront publication cache.
+- **Storefront:** **`useStorefrontActiveDrop`** + **`ActiveDropThemeProvider`** read published drop theme from Supabase; **`useLandingCms`** no longer falls back to admin localStorage when Supabase is configured.
+- **Tests:** **`useStorefrontActiveDrop`**, bootstrap/auth storage coverage updated.
+
+## 2026-05-19 — Cleanup: remove unused bootstrap ops + tab-close helper
+
+- **Removed:** **`scripts/bootstrap-cms-admin.mjs`**, **`supabase/scripts/`**, migration **`20260519180000_cms_profiles_bootstrap_fn.sql`**, **`adminTabCloseCleanup`** (unused after explicit logout-only auth). **`.env.example`** trimmed to URL + publishable key only.
+- **Docs:** **`supabase-cms.md`**, **`admin-ui.md`**.
+
+## 2026-05-19 — Admin: fix Supabase bootstrap timeout (stale session / hanging getSession)
+
+- **Auth:** **`readBootstrapAdminSession`** — single **`getSession`** with **8s** timeout; clears **`anvl.supabase.admin.v1`** when GoTrue hangs (common after switching anon ↔ publishable keys). Watchdog **20s**; **`detectSessionInUrl: false`** on admin client.
+- **Helpers:** **`resetAdminSupabaseBrowserClient`**, **`withTimeout`** on profile reads.
+- **Tests:** **`adminSupabaseAuthFlow`**, bootstrap provider tests updated.
+
+## 2026-05-19 — Fix duplicate GoTrue client (remove `shared/lib/supabase.ts`)
+
+- **Removed:** **`src/shared/lib/supabase.ts`** — duplicate `createClient` (tutorial pattern); ANVL uses **`getAdminSupabaseBrowserClient`** + **`getSupabasePublicationAnonClient`** instead.
+- **Auth client:** Admin singleton stored on **`globalThis`** so Vite HMR does not warn about multiple **`anvl.supabase.admin.v1`** GoTrue instances.
+- **Tests:** **`adminSupabaseBrowserClient.test.ts`**.
+
+## 2026-05-19 — Env: publishable key only (`VITE_SUPABASE_PUBLISHABLE_KEY`)
+
+- **App:** **`getSupabasePublicEnv`** prefers **`VITE_SUPABASE_PUBLISHABLE_KEY`** over legacy **`VITE_SUPABASE_ANON_KEY`**; error copy updated. **`.env.example`** trimmed to URL + publishable key.
+- **Tests:** **`supabasePublicEnv.test.ts`**.
+- **Docs:** **`supabase-cms.md`**, **`AGENTS.md`**.
+
+## 2026-05-19 — Ops: `pnpm bootstrap:cms-admin` (service role, no SQL CREATE)
+
+- **Script:** **`scripts/bootstrap-cms-admin.mjs`** upserts **`cms_profiles`** via **`SUPABASE_SERVICE_ROLE_KEY`** when Dashboard SQL hits **`permission denied for schema public`** or RLS on direct **`INSERT`**.
+- **Package:** **`pnpm bootstrap:cms-admin -- <auth-user-uuid>`**.
+- **DB:** Migration grants **`service_role`** DML on **`cms_profiles`**.
+- **Docs:** **`supabase-cms.md`**, **`admin-ui.md`**, bootstrap SQL comments.
+
+## 2026-05-19 — Supabase: `bootstrap_cms_profile` RPC (RLS-safe admin row)
+
+- **DB:** Migration **`20260519180000_cms_profiles_bootstrap_fn.sql`** — **`SECURITY DEFINER`** **`bootstrap_cms_profile(uuid, text)`** so first admin row can be created from SQL Editor (direct **`INSERT`** hits RLS **`42501`**).
+- **Ops:** **`supabase/scripts/bootstrap-cms-admin-profile.sql`** updated (use **`SELECT bootstrap_cms_profile(...)`**, not Table Editor insert).
+- **Docs:** **`supabase-cms.md`**, **`admin-ui.md`**.
+
+## 2026-05-19 — Admin: fix Supabase sign-in after GoTrue session + cms_profiles gate
+
+- **Auth:** New **`adminSupabaseAuthFlow.ts`** — wait for session attach, retry **`cms_profiles`** read, assert admin role, pull CMS in background. Login no longer blocks on full hydration; **`ProtectedAdminRoute`** gates on auth only; **`AdminLayout`** shows sync/error banners.
+- **Removed:** **`pagehide`** auto-logout (broke reload and raced bootstrap). Logout is explicit via sidebar only.
+- **Errors:** Access-denied copy includes Auth **`user_id`** + sample **`INSERT INTO cms_profiles`** SQL.
+- **Ops:** **`supabase/scripts/bootstrap-cms-admin-profile.sql`** for first admin row.
+- **Tests:** **`adminSupabaseAuthFlow.test.ts`**; bootstrap test retained.
+- **Docs:** **`admin-ui.md`**, **`supabase-cms.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-19 — Docs: `.env.example` Supabase publishable vs anon
+
+- **Env:** Clarified that **`VITE_SUPABASE_ANON_KEY`** or **`VITE_SUPABASE_PUBLISHABLE_KEY`** is enough (same resolver as **`getSupabasePublicEnv`**).
+
+## 2026-05-19 — Admin: Supabase bootstrap timeout + tab-close guard
+
+- **Auth:** **`pagehide`** cleanup runs only after **`isHydrated`** (avoids racing bootstrap). Bootstrap timeout sets **`timedOut`** so a slow **`getSession`** cannot overwrite session state after the watchdog fires. Timer handle typing uses **`number`** for **`window.setTimeout`** (Windows/ DOM typings).
+- **Tests:** **`AdminAuthProvider.bootstrap.test.tsx`** (hang + no-session paths).
+- **Docs:** **`docs/features/admin-ui.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-19 — Admin: show/hide password on sign-in
+
+- **UI:** `/admin/login` password field includes an **`IconButton`** visibility toggle (**`Eye` / `EyeOff`**, **`aria-pressed`**).
+- **Tests:** `-adminLogin.test.tsx`; **`getSupabasePublicEnv`** mocked in **`-adminSettings.test.tsx`** so reset-modal labels stay deterministic when **`.env`** enables Supabase.
+- **Docs:** `docs/features/admin-ui.md`.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-19 — Admin: sign out when browser tab closes
+
+- **Auth:** While a CMS session exists under **`AdminAuthProvider`**, a **`pagehide`** listener (skips **`persisted`** BFCache) runs **`runAdminTabCloseSessionCleanup`**: Supabase **`signOut`** + dispose client + **`clearAdminSession`** for legacy keys. Same path runs on full unload/reload (not on in-app TanStack navigation away from `/admin`).
+- **Tests:** **`adminTabCloseCleanup.test.ts`**.
+- **Docs:** **`docs/features/admin-ui.md`**, **`docs/features/supabase-cms.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-19 — Supabase: single publication anon client (GoTrue warning)
+
+- **App:** `publicStorefrontPublication` uses **`getSupabasePublicationAnonClient`** (per-URL singleton + **`auth.storageKey` `anvl.supabase.storefront-public.v1`**) instead of creating a new **`createClient`** on every fetch — removes **“Multiple GoTrueClient instances”** when TanStack Query refocuses alongside other Supabase usage.
+- **Tests:** `publicStorefrontPublication.test.ts` (singleton assertion).
+- **Docs:** `docs/features/supabase-cms.md`.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-19 — Admin: fix stuck loading + top bar display name
+
+- **Auth:** Supabase bootstrap always ends in **`try/finally`** so **`isHydrated` / `isRemoteCmsReady`** run even when **`cancelled`** mid-await (e.g. React Strict Mode) or after early **`return`** from hydration errors — fixes endless “Loading admin…”.
+- **Session:** Supabase sessions include **`displayName`** from Auth **`user_metadata`** (`full_name`, `name`, `display_name`, …) or email local-part (**`adminDisplayName.ts`**).
+- **UI:** **`AdminTopbar`** shows the signed-in label; **`ProtectedAdminRoute`** loading copy distinguishes sync vs redirect; **Settings** user line uses display name + email.
+- **Tests:** **`adminDisplayName.test.ts`**, **`AdminTopbar.test.tsx`**.
+- **Docs:** **`docs/features/admin-ui.md`**.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-19 — Fix admin hydration: `site_seo.staticPages` + clearer CMS role errors
+
+- **CMS:** `storefront_publication.site_seo` blobs with `staticPages` keys set to `null` / `undefined` no longer break `saveSiteSeoContent` / Supabase hydration (Zod 4 enum-key `z.record` required every path). Sanitize via **`sanitizeStaticPagesLoose`** + **`z.unknown().transform(...)`** in **`siteSeo.local.ts`**.
+- **Auth:** **`fetchCmsProfileRole`** returns **`{ role, selectError }`**, normalizes **`role`** with trim + lowercase, surfaces PostgREST errors; login uses **`formatCmsAdminAccessDeniedReason`** for targeted copy (RLS vs missing row vs editor/viewer).
+- **Tests:** **`siteSeo.local.test.ts`**, **`adminCmsProfileRole.test.ts`**, **`adminCmsPublish.test.ts`** mock shape.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-19 — Admin: `cms_profiles` role read after Supabase sign-in
+
+- **Auth:** `fetchCmsProfileRole` accepts an optional Supabase **`user.id`** so login and session restore query **`public.cms_profiles`** immediately (same **`role = admin`** gate); avoids an extra **`getUser()`** when the id is already known.
+- **Tests:** `adminCmsProfileRole.test.ts`.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-19 — Storefront: Supabase reads with local/seed offline fallback
+
+- **Reads:** `useLandingCms` and `useHomeProducts` prefer published Supabase data when `VITE_SUPABASE_*` is set, then SSR loader data, then the **existing** local/seed storefront (`storefrontReadFallback.ts`). Avoids replacing the live site with seed-only when the backend is down or unpublished.
+- **Commerce:** `commerceClient.supabase` falls back to `localStorageCommerceClient` in the browser and `seedCommerceClient` on SSR when publication fetch fails.
+- **Runtime:** Supabase CMS slice fallbacks use `getStorefrontOfflineLandingCms` / `getStorefrontOfflineActiveDrop` instead of seed-only on the client.
+- **Tests:** `storefrontReadFallback.test.ts`.
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-19 — Supabase: publish on activate + lock down cms_publish_drop RPC
+
+- **App:** **`publishStorefrontDropByClientId`** flushes debounced CMS sync, resolves **`anvl_drops.id`** by **`client_drop_id`**, then calls **`cms_publish_drop`** when an admin sets the active drop (storefront reads **`published_drop_snapshot`** immediately).
+- **DB:** Migration **`20260519120000_revoke_anon_cms_publish_drop.sql`** revokes **`anon`** / **`PUBLIC`** execute on **`cms_publish_drop`** (authenticated admins only).
+- **Tests:** **`adminCmsPublish.test.ts`**.
+- **Docs:** **`docs/features/supabase-cms.md`** (auth + publish flow).
+- Tests / verify: **`pnpm verify`**.
+
+## 2026-05-18 — Supabase: admin Auth (admin role) + debounced CMS writes
+
+- **DB:** Migration **`20260518220000_anvl_drops_client_id_admin_rls.sql`** — **`anvl_drops.client_drop_id`** (stable app `Drop.id`), idempotent **`storefront_publication`** catalog columns, **admin-only** INSERT/UPDATE/DELETE RLS on **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** updates; **`cms_publish_drop`** now requires **`cms_profiles.role = admin`** (catalog snapshot refresh preserved).
+- **App:** When **`VITE_SUPABASE_*`** is set, **`AdminAuthProvider`** uses Supabase **`signInWithPassword`**, **`hydrateAdminCmsFromSupabase`**, and **`scheduleAdminCmsRemoteSync`** after saves (drops / products / layout / site SEO / global brand). Legacy **`VITE_ANVL_ADMIN_*`** remains when Supabase env is absent. **`ProtectedAdminRoute`** waits for remote hydration; **`/admin/settings`** shows Supabase email and uses a dual-field confirmation for local reset when Supabase is on.
+- **Tests:** **`adminCmsProfileRole.test.ts`**.
+- **Docs:** **`docs/features/supabase-cms.md`**, **`docs/features/admin-ui.md`**, **`AGENTS.md`**, **`docs/audit-2026-05-17.md`**, **`.env.example`**.
+- Tests / verify: **`pnpm verify`**.
+
 ## 2026-05-18 — Supabase: publication catalog snapshot + storefront commerce read path
 
 - **Schema:** Migration **`20260518140000_storefront_publication_catalog.sql`** adds **`products_snapshot`**, **`catalog_drop_index`**, **`global_brand`**, **`campaigns`**, **`lookbook`**, **`legacy_landing_cms`** on **`storefront_publication`**; **`cms_publish_drop`** now aggregates **`cms_admin_products`** into **`products_snapshot`** and rebuilds **`catalog_drop_index`** from **`anvl_drops`** referenced by product **`dropIds`**.

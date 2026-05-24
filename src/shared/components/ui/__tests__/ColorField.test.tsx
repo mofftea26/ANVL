@@ -84,6 +84,6 @@ describe('ColorField', () => {
     expect(tile?.classList.contains('min-h-[7rem]')).toBe(false)
     expect(tile?.parentElement?.classList.contains('max-h-10')).toBe(true)
     const opener = screen.getByRole('button', { name: /^accent$/i })
-    expect(opener.classList.contains('rounded-md')).toBe(true)
+    expect(opener.classList.contains('rounded-full')).toBe(true)
   })
 })

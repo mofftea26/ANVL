@@ -5,6 +5,7 @@ import {
   getResolvedStorefrontLandingCmsSync,
   resolveStorefrontActiveDrop,
 } from '@/features/cms/runtime/storefrontCmsSync'
+import { adminDropListVisualsFromDrop } from '@/features/admin/drops/adminDropListItemVisuals'
 import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { HomePageContent } from '@/features/cms/types/cms.types'
@@ -23,6 +24,7 @@ function seedDropListItem(): AdminDropListItem {
     productCount: SEED_DROP.productIds.length,
     updatedAt: SEED_DROP.updatedAt,
     createdAt: SEED_DROP.createdAt,
+    ...adminDropListVisualsFromDrop(SEED_DROP),
   }
 }
 
@@ -87,6 +89,9 @@ export const seedCmsClient: CmsClient = {
     return null
   },
   async setAdminActiveDrop() {
+    /* SSR seed is read-only */
+  },
+  async deactivateAdminDrop() {
     /* SSR seed is read-only */
   },
   async scheduleAdminDrop() {

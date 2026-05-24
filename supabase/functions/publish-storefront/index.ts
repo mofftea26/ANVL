@@ -82,8 +82,31 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authHeader } },
   })
 
+  const uuidRe =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  let dbDropId = dropId
+  if (!uuidRe.test(dropId)) {
+    const { data: row, error: selErr } = await supabase
+      .from('anvl_drops')
+      .select('id')
+      .eq('client_drop_id', dropId)
+      .maybeSingle()
+    if (selErr || !row?.id) {
+      return new Response(
+        JSON.stringify({
+          error: selErr?.message ?? 'Drop not found for client_drop_id',
+        }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+    dbDropId = row.id
+  }
+
   const { data, error } = await supabase.rpc('cms_publish_drop', {
-    p_drop_id: dropId,
+    p_drop_id: dbDropId,
   })
 
   if (error) {

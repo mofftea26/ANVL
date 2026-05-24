@@ -48,5 +48,26 @@ export function saveGlobalBrandSettings(
 ): GlobalBrandSettings {
   const stamped = mergeStored(next)
   writeGlobalBrandRaw(JSON.stringify(stamped))
+  if (typeof window !== 'undefined' && import.meta.env.MODE !== 'test') {
+    void import('@/features/admin/cmsRemote/adminCmsRemoteSync').then((m) =>
+      m.scheduleAdminCmsRemoteSync(),
+    )
+  }
+  return stamped
+}
+
+/** Persist brand fallbacks locally, then immediately flush to Supabase when configured. */
+export async function saveGlobalBrandSettingsAsync(
+  next: GlobalBrandSettings,
+): Promise<GlobalBrandSettings> {
+  const stamped = mergeStored(next)
+  writeGlobalBrandRaw(JSON.stringify(stamped))
+  const { afterLocalCmsMutation } = await import(
+    '@/features/admin/cmsRemote/cmsWriteThrough'
+  )
+  const sync = await afterLocalCmsMutation()
+  if (!sync.ok) {
+    throw new Error(sync.error)
+  }
   return stamped
 }

@@ -40,6 +40,11 @@ import { bumpDropsPersistGeneration } from './drops.persistGeneration'
 
 let hydrationRan = false
 
+/** Reset so the next `ensureDropSystemHydrated()` re-reads storage (used after Supabase pull). */
+export function resetDropSystemHydrationGate(): void {
+  hydrationRan = false
+}
+
 /** Resolves `acts` when merging a persisted or partial drop row (Vitest covers edge cases). */
 export function resolveActsForMergedDrop(
   partial: Partial<Drop>,
@@ -51,7 +56,7 @@ export function resolveActsForMergedDrop(
   return landingContentToSimpleActs(mergedLanding)
 }
 
-function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
+export function mergeDropPartial(partial: Partial<Drop> | Drop): Drop {
   const base = createDefaultTheOathDrop([...DEFAULT_OATH_PRODUCT_IDS])
   const lc = partial.landingContent ?? base.landingContent
   const mergedLanding = {
@@ -201,6 +206,11 @@ export function persistDropsState(
   writeDropsRaw(JSON.stringify(body))
   writeActiveDropId(activeDropId)
   synced.forEach(syncProductsWithDrop)
+  if (typeof window !== 'undefined' && import.meta.env.MODE !== 'test') {
+    void import('@/features/admin/cmsRemote/adminCmsRemoteSync').then((m) =>
+      m.scheduleAdminCmsRemoteSync(),
+    )
+  }
 }
 
 export function ensureDropSystemHydrated(): void {
@@ -304,6 +314,15 @@ export function setActiveDrop(dropId: string): void {
   persistDropsState(drops, dropId)
 }
 
+/** Clears the active campaign when `dropId` is the current active drop. */
+export function deactivateDrop(dropId: string): void {
+  ensureDropSystemHydrated()
+  const activeId = readActiveDropIdRaw()
+  if (activeId !== dropId) return
+  const drops = readDropsArray()
+  persistDropsState(drops, null)
+}
+
 export function deleteDrop(dropId: string): void {
   ensureDropSystemHydrated()
   const drops = readDropsArray().filter((d) => d.id !== dropId)
@@ -340,6 +359,46 @@ export function createDraftDrop(): Drop {
   const base = createEmptyDrop()
   saveDrop(base)
   return base
+}
+
+export type CreateDraftDropResult =
+  | { ok: true; drop: Drop }
+  | { ok: false; error: string }
+
+/**
+ * Persists a draft locally and, when Supabase is configured, inserts
+ * `anvl_drops` immediately before the editor route loads.
+ */
+export async function createDraftDropAsync(): Promise<CreateDraftDropResult> {
+  const drop = createDraftDrop()
+  if (!getDropById(drop.id)) {
+    return {
+      ok: false,
+      error:
+        'The new drop did not appear in storage. Try again or return to the list.',
+    }
+  }
+
+  const { insertAnvlDropToSupabase } = await import(
+    '@/features/admin/cmsRemote/adminCmsInsertDrop'
+  )
+  const { getSupabasePublicEnv } = await import(
+    '@/features/cms/api/supabasePublicEnv'
+  )
+  const { notifyAdminDropsListChanged } = await import(
+    '@/features/admin/cmsRemote/invalidateAdminDropsList'
+  )
+
+  if (getSupabasePublicEnv()) {
+    const remote = await insertAnvlDropToSupabase(drop)
+    if (!remote.ok) {
+      deleteDrop(drop.id)
+      return remote
+    }
+    await notifyAdminDropsListChanged()
+  }
+
+  return { ok: true, drop }
 }
 
 export function duplicateDrop(sourceId: string): Drop | null {

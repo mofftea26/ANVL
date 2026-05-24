@@ -78,7 +78,7 @@ The Drops section should be simple:
 3. The admin list (`DropsAdminList` at `/admin/drops`) uses the runtime `CmsClient` for reads and mutations, TanStack Query for server state, and a small Zustand store for search and tab UI only.
 4. **Empty states:** when the CMS returns zero drops, the list shows a “No drops yet” card with a link to `/admin/drops/new`; when filters exclude every row, a “Nothing matches” card offers one tap to clear search + status tab.
 5. Create Drop flow:
-   - **`/admin/drops/new`** is a bootstrap route: it persists a draft via **`createDraftDrop`** ( **`saveDrop`** / **`persistDropsState`** ), confirms the id round-trips with **`getDropById`**, then **`replace`‑navigates** to **`/admin/drops/:id`**. While that runs, **`AdminSpinner`** + copy replace a transient “Missing drop” flash. **`persistDropsState`** bumps a small generation counter consumed by **`useDropsList`** so the React snapshot cache re-reads localStorage immediately even when nothing was subscribed during the write (e.g. first paint after navigation).
+   - **`/admin/drops/new`** is a bootstrap route: it calls **`createDraftDropAsync`**, which persists a draft via **`createDraftDrop`** / **`saveDrop`**, and when Supabase is configured immediately **`insert`s** into **`public.anvl_drops`** (so login hydration cannot wipe a local-only draft). On success it **`replace`‑navigates** to **`/admin/drops/:id`**. While that runs, **`AdminSpinner`** + copy replace a transient “Missing drop” flash. Failures (e.g. slug collision) surface an alert + back link.
    - Step 1: Basic info.
    - Step 2: Theme/branding.
    - Step 3: Acts builder.
@@ -163,7 +163,8 @@ When a drop becomes active:
 - `landingActSequence` on each drop is the ordered list of six canonical slots (`hero`, `manifesto`, `dropReveal`, `pieces`, `materials`, `waitlist`) with an `enabled` flag per slot.
 - `composeLandingPageFromDrop` adds `landingActs` to `LandingPageCmsContent`: public descriptors with `nature` (e.g. `productShowcase`), `preset`, `sortOrder`, `slotKey` (legacy homepage section id), `enabled`, and `animation` defaults for future GSAP gating.
 - The Drop Editor **Landing acts** tab includes `DropActsBuilderPanel` (add/remove/reorder, nature and preset selectors, eyebrow/title/subtitle/body) plus the legacy per-section forms. `Drop.acts` is persisted with the drop; `landingActSequence` toggles are synced when mapped slots have at least one enabled act.
-- The public `/` route renders `PublicLandingActs`, which switches on `nature` to existing section components (Act III onward lazy-loaded), respects `enabled === false`, and degrades unknown types to a small on-page notice.
+- The public `/` route renders `PublicLandingActs`, which resolves `act.nature` + `act.preset` through the act preset registry (lazy chunks), respects `enabled === false`, and degrades unknown types to a small on-page notice. **PR-9** adds storefront renderers for **`lookbook`**, **`specialEvent`**, and **`finalCTA`** (builder fields in `DropActsBuilderPanel`; presets under `src/features/marketing/act-presets/`).
+- Optional homepage **`campaigns`** and **`lookbook`** strips render below landing acts when **`storefront_publication`** (or local **Home extras** in Website layout) has non-empty arrays — see **`CampaignCardsSection`** / **`LookbookStripSection`** on `src/routes/index.tsx`.
 - Hero GSAP runs only at `min-width: 768px` with `prefers-reduced-motion: no-preference`; mobile and reduced-motion users see a static hero layout for speed and accessibility.
 
 ## Website layout (global chrome)

@@ -10,7 +10,7 @@
  * `features/admin/landing-cms/landingCms.types` directly.
  */
 
-import type { PublicLandingAct } from './landingActs.types'
+import type { LandingAct, PublicLandingAct } from './landingActs.types'
 import type { SeoStructuredDataType } from '@/features/cms/types/cms.types'
 
 export interface CmsCta {
@@ -206,9 +206,11 @@ export interface LandingPageCmsContent {
   materials: LandingMaterialsContent
   waitlist: LandingWaitlistContent
   landingActs: PublicLandingAct[]
+  /** Full act rows from the active drop — overlays copy on the storefront (same as editor `draftActs`). */
+  dropActs?: LandingAct[]
 }
 
 export type LandingCmsSectionKey = Exclude<
   keyof LandingPageCmsContent,
-  'version' | 'updatedAt' | 'landingActs'
+  'version' | 'updatedAt' | 'landingActs' | 'dropActs'
 >

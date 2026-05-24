@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { createDefaultWebsiteLayout } from '@/features/admin/website-layout/websiteLayout.defaults'
 import { persistedWebsiteLayoutSchema } from '@/features/admin/website-layout/websiteLayout.persistence.zod'
@@ -13,7 +13,42 @@ import type { WebsiteLayoutContent } from '@/features/cms/layout/websiteLayout.t
 import type { SiteSeoContent } from '@/features/cms/siteSeo.local'
 import { parseSiteSeoUnknown } from '@/features/cms/siteSeo.local'
 import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import { createAnvlSupabaseClient } from '@/features/cms/api/createAnvlSupabaseClient'
 import type { ShopDropFilterOption } from '@/features/products/types/product.types'
+
+/**
+ * Dedicated auth storage key so this anon client never shares GoTrue's default
+ * `sb-<ref>-auth-token` bucket with other in-memory clients (admin uses
+ * `anvl.supabase.admin.v1`). Prevents "Multiple GoTrueClient instances" warnings
+ * when publication fetch runs alongside other Supabase usage.
+ */
+export const SUPABASE_PUBLICATION_ANON_AUTH_STORAGE_KEY =
+  'anvl.supabase.storefront-public.v1'
+
+const publicationAnonClients = new Map<string, SupabaseClient>()
+
+/**
+ * Singleton anon Supabase client for published storefront reads. Reused across
+ * SSR loaders, TanStack Query refetches, and concurrent callers (see also
+ * {@link fetchPublishedStorefrontProjection} coalescing).
+ */
+export function getSupabasePublicationAnonClient(
+  env: SupabasePublicEnv,
+): SupabaseClient {
+  const key = `${env.url}#${env.anonKey}`
+  let client = publicationAnonClients.get(key)
+  if (!client) {
+    client = createAnvlSupabaseClient(env, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        storageKey: SUPABASE_PUBLICATION_ANON_AUTH_STORAGE_KEY,
+      },
+    })
+    publicationAnonClients.set(key, client)
+  }
+  return client
+}
 
 /** Public homepage campaign cards — stored on `storefront_publication.campaigns`. */
 export const storefrontCampaignSchema = z.object({
@@ -175,15 +210,6 @@ export function normalizeStorefrontPublicationRow(
   }
 }
 
-export function createSupabaseAnonClient(env: SupabasePublicEnv): SupabaseClient {
-  return createClient(env.url, env.anonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  })
-}
-
 const publicationFetchCoalesce = new Map<
   string,
   Promise<PublishedStorefrontProjection | null>
@@ -192,7 +218,7 @@ const publicationFetchCoalesce = new Map<
 async function fetchPublishedStorefrontProjectionOnce(
   env: SupabasePublicEnv,
 ): Promise<PublishedStorefrontProjection | null> {
-  const supabase = createSupabaseAnonClient(env)
+  const supabase = getSupabasePublicationAnonClient(env)
   const { data, error } = await supabase
     .from('storefront_publication')
     .select(PUBLICATION_SELECT)

@@ -24,6 +24,24 @@ vi.mock('@/features/admin/drops/useDrops', () => ({
   useDropsList: () => mockDropsState.drops,
 }))
 
+vi.mock('@/features/admin/drops/useDropLiveOnStorefront', () => ({
+  useDropLiveOnStorefront: (
+    _dropId: string | undefined,
+    localIsActive: boolean,
+  ) => localIsActive,
+}))
+
+vi.mock('@/features/admin/drops/useAdminDropsListQuery', () => ({
+  useSetActiveAdminDropMutation: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+  useDeactivateAdminDropMutation: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+}))
+
 vi.mock('@/features/admin/products/useAdminProducts', () => ({
   useAdminProductsList: () => [],
 }))
@@ -107,9 +125,8 @@ describe('DropEditorRoute Visuals tab', () => {
     renderDropEditor()
     const pane = await screen.findByTestId('drop-editor-preview-column')
     expect(pane.className).toContain(DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS)
-    expect(pane.className).toContain('xl:h-full')
     expect(pane.className).toContain('xl:min-h-0')
-    expect(pane.className).toContain('xl:self-stretch')
+    expect(pane.className).toContain('xl:self-start')
     const split = pane.parentElement
     expect(split).toBeTruthy()
     expect(split?.className).toContain(DROP_EDITOR_SPLIT_XL_MIN_H_CLASS)

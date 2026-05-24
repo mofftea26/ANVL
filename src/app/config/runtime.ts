@@ -16,35 +16,33 @@ import {
   createSupabaseSiteSettingsReadSlice,
 } from '@/features/cms/api/supabaseStorefrontReaders'
 import {
-  getResolvedStorefrontLandingCmsSync,
-  resolveStorefrontActiveDrop,
-} from '@/features/cms/runtime/storefrontCmsSync'
+  getStorefrontOfflineActiveDrop,
+  getStorefrontOfflineLandingCms,
+} from '@/features/cms/runtime/storefrontReadFallback'
 import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
-import { seedCommerceClient } from '@/features/products/api/commerceClient.seed'
-import { localStorageCommerceClient } from '@/features/products/api/commerceClient.localStorage'
-import { supabaseCommerceClient } from '@/features/products/api/commerceClient.supabase'
+import { createCommerceClient } from '@/features/products/api/createCommerceClient'
 
 /**
  * Factory for storefront runtime clients. Server uses seed adapters (no `localStorage`)
  * unless `VITE_SUPABASE_URL` + anon key are set — then **published** CMS projection is read
  * from Supabase so SSR matches all visitors (including commerce catalog snapshots).
  *
- * Browser uses persisted admin state for **admin-only** CMS mutations; public reads + commerce
- * still prefer Supabase when configured so the storefront matches SSR.
+ * Browser: admin mutations use localStorage as working copy with Supabase write-through
+ * when configured; **public** CMS/commerce reads prefer Supabase publication (never admin drafts).
  *
- * TODO: add Medusa-backed factories and branch on env when the commerce backend ships.
+ * Commerce: Shopify Storefront API when configured, else Supabase snapshot, else local/seed.
  */
 export function createRuntimeClients(options: { isServer: boolean }): RuntimeClients {
   const supabase = getSupabasePublicEnv()
+  const commerce = createCommerceClient(options)
 
   if (options.isServer) {
     const cms = supabase
       ? {
           ...seedCmsClient,
           ...createSupabaseCmsPublicReadSlice(supabase, {
-            landingFallback: () =>
-              getResolvedStorefrontLandingCmsSync({ forceSsrSnapshot: true }),
-            activeDropFallback: () => resolveStorefrontActiveDrop(),
+            landingFallback: () => getStorefrontOfflineLandingCms(),
+            activeDropFallback: () => getStorefrontOfflineActiveDrop(),
           }),
         }
       : seedCmsClient
@@ -68,7 +66,7 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
 
     return {
       cms,
-      commerce: supabase ? supabaseCommerceClient : seedCommerceClient,
+      commerce,
       seo,
       siteSettings,
       analytics: mockAnalyticsClient,
@@ -81,8 +79,8 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
     ? {
         ...localStorageCmsClient,
         ...createSupabaseCmsPublicReadSlice(supabase, {
-          landingFallback: () => getResolvedStorefrontLandingCmsSync(),
-          activeDropFallback: () => resolveStorefrontActiveDrop(),
+          landingFallback: () => getStorefrontOfflineLandingCms(),
+          activeDropFallback: () => getStorefrontOfflineActiveDrop(),
         }),
       }
     : localStorageCmsClient
@@ -105,7 +103,7 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
 
   return {
     cms,
-    commerce: supabase ? supabaseCommerceClient : localStorageCommerceClient,
+    commerce,
     seo,
     siteSettings,
     analytics: mockAnalyticsClient,

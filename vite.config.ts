@@ -35,6 +35,15 @@ const config = defineConfig({
           if (id.includes('node_modules/gsap')) return 'vendor-gsap'
           if (id.includes('node_modules/lenis')) return 'vendor-lenis'
           if (id.includes('node_modules/framer-motion')) return 'vendor-framer-motion'
+          if (id.includes('/features/marketing/act-presets/')) {
+            const natureMatch = id.match(
+              /\/features\/marketing\/act-presets\/([^/]+)\//,
+            )
+            if (natureMatch?.[1] && natureMatch[1] !== 'shared') {
+              return `act-presets-${natureMatch[1]}`
+            }
+            return 'act-presets-core'
+          }
           if (id.includes('node_modules/zod')) return 'vendor-zod'
           if (id.includes('node_modules/@tanstack')) return 'vendor-tanstack'
           if (

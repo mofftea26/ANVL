@@ -116,18 +116,45 @@ export function normalizeWebsiteLayoutForPersist(
   }
 }
 
-export function saveWebsiteLayoutContent(
+function stampWebsiteLayoutForPersist(
   content: WebsiteLayoutContent,
 ): WebsiteLayoutContent {
   const err = getWebsiteLayoutSaveError(content)
   if (err) {
     throw new Error(err)
   }
-  const stamped: WebsiteLayoutContent = {
+  return {
     ...normalizeWebsiteLayoutForPersist(content),
     version: WEBSITE_LAYOUT_VERSION,
     updatedAt: new Date().toISOString(),
   }
+}
+
+export function saveWebsiteLayoutContent(
+  content: WebsiteLayoutContent,
+): WebsiteLayoutContent {
+  const stamped = stampWebsiteLayoutForPersist(content)
   writeWebsiteLayoutRaw(JSON.stringify(stamped))
+  if (typeof window !== 'undefined' && import.meta.env.MODE !== 'test') {
+    void import('@/features/admin/cmsRemote/adminCmsRemoteSync').then((m) =>
+      m.scheduleAdminCmsRemoteSync(),
+    )
+  }
+  return stamped
+}
+
+/** Persist layout locally, then immediately flush to Supabase when configured. */
+export async function saveWebsiteLayoutContentAsync(
+  content: WebsiteLayoutContent,
+): Promise<WebsiteLayoutContent> {
+  const stamped = stampWebsiteLayoutForPersist(content)
+  writeWebsiteLayoutRaw(JSON.stringify(stamped))
+  const { afterLocalCmsMutation } = await import(
+    '@/features/admin/cmsRemote/cmsWriteThrough'
+  )
+  const sync = await afterLocalCmsMutation()
+  if (!sync.ok) {
+    throw new Error(sync.error)
+  }
   return stamped
 }

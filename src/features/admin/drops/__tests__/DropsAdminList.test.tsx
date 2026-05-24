@@ -9,19 +9,6 @@ import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import { DropsAdminList } from '@/features/admin/drops/DropsAdminList'
 import { useDropsListUiStore } from '@/features/admin/drops/dropsListUi.store'
 
-function mockMediumViewport() {
-  vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => ({
-    matches: query.includes('768px'),
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  }))
-}
-
 const MOCK_DROPS: AdminDropListItem[] = [
   {
     id: 'drop-alpha',
@@ -115,59 +102,44 @@ describe('DropsAdminList', () => {
   })
 
   it('exposes the square New drop control by accessible name', () => {
-    mockMediumViewport()
     renderList()
 
     const create = screen.getByRole('link', { name: /create new drop/i })
     expect(create.getAttribute('href')).toBe('/admin/drops/new')
   })
 
-  it('opens the row overflow menu from the ⋯ trigger', async () => {
-    mockMediumViewport()
+  it('renders drop cards in a responsive grid (no table)', () => {
+    renderList()
+
+    expect(screen.queryByRole('table')).toBeNull()
+    expect(screen.getByText(/D01 · Alpha internal/)).toBeTruthy()
+    expect(screen.getByText(/D02 · Beta internal/)).toBeTruthy()
+  })
+
+  it('opens the row overflow menu from the card ⋯ trigger', async () => {
     const user = userEvent.setup()
     renderList()
 
-    const table = screen.getByRole('table')
-    const trigger = within(table).getByRole('button', { name: /actions for beta campaign/i })
+    const betaCard = screen.getByText(/D02 · Beta internal/).closest('section')!
+    const trigger = within(betaCard).getByRole('button', { name: /actions for beta campaign/i })
     await user.click(trigger)
     expect(await screen.findByRole('menu')).toBeTruthy()
     expect(screen.getByRole('menuitem', { name: /^edit$/i })).toBeTruthy()
     expect(screen.getByRole('menuitem', { name: /duplicate/i })).toBeTruthy()
   })
 
-  it('sorts rows when toggling the Campaign header (TanStack Table)', async () => {
-    mockMediumViewport()
+  it('sorts cards when changing the sort dropdown (newest first by default)', async () => {
     const user = userEvent.setup()
     renderList()
 
-    const table = screen.getByRole('table')
-    const bodyRows = within(table).getAllByRole('row').slice(1)
-    expect(bodyRows[0]?.textContent).toMatch(/Beta campaign/)
+    const cards = screen.getAllByText(/D0[12] · /)
+    expect(cards[0]?.textContent).toMatch(/D02 · Beta/)
 
-    await user.click(screen.getByRole('button', { name: /^campaign$/i }))
+    const sortTrigger = screen.getByRole('combobox', { name: /sort drops/i })
+    await user.click(sortTrigger)
+    await user.click(await screen.findByRole('option', { name: /campaign \(a–z\)/i }))
 
-    const bodyRowsAsc = within(table).getAllByRole('row').slice(1)
-    expect(bodyRowsAsc[0]?.textContent).toMatch(/Alpha campaign/)
-  })
-
-  it('renders the overflow column as the leftmost desktop column header', () => {
-    mockMediumViewport()
-    renderList()
-
-    const table = screen.getByRole('table')
-    const headerRow = within(table).getAllByRole('row')[0]!
-    const columnHeaders = within(headerRow).getAllByRole('columnheader')
-    expect(columnHeaders[0]?.textContent?.trim().toLowerCase()).toBe('actions')
-  })
-
-  it('keeps the wide drops table in an overflow-x-auto wrapper (no page-level spill)', () => {
-    mockMediumViewport()
-    renderList()
-
-    const table = screen.getByRole('table')
-    const scrollShell = table.parentElement
-    expect(scrollShell).not.toBeNull()
-    expect(scrollShell!.classList.contains('overflow-x-auto')).toBe(true)
-    expect(scrollShell!.classList.contains('max-w-full')).toBe(true)
+    const cardsAsc = screen.getAllByText(/D0[12] · /)
+    expect(cardsAsc[0]?.textContent).toMatch(/D01 · Alpha/)
   })
 })
