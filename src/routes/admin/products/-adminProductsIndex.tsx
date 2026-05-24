@@ -39,7 +39,7 @@ import { adminStackedFieldClass } from '@/shared/lib/cmsFieldStyles'
 export function AdminProductsIndexRoute() {
   return (
     <ProtectedAdminRoute>
-      <ProductsIndex />
+      {getShopifyPublicEnv() ? <AdminShopifyCatalogRedirect /> : <ProductsIndex />}
     </ProtectedAdminRoute>
   )
 }

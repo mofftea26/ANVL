@@ -53,8 +53,8 @@ export async function flushAdminCmsRemoteSync(): Promise<
   if (!canWriteCmsDraftsToSupabase(role)) return { ok: true }
 
   const drops = readDropsArray()
-  const activeClientId = readActiveDropIdRaw()
-  const products = getAdminProducts()
+  const syncProductsToSupabase = !getShopifyPublicEnv()
+  const products = syncProductsToSupabase ? getAdminProducts() : []
 
   const { data: dbActiveRows, error: activeListErr } = await client
     .from('anvl_drops')
@@ -137,45 +137,46 @@ export async function flushAdminCmsRemoteSync(): Promise<
     }
   }
 
-  for (const p of products) {
-    const body = JSON.parse(JSON.stringify(p)) as Record<string, unknown>
-    const { data: ex, error: pSelErr } = await client
-      .from('cms_admin_products')
-      .select('id')
-      .eq('slug', p.slug)
-      .maybeSingle()
-
-    if (pSelErr) return { ok: false, error: pSelErr.message }
-
-    if (ex?.id) {
-      const { error: pUp } = await client
+  if (syncProductsToSupabase) {
+    for (const p of products) {
+      const body = JSON.parse(JSON.stringify(p)) as Record<string, unknown>
+      const { data: ex, error: pSelErr } = await client
         .from('cms_admin_products')
-        .update({ body, slug: p.slug })
-        .eq('id', ex.id)
-      if (pUp) return { ok: false, error: pUp.message }
-    } else {
-      const { error: pIn } = await client
-        .from('cms_admin_products')
-        .insert({ slug: p.slug, body })
-      if (pIn) return { ok: false, error: pIn.message }
+        .select('id')
+        .eq('slug', p.slug)
+        .maybeSingle()
+
+      if (pSelErr) return { ok: false, error: pSelErr.message }
+
+      if (ex?.id) {
+        const { error: pUp } = await client
+          .from('cms_admin_products')
+          .update({ body, slug: p.slug })
+          .eq('id', ex.id)
+        if (pUp) return { ok: false, error: pUp.message }
+      } else {
+        const { error: pIn } = await client
+          .from('cms_admin_products')
+          .insert({ slug: p.slug, body })
+        if (pIn) return { ok: false, error: pIn.message }
+      }
     }
-  }
+    const { data: remoteProd, error: rpErr } = await client
+      .from('cms_admin_products')
+      .select('id, slug')
 
-  const { data: remoteProd, error: rpErr } = await client
-    .from('cms_admin_products')
-    .select('id, slug')
+    if (rpErr) return { ok: false, error: rpErr.message }
 
-  if (rpErr) return { ok: false, error: rpErr.message }
-
-  const localSlugs = new Set(products.map((p) => p.slug))
-  for (const r of remoteProd ?? []) {
-    const slug = typeof r.slug === 'string' ? r.slug : ''
-    if (slug && !localSlugs.has(slug)) {
-      const { error: dErr } = await client
-        .from('cms_admin_products')
-        .delete()
-        .eq('id', r.id)
-      if (dErr) return { ok: false, error: dErr.message }
+    const localSlugs = new Set(products.map((p) => p.slug))
+    for (const r of remoteProd ?? []) {
+      const slug = typeof r.slug === 'string' ? r.slug : ''
+      if (slug && !localSlugs.has(slug)) {
+        const { error: dErr } = await client
+          .from('cms_admin_products')
+          .delete()
+          .eq('id', r.id)
+        if (dErr) return { ok: false, error: dErr.message }
+      }
     }
   }
 

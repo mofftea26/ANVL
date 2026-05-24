@@ -1,6 +1,8 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
+import { AdminShopifyCatalogRedirect } from '@/features/admin/products/AdminShopifyCatalogRedirect'
+import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
 import {
   createNewAdminProduct,
   upsertAdminProduct,
@@ -9,7 +11,7 @@ import {
 export function AdminNewProductPageRoute() {
   return (
     <ProtectedAdminRoute>
-      <NewProductBootstrap />
+      {getShopifyPublicEnv() ? <AdminShopifyCatalogRedirect /> : <NewProductBootstrap />}
     </ProtectedAdminRoute>
   )
 }
