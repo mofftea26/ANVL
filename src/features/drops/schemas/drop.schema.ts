@@ -4,13 +4,7 @@ import { landingActSchema } from '@/features/landing/schemas/landing-act.schema'
 import { seoDocumentSchema } from '@/features/seo/schemas/seo-document.schema'
 import { mediaAssetSchema } from '@/shared/schemas/media.schema'
 
-export const dropStatusSchema = z.enum([
-  'draft',
-  'inactive',
-  'scheduled',
-  'active',
-  'archived',
-])
+export const dropStatusSchema = z.enum(['inactive', 'scheduled', 'active'])
 
 export const dropThemeSchema = z.object({
   paletteName: z.string(),

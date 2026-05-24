@@ -137,9 +137,6 @@ function parseDropsPayload(raw: string | null): DropsPersistedState | null {
 
 function normalizeDropForPersist(drop: Drop, activeDropId: string | null): Drop {
   const isActiveRow = activeDropId !== null && drop.id === activeDropId
-  if (drop.status === 'archived') {
-    return { ...drop, isActive: false }
-  }
   if (isActiveRow) {
     return {
       ...drop,
@@ -295,7 +292,7 @@ export function saveDrop(
       : drops.map((d, i) => (i === idx ? stamped : d))
 
   let activeId = readActiveDropIdRaw()
-  if (opts?.makeActive && stamped.status !== 'archived') activeId = stamped.id
+  if (opts?.makeActive) activeId = stamped.id
   else if (!activeId) activeId = stamped.id
 
   if (!mergedList.some((d) => d.id === activeId))
@@ -310,7 +307,7 @@ export function setActiveDrop(dropId: string): void {
   ensureDropSystemHydrated()
   const drops = readDropsArray()
   const target = drops.find((d) => d.id === dropId)
-  if (!target || target.status === 'archived') return
+  if (!target) return
   persistDropsState(drops, dropId)
 }
 
@@ -333,8 +330,7 @@ export function deleteDrop(dropId: string): void {
   }
   let active = readActiveDropIdRaw()
   if (active === dropId) {
-    active =
-      drops.find((d) => d.status !== 'archived')?.id ?? drops[0]?.id ?? null
+    active = drops.find((d) => d.id !== dropId)?.id ?? drops[0]?.id ?? null
   }
   persistDropsState(drops, active)
 }
@@ -354,23 +350,22 @@ export function resetDropToDefaults(dropId: string): Drop | null {
   return saveDrop(fresh)
 }
 
-export function createDraftDrop(): Drop {
+export function createNewDrop(): Drop {
   ensureDropSystemHydrated()
   const base = createEmptyDrop()
   saveDrop(base)
   return base
 }
 
-export type CreateDraftDropResult =
+export type CreateNewDropResult =
   | { ok: true; drop: Drop }
   | { ok: false; error: string }
 
 /**
- * Persists a draft locally and, when Supabase is configured, inserts
- * `anvl_drops` immediately before the editor route loads.
+ * Creates a drop in local storage only. Supabase row is inserted on first save.
  */
-export async function createDraftDropAsync(): Promise<CreateDraftDropResult> {
-  const drop = createDraftDrop()
+export async function createNewDropAsync(): Promise<CreateNewDropResult> {
+  const drop = createNewDrop()
   if (!getDropById(drop.id)) {
     return {
       ok: false,
@@ -378,28 +373,14 @@ export async function createDraftDropAsync(): Promise<CreateDraftDropResult> {
         'The new drop did not appear in storage. Try again or return to the list.',
     }
   }
-
-  const { insertAnvlDropToSupabase } = await import(
-    '@/features/admin/cmsRemote/adminCmsInsertDrop'
-  )
-  const { getSupabasePublicEnv } = await import(
-    '@/features/cms/api/supabasePublicEnv'
-  )
-  const { notifyAdminDropsListChanged } = await import(
-    '@/features/admin/cmsRemote/invalidateAdminDropsList'
-  )
-
-  if (getSupabasePublicEnv()) {
-    const remote = await insertAnvlDropToSupabase(drop)
-    if (!remote.ok) {
-      deleteDrop(drop.id)
-      return remote
-    }
-    await notifyAdminDropsListChanged()
-  }
-
   return { ok: true, drop }
 }
+
+/** @deprecated use createNewDrop */
+export const createDraftDrop = createNewDrop
+
+/** @deprecated use createNewDropAsync */
+export const createDraftDropAsync = createNewDropAsync
 
 export function duplicateDrop(sourceId: string): Drop | null {
   ensureDropSystemHydrated()
@@ -420,7 +401,7 @@ export function duplicateDrop(sourceId: string): Drop | null {
     slug: nextSlug,
     name: `${source.name} (copy)`,
     title: `${source.title} (copy)`,
-    status: 'draft',
+    status: 'inactive',
     isActive: false,
     productIds: [],
     scheduledActivationAt: undefined,
@@ -434,12 +415,11 @@ export function scheduleDropActivation(id: string, activationIso: string): void 
   ensureDropSystemHydrated()
   const drops = readDropsArray()
   const existing = drops.find((d) => d.id === id)
-  if (!existing || existing.status === 'archived') return
+  if (!existing) return
 
   let activeId = readActiveDropIdRaw()
   if (activeId === id) {
-    activeId =
-      drops.find((d) => d.id !== id && d.status !== 'archived')?.id ?? null
+    activeId = drops.find((d) => d.id !== id)?.id ?? null
   }
 
   const now = new Date().toISOString()
@@ -456,32 +436,6 @@ export function scheduleDropActivation(id: string, activationIso: string): void 
   )
   persistDropsState(next, activeId)
 }
-
-export function archiveDrop(id: string): void {
-  ensureDropSystemHydrated()
-  const drops = readDropsArray()
-  const existing = drops.find((d) => d.id === id)
-  if (!existing || existing.status === 'archived') return
-
-  let activeId = readActiveDropIdRaw()
-  const now = new Date().toISOString()
-  const next = drops.map((d) =>
-    d.id === id
-      ? {
-          ...d,
-          status: 'archived' as const,
-          isActive: false,
-          scheduledActivationAt: undefined,
-          updatedAt: now,
-        }
-      : d,
-  )
-  if (activeId === id) {
-    activeId = next.find((d) => d.status !== 'archived')?.id ?? null
-  }
-  persistDropsState(next, activeId)
-}
-
 /**
  * Dangerous — clears every admin localStorage key (drops + layout +
  * products + brand + legacy landing + site SEO). Sources the key list

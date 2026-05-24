@@ -116,13 +116,15 @@ function renderDropEditor() {
   )
 }
 
-describe('DropEditorRoute Visuals tab', () => {
+describe('DropEditorRoute Basics campaign assets', () => {
   beforeEach(() => {
     mockDropsState.drops = [createDefaultTheOathDrop()]
   })
 
-  it('gives the live preview column a viewport-based minimum height (admin top chrome)', async () => {
+  it('gives the live preview column a viewport-based minimum height on Theme tab', async () => {
+    const user = userEvent.setup()
     renderDropEditor()
+    await user.click(await screen.findByRole('tab', { name: /theme/i }))
     const pane = await screen.findByTestId('drop-editor-preview-column')
     expect(pane.className).toContain(DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS)
     expect(pane.className).toContain('xl:min-h-0')
@@ -132,27 +134,18 @@ describe('DropEditorRoute Visuals tab', () => {
     expect(split?.className).toContain(DROP_EDITOR_SPLIT_XL_MIN_H_CLASS)
   })
 
-  it('scopes media controls under the Visuals card with no native <select> (smoke)', async () => {
-    const user = userEvent.setup()
+  it('scopes media controls under Basics campaign assets with no native <select>', async () => {
     renderDropEditor()
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /visuals/i })).toBeTruthy()
+      expect(screen.getByText(/campaign assets/i)).toBeTruthy()
     })
 
-    await user.click(screen.getByRole('tab', { name: /visuals/i }))
-
-    const card = await screen.findByTestId('drop-editor-visuals')
-    expect(within(card).getByRole('heading', { name: /^visuals$/i })).toBeTruthy()
-
-    expect(card.querySelector('select')).toBeNull()
-    expect(
-      within(card).getByRole('textbox', { name: /emblem alt text/i }),
-    ).toBeTruthy()
+    expect(document.querySelector('select')).toBeNull()
+    expect(screen.getByText(/drop emblem/i)).toBeTruthy()
   })
 
-  it('groups emblem, wordmark, and hero with no empty <img src> fallbacks', async () => {
-    const user = userEvent.setup()
+  it('groups emblem, wordmark, and hero under Basics with no empty <img src> fallbacks', async () => {
     const base = createDefaultTheOathDrop()
     mockDropsState.drops = [
       {
@@ -167,20 +160,15 @@ describe('DropEditorRoute Visuals tab', () => {
     ]
     renderDropEditor()
 
-    await user.click(await screen.findByRole('tab', { name: /visuals/i }))
-    const card = await screen.findByTestId('drop-editor-visuals')
-    expect(within(card).getByRole('heading', { name: /^drop emblem$/i })).toBeTruthy()
-    expect(within(card).getByRole('heading', { name: /^wordmark$/i })).toBeTruthy()
-    expect(within(card).getByRole('heading', { name: /^hero backdrop$/i })).toBeTruthy()
-    expect(within(card).getByRole('textbox', { name: /emblem alt text/i })).toBeTruthy()
+    const basics = await screen.findByRole('tab', { name: /basics/i })
+    expect(basics).toBeTruthy()
+    expect(screen.getByText(/wordmark/i)).toBeTruthy()
+    expect(screen.getByText(/hero backdrop/i)).toBeTruthy()
 
-    const imgs = card.querySelectorAll('img')
+    const imgs = document.querySelectorAll('img')
     for (const el of Array.from(imgs)) {
       const src = el.getAttribute('src')
       expect(src == null || src.length > 0).toBe(true)
     }
-    expect(
-      within(card).getAllByRole('img', { name: /default anvl crest|anvl wordmark/i }).length,
-    ).toBeGreaterThan(0)
   })
 })

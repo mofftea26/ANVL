@@ -1,22 +1,17 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Check, Eye, EyeOff, Plus, Power, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { Check, Eye, EyeOff, MonitorPlay, Plus, Power, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { toast } from 'sonner'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
-import { AdminPanel } from '@/features/admin/components/AdminPanel'
-import {
-  AdminStatusBadge,
-  dropStatusBadgeLabel,
-  dropStatusBadgeTone,
-} from '@/features/admin/components/AdminStatusBadge'
+import { DropEditorHeaderMeta } from '@/features/admin/drops/DropEditorHeaderMeta'
+import { DropSitePreviewModal } from '@/features/admin/drops/DropSitePreviewModal'
 import { AdminMicroHeading } from '@/features/admin/components/AdminMicroHeading'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { DROP_THEME_PRESETS } from '@/features/admin/drops/drops.presets'
 import { DropEditorLivePreview } from '@/features/admin/drops/DropEditorLivePreview'
-import type { DropStatus } from '@/features/admin/drops/drops.types'
 import {
   deleteDrop,
   persistProductDropLinks,
@@ -57,7 +52,6 @@ import {
   DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS,
   DROP_EDITOR_SPLIT_XL_MIN_H_CLASS,
   fieldErrorClass,
-  type LeaveEmptyMap,
   type TabId,
 } from '@/features/admin/drops/dropEditorRoute.shared'
 import { useDropEditorXlPreviewSplit } from '@/features/admin/drops/useDropEditorXlPreviewSplit'
@@ -120,14 +114,6 @@ const QUICK_PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
 
 const QUICK_PRODUCT_CURRENCIES = ['USD', 'EUR', 'GBP'] as const
 
-const DROP_STATUS_OPTIONS = [
-  { value: 'draft' as const, label: 'Draft' },
-  { value: 'active' as const, label: 'Active' },
-  { value: 'inactive' as const, label: 'Inactive' },
-  { value: 'scheduled' as const, label: 'Scheduled' },
-  { value: 'archived' as const, label: 'Archived' },
-] satisfies ReadonlyArray<{ value: DropStatus; label: string }>
-
 export function DropEditorRoute({ dropId }: { dropId: string }) {
   const navigate = useNavigate()
   const setPageActions = useAdminPageActions()
@@ -145,7 +131,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const [saveModalActivateAfterSave, setSaveModalActivateAfterSave] = useState(false)
   const confirmSaveWasOpenRef = useRef(false)
   const dropEditorSplitRef = useRef<HTMLDivElement | null>(null)
-  const [leaveEmpty, setLeaveEmpty] = useState<LeaveEmptyMap>({})
+  const [previewCollapsed, setPreviewCollapsed] = useState(false)
 
   const [confirmSave, setConfirmSave] = useState(false)
   const [saveInFlight, setSaveInFlight] = useState(false)
@@ -157,7 +143,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const setActiveMut = useSetActiveAdminDropMutation()
   const deactivateMut = useDeactivateAdminDropMutation()
   const activateToggleBusy = setActiveMut.isPending || deactivateMut.isPending
-  const [previewCollapsed, setPreviewCollapsed] = useState(false)
+  const [sitePreviewOpen, setSitePreviewOpen] = useState(false)
   const [quickProductOpen, setQuickProductOpen] = useState(false)
   const [quickProductSlug, setQuickProductSlug] = useState('')
   const [quickProductName, setQuickProductName] = useState('')
@@ -271,20 +257,22 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
     [draft],
   )
 
-  const split = useDropEditorXlPreviewSplit(dropEditorSplitRef, editorReady)
+  const split = useDropEditorXlPreviewSplit(dropEditorSplitRef, editorReady && tab === 'theme')
+  const showThemePreview = tab === 'theme'
 
   const tabWithErrors = useCallback(
     (id: TabId): boolean => {
-      const prefixes: Record<TabId, string> = {
-        basics: 'basics',
-        theme: 'theme',
-        visuals: 'visuals',
-        landing: 'landing',
-        products: 'products',
-        seo: 'seo',
+      const prefixes: Record<TabId, string[]> = {
+        basics: ['basics', 'visuals'],
+        theme: ['theme'],
+        landing: ['landing'],
+        products: ['products'],
+        seo: ['seo'],
       }
-      const prefix = prefixes[id]
-      return Object.keys(errors.fields).some((k) => k.startsWith(`${prefix}.`))
+      const keys = prefixes[id]
+      return Object.keys(errors.fields).some((k) =>
+        keys.some((prefix) => k.startsWith(`${prefix}.`)),
+      )
     },
     [errors.fields],
   )
@@ -304,32 +292,38 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
 
   const dropToolbarActions = useMemo(() => {
     if (!editorReady || !draft) return null
-    const canToggleActive = draft.status !== 'archived'
     return (
       <div className="flex flex-wrap items-center justify-end gap-2">
-        {canToggleActive ? (
-          <AdminTopbarChipButton
-            type="button"
-            disabled={activateToggleBusy}
-            aria-label={
-              isLiveOnStorefront
-                ? 'Deactivate drop on storefront'
-                : 'Activate drop on storefront'
-            }
-            title={
-              isLiveOnStorefront
-                ? 'Remove this drop from the live storefront'
-                : 'Make this drop the live storefront campaign'
-            }
-            variant={isLiveOnStorefront ? 'success' : 'default'}
-            icon={<Power size={14} />}
-            onClick={() =>
-              setConfirmActivateToggle(isLiveOnStorefront ? 'deactivate' : 'activate')
-            }
-          >
-            {isLiveOnStorefront ? 'Deactivate' : 'Activate'}
-          </AdminTopbarChipButton>
-        ) : null}
+        <AdminTopbarChipButton
+          type="button"
+          aria-label="Preview full landing page"
+          title="Open full landing preview in a modal"
+          icon={<MonitorPlay size={14} />}
+          onClick={() => setSitePreviewOpen(true)}
+        >
+          Preview site
+        </AdminTopbarChipButton>
+        <AdminTopbarChipButton
+          type="button"
+          disabled={activateToggleBusy}
+          aria-label={
+            isLiveOnStorefront
+              ? 'Deactivate drop on storefront'
+              : 'Activate drop on storefront'
+          }
+          title={
+            isLiveOnStorefront
+              ? 'Remove this drop from the live storefront'
+              : 'Make this drop the live storefront campaign'
+          }
+          variant={isLiveOnStorefront ? 'success' : 'default'}
+          icon={<Power size={14} />}
+          onClick={() =>
+            setConfirmActivateToggle(isLiveOnStorefront ? 'deactivate' : 'activate')
+          }
+        >
+          {isLiveOnStorefront ? 'Deactivate' : 'Activate'}
+        </AdminTopbarChipButton>
         <AdminTopbarChipButton
           type="button"
           aria-label="Reset drop"
@@ -404,10 +398,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
     )
   }
 
-  const tabDefs: Array<{ id: TabId; label: string; badge?: string }> = [
+  const tabDefs: Array<{ id: TabId; label: string }> = [
     { id: 'basics', label: 'Basics' },
     { id: 'theme', label: 'Theme' },
-    { id: 'visuals', label: 'Visuals' },
     { id: 'landing', label: 'Acts' },
     { id: 'products', label: 'Products' },
     { id: 'seo', label: 'SEO' },
@@ -519,19 +512,20 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
       layout="wide"
       title={headerTitle}
       description={
-        <span className="flex flex-wrap items-center gap-2">
-          <AdminStatusBadge
-            tone={dropStatusBadgeTone(draft.status, isLiveOnStorefront)}
-            size="chip"
-          >
-            {dropStatusBadgeLabel(draft.status, isLiveOnStorefront)}
-          </AdminStatusBadge>
-          {hasErrors ? (
-            <AdminStatusBadge tone="danger" size="chip">
-              {errors.summary.length} validation issue(s)
-            </AdminStatusBadge>
-          ) : null}
-        </span>
+        <DropEditorHeaderMeta
+          status={draft.status}
+          isLive={isLiveOnStorefront}
+          errorCount={errors.summary.length}
+          errorSummary={errors.summary}
+          onValidationClick={() => {
+            if (!hasErrors) return
+            const target = resolveFirstValidationTarget(errors)
+            if (target) {
+              setTab(target.tab)
+              scrollToDropEditorField(target.fieldKey)
+            }
+          }}
+        />
       }
     >
       {/* Preview + forms: single column until xl; xl uses draggable sash + persisted width. */}
@@ -542,6 +536,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
           DROP_EDITOR_SPLIT_XL_MIN_H_CLASS,
         )}
       >
+        {showThemePreview ? (
         <section
           data-testid="drop-editor-preview-column"
           className={cn(
@@ -604,7 +599,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             </AdminCard>
           </div>
         </section>
+        ) : null}
 
+        {showThemePreview ? (
         <div
           role="separator"
           aria-orientation="vertical"
@@ -631,9 +628,15 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             aria-hidden="true"
           />
         </div>
+        ) : null}
 
         {/* Editor side panel — tall tabs scroll with the main admin page (no nested column scroll). */}
-        <section className="order-2 min-w-0 space-y-5 xl:order-3 xl:flex xl:h-full xl:min-h-0 xl:flex-1 xl:flex-col xl:self-stretch xl:overflow-visible">
+        <section
+          className={cn(
+            'order-2 min-w-0 space-y-5 xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:self-stretch xl:overflow-visible',
+            showThemePreview ? 'xl:order-3' : 'xl:order-1',
+          )}
+        >
           <div
             role="tablist"
             aria-label="Drop editor sections"
@@ -717,35 +720,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                   />
                   <DropEditorFieldError message={errors.fields['basics.slug']} />
                 </label>
-                <div className="block text-xs text-[var(--color-text-muted)]">
-                  <span className="block" id="drop-editor-basics-status-label">
-                    Status
-                  </span>
-                  <AdminSelect
-                    value={draft.status}
-                    onValueChange={(value) =>
-                      setDraft({
-                        ...draft,
-                        status: value as DropStatus,
-                      })
-                    }
-                  >
-                    <AdminSelectTrigger
-                      id="drop-editor-basics-status"
-                      aria-labelledby="drop-editor-basics-status-label"
-                    >
-                      <AdminSelectValue placeholder="Status" />
-                    </AdminSelectTrigger>
-                    <AdminSelectContent>
-                      {DROP_STATUS_OPTIONS.map((opt) => (
-                        <AdminSelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </AdminSelectItem>
-                      ))}
-                    </AdminSelectContent>
-                  </AdminSelect>
-                </div>
-                <label className="text-xs text-[var(--color-text-muted)]">
+                <label className="text-xs text-[var(--color-text-muted)] md:col-span-2">
                   <span className="block" id="drop-editor-basics-release-label">
                     Release date (optional)
                   </span>
@@ -798,6 +773,69 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                   />
                 </label>
               </div>
+
+              <div className="mt-8 space-y-4 border-t border-[var(--color-line)]/60 pt-6">
+                <AdminMicroHeading as="h3">Campaign assets</AdminMicroHeading>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  Global drop marks used across acts. Upload act-specific media in the Acts builder.
+                </p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <MediaPickerField
+                    label="Drop emblem"
+                    kind="image"
+                    hint="Default crest for hero and manifesto surfaces."
+                    value={draft.visuals.emblemImageUrl}
+                    supabaseUpload={dropMediaUpload('emblem')}
+                    onChange={(next) =>
+                      setDraft({
+                        ...draft,
+                        visuals: { ...draft.visuals, emblemImageUrl: next },
+                      })
+                    }
+                    fallback="crest"
+                    fallbackPreviewSrc={emblemFallbackPreview}
+                  />
+                  <MediaPickerField
+                    label="Wordmark"
+                    kind="image"
+                    hint="Optional wide lockup for marquee surfaces."
+                    value={draft.visuals.wordmarkImageUrl ?? ''}
+                    supabaseUpload={dropMediaUpload('wordmark')}
+                    onChange={(next) =>
+                      setDraft({
+                        ...draft,
+                        visuals: {
+                          ...draft.visuals,
+                          wordmarkImageUrl: next || undefined,
+                        },
+                      })
+                    }
+                    error={errors.fields['visuals.wordmarkImageUrl']}
+                    fallback="wordmark"
+                    fallbackPreviewSrc={wordmarkChainPreview}
+                  />
+                  <div className="md:col-span-2">
+                    <MediaPickerField
+                      label="Hero backdrop (optional)"
+                      kind="any"
+                      hint="Large mood image or loop used when acts do not supply their own backdrop."
+                      value={draft.visuals.heroImageUrl ?? ''}
+                      supabaseUpload={dropMediaUpload('hero')}
+                      onChange={(next) =>
+                        setDraft({
+                          ...draft,
+                          visuals: {
+                            ...draft.visuals,
+                            heroImageUrl: next || undefined,
+                          },
+                        })
+                      }
+                      error={errors.fields['visuals.heroImageUrl']}
+                      fallback="none"
+                    />
+                  </div>
+                </div>
+              </div>
             </AdminCard>
           ) : null}
 
@@ -816,178 +854,6 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             </AdminCard>
           ) : null}
 
-          {tab === 'visuals' ? (
-            <AdminCard
-              className="h-auto min-h-0"
-              testId="drop-editor-visuals"
-              title="Visuals"
-              description="Campaign imagery for this drop: emblem, wordmark, and hero, plus optional campaign lockups. Inline ANVL marks replace broken or empty previews; use “Hide fallback preview” to QA a cleared slot."
-            >
-              <div className="space-y-6">
-                <AdminPanel variant="inset" className="space-y-3">
-                  <AdminMicroHeading as="h3">Drop emblem</AdminMicroHeading>
-                      <p className="text-xs text-[var(--color-text-muted)]">
-                        Mark used in hero / manifesto / join surfaces.
-                      </p>
-                      <MediaPickerField
-                        label="Emblem asset"
-                        kind="image"
-                        hint="SVG or raster under /public — invalid URLs fall back to the ANVL crest preview."
-                        value={draft.visuals.emblemImageUrl}
-                        supabaseUpload={dropMediaUpload('emblem')}
-                        onChange={(next) =>
-                          setDraft({
-                            ...draft,
-                            visuals: { ...draft.visuals, emblemImageUrl: next },
-                          })
-                        }
-                        fallback="crest"
-                        fallbackPreviewSrc={emblemFallbackPreview}
-                      />
-                      <label className="block text-xs text-[var(--color-text-muted)]">
-                        <span className="block" id="drop-editor-visuals-emblem-alt-label">
-                          Emblem alt text
-                        </span>
-                        <AdminInput
-                          aria-labelledby="drop-editor-visuals-emblem-alt-label"
-                          className={
-                            errors.fields['visuals.emblemAlt'] ? fieldErrorClass : undefined
-                          }
-                          value={draft.visuals.emblemAlt}
-                          onChange={(e) =>
-                            setDraft({
-                              ...draft,
-                              visuals: { ...draft.visuals, emblemAlt: e.target.value },
-                            })
-                          }
-                        />
-                        <DropEditorFieldError message={errors.fields['visuals.emblemAlt']} />
-                      </label>
-                    </AdminPanel>
-
-                    <AdminPanel variant="inset" className="space-y-3">
-                      <AdminMicroHeading as="h3">Wordmark</AdminMicroHeading>
-                      <p className="text-xs text-[var(--color-text-muted)]">
-                        Wide lockup for marquee surfaces. Empty or broken picks fall back to the bundled ANVL wordmark; chained preview tries campaign logo then emblem.
-                      </p>
-                      <MediaPickerField
-                        label="Wordmark asset"
-                        kind="image"
-                        hint="Optional — inherits campaign logo or emblem in preview when empty."
-                        value={draft.visuals.wordmarkImageUrl ?? ''}
-                        supabaseUpload={dropMediaUpload('wordmark')}
-                        leaveEmpty={leaveEmpty.wordmarkImageUrl}
-                        onLeaveEmptyChange={(v) =>
-                          setLeaveEmpty((prev) => ({ ...prev, wordmarkImageUrl: v }))
-                        }
-                        onChange={(next) =>
-                          setDraft({
-                            ...draft,
-                            visuals: {
-                              ...draft.visuals,
-                              wordmarkImageUrl: next || undefined,
-                            },
-                          })
-                        }
-                        error={errors.fields['visuals.wordmarkImageUrl']}
-                        fallback="wordmark"
-                        fallbackPreviewSrc={wordmarkChainPreview}
-                      />
-                    </AdminPanel>
-
-                    <AdminPanel variant="inset" className="space-y-3">
-                      <AdminMicroHeading as="h3">Hero backdrop</AdminMicroHeading>
-                      <p className="text-xs text-[var(--color-text-muted)]">
-                        Large mood image or loop behind the drop landing hero.
-                      </p>
-                      <MediaPickerField
-                        label="Backdrop media"
-                        kind="any"
-                        hint="Optional large image or short clip — leave empty for a clean hero plate."
-                        value={draft.visuals.heroImageUrl ?? ''}
-                        supabaseUpload={dropMediaUpload('hero')}
-                        leaveEmpty={leaveEmpty.heroImageUrl}
-                        onLeaveEmptyChange={(v) =>
-                          setLeaveEmpty((prev) => ({ ...prev, heroImageUrl: v }))
-                        }
-                        onChange={(next) =>
-                          setDraft({
-                            ...draft,
-                            visuals: {
-                              ...draft.visuals,
-                              heroImageUrl: next || undefined,
-                            },
-                          })
-                        }
-                        error={errors.fields['visuals.heroImageUrl']}
-                        fallback="none"
-                      />
-                    </AdminPanel>
-
-                    <div className="space-y-6 border-t border-[var(--color-line)]/55 pt-6">
-                      <AdminMicroHeading as="h3">Additional lockups</AdminMicroHeading>
-
-                      <AdminPanel variant="inset" className="space-y-3">
-                        <h4 className="text-xs font-semibold text-[var(--color-heading)]">
-                          Campaign logo
-                        </h4>
-                        <MediaPickerField
-                          label="Drop logo (optional)"
-                          kind="image"
-                          hint="Campaign lockup — leave empty to inherit the official ANVL crest."
-                          value={draft.visuals.logoImageUrl ?? ''}
-                          supabaseUpload={dropMediaUpload('logo')}
-                          leaveEmpty={leaveEmpty.logoImageUrl}
-                          onLeaveEmptyChange={(v) =>
-                            setLeaveEmpty((prev) => ({ ...prev, logoImageUrl: v }))
-                          }
-                          onChange={(next) =>
-                            setDraft({
-                              ...draft,
-                              visuals: {
-                                ...draft.visuals,
-                                logoImageUrl: next || undefined,
-                              },
-                            })
-                          }
-                          error={errors.fields['visuals.logoImageUrl']}
-                          fallback="crest"
-                        />
-                      </AdminPanel>
-
-                      <AdminPanel variant="inset" className="space-y-3">
-                        <h4 className="text-xs font-semibold text-[var(--color-heading)]">
-                          Loading emblem
-                        </h4>
-                        <MediaPickerField
-                          label="Loading emblem asset"
-                          kind="image"
-                          hint="Crest shown during initial mark hydration. Default: ANVL crest preview."
-                          value={draft.visuals.loadingEmblemUrl ?? ''}
-                          supabaseUpload={dropMediaUpload('loading-emblem')}
-                          leaveEmpty={leaveEmpty.loadingEmblemUrl}
-                          onLeaveEmptyChange={(v) =>
-                            setLeaveEmpty((prev) => ({ ...prev, loadingEmblemUrl: v }))
-                          }
-                          onChange={(next) =>
-                            setDraft({
-                              ...draft,
-                              visuals: {
-                                ...draft.visuals,
-                                loadingEmblemUrl: next || undefined,
-                              },
-                            })
-                          }
-                          error={errors.fields['visuals.loadingEmblemUrl']}
-                          fallback="crest"
-                          fallbackPreviewSrc={draft.visuals.emblemImageUrl ?? ''}
-                        />
-                      </AdminPanel>
-                    </div>
-              </div>
-            </AdminCard>
-          ) : null}
-
           {tab === 'landing' ? (
             <Suspense
               fallback={
@@ -1001,6 +867,10 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                 acts={draft.acts}
                 landingActSequence={draft.landingActSequence}
                 catalogProducts={catalog.map((c) => ({ id: c.id, name: c.name }))}
+                previewLanding={previewLanding}
+                previewProducts={previewProducts}
+                palette={draft.theme}
+                emblemUrl={draft.visuals.emblemImageUrl}
                 onChange={({ acts, landingActSequence }) =>
                   setDraft((prev) =>
                     prev ? { ...prev, acts, landingActSequence } : prev,
@@ -1308,7 +1178,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         }}
       >
         {getSupabasePublicEnv()
-          ? 'Saves the drop draft to Supabase. Live storefront updates when this drop is active (or you check activate below).'
+          ? 'Saves the drop to Supabase. Live storefront updates when this drop is active (or you check activate below).'
           : 'Updates persist in this browser until Supabase is configured.'}
       </AdminConfirmDialog>
 
@@ -1650,6 +1520,17 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
           </div>
         </div>
       </Modal>
+
+      <DropSitePreviewModal
+        open={sitePreviewOpen}
+        onClose={() => setSitePreviewOpen(false)}
+        title={`Preview · ${headerTitle}`}
+        landing={previewLanding}
+        products={previewProducts}
+        palette={draft.theme}
+        emblemUrl={draft.visuals.emblemImageUrl}
+        draftActs={draft.acts}
+      />
     </AdminLayout>
   )
 }

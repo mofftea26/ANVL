@@ -2,11 +2,9 @@ import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import type { DropStatus } from '@/features/drops/drop.types'
 
 const STATUS_SORT_RANK: Record<DropStatus, number> = {
-  draft: 10,
   scheduled: 20,
   inactive: 30,
   active: 40,
-  archived: 50,
 }
 
 function parseOptionalTime(iso?: string): number {

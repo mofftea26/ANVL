@@ -2,13 +2,7 @@ import { adminStackedFieldClass } from '@/shared/lib/cmsFieldStyles'
 
 /** Shared form styling + tab model for the drop editor route. */
 
-export type TabId =
-  | 'basics'
-  | 'visuals'
-  | 'theme'
-  | 'landing'
-  | 'products'
-  | 'seo'
+export type TabId = 'basics' | 'theme' | 'landing' | 'products' | 'seo'
 
 export type LeaveEmptyMap = Partial<{
   logoImageUrl: boolean

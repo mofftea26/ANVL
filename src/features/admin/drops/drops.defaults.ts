@@ -127,7 +127,7 @@ export function createEmptyDrop(nowIso = new Date().toISOString()): Drop {
     title: 'NEW DROP',
     subtitle: 'Subtitle',
     description: '',
-    status: 'draft',
+    status: 'inactive',
     isActive: false,
     productIds: [],
     acts: landingContentToSimpleActs(oath.landingContent),

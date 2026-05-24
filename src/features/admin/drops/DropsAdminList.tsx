@@ -1,4 +1,4 @@
-import { ExternalLink, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useCallback, useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminButton } from '@/features/admin/components/AdminButton'
@@ -7,7 +7,6 @@ import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDial
 import { AdminDateTimeField } from '@/features/admin/components/AdminDateTimeField'
 import {
   AdminEmptyState,
-  AdminSecondaryExternalLink,
 } from '@/features/admin/components/AdminEmptyState'
 import { AdminForgedLink } from '@/features/admin/components/AdminForgedLink'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'
@@ -25,12 +24,20 @@ import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import { coerceToDate } from '@/features/admin/lib/adminDateTime'
 import {
   useAdminDropsListQuery,
-  useArchiveAdminDropMutation,
   useDeleteAdminDropMutation,
   useDuplicateAdminDropMutation,
   useScheduleAdminDropMutation,
   useSetActiveAdminDropMutation,
 } from '@/features/admin/drops/useAdminDropsListQuery'
+import { DropSitePreviewModal } from '@/features/admin/drops/DropSitePreviewModal'
+import { composeLandingPageFromDrop } from '@/features/cms/landing/composeLandingPageFromDrop'
+import { useWebsiteLayout } from '@/features/admin/website-layout/useWebsiteLayout'
+import { useAdminProductsList } from '@/features/admin/products/useAdminProducts'
+import {
+  adminProductIsPubliclyVisible,
+  adminProductToLegacy,
+} from '@/features/admin/products/products.mapper'
+import { getDropById } from '@/features/admin/drops/drops.service'
 import {
   type DropsListStatusTab,
   useDropsListUiStore,
@@ -44,11 +51,9 @@ import {
 
 const STATUS_TABS: Array<{ id: DropsListStatusTab; label: string }> = [
   { id: 'all', label: 'All' },
-  { id: 'draft', label: 'Draft' },
   { id: 'inactive', label: 'Inactive' },
   { id: 'scheduled', label: 'Scheduled' },
   { id: 'active', label: 'Active' },
-  { id: 'archived', label: 'Archived' },
 ]
 
 function filterRows(
@@ -71,12 +76,13 @@ function filterRows(
 
 type ModalMode =
   | { kind: 'activate'; id: string; label: string }
-  | { kind: 'archive'; id: string; label: string }
   | { kind: 'delete'; id: string; label: string }
   | { kind: 'schedule'; id: string; label: string }
 
 export function DropsAdminList() {
   const { data, isLoading, isError, refetch } = useAdminDropsListQuery()
+  const websiteLayout = useWebsiteLayout()
+  const catalog = useAdminProductsList()
   const search = useDropsListUiStore((s) => s.search)
   const statusTab = useDropsListUiStore((s) => s.statusTab)
   const setSearch = useDropsListUiStore((s) => s.setSearch)
@@ -85,10 +91,10 @@ export function DropsAdminList() {
   const duplicateMut = useDuplicateAdminDropMutation()
   const setActiveMut = useSetActiveAdminDropMutation()
   const scheduleMut = useScheduleAdminDropMutation()
-  const archiveMut = useArchiveAdminDropMutation()
   const deleteMut = useDeleteAdminDropMutation()
 
   const [modal, setModal] = useState<ModalMode | null>(null)
+  const [previewDropId, setPreviewDropId] = useState<string | null>(null)
   const [sortKey, setSortKey] = useState<DropsListSortKey>('updatedAt:desc')
   const scheduleFieldLabelId = useId()
   const searchFieldId = useId()
@@ -123,8 +129,25 @@ export function DropsAdminList() {
     duplicateMut.isPending ||
     setActiveMut.isPending ||
     scheduleMut.isPending ||
-    archiveMut.isPending ||
     deleteMut.isPending
+
+  const previewDrop = previewDropId ? getDropById(previewDropId) : null
+  const previewLanding = previewDrop
+    ? composeLandingPageFromDrop(previewDrop, websiteLayout, {
+        editorActsPreview: true,
+        editorPreviewHeroFallback: true,
+      })
+    : null
+  const previewProducts = useMemo(() => {
+    if (!previewDrop) return []
+    const map = new Map(catalog.map((p) => [p.id, p]))
+    const label = `${previewDrop.dropNumber}: ${previewDrop.name}`
+    return previewDrop.productIds
+      .map((id) => map.get(id))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p))
+      .filter(adminProductIsPubliclyVisible)
+      .map((p) => adminProductToLegacy(p, label))
+  }, [catalog, previewDrop])
 
   function clearListFilters() {
     setSearch('')
@@ -182,10 +205,6 @@ export function DropsAdminList() {
                 >
                   <Plus className="size-[18px]" aria-hidden />
                 </AdminForgedLink>
-                <AdminSecondaryExternalLink href="/">
-                  View site
-                  <ExternalLink size={14} aria-hidden />
-                </AdminSecondaryExternalLink>
               </div>
             </div>
           </div>
@@ -259,18 +278,16 @@ export function DropsAdminList() {
                       setModal({ kind: 'activate', id: row.id, label: row.title })
                     }
                     onSchedule={() => openSchedule(row)}
-                    onArchive={() =>
-                      setModal({ kind: 'archive', id: row.id, label: row.title })
-                    }
                     onDelete={() =>
                       setModal({ kind: 'delete', id: row.id, label: row.title })
                     }
                     onDuplicate={() => {
                       duplicateMut.mutate(row.id, {
-                        onSuccess: () => toast.success('Drop duplicated as draft.'),
+                        onSuccess: () => toast.success('Drop duplicated.'),
                         onError: () => toast.error('Duplicate failed.'),
                       })
                     }}
+                    onPreview={() => setPreviewDropId(row.id)}
                   />
                 ))}
               </div>
@@ -343,27 +360,6 @@ export function DropsAdminList() {
       </AdminConfirmDialog>
 
       <AdminConfirmDialog
-        open={modal?.kind === 'archive'}
-        onClose={() => setModal(null)}
-        title="Archive drop?"
-        confirmLabel="Archive"
-        confirmDisabled={busy}
-        onConfirm={() => {
-          if (modal?.kind !== 'archive') return
-          archiveMut.mutate(modal.id, {
-            onSuccess: () => {
-              toast.success('Drop archived.')
-              setModal(null)
-            },
-            onError: () => toast.error('Archive failed.'),
-          })
-        }}
-      >
-        <span className="font-medium text-[var(--color-text)]">{modal?.label}</span> will be hidden
-        from activation and scheduling.
-      </AdminConfirmDialog>
-
-      <AdminConfirmDialog
         open={modal?.kind === 'delete'}
         onClose={() => setModal(null)}
         title="Delete drop?"
@@ -383,6 +379,19 @@ export function DropsAdminList() {
         This removes <span className="font-medium text-[var(--color-text)]">{modal?.label}</span>{' '}
         from local storage. If it was the only drop, a fresh default drop is recreated.
       </AdminConfirmDialog>
+
+      {previewDrop && previewLanding ? (
+        <DropSitePreviewModal
+          open={previewDropId !== null}
+          onClose={() => setPreviewDropId(null)}
+          title={`Preview · ${previewDrop.name}`}
+          landing={previewLanding}
+          products={previewProducts}
+          palette={previewDrop.theme}
+          emblemUrl={previewDrop.visuals.emblemImageUrl}
+          draftActs={previewDrop.acts}
+        />
+      ) : null}
     </>
   )
 }

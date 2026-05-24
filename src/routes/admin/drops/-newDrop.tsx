@@ -1,7 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
-import { createDraftDropAsync } from '@/features/admin/drops/drops.service'
+import { createNewDropAsync } from '@/features/admin/drops/drops.service'
 import { AdminSpinner } from '@/shared/components/ui/AdminSpinner'
 
 export function AdminNewDropPageRoute() {
@@ -22,7 +22,7 @@ function NewDropBootstrap() {
     startedRef.current = true
 
     void (async () => {
-      const result = await createDraftDropAsync()
+      const result = await createNewDropAsync()
       if (!result.ok) {
         setPersistError(result.error)
         return

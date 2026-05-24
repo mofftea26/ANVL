@@ -48,11 +48,9 @@ export function AdminStatusBadge({
 }
 
 const DROP_STATUS_LABEL: Record<DropStatus, string> = {
-  draft: 'Draft',
   active: 'Active',
   inactive: 'Inactive',
   scheduled: 'Scheduled',
-  archived: 'Archived',
 }
 
 /** Single badge label: live storefront wins over CMS status. */
@@ -68,12 +66,8 @@ export function dropStatusBadgeTone(
 ): NonNullable<VariantProps<typeof adminStatusBadgeVariants>['tone']> {
   if (isLive) return 'live'
   switch (status) {
-    case 'draft':
-      return 'neutral'
     case 'scheduled':
       return 'scheduled'
-    case 'archived':
-      return 'archived'
     case 'inactive':
       return 'neutral'
     case 'active':

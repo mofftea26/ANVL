@@ -13,9 +13,9 @@ export type DropAdminListCardProps = {
   busy: boolean
   onActivate: () => void
   onSchedule: () => void
-  onArchive: () => void
   onDelete: () => void
   onDuplicate: () => void
+  onPreview: () => void
 }
 
 export function DropAdminListCard({
@@ -23,9 +23,9 @@ export function DropAdminListCard({
   busy,
   onActivate,
   onSchedule,
-  onArchive,
   onDelete,
   onDuplicate,
+  onPreview,
 }: DropAdminListCardProps) {
   const emblemUrl = row.emblemImageUrl?.trim()
   const themeAccent = row.themeAccent?.trim()
@@ -117,9 +117,9 @@ export function DropAdminListCard({
             className="border-[var(--color-line)] bg-[var(--color-bg)]/70 hover:bg-[var(--color-surface-elevated)]"
             onActivate={onActivate}
             onSchedule={onSchedule}
-            onArchive={onArchive}
             onDelete={onDelete}
             onDuplicate={onDuplicate}
+            onPreview={onPreview}
           />
         </header>
 

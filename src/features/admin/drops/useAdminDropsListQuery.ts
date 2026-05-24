@@ -81,14 +81,6 @@ export function useScheduleAdminDropMutation() {
   })
 }
 
-export function useArchiveAdminDropMutation() {
-  const invalidate = useInvalidateAdminDropsList()
-  return useMutation({
-    mutationFn: (id: string) => runtimeClients.cms.archiveAdminDrop(id),
-    onSuccess: () => invalidate(),
-  })
-}
-
 export function useDeleteAdminDropMutation() {
   const invalidate = useInvalidateAdminDropsList()
   return useMutation({

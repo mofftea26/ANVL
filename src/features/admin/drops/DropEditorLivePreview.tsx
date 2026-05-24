@@ -130,6 +130,31 @@ a { pointer-events: none; }
 /* Tight scroll inside the iframe so the section heights breathe correctly. */
 `.trim()
 
+const PREVIEW_BASE_CSS = `
+:root { color-scheme: dark; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--color-bg, #0b0b0c);
+  color: var(--color-text, #e7e4df);
+  font-family: var(--font-sans, "Manrope", system-ui, sans-serif);
+  overflow-x: hidden;
+  min-height: auto !important;
+  height: auto !important;
+  overflow-y: auto !important;
+}
+.anvl-screen-section,
+.anvl-screen-section-fixed {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  max-height: none !important;
+}
+.anvl-screen-section-fixed {
+  min-height: var(--anvl-section-h, 100svh) !important;
+  height: var(--anvl-section-h, 100svh) !important;
+}
+a { pointer-events: none; }
+`.trim()
+
 type BoundaryProps = { children: ReactNode }
 type BoundaryState = { error: Error | null }
 
@@ -210,6 +235,8 @@ function ViewportIframe({
   fill,
   children,
   className,
+  freezeIntroAnimations = true,
+  remountKey,
 }: {
   /** Device width in CSS px when `fill` is false. */
   widthPx: number
@@ -218,6 +245,10 @@ function ViewportIframe({
   children: ReactNode
   /** Classes for the iframe element (replaced element); shell wrapper uses flex stretch. */
   className?: string
+  /** When true (default), GSAP intro states are neutralized for static layout preview. */
+  freezeIntroAnimations?: boolean
+  /** Bumps iframe bootstrap when animations should replay. */
+  remountKey?: string | number
 }) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   /** Latest bootstrap closure for `iframe` `load` callbacks (attached before refs settle). */
@@ -292,7 +323,7 @@ function ViewportIframe({
 
         const reset = doc.createElement('style')
         reset.dataset['anvlPreviewReset'] = 'true'
-        reset.textContent = PREVIEW_RESET_CSS
+        reset.textContent = freezeIntroAnimations ? PREVIEW_RESET_CSS : PREVIEW_BASE_CSS
         doc.head.appendChild(reset)
 
         doc.documentElement.classList.add('anvl-preview-iframe')
@@ -400,7 +431,7 @@ function ViewportIframe({
       bootstrapIframeRef.current = null
       setBody(null)
     }
-  }, [])
+  }, [freezeIntroAnimations, remountKey])
 
   /**
    * The iframe sits in a **flex-1 min-h-0** shell — not as the row flex item directly — so `%`
@@ -446,8 +477,16 @@ export type DropEditorLivePreviewProps = {
   emblemUrl: string
   /** Act rows from the drop editor — merged over `landing` slices in the preview renderer. */
   draftActs?: LandingAct[]
+  /** Render only these act ids (acts builder single-act preview). */
+  onlyActIds?: string[]
+  /** When true (default), neutralize GSAP intro keyframes for static layout QA. */
+  freezeIntroAnimations?: boolean
+  /** Increment to replay entrance animations inside the iframe. */
+  animationRemountKey?: number
   /** Below `xl`: parent drives collapse; preview hides toolbar + iframe shell (`max-xl:hidden`). */
   belowXlCollapse?: BelowXlLivePreviewCollapse
+  /** Hide viewport toolbar (single-act sticky preview). */
+  compact?: boolean
 }
 
 export function DropEditorLivePreview({
@@ -456,7 +495,11 @@ export function DropEditorLivePreview({
   palette,
   emblemUrl,
   draftActs,
+  onlyActIds,
+  freezeIntroAnimations = true,
+  animationRemountKey = 0,
   belowXlCollapse,
+  compact = false,
 }: DropEditorLivePreviewProps) {
   const [viewport, setViewport] = useState<ViewportId>('fit')
   const option = useMemo(
@@ -464,16 +507,31 @@ export function DropEditorLivePreview({
     [viewport],
   )
 
+  const filteredLanding = useMemo(() => {
+    if (!onlyActIds?.length) return landing
+    const allowed = new Set(onlyActIds)
+    return {
+      ...landing,
+      landingActs: landing.landingActs.filter((a) => allowed.has(a.id)),
+    }
+  }, [landing, onlyActIds])
+
+  const filteredDraftActs = useMemo(() => {
+    if (!draftActs?.length || !onlyActIds?.length) return draftActs
+    const allowed = new Set(onlyActIds)
+    return draftActs.filter((a) => allowed.has(a.id))
+  }, [draftActs, onlyActIds])
+
   const previewBody = (
     <DropPreviewThemeScope palette={palette} emblemUrl={emblemUrl}>
       <DropEditorPreviewErrorBoundary>
         <div className="pointer-events-none select-none [&_a]:pointer-events-none">
           <PublicLandingActs
-            landing={landing}
+            landing={filteredLanding}
             products={products}
             emblemSrc={emblemUrl}
             cmsPreview
-            draftActs={draftActs}
+            draftActs={filteredDraftActs}
           />
         </div>
       </DropEditorPreviewErrorBoundary>
@@ -498,7 +556,7 @@ export function DropEditorLivePreview({
         aria-label="Preview viewport size"
         className={cn(
           'flex shrink-0 flex-wrap items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-surface)]/70 p-1.5 backdrop-blur',
-          collapsedBelowXl ? 'max-xl:hidden' : '',
+          (collapsedBelowXl || compact) && 'hidden',
         )}
       >
         {VIEWPORT_OPTIONS.map((opt) => {
@@ -561,6 +619,8 @@ export function DropEditorLivePreview({
               <ViewportIframe
                 fill={isFit}
                 widthPx={deviceWidthPx}
+                freezeIntroAnimations={freezeIntroAnimations}
+                remountKey={animationRemountKey}
                 className={cn(
                   isFit ? 'w-full max-w-full' : 'rounded-lg',
                 )}

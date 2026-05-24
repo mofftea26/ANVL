@@ -157,13 +157,13 @@ describe('DropEditorRoute top bar actions', () => {
   it('shows CMS status only when the drop is not live on storefront', async () => {
     const drop = createDefaultTheOathDrop()
     drop.isActive = false
-    drop.status = 'draft'
+    drop.status = 'inactive'
     mockDropsState.drops = [drop]
 
     renderDropEditor()
 
     await waitFor(() => {
-      expect(within(screen.getByTestId('layout-description')).getByText(/^draft$/i)).toBeTruthy()
+      expect(within(screen.getByTestId('layout-description')).getByText(/^inactive$/i)).toBeTruthy()
     })
     expect(within(screen.getByTestId('layout-description')).queryByText(/^live$/i)).toBeNull()
   })
@@ -217,6 +217,8 @@ describe('DropEditorRoute top bar actions', () => {
     const user = userEvent.setup()
     renderDropEditor()
 
+    await user.click(screen.getByRole('tab', { name: /^theme$/i }))
+
     await waitFor(() => {
       expect(
         screen.getByRole('button', { name: /^hide live preview$/i }),
@@ -226,22 +228,22 @@ describe('DropEditorRoute top bar actions', () => {
     const previewToolbar = screen.getByRole('toolbar', {
       name: /preview viewport size/i,
     })
-    expect(previewToolbar.className.includes('max-xl:hidden')).toBe(false)
+    expect(previewToolbar.className.includes('hidden')).toBe(false)
 
     await user.click(screen.getByRole('button', { name: /^hide live preview$/i }))
-    expect(previewToolbar.className.includes('max-xl:hidden')).toBe(true)
+    expect(previewToolbar.className.includes('hidden')).toBe(true)
 
     await user.click(screen.getByRole('button', { name: /^show live preview$/i }))
     await waitFor(() => {
-      expect(previewToolbar.className.includes('max-xl:hidden')).toBe(false)
+      expect(previewToolbar.className.includes('hidden')).toBe(false)
     })
   })
 
-  it('Basics tab uses Radix AdminSelect for drop status (no native select)', async () => {
+  it('Basics tab includes campaign asset pickers (no native select)', async () => {
     renderDropEditor()
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: /^status$/i })).toBeTruthy()
+      expect(screen.getByText(/campaign assets/i)).toBeTruthy()
     })
 
     expect(document.querySelector('select')).toBeNull()

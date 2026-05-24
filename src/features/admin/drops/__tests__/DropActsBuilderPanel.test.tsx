@@ -6,6 +6,23 @@ import { mergeActAnimationConfig } from '@/features/admin/drops/acts/landingActs
 import { safeParseActContent } from '@/features/admin/drops/acts/landingActs.zod'
 import { defaultLandingActSequence } from '@/features/admin/drops/drops.actSequence'
 import type { LandingAct } from '@/features/admin/drops/acts/landingActs.types'
+import { createDefaultTheOathDrop } from '@/features/admin/drops/drops.defaults'
+import { composeLandingPageFromDrop } from '@/features/cms/landing/composeLandingPageFromDrop'
+import { createDefaultWebsiteLayout } from '@/features/admin/website-layout/websiteLayout.defaults'
+
+function previewProps() {
+  const drop = createDefaultTheOathDrop()
+  return {
+    previewLanding: composeLandingPageFromDrop(
+      drop,
+      createDefaultWebsiteLayout(),
+      { editorActsPreview: true },
+    ),
+    previewProducts: [],
+    palette: drop.theme,
+    emblemUrl: drop.visuals.emblemImageUrl,
+  }
+}
 
 describe('DropActsBuilderPanel', () => {
   it('does not mount native select elements inside the Acts admin card', () => {
@@ -51,6 +68,7 @@ describe('DropActsBuilderPanel', () => {
         acts={acts}
         landingActSequence={defaultLandingActSequence()}
         onChange={vi.fn()}
+        {...previewProps()}
       />,
     )
 
@@ -101,6 +119,7 @@ describe('DropActsBuilderPanel', () => {
         acts={acts}
         landingActSequence={defaultLandingActSequence()}
         onChange={vi.fn()}
+        {...previewProps()}
       />,
     )
 
@@ -142,6 +161,7 @@ describe('DropActsBuilderPanel', () => {
         acts={acts}
         landingActSequence={defaultLandingActSequence()}
         onChange={vi.fn()}
+        {...previewProps()}
       />,
     )
 

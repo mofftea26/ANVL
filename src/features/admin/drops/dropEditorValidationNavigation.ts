@@ -1,19 +1,12 @@
 import type { DropFieldErrors } from '@/features/admin/drops/drops.editor.validation'
 import type { TabId } from '@/features/admin/drops/dropEditorRoute.shared'
 
-const TAB_ORDER: TabId[] = [
-  'basics',
-  'theme',
-  'visuals',
-  'landing',
-  'products',
-  'seo',
-]
+const TAB_ORDER: TabId[] = ['basics', 'theme', 'landing', 'products', 'seo']
 
 const FIELD_TAB: Array<{ prefix: string; tab: TabId }> = [
   { prefix: 'basics.', tab: 'basics' },
   { prefix: 'theme.', tab: 'theme' },
-  { prefix: 'visuals.', tab: 'visuals' },
+  { prefix: 'visuals.', tab: 'basics' },
   { prefix: 'landing.', tab: 'landing' },
   { prefix: 'products.', tab: 'products' },
   { prefix: 'seo.', tab: 'seo' },

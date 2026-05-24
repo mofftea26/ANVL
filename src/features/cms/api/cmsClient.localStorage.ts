@@ -1,7 +1,6 @@
 import type { CmsClient } from '@/app/config/clients'
 import type { Drop } from '@/features/drops/drop.types'
 import {
-  archiveDrop,
   deleteDrop,
   duplicateDrop,
   readDropsArray,
@@ -148,10 +147,6 @@ export const localStorageCmsClient: CmsClient = {
   },
   async scheduleAdminDrop(id, activationIso) {
     scheduleDropActivation(id, activationIso)
-    await flushAdminCmsToSupabaseIfConfigured()
-  },
-  async archiveAdminDrop(id) {
-    archiveDrop(id)
     await flushAdminCmsToSupabaseIfConfigured()
   },
   async deleteAdminDrop(id) {

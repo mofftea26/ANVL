@@ -1,12 +1,6 @@
 import { z } from 'zod'
 
-const dropStatusSchema = z.enum([
-  'draft',
-  'active',
-  'inactive',
-  'scheduled',
-  'archived',
-])
+const dropStatusSchema = z.enum(['active', 'inactive', 'scheduled'])
 
 const landingActSlotKeySchema = z.enum([
   'hero',

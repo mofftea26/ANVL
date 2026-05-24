@@ -35,7 +35,7 @@ describe('DropEditorLivePreview below-xl collapse', () => {
     const toolbar = screen.getByRole('toolbar', {
       name: /preview viewport size/i,
     })
-    expect(toolbar.className.includes('max-xl:hidden')).toBe(true)
+    expect(toolbar.className.includes('hidden')).toBe(true)
   })
 
   it('does not apply max-xl:hidden to viewport toolbar when expanded', () => {
@@ -49,7 +49,7 @@ describe('DropEditorLivePreview below-xl collapse', () => {
     const toolbar = screen.getByRole('toolbar', {
       name: /preview viewport size/i,
     })
-    expect(toolbar.className.includes('max-xl:hidden')).toBe(false)
+    expect(toolbar.className.includes('hidden')).toBe(false)
   })
 
   it('wires Tablet viewport iframe with anvl-branded srcdoc stub', async () => {

@@ -51,7 +51,7 @@ function renderCard(row: AdminDropListItem) {
       busy={false}
       onActivate={noop}
       onSchedule={noop}
-      onArchive={noop}
+      onPreview={noop}
       onDelete={noop}
       onDuplicate={noop}
     />,
@@ -72,9 +72,9 @@ describe('DropAdminListCard', () => {
   })
 
   it('shows CMS status when the drop is not live on storefront', () => {
-    renderCard({ ...BASE_ROW, isActive: false, status: 'draft' })
+    renderCard({ ...BASE_ROW, isActive: false, status: 'inactive' })
 
-    expect(screen.getByText(/^draft$/i)).toBeTruthy()
+    expect(screen.getByText(/^inactive$/i)).toBeTruthy()
     expect(screen.queryByText(/^live$/i)).toBeNull()
   })
 

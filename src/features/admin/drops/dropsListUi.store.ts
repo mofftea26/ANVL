@@ -1,12 +1,6 @@
 import { create } from 'zustand'
 
-export type DropsListStatusTab =
-  | 'all'
-  | 'draft'
-  | 'inactive'
-  | 'scheduled'
-  | 'active'
-  | 'archived'
+export type DropsListStatusTab = 'all' | 'inactive' | 'scheduled' | 'active'
 
 type DropsListUiState = {
   search: string

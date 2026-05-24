@@ -13,14 +13,14 @@ type AnvlDropListRow = {
   release_date?: string | null
   scheduled_activation_at?: string | null
   updated_at?: string | null
-  draft_body: unknown
+  body: unknown
 }
 
 function resolveClientDropId(row: AnvlDropListRow): string | null {
   const fromColumn =
     typeof row.client_drop_id === 'string' ? row.client_drop_id.trim() : ''
   if (fromColumn) return fromColumn
-  const parsed = persistedDropSchema.safeParse(row.draft_body)
+  const parsed = persistedDropSchema.safeParse(row.body)
   if (!parsed.success) return null
   return parsed.data.id
 }
@@ -29,7 +29,7 @@ function rowToAdminListItem(
   row: AnvlDropListRow,
   activeDbDropId: string | null,
 ): AdminDropListItem | null {
-  const parsed = persistedDropSchema.safeParse(row.draft_body)
+  const parsed = persistedDropSchema.safeParse(row.body)
   if (!parsed.success) return null
 
   const id = resolveClientDropId(row)
@@ -87,7 +87,7 @@ export async function fetchAdminDropsListFromSupabase(): Promise<FetchAdminDrops
     client
       .from('anvl_drops')
       .select(
-        'id, slug, status, client_drop_id, release_date, scheduled_activation_at, updated_at, draft_body',
+        'id, slug, status, client_drop_id, release_date, scheduled_activation_at, updated_at, body',
       )
       .order('slug'),
     client

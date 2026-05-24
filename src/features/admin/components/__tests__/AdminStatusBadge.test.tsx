@@ -27,11 +27,11 @@ describe('AdminStatusBadge', () => {
 
   it('maps drop status to badge tone', () => {
     expect(dropStatusBadgeTone('scheduled', false)).toBe('scheduled')
-    expect(dropStatusBadgeTone('draft', true)).toBe('live')
+    expect(dropStatusBadgeTone('inactive', true)).toBe('live')
   })
 
   it('prefers live label over CMS status when storefront-active', () => {
     expect(dropStatusBadgeLabel('active', true)).toBe('Live')
-    expect(dropStatusBadgeLabel('draft', false)).toBe('Draft')
+    expect(dropStatusBadgeLabel('inactive', false)).toBe('Inactive')
   })
 })

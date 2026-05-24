@@ -28,7 +28,7 @@ function sampleDrop(): Drop {
     title: 'NEW DROP',
     subtitle: 'Subtitle',
     description: '',
-    status: 'draft',
+    status: 'inactive',
     isActive: false,
     createdAt: '2026-05-19T00:00:00.000Z',
     updatedAt: '2026-05-19T00:00:00.000Z',
@@ -49,8 +49,8 @@ describe('buildAnvlDropRemoteRow', () => {
     const drop = sampleDrop()
     expect(buildAnvlDropRemoteRow(drop)).toEqual({
       slug: 'test-1',
-      status: 'draft',
-      draft_body: drop,
+      status: 'inactive',
+      body: drop,
       client_drop_id: 'drop-test-1',
       release_date: null,
       scheduled_activation_at: null,
@@ -67,7 +67,7 @@ describe('buildAnvlDropRemoteRow', () => {
     expect(buildAnvlDropRemoteRow(drop)).toEqual({
       slug: 'test-1',
       status: 'scheduled',
-      draft_body: drop,
+      body: drop,
       client_drop_id: 'drop-test-1',
       release_date: null,
       scheduled_activation_at: '2026-06-01T12:00:00.000Z',

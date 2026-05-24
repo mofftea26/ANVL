@@ -1,5 +1,10 @@
-﻿import { useCallback, useMemo } from 'react'
-import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Play } from 'lucide-react'
+import { DropActListRail } from '@/features/admin/drops/DropActListRail'
+import { DropEditorLivePreview } from '@/features/admin/drops/DropEditorLivePreview'
+import type { DropThemePalette } from '@/features/drops/theme/dropThemePalette.types'
+import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
+import type { Product } from '@/features/products/types/product.types'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import type { LandingActSlot } from '@/features/admin/drops/drops.actSequence'
@@ -7,8 +12,6 @@ import { defaultLandingActSequence } from '@/features/admin/drops/drops.actSeque
 import type { ActMedia, LandingAct } from '@/features/admin/drops/acts/landingActs.types'
 import { mergeActAnimationConfig } from '@/features/admin/drops/acts/landingActs.types'
 import { safeParseActContent } from '@/features/admin/drops/acts/landingActs.zod'
-import { landingContentToSimpleActs } from '@/features/admin/drops/acts/landingActs.seed'
-import { dropLandingContentSchema } from '@/features/admin/drops/drops.persistence.zod'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
 import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
@@ -23,7 +26,6 @@ import {
   AdminSelectValue,
 } from '@/features/admin/components/AdminSelect'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
-import { IconButton } from '@/shared/components/ui/IconButton'
 
 const NATURE_OPTIONS = [
   { value: 'hero', label: 'Hero' },
@@ -804,6 +806,10 @@ type Props = {
   acts: LandingAct[]
   landingActSequence: LandingActSlot[]
   catalogProducts?: CatalogProduct[]
+  previewLanding: LandingPageCmsContent
+  previewProducts: Product[]
+  palette: DropThemePalette
+  emblemUrl: string
   onChange: (next: {
     acts: LandingAct[]
     landingActSequence: LandingActSlot[]
@@ -811,16 +817,33 @@ type Props = {
 }
 
 export function DropActsBuilderPanel({
-  landingContentJson,
+  landingContentJson: _landingContentJson,
   acts,
   landingActSequence,
   catalogProducts = [],
+  previewLanding,
+  previewProducts,
+  palette,
+  emblemUrl,
   onChange,
 }: Props) {
   const sorted = useMemo(
     () => [...acts].sort((a, b) => a.sortOrder - b.sortOrder),
     [acts],
   )
+
+  const [selectedActId, setSelectedActId] = useState<string | null>(
+    () => sorted[0]?.id ?? null,
+  )
+  const [animationRemountKey, setAnimationRemountKey] = useState(0)
+  const [playingAnimation, setPlayingAnimation] = useState(false)
+
+  useEffect(() => {
+    if (selectedActId && sorted.some((a) => a.id === selectedActId)) return
+    setSelectedActId(sorted[0]?.id ?? null)
+  }, [selectedActId, sorted])
+
+  const selectedAct = sorted.find((a) => a.id === selectedActId) ?? null
 
   const emit = useCallback(
     (nextActs: LandingAct[]) => {
@@ -832,27 +855,16 @@ export function DropActsBuilderPanel({
     [landingActSequence, onChange],
   )
 
-  const bootstrapFromLanding = useCallback(() => {
-    let parsed: unknown
-    try {
-      parsed = JSON.parse(landingContentJson)
-    } catch {
-      return
-    }
-    // SEC-16 — never feed unvalidated JSON into the act builder. A
-    // malformed paste used to throw downstream during normalize; a
-    // hostile one would drive unexpected state in the builder draft.
-    const result = dropLandingContentSchema.safeParse(parsed)
-    if (!result.success) return
-    emit(landingContentToSimpleActs(result.data))
-  }, [emit, landingContentJson])
-
   function updateAct(id: string, patch: Partial<LandingAct>) {
     emit(acts.map((a) => (a.id === id ? { ...a, ...patch } : a)))
   }
 
   function removeAct(id: string) {
-    emit(acts.filter((a) => a.id !== id).map((a, i) => ({ ...a, sortOrder: i })))
+    const next = acts.filter((a) => a.id !== id).map((a, i) => ({ ...a, sortOrder: i }))
+    emit(next)
+    if (selectedActId === id) {
+      setSelectedActId(next[0]?.id ?? null)
+    }
   }
 
   function moveAct(id: string, dir: -1 | 1) {
@@ -881,225 +893,156 @@ export function DropActsBuilderPanel({
       media: {},
     }
     emit([...acts, next])
+    setSelectedActId(next.id)
   }
 
+  function playSelectedAnimation() {
+    setPlayingAnimation(true)
+    setAnimationRemountKey((k) => k + 1)
+    window.setTimeout(() => setPlayingAnimation(false), 1200)
+  }
+
+  const act = selectedAct
+  const anim = act ? mergeActAnimationConfig(act.animation) : null
+  const presetChoices = act ? [...(PRESETS[act.nature] ?? ['default'])] : []
+  const presetSelectValue =
+    act && presetChoices.includes(act.preset)
+      ? act.preset
+      : (presetChoices[0] ?? 'default')
+
   return (
-    <AdminCard
-      className="h-auto min-h-0"
-      testId="drop-acts-builder-panel"
-      title="Acts builder"
-      description="Configure act order, visibility, nature, presets, copy, media, animation, and structured content. Use “Reset acts from landing copy” only when you intentionally want to re-import legacy `Drop.landingContent` into acts."
+    <div
+      className="grid min-h-0 gap-4 xl:grid-cols-[minmax(11rem,13rem)_minmax(0,1fr)_minmax(16rem,42%)] xl:items-start"
+      data-testid="drop-acts-builder-panel"
     >
-      <div className="mb-4 flex flex-wrap gap-2">
-        <AdminButton
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="text-xs uppercase tracking-[0.16em] text-[var(--color-heading)]"
-          onClick={bootstrapFromLanding}
-        >
-          Reset acts from landing copy
-        </AdminButton>
-        <AdminButton
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="text-xs uppercase tracking-[0.16em] text-[var(--color-heading)]"
-          onClick={addAct}
-        >
-          Add act
-        </AdminButton>
-      </div>
+      <DropActListRail
+        acts={sorted}
+        selectedId={selectedActId}
+        onSelect={setSelectedActId}
+        onAdd={addAct}
+        onRemove={removeAct}
+        onMove={moveAct}
+      />
 
-      <div className="space-y-4">
-        {sorted.map((act, actIndex) => {
-          const anim = mergeActAnimationConfig(act.animation)
-          const presetChoices = [...(PRESETS[act.nature] ?? ['default'])]
-          const presetSelectValue = presetChoices.includes(act.preset)
-            ? act.preset
-            : (presetChoices[0] ?? 'default')
-          const patchContent = (patch: Record<string, unknown>) => {
-            const merged = safeParseActContent(act.nature, {
-              ...(act.content ?? {}),
-              ...patch,
-            })
-            updateAct(act.id, { content: merged })
-          }
-          return (
-            <AdminPanel key={act.id} variant="actRow">
-              <div className="flex flex-wrap items-center gap-3">
-                <AdminCheckbox
-                  className="py-0"
-                  checked={act.isEnabled}
-                  onChange={(e) =>
-                    updateAct(act.id, { isEnabled: e.target.checked })
-                  }
-                  label="On"
-                />
-                <span className="anvl-micro text-[10px] text-[var(--color-text-muted)]">
-                  #{act.sortOrder + 1}
-                </span>
-                <div
-                  className="ml-auto inline-flex gap-1 rounded-md border border-[var(--color-line)] p-0.5"
-                  role="group"
-                  aria-label={
-                    sorted.length > 1
-                      ? `Reorder act ${actIndex + 1} of ${sorted.length}`
-                      : 'Act actions'
-                  }
-                >
-                  <IconButton
-                    type="button"
-                    aria-label={
-                      sorted.length > 1
-                        ? `Move act up, position ${actIndex + 1} of ${sorted.length}`
-                        : 'Move act up'
-                    }
-                    title="Move act up"
-                    disabled={actIndex === 0}
-                    className="border-transparent bg-transparent hover:bg-[var(--color-surface-elevated)] disabled:pointer-events-none disabled:opacity-40 disabled:hover:bg-transparent"
-                    onClick={() => moveAct(act.id, -1)}
-                  >
-                    <ChevronUp size={20} aria-hidden="true" />
-                  </IconButton>
-                  <IconButton
-                    type="button"
-                    aria-label={
-                      sorted.length > 1
-                        ? `Move act down, position ${actIndex + 1} of ${sorted.length}`
-                        : 'Move act down'
-                    }
-                    title="Move act down"
-                    disabled={actIndex >= sorted.length - 1}
-                    className="border-transparent bg-transparent hover:bg-[var(--color-surface-elevated)] disabled:pointer-events-none disabled:opacity-40 disabled:hover:bg-transparent"
-                    onClick={() => moveAct(act.id, 1)}
-                  >
-                    <ChevronDown size={20} aria-hidden="true" />
-                  </IconButton>
-                  <IconButton
-                    type="button"
-                    aria-label={
-                      sorted.length > 1
-                        ? `Remove act, position ${actIndex + 1} of ${sorted.length}`
-                        : 'Remove act'
-                    }
-                    title="Remove act"
-                    className="border-transparent bg-transparent text-red-300 hover:border-red-400/60 hover:bg-red-500/10 hover:text-red-200"
-                    onClick={() => removeAct(act.id)}
-                  >
-                    <Trash2 size={20} aria-hidden="true" />
-                  </IconButton>
-                </div>
-              </div>
-
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <div className="text-xs text-[var(--color-text-muted)]">
-                  <span className="block" id={`act-${act.id}-nature-label`}>
-                    Nature
-                  </span>
-                  <AdminSelect
-                    value={act.nature}
-                    onValueChange={(nature) => {
-                      const preset = PRESETS[nature]?.[0] ?? 'default'
-                      updateAct(act.id, {
-                        nature,
-                        preset,
-                        content: safeParseActContent(nature, act.content ?? {}),
-                        productIds:
-                          nature === 'productShowcase'
-                            ? act.productIds
-                            : undefined,
-                      })
-                    }}
-                  >
-                    <AdminSelectTrigger
-                      id={`act-${act.id}-nature`}
-                      aria-labelledby={`act-${act.id}-nature-label`}
-                      className="mt-1"
-                    >
-                      <AdminSelectValue placeholder="Nature" />
-                    </AdminSelectTrigger>
-                    <AdminSelectContent>
-                      {NATURE_OPTIONS.map((o) => (
-                        <AdminSelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </AdminSelectItem>
-                      ))}
-                    </AdminSelectContent>
-                  </AdminSelect>
-                </div>
-                <div className="text-xs text-[var(--color-text-muted)]">
-                  <span className="block" id={`act-${act.id}-preset-label`}>
-                    Preset
-                  </span>
-                  <AdminSelect
-                    value={presetSelectValue}
-                    onValueChange={(preset) =>
-                      updateAct(act.id, { preset })
-                    }
-                  >
-                    <AdminSelectTrigger
-                      id={`act-${act.id}-preset`}
-                      aria-labelledby={`act-${act.id}-preset-label`}
-                      className="mt-1"
-                    >
-                      <AdminSelectValue placeholder="Preset" />
-                    </AdminSelectTrigger>
-                    <AdminSelectContent>
-                      {presetChoices.map((p) => (
-                        <AdminSelectItem key={p} value={p}>
-                          {p}
-                        </AdminSelectItem>
-                      ))}
-                    </AdminSelectContent>
-                  </AdminSelect>
-                </div>
-                <AdminFieldLabel labelStyle="stacked" className="block">
-                  Eyebrow
-                  <AdminInput
-                                        value={act.eyebrow ?? ''}
-                    onChange={(e) =>
-                      updateAct(act.id, { eyebrow: e.target.value })
-                    }
-                  />
-                </AdminFieldLabel>
-                <AdminFieldLabel labelStyle="stacked" className="block">
-                  Title
-                  <AdminInput
-                                        value={act.title ?? ''}
-                    onChange={(e) =>
-                      updateAct(act.id, { title: e.target.value })
-                    }
-                  />
-                </AdminFieldLabel>
-                <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-                  Subtitle
-                  <AdminInput
-                                        value={act.subtitle ?? ''}
-                    onChange={(e) =>
-                      updateAct(act.id, { subtitle: e.target.value })
-                    }
-                  />
-                </AdminFieldLabel>
-                <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-                  Body
-                  <AdminTextarea
-                    className="min-h-[72px]"
-                    value={act.body ?? ''}
-                    onChange={(e) =>
-                      updateAct(act.id, { body: e.target.value })
-                    }
-                  />
-                </AdminFieldLabel>
-              </div>
-
-              <ActMediaBlock
-                media={act.media}
-                onChange={(next) => updateAct(act.id, { media: next })}
+      <AdminCard
+        className="min-h-0 h-auto"
+        title={act ? `Edit · ${act.title?.trim() || act.nature}` : 'Select an act'}
+        description="Configure nature, preset, copy, media, and animation for the selected section."
+      >
+        {!act ? (
+          <p className="text-sm text-[var(--color-text-muted)]">
+            Choose an act from the list or add a new one to begin editing.
+          </p>
+        ) : (
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center gap-3">
+              <AdminCheckbox
+                className="py-0"
+                checked={act.isEnabled}
+                onChange={(e) => updateAct(act.id, { isEnabled: e.target.checked })}
+                label="Visible on landing"
               />
+            </div>
 
-              <div className="mt-3 space-y-2 border-t border-[var(--color-line)]/60 pt-3">
-                <AdminMicroHeading as="p" className="text-[10px] tracking-[0.14em] text-[var(--color-heading)]">Animation</AdminMicroHeading>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="text-xs text-[var(--color-text-muted)]">
+                <span className="block" id={`act-${act.id}-nature-label`}>
+                  Nature
+                </span>
+                <AdminSelect
+                  value={act.nature}
+                  onValueChange={(nature) => {
+                    const preset = PRESETS[nature]?.[0] ?? 'default'
+                    updateAct(act.id, {
+                      nature,
+                      preset,
+                      content: safeParseActContent(nature, act.content ?? {}),
+                      productIds:
+                        nature === 'productShowcase' ? act.productIds : undefined,
+                    })
+                  }}
+                >
+                  <AdminSelectTrigger
+                    id={`act-${act.id}-nature`}
+                    aria-labelledby={`act-${act.id}-nature-label`}
+                    className="mt-1"
+                  >
+                    <AdminSelectValue placeholder="Nature" />
+                  </AdminSelectTrigger>
+                  <AdminSelectContent>
+                    {NATURE_OPTIONS.map((o) => (
+                      <AdminSelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </AdminSelectItem>
+                    ))}
+                  </AdminSelectContent>
+                </AdminSelect>
+              </div>
+              <div className="text-xs text-[var(--color-text-muted)]">
+                <span className="block" id={`act-${act.id}-preset-label`}>
+                  Preset
+                </span>
+                <AdminSelect
+                  value={presetSelectValue}
+                  onValueChange={(preset) => updateAct(act.id, { preset })}
+                >
+                  <AdminSelectTrigger
+                    id={`act-${act.id}-preset`}
+                    aria-labelledby={`act-${act.id}-preset-label`}
+                    className="mt-1"
+                  >
+                    <AdminSelectValue placeholder="Preset" />
+                  </AdminSelectTrigger>
+                  <AdminSelectContent>
+                    {presetChoices.map((p) => (
+                      <AdminSelectItem key={p} value={p}>
+                        {p}
+                      </AdminSelectItem>
+                    ))}
+                  </AdminSelectContent>
+                </AdminSelect>
+              </div>
+              <AdminFieldLabel labelStyle="stacked" className="block">
+                Eyebrow
+                <AdminInput
+                  value={act.eyebrow ?? ''}
+                  onChange={(e) => updateAct(act.id, { eyebrow: e.target.value })}
+                />
+              </AdminFieldLabel>
+              <AdminFieldLabel labelStyle="stacked" className="block">
+                Title
+                <AdminInput
+                  value={act.title ?? ''}
+                  onChange={(e) => updateAct(act.id, { title: e.target.value })}
+                />
+              </AdminFieldLabel>
+              <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
+                Subtitle
+                <AdminInput
+                  value={act.subtitle ?? ''}
+                  onChange={(e) => updateAct(act.id, { subtitle: e.target.value })}
+                />
+              </AdminFieldLabel>
+              <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
+                Body
+                <AdminTextarea
+                  className="min-h-[88px]"
+                  value={act.body ?? ''}
+                  onChange={(e) => updateAct(act.id, { body: e.target.value })}
+                />
+              </AdminFieldLabel>
+            </div>
+
+            <ActMediaBlock
+              media={act.media}
+              onChange={(next) => updateAct(act.id, { media: next })}
+            />
+
+            {anim ? (
+              <AdminPanel variant="inset" className="space-y-3">
+                <AdminMicroHeading as="p" className="text-[10px] tracking-[0.14em]">
+                  Animation
+                </AdminMicroHeading>
                 <div className="flex flex-wrap gap-4 text-xs text-[var(--color-text-muted)]">
                   <AdminCheckbox
                     className="py-0"
@@ -1130,7 +1073,7 @@ export function DropActsBuilderPanel({
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <AdminFieldLabel labelStyle="stacked" className="block">
-                    Motion type key
+                    Motion type
                     <AdminInput
                       placeholder="fadeUp, parallax, none…"
                       value={anim.type}
@@ -1145,10 +1088,7 @@ export function DropActsBuilderPanel({
                     />
                   </AdminFieldLabel>
                   <div className="text-xs text-[var(--color-text-muted)]">
-                    <span
-                      className="block"
-                      id={`act-${act.id}-anim-intensity-label`}
-                    >
+                    <span className="block" id={`act-${act.id}-anim-intensity-label`}>
                       Intensity
                     </span>
                     <AdminSelect
@@ -1171,61 +1111,100 @@ export function DropActsBuilderPanel({
                       </AdminSelectTrigger>
                       <AdminSelectContent>
                         <AdminSelectItem value="subtle">Subtle</AdminSelectItem>
-                        <AdminSelectItem value="standard">
-                          Standard
-                        </AdminSelectItem>
+                        <AdminSelectItem value="standard">Standard</AdminSelectItem>
                         <AdminSelectItem value="bold">Bold</AdminSelectItem>
                       </AdminSelectContent>
                     </AdminSelect>
                   </div>
                 </div>
-              </div>
+              </AdminPanel>
+            ) : null}
 
-              <NatureContentFields act={act} patchContent={patchContent} />
+            <NatureContentFields
+              act={act}
+              patchContent={(patch) => {
+                const merged = safeParseActContent(act.nature, {
+                  ...(act.content ?? {}),
+                  ...patch,
+                })
+                updateAct(act.id, { content: merged })
+              }}
+            />
 
-              {act.nature === 'productShowcase' ? (
-                <div className="mt-3 border-t border-[var(--color-line)]/60 pt-3">
-                  <p className="mb-2 text-[10px] text-[var(--color-text-muted)]">
-                    Featured SKUs for this act (optional — leave empty to use all
-                    products assigned to the drop).
-                  </p>
-                  {catalogProducts.length === 0 ? (
-                    <p className="text-[10px] text-[var(--color-text-muted)]">
-                      No catalog products loaded.
-                    </p>
-                  ) : (
-                    <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-[var(--color-line)]/50 p-2">
-                      {catalogProducts.map((p) => {
-                        const picked = act.productIds?.includes(p.id) ?? false
-                        return (
-                          <AdminCheckbox
-                            key={p.id}
-                            className="border border-[var(--color-line)]/40 px-2 py-1"
-                            checked={picked}
-                            onChange={(e) => {
-                              const cur = act.productIds ?? []
-                              const next = e.target.checked
-                                ? [...cur, p.id]
-                                : cur.filter((x) => x !== p.id)
-                              updateAct(act.id, {
-                                productIds: next.length ? next : undefined,
-                              })
-                            }}
-                            label={p.name}
-                            description={
-                              <span className="font-mono text-[10px]">{p.id}</span>
-                            }
-                          />
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              ) : null}
-            </AdminPanel>
-          )
-        })}
+            {act.nature === 'productShowcase' ? (
+              <AdminPanel variant="inset" className="space-y-2">
+                <p className="text-[10px] text-[var(--color-text-muted)]">
+                  Featured SKUs (optional — empty uses all drop products).
+                </p>
+                {catalogProducts.length === 0 ? (
+                  <p className="text-[10px] text-[var(--color-text-muted)]">No catalog products.</p>
+                ) : (
+                  <div className="max-h-36 space-y-1 overflow-y-auto">
+                    {catalogProducts.map((p) => {
+                      const picked = act.productIds?.includes(p.id) ?? false
+                      return (
+                        <AdminCheckbox
+                          key={p.id}
+                          className="border border-[var(--color-line)]/40 px-2 py-1"
+                          checked={picked}
+                          onChange={(e) => {
+                            const cur = act.productIds ?? []
+                            const next = e.target.checked
+                              ? [...cur, p.id]
+                              : cur.filter((x) => x !== p.id)
+                            updateAct(act.id, {
+                              productIds: next.length ? next : undefined,
+                            })
+                          }}
+                          label={p.name}
+                        />
+                      )
+                    })}
+                  </div>
+                )}
+              </AdminPanel>
+            ) : null}
+          </div>
+        )}
+      </AdminCard>
+
+      <div className="xl:sticky xl:top-[calc(var(--admin-topbar-height)+1rem)] xl:max-h-[calc(100dvh-var(--admin-topbar-height)-2rem)] xl:self-start">
+        <AdminCard
+          className="flex min-h-[min(420px,50vh)] flex-col !p-3 xl:min-h-[min(640px,calc(100dvh-var(--admin-topbar-height)-2rem))]"
+          title="Act preview"
+          description="Live render of the selected act only."
+          actions={
+            selectedActId ? (
+              <AdminButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={playingAnimation}
+                onClick={playSelectedAnimation}
+              >
+                <Play size={14} className="me-1.5" aria-hidden />
+                {playingAnimation ? 'Playing…' : 'Play animation'}
+              </AdminButton>
+            ) : null
+          }
+        >
+          {selectedActId ? (
+            <DropEditorLivePreview
+              landing={previewLanding}
+              products={previewProducts}
+              palette={palette}
+              emblemUrl={emblemUrl}
+              draftActs={acts}
+              onlyActIds={[selectedActId]}
+              freezeIntroAnimations={!playingAnimation}
+              animationRemountKey={animationRemountKey}
+              compact
+            />
+          ) : (
+            <p className="text-xs text-[var(--color-text-muted)]">Select an act to preview.</p>
+          )}
+        </AdminCard>
       </div>
-    </AdminCard>
+    </div>
   )
 }

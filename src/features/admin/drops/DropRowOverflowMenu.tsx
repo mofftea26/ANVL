@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ExternalLink, MoreVertical } from 'lucide-react'
+import { MoreVertical } from 'lucide-react'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import {
   AdminDropdownMenu,
@@ -21,9 +21,9 @@ export type DropRowOverflowMenuProps = {
   triggerClassName?: string
   onActivate: () => void
   onSchedule: () => void
-  onArchive: () => void
   onDelete: () => void
   onDuplicate: () => void
+  onPreview: () => void
 }
 
 export function DropRowOverflowMenu({
@@ -33,11 +33,11 @@ export function DropRowOverflowMenu({
   triggerClassName,
   onActivate,
   onSchedule,
-  onArchive,
   onDelete,
   onDuplicate,
+  onPreview,
 }: DropRowOverflowMenuProps) {
-  const canActivate = !row.isActive && row.status !== 'archived'
+  const canActivate = !row.isActive
   const menuLabel = `Actions for ${row.title}`
 
   return (
@@ -66,16 +66,8 @@ export function DropRowOverflowMenu({
             Edit
           </Link>
         </AdminDropdownMenuItem>
-        <AdminDropdownMenuItem asChild>
-          <a
-            href={`/drop/${row.slug}`}
-            target="_blank"
-            rel="noreferrer"
-            className={cn(menuItemLinkClass, 'inline-flex items-center')}
-          >
-            Preview storefront
-            <ExternalLink className="ml-auto size-3.5 opacity-70" aria-hidden />
-          </a>
+        <AdminDropdownMenuItem disabled={busy} onSelect={() => onPreview()}>
+          Preview storefront
         </AdminDropdownMenuItem>
         <AdminDropdownMenuSeparator />
         <AdminDropdownMenuItem disabled={busy} onSelect={() => onDuplicate()}>
@@ -86,16 +78,9 @@ export function DropRowOverflowMenu({
             Set active
           </AdminDropdownMenuItem>
         ) : null}
-        {row.status !== 'archived' ? (
-          <AdminDropdownMenuItem disabled={busy} onSelect={() => onSchedule()}>
-            Schedule activation
-          </AdminDropdownMenuItem>
-        ) : null}
-        {row.status !== 'archived' ? (
-          <AdminDropdownMenuItem disabled={busy} onSelect={() => onArchive()}>
-            Archive
-          </AdminDropdownMenuItem>
-        ) : null}
+        <AdminDropdownMenuItem disabled={busy} onSelect={() => onSchedule()}>
+          Schedule activation
+        </AdminDropdownMenuItem>
         <AdminDropdownMenuSeparator />
         <AdminDropdownMenuItem destructive disabled={busy} onSelect={() => onDelete()}>
           Delete…

@@ -3,6 +3,7 @@ import type { Drop } from '@/features/admin/drops/drops.types'
 import {
   ensureDropSystemHydrated,
   mergeDropPartial,
+  persistDropsState,
   resetDropSystemHydrationGate,
 } from '@/features/admin/drops/drops.service'
 import { persistedDropSchema } from '@/features/admin/drops/drops.persistence.zod'
@@ -26,7 +27,7 @@ import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
 
 type AnvlDropRow = {
   id: string
-  draft_body: unknown
+  body: unknown
   status: string
   slug: string
   client_drop_id?: string | null
@@ -46,7 +47,7 @@ function resolveActiveClientDropId(
           ? activeRow.client_drop_id.trim()
           : ''
       if (cid) return cid
-      const parsed = persistedDropSchema.safeParse(activeRow.draft_body)
+      const parsed = persistedDropSchema.safeParse(activeRow.body)
       if (parsed.success) return parsed.data.id
     }
   }
@@ -57,14 +58,14 @@ function resolveActiveClientDropId(
         ? byStatus.client_drop_id.trim()
         : ''
     if (cid) return cid
-    const parsed = persistedDropSchema.safeParse(byStatus.draft_body)
+    const parsed = persistedDropSchema.safeParse(byStatus.body)
     if (parsed.success) return parsed.data.id
   }
   return null
 }
 
 function mapDbDropRow(row: AnvlDropRow): Drop | null {
-  const parsed = persistedDropSchema.safeParse(row.draft_body)
+  const parsed = persistedDropSchema.safeParse(row.body)
   if (!parsed.success) return null
   const clientId =
     typeof row.client_drop_id === 'string' && row.client_drop_id.trim()
@@ -94,7 +95,7 @@ export async function hydrateAdminCmsFromSupabase(
       client
         .from('anvl_drops')
         .select(
-          'id, draft_body, status, slug, client_drop_id, release_date, scheduled_activation_at',
+          'id, body, status, slug, client_drop_id, release_date, scheduled_activation_at',
         )
         .order('slug'),
       client
@@ -154,6 +155,8 @@ export async function hydrateAdminCmsFromSupabase(
       }
       writeProductsRaw(JSON.stringify({ products }))
     }
+
+    const pub = pubRes.data
 
     if (pub?.website_layout != null) {
       const layoutParse = persistedWebsiteLayoutSchema.safeParse(

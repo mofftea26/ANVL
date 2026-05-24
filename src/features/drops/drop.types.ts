@@ -11,12 +11,7 @@ export {
   normalizeLandingActSequence,
 } from '@/features/drops/drops.actSequence'
 
-export type DropStatus =
-  | 'draft'
-  | 'active'
-  | 'inactive'
-  | 'scheduled'
-  | 'archived'
+export type DropStatus = 'active' | 'inactive' | 'scheduled'
 
 export type DropVisuals = {
   emblemImageUrl: string

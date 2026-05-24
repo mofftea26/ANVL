@@ -1,16 +1,19 @@
 import type { Drop } from '@/features/admin/drops/drops.types'
 
-/** Patch draft JSON when demoting so storefront-shaped fields stay coherent. */
-export function demoteDropDraftBody(
-  draftBody: Record<string, unknown>,
+/** Patch drop JSON when demoting so storefront-shaped fields stay coherent. */
+export function demoteDropBody(
+  dropBody: Record<string, unknown>,
 ): Record<string, unknown> {
   return {
-    ...draftBody,
+    ...dropBody,
     status: 'inactive',
     isActive: false,
     updatedAt: new Date().toISOString(),
   }
 }
+
+/** @deprecated use demoteDropBody */
+export const demoteDropDraftBody = demoteDropBody
 
 /** Ensure at most one local row carries `status: 'active'` before remote upsert. */
 export function clampLocalDropsForSync(
@@ -44,7 +47,7 @@ export function orderDropsForRemoteSync(
 export type AnvlDropActiveRow = {
   id: string
   client_drop_id?: string | null
-  draft_body?: unknown
+  body?: unknown
 }
 
 /** Returns DB row ids that must be demoted before promoting a different active drop. */

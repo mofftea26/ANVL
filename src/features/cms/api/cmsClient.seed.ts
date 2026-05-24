@@ -97,9 +97,6 @@ export const seedCmsClient: CmsClient = {
   async scheduleAdminDrop() {
     /* SSR seed is read-only */
   },
-  async archiveAdminDrop() {
-    /* SSR seed is read-only */
-  },
   async deleteAdminDrop() {
     /* SSR seed is read-only */
   },

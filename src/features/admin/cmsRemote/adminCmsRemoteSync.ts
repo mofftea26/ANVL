@@ -10,7 +10,7 @@ import { getSiteSeoContent } from '@/features/cms/siteSeo.local'
 import { getGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.service'
 import { isAdminCmsRemoteHydrationLocked } from '@/features/admin/cmsRemote/adminCmsRemoteGate'
 import {
-  demoteDropDraftBody,
+  demoteDropBody,
   orderDropsForRemoteSync,
 } from '@/features/admin/cmsRemote/adminCmsRemoteSyncOrder'
 import { buildAnvlDropRemoteRow } from '@/features/admin/cmsRemote/adminCmsDropRemoteRow'
@@ -18,6 +18,7 @@ import {
   buildMediaIndex,
   listMediaAssets,
 } from '@/features/admin/media/mediaAssets.service'
+import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
 
 const isTestRunner = import.meta.env.MODE === 'test'
 
@@ -53,12 +54,13 @@ export async function flushAdminCmsRemoteSync(): Promise<
   if (!canWriteCmsDraftsToSupabase(role)) return { ok: true }
 
   const drops = readDropsArray()
+  const activeClientId = readActiveDropIdRaw()
   const syncProductsToSupabase = !getShopifyPublicEnv()
   const products = syncProductsToSupabase ? getAdminProducts() : []
 
   const { data: dbActiveRows, error: activeListErr } = await client
     .from('anvl_drops')
-    .select('id, client_drop_id, draft_body')
+    .select('id, client_drop_id, body')
     .eq('status', 'active')
 
   if (activeListErr) {
@@ -72,17 +74,17 @@ export async function flushAdminCmsRemoteSync(): Promise<
       activeClientId !== null && cid === activeClientId
     if (shouldStayActive) continue
 
-    const draftRaw = row.draft_body
-    const draft =
-      typeof draftRaw === 'object' && draftRaw !== null
-        ? (draftRaw as Record<string, unknown>)
+    const bodyRaw = row.body
+    const body =
+      typeof bodyRaw === 'object' && bodyRaw !== null
+        ? (bodyRaw as Record<string, unknown>)
         : {}
 
     const { error: demoteErr } = await client
       .from('anvl_drops')
       .update({
         status: 'inactive',
-        draft_body: demoteDropDraftBody(draft),
+        body: demoteDropBody(body),
       })
       .eq('id', row.id)
 

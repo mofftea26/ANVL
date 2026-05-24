@@ -12,7 +12,6 @@ vi.mock('@/features/admin/cmsRemote/adminCmsRemoteSync', () => ({
 }))
 
 vi.mock('@/features/admin/drops/drops.service', () => ({
-  archiveDrop: vi.fn(),
   deleteDrop: vi.fn(),
   duplicateDrop: vi.fn(() => ({
     id: 'drop-copy',
@@ -20,7 +19,7 @@ vi.mock('@/features/admin/drops/drops.service', () => ({
     title: 'Copy',
     name: 'Copy',
     dropNumber: '02',
-    status: 'draft',
+    status: 'inactive',
     isActive: false,
     productIds: [],
     updatedAt: '2026-05-19T00:00:00.000Z',
@@ -74,11 +73,6 @@ describe('localStorageCmsClient drop mutations', () => {
     expect(mockFlush).toHaveBeenCalledTimes(1)
   })
 
-  it('flushes to Supabase after archive when env is set', async () => {
-    mockGetEnv.mockReturnValue({ url: 'https://x.supabase.co', anonKey: 'k' })
-    await localStorageCmsClient.archiveAdminDrop('drop-1')
-    expect(mockFlush).toHaveBeenCalledTimes(1)
-  })
 
   it('flushes to Supabase after delete when env is set', async () => {
     mockGetEnv.mockReturnValue({ url: 'https://x.supabase.co', anonKey: 'k' })
@@ -104,7 +98,7 @@ describe('localStorageCmsClient drop mutations', () => {
     mockGetEnv.mockReturnValue({ url: 'https://x.supabase.co', anonKey: 'k' })
     mockFlush.mockResolvedValue({ ok: false, error: 'RLS denied' })
     await expect(
-      localStorageCmsClient.archiveAdminDrop('drop-1'),
+      localStorageCmsClient.deleteAdminDrop('drop-1'),
     ).rejects.toThrow('RLS denied')
   })
 })
