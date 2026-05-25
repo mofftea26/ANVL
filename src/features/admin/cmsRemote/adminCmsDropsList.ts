@@ -1,9 +1,12 @@
 import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
-import type { DropStatus } from '@/features/drops/drop.types'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { adminDropListVisualsFromPersistedBody } from '@/features/admin/drops/adminDropListItemVisuals'
-import { persistedDropSchema } from '@/features/admin/drops/drops.persistence.zod'
+import {
+  normalizeRemoteDropStatus,
+  parseRemoteDropRecord,
+  resolveRemoteClientDropId,
+} from '@/features/admin/cmsRemote/adminCmsDropRemoteParse'
 
 type AnvlDropListRow = {
   id: string
@@ -17,26 +20,20 @@ type AnvlDropListRow = {
 }
 
 function resolveClientDropId(row: AnvlDropListRow): string | null {
-  const fromColumn =
-    typeof row.client_drop_id === 'string' ? row.client_drop_id.trim() : ''
-  if (fromColumn) return fromColumn
-  const parsed = persistedDropSchema.safeParse(row.body)
-  if (!parsed.success) return null
-  return parsed.data.id
+  return resolveRemoteClientDropId(row.body, row)
 }
 
 function rowToAdminListItem(
   row: AnvlDropListRow,
   activeDbDropId: string | null,
 ): AdminDropListItem | null {
-  const parsed = persistedDropSchema.safeParse(row.body)
-  if (!parsed.success) return null
+  const drop = parseRemoteDropRecord(row.body, row)
+  if (!drop) return null
 
   const id = resolveClientDropId(row)
   if (!id) return null
 
-  const body = parsed.data
-  const status = row.status as DropStatus
+  const status = normalizeRemoteDropStatus(row.status)
   const isActive =
     activeDbDropId != null
       ? row.id === activeDbDropId
@@ -45,18 +42,18 @@ function rowToAdminListItem(
   return {
     id,
     slug: row.slug,
-    title: body.title,
-    name: body.name,
-    dropNumber: body.dropNumber,
+    title: drop.title,
+    name: drop.name,
+    dropNumber: drop.dropNumber,
     status,
     isActive,
-    releaseDate: row.release_date ?? body.releaseDate,
+    releaseDate: row.release_date ?? drop.releaseDate,
     scheduledActivationAt:
-      row.scheduled_activation_at ?? body.scheduledActivationAt,
-    productCount: Array.isArray(body.productIds) ? body.productIds.length : 0,
-    updatedAt: body.updatedAt,
-    createdAt: body.createdAt,
-    ...adminDropListVisualsFromPersistedBody(body),
+      row.scheduled_activation_at ?? drop.scheduledActivationAt,
+    productCount: Array.isArray(drop.productIds) ? drop.productIds.length : 0,
+    updatedAt: drop.updatedAt,
+    createdAt: drop.createdAt,
+    ...adminDropListVisualsFromPersistedBody(drop),
   }
 }
 

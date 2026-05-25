@@ -146,8 +146,13 @@ export const localStorageCmsClient: CmsClient = {
     await rehydrateAdminCmsFromRemote()
   },
   async scheduleAdminDrop(id, activationIso) {
+    const { rehydrateAdminCmsFromRemote } = await import(
+      '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'
+    )
+    await rehydrateAdminCmsFromRemote()
     scheduleDropActivation(id, activationIso)
     await flushAdminCmsToSupabaseIfConfigured()
+    await rehydrateAdminCmsFromRemote()
   },
   async deleteAdminDrop(id) {
     deleteDrop(id)

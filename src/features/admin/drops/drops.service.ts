@@ -4,6 +4,7 @@ import type { Drop, DropLandingContent, DropStatus, DropsPersistedState } from '
 import { normalizeLandingActSequence } from './drops.actSequence'
 import {
   readActiveDropIdRaw,
+  queueRemoteDropDelete,
   readDropsRaw,
   writeActiveDropId,
   writeDropsRaw,
@@ -32,6 +33,8 @@ import {
 } from '@/features/admin/products/products.service'
 import { landingContentToSimpleActs } from '@/features/admin/drops/acts/landingActs.seed'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
+import { insertAnvlDropToSupabase } from '@/features/admin/cmsRemote/adminCmsInsertDrop'
+import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import {
   dropsPersistedPayloadSchema,
   persistedDropSchema,
@@ -136,8 +139,27 @@ function parseDropsPayload(raw: string | null): DropsPersistedState | null {
 }
 
 function normalizeDropForPersist(drop: Drop, activeDropId: string | null): Drop {
+  const activation = drop.scheduledActivationAt?.trim()
+  const activationMs = activation ? new Date(activation).getTime() : NaN
+  const hasValidActivation = Number.isFinite(activationMs)
+  const isFutureSchedule = hasValidActivation && activationMs > Date.now()
+
+  // Scheduled intent wins over the active pointer (which may still reference this drop).
+  if (
+    hasValidActivation &&
+    (isFutureSchedule || drop.status === 'scheduled')
+  ) {
+    return {
+      ...drop,
+      isActive: false,
+      status: 'scheduled',
+      releaseDate: drop.releaseDate ?? activation,
+      scheduledActivationAt: activation,
+    }
+  }
+
   const isActiveRow = activeDropId !== null && drop.id === activeDropId
-  if (isActiveRow) {
+  if (drop.status === 'active' || drop.isActive || isActiveRow) {
     return {
       ...drop,
       isActive: true,
@@ -145,8 +167,11 @@ function normalizeDropForPersist(drop: Drop, activeDropId: string | null): Drop 
       scheduledActivationAt: undefined,
     }
   }
+
   let nextStatus: DropStatus = drop.status
-  if (nextStatus === 'active') nextStatus = 'inactive'
+  if (nextStatus === 'active' || nextStatus === 'scheduled') {
+    nextStatus = 'inactive'
+  }
   return { ...drop, isActive: false, status: nextStatus }
 }
 
@@ -282,9 +307,17 @@ export function saveDrop(
   ensureDropSystemHydrated()
   const drops = readDropsArray()
   const idx = drops.findIndex((d) => d.id === nextDrop.id)
-  const stamped: Drop = {
+  let stamped: Drop = {
     ...nextDrop,
     updatedAt: new Date().toISOString(),
+  }
+  if (opts?.makeActive) {
+    stamped = {
+      ...stamped,
+      status: 'active',
+      isActive: true,
+      scheduledActivationAt: undefined,
+    }
   }
   const mergedList =
     idx === -1
@@ -292,11 +325,16 @@ export function saveDrop(
       : drops.map((d, i) => (i === idx ? stamped : d))
 
   let activeId = readActiveDropIdRaw()
-  if (opts?.makeActive) activeId = stamped.id
-  else if (!activeId) activeId = stamped.id
+  if (opts?.makeActive) {
+    activeId = stamped.id
+  }
 
-  if (!mergedList.some((d) => d.id === activeId))
-    activeId = mergedList[0]?.id ?? null
+  if (activeId && !mergedList.some((d) => d.id === activeId)) {
+    activeId =
+      mergedList.find((d) => d.status === 'active')?.id ??
+      mergedList[0]?.id ??
+      null
+  }
 
   persistDropsState(mergedList, activeId)
   syncProductsWithDrop(stamped)
@@ -316,12 +354,21 @@ export function deactivateDrop(dropId: string): void {
   ensureDropSystemHydrated()
   const activeId = readActiveDropIdRaw()
   if (activeId !== dropId) return
-  const drops = readDropsArray()
+  const drops = readDropsArray().map((d) =>
+    d.id === dropId
+      ? {
+          ...d,
+          status: 'inactive' as const,
+          isActive: false,
+        }
+      : d,
+  )
   persistDropsState(drops, null)
 }
 
 export function deleteDrop(dropId: string): void {
   ensureDropSystemHydrated()
+  queueRemoteDropDelete(dropId)
   const drops = readDropsArray().filter((d) => d.id !== dropId)
   if (drops.length === 0) {
     const oath = createDefaultTheOathDrop()
@@ -362,7 +409,8 @@ export type CreateNewDropResult =
   | { ok: false; error: string }
 
 /**
- * Creates a drop in local storage only. Supabase row is inserted on first save.
+ * Creates a drop locally and inserts a Supabase row when configured so hydration
+ * cannot overwrite a brand-new drop before the editor opens.
  */
 export async function createNewDropAsync(): Promise<CreateNewDropResult> {
   const drop = createNewDrop()
@@ -373,6 +421,14 @@ export async function createNewDropAsync(): Promise<CreateNewDropResult> {
         'The new drop did not appear in storage. Try again or return to the list.',
     }
   }
+
+  if (!getSupabasePublicEnv()) return { ok: true, drop }
+
+  const insert = await insertAnvlDropToSupabase(drop)
+  if (!insert.ok && insert.error !== 'Not signed in.') {
+    return { ok: false, error: insert.error }
+  }
+
   return { ok: true, drop }
 }
 
@@ -415,7 +471,11 @@ export function scheduleDropActivation(id: string, activationIso: string): void 
   ensureDropSystemHydrated()
   const drops = readDropsArray()
   const existing = drops.find((d) => d.id === id)
-  if (!existing) return
+  if (!existing) {
+    throw new Error(
+      `Drop "${id}" was not found in local storage. Refresh the drops list and try again.`,
+    )
+  }
 
   let activeId = readActiveDropIdRaw()
   if (activeId === id) {

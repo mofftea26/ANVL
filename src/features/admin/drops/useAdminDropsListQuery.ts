@@ -12,6 +12,11 @@ export const ADMIN_DROPS_LIST_QUERY_KEY = ['admin', 'drops', 'list'] as const
 
 export async function loadAdminDropsList() {
   if (getSupabasePublicEnv()) {
+    try {
+      await rehydrateAdminCmsFromRemote()
+    } catch {
+      /* list can still fall back to remote fetch */
+    }
     const remote = await fetchAdminDropsListFromSupabase()
     if (remote.ok) return remote.items
   }
@@ -77,7 +82,10 @@ export function useScheduleAdminDropMutation() {
   return useMutation({
     mutationFn: (input: { id: string; activationIso: string }) =>
       runtimeClients.cms.scheduleAdminDrop(input.id, input.activationIso),
-    onSuccess: () => invalidate(),
+    onSuccess: async () => {
+      invalidate()
+      await notifyAdminDropsListChanged()
+    },
   })
 }
 

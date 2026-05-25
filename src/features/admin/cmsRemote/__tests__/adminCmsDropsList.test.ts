@@ -105,4 +105,50 @@ describe('fetchAdminDropsListFromSupabase', () => {
     )
     expect(result.items.find((d) => d.id === secondDrop.id)?.isActive).toBe(true)
   })
+
+  it('lists drops when body is missing newer required fields', async () => {
+    const dropsQuery = dropsChain({
+      data: [
+        {
+          id: 'db-legacy',
+          slug: 'legacy-drop',
+          status: 'active',
+          client_drop_id: 'client-legacy',
+          body: {
+            id: 'client-legacy',
+            slug: 'legacy-drop',
+            title: 'Legacy Drop',
+            name: 'Legacy Drop',
+            dropNumber: '01',
+            status: 'active',
+            isActive: true,
+            createdAt: oathDrop.createdAt,
+            updatedAt: oathDrop.updatedAt,
+            productIds: [],
+          },
+        },
+      ],
+      error: null,
+    })
+
+    const publicationQuery = pubChain({
+      data: { active_drop_id: 'db-legacy' },
+      error: null,
+    })
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'anvl_drops') return dropsQuery
+      if (table === 'storefront_publication') return publicationQuery
+      throw new Error(`unexpected table ${table}`)
+    })
+
+    const result = await fetchAdminDropsListFromSupabase()
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(result.items).toHaveLength(1)
+    expect(result.items[0]?.id).toBe('client-legacy')
+    expect(result.items[0]?.isActive).toBe(true)
+    expect(result.items[0]?.title).toBe('Legacy Drop')
+  })
 })
