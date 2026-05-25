@@ -35,6 +35,8 @@ import { cn } from '@/shared/lib/cn'
 import { Modal } from '@/shared/components/ui/Modal'
 import { AdminNativeSelect } from '@/features/admin/components/AdminNativeSelect'
 import { adminStackedFieldClass } from '@/shared/lib/cmsFieldStyles'
+import { AdminShopifyCatalogRedirect } from '@/features/admin/products/AdminShopifyCatalogRedirect'
+import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
 
 export function AdminProductsIndexRoute() {
   return (

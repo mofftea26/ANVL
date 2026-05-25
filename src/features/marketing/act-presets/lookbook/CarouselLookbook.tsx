@@ -75,12 +75,15 @@ export function CarouselLookbookPreset({ row }: ActPresetProps) {
           ) : null}
         </header>
       </Container>
-      <div ref={trackRef} className="flex gap-4 px-[max(1rem,calc((100vw-72rem)/2))]">
+      <div
+        ref={trackRef}
+        className="flex w-max max-w-none gap-4 px-[max(1rem,calc((100%-min(100%,80rem))/2))] pr-6 md:px-8"
+      >
         {fields.items.map((item, i) => (
           <figure
             key={`${item.src}-${i}`}
             data-lookbook-carousel-tile
-            className="w-[min(72vw,20rem)] shrink-0 overflow-hidden rounded-lg border border-[var(--color-line)]"
+            className="w-[min(min(72vw,100%-2rem),20rem)] shrink-0 overflow-hidden rounded-lg border border-[var(--color-line)]"
           >
             <LookbookMedia
               item={item}

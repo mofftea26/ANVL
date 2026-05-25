@@ -36,7 +36,7 @@ export function ProductCarouselPreset({ landing, row, products }: ActPresetProps
         </h2>
       </Container>
       <div className="overflow-x-auto pb-4">
-        <div className="flex gap-4 px-[max(1rem,calc((100vw-72rem)/2+1rem))]">
+        <div className="flex w-max max-w-none gap-4 px-[max(1rem,calc((100%-min(100%,80rem))/2))] pr-6 md:pl-8 md:pr-12">
           {showcaseProducts.map((product) => (
             <Link
               key={product.id}

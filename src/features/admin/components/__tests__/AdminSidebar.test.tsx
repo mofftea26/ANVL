@@ -47,7 +47,7 @@ describe('AdminSidebar', () => {
 
     const dashboard = screen.getByRole('link', { name: 'Dashboard' })
     expect(dashboard).toHaveAttribute('aria-current', 'page')
-    expect(dashboard.className).toContain('rounded-md')
+    expect(dashboard.className).toContain('rounded-lg')
     expect(dashboard.className).not.toContain('rounded-full')
 
     for (const cluster of ['Workspace', 'Campaigns', 'Catalog', 'Site']) {
@@ -61,7 +61,7 @@ describe('AdminSidebar', () => {
     const storefrontLink = screen.getByRole('link', { name: /view storefront/i })
     expect(storefrontLink).toHaveAttribute('href', '/')
     expect(storefrontLink).toHaveAttribute('target', '_blank')
-    expect(storefrontLink.className).toContain('color-bone')
+    expect(storefrontLink.className).toMatch(/color-text-muted/)
 
     const logoutButton = screen.getByRole('button', { name: /logout/i })
     expect(logoutButton.className).toContain('red-')

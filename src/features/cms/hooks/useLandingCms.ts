@@ -1,59 +1,37 @@
-import { useQuery } from '@tanstack/react-query'
-import { useMemo } from 'react'
-import { subscribeSiteSeoChange } from '@/features/cms/siteSeo.local'
-import { useSyncExternalStore } from 'react'
-import { subscribeDropsChange, subscribeWebsiteLayoutChange } from '@/features/cms/read/cmsSubscriptions'
+import { fetchStorefrontPublicationView, STOREFRONT_PUBLICATION_QUERY_KEY } from '@/features/cms/hooks/storefrontPublicationQuery'
 import { getLandingCmsContent } from '@/features/cms/landing/landingCmsRead'
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import {
-  fetchStorefrontPublicationView,
-  STOREFRONT_PUBLICATION_QUERY_KEY,
-} from '@/features/cms/hooks/storefrontPublicationQuery'
 import { getResolvedStorefrontLandingCmsSync } from '@/features/cms/runtime/storefrontCmsSync'
-
-/**
- * Module-scoped snapshot cache — `useSyncExternalStore` requires stable snapshots.
- */
-let clientSnapshot: LandingPageCmsContent | null = null
-const serverSnapshot = getLandingCmsContent()
-
-function getClientSnapshot(): LandingPageCmsContent {
-  if (clientSnapshot === null) {
-    clientSnapshot = getLandingCmsContent()
-  }
-  return clientSnapshot
-}
-
-function refreshClientSnapshot() {
-  clientSnapshot = getLandingCmsContent()
-}
-
-function subscribe(listener: () => void): () => void {
-  const wrapped = () => {
-    refreshClientSnapshot()
-    listener()
-  }
-  const unsubs = [
-    subscribeDropsChange(wrapped),
-    subscribeWebsiteLayoutChange(wrapped),
-    subscribeSiteSeoChange(wrapped),
-  ]
-  return () => unsubs.forEach((u) => u())
-}
-
-function getServerSnapshot(initial?: LandingPageCmsContent) {
-  return initial ?? serverSnapshot
-}
+import { subscribeDropsChange, subscribeWebsiteLayoutChange } from '@/features/cms/read/cmsSubscriptions'
+import { subscribeSiteSeoChange } from '@/features/cms/siteSeo.local'
+import { useQuery } from '@tanstack/react-query'
+import { useLayoutEffect, useMemo, useState } from 'react'
 
 function useLandingCmsFromLocalStorage(
   initial?: LandingPageCmsContent,
 ): LandingPageCmsContent {
-  return useSyncExternalStore(
-    subscribe,
-    getClientSnapshot,
-    () => getServerSnapshot(initial),
+  const [live, setLive] = useState<LandingPageCmsContent | null>(null)
+
+  const fallback = useMemo(
+    () =>
+      initial ??
+      getResolvedStorefrontLandingCmsSync({ forceSsrSnapshot: true }),
+    [initial],
   )
+
+  useLayoutEffect(() => {
+    setLive(getLandingCmsContent())
+    const wrapped = () => setLive(getLandingCmsContent())
+    const unsubs = [
+      subscribeDropsChange(wrapped),
+      subscribeWebsiteLayoutChange(wrapped),
+      subscribeSiteSeoChange(wrapped),
+    ]
+    return () => unsubs.forEach((u) => u())
+  }, [])
+
+  return live ?? fallback
 }
 
 function useLandingCmsFromSupabase(
@@ -83,6 +61,9 @@ function useLandingCmsFromSupabase(
  * Homepage CMS for the public storefront.
  * With Supabase: published snapshot when available; SSR initial or seed fallback
  * (never admin localStorage drafts on the public site).
+ *
+ * Local CMS: first paint matches SSR loader output, then replaces with composed active
+ * drop + layout from persistence so theme/acts track the editor without hydration drift.
  */
 export function useLandingCms(
   initial?: LandingPageCmsContent,

@@ -1,4 +1,10 @@
-﻿## 2026-05-20 — Production follow-ups: migrations, scheduler cron, bundle split
+﻿## 2026-05-25 — Storefront reads local active drop after SSR + carousel overflow (MAINT-20 / RESP-15)
+
+- **`useActiveDrop`:** Without Supabase, the hydrated client now prefers the persisted active drop from admin storage (`live ?? SSR initial`) instead of pinning the SSR seed forever; theme CSS and chrome match "Set active." With Supabase, publication wins; unpublished visitors use SSR/projection (`initial`) only—no leaking admin drafts from `offline` subscribers.
+- **`useLandingCms` (local):** Replaced the module-global `useSyncExternalStore` cache with mount-time `useLayoutEffect` + drop/layout/SEO subscriptions so composed acts and hero copy reconcile to `getLandingCmsContent()` after hydrate (same SSR-first paint pattern).
+- **Layout:** Public storefront `<main class="min-w-0 overflow-x-clip">` caps horizontal bleed; **`ProductCarouselPreset`** / **`CarouselLookbookPreset`** use container-relative inset math (`100%`, `min(100%,80rem)`) plus `w-max` tracks; **`SplitProductHero`** columns get `min-w-0`.
+- **Tests / hygiene:** Vitest helpers `pickLocalActiveDropForStorefront` / `pickSupabaseActiveDropForStorefront`; `AdminSidebar` / `AdminNewDropRoute` expectations updated (`createNewDropAsync` mock, token classnames); **`AdminProductsIndex`** imports `getShopifyPublicEnv` + `AdminShopifyCatalogRedirect`; drop editor visuals test drops unused import.
+
 
 - **Supabase (project `cptebkgyrfmokklwtrgp`):** applied migrations **`storefront_site_drafts`**, **`cms_media_assets`**, **`cms_scheduled_activation`** (`media_index`, catalog table, `cms_process_scheduled_drops`).
 - **Edge Function:** **`process-scheduled-drops`** deployed (`CRON_SECRET` auth, calls RPC with service role). Schedule in Dashboard every 1–5 min after setting secrets.

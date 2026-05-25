@@ -89,7 +89,7 @@ export function SplitProductHeroPreset({
         </div>
         <div
           data-split-hero-visual
-          className="relative flex items-center justify-center lg:justify-end"
+          className="relative flex min-w-0 items-center justify-center lg:justify-end"
         >
           <DropEmblemDecor
             src={emblemSrc}

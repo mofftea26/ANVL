@@ -6,7 +6,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { resetAllLocalCmsKeys } from '@/features/admin/drops/drops.service'
 
 const navigateMock = vi.hoisted(() => vi.fn())
-const createDraftDropAsyncMock = vi.hoisted(() => vi.fn())
+const createNewDropAsyncMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/features/admin/auth/ProtectedAdminRoute', () => ({
   ProtectedAdminRoute: ({ children }: { children: React.ReactNode }) => (
@@ -19,8 +19,7 @@ vi.mock('@/features/admin/drops/drops.service', async (importOriginal) => {
     await importOriginal<typeof import('@/features/admin/drops/drops.service')>()
   return {
     ...actual,
-    createDraftDropAsync: (...args: unknown[]) =>
-      createDraftDropAsyncMock(...args),
+    createNewDropAsync: (...args: unknown[]) => createNewDropAsyncMock(...args),
   }
 })
 
@@ -46,11 +45,11 @@ describe('AdminNewDropPageRoute', () => {
   beforeEach(() => {
     resetAllLocalCmsKeys()
     navigateMock.mockClear()
-    createDraftDropAsyncMock.mockReset()
+    createNewDropAsyncMock.mockReset()
   })
 
   it('shows a spinner then replace-navigates to the persisted draft id', async () => {
-    createDraftDropAsyncMock.mockResolvedValue({
+    createNewDropAsyncMock.mockResolvedValue({
       ok: true,
       drop: { id: 'drop-new-test' },
     })
@@ -75,8 +74,8 @@ describe('AdminNewDropPageRoute', () => {
     })
   })
 
-  it('shows an alert when createDraftDropAsync fails', async () => {
-    createDraftDropAsyncMock.mockResolvedValue({
+  it('shows an alert when createNewDropAsync fails', async () => {
+    createNewDropAsyncMock.mockResolvedValue({
       ok: false,
       error: 'duplicate slug',
     })

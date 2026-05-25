@@ -144,7 +144,7 @@ function RootLayout() {
       <ActiveDropThemeProvider initialDrop={activeDrop} initialGlobalBrand={globalBrand}>
         <RouteAnalytics />
         <StickyHeader navigation={navigation} />
-        <main>
+        <main className="min-w-0 overflow-x-clip">
           <AppErrorBoundary resetKey={pathname}>
             <Outlet />
           </AppErrorBoundary>
