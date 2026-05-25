@@ -28,19 +28,19 @@ export const fieldClass = adminStackedFieldClass
 
 export const fieldErrorClass = 'border-red-500/60 bg-red-500/5'
 
-/**
- * Preview column shell: usable viewport below sticky {@link AdminTopbar}, main gutters, and
- * safe-area insets. Uses `--admin-topbar-height`, `--admin-main-block-gutter` in `src/styles.css`.
- * On `xl`, pair with {@link DROP_EDITOR_SPLIT_XL_MIN_H_CLASS} + `items-stretch` so the preview
- * stack matches the builder column (tabs + forms) height.
- */
-export const DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS =
-  'min-h-[calc(100dvh-var(--admin-topbar-height)-var(--admin-main-block-gutter)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]'
+export const DROP_EDITOR_SPLIT_VIEWPORT_H_CLASS =
+  'lg:h-[calc(100dvh-var(--admin-topbar-height)-var(--admin-editor-tabs-height)-var(--admin-main-block-gutter)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] lg:max-h-[calc(100dvh-var(--admin-topbar-height)-var(--admin-editor-tabs-height)-var(--admin-main-block-gutter)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]'
 
 /**
- * On `xl`, the split row uses the same minimum height so a **short** builder column still leaves
- * a tall preview lane; when the builder rail is taller, flex `items-stretch` grows the preview
- * column to the full rail (including the BASICS/THEME tab row).
+ * Preview column shell: fills the split row on `lg+` when the parent chain is viewport-capped.
  */
-export const DROP_EDITOR_SPLIT_XL_MIN_H_CLASS =
-  'xl:min-h-[calc(100dvh-var(--admin-topbar-height)-var(--admin-main-block-gutter)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]'
+export const DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS =
+  'lg:min-h-0 lg:h-full lg:max-h-full'
+
+/**
+ * On `lg`, the split row fills the viewport below tabs so only the editor pane scrolls.
+ */
+export const DROP_EDITOR_SPLIT_LG_MIN_H_CLASS = `${DROP_EDITOR_SPLIT_VIEWPORT_H_CLASS} lg:min-h-0 lg:flex-1 lg:overflow-hidden`
+
+/** @deprecated use DROP_EDITOR_SPLIT_LG_MIN_H_CLASS */
+export const DROP_EDITOR_SPLIT_XL_MIN_H_CLASS = DROP_EDITOR_SPLIT_LG_MIN_H_CLASS

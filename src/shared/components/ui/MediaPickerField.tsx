@@ -20,6 +20,7 @@ import { isLikelySafeMediaSrc } from '@/shared/lib/url'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import {
   uploadCmsMediaFile,
+  deleteCmsMediaByPublicUrl,
   type CmsDropVisualAssetRole,
 } from '@/features/admin/cmsRemote/uploadCmsMedia'
 import { MediaLibraryPickerModal } from '@/features/admin/media/MediaLibraryPickerModal'
@@ -78,6 +79,8 @@ type MediaPickerFieldProps = {
   }
   /** Opens the Supabase media library picker when env is configured. */
   enableLibraryBrowse?: boolean
+  /** When replacing via upload or library pick, delete the previous Supabase object. */
+  replaceRemoteAsset?: boolean
 }
 
 function isImageHref(value: string): boolean {
@@ -152,7 +155,8 @@ export function MediaPickerField({
   className,
   pickerLabel,
   supabaseUpload,
-  enableLibraryBrowse = false,
+  enableLibraryBrowse,
+  replaceRemoteAsset = true,
 }: MediaPickerFieldProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [isOver, setIsOver] = useState(false)
@@ -162,7 +166,8 @@ export function MediaPickerField({
   const [chainImageFailed, setChainImageFailed] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
   const showLibraryBrowse =
-    enableLibraryBrowse && Boolean(getSupabasePublicEnv())
+    (enableLibraryBrowse ?? Boolean(supabaseUpload)) &&
+    Boolean(getSupabasePublicEnv())
   const limit = useMemo(
     () => maxBytes ?? (kind === 'video' ? DEFAULT_VIDEO_MAX_BYTES : DEFAULT_MAX_BYTES),
     [kind, maxBytes],
@@ -201,6 +206,20 @@ export function MediaPickerField({
     return () => mq.removeEventListener('change', apply)
   }, [])
 
+  const applyNextValue = (next: string) => {
+    const prev = value.trim()
+    const nextTrim = next.trim()
+    if (
+      replaceRemoteAsset &&
+      prev &&
+      prev !== nextTrim &&
+      prev.includes('/storage/v1/object/public/')
+    ) {
+      void deleteCmsMediaByPublicUrl(prev)
+    }
+    onChange(next)
+  }
+
   const handleFile = (file: File) => {
     const err = validateFile(file, kind, limit)
     if (err) {
@@ -218,7 +237,7 @@ export function MediaPickerField({
         })
         setIsEmbeddingFile(false)
         if (uploaded.ok) {
-          onChange(uploaded.publicUrl)
+          applyNextValue(uploaded.publicUrl)
           toast.success('Uploaded to Supabase.')
           return
         }
@@ -232,7 +251,7 @@ export function MediaPickerField({
     reader.onload = () => {
       setIsEmbeddingFile(false)
       if (typeof reader.result === 'string') {
-        onChange(reader.result)
+        applyNextValue(reader.result)
         toast.success('Embedded for this browser.')
       }
     }
@@ -477,7 +496,7 @@ export function MediaPickerField({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => onChange('')}
+                onClick={() => applyNextValue('')}
                 aria-label={`Clear ${label}`}
               >
                 <X size={14} className="mr-1" aria-hidden="true" />
@@ -496,7 +515,7 @@ export function MediaPickerField({
                 type="url"
                 value={value}
                 disabled={dropzoneDisabled}
-                onChange={(e) => onChange(e.target.value)}
+                onChange={(e) => applyNextValue(e.target.value)}
                 placeholder={
                   kind === 'video'
                     ? 'https://… or /media/video.mp4'
@@ -529,11 +548,11 @@ export function MediaPickerField({
         </p>
       ) : null}
 
-      {showLibraryBrowse ? (
+      {showLibraryBrowse && libraryOpen ? (
         <MediaLibraryPickerModal
           open={libraryOpen}
           onClose={() => setLibraryOpen(false)}
-          onSelect={(url) => onChange(url)}
+          onSelect={(url) => applyNextValue(url)}
           kind={kind}
         />
       ) : null}

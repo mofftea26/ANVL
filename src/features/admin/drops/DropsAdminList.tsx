@@ -1,6 +1,8 @@
 import { Plus } from 'lucide-react'
 import { useCallback, useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { processDueScheduledDropsRemote } from '@/features/admin/cmsRemote/adminCmsProcessScheduledDrops'
+import { rehydrateAdminCmsFromRemote } from '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
@@ -95,6 +97,7 @@ export function DropsAdminList() {
 
   const [modal, setModal] = useState<ModalMode | null>(null)
   const [previewDropId, setPreviewDropId] = useState<string | null>(null)
+  const [processingDue, setProcessingDue] = useState(false)
   const [sortKey, setSortKey] = useState<DropsListSortKey>('updatedAt:desc')
   const scheduleFieldLabelId = useId()
   const searchFieldId = useId()
@@ -129,7 +132,35 @@ export function DropsAdminList() {
     duplicateMut.isPending ||
     setActiveMut.isPending ||
     scheduleMut.isPending ||
-    deleteMut.isPending
+    deleteMut.isPending ||
+    processingDue
+
+  const runDueSchedules = useCallback(async () => {
+    setProcessingDue(true)
+    try {
+      const result = await processDueScheduledDropsRemote()
+      if (!result.ok) {
+        toast.error(result.error)
+        return
+      }
+      if (result.processedCount === 0) {
+        toast.message('No due scheduled drops', {
+          description:
+            'Nothing is scheduled with an activation time in the past. Check the date on each drop — promotion uses the database scheduler every ~2 minutes, not Edge Function invocations.',
+        })
+      } else {
+        toast.success(
+          result.processedCount === 1
+            ? `Activated ${result.slugs[0] ?? '1 drop'}.`
+            : `Activated ${result.processedCount} drops.`,
+        )
+      }
+      await rehydrateAdminCmsFromRemote()
+      await refetch()
+    } finally {
+      setProcessingDue(false)
+    }
+  }, [refetch])
 
   const previewDrop = previewDropId ? getDropById(previewDropId) : null
   const previewLanding = previewDrop
@@ -197,6 +228,15 @@ export function DropsAdminList() {
                 </AdminSelect>
               </AdminFormField>
               <div className="flex flex-wrap items-center gap-2 pb-0.5">
+                <AdminButton
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => void runDueSchedules()}
+                >
+                  Run due schedules
+                </AdminButton>
                 <AdminForgedLink
                   to="/admin/drops/new"
                   variant="icon"

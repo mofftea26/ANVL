@@ -38,6 +38,14 @@ const landingActSchema = z.object({
   animation: actAnimationConfigSchema.optional(),
   content: z.record(z.string(), z.unknown()).optional(),
   productIds: z.array(z.string()).optional(),
+  media: z
+    .object({
+      imageUrl: z.string().optional(),
+      videoUrl: z.string().optional(),
+      alt: z.string().optional(),
+    })
+    .optional(),
+  campaignMarkFallback: z.enum(['emblem', 'wordmark']).optional(),
 })
 
 export const dropThemePaletteSchema = z.object({

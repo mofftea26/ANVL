@@ -19,6 +19,16 @@ export const heroContentSchema = z.object({
 export const manifestoContentSchema = z.object({
   quote: z.string().optional(),
   storyParagraphs: z.string().optional(),
+  tenets: z
+    .array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+        body: z.string().optional(),
+      }),
+    )
+    .max(12)
+    .optional(),
 })
 
 export const storytellingContentSchema = z.object({

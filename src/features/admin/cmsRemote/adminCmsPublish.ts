@@ -4,7 +4,7 @@ import { fetchCmsProfileRole } from '@/features/admin/auth/adminCmsProfileRole'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { flushAdminCmsRemoteSync } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
 
-const publishRpcResultSchema = z.object({
+export const publishRpcResultSchema = z.object({
   revision: z.union([z.number(), z.string()]),
   publishedAt: z.string().optional(),
   dropId: z.string().uuid().optional(),

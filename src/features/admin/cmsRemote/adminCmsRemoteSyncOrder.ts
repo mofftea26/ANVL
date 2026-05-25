@@ -44,6 +44,17 @@ export function orderDropsForRemoteSync(
   return activeDrop ? [...rest, activeDrop] : rest
 }
 
+/** Only demote remote actives when local is intentionally pushing a different active drop. */
+export function shouldDemoteRemoteActiveRows(
+  drops: Drop[],
+  activeClientId: string | null,
+): boolean {
+  if (!activeClientId) return false
+  const intended = drops.find((d) => d.id === activeClientId)
+  if (!intended) return false
+  return intended.status === 'active' || intended.isActive
+}
+
 export type AnvlDropActiveRow = {
   id: string
   client_drop_id?: string | null

@@ -475,6 +475,7 @@ export type DropEditorLivePreviewProps = {
   products: Product[]
   palette: DropThemePalette
   emblemUrl: string
+  wordmarkUrl?: string
   /** Act rows from the drop editor — merged over `landing` slices in the preview renderer. */
   draftActs?: LandingAct[]
   /** Render only these act ids (acts builder single-act preview). */
@@ -494,6 +495,7 @@ export function DropEditorLivePreview({
   products,
   palette,
   emblemUrl,
+  wordmarkUrl,
   draftActs,
   onlyActIds,
   freezeIntroAnimations = true,
@@ -530,6 +532,7 @@ export function DropEditorLivePreview({
             landing={filteredLanding}
             products={products}
             emblemSrc={emblemUrl}
+            wordmarkSrc={wordmarkUrl}
             cmsPreview
             draftActs={filteredDraftActs}
           />

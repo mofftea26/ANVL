@@ -21,8 +21,10 @@ export interface AdminAuthContextValue {
   isAuthenticated: boolean
   session: AdminSession | null
   isHydrated: boolean
-  /** Supabase mode: false until remote CMS rows are pulled into localStorage. Legacy: true once hydrated. */
+  /** Supabase mode: false until the first remote CMS pull completes. Legacy: true once hydrated. */
   isRemoteCmsReady: boolean
+  /** Background Supabase pull in progress — use for non-blocking sync UI only. */
+  isRemoteSyncing: boolean
   /** Set when Supabase hydration throws (misconfigured schema, network, etc.). */
   remoteHydrateError: string | null
   authMode: AdminAuthMode

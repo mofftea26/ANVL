@@ -38,6 +38,8 @@ export const ADMIN_STORAGE_KEYS = {
   dropThemePalettePresets: 'ANVL_DROP_THEME_PALETTE_PRESETS',
   /** Drop editor `xl` split: live preview column width (px). */
   dropEditorPreviewSplitPx: 'ANVL_DROP_EDITOR_PREVIEW_SPLIT_PX',
+  /** Client drop ids pending explicit delete on next remote sync. */
+  remoteDropDeleteQueue: 'ANVL_DROPS_REMOTE_DELETE_QUEUE',
 } as const
 
 export type AdminStorageKey =

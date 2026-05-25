@@ -214,9 +214,23 @@ export function SiteLayoutEditor() {
                 <MediaPickerField
                   label="Header logo (stacked)"
                   kind="image"
-                  hint="Leave empty for the bundled official ANVL mark. Optional override via file picker, drag-drop, or public path."
+                  hint="Used in the storefront header. Leave empty for the bundled ANVL mark."
                   value={layout.header.logoStackedSrc ?? ''}
+                  supabaseUpload={{ dropSlug: 'site', role: 'logo' }}
                   onChange={(next) => patchHeader({ logoStackedSrc: next })}
+                  fallback="crest"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <MediaPickerField
+                  label="Loading emblem"
+                  kind="image"
+                  hint="Shown while drop content loads. Defaults to the header logo when empty."
+                  value={layout.header.loadingEmblemSrc ?? ''}
+                  supabaseUpload={{ dropSlug: 'site', role: 'loading-emblem' }}
+                  onChange={(next) =>
+                    patchHeader({ loadingEmblemSrc: next || undefined })
+                  }
                   fallback="crest"
                 />
               </div>

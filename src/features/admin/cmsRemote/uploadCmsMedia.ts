@@ -41,6 +41,43 @@ export function formatCmsDropMediaObjectPath(
   return `drops/${slug}/${role}-${Date.now()}.${ext}`
 }
 
+/** Shared library uploads: `library/{category}/{epoch}.{ext}` */
+export function formatCmsLibraryMediaObjectPath(
+  category: string,
+  file: File,
+): string {
+  const safe = sanitizeSlugPart(category) || 'general'
+  const ext = extensionFor(file)
+  return `library/${safe}/${Date.now()}.${ext}`
+}
+
+export function parseCmsMediaObjectPathFromPublicUrl(
+  publicUrl: string,
+): string | null {
+  const trimmed = publicUrl.trim()
+  if (!trimmed) return null
+  const marker = `/storage/v1/object/public/${CMS_MEDIA_BUCKET}/`
+  const idx = trimmed.indexOf(marker)
+  if (idx < 0) return null
+  try {
+    return decodeURIComponent(trimmed.slice(idx + marker.length))
+  } catch {
+    return null
+  }
+}
+
+export async function deleteCmsMediaByPublicUrl(
+  publicUrl: string,
+): Promise<void> {
+  const objectPath = parseCmsMediaObjectPathFromPublicUrl(publicUrl)
+  if (!objectPath) return
+
+  const client = getAdminSupabaseBrowserClient()
+  if (!client) return
+
+  await client.storage.from(CMS_MEDIA_BUCKET).remove([objectPath])
+}
+
 export function publicCmsMediaUrl(objectPath: string): string | null {
   const env = getSupabasePublicEnv()
   if (!env) return null

@@ -27,6 +27,8 @@ export type WebsiteLayoutContent = {
      * the public shell uses the bundled `AnvlLogoImage` (official mark).
      */
     logoStackedSrc?: string
+    /** Optional emblem shown while drop / route content is loading. */
+    loadingEmblemSrc?: string
     /** Reserved for a future media library — ignored until wired. */
     logoMediaAssetId?: string
     cartVisible: boolean

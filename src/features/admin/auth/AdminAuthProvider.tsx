@@ -55,6 +55,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<AdminSession | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)
   const [isRemoteCmsReady, setIsRemoteCmsReady] = useState(false)
+  const [isRemoteSyncing, setIsRemoteSyncing] = useState(false)
   const [remoteHydrateError, setRemoteHydrateError] = useState<string | null>(
     null,
   )
@@ -62,12 +63,28 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
   const authMode = useMemo(() => resolveAuthMode(), [])
   const loginInFlightRef = useRef(false)
   const remotePullGenerationRef = useRef(0)
+  const hasCompletedInitialRemotePullRef = useRef(false)
+  const lastBackgroundPullAtRef = useRef(0)
 
   const startRemoteCmsPull = useCallback(
-    (client: NonNullable<ReturnType<typeof getAdminSupabaseBrowserClient>>) => {
+    (
+      client: NonNullable<ReturnType<typeof getAdminSupabaseBrowserClient>>,
+      opts?: { background?: boolean },
+    ) => {
+      const background = opts?.background ?? hasCompletedInitialRemotePullRef.current
+      if (background) {
+        const now = Date.now()
+        if (now - lastBackgroundPullAtRef.current < 45_000) return
+        lastBackgroundPullAtRef.current = now
+      }
+
       const generation = remotePullGenerationRef.current + 1
       remotePullGenerationRef.current = generation
-      setIsRemoteCmsReady(false)
+      if (background) {
+        setIsRemoteSyncing(true)
+      } else {
+        setIsRemoteCmsReady(false)
+      }
       setRemoteHydrateError(null)
 
       void (async () => {
@@ -78,7 +95,9 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
         } else {
           setRemoteHydrateError(null)
         }
+        hasCompletedInitialRemotePullRef.current = true
         setIsRemoteCmsReady(true)
+        setIsRemoteSyncing(false)
       })()
     },
     [],
@@ -269,7 +288,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
 
     const refreshRemoteCms = () => {
       const client = getAdminSupabaseBrowserClient()
-      if (client) startRemoteCmsPull(client)
+      if (client) startRemoteCmsPull(client, { background: true })
     }
 
     const onVisibilityChange = () => {
@@ -374,6 +393,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
     setSession(null)
     setRemoteHydrateError(null)
     setIsRemoteCmsReady(true)
+    setIsRemoteSyncing(false)
   }, [authMode])
 
   const value = useMemo<AdminAuthContextValue>(
@@ -382,6 +402,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
       session,
       isHydrated,
       isRemoteCmsReady,
+      isRemoteSyncing,
       remoteHydrateError,
       authMode,
       login,
@@ -391,6 +412,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
       session,
       isHydrated,
       isRemoteCmsReady,
+      isRemoteSyncing,
       remoteHydrateError,
       authMode,
       login,

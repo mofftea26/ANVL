@@ -19,6 +19,8 @@ vi.mock('@/features/admin/drops/drops.service', async (importOriginal) => {
     await importOriginal<typeof import('@/features/admin/drops/drops.service')>()
   return {
     ...actual,
+    createNewDropAsync: (...args: unknown[]) =>
+      createDraftDropAsyncMock(...args),
     createDraftDropAsync: (...args: unknown[]) =>
       createDraftDropAsyncMock(...args),
   }

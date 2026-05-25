@@ -49,17 +49,6 @@ describe('DropActsBuilderPanel', () => {
         animation: mergeActAnimationConfig(),
         media: {},
       },
-      {
-        id: 'act-fixture-c',
-        nature: 'lookbook',
-        preset: 'masonry',
-        isEnabled: true,
-        sortOrder: 2,
-        title: 'Fixture lookbook',
-        content: safeParseActContent('lookbook', {}),
-        animation: mergeActAnimationConfig(),
-        media: {},
-      },
     ]
 
     render(
@@ -76,7 +65,7 @@ describe('DropActsBuilderPanel', () => {
     expect(panel.querySelector('select')).toBeNull()
   })
 
-  it('uses icon toolbar buttons with disabled move controls at ends', () => {
+  it('renders a horizontal draggable act sequence rail', () => {
     const acts: LandingAct[] = [
       {
         id: 'act-fixture-a',
@@ -100,17 +89,6 @@ describe('DropActsBuilderPanel', () => {
         animation: mergeActAnimationConfig(),
         media: {},
       },
-      {
-        id: 'act-fixture-c',
-        nature: 'lookbook',
-        preset: 'masonry',
-        isEnabled: true,
-        sortOrder: 2,
-        title: 'Fixture lookbook',
-        content: safeParseActContent('lookbook', {}),
-        animation: mergeActAnimationConfig(),
-        media: {},
-      },
     ]
 
     render(
@@ -123,24 +101,13 @@ describe('DropActsBuilderPanel', () => {
       />,
     )
 
-    const moveUp = screen.getAllByRole('button', { name: /Move act up/i })
-    expect(moveUp).toHaveLength(3)
-    expect((moveUp[0] as HTMLButtonElement).disabled).toBe(true)
-    expect((moveUp[1] as HTMLButtonElement).disabled).toBe(false)
-    expect((moveUp[2] as HTMLButtonElement).disabled).toBe(false)
-
-    const moveDown = screen.getAllByRole('button', { name: /Move act down/i })
-    expect(moveDown).toHaveLength(3)
-    expect((moveDown[0] as HTMLButtonElement).disabled).toBe(false)
-    expect((moveDown[1] as HTMLButtonElement).disabled).toBe(false)
-    expect((moveDown[2] as HTMLButtonElement).disabled).toBe(true)
-
-    expect(screen.getAllByRole('button', { name: /Remove act/i })).toHaveLength(
-      3,
-    )
+    expect(screen.getByTestId('drop-act-list-rail')).toBeTruthy()
+    expect(screen.getByRole('list', { name: 'Landing acts' })).toBeTruthy()
+    expect(screen.getAllByRole('listitem')).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: /Remove/i })).toHaveLength(2)
   })
 
-  it('disables both reorder icons when there is only one act', () => {
+  it('shows act preview on the left column label', () => {
     const acts: LandingAct[] = [
       {
         id: 'solo-act',
@@ -165,8 +132,6 @@ describe('DropActsBuilderPanel', () => {
       />,
     )
 
-    expect((screen.getByRole('button', { name: /^Move act up$/ }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: /^Move act down$/ }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: /^Remove act$/ }) as HTMLButtonElement).disabled).toBe(false)
+    expect(screen.getByRole('button', { name: /Play animation/i })).toBeTruthy()
   })
 })

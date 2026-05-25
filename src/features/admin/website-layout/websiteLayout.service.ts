@@ -31,6 +31,7 @@ function mergeWebsiteLayout(
       ...defaults.header,
       ...(stored.header ?? {}),
       logoStackedSrc: normalizeLogoSrc(stored.header?.logoStackedSrc),
+      loadingEmblemSrc: normalizeLogoSrc(stored.header?.loadingEmblemSrc),
       logoMediaAssetId:
         typeof stored.header?.logoMediaAssetId === 'string'
           ? stored.header.logoMediaAssetId.trim() || undefined
@@ -106,6 +107,7 @@ export function normalizeWebsiteLayoutForPersist(
     header: {
       ...content.header,
       logoStackedSrc: normalizeLogoSrc(content.header.logoStackedSrc),
+      loadingEmblemSrc: normalizeLogoSrc(content.header.loadingEmblemSrc),
       logoMediaAssetId: content.header.logoMediaAssetId?.trim() || undefined,
     },
     footer: {

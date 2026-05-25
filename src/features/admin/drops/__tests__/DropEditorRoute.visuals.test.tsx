@@ -14,7 +14,7 @@ import {
 } from '@/features/admin/drops/drops.defaults'
 import { createDefaultWebsiteLayout } from '@/features/admin/website-layout/websiteLayout.defaults'
 import { AdminPageActionsProvider } from '@/features/admin/components/AdminPageActionsContext'
-import { DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS, DROP_EDITOR_SPLIT_XL_MIN_H_CLASS } from '@/features/admin/drops/dropEditorRoute.shared'
+import { DROP_EDITOR_SPLIT_LG_MIN_H_CLASS } from '@/features/admin/drops/dropEditorRoute.shared'
 
 const mockDropsState = vi.hoisted(() => ({
   drops: [] as Drop[],
@@ -126,26 +126,25 @@ describe('DropEditorRoute Basics campaign assets', () => {
     renderDropEditor()
     await user.click(await screen.findByRole('tab', { name: /theme/i }))
     const pane = await screen.findByTestId('drop-editor-preview-column')
-    expect(pane.className).toContain(DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS)
-    expect(pane.className).toContain('xl:min-h-0')
-    expect(pane.className).toContain('xl:self-start')
+    expect(pane.className).toContain('lg:h-full')
+    expect(pane.className).toContain('lg:shrink-0')
     const split = pane.parentElement
     expect(split).toBeTruthy()
-    expect(split?.className).toContain(DROP_EDITOR_SPLIT_XL_MIN_H_CLASS)
+    expect(split?.className).toContain(DROP_EDITOR_SPLIT_LG_MIN_H_CLASS)
   })
 
   it('scopes media controls under Basics campaign assets with no native <select>', async () => {
     renderDropEditor()
 
     await waitFor(() => {
-      expect(screen.getByText(/campaign assets/i)).toBeTruthy()
+      expect(screen.getByText(/campaign emblem/i)).toBeTruthy()
     })
 
     expect(document.querySelector('select')).toBeNull()
     expect(screen.getByText(/drop emblem/i)).toBeTruthy()
   })
 
-  it('groups emblem, wordmark, and hero under Basics with no empty <img src> fallbacks', async () => {
+  it('groups emblem and wordmark under Basics with no empty <img src> fallbacks', async () => {
     const base = createDefaultTheOathDrop()
     mockDropsState.drops = [
       {
@@ -163,7 +162,7 @@ describe('DropEditorRoute Basics campaign assets', () => {
     const basics = await screen.findByRole('tab', { name: /basics/i })
     expect(basics).toBeTruthy()
     expect(screen.getByText(/wordmark/i)).toBeTruthy()
-    expect(screen.getByText(/hero backdrop/i)).toBeTruthy()
+    expect(screen.queryByText(/hero backdrop/i)).toBeNull()
 
     const imgs = document.querySelectorAll('img')
     for (const el of Array.from(imgs)) {

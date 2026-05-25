@@ -6,6 +6,7 @@ import type { Product } from '@/features/products/types/product.types'
 import { defaultLandingActSequence } from '@/features/drops/drops.actSequence'
 import { publicLandingActsFromSequence } from '@/features/cms/landing/landingActs.normalize'
 import { resolveActPreset } from '@/features/marketing/act-presets/registry'
+import { resolveActCampaignMarkSrc } from '@/features/cms/landing/resolveActCampaignMark'
 import { Container } from '@/shared/components/ui'
 import { DropLoadingIndicator } from '@/shared/components/ui/DropLoadingIndicator'
 
@@ -69,6 +70,7 @@ export type PublicLandingActsProps = {
   landing: LandingPageCmsContent
   products: Product[]
   emblemSrc?: string
+  wordmarkSrc?: string
   /** When true, unknown act types show an explicit admin warning instead of the public notice. */
   cmsPreview?: boolean
   /**
@@ -82,6 +84,7 @@ export function PublicLandingActs({
   landing,
   products,
   emblemSrc,
+  wordmarkSrc,
   cmsPreview,
   draftActs,
 }: PublicLandingActsProps) {
@@ -133,6 +136,11 @@ export function PublicLandingActs({
         const Preset = entry.component
         const row = rowFor(act.id)
         const loadingLabel = `Loading ${entry.label}`
+        const actEmblemSrc = resolveActCampaignMarkSrc({
+          row,
+          dropEmblemSrc: emblemSrc,
+          dropWordmarkSrc: wordmarkSrc,
+        })
 
         return wrapLazy(
           act.id,
@@ -141,7 +149,7 @@ export function PublicLandingActs({
             act={act}
             landing={landing}
             products={products}
-            emblemSrc={emblemSrc}
+            emblemSrc={actEmblemSrc}
             row={row}
           />,
         )

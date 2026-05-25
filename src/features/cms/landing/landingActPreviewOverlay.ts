@@ -85,12 +85,22 @@ export function previewManifestoFields(
     introMerged = parts.filter(Boolean).join('\n\n')
   }
 
+  const tenetsFromContent = Array.isArray(c.tenets)
+    ? (c.tenets as Array<{ id?: string; label?: string; body?: string }>)
+        .filter((t) => typeof t.label === 'string' && t.label.trim())
+        .map((t, i) => ({
+          id: t.id?.trim() || `tenet-${i + 1}`,
+          label: t.label!.trim(),
+          body: typeof t.body === 'string' ? t.body : undefined,
+        }))
+    : null
+
   return {
     actLabel: row?.eyebrow ?? landing.actLabel,
     counterLabel: row?.subtitle ?? landing.counterLabel,
     heading: headingBase,
     intro: introMerged,
-    tenets: landing.tenets,
+    tenets: tenetsFromContent?.length ? tenetsFromContent : landing.tenets,
   }
 }
 

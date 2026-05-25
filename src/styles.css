@@ -25,12 +25,16 @@
 
   /* Admin CMS — approximate sticky `AdminTopbar` block (padding + title + description slot).
      Used by drop editor live preview `min-height`; raise if top bar layout grows. */
-  --admin-topbar-height: 6.5rem;
+  --admin-topbar-height: 3.75rem;
+  --admin-sidebar-width: 17rem;
+
+  /* Drop editor tab strip (tabs + margin below). */
+  --admin-editor-tabs-height: 3.25rem;
 
   /* Main content vertical breathing room for “usable viewport below topbar” math in the drop
      editor (pairs with `--admin-topbar-height`; ~`main` block padding — not exact per-breakpoint).
-     See `DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS` / `DROP_EDITOR_SPLIT_XL_MIN_H_CLASS`. */
-  --admin-main-block-gutter: 3rem;
+     See `DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS` / `DROP_EDITOR_SPLIT_LG_MIN_H_CLASS`. */
+  --admin-main-block-gutter: 2.5rem;
 
   /* Shared timing for buttons + CTA-shaped links (honors prefers-reduced-motion
      via the global transition clamp + motion-scoped transforms below). */

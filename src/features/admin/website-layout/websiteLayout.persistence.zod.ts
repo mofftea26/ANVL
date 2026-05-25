@@ -26,6 +26,7 @@ const websiteAnnouncementBarSchema = z.object({
 
 const websiteHeaderSchema = z.object({
   logoStackedSrc: z.string().optional(),
+  loadingEmblemSrc: z.string().optional(),
   logoMediaAssetId: z.string().optional(),
   cartVisible: z.boolean(),
   announcement: websiteAnnouncementBarSchema,

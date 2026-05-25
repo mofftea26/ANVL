@@ -1,20 +1,47 @@
-import { useMemo } from 'react'
+import { useSyncExternalStore } from 'react'
 import type { Drop } from '@/features/drops/drop.types'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { useStorefrontPublication } from '@/features/cms/hooks/useStorefrontPublication'
 import { getStorefrontOfflineActiveDrop } from '@/features/cms/runtime/storefrontReadFallback'
-import { useSyncExternalStore } from 'react'
+import { useMemo } from 'react'
 import { subscribeDropsChange } from '@/features/cms/read/cmsSubscriptions'
 import { ensureDropSystemHydrated } from '@/features/cms/read/dropRuntime'
 import { getActiveDrop } from '@/features/admin/drops/drops.service'
+import { getDropsPersistGeneration } from '@/features/admin/drops/drops.persistGeneration'
+
+let clientActiveDropSnapshot: Drop | null | undefined = undefined
+let lastActiveDropPersistGeneration = -1
+
+function refreshActiveDropSnapshot(): void {
+  clientActiveDropSnapshot = getActiveDrop()
+  lastActiveDropPersistGeneration = getDropsPersistGeneration()
+}
+
+function ensureActiveDropSnapshot(): void {
+  const gen = getDropsPersistGeneration()
+  if (
+    clientActiveDropSnapshot === undefined ||
+    gen !== lastActiveDropPersistGeneration
+  ) {
+    refreshActiveDropSnapshot()
+  }
+}
+
+function subscribeActiveDropStore(listener: () => void): () => void {
+  return subscribeDropsChange(() => {
+    refreshActiveDropSnapshot()
+    listener()
+  })
+}
 
 function useOfflineActiveDrop(): Drop | null {
   return useSyncExternalStore(
-    subscribeDropsChange,
+    subscribeActiveDropStore,
     () => {
       if (typeof window === 'undefined') return getStorefrontOfflineActiveDrop()
       ensureDropSystemHydrated()
-      return getActiveDrop()
+      ensureActiveDropSnapshot()
+      return clientActiveDropSnapshot ?? null
     },
     () => getStorefrontOfflineActiveDrop(),
   )

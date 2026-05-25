@@ -1,8 +1,5 @@
--- Scheduled drop activation: promote rows when scheduled_activation_at <= now().
---
--- pg_cron is not enabled in this project. Wire a Supabase Edge Function (or external
--- cron) to POST /rest/v1/rpc/cms_process_scheduled_drops with the service_role key
--- on a 1–5 minute interval once deployed.
+-- Repair _cms_publish_drop_core after draft_body was renamed to body in 20260524120000.
+-- 20260620130000_cms_scheduled_activation.sql accidentally reintroduced draft_body references.
 
 CREATE OR REPLACE FUNCTION public._cms_publish_drop_core(p_drop_id uuid)
 RETURNS jsonb
@@ -11,7 +8,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_draft jsonb;
+  v_body jsonb;
   v_pub jsonb;
   v_slug text;
   v_rev bigint;
@@ -20,12 +17,12 @@ DECLARE
   v_catalog_drops jsonb;
 BEGIN
   SELECT d.body, d.slug
-  INTO v_draft, v_slug
+  INTO v_body, v_slug
   FROM public.anvl_drops AS d
   WHERE d.id = p_drop_id
   FOR UPDATE;
 
-  IF v_draft IS NULL THEN
+  IF v_body IS NULL THEN
     RAISE EXCEPTION 'cms_publish_drop: drop not found' USING ERRCODE = 'P0002';
   END IF;
 
@@ -67,7 +64,7 @@ BEGIN
   );
 
   v_pub :=
-    v_draft
+    v_body
     || jsonb_build_object(
       'status', 'active',
       'isActive', true,
@@ -102,7 +99,7 @@ BEGIN
     published_body = v_pub,
     status = 'active',
     scheduled_activation_at = NULL,
-    body = v_draft
+    body = v_body
       || jsonb_build_object(
         'status', 'active',
         'isActive', true,
@@ -136,78 +133,5 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.cms_publish_drop(p_drop_id uuid)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_role text;
-BEGIN
-  SELECT p.role INTO v_role
-  FROM public.cms_profiles AS p
-  WHERE p.user_id = auth.uid();
-
-  IF v_role IS NULL OR v_role <> 'admin' THEN
-    RAISE EXCEPTION 'cms_publish_drop: forbidden' USING ERRCODE = '42501';
-  END IF;
-
-  RETURN public._cms_publish_drop_core(p_drop_id);
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.cms_process_scheduled_drops()
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_drop record;
-  v_pub jsonb;
-  v_processed jsonb := '[]'::jsonb;
-BEGIN
-  FOR v_drop IN
-    SELECT d.id, d.slug
-    FROM public.anvl_drops AS d
-    WHERE d.status = 'scheduled'
-      AND d.scheduled_activation_at IS NOT NULL
-      AND d.scheduled_activation_at <= now()
-    ORDER BY d.scheduled_activation_at ASC, d.updated_at ASC
-    FOR UPDATE SKIP LOCKED
-  LOOP
-    v_pub := public._cms_publish_drop_core(v_drop.id);
-    v_processed :=
-      v_processed
-      || jsonb_build_array(
-        jsonb_build_object(
-          'dropId', v_drop.id,
-          'slug', v_drop.slug,
-          'published', v_pub
-        )
-      );
-  END LOOP;
-
-  RETURN jsonb_build_object(
-    'processedCount', jsonb_array_length(v_processed),
-    'processed', v_processed
-  );
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public._cms_publish_drop_core(uuid) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.cms_publish_drop(uuid) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.cms_process_scheduled_drops() FROM PUBLIC;
-
-GRANT EXECUTE ON FUNCTION public.cms_publish_drop(uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.cms_process_scheduled_drops() TO service_role;
-
 COMMENT ON FUNCTION public._cms_publish_drop_core IS
-  'Internal publish helper: demote actives, snapshot drop + catalog into storefront_publication.';
-
-COMMENT ON FUNCTION public.cms_process_scheduled_drops IS
-  'Promote scheduled drops whose scheduled_activation_at <= now(). Invoke via Edge/cron with service_role — pg_cron not configured.';
-
-COMMENT ON FUNCTION public.cms_publish_drop IS
-  'Atomically publish a drop (admin only). Delegates to _cms_publish_drop_core after role check.';
+  'Internal publish helper: demote actives, snapshot drop + catalog into storefront_publication. Uses body column (not draft_body).';

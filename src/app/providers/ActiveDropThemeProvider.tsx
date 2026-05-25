@@ -7,12 +7,7 @@ import { useActiveDrop } from '@/features/drops/hooks/useActiveDrop'
 import type { Drop } from '@/features/drops/drop.types'
 import type { GlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.types'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
-import { useStorefrontActiveDrop } from '@/features/cms/hooks/useStorefrontActiveDrop'
-import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import {
-  fetchStorefrontPublicationView,
-  STOREFRONT_PUBLICATION_QUERY_KEY,
-} from '@/features/cms/hooks/storefrontPublicationQuery'
+
 const StorefrontGlobalBrandContext = createContext<GlobalBrandSettings | null>(
   null,
 )

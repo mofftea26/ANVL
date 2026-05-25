@@ -4,6 +4,7 @@ import {
   ensureDropSystemHydrated,
   mergeDropPartial,
   persistDropsState,
+  readDropsArray,
   resetDropSystemHydrationGate,
 } from '@/features/admin/drops/drops.service'
 import { persistedDropSchema } from '@/features/admin/drops/drops.persistence.zod'
@@ -77,6 +78,7 @@ function mapDbDropRow(row: AnvlDropRow): Drop | null {
     id: clientId,
     slug: row.slug,
     status,
+    isActive: status === 'active',
     releaseDate: row.release_date ?? undefined,
     scheduledActivationAt: row.scheduled_activation_at ?? undefined,
   })
@@ -115,10 +117,30 @@ export async function hydrateAdminCmsFromSupabase(
         ? pubRes.data.active_drop_id
         : null
 
+    ensureDropSystemHydrated()
+    const localDrops = readDropsArray()
+    const remoteClientIds = new Set(
+      dropRows
+        .map((row) => {
+          const cid =
+            typeof row.client_drop_id === 'string'
+              ? row.client_drop_id.trim()
+              : ''
+          if (cid) return cid
+          const parsed = persistedDropSchema.safeParse(row.body)
+          return parsed.success ? parsed.data.id : null
+        })
+        .filter((id): id is string => Boolean(id)),
+    )
+    const localOnlyDrops = localDrops.filter((d) => !remoteClientIds.has(d.id))
+
     const drops: Drop[] = []
     for (const row of dropRows) {
       const d = mapDbDropRow(row)
       if (d) drops.push(d)
+    }
+    for (const local of localOnlyDrops) {
+      if (!drops.some((d) => d.id === local.id)) drops.push(local)
     }
 
     resetDropSystemHydrationGate()

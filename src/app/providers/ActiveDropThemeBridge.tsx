@@ -40,13 +40,20 @@ export function previewLoadingSrc(
   drop?: {
     visuals: { loadingEmblemUrl?: string; emblemImageUrl: string }
   },
-  /** When set (e.g. from published Supabase projection), matches SSR without reading localStorage. */
+  /** Website layout + legacy global brand fallbacks. */
   publishedGlobalBrand?: GlobalBrandSettings | null,
+  websiteLayout?: {
+    header?: { logoStackedSrc?: string; loadingEmblemSrc?: string }
+  } | null,
 ): string {
   const fromDrop =
     drop?.visuals.loadingEmblemUrl?.trim() ||
     drop?.visuals.emblemImageUrl?.trim()
   if (fromDrop) return fromDrop
+  const fromLayout =
+    websiteLayout?.header?.loadingEmblemSrc?.trim() ||
+    websiteLayout?.header?.logoStackedSrc?.trim()
+  if (fromLayout) return fromLayout
   const g = publishedGlobalBrand ?? getGlobalBrandSettings()
   return (
     g.loadingEmblemFallbackUrl.trim() ||

@@ -39,6 +39,8 @@ vi.mock('@tanstack/react-router', () => ({
       {children}
     </a>
   ),
+  useRouterState: ({ select }: { select: (s: { location: { pathname: string } }) => string }) =>
+    select({ location: { pathname: '/admin' } }),
 }))
 
 describe('AdminTopbar', () => {
@@ -55,7 +57,7 @@ describe('AdminTopbar', () => {
     render(<AdminTopbar title="Drops" onOpenMenu={onOpenMenu} />)
 
     const menuButton = screen.getByRole('button', { name: 'Open admin navigation' })
-    expect(menuButton.className).not.toContain('lg:hidden')
+    expect(menuButton).toBeVisible()
 
     await user.click(menuButton)
     expect(onOpenMenu).toHaveBeenCalledTimes(1)
@@ -66,5 +68,6 @@ describe('AdminTopbar', () => {
     render(<AdminTopbar title="Drops" onOpenMenu={() => {}} />)
     await user.click(screen.getByLabelText(/Account menu/i))
     expect(screen.getByRole('link', { name: 'Settings' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeTruthy()
   })
 })

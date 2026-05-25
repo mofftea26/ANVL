@@ -243,7 +243,7 @@ describe('DropEditorRoute top bar actions', () => {
     renderDropEditor()
 
     await waitFor(() => {
-      expect(screen.getByText(/campaign assets/i)).toBeTruthy()
+      expect(screen.getByText(/campaign emblem/i)).toBeTruthy()
     })
 
     expect(document.querySelector('select')).toBeNull()

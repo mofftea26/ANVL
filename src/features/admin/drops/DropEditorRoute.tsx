@@ -49,8 +49,12 @@ import {
   DropEditorFieldError,
 } from '@/features/admin/drops/DropEditorFieldError'
 import {
+  defaultScheduleActivationIso,
+  scheduleActivationHint,
+} from '@/features/admin/drops/dropScheduleDisplay'
+import {
   DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS,
-  DROP_EDITOR_SPLIT_XL_MIN_H_CLASS,
+  DROP_EDITOR_SPLIT_LG_MIN_H_CLASS,
   fieldErrorClass,
   type TabId,
 } from '@/features/admin/drops/dropEditorRoute.shared'
@@ -259,6 +263,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
 
   const split = useDropEditorXlPreviewSplit(dropEditorSplitRef, editorReady && tab === 'theme')
   const showThemePreview = tab === 'theme'
+  const fillViewportEditor = tab === 'theme' || tab === 'landing'
 
   const tabWithErrors = useCallback(
     (id: TabId): boolean => {
@@ -528,20 +533,51 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         />
       }
     >
-      {/* Preview + forms: single column until xl; xl uses draggable sash + persisted width. */}
-      <div
-        ref={dropEditorSplitRef}
-        className={cn(
-          'mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-6 overscroll-x-contain xl:flex-row xl:flex-nowrap xl:items-start xl:gap-0 xl:overflow-x-hidden',
-          DROP_EDITOR_SPLIT_XL_MIN_H_CLASS,
-        )}
-      >
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div
+          role="tablist"
+          aria-label="Drop editor sections"
+          className="mb-3 flex shrink-0 flex-wrap gap-1.5 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]/60 p-1.5 backdrop-blur"
+        >
+          {tabDefs.map((t) => {
+            const hasError = tabWithErrors(t.id)
+            return (
+              <AdminButton
+                key={t.id}
+                role="tab"
+                aria-selected={tab === t.id}
+                type="button"
+                variant="adminTabEditor"
+                data-active={tab === t.id ? 'true' : 'false'}
+                onClick={() => setTab(t.id)}
+              >
+                {t.label}
+                {hasError ? (
+                  <span
+                    aria-hidden="true"
+                    className="inline-block h-1.5 w-1.5 rounded-full bg-red-400"
+                  />
+                ) : null}
+              </AdminButton>
+            )
+          })}
+        </div>
+
+        <div
+          ref={dropEditorSplitRef}
+          className={cn(
+            'flex min-h-0 flex-1 flex-col gap-4 overscroll-x-contain lg:min-h-0 lg:gap-0 lg:overflow-hidden',
+            fillViewportEditor && DROP_EDITOR_SPLIT_LG_MIN_H_CLASS,
+            fillViewportEditor && 'lg:flex-row lg:items-stretch',
+          )}
+        >
         {showThemePreview ? (
         <section
           data-testid="drop-editor-preview-column"
           className={cn(
-            'order-1 flex w-full flex-col xl:order-1 xl:min-h-0 xl:shrink-0 xl:self-start',
+            'order-1 flex w-full min-h-0 flex-col lg:order-1 lg:h-full lg:shrink-0 lg:self-stretch',
             DROP_EDITOR_PREVIEW_PANE_MIN_H_CLASS,
+            previewCollapsed && 'max-lg:hidden',
           )}
           style={
             split.isXl
@@ -552,17 +588,17 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               : undefined
           }
         >
-          <div className="flex min-h-0 h-full min-w-0 flex-1 flex-col xl:h-full xl:min-h-0">
+          <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
             <AdminCard
               title={
-                <span className="inline-flex items-center gap-2">
-                  <Eye size={16} aria-hidden="true" />
+                <span className="inline-flex items-center gap-2 text-sm">
+                  <Eye size={15} aria-hidden="true" />
                   Live preview
                 </span>
               }
-              description="Theme, acts, copy, and media render here as you type. Toggle viewport to QA each breakpoint."
+              description={undefined}
               actions={
-                <div className="xl:hidden">
+                <div className="lg:hidden">
                   <IconButton
                     type="button"
                     aria-expanded={!previewCollapsed}
@@ -583,7 +619,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                   </IconButton>
                 </div>
               }
-              className="flex min-h-0 flex-1 flex-col !p-4 sm:!p-5 xl:h-full"
+              className="flex min-h-0 flex-1 flex-col !p-3 sm:!p-4 lg:h-full lg:max-h-none [&_header]:mb-2 [&_header]:sm:mb-3"
             >
               <DropEditorLivePreview
                 landing={previewLanding}
@@ -609,9 +645,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
           tabIndex={0}
           data-testid="drop-editor-xl-sash"
           className={cn(
-            'hidden min-h-0 select-none touch-none xl:order-2 xl:flex',
+            'hidden min-h-0 select-none touch-none lg:order-2 lg:flex',
             'cursor-col-resize',
-            'self-stretch items-center justify-center px-3',
+            'self-stretch items-center justify-center px-2',
             'motion-safe:outline-none motion-safe:focus-visible:ring-2 motion-safe:focus-visible:ring-[var(--color-accent)]/45',
             split.isDragging && 'bg-[var(--color-accent)]/8',
           )}
@@ -630,62 +666,36 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
         </div>
         ) : null}
 
-        {/* Editor side panel — tall tabs scroll with the main admin page (no nested column scroll). */}
         <section
           className={cn(
-            'order-2 min-w-0 space-y-5 xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:self-stretch xl:overflow-visible',
-            showThemePreview ? 'xl:order-3' : 'xl:order-1',
+            'order-2 min-w-0 min-h-0 flex-1',
+            showThemePreview ? 'lg:order-3 lg:overflow-y-auto lg:overscroll-contain lg:pr-1' : 'overflow-y-auto',
+            tab === 'landing' && 'flex flex-col overflow-hidden',
           )}
         >
-          <div
-            role="tablist"
-            aria-label="Drop editor sections"
-            className="flex flex-wrap gap-1.5 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]/60 p-1.5 backdrop-blur"
-          >
-            {tabDefs.map((t) => {
-              const hasError = tabWithErrors(t.id)
-              return (
-                <AdminButton
-                  key={t.id}
-                  role="tab"
-                  aria-selected={tab === t.id}
-                  type="button"
-                  variant="adminTabEditor"
-                  data-active={tab === t.id ? 'true' : 'false'}
-                  onClick={() => setTab(t.id)}
-                >
-                  {t.label}
-                  {hasError ? (
-                    <span
-                      aria-hidden="true"
-                      className="inline-block h-1.5 w-1.5 rounded-full bg-red-400"
-                    />
-                  ) : null}
-                </AdminButton>
-              )
-            })}
-          </div>
-
           {tab === 'basics' ? (
             <AdminCard
               className="h-auto min-h-0"
               title="Basics"
               description="Identity surfaced across admin and routing."
             >
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-3">
                 <label
                   data-drop-field="basics.name"
-                  className="text-xs text-[var(--color-text-muted)]"
+                  className="text-xs text-[var(--color-text-muted)] lg:col-span-1"
                 >
-                  Drop name (internal)
+                  Drop name
                   <AdminInput
                     className={errors.fields['basics.name'] ? fieldErrorClass : undefined}
                     value={draft.name}
-                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                    onChange={(e) => {
+                      const name = e.target.value
+                      setDraft({ ...draft, name, title: name })
+                    }}
                   />
                   <DropEditorFieldError message={errors.fields['basics.name']} />
                 </label>
-                <label className="text-xs text-[var(--color-text-muted)]">
+                <label className="text-xs text-[var(--color-text-muted)] lg:col-span-1">
                   Drop number
                   <AdminInput
                     value={draft.dropNumber}
@@ -696,18 +706,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                 </label>
                 <label
                   data-drop-field="basics.slug"
-                  className="text-xs text-[var(--color-text-muted)] md:col-span-2"
+                  className="text-xs text-[var(--color-text-muted)] lg:col-span-1"
                 >
-                  <span className="block">Slug</span>
-                  <span className="mt-1 block text-[11px] font-normal normal-case leading-snug text-[var(--color-text-muted)]">
-                    URL-safe id for{' '}
-                    <code className="font-mono text-[10px] text-[var(--color-text)]">
-                      /drop/&lt;slug&gt;
-                    </code>
-                    , local storage keys, and the active homepage compose pipeline. Use
-                    lowercase letters, numbers, and hyphens; avoid renaming once links and promos
-                    reference it.
-                  </span>
+                  Slug
                   <AdminInput
                     className={errors.fields['basics.slug'] ? fieldErrorClass : undefined}
                     value={draft.slug}
@@ -720,40 +721,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                   />
                   <DropEditorFieldError message={errors.fields['basics.slug']} />
                 </label>
-                <label className="text-xs text-[var(--color-text-muted)] md:col-span-2">
-                  <span className="block" id="drop-editor-basics-release-label">
-                    Release date (optional)
-                  </span>
-                  <AdminDateTimeField
-                    clear
-                    aria-labelledby="drop-editor-basics-release-label"
-                    className={
-                      errors.fields['basics.releaseDate'] ? fieldErrorClass : undefined
-                    }
-                    error={Boolean(errors.fields['basics.releaseDate'])}
-                    value={draft.releaseDate}
-                    onChange={(next) =>
-                      setDraft({
-                        ...draft,
-                        releaseDate: next,
-                      })
-                    }
-                  />
-                  <DropEditorFieldError message={errors.fields['basics.releaseDate']} />
-                </label>
-                <label
-                  data-drop-field="basics.title"
-                  className="md:col-span-2 text-xs text-[var(--color-text-muted)]"
-                >
-                  Title (public)
-                  <AdminInput
-                    className={errors.fields['basics.title'] ? fieldErrorClass : undefined}
-                    value={draft.title}
-                    onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                  />
-                  <DropEditorFieldError message={errors.fields['basics.title']} />
-                </label>
-                <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+                <label className="text-xs text-[var(--color-text-muted)] lg:col-span-2">
                   Subtitle
                   <AdminInput
                     value={draft.subtitle}
@@ -762,7 +730,78 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     }
                   />
                 </label>
-                <label className="md:col-span-2 text-xs text-[var(--color-text-muted)]">
+                <label className="text-xs text-[var(--color-text-muted)] lg:col-span-1">
+                  <span className="block" id="drop-editor-basics-schedule-label">
+                    Scheduled activation (optional)
+                  </span>
+                  <AdminDateTimeField
+                    clear
+                    aria-labelledby="drop-editor-basics-schedule-label"
+                    className={
+                      errors.fields['basics.scheduledActivationAt'] ||
+                      errors.fields['basics.releaseDate']
+                        ? fieldErrorClass
+                        : undefined
+                    }
+                    error={Boolean(
+                      errors.fields['basics.scheduledActivationAt'] ||
+                        errors.fields['basics.releaseDate'],
+                    )}
+                    value={draft.scheduledActivationAt ?? draft.releaseDate}
+                    onChange={(next) =>
+                      setDraft({
+                        ...draft,
+                        scheduledActivationAt: next,
+                        releaseDate: next,
+                      })
+                    }
+                  />
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <AdminButton
+                      type="button"
+                      variant="secondary"
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() => {
+                        const next = defaultScheduleActivationIso(15)
+                        setDraft({
+                          ...draft,
+                          scheduledActivationAt: next,
+                          releaseDate: next,
+                        })
+                      }}
+                    >
+                      +15 min
+                    </AdminButton>
+                    <AdminButton
+                      type="button"
+                      variant="secondary"
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() => {
+                        const next = defaultScheduleActivationIso(60)
+                        setDraft({
+                          ...draft,
+                          scheduledActivationAt: next,
+                          releaseDate: next,
+                        })
+                      }}
+                    >
+                      +1 hour
+                    </AdminButton>
+                  </div>
+                  <p className="mt-2 text-[10px] leading-snug text-[var(--color-text-muted)]/90">
+                    {scheduleActivationHint(
+                      draft.scheduledActivationAt ?? draft.releaseDate,
+                      draft.status,
+                    )}
+                  </p>
+                  <DropEditorFieldError
+                    message={
+                      errors.fields['basics.scheduledActivationAt'] ??
+                      errors.fields['basics.releaseDate']
+                    }
+                  />
+                </label>
+                <label className="md:col-span-3 text-xs text-[var(--color-text-muted)]">
                   Description
                   <AdminTextarea
                     className="min-h-[96px]"
@@ -775,15 +814,15 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
               </div>
 
               <div className="mt-8 space-y-4 border-t border-[var(--color-line)]/60 pt-6">
-                <AdminMicroHeading as="h3">Campaign assets</AdminMicroHeading>
+                <AdminMicroHeading as="h3">Campaign emblem</AdminMicroHeading>
                 <p className="text-xs text-[var(--color-text-muted)]">
-                  Global drop marks used across acts. Upload act-specific media in the Acts builder.
+                  Default mark for acts without their own asset. Upload act-specific media in the Acts builder.
                 </p>
                 <div className="grid gap-4 md:grid-cols-2">
                   <MediaPickerField
                     label="Drop emblem"
                     kind="image"
-                    hint="Default crest for hero and manifesto surfaces."
+                    hint="Used across hero, manifesto, and as the act fallback."
                     value={draft.visuals.emblemImageUrl}
                     supabaseUpload={dropMediaUpload('emblem')}
                     onChange={(next) =>
@@ -796,9 +835,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     fallbackPreviewSrc={emblemFallbackPreview}
                   />
                   <MediaPickerField
-                    label="Wordmark"
+                    label="Wordmark (optional)"
                     kind="image"
-                    hint="Optional wide lockup for marquee surfaces."
+                    hint="Wide lockup — selectable as act fallback in the Acts builder."
                     value={draft.visuals.wordmarkImageUrl ?? ''}
                     supabaseUpload={dropMediaUpload('wordmark')}
                     onChange={(next) =>
@@ -814,26 +853,6 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                     fallback="wordmark"
                     fallbackPreviewSrc={wordmarkChainPreview}
                   />
-                  <div className="md:col-span-2">
-                    <MediaPickerField
-                      label="Hero backdrop (optional)"
-                      kind="any"
-                      hint="Large mood image or loop used when acts do not supply their own backdrop."
-                      value={draft.visuals.heroImageUrl ?? ''}
-                      supabaseUpload={dropMediaUpload('hero')}
-                      onChange={(next) =>
-                        setDraft({
-                          ...draft,
-                          visuals: {
-                            ...draft.visuals,
-                            heroImageUrl: next || undefined,
-                          },
-                        })
-                      }
-                      error={errors.fields['visuals.heroImageUrl']}
-                      fallback="none"
-                    />
-                  </div>
                 </div>
               </div>
             </AdminCard>
@@ -841,9 +860,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
 
           {tab === 'theme' ? (
             <AdminCard
-              className="h-auto min-h-0"
-              title="Theme"
-              description="Unified palette card — tokens debounce into the draft while you drag sliders for smoother editing."
+              className="h-auto min-h-0 border-0 bg-transparent p-0 shadow-none [&_span[aria-hidden]]:hidden"
+              title={undefined}
+              description={undefined}
             >
               <DropThemePaletteCard
                 theme={draft.theme}
@@ -871,6 +890,9 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                 previewProducts={previewProducts}
                 palette={draft.theme}
                 emblemUrl={draft.visuals.emblemImageUrl}
+                wordmarkUrl={draft.visuals.wordmarkImageUrl ?? ''}
+                dropSlug={draft.slug}
+                fillViewport
                 onChange={({ acts, landingActSequence }) =>
                   setDraft((prev) =>
                     prev ? { ...prev, acts, landingActSequence } : prev,
@@ -1114,6 +1136,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
             </AdminCard>
           ) : null}
         </section>
+        </div>
       </div>
 
       <AdminConfirmDialog
@@ -1171,6 +1194,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
 
               flashSuccess()
               setConfirmSave(false)
+              navigate({ to: '/admin/drops' })
             } finally {
               setSaveInFlight(false)
             }

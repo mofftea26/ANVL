@@ -5,6 +5,7 @@ import {
   activeDropRowIdsToDemote,
   clampLocalDropsForSync,
   orderDropsForRemoteSync,
+  shouldDemoteRemoteActiveRows,
 } from '@/features/admin/cmsRemote/adminCmsRemoteSyncOrder'
 
 function makeDrop(id: string, status: Drop['status'], isActive: boolean): Drop {
@@ -43,6 +44,20 @@ describe('clampLocalDropsForSync', () => {
     const b = makeDrop('drop-b', 'inactive', false)
     const out = clampLocalDropsForSync([a, b], 'drop-b')
     expect(out.find((d) => d.id === 'drop-a')?.status).toBe('inactive')
+  })
+})
+
+describe('shouldDemoteRemoteActiveRows', () => {
+  it('is false when local has no intentional active drop to push', () => {
+    const scheduled = makeDrop('drop-a', 'scheduled', false)
+    expect(shouldDemoteRemoteActiveRows([scheduled], null)).toBe(false)
+    expect(shouldDemoteRemoteActiveRows([scheduled], 'drop-a')).toBe(false)
+  })
+
+  it('is true only when the local active pointer targets an active drop', () => {
+    const active = makeDrop('drop-b', 'active', true)
+    const scheduled = makeDrop('drop-a', 'scheduled', false)
+    expect(shouldDemoteRemoteActiveRows([active, scheduled], 'drop-b')).toBe(true)
   })
 })
 

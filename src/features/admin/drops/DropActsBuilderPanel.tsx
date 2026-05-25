@@ -26,6 +26,8 @@ import {
   AdminSelectValue,
 } from '@/features/admin/components/AdminSelect'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
+import { IconButton } from '@/shared/components/ui/IconButton'
+import { cn } from '@/shared/lib/cn'
 
 const NATURE_OPTIONS = [
   { value: 'hero', label: 'Hero' },
@@ -217,12 +219,19 @@ function NatureContentFields({
   }
 
   if (nature === 'manifesto') {
+    const tenetsRaw = Array.isArray(c.tenets)
+      ? (c.tenets as Array<{ id?: string; label?: string; body?: string }>)
+      : []
+    const tenetLine = tenetsRaw
+      .map((t) => [t.label?.trim(), t.body?.trim()].filter(Boolean).join(' — '))
+      .filter(Boolean)
+      .join('\n')
     return (
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
         <AdminFieldLabel labelStyle="stacked" className="block">
           Quote
           <AdminInput
-                        value={readStr(c, 'quote')}
+            value={readStr(c, 'quote')}
             onChange={(e) => patchContent({ quote: e.target.value || undefined })}
           />
         </AdminFieldLabel>
@@ -234,6 +243,28 @@ function NatureContentFields({
             onChange={(e) =>
               patchContent({ storyParagraphs: e.target.value || undefined })
             }
+          />
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
+          Tenets (one per line: label — body)
+          <AdminTextarea
+            className="min-h-[96px]"
+            value={tenetLine}
+            onChange={(e) => {
+              const lines = e.target.value
+                .split('\n')
+                .map((line) => line.trim())
+                .filter(Boolean)
+              const tenets = lines.map((line, i) => {
+                const [label, ...rest] = line.split('—')
+                return {
+                  id: `tenet-${i + 1}`,
+                  label: (label ?? line).trim(),
+                  body: rest.join('—').trim() || undefined,
+                }
+              })
+              patchContent({ tenets: tenets.length ? tenets : undefined })
+            }}
           />
         </AdminFieldLabel>
       </div>
@@ -744,20 +775,53 @@ function NatureContentFields({
 
 function ActMediaBlock({
   media,
+  campaignMarkFallback,
+  dropSlug,
   onChange,
+  onCampaignMarkChange,
 }: {
   media: ActMedia | undefined
+  campaignMarkFallback?: 'emblem' | 'wordmark'
+  dropSlug?: string
   onChange: (next: ActMedia | undefined) => void
+  onCampaignMarkChange: (next: 'emblem' | 'wordmark') => void
 }) {
   const m = media ?? {}
+  const upload =
+    dropSlug != null ? { dropSlug, role: 'media' as const } : undefined
   return (
     <div className="mt-3 space-y-3 border-t border-[var(--color-line)]/60 pt-3">
       <AdminMicroHeading as="p" className="text-[10px] tracking-[0.14em] text-[var(--color-heading)]">Act media</AdminMicroHeading>
+      <div className="text-xs text-[var(--color-text-muted)]">
+        <span className="block" id="act-campaign-mark-label">
+          Fallback campaign mark
+        </span>
+        <AdminSelect
+          value={campaignMarkFallback ?? 'emblem'}
+          onValueChange={(v) => onCampaignMarkChange(v as 'emblem' | 'wordmark')}
+        >
+          <AdminSelectTrigger
+            id="act-campaign-mark"
+            aria-labelledby="act-campaign-mark-label"
+            className="mt-1"
+          >
+            <AdminSelectValue placeholder="Fallback mark" />
+          </AdminSelectTrigger>
+          <AdminSelectContent>
+            <AdminSelectItem value="emblem">Drop emblem</AdminSelectItem>
+            <AdminSelectItem value="wordmark">Drop wordmark</AdminSelectItem>
+          </AdminSelectContent>
+        </AdminSelect>
+        <p className="mt-1 text-[10px] text-[var(--color-text-muted)]">
+          Used for crest/wordmark slots when this act has no dedicated image.
+        </p>
+      </div>
       <MediaPickerField
         label="Act image (optional)"
         kind="image"
-        hint="Backdrop keyed to this act row — defaults to the ANVL crest when empty."
+        hint="Backdrop keyed to this act row."
         value={m.imageUrl ?? ''}
+        supabaseUpload={upload}
         onChange={(next) =>
           onChange({
             ...m,
@@ -771,8 +835,9 @@ function ActMediaBlock({
       <MediaPickerField
         label="Act video (optional)"
         kind="video"
-        hint="Hosted .mp4/.webm URL, or upload a small file (≤ 8 MB) to embed."
+        hint="Hosted .mp4/.webm URL, or upload to Supabase."
         value={m.videoUrl ?? ''}
+        supabaseUpload={upload}
         onChange={(next) =>
           onChange({
             ...m,
@@ -810,6 +875,9 @@ type Props = {
   previewProducts: Product[]
   palette: DropThemePalette
   emblemUrl: string
+  wordmarkUrl?: string
+  dropSlug?: string
+  fillViewport?: boolean
   onChange: (next: {
     acts: LandingAct[]
     landingActSequence: LandingActSlot[]
@@ -825,6 +893,9 @@ export function DropActsBuilderPanel({
   previewProducts,
   palette,
   emblemUrl,
+  wordmarkUrl = '',
+  dropSlug,
+  fillViewport = false,
   onChange,
 }: Props) {
   const sorted = useMemo(
@@ -867,16 +938,20 @@ export function DropActsBuilderPanel({
     }
   }
 
-  function moveAct(id: string, dir: -1 | 1) {
-    const list = [...sorted]
-    const idx = list.findIndex((a) => a.id === id)
-    if (idx < 0) return
-    const swap = idx + dir
-    if (swap < 0 || swap >= list.length) return
-    ;[list[idx], list[swap]] = [list[swap], list[idx]]
-    emit(list.map((a, i) => ({ ...a, sortOrder: i })))
+  function reorderActs(orderedIds: string[]) {
+    const byId = new Map(sorted.map((a) => [a.id, a]))
+    const next = orderedIds
+      .map((id) => byId.get(id))
+      .filter((a): a is LandingAct => Boolean(a))
+      .map((a, i) => ({ ...a, sortOrder: i }))
+    emit(next)
   }
 
+  function playSelectedAnimation() {
+    setPlayingAnimation(true)
+    setAnimationRemountKey((k) => k + 1)
+    window.setTimeout(() => setPlayingAnimation(false), 2800)
+  }
 
   function addAct() {
     const nature = 'hero'
@@ -896,12 +971,6 @@ export function DropActsBuilderPanel({
     setSelectedActId(next.id)
   }
 
-  function playSelectedAnimation() {
-    setPlayingAnimation(true)
-    setAnimationRemountKey((k) => k + 1)
-    window.setTimeout(() => setPlayingAnimation(false), 1200)
-  }
-
   const act = selectedAct
   const anim = act ? mergeActAnimationConfig(act.animation) : null
   const presetChoices = act ? [...(PRESETS[act.nature] ?? ['default'])] : []
@@ -912,7 +981,10 @@ export function DropActsBuilderPanel({
 
   return (
     <div
-      className="grid min-h-0 gap-4 xl:grid-cols-[minmax(11rem,13rem)_minmax(0,1fr)_minmax(16rem,42%)] xl:items-start"
+      className={cn(
+        'flex min-h-0 flex-col gap-2',
+        fillViewport && 'h-full flex-1 overflow-hidden',
+      )}
       data-testid="drop-acts-builder-panel"
     >
       <DropActListRail
@@ -921,14 +993,60 @@ export function DropActsBuilderPanel({
         onSelect={setSelectedActId}
         onAdd={addAct}
         onRemove={removeAct}
-        onMove={moveAct}
+        onReorder={reorderActs}
       />
 
-      <AdminCard
-        className="min-h-0 h-auto"
-        title={act ? `Edit · ${act.title?.trim() || act.nature}` : 'Select an act'}
-        description="Configure nature, preset, copy, media, and animation for the selected section."
+      <div
+        className={cn(
+          'grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(14rem,38%)_minmax(0,1fr)] lg:items-stretch lg:overflow-hidden',
+          fillViewport && 'h-full',
+        )}
       >
+        <div className="order-2 flex min-h-0 flex-col lg:order-1 lg:h-full lg:min-h-0 lg:max-h-full">
+          <AdminCard
+            className="flex min-h-0 flex-1 flex-col !p-2 sm:!p-3 [&_header]:mb-2"
+            title="Act preview"
+            description={undefined}
+            actions={
+              selectedActId ? (
+                <IconButton
+                  type="button"
+                  aria-label={playingAnimation ? 'Playing animation' : 'Play animation'}
+                  title={playingAnimation ? 'Playing…' : 'Play animation'}
+                  disabled={playingAnimation}
+                  className="h-8 w-8 border-[var(--color-line)]/70 bg-[var(--color-surface-soft)]"
+                  onClick={playSelectedAnimation}
+                >
+                  <Play size={14} aria-hidden />
+                </IconButton>
+              ) : null
+            }
+          >
+            {selectedActId ? (
+              <DropEditorLivePreview
+                key={`act-preview-${selectedActId}-${animationRemountKey}-${playingAnimation ? 'play' : 'static'}`}
+                landing={previewLanding}
+                products={previewProducts}
+                palette={palette}
+                emblemUrl={emblemUrl}
+                wordmarkUrl={wordmarkUrl}
+                draftActs={acts}
+                onlyActIds={[selectedActId]}
+                freezeIntroAnimations={!playingAnimation}
+                animationRemountKey={animationRemountKey}
+                compact
+              />
+            ) : (
+              <p className="text-xs text-[var(--color-text-muted)]">Select an act to preview.</p>
+            )}
+          </AdminCard>
+        </div>
+
+        <AdminCard
+          className="order-1 flex min-h-0 flex-col lg:order-2 lg:max-h-full lg:overflow-y-auto lg:overscroll-contain lg:pr-1"
+          title={act ? `Edit · ${act.title?.trim() || act.nature}` : 'Select an act'}
+          description={undefined}
+        >
         {!act ? (
           <p className="text-sm text-[var(--color-text-muted)]">
             Choose an act from the list or add a new one to begin editing.
@@ -1035,7 +1153,12 @@ export function DropActsBuilderPanel({
 
             <ActMediaBlock
               media={act.media}
+              campaignMarkFallback={act.campaignMarkFallback}
+              dropSlug={dropSlug}
               onChange={(next) => updateAct(act.id, { media: next })}
+              onCampaignMarkChange={(next) =>
+                updateAct(act.id, { campaignMarkFallback: next })
+              }
             />
 
             {anim ? (
@@ -1166,43 +1289,6 @@ export function DropActsBuilderPanel({
             ) : null}
           </div>
         )}
-      </AdminCard>
-
-      <div className="xl:sticky xl:top-[calc(var(--admin-topbar-height)+1rem)] xl:max-h-[calc(100dvh-var(--admin-topbar-height)-2rem)] xl:self-start">
-        <AdminCard
-          className="flex min-h-[min(420px,50vh)] flex-col !p-3 xl:min-h-[min(640px,calc(100dvh-var(--admin-topbar-height)-2rem))]"
-          title="Act preview"
-          description="Live render of the selected act only."
-          actions={
-            selectedActId ? (
-              <AdminButton
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={playingAnimation}
-                onClick={playSelectedAnimation}
-              >
-                <Play size={14} className="me-1.5" aria-hidden />
-                {playingAnimation ? 'Playing…' : 'Play animation'}
-              </AdminButton>
-            ) : null
-          }
-        >
-          {selectedActId ? (
-            <DropEditorLivePreview
-              landing={previewLanding}
-              products={previewProducts}
-              palette={palette}
-              emblemUrl={emblemUrl}
-              draftActs={acts}
-              onlyActIds={[selectedActId]}
-              freezeIntroAnimations={!playingAnimation}
-              animationRemountKey={animationRemountKey}
-              compact
-            />
-          ) : (
-            <p className="text-xs text-[var(--color-text-muted)]">Select an act to preview.</p>
-          )}
         </AdminCard>
       </div>
     </div>

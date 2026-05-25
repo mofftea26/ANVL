@@ -63,4 +63,6 @@ export type LandingAct = {
   animation?: ActAnimationConfig
   content?: Record<string, unknown>
   productIds?: string[]
+  /** When act media is empty, choose drop emblem vs wordmark for preset crests. */
+  campaignMarkFallback?: 'emblem' | 'wordmark'
 }

@@ -73,7 +73,7 @@ describe('AdminLayout', () => {
 
     await user.click(screen.getByRole('button', { name: /open admin navigation/i }))
     const dialog = screen.getByRole('dialog', { name: 'Admin navigation' })
-    await user.click(within(dialog).getByRole('link', { name: 'Dashboard' }))
+    await user.click(within(dialog).getByRole('link', { name: /Dashboard/i }))
 
     expect(screen.queryByRole('dialog', { name: 'Admin navigation' })).not.toBeInTheDocument()
   })

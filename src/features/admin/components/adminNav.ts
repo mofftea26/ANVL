@@ -42,12 +42,12 @@ export const adminNavItems: AdminNavItem[] = [
     badge: 'Global',
   },
   {
-    label: 'Brand fallbacks',
-    href: '/admin/theme',
-    description: 'Emblems before drop loads.',
+    label: 'Media',
+    href: '/admin/media',
+    description: 'Shared asset library for uploads.',
     cluster: 'Site',
-    cta: 'Edit',
-    badge: 'Global',
+    cta: 'Browse',
+    badge: 'Assets',
   },
   {
     label: 'SEO',
@@ -56,14 +56,6 @@ export const adminNavItems: AdminNavItem[] = [
     cluster: 'Site',
     cta: 'Edit',
     badge: 'Discovery',
-  },
-  {
-    label: 'Media',
-    href: '/admin/media',
-    description: 'Where images are attached.',
-    cluster: 'Site',
-    cta: 'Guide',
-    badge: 'Assets',
   },
   {
     label: 'Settings',

@@ -12,8 +12,13 @@ import { isAdminCmsRemoteHydrationLocked } from '@/features/admin/cmsRemote/admi
 import {
   demoteDropBody,
   orderDropsForRemoteSync,
+  shouldDemoteRemoteActiveRows,
 } from '@/features/admin/cmsRemote/adminCmsRemoteSyncOrder'
 import { buildAnvlDropRemoteRow } from '@/features/admin/cmsRemote/adminCmsDropRemoteRow'
+import {
+  readRemoteDropDeleteQueue,
+  removeRemoteDropDeleteQueueIds,
+} from '@/features/admin/drops/drops.storage'
 import {
   buildMediaIndex,
   listMediaAssets,
@@ -67,28 +72,33 @@ export async function flushAdminCmsRemoteSync(): Promise<
     return { ok: false, error: activeListErr.message }
   }
 
-  for (const row of dbActiveRows ?? []) {
-    const cid =
-      typeof row.client_drop_id === 'string' ? row.client_drop_id.trim() : ''
-    const shouldStayActive =
-      activeClientId !== null && cid === activeClientId
-    if (shouldStayActive) continue
+  if (shouldDemoteRemoteActiveRows(drops, activeClientId)) {
+    for (const row of dbActiveRows ?? []) {
+      const cid =
+        typeof row.client_drop_id === 'string' ? row.client_drop_id.trim() : ''
+      const shouldStayActive =
+        activeClientId !== null && cid === activeClientId
+      if (shouldStayActive) continue
 
-    const bodyRaw = row.body
-    const body =
-      typeof bodyRaw === 'object' && bodyRaw !== null
-        ? (bodyRaw as Record<string, unknown>)
-        : {}
+      const localDrop = drops.find((d) => d.id === cid)
+      if (!localDrop) continue
 
-    const { error: demoteErr } = await client
-      .from('anvl_drops')
-      .update({
-        status: 'inactive',
-        body: demoteDropBody(body),
-      })
-      .eq('id', row.id)
+      const bodyRaw = row.body
+      const body =
+        typeof bodyRaw === 'object' && bodyRaw !== null
+          ? (bodyRaw as Record<string, unknown>)
+          : {}
 
-    if (demoteErr) return { ok: false, error: demoteErr.message }
+      const { error: demoteErr } = await client
+        .from('anvl_drops')
+        .update({
+          status: 'inactive',
+          body: demoteDropBody(body),
+        })
+        .eq('id', row.id)
+
+      if (demoteErr) return { ok: false, error: demoteErr.message }
+    }
   }
 
   const orderedDrops = orderDropsForRemoteSync(drops, activeClientId)
@@ -107,6 +117,31 @@ export async function flushAdminCmsRemoteSync(): Promise<
     }
 
     if (existing?.id) {
+      const { data: current, error: curErr } = await client
+        .from('anvl_drops')
+        .select('status, updated_at')
+        .eq('id', existing.id)
+        .maybeSingle()
+
+      if (curErr) return { ok: false, error: curErr.message }
+
+      // Cron may have promoted this row while localStorage still says scheduled.
+      if (current?.status === 'active' && drop.status === 'scheduled') {
+        const serverMs = current.updated_at
+          ? new Date(current.updated_at).getTime()
+          : 0
+        const localMs = drop.updatedAt
+          ? new Date(drop.updatedAt).getTime()
+          : 0
+        if (
+          Number.isFinite(serverMs) &&
+          serverMs > 0 &&
+          localMs <= serverMs
+        ) {
+          continue
+        }
+      }
+
       const { error: upErr } = await client
         .from('anvl_drops')
         .update(row)
@@ -118,25 +153,31 @@ export async function flushAdminCmsRemoteSync(): Promise<
     }
   }
 
-  const { data: remoteDropRows, error: listErr } = await client
-    .from('anvl_drops')
-    .select('id, client_drop_id')
+  const deleteQueue = readRemoteDropDeleteQueue()
+  const deletedClientIds: string[] = []
 
-  if (listErr) {
-    return { ok: false, error: listErr.message }
-  }
+  for (const clientId of deleteQueue) {
+    const { data: row, error: selDelErr } = await client
+      .from('anvl_drops')
+      .select('id')
+      .eq('client_drop_id', clientId)
+      .maybeSingle()
 
-  const localIds = new Set(drops.map((d) => d.id))
-  for (const r of remoteDropRows ?? []) {
-    const cid =
-      typeof r.client_drop_id === 'string' ? r.client_drop_id.trim() : ''
-    if (cid && !localIds.has(cid)) {
+    if (selDelErr) return { ok: false, error: selDelErr.message }
+
+    if (row?.id) {
       const { error: delErr } = await client
         .from('anvl_drops')
         .delete()
-        .eq('id', r.id)
+        .eq('id', row.id)
       if (delErr) return { ok: false, error: delErr.message }
     }
+
+    deletedClientIds.push(clientId)
+  }
+
+  if (deletedClientIds.length > 0) {
+    removeRemoteDropDeleteQueueIds(deletedClientIds)
   }
 
   if (syncProductsToSupabase) {

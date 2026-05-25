@@ -56,7 +56,7 @@ export function useDropEditorXlPreviewSplit(
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const mq = window.matchMedia('(min-width: 1280px)')
+    const mq = window.matchMedia('(min-width: 1024px)')
     const apply = () => setIsXl(mq.matches)
     apply()
     mq.addEventListener('change', apply)
