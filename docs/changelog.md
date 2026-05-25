@@ -1,10 +1,11 @@
-﻿## 2026-05-25 — Storefront reads local active drop after SSR + carousel overflow (MAINT-20 / RESP-15)
+## 2026-05-25 — Storefront CMS hydration + carousel overflow (`a11ef5a`; MAINT-20 / RESP-15)
 
 - **`useActiveDrop`:** Without Supabase, the hydrated client now prefers the persisted active drop from admin storage (`live ?? SSR initial`) instead of pinning the SSR seed forever; theme CSS and chrome match "Set active." With Supabase, publication wins; unpublished visitors use SSR/projection (`initial`) only—no leaking admin drafts from `offline` subscribers.
 - **`useLandingCms` (local):** Replaced the module-global `useSyncExternalStore` cache with mount-time `useLayoutEffect` + drop/layout/SEO subscriptions so composed acts and hero copy reconcile to `getLandingCmsContent()` after hydrate (same SSR-first paint pattern).
 - **Layout:** Public storefront `<main class="min-w-0 overflow-x-clip">` caps horizontal bleed; **`ProductCarouselPreset`** / **`CarouselLookbookPreset`** use container-relative inset math (`100%`, `min(100%,80rem)`) plus `w-max` tracks; **`SplitProductHero`** columns get `min-w-0`.
 - **Tests / hygiene:** Vitest helpers `pickLocalActiveDropForStorefront` / `pickSupabaseActiveDropForStorefront`; `AdminSidebar` / `AdminNewDropRoute` expectations updated (`createNewDropAsync` mock, token classnames); **`AdminProductsIndex`** imports `getShopifyPublicEnv` + `AdminShopifyCatalogRedirect`; drop editor visuals test drops unused import.
 
+## 2026-05-20 — Production follow-ups: migrations, scheduler cron, bundle split
 
 - **Supabase (project `cptebkgyrfmokklwtrgp`):** applied migrations **`storefront_site_drafts`**, **`cms_media_assets`**, **`cms_scheduled_activation`** (`media_index`, catalog table, `cms_process_scheduled_drops`).
 - **Edge Function:** **`process-scheduled-drops`** deployed (`CRON_SECRET` auth, calls RPC with service role). Schedule in Dashboard every 1–5 min after setting secrets.
@@ -98,7 +99,6 @@
 - **DB:** Migration **`20260620130000_cms_scheduled_activation.sql`** — `_cms_publish_drop_core`, **`cms_process_scheduled_drops()`** (service_role; Edge/cron — pg_cron not used); refactors **`cms_publish_drop`** to delegate to core.
 - **Admin sync:** **`scheduleDropActivation`** already writes **`status: scheduled`** + **`scheduled_activation_at`** via **`buildAnvlDropRemoteRow`** (Vitest coverage added).
 - **Storefront:** **`PublicLandingActs`** product showcase uses act **`productIds`** when set; otherwise first six products.
-
 
 - **DB:** Migration **`20260620120000_cms_media_assets.sql`** — `cms_media_assets` catalog with RLS (CMS read; editor/admin write).
 - **Admin:** `MediaLibraryPage` grid (search, mime filters, inline alt, copy URL, delete confirm), drag-drop upload to `cms-media` + catalog row.
@@ -369,7 +369,6 @@
 - **UX:** After the **`ViewportIframe`** shell fix, **`height:100%`** on the iframe stretched the iframe to the full preview column, so **`svh`-based landing sections reflowed and the hero read “huge” on desktop.** Fix:** Shell stays **`flex-1 min-h-0 self-stretch`** with **`justify-start`**; iframe **`width`** stays Fit **`100%`** or device widths **390 / 820 / 1280**. **`height` / `max-height`** use Tailwind **`h-[min(62dvh,760px)] max-h-[…]`** (avoids jsdom stripping `min()` in React inline styles while matching browser intent); surplus shell letterboxes inside the gradient chrome.
 - Files: **`DropEditorLivePreview.tsx`**, **`__tests__/DropEditorLivePreview.test.tsx`**, **`docs/changelog.md`**.
 - Tests / verify: **`pnpm verify`**.
-
 
 - **RCA:** **`ViewportIframe`** rendered the **`<iframe>`** as the **direct flex item** of the preview row (`DropEditorLivePreview`). For replaced elements, **`height: 100%`** often **does not resolve** when the flex item’s used size is still tied to the **intrinsic default iframe height (~150px)** — so the live preview band collapsed while the builder column stayed tall. Separately, the **`layout="wide"`** content wrapper did not participate in a **`flex-1` / `min-h-0`** chain under **`main`**, so the split row could not reliably consume **remaining viewport height** below the top bar.
 - **Fix:** Wrap the iframe in a **`flex-1 min-h-0 self-stretch`** shell (**`data-testid="drop-editor-viewport-iframe-shell"`**); iframe keeps **`h-full min-h-0 flex-1`** inside that shell. **`AdminLayout`** (`wide` only): **`main`** + inner **`max-w-[1600px]`** wrapper use **`flex flex-col flex-1 min-h-0`**. **`DropEditorRoute`** split: **`flex-1 min-h-0`** + **`xl:flex-nowrap`**. Dropped redundant **`max-h-full`** / **`h-full`** duplications on the iframe **`className`** in **`DropEditorLivePreview`** (height comes from the shell + inline **`height: 100%`**).
@@ -701,7 +700,6 @@ Removed the trailing **`fits preview pane`** / simulated-width caption from **`D
 - Files changed: `src/styles.css`, `src/features/marketing/components/HeroForgeSequence.tsx`, `src/features/marketing/components/DropRevealSection.tsx`, `src/test/anvl-global-interactive-styles.test.ts`, `docs/changelog.md`.
 - Tests/manual checks: **`pnpm verify`** (log on this workstation); optional smoke: hover storefront hero CTAs, admin dashboard tiles, and a native **Join** / form button with motion on vs **reduced motion** in OS — translate should only appear for motion-OK link CTAs outside card shells; brightness-only for reduced motion.
 - Notes/debt: Plain text links (`focus-ring` + `inline-flex` without fixed row heights) are unchanged so underline / micro-label patterns are not forced into “button” hover. Any future CTA link that omits both `min-h-*` and `h-*` won’t pick up the global link translate until one is added or the selector is extended.
-
 
 ## 2026-05-17 — Admin dashboard card CTA polish
 
