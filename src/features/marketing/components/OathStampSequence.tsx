@@ -158,7 +158,7 @@ export function OathStampSequence({
   return (
     <section
       ref={root}
-      className="anvl-screen-section relative w-full overflow-hidden border-y border-[var(--color-line)] bg-[var(--color-surface)] py-16 sm:py-20 md:py-24"
+      className="anvl-screen-section relative w-full overflow-hidden border-y border-[var(--color-line)] bg-[var(--color-surface)]"
       aria-label="The Manifesto"
     >
       {/* Background Oath shape — centered, slow rotation. */}
@@ -178,7 +178,7 @@ export function OathStampSequence({
         </span>
       </div>
 
-      <Container className="relative z-10">
+      <Container className="anvl-act-content relative z-10 flex flex-col justify-center py-6 sm:py-8">
         <div className="flex items-baseline justify-between gap-4">
           <p data-oath-eyebrow="true" className="anvl-micro will-change-transform">
             {actLabel}

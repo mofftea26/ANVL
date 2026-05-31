@@ -35,22 +35,23 @@ export function DropAdminListCard({
       data-testid="drop-admin-list-card"
       data-drop-id={row.id}
       className={cn(
-        'group/drop-card relative isolate overflow-hidden rounded-2xl',
+        'group/drop-card relative isolate flex h-full flex-col overflow-hidden rounded-2xl',
         'border border-[var(--color-line)] bg-[var(--color-surface)]',
-        'shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_-1px_0_rgba(0,0,0,0.42),0_1px_0_rgba(255,255,255,0.04),0_20px_56px_-36px_rgba(0,0,0,0.82)]',
-        'motion-safe:transition-[box-shadow,border-color] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]',
+        'shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_48px_-32px_rgba(0,0,0,0.78)]',
+        'motion-safe:transition-[transform,box-shadow,border-color] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]',
         'motion-reduce:transition-none',
-        'hover:border-[color:color-mix(in_srgb,var(--anvl-bone)_28%,transparent)]',
+        'hover:-translate-y-0.5 hover:border-[color:color-mix(in_srgb,var(--anvl-bone)_30%,transparent)]',
+        'motion-reduce:hover:translate-y-0',
         row.isActive &&
-          'border-[color:color-mix(in_srgb,rgb(16_185_129)_32%,var(--color-line))] bg-[color-mix(in_oklab,rgb(16_185_129)_8%,var(--color-surface))]',
+          'border-[color:color-mix(in_srgb,rgb(16_185_129)_34%,var(--color-line))] bg-[color-mix(in_oklab,rgb(16_185_129)_9%,var(--color-surface))]',
       )}
     >
       {themeAccent ? (
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-80"
+          className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-90"
           style={{
-            background: `radial-gradient(ellipse 120% 80% at 100% 0%, color-mix(in srgb, ${themeAccent} 22%, transparent) 0%, transparent 58%), linear-gradient(135deg, color-mix(in srgb, ${themeAccent} 10%, transparent) 0%, transparent 42%)`,
+            background: `radial-gradient(ellipse 110% 75% at 100% -10%, color-mix(in srgb, ${themeAccent} 24%, transparent) 0%, transparent 55%), linear-gradient(160deg, color-mix(in srgb, ${themeAccent} 8%, transparent) 0%, transparent 45%)`,
           }}
         />
       ) : null}
@@ -58,14 +59,14 @@ export function DropAdminListCard({
       {emblemUrl ? (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 z-0 w-[min(58%,11rem)] overflow-hidden"
+          className="pointer-events-none absolute inset-y-0 right-0 z-0 w-[min(62%,12rem)] overflow-hidden"
         >
           <div
             className={cn(
               'absolute inset-0',
-              'bg-[linear-gradient(to_left,var(--color-surface)_18%,color-mix(in_oklab,var(--color-surface)_72%,transparent)_48%,transparent_100%)]',
+              'bg-[linear-gradient(to_left,var(--color-surface)_12%,color-mix(in_oklab,var(--color-surface)_68%,transparent)_46%,transparent_100%)]',
               row.isActive &&
-                'bg-[linear-gradient(to_left,color-mix(in_oklab,rgb(16_185_129)_12%,var(--color-surface))_18%,color-mix(in_oklab,var(--color-surface)_72%,transparent)_48%,transparent_100%)]',
+                'bg-[linear-gradient(to_left,color-mix(in_oklab,rgb(16_185_129)_14%,var(--color-surface))_12%,color-mix(in_oklab,var(--color-surface)_68%,transparent)_46%,transparent_100%)]',
             )}
           />
           <img
@@ -73,11 +74,10 @@ export function DropAdminListCard({
             alt=""
             decoding="async"
             className={cn(
-              'absolute -right-2 top-1/2 h-[min(9.5rem,88%)] w-auto max-w-none -translate-y-1/2 object-contain object-right',
-              'opacity-[0.16] motion-safe:blur-[0.4px] motion-reduce:blur-0',
-              'motion-safe:transition-[opacity,transform] motion-safe:duration-500 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]',
-              'motion-reduce:transition-none',
-              'group-hover/drop-card:opacity-[0.22] motion-reduce:group-hover/drop-card:opacity-[0.16]',
+              'absolute -right-3 top-1/2 h-[min(10rem,90%)] w-auto max-w-none -translate-y-1/2 object-contain object-right',
+              'opacity-[0.14] motion-safe:blur-[0.35px] motion-reduce:blur-0',
+              'motion-safe:transition-[opacity,transform] motion-safe:duration-500',
+              'group-hover/drop-card:opacity-[0.24] motion-reduce:group-hover/drop-card:opacity-[0.14]',
             )}
           />
         </div>
@@ -87,34 +87,44 @@ export function DropAdminListCard({
         aria-hidden
         className={cn(
           'pointer-events-none absolute inset-0 rounded-[inherit]',
-          'ring-1 ring-inset ring-[color:color-mix(in_srgb,var(--anvl-bone)_10%,transparent)]',
-          'bg-[linear-gradient(145deg,color-mix(in_srgb,var(--anvl-bone)_12%,transparent)_0%,transparent_40%)]',
-          'opacity-90',
+          'ring-1 ring-inset ring-[color:color-mix(in_srgb,var(--anvl-bone)_12%,transparent)]',
+          'bg-[linear-gradient(155deg,color-mix(in_srgb,var(--anvl-bone)_10%,transparent)_0%,transparent_38%)]',
         )}
       />
 
-      <div className="relative z-[1] p-5">
-        <header className="mb-4 flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1 pr-2">
-            <h2 className="anvl-heading text-base font-normal leading-snug tracking-[0.04em] text-[var(--color-heading)]">
-              <span className="block truncate">
-                {row.dropNumber} · {row.name}
+      <div className="relative z-[1] flex flex-1 flex-col p-5 sm:p-6">
+        <header className="mb-5 flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-2 pr-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <AdminStatusBadge
+                tone={dropStatusBadgeTone(row.status, row.isActive)}
+                size="default"
+              >
+                {dropStatusBadgeLabel(row.status, row.isActive)}
+              </AdminStatusBadge>
+              <span className="anvl-micro rounded-full border border-[var(--color-line)]/70 bg-[var(--color-bg)]/50 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
+                Drop {row.dropNumber}
               </span>
+            </div>
+            <h2 className="anvl-heading text-lg font-normal leading-tight tracking-[0.02em] text-[var(--color-heading)] sm:text-xl">
+              <span className="line-clamp-2">{row.name}</span>
             </h2>
             <p className="text-[13px] leading-relaxed text-[var(--color-text-muted)]">
-              <span className="font-mono text-[12px]">/drop/{row.slug}</span>
-              <span aria-hidden className="mx-1.5 opacity-50">
+              <span className="font-mono text-[12px] text-[var(--color-text)]/90">
+                /drop/{row.slug}
+              </span>
+              <span aria-hidden className="mx-1.5 opacity-40">
                 ·
               </span>
               <span>
-                {row.productCount} product{row.productCount === 1 ? '' : 's'}
+                {row.productCount} piece{row.productCount === 1 ? '' : 's'}
               </span>
             </p>
           </div>
           <DropRowOverflowMenu
             row={row}
             busy={busy}
-            className="border-[var(--color-line)] bg-[var(--color-bg)]/70 hover:bg-[var(--color-surface-elevated)]"
+            className="border-[var(--color-line)] bg-[var(--color-bg)]/80 hover:bg-[var(--color-surface-elevated)]"
             onActivate={onActivate}
             onSchedule={onSchedule}
             onDelete={onDelete}
@@ -123,32 +133,32 @@ export function DropAdminListCard({
           />
         </header>
 
-        <div className="space-y-3 text-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <AdminStatusBadge
-              tone={dropStatusBadgeTone(row.status, row.isActive)}
-              size="default"
-            >
-              {dropStatusBadgeLabel(row.status, row.isActive)}
-            </AdminStatusBadge>
+        <dl className="mt-auto grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[var(--color-line)]/60 pt-4 text-xs">
+          <div>
+            <dt className="anvl-micro text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+              Release
+            </dt>
+            <dd className="mt-1 text-sm text-[var(--color-text)]">
+              {formatAdminDropDate(row.releaseDate)}
+            </dd>
           </div>
-          <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-[var(--color-text-muted)]">
-            <div>
-              <dt className="text-[10px] uppercase tracking-wider">Release</dt>
-              <dd className="text-[var(--color-text)]">{formatAdminDropDate(row.releaseDate)}</dd>
-            </div>
-            <div>
-              <dt className="text-[10px] uppercase tracking-wider">Scheduled</dt>
-              <dd className="text-[var(--color-text)]">
-                {formatAdminDropDate(row.scheduledActivationAt)}
-              </dd>
-            </div>
-            <div className="col-span-2">
-              <dt className="text-[10px] uppercase tracking-wider">Last edited</dt>
-              <dd className="text-[var(--color-text)]">{formatAdminDropDate(row.updatedAt)}</dd>
-            </div>
-          </dl>
-        </div>
+          <div>
+            <dt className="anvl-micro text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+              Scheduled
+            </dt>
+            <dd className="mt-1 text-sm text-[var(--color-text)]">
+              {formatAdminDropDate(row.scheduledActivationAt)}
+            </dd>
+          </div>
+          <div className="col-span-2">
+            <dt className="anvl-micro text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+              Last edited
+            </dt>
+            <dd className="mt-1 text-sm text-[var(--color-text)]">
+              {formatAdminDropDate(row.updatedAt)}
+            </dd>
+          </div>
+        </dl>
       </div>
     </section>
   )

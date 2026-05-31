@@ -25,9 +25,16 @@ import {
   AdminSelectTrigger,
   AdminSelectValue,
 } from '@/features/admin/components/AdminSelect'
+import { AdminDateTimeField } from '@/features/admin/components/AdminDateTimeField'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 import { IconButton } from '@/shared/components/ui/IconButton'
 import { cn } from '@/shared/lib/cn'
+import { ACT_MOTION_TYPE_OPTIONS } from '@/features/marketing/act-presets/shared/actAnimationConfig'
+import {
+  ACT_PRESETS_BY_NATURE,
+  getActPresetLabel,
+} from '@/features/marketing/act-presets/registry'
+import { isLayeredHeroPreset } from '@/features/marketing/act-presets/shared/actLayerMedia'
 
 const NATURE_OPTIONS = [
   { value: 'hero', label: 'Hero' },
@@ -42,18 +49,7 @@ const NATURE_OPTIONS = [
   { value: 'finalCTA', label: 'Final CTA' },
 ] as const
 
-const PRESETS: Record<string, readonly string[]> = {
-  hero: ['theOathCinematic', 'splitProduct', 'minimalEmblem'],
-  manifesto: ['oathStampLedger', 'splitText', 'scrollStacked'],
-  storytelling: ['chapterScroll', 'editorialArticle', 'imageLed'],
-  dropReveal: ['monolithReveal', 'countdownTrio', 'emblemFirst'],
-  productShowcase: ['threeCardEditorial', 'carousel', 'productStory'],
-  materialShowcase: ['fabricRunway', 'specsGrid', 'splitDetail'],
-  specialEvent: ['eventCard', 'countdownEvent', 'locationSplit'],
-  lookbook: ['masonry', 'carousel', 'editorial'],
-  newsletterWaitlist: ['oathFullWidthForm', 'minimalForm', 'splitForm'],
-  finalCTA: ['centered', 'footerOverlap', 'productCta'],
-}
+const PRESETS = ACT_PRESETS_BY_NATURE
 
 function slotKeyForNature(nature: string): LandingActSlot['key'] | null {
   switch (nature) {
@@ -138,38 +134,49 @@ function NatureContentFields({
     return (
       <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
         <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-          Countdown target (ISO datetime)
-          <AdminInput
-                        value={readStr(c, 'countdownTargetIso')}
-            onChange={(e) =>
-              patchContent({ countdownTargetIso: e.target.value || undefined })
+          Countdown target
+          <AdminDateTimeField
+            value={readStr(c, 'countdownTargetIso') || undefined}
+            onChange={(next) =>
+              patchContent({ countdownTargetIso: next || undefined })
             }
+            clear
+            placeholder="Select drop open date & time"
           />
         </AdminFieldLabel>
-        <div className="md:col-span-2">
-          <MediaPickerField
-            label="Background image"
-            kind="image"
-            hint="Optional hero backdrop for this act."
-            value={readStr(c, 'backgroundImageUrl')}
-            onChange={(next) =>
-              patchContent({ backgroundImageUrl: next || undefined })
+        <AdminFieldLabel labelStyle="stacked" className="block">
+          Drop
+          <AdminInput
+            value={readStr(c, 'heroDrop')}
+            onChange={(e) =>
+              patchContent({ heroDrop: e.target.value || undefined })
             }
-            fallback="crest"
+            placeholder="01"
           />
-        </div>
-        <div className="md:col-span-2">
-          <MediaPickerField
-            label="Emblem / watermark"
-            kind="image"
-            hint="Decorative crest layered behind hero copy."
-            value={readStr(c, 'emblemWatermarkSrc')}
-            onChange={(next) =>
-              patchContent({ emblemWatermarkSrc: next || undefined })
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block">
+          Pieces
+          <AdminInput
+            inputMode="numeric"
+            value={readStr(c, 'heroPieces')}
+            onChange={(e) =>
+              patchContent({ heroPieces: e.target.value || undefined })
             }
-            fallback="crest"
+            placeholder="3"
           />
-        </div>
+        </AdminFieldLabel>
+        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
+          Status
+          <AdminInput
+            value={readStr(c, 'heroStatus') || 'Soon'}
+            onChange={(e) =>
+              patchContent({
+                heroStatus: e.target.value.trim() || 'Soon',
+              })
+            }
+            placeholder="Soon"
+          />
+        </AdminFieldLabel>
         <AdminFieldLabel labelStyle="stacked" className="block">
           Primary CTA label
           <AdminInput
@@ -774,12 +781,20 @@ function NatureContentFields({
 }
 
 function ActMediaBlock({
+  nature,
+  preset,
+  content,
+  patchContent,
   media,
   campaignMarkFallback,
   dropSlug,
   onChange,
   onCampaignMarkChange,
 }: {
+  nature: LandingAct['nature']
+  preset: string
+  content: Record<string, unknown>
+  patchContent: (patch: Record<string, unknown>) => void
   media: ActMedia | undefined
   campaignMarkFallback?: 'emblem' | 'wordmark'
   dropSlug?: string
@@ -789,9 +804,24 @@ function ActMediaBlock({
   const m = media ?? {}
   const upload =
     dropSlug != null ? { dropSlug, role: 'media' as const } : undefined
+  const isLayeredHero = nature === 'hero' && isLayeredHeroPreset(preset)
+  const bgImageLabel = isLayeredHero
+    ? 'Background image (optional)'
+    : 'Act image (optional)'
+  const bgVideoLabel = isLayeredHero
+    ? 'Background video (optional)'
+    : 'Act video (optional)'
+  const bgImageHint = isLayeredHero
+    ? 'Atmospheric backdrop — clears background video when set.'
+    : 'Hero backdrop — clears video when set.'
+  const fgImage = readStr(content, 'foregroundImageUrl')
+  const fgVideo = readStr(content, 'foregroundVideoUrl')
+
   return (
     <div className="mt-3 space-y-3 border-t border-[var(--color-line)]/60 pt-3">
-      <AdminMicroHeading as="p" className="text-[10px] tracking-[0.14em] text-[var(--color-heading)]">Act media</AdminMicroHeading>
+      <AdminMicroHeading as="p" className="text-[10px] tracking-[0.14em] text-[var(--color-heading)]">
+        {isLayeredHero ? 'Background media' : 'Act media'}
+      </AdminMicroHeading>
       <div className="text-xs text-[var(--color-text-muted)]">
         <span className="block" id="act-campaign-mark-label">
           Fallback campaign mark
@@ -813,41 +843,82 @@ function ActMediaBlock({
           </AdminSelectContent>
         </AdminSelect>
         <p className="mt-1 text-[10px] text-[var(--color-text-muted)]">
-          Used for crest/wordmark slots when this act has no dedicated image.
+          {isLayeredHero
+            ? 'Shown in the foreground when no foreground image or video is set.'
+            : 'Shown only when this act has no image or video media.'}
         </p>
       </div>
       <MediaPickerField
-        label="Act image (optional)"
+        label={bgImageLabel}
         kind="image"
-        hint="Backdrop keyed to this act row."
+        hint={bgImageHint}
         value={m.imageUrl ?? ''}
         supabaseUpload={upload}
         onChange={(next) =>
           onChange({
             ...m,
             imageUrl: next || undefined,
-            videoUrl: m.videoUrl,
+            videoUrl: next ? undefined : m.videoUrl,
             alt: m.alt,
           })
         }
         fallback="crest"
       />
       <MediaPickerField
-        label="Act video (optional)"
+        label={bgVideoLabel}
         kind="video"
-        hint="Hosted .mp4/.webm URL, or upload to Supabase."
+        hint={
+          isLayeredHero
+            ? 'Clears background image when set. .mp4/.webm or Supabase upload.'
+            : 'Clears image when set. .mp4/.webm or Supabase upload.'
+        }
         value={m.videoUrl ?? ''}
         supabaseUpload={upload}
         onChange={(next) =>
           onChange({
             ...m,
-            imageUrl: m.imageUrl,
+            imageUrl: next ? undefined : m.imageUrl,
             videoUrl: next || undefined,
             alt: m.alt,
           })
         }
         fallback="none"
       />
+      {isLayeredHero ? (
+        <>
+          <AdminMicroHeading as="p" className="pt-1 text-[10px] tracking-[0.14em] text-[var(--color-heading)]">
+            Foreground media
+          </AdminMicroHeading>
+          <MediaPickerField
+            label="Foreground image (optional)"
+            kind="image"
+            hint="Product or emblem focal — clears foreground video when set."
+            value={fgImage}
+            supabaseUpload={upload}
+            onChange={(next) =>
+              patchContent({
+                foregroundImageUrl: next || undefined,
+                foregroundVideoUrl: next ? undefined : fgVideo || undefined,
+              })
+            }
+            fallback="crest"
+          />
+          <MediaPickerField
+            label="Foreground video (optional)"
+            kind="video"
+            hint="Clears foreground image when set. .mp4/.webm or Supabase upload."
+            value={fgVideo}
+            supabaseUpload={upload}
+            onChange={(next) =>
+              patchContent({
+                foregroundImageUrl: next ? undefined : fgImage || undefined,
+                foregroundVideoUrl: next || undefined,
+              })
+            }
+            fallback="none"
+          />
+        </>
+      ) : null}
       <AdminFieldLabel labelStyle="stacked" className="block">
         Alt text
         <AdminInput
@@ -1052,7 +1123,7 @@ export function DropActsBuilderPanel({
             Choose an act from the list or add a new one to begin editing.
           </p>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-5 pb-4">
             <div className="flex flex-wrap items-center gap-3">
               <AdminCheckbox
                 className="py-0"
@@ -1114,7 +1185,7 @@ export function DropActsBuilderPanel({
                   <AdminSelectContent>
                     {presetChoices.map((p) => (
                       <AdminSelectItem key={p} value={p}>
-                        {p}
+                        {getActPresetLabel(act.nature, p)}
                       </AdminSelectItem>
                     ))}
                   </AdminSelectContent>
@@ -1141,17 +1212,29 @@ export function DropActsBuilderPanel({
                   onChange={(e) => updateAct(act.id, { subtitle: e.target.value })}
                 />
               </AdminFieldLabel>
-              <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-                Body
-                <AdminTextarea
-                  className="min-h-[88px]"
-                  value={act.body ?? ''}
-                  onChange={(e) => updateAct(act.id, { body: e.target.value })}
-                />
-              </AdminFieldLabel>
+              {act.nature !== 'hero' ? (
+                <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
+                  Body
+                  <AdminTextarea
+                    className="min-h-[88px]"
+                    value={act.body ?? ''}
+                    onChange={(e) => updateAct(act.id, { body: e.target.value })}
+                  />
+                </AdminFieldLabel>
+              ) : null}
             </div>
 
             <ActMediaBlock
+              nature={act.nature}
+              preset={act.preset}
+              content={(act.content ?? {}) as Record<string, unknown>}
+              patchContent={(patch) => {
+                const merged = safeParseActContent(act.nature, {
+                  ...(act.content ?? {}),
+                  ...patch,
+                })
+                updateAct(act.id, { content: merged })
+              }}
               media={act.media}
               campaignMarkFallback={act.campaignMarkFallback}
               dropSlug={dropSlug}
@@ -1195,21 +1278,41 @@ export function DropActsBuilderPanel({
                   />
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <AdminFieldLabel labelStyle="stacked" className="block">
-                    Motion type
-                    <AdminInput
-                      placeholder="fadeUp, parallax, none…"
-                      value={anim.type}
-                      onChange={(e) =>
+                  <div className="text-xs text-[var(--color-text-muted)]">
+                    <span className="block" id={`act-${act.id}-anim-type-label`}>
+                      Motion type
+                    </span>
+                    <AdminSelect
+                      value={
+                        ACT_MOTION_TYPE_OPTIONS.some((o) => o.value === anim.type)
+                          ? anim.type
+                          : 'wordReveal'
+                      }
+                      onValueChange={(v) =>
                         updateAct(act.id, {
                           animation: mergeActAnimationConfig({
                             ...anim,
-                            type: e.target.value,
+                            type: v,
                           }),
                         })
                       }
-                    />
-                  </AdminFieldLabel>
+                    >
+                      <AdminSelectTrigger
+                        id={`act-${act.id}-anim-type`}
+                        aria-labelledby={`act-${act.id}-anim-type-label`}
+                        className="mt-1"
+                      >
+                        <AdminSelectValue placeholder="Motion type" />
+                      </AdminSelectTrigger>
+                      <AdminSelectContent>
+                        {ACT_MOTION_TYPE_OPTIONS.map((o) => (
+                          <AdminSelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </AdminSelectItem>
+                        ))}
+                      </AdminSelectContent>
+                    </AdminSelect>
+                  </div>
                   <div className="text-xs text-[var(--color-text-muted)]">
                     <span className="block" id={`act-${act.id}-anim-intensity-label`}>
                       Intensity

@@ -135,7 +135,7 @@ export function MaterialsMarquee({
   return (
     <section
       ref={root}
-      className="anvl-screen-section relative w-full overflow-hidden border-b border-[var(--color-line)] py-16 sm:py-20 md:py-24"
+      className="anvl-screen-section relative w-full overflow-hidden border-b border-[var(--color-line)]"
       aria-label="Materials and quality"
     >
       <div
@@ -143,7 +143,7 @@ export function MaterialsMarquee({
         className="anvl-grid-overlay pointer-events-none absolute inset-0 z-0"
       />
 
-      <Container className="relative z-10">
+      <Container className="anvl-act-content relative z-10 flex flex-col justify-center py-6 sm:py-8">
         <div className="flex items-baseline justify-between gap-4">
           <p
             data-mm-eyebrow="true"

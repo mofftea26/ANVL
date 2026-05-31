@@ -5,7 +5,8 @@ import { submitWaitlistMock } from '@/features/marketing/data/waitlist.mock'
 import { useCartAnalytics } from '@/features/analytics/hooks/useCartAnalytics'
 import { Button, Container, FormField, Input } from '@/shared/components/ui'
 import { toast } from 'sonner'
-import { useActScrollReveal } from '../shared/useActScrollReveal'
+import { ActMediaBackdrop } from '../shared/ActMediaBackdrop'
+import { useActPresetMotion } from '../shared/useActScrollReveal'
 import type { ActPresetProps } from '../types'
 
 /** Minimal centered waitlist form. */
@@ -15,7 +16,7 @@ export function MinimalWaitlistFormPreset({ landing, row, products }: ActPresetP
   const waitlistForm = useWaitlistForm()
   const { trackWaitlist } = useCartAnalytics()
 
-  useActScrollReveal(root, {
+  useActPresetMotion(root, row, {
     staggerSelector: '[data-minimal-wait-field]',
     snapSelectors: ['[data-minimal-wait-heading]'],
   })
@@ -30,16 +31,17 @@ export function MinimalWaitlistFormPreset({ landing, row, products }: ActPresetP
   return (
     <section
       ref={root}
-      className="border-b border-[var(--color-line)] bg-[var(--color-bg)] py-16 md:py-24"
+      className="anvl-screen-section relative overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-bg)]"
       aria-label="Waitlist"
     >
-      <Container className="mx-auto max-w-lg text-center">
+      <ActMediaBackdrop row={row} />
+      <Container className="anvl-act-content relative z-10 mx-auto flex max-w-lg flex-col justify-center py-6 text-center sm:py-8">
         <p className="anvl-micro mb-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
           {content.actLabel}
         </p>
         <h2
           data-minimal-wait-heading
-          className="anvl-display mb-4 text-[clamp(1.75rem,3.5vw,2.5rem)]"
+          className="anvl-display mb-4 text-[clamp(1.75rem,3.5vw,2.5rem)] text-[var(--color-heading)]"
         >
           {content.heading}
         </h2>
@@ -47,15 +49,11 @@ export function MinimalWaitlistFormPreset({ landing, row, products }: ActPresetP
         <form onSubmit={onSubmit} className="space-y-4 text-left">
           <FormField label={content.form.emailLabel} error={waitlistForm.formState.errors.email?.message}>
             <div data-minimal-wait-field>
-              <Input
-                type="email"
-                autoComplete="email"
-                {...waitlistForm.register('email')}
-              />
+              <Input type="email" autoComplete="email" {...waitlistForm.register('email')} />
             </div>
           </FormField>
           <div data-minimal-wait-field>
-            <Button type="submit" className="w-full">
+            <Button data-act-micro type="submit" className="w-full">
               {content.form.submitLabel}
             </Button>
           </div>

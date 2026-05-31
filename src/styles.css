@@ -179,19 +179,31 @@ a {
   color: var(--color-text-muted);
 }
 
-/* Section sizing utilities. `anvl-screen-section` is the default —
-   a min-height of one screen under the sticky header. Content flows
-   naturally and can grow taller on small viewports without clipping.
-   `anvl-screen-section-fixed` locks to that height with a small
-   minimum and is used only where the content is guaranteed to fit
-   (currently just the hero). */
-.anvl-screen-section {
+/* Section sizing utilities — each landing act occupies exactly one
+   viewport below the sticky header. Inner `.anvl-act-content` scrolls
+   only when copy overflows on very small screens. */
+.anvl-screen-section,
+.anvl-screen-section-fixed {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: var(--anvl-section-h);
   min-height: var(--anvl-section-h);
+  max-height: var(--anvl-section-h);
+  overflow: hidden;
 }
 
-.anvl-screen-section-fixed {
-  height: var(--anvl-section-h);
-  min-height: 36rem;
+.anvl-act-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Drop editor iframe has no storefront header — acts fill the frame. */
+html.anvl-preview-iframe {
+  --anvl-header-h: 0px;
 }
 
 .anvl-grid-overlay::before {

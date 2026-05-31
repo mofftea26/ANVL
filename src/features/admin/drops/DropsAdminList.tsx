@@ -338,14 +338,19 @@ export function DropsAdminList() {
 
       <AdminConfirmDialog
         open={modal?.kind === 'activate'}
-        onClose={() => setModal(null)}
+        onClose={() => {
+          if (setActiveMut.isPending) return
+          setModal(null)
+        }}
         title="Make drop active?"
-        confirmLabel="Activate"
-        confirmDisabled={busy}
+        confirmLabel={setActiveMut.isPending ? 'Activating…' : 'Activate'}
+        confirmLoading={setActiveMut.isPending}
+        confirmDisabled={busy && !setActiveMut.isPending}
         onConfirm={() => {
-          if (modal?.kind !== 'activate') return
+          if (modal?.kind !== 'activate' || setActiveMut.isPending) return
           setActiveMut.mutate(modal.id, {
-            onSuccess: () => {
+            onSuccess: async () => {
+              await refetch()
               toast.success('Active drop updated.')
               setModal(null)
             },

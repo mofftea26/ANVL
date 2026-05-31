@@ -12,11 +12,6 @@ export const ADMIN_DROPS_LIST_QUERY_KEY = ['admin', 'drops', 'list'] as const
 
 export async function loadAdminDropsList() {
   if (getSupabasePublicEnv()) {
-    try {
-      await rehydrateAdminCmsFromRemote()
-    } catch {
-      /* list can still fall back to remote fetch */
-    }
     const remote = await fetchAdminDropsListFromSupabase()
     if (remote.ok) return remote.items
   }
@@ -39,15 +34,22 @@ export function useAdminDropsListQuery() {
 
 function useInvalidateAdminDropsList() {
   const queryClient = useQueryClient()
-  return () =>
-    void queryClient.invalidateQueries({ queryKey: ADMIN_DROPS_LIST_QUERY_KEY })
+  return async () => {
+    await queryClient.invalidateQueries({ queryKey: ADMIN_DROPS_LIST_QUERY_KEY })
+    await queryClient.refetchQueries({
+      queryKey: ADMIN_DROPS_LIST_QUERY_KEY,
+      type: 'active',
+    })
+  }
 }
 
 export function useDuplicateAdminDropMutation() {
   const invalidate = useInvalidateAdminDropsList()
   return useMutation({
     mutationFn: (id: string) => runtimeClients.cms.duplicateAdminDrop(id),
-    onSuccess: () => invalidate(),
+    onSuccess: async () => {
+      await invalidate()
+    },
   })
 }
 
@@ -56,9 +58,9 @@ export function useSetActiveAdminDropMutation() {
   return useMutation({
     mutationFn: (id: string) => runtimeClients.cms.setAdminActiveDrop(id),
     onSuccess: async () => {
-      invalidate()
       await rehydrateAdminCmsFromRemote()
       await notifyStorefrontPublicationChanged()
+      await invalidate()
       await notifyAdminDropsListChanged()
     },
   })
@@ -69,9 +71,9 @@ export function useDeactivateAdminDropMutation() {
   return useMutation({
     mutationFn: (id: string) => runtimeClients.cms.deactivateAdminDrop(id),
     onSuccess: async () => {
-      invalidate()
       await rehydrateAdminCmsFromRemote()
       await notifyStorefrontPublicationChanged()
+      await invalidate()
       await notifyAdminDropsListChanged()
     },
   })
@@ -82,7 +84,9 @@ export function useScheduleAdminDropMutation() {
   return useMutation({
     mutationFn: (input: { id: string; activationIso: string }) =>
       runtimeClients.cms.scheduleAdminDrop(input.id, input.activationIso),
-    onSuccess: () => invalidate(),
+    onSuccess: async () => {
+      await invalidate()
+    },
   })
 }
 
@@ -90,6 +94,8 @@ export function useDeleteAdminDropMutation() {
   const invalidate = useInvalidateAdminDropsList()
   return useMutation({
     mutationFn: (id: string) => runtimeClients.cms.deleteAdminDrop(id),
-    onSuccess: () => invalidate(),
+    onSuccess: async () => {
+      await invalidate()
+    },
   })
 }

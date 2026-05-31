@@ -70,12 +70,12 @@ body {
 .anvl-screen-section,
 .anvl-screen-section-fixed {
   flex: 0 0 auto !important;
-  height: auto !important;
-  max-height: none !important;
-}
-.anvl-screen-section-fixed {
   min-height: var(--anvl-section-h, 100svh) !important;
   height: var(--anvl-section-h, 100svh) !important;
+  max-height: var(--anvl-section-h, 100svh) !important;
+}
+html.anvl-preview-iframe {
+  --anvl-header-h: 0px;
 }
 /* Cancel GSAP intro states so the preview always shows the final layout. */
 [data-hero-word],
@@ -145,12 +145,12 @@ body {
 .anvl-screen-section,
 .anvl-screen-section-fixed {
   flex: 0 0 auto !important;
-  height: auto !important;
-  max-height: none !important;
-}
-.anvl-screen-section-fixed {
   min-height: var(--anvl-section-h, 100svh) !important;
   height: var(--anvl-section-h, 100svh) !important;
+  max-height: var(--anvl-section-h, 100svh) !important;
+}
+html.anvl-preview-iframe {
+  --anvl-header-h: 0px;
 }
 a { pointer-events: none; }
 `.trim()

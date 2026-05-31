@@ -4,7 +4,9 @@ import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { Container } from '@/shared/components/ui/Container'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { gsap } from '@/shared/lib/gsap'
-import { useActScrollReveal } from '../shared/useActScrollReveal'
+import { ActMediaBackdrop } from '../shared/ActMediaBackdrop'
+import { applyCalmIdlePulse } from '../shared/actMotionHelpers'
+import { useActPresetMotion } from '../shared/useActScrollReveal'
 import type { ActPresetProps } from '../types'
 
 /** Emblem-first drop reveal — crest leads, type follows. */
@@ -19,7 +21,7 @@ export function EmblemFirstRevealPreset({ landing, row, emblemSrc, products }: A
           { id: 's2', label: 'Edition', value: 'Numbered' },
         ]
 
-  useActScrollReveal(root, {
+  useActPresetMotion(root, row, {
     snapSelectors: ['[data-emblem-first-crest]', '[data-emblem-first-heading]', '[data-emblem-first-tag]'],
     onAnimate: (host) => {
       const crest = host.querySelector('[data-emblem-first-crest]')
@@ -38,25 +40,32 @@ export function EmblemFirstRevealPreset({ landing, row, emblemSrc, products }: A
         .to(heading, { opacity: 1, y: 0, duration: 0.8 }, 0.2)
         .to(tag, { opacity: 1, y: 0, duration: 0.7 }, 0.35)
         .to(statsEls, { opacity: 1, y: 0, stagger: 0.08, duration: 0.6 }, 0.4)
+
+      return applyCalmIdlePulse(crest, 'subtle')
     },
   })
 
   return (
     <section
       ref={root}
-      className="anvl-screen-section border-b border-[var(--color-line)] bg-[var(--color-bg)] py-16"
+      className="anvl-screen-section relative overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-bg)]"
       aria-label="Drop reveal"
     >
-      <Container className="flex flex-col items-center text-center">
+      <ActMediaBackdrop row={row} />
+      <Container className="anvl-act-content relative z-10 flex flex-col items-center justify-center py-6 text-center sm:py-8">
         <div data-emblem-first-crest className="mb-10">
-          <DropEmblemDecor src={emblemSrc} className="h-36 w-36 md:h-48 md:w-48" alt="" />
+          <DropEmblemDecor
+            src={d.dropIcon || emblemSrc}
+            className="h-36 w-36 md:h-48 md:w-48"
+            alt=""
+          />
         </div>
         <p className="anvl-micro mb-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
           {d.actLabel} · {d.counterLabel}
         </p>
         <h2
           data-emblem-first-heading
-          className="anvl-display text-[clamp(2.5rem,6vw,4rem)] leading-[0.9]"
+          className="anvl-display text-[clamp(2.5rem,6vw,4rem)] leading-[0.9] text-[var(--color-heading)]"
         >
           {d.words.join(' ')}
         </h2>
@@ -72,15 +81,15 @@ export function EmblemFirstRevealPreset({ landing, row, emblemSrc, products }: A
               <dt className="anvl-micro text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
                 {stat.label}
               </dt>
-              <dd className="mt-1 text-lg font-semibold">{stat.value}</dd>
+              <dd className="mt-1 text-lg font-semibold text-[var(--color-heading)]">{stat.value}</dd>
             </div>
           ))}
         </dl>
         <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <SafeLink href={d.primaryCta.href} className="anvl-btn anvl-btn-primary">
+          <SafeLink data-act-micro href={d.primaryCta.href} className="anvl-btn anvl-btn-primary">
             {d.primaryCta.label}
           </SafeLink>
-          <SafeLink href={d.secondaryCta.href} className="anvl-btn anvl-btn-ghost">
+          <SafeLink data-act-micro href={d.secondaryCta.href} className="anvl-btn anvl-btn-ghost">
             {d.secondaryCta.label}
           </SafeLink>
         </div>

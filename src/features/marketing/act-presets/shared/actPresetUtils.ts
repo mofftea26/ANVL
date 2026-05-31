@@ -1,0 +1,69 @@
+import type { LandingAct } from '@/features/cms/landing/landingActs.types'
+
+/** One viewport per act — subtracts sticky header via `--anvl-section-h`. */
+export const ACT_SECTION_CLASS =
+  'anvl-screen-section relative w-full overflow-hidden border-b border-[var(--color-line)]'
+
+/** Scrollable inner column; centers content when it fits. */
+export const ACT_CONTENT_CLASS =
+  'anvl-act-content relative z-10 flex flex-col justify-center px-4 py-6 sm:py-8'
+import { readActStr } from '@/features/cms/landing/landingActPreviewOverlay'
+import {
+  hasActLayerMedia,
+} from './actLayerMedia'
+
+export type TenetLike = { label?: string; body?: string; text?: string; id?: string }
+
+export function formatTenetLine(tenet: TenetLike): string {
+  if (typeof tenet.text === 'string' && tenet.text.trim()) return tenet.text.trim()
+  const label = typeof tenet.label === 'string' ? tenet.label.trim() : ''
+  const body = typeof tenet.body === 'string' ? tenet.body.trim() : ''
+  if (label && body) return `${label} — ${body}`
+  return label || body
+}
+
+export function resolveActRowImage(row?: LandingAct, contentKey?: string): string | undefined {
+  const fromMedia = row?.media?.imageUrl?.trim()
+  if (fromMedia) return fromMedia
+  if (contentKey && row?.content) {
+    const fromContent = readActStr(row.content as Record<string, unknown>, contentKey)
+    if (fromContent) return fromContent
+  }
+  return undefined
+}
+
+export function resolveActRowVideo(row?: LandingAct): string | undefined {
+  return row?.media?.videoUrl?.trim() || undefined
+}
+
+/** True when the act row has dedicated background image or video media. */
+export function hasActRowMedia(row?: LandingAct): boolean {
+  return hasActLayerMedia(row, 'background')
+}
+
+export function resolveActRowMediaAlt(row?: LandingAct): string | undefined {
+  return row?.media?.alt?.trim() || undefined
+}
+
+export { hasActForegroundMedia, hasActLayerMedia, resolveActLayerMedia } from './actLayerMedia'
+
+export type CountdownParts = { days: number; hours: number; minutes: number; seconds: number }
+
+export function getCountdownParts(targetIso: string): CountdownParts | null {
+  const target = new Date(targetIso).getTime()
+  if (!Number.isFinite(target)) return null
+  const diff = Math.max(0, target - Date.now())
+  return {
+    days: Math.floor(diff / 86_400_000),
+    hours: Math.floor((diff / 3_600_000) % 24),
+    minutes: Math.floor((diff / 60_000) % 60),
+    seconds: Math.floor((diff / 1000) % 60),
+  }
+}
+
+export function formatEventDate(iso: string): string {
+  if (!iso.trim()) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+}

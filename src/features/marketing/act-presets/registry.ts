@@ -1,5 +1,10 @@
 import { lazy, type JSX, type LazyExoticComponent } from 'react'
-import type { ActPresetEntry, ActPresetProps, LandingActNature } from './types'
+import {
+  LANDING_ACT_NATURES,
+  type ActPresetEntry,
+  type ActPresetProps,
+  type LandingActNature,
+} from './types'
 
 function lazyPreset(
   loader: () => Promise<{ [key: string]: (props: ActPresetProps) => JSX.Element | null }>,
@@ -42,7 +47,7 @@ const ENTRIES: ActPresetEntry[] = [
   {
     nature: 'hero',
     preset: 'splitProduct',
-    label: 'Split product hero',
+    label: 'Cinematic split hero',
     component: lazyPreset(
       () => import('./hero/SplitProductHero'),
       'SplitProductHeroPreset',
@@ -204,7 +209,7 @@ const ENTRIES: ActPresetEntry[] = [
   {
     nature: 'newsletterWaitlist',
     preset: 'oathFullWidthForm',
-    label: 'Oath full-width form',
+    label: 'Full-width waitlist',
     component: lazyPreset(
       () => import('./newsletterWaitlist/OathFullWidthForm'),
       'OathFullWidthFormPreset',
@@ -213,7 +218,7 @@ const ENTRIES: ActPresetEntry[] = [
   {
     nature: 'newsletterWaitlist',
     preset: 'minimalForm',
-    label: 'Minimal form',
+    label: 'Minimal waitlist',
     component: lazyPreset(
       () => import('./newsletterWaitlist/MinimalWaitlistForm'),
       'MinimalWaitlistFormPreset',
@@ -222,7 +227,7 @@ const ENTRIES: ActPresetEntry[] = [
   {
     nature: 'newsletterWaitlist',
     preset: 'splitForm',
-    label: 'Split form',
+    label: 'Split waitlist',
     component: lazyPreset(
       () => import('./newsletterWaitlist/SplitWaitlistForm'),
       'SplitWaitlistFormPreset',
@@ -337,6 +342,31 @@ export function resolveActPreset(
 
 export function listActPresetsForNature(nature: LandingActNature): ActPresetEntry[] {
   return ENTRIES.filter((entry) => entry.nature === nature)
+}
+
+/** Preset ids grouped by nature — same order as CMS builder choices. */
+export const ACT_PRESETS_BY_NATURE: Record<LandingActNature, readonly string[]> =
+  Object.fromEntries(
+    LANDING_ACT_NATURES.map((nature) => [
+      nature,
+      listActPresetsForNature(nature).map((entry) => entry.preset),
+    ]),
+  ) as Record<LandingActNature, readonly string[]>
+
+function humanizePresetId(preset: string): string {
+  const spaced = preset
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/_/g, ' ')
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
+}
+
+/** User-facing label for a stored preset id (backend id unchanged). */
+export function getActPresetLabel(nature: string, preset: string): string {
+  const id = preset.trim()
+  if (!id) return 'Default'
+  const hit = REGISTRY.get(`${nature}:${id}`)
+  if (hit) return hit.label
+  return humanizePresetId(id)
 }
 
 export { ENTRIES as ACT_PRESET_ENTRIES }

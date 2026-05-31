@@ -2,7 +2,8 @@ import { useRef } from 'react'
 import { previewLookbookFields } from '@/features/cms/landing/landingActPreviewOverlay'
 import { Container } from '@/shared/components/ui/Container'
 import { gsap } from '@/shared/lib/gsap'
-import { useActScrollReveal } from '../shared/useActScrollReveal'
+import { ActMediaBackdrop } from '../shared/ActMediaBackdrop'
+import { useActPresetMotion } from '../shared/useActScrollReveal'
 import type { ActPresetProps } from '../types'
 import { LookbookMedia } from './lookbookShared'
 
@@ -12,7 +13,7 @@ export function EditorialLookbookPreset({ row }: ActPresetProps) {
   const root = useRef<HTMLElement | null>(null)
   const [hero, ...rest] = fields.items
 
-  useActScrollReveal(root, {
+  useActPresetMotion(root, row, {
     snapSelectors: ['[data-lookbook-editorial-copy]', '[data-lookbook-editorial-hero]', '[data-lookbook-editorial-thumb]'],
     onAnimate: (host) => {
       const copy = host.querySelector('[data-lookbook-editorial-copy]')
@@ -37,10 +38,11 @@ export function EditorialLookbookPreset({ row }: ActPresetProps) {
   return (
     <section
       ref={root}
-      className="border-b border-[var(--color-line)] bg-[var(--color-surface)] py-16 md:py-24"
+      className="anvl-screen-section relative border-b border-[var(--color-line)] bg-[var(--color-surface)]"
       aria-label="Editorial lookbook"
     >
-      <Container className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start">
+      <ActMediaBackdrop row={row} />
+      <Container className="anvl-act-content relative z-10 grid gap-8 py-6 sm:gap-10 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center">
         <div data-lookbook-editorial-copy>
           <p className="anvl-micro mb-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
             {fields.actLabel}

@@ -1,7 +1,8 @@
 import { useMemo, useRef } from 'react'
 import { previewMaterialsFields } from '@/features/cms/landing/landingActPreviewOverlay'
 import { Container } from '@/shared/components/ui/Container'
-import { useActScrollReveal } from '../shared/useActScrollReveal'
+import { ActMediaBackdrop } from '../shared/ActMediaBackdrop'
+import { useActPresetMotion } from '../shared/useActScrollReveal'
 import type { ActPresetProps } from '../types'
 
 /** Specs grid — compact material cards in a uniform grid. */
@@ -13,7 +14,7 @@ export function SpecsGridMaterialsPreset({ landing, row }: ActPresetProps) {
     [mat.materials],
   )
 
-  useActScrollReveal(root, {
+  useActPresetMotion(root, row, {
     staggerSelector: '[data-specs-card]',
     snapSelectors: ['[data-specs-heading]'],
   })
@@ -21,27 +22,37 @@ export function SpecsGridMaterialsPreset({ landing, row }: ActPresetProps) {
   return (
     <section
       ref={root}
-      className="border-b border-[var(--color-line)] bg-[var(--color-bg)] py-14 md:py-20"
+      className="anvl-screen-section relative overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-bg)]"
       aria-label="Materials"
     >
-      <Container>
+      <ActMediaBackdrop row={row} />
+      <Container className="anvl-act-content relative z-10 py-6 sm:py-8">
         <p className="anvl-micro mb-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
           {mat.actLabel}
         </p>
-        <h2 data-specs-heading className="anvl-display mb-4 text-[clamp(1.75rem,3.5vw,2.5rem)]">
+        <h2
+          data-specs-heading
+          className="anvl-display mb-4 text-[clamp(1.75rem,3.5vw,2.5rem)] text-[var(--color-heading)]"
+        >
           {mat.heading}
         </h2>
-        <p className="mb-10 max-w-2xl text-sm text-[var(--color-text-muted)]">{mat.intro}</p>
+        <p className="mb-10 max-w-2xl whitespace-pre-line text-sm text-[var(--color-text-muted)]">
+          {mat.intro}
+        </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((material) => (
             <article
               key={material.id}
               data-specs-card
-              className="rounded-lg border border-[var(--color-line)] p-5"
+              className="rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)]/20 p-5 backdrop-blur-sm"
             >
-              <p className="font-semibold uppercase tracking-wide">{material.title}</p>
-              <p className="mt-2 text-xs text-[var(--color-text-muted)]">{material.code}</p>
-              <p className="mt-1 text-xs text-[var(--color-text-muted)]">{material.description}</p>
+              <p className="font-semibold uppercase tracking-wide text-[var(--color-heading)]">
+                {material.title}
+              </p>
+              <p className="mt-2 text-xs text-[var(--color-accent)]">{material.code}</p>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
+                {material.description}
+              </p>
             </article>
           ))}
         </div>

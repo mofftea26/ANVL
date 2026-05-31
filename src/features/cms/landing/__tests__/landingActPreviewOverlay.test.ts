@@ -46,4 +46,76 @@ describe('landingActPreviewOverlay', () => {
     expect(hero.subtitle).toBe('Live subtitle')
     expect(hero.primaryCta).toEqual({ label: 'Cta', href: '/a' })
   })
+
+  it('previewHeroFields builds meta from heroDrop, heroPieces, and heroStatus', () => {
+    const landing = {
+      actLabel: 'Act I',
+      badgeText: 'Default badge',
+      title: 'Default title',
+      subtitle: 'Default subtitle',
+      primaryCta: { label: 'A', href: '/a' },
+      secondaryCta: { label: 'B', href: '/b' },
+      meta: [{ id: 'x', label: 'Drop', value: '99' }],
+    }
+    const row: LandingAct = {
+      id: 'act-1',
+      nature: 'hero',
+      preset: 'theOathCinematic',
+      isEnabled: true,
+      sortOrder: 0,
+      content: {
+        heroDrop: '02',
+        heroPieces: '5',
+        heroStatus: 'Live',
+      },
+    }
+    const hero = previewHeroFields(landing, row)
+    expect(hero.meta).toEqual([
+      { id: 'hero-meta-drop', label: 'Drop', value: '02' },
+      { id: 'hero-meta-pieces', label: 'Pieces', value: '5' },
+      { id: 'hero-meta-status', label: 'Status', value: 'Live' },
+    ])
+    expect(hero.heroStatus).toBe('Live')
+  })
+
+  it('previewHeroFields does not expose removed background or watermark keys', () => {
+    const landing = {
+      actLabel: 'Act I',
+      badgeText: 'Badge',
+      title: 'Title',
+      subtitle: 'Sub',
+      primaryCta: { label: 'A', href: '/a' },
+      secondaryCta: { label: 'B', href: '/b' },
+      meta: [],
+    }
+    const hero = previewHeroFields(landing, undefined)
+    expect('backgroundImageUrl' in hero).toBe(false)
+    expect('emblemWatermarkSrc' in hero).toBe(false)
+  })
+
+  it('previewHeroFields exposes layered foreground media from act content', () => {
+    const landing = {
+      actLabel: 'Act I',
+      badgeText: 'Badge',
+      title: 'Title',
+      subtitle: 'Sub',
+      primaryCta: { label: 'A', href: '/a' },
+      secondaryCta: { label: 'B', href: '/b' },
+      meta: [],
+    }
+    const row: LandingAct = {
+      id: 'act-1',
+      nature: 'hero',
+      preset: 'splitProduct',
+      isEnabled: true,
+      sortOrder: 0,
+      content: {
+        foregroundImageUrl: '/fg.png',
+        foregroundVideoUrl: '/fg.mp4',
+      },
+    }
+    const hero = previewHeroFields(landing, row)
+    expect(hero.foregroundImageUrl).toBe('/fg.png')
+    expect(hero.foregroundVideoUrl).toBe('/fg.mp4')
+  })
 })

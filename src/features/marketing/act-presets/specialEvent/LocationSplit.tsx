@@ -3,15 +3,17 @@ import { previewSpecialEventFields } from '@/features/cms/landing/landingActPrev
 import { Container } from '@/shared/components/ui/Container'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { gsap } from '@/shared/lib/gsap'
-import { useActScrollReveal } from '../shared/useActScrollReveal'
+import { ActMediaBackdrop } from '../shared/ActMediaBackdrop'
+import { formatEventDate } from '../shared/actPresetUtils'
+import { useActPresetMotion } from '../shared/useActScrollReveal'
 import type { ActPresetProps } from '../types'
 
-/** Split layout — location block + event details. */
+/** Split layout — location block + event details card. */
 export function LocationSplitPreset({ row }: ActPresetProps) {
   const event = previewSpecialEventFields(row)
   const root = useRef<HTMLElement | null>(null)
 
-  useActScrollReveal(root, {
+  useActPresetMotion(root, row, {
     snapSelectors: ['[data-location-split-left]', '[data-location-split-right]'],
     onAnimate: (host) => {
       const left = host.querySelector('[data-location-split-left]')
@@ -30,40 +32,43 @@ export function LocationSplitPreset({ row }: ActPresetProps) {
   return (
     <section
       ref={root}
-      className="border-b border-[var(--color-line)] bg-[var(--color-bg)] py-16 md:py-24"
+      className="anvl-screen-section relative overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-bg)]"
       aria-label="Event location"
     >
-      <Container className="grid gap-10 lg:grid-cols-2 lg:items-center">
+      <ActMediaBackdrop row={row} />
+      <Container className="anvl-act-content relative z-10 grid items-center gap-8 py-6 sm:gap-10 sm:py-8 lg:grid-cols-2">
         <div data-location-split-left>
           <p className="anvl-micro mb-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
             {event.actLabel}
           </p>
-          <h2 className="anvl-display text-[clamp(1.75rem,3.5vw,2.75rem)]">
+          <h2 className="anvl-display text-[clamp(1.75rem,3.5vw,2.75rem)] text-[var(--color-heading)]">
             {event.location || event.heading}
           </h2>
           {event.intro ? (
-            <p className="mt-4 text-sm leading-relaxed text-[var(--color-text-muted)]">
-              {event.intro}
-            </p>
+            <p className="mt-4 text-sm leading-relaxed text-[var(--color-text-muted)]">{event.intro}</p>
           ) : null}
         </div>
         <div
           data-location-split-right
-          className="rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-6"
+          className="rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]/40 p-6 backdrop-blur-sm"
         >
-          <h3 className="text-sm font-semibold uppercase tracking-[0.16em]">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-heading)]">
             {event.eventTitle || event.heading}
           </h3>
           {event.startsAtIso ? (
-            <p className="mt-4 text-sm">{event.startsAtIso}</p>
+            <p className="mt-4 text-sm text-[var(--color-text)]">
+              {formatEventDate(event.startsAtIso)}
+              {event.endsAtIso ? ` — ${formatEventDate(event.endsAtIso)}` : ''}
+            </p>
           ) : null}
           {event.rules ? (
-            <p className="mt-4 text-xs leading-relaxed text-[var(--color-text-muted)]">
+            <p className="mt-4 whitespace-pre-line text-xs leading-relaxed text-[var(--color-text-muted)]">
               {event.rules}
             </p>
           ) : null}
           {event.cta.label.trim() ? (
             <SafeLink
+              data-act-micro
               href={event.cta.href}
               className="anvl-btn anvl-btn-primary mt-6 inline-flex"
             >

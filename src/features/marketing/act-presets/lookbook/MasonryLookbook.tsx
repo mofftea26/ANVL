@@ -1,7 +1,8 @@
 import { useRef } from 'react'
 import { previewLookbookFields } from '@/features/cms/landing/landingActPreviewOverlay'
 import { Container } from '@/shared/components/ui/Container'
-import { useActScrollReveal } from '../shared/useActScrollReveal'
+import { ActMediaBackdrop } from '../shared/ActMediaBackdrop'
+import { useActPresetMotion } from '../shared/useActScrollReveal'
 import type { ActPresetProps } from '../types'
 import { LookbookMedia } from './lookbookShared'
 
@@ -10,7 +11,7 @@ export function MasonryLookbookPreset({ row }: ActPresetProps) {
   const fields = previewLookbookFields(row)
   const root = useRef<HTMLElement | null>(null)
 
-  useActScrollReveal(root, {
+  useActPresetMotion(root, row, {
     staggerSelector: '[data-lookbook-tile]',
     snapSelectors: ['[data-lookbook-heading]', '[data-lookbook-intro]'],
   })
@@ -22,10 +23,11 @@ export function MasonryLookbookPreset({ row }: ActPresetProps) {
   return (
     <section
       ref={root}
-      className="border-b border-[var(--color-line)] bg-[var(--color-bg)] py-16 md:py-24"
+      className="anvl-screen-section relative border-b border-[var(--color-line)] bg-[var(--color-bg)]"
       aria-label="Lookbook"
     >
-      <Container>
+      <ActMediaBackdrop row={row} />
+      <Container className="anvl-act-content relative z-10 flex flex-col justify-center py-6 sm:py-8">
         <header className="mb-10 max-w-xl">
           <p
             data-lookbook-heading
@@ -33,7 +35,7 @@ export function MasonryLookbookPreset({ row }: ActPresetProps) {
           >
             {fields.actLabel}
           </p>
-          <h2 className="anvl-display text-[clamp(1.75rem,3.5vw,2.75rem)]">
+          <h2 className="anvl-display text-[clamp(1.75rem,3.5vw,2.75rem)] text-[var(--color-heading)]">
             {fields.heading}
           </h2>
           {fields.intro ? (

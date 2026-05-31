@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   ACT_PRESET_ENTRIES,
+  ACT_PRESETS_BY_NATURE,
   DEFAULT_ACT_PRESETS,
+  getActPresetLabel,
   resolveActPreset,
 } from '@/features/marketing/act-presets/registry'
 import { LANDING_ACT_NATURES } from '@/features/marketing/act-presets/types'
@@ -31,24 +33,19 @@ describe('act preset registry', () => {
   })
 
   it('registers all CMS builder preset keys for PR-8 natures', () => {
-    const builderPresets: Record<string, readonly string[]> = {
-      hero: ['theOathCinematic', 'splitProduct', 'minimalEmblem'],
-      manifesto: ['oathStampLedger', 'splitText', 'scrollStacked'],
-      storytelling: ['chapterScroll', 'editorialArticle', 'imageLed'],
-      dropReveal: ['monolithReveal', 'countdownTrio', 'emblemFirst'],
-      productShowcase: ['threeCardEditorial', 'carousel', 'productStory'],
-      materialShowcase: ['fabricRunway', 'specsGrid', 'splitDetail'],
-      newsletterWaitlist: ['oathFullWidthForm', 'minimalForm', 'splitForm'],
-      lookbook: ['masonry', 'carousel', 'editorial'],
-      specialEvent: ['eventCard', 'countdownEvent', 'locationSplit'],
-      finalCTA: ['centered', 'footerOverlap', 'productCta'],
-    }
-
-    for (const [nature, presets] of Object.entries(builderPresets)) {
-      for (const preset of presets) {
+    for (const nature of LANDING_ACT_NATURES) {
+      for (const preset of ACT_PRESETS_BY_NATURE[nature]) {
         expect(resolveActPreset(nature, preset)?.preset).toBe(preset)
       }
     }
+  })
+
+  it('maps stored preset ids to user-facing labels', () => {
+    expect(getActPresetLabel('newsletterWaitlist', 'minimalForm')).toBe('Minimal waitlist')
+    expect(getActPresetLabel('hero', 'theOathCinematic')).toBe('The Oath cinematic')
+    expect(getActPresetLabel('hero', 'splitProduct')).toBe('Cinematic split hero')
+    expect(getActPresetLabel('hero', 'splitProduct')).toBe('Cinematic split hero')
+    expect(getActPresetLabel('hero', 'legacyUnknown')).toBe('Legacy Unknown')
   })
 
   it('aliases legacy gridSix product showcase preset', () => {

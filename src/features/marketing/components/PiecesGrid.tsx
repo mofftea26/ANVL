@@ -128,10 +128,10 @@ export function PiecesGrid({
   return (
     <section
       ref={root}
-      className="relative w-full overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-surface)] py-12 sm:py-14 md:py-16"
+      className="anvl-screen-section relative w-full overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-surface)]"
       aria-label="Drop 01 pieces"
     >
-      <Container className="relative z-10">
+      <Container className="anvl-act-content relative z-10 flex flex-col justify-center py-6 sm:py-8">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
           <div>
             <p

@@ -2,7 +2,8 @@ import { useRef } from 'react'
 import { previewLookbookFields } from '@/features/cms/landing/landingActPreviewOverlay'
 import { Container } from '@/shared/components/ui/Container'
 import { gsap } from '@/shared/lib/gsap'
-import { useActScrollReveal } from '../shared/useActScrollReveal'
+import { ActMediaBackdrop } from '../shared/ActMediaBackdrop'
+import { useActPresetMotion } from '../shared/useActScrollReveal'
 import type { ActPresetProps } from '../types'
 import { LookbookMedia } from './lookbookShared'
 
@@ -12,7 +13,7 @@ export function CarouselLookbookPreset({ row }: ActPresetProps) {
   const root = useRef<HTMLElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
 
-  useActScrollReveal(root, {
+  useActPresetMotion(root, row, {
     snapSelectors: ['[data-lookbook-carousel-heading]', '[data-lookbook-carousel-tile]'],
     onAnimate: (host) => {
       const track = trackRef.current
@@ -56,26 +57,28 @@ export function CarouselLookbookPreset({ row }: ActPresetProps) {
   return (
     <section
       ref={root}
-      className="overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-bg)] py-16 md:py-24"
+      className="anvl-screen-section relative overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-bg)]"
       aria-label="Lookbook carousel"
     >
-      <Container>
-        <header className="mb-8 max-w-xl">
-          <p
-            data-lookbook-carousel-heading
-            className="anvl-micro mb-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]"
-          >
-            {fields.actLabel}
-          </p>
-          <h2 className="anvl-display text-[clamp(1.75rem,3.5vw,2.75rem)]">
-            {fields.heading}
-          </h2>
-          {fields.intro ? (
-            <p className="mt-4 text-sm text-[var(--color-text-muted)]">{fields.intro}</p>
-          ) : null}
-        </header>
-      </Container>
-      <div ref={trackRef} className="flex gap-4 px-[max(1rem,calc((100vw-72rem)/2))]">
+      <ActMediaBackdrop row={row} />
+      <div className="anvl-act-content relative z-10 flex min-h-0 flex-1 flex-col justify-center gap-6 py-6 sm:py-8">
+        <Container>
+          <header className="max-w-xl">
+            <p
+              data-lookbook-carousel-heading
+              className="anvl-micro mb-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]"
+            >
+              {fields.actLabel}
+            </p>
+            <h2 className="anvl-display text-[clamp(1.75rem,3.5vw,2.75rem)]">
+              {fields.heading}
+            </h2>
+            {fields.intro ? (
+              <p className="mt-4 text-sm text-[var(--color-text-muted)]">{fields.intro}</p>
+            ) : null}
+          </header>
+        </Container>
+        <div ref={trackRef} className="flex min-h-0 shrink gap-4 overflow-x-auto px-[max(1rem,calc((100vw-72rem)/2))] pb-1">
         {fields.items.map((item, i) => (
           <figure
             key={`${item.src}-${i}`}
@@ -93,6 +96,7 @@ export function CarouselLookbookPreset({ row }: ActPresetProps) {
             ) : null}
           </figure>
         ))}
+        </div>
       </div>
     </section>
   )

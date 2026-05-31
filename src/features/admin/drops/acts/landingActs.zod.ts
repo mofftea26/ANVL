@@ -8,10 +8,15 @@ const galleryItem = z.object({
   mediaType: z.enum(['image', 'video']).optional(),
 })
 
+/** Layered hero presets (splitProduct, minimalEmblem) store foreground media in content. */
 export const heroContentSchema = z.object({
   countdownTargetIso: z.string().optional(),
-  backgroundImageUrl: z.string().optional(),
-  emblemWatermarkSrc: z.string().optional(),
+  heroDrop: z.string().optional(),
+  heroPieces: z.string().optional(),
+  heroStatus: z.string().optional(),
+  /** Foreground layer — product/emblem focal (image OR video, not both). */
+  foregroundImageUrl: z.string().optional(),
+  foregroundVideoUrl: z.string().optional(),
   primaryCta: cta.optional(),
   secondaryCta: cta.optional(),
 })

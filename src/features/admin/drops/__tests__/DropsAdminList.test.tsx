@@ -36,6 +36,13 @@ const MOCK_DROPS: AdminDropListItem[] = [
   },
 ]
 
+const activateMutation = vi.hoisted(() => ({
+  isPending: false,
+  mutate: vi.fn(),
+}))
+
+const refetchDropsList = vi.hoisted(() => vi.fn())
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     to,
@@ -65,10 +72,10 @@ vi.mock('@/features/admin/drops/useAdminDropsListQuery', () => ({
     data: MOCK_DROPS,
     isLoading: false,
     isError: false,
-    refetch: vi.fn(),
+    refetch: refetchDropsList,
   }),
   useDuplicateAdminDropMutation: () => ({ mutate: vi.fn(), isPending: false }),
-  useSetActiveAdminDropMutation: () => ({ mutate: vi.fn(), isPending: false }),
+  useSetActiveAdminDropMutation: () => activateMutation,
   useScheduleAdminDropMutation: () => ({ mutate: vi.fn(), isPending: false }),
   useArchiveAdminDropMutation: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteAdminDropMutation: () => ({ mutate: vi.fn(), isPending: false }),
@@ -78,6 +85,7 @@ vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
+    message: vi.fn(),
   },
 }))
 
@@ -92,13 +100,24 @@ function renderList() {
   )
 }
 
+async function openActivateDialog(user: ReturnType<typeof userEvent.setup>) {
+  const betaCard = screen.getByText(/D02 · Beta internal/).closest('section')!
+  const trigger = within(betaCard).getByRole('button', { name: /actions for beta campaign/i })
+  await user.click(trigger)
+  await user.click(await screen.findByRole('menuitem', { name: /set active/i }))
+}
+
 describe('DropsAdminList', () => {
   beforeEach(() => {
     useDropsListUiStore.setState({ search: '', statusTab: 'all' })
+    activateMutation.isPending = false
+    activateMutation.mutate.mockReset()
+    refetchDropsList.mockReset()
+    refetchDropsList.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('exposes the square New drop control by accessible name', () => {
@@ -141,5 +160,45 @@ describe('DropsAdminList', () => {
 
     const cardsAsc = screen.getAllByText(/D0[12] · /)
     expect(cardsAsc[0]?.textContent).toMatch(/D01 · Alpha/)
+  })
+
+  it('shows Activating… on the confirm button while activation is pending', async () => {
+    const user = userEvent.setup()
+    const { rerender } = renderList()
+    await openActivateDialog(user)
+
+    expect(screen.getByRole('button', { name: /^activate$/i })).toBeTruthy()
+
+    activateMutation.isPending = true
+    rerender(
+      <QueryClientProvider
+        client={
+          new QueryClient({
+            defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+          })
+        }
+      >
+        <DropsAdminList />
+      </QueryClientProvider>,
+    )
+
+    expect(screen.getByRole('button', { name: /activating/i })).toBeTruthy()
+  })
+
+  it('refetches the drops list after successful activation', async () => {
+    const user = userEvent.setup()
+    activateMutation.mutate.mockImplementation((_id, opts) => {
+      void opts?.onSuccess?.()
+    })
+
+    renderList()
+    await openActivateDialog(user)
+    await user.click(screen.getByRole('button', { name: /^activate$/i }))
+
+    expect(activateMutation.mutate).toHaveBeenCalledWith(
+      'drop-beta',
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    )
+    expect(refetchDropsList).toHaveBeenCalled()
   })
 })

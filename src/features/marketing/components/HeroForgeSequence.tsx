@@ -1,5 +1,9 @@
+import { useEffect, useState } from 'react'
 import { useRef } from 'react'
+import type { ActAnimationIntensity } from '@/features/cms/landing/landingActs.types'
 import type { CmsMetaItem } from '@/features/cms/landing/landingPageCms.types'
+import type { ActMotionType } from '@/features/marketing/act-presets/shared/actAnimationConfig'
+import { getActMotionTokens } from '@/features/marketing/act-presets/shared/actAnimationConfig'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { Badge } from '@/shared/components/ui/Badge'
 import { Container } from '@/shared/components/ui/Container'
@@ -14,21 +18,16 @@ interface HeroForgeSequenceProps {
   primaryCta: { label: string; href: string }
   secondaryCta: { label: string; href: string }
   meta?: CmsMetaItem[]
+  /** Fallback campaign mark — omit when act media is present. */
   emblemSrc?: string
+  countdownTargetIso?: string
+  motionType?: ActMotionType
+  motionEnabled?: boolean
+  motionIntensity?: ActAnimationIntensity
 }
 
 const EMBER_COUNT = 10
 
-/**
- * Act I — Forged Under Pressure.
- *
- * Compact, full-screen hero sized at `100svh - var(--anvl-header-h)`.
- * Type, copy, CTAs and the meta strip are tuned to fit that height
- * on every breakpoint (320px → 1920px), so the section never spills
- * into the next one. Animations stay in-section: an intro timeline
- * + idle loops, and a small scroll-linked parallax/fade as the user
- * leaves the section.
- */
 const DEFAULT_META: CmsMetaItem[] = [
   { id: 'hero-meta-drop', label: 'Drop', value: '01' },
   { id: 'hero-meta-pieces', label: 'Pieces', value: '03' },
@@ -43,9 +42,16 @@ export function HeroForgeSequence({
   secondaryCta,
   meta = DEFAULT_META,
   emblemSrc,
+  countdownTargetIso,
+  motionType = 'wordReveal',
+  motionEnabled = true,
+  motionIntensity = 'standard',
 }: HeroForgeSequenceProps) {
   const metaItems = meta.length > 0 ? meta : DEFAULT_META
   const root = useRef<HTMLElement | null>(null)
+  const showCrest = Boolean(emblemSrc?.trim())
+  const runMotion = motionEnabled && motionType !== 'none'
+  const tokens = getActMotionTokens(motionIntensity)
 
   useGSAP(
     () => {
@@ -59,20 +65,17 @@ export function HeroForgeSequence({
         const badge = host.querySelector('[data-hero-badge]')
         const subtitleEl = host.querySelector('[data-hero-sub]')
         const ctaEl = host.querySelector('[data-hero-ctas]')
-        const meta = host.querySelector('[data-hero-meta]')
+        const metaEl = host.querySelector('[data-hero-meta]')
         const crest = host.querySelector('[data-hero-crest]')
         const glow = host.querySelector('[data-hero-glow]')
         const vignette = host.querySelector('[data-hero-vignette]')
-        const embers = gsap.utils.toArray<HTMLElement>(
-          '[data-hero-ember]',
-          host,
-        )
+        const embers = gsap.utils.toArray<HTMLElement>('[data-hero-ember]', host)
         return {
           words,
           badge,
           subtitleEl,
           ctaEl,
-          meta,
+          meta: metaEl,
           crest,
           glow,
           vignette,
@@ -80,33 +83,53 @@ export function HeroForgeSequence({
         }
       }
 
-      mm.add('(max-width: 767px), (prefers-reduced-motion: reduce)', () => {
-        const { words, badge, subtitleEl, ctaEl, meta, crest } =
-          queryElements()
-        gsap.set([badge, subtitleEl, ctaEl, meta, crest, ...words], {
+      const snapFinal = () => {
+        const { words, badge, subtitleEl, ctaEl, meta: metaEl, crest } = queryElements()
+        gsap.set([badge, subtitleEl, ctaEl, metaEl, crest, ...words], {
           opacity: 1,
           y: 0,
+          yPercent: 0,
           scale: 1,
         })
-      })
+      }
 
-      mm.add(
-        '(min-width: 768px) and (prefers-reduced-motion: no-preference)',
-        () => {
-          const {
-            words,
-            badge,
-            subtitleEl,
-            ctaEl,
-            meta,
-            crest,
-            glow,
-            vignette,
-            embers,
-          } = queryElements()
+      mm.add('(max-width: 767px), (prefers-reduced-motion: reduce)', snapFinal)
 
+      mm.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
+        if (!runMotion) {
+          snapFinal()
+          return
+        }
+
+        const {
+          words,
+          badge,
+          subtitleEl,
+          ctaEl,
+          meta: metaEl,
+          crest,
+          glow,
+          vignette,
+          embers,
+        } = queryElements()
+
+        const wordStagger = motionType === 'stagger' ? tokens.stagger * 1.35 : 0.1
+        const useWordReveal =
+          motionType === 'wordReveal' || motionType === 'stagger'
+        const useFadeUp = motionType === 'fadeUp'
+        const emphasizeParallax = motionType === 'parallax'
+        const emphasizeIdle = motionType === 'calmIdle'
+
+        if (useWordReveal) {
           gsap.set(words, { yPercent: 115, opacity: 0 })
-          gsap.set([badge, subtitleEl, ctaEl, meta], { opacity: 0, y: 22 })
+        } else if (useFadeUp) {
+          gsap.set(words, { y: tokens.enterY, opacity: 0 })
+        } else {
+          gsap.set(words, { opacity: 0, y: tokens.enterY * 0.5 })
+        }
+
+        gsap.set([badge, subtitleEl, ctaEl, metaEl], { opacity: 0, y: 22 })
+        if (crest) {
           gsap.set(crest, {
             opacity: 0,
             scale: 0.7,
@@ -115,61 +138,81 @@ export function HeroForgeSequence({
             transformPerspective: 1100,
             transformOrigin: '50% 50%',
           })
-          gsap.set(glow, { opacity: 0, scale: 0.6 })
-          gsap.set(embers, {
-            opacity: 0,
-            y: () => gsap.utils.random(40, 100),
-            x: () => gsap.utils.random(-20, 20),
-            scale: () => gsap.utils.random(0.5, 1.0),
-          })
+        }
+        if (glow) gsap.set(glow, { opacity: 0, scale: 0.6 })
+        gsap.set(embers, {
+          opacity: 0,
+          y: () => gsap.utils.random(40, 100),
+          x: () => gsap.utils.random(-20, 20),
+          scale: () => gsap.utils.random(0.5, 1.0),
+        })
 
-          const intro = gsap.timeline({
-            defaults: { ease: 'expo.out' },
-            delay: 0.1,
-          })
+        const intro = gsap.timeline({
+          defaults: { ease: 'expo.out' },
+          delay: 0.1,
+        })
 
-          intro
-            .to(glow, { opacity: 1, scale: 1, duration: 1.5 }, 0)
-            .to(
-              crest,
-              {
-                opacity: 1,
-                scale: 1,
-                rotateY: 0,
-                rotateX: 0,
-                duration: 1.7,
-              },
-              0,
-            )
-            .to(
-              embers,
-              {
-                opacity: 0.55,
-                y: 0,
-                x: 0,
-                scale: 1,
-                duration: 1.2,
-                stagger: { each: 0.05, from: 'random' },
-                ease: 'power3.out',
-              },
-              0.1,
-            )
-            .to(badge, { opacity: 1, y: 0, duration: 0.8 }, 0.15)
-            .to(
-              words,
-              {
-                yPercent: 0,
-                opacity: 1,
-                duration: 1.0,
-                stagger: 0.1,
-                ease: 'expo.out',
-              },
-              0.25,
-            )
-            .to(subtitleEl, { opacity: 1, y: 0, duration: 0.7 }, 0.6)
-            .to(ctaEl, { opacity: 1, y: 0, duration: 0.7 }, 0.75)
-            .to(meta, { opacity: 1, y: 0, duration: 0.7 }, 0.85)
+        if (glow) intro.to(glow, { opacity: 1, scale: 1, duration: 1.5 }, 0)
+        if (crest) {
+          intro.to(
+            crest,
+            {
+              opacity: 1,
+              scale: 1,
+              rotateY: 0,
+              rotateX: 0,
+              duration: 1.7,
+            },
+            0,
+          )
+        }
+        intro.to(
+          embers,
+          {
+            opacity: 0.55,
+            y: 0,
+            x: 0,
+            scale: 1,
+            duration: 1.2,
+            stagger: { each: 0.05, from: 'random' },
+            ease: 'power3.out',
+          },
+          0.1,
+        )
+        intro.to(badge, { opacity: 1, y: 0, duration: 0.8 }, 0.15)
 
+        if (useWordReveal) {
+          intro.to(
+            words,
+            {
+              yPercent: 0,
+              opacity: 1,
+              duration: tokens.duration + 0.15,
+              stagger: wordStagger,
+              ease: 'expo.out',
+            },
+            0.25,
+          )
+        } else {
+          intro.to(
+            words,
+            {
+              y: 0,
+              opacity: 1,
+              duration: tokens.duration,
+              stagger: tokens.stagger,
+              ease: 'power3.out',
+            },
+            0.25,
+          )
+        }
+
+        intro
+          .to(subtitleEl, { opacity: 1, y: 0, duration: 0.7 }, 0.6)
+          .to(ctaEl, { opacity: 1, y: 0, duration: 0.7 }, 0.75)
+          .to(metaEl, { opacity: 1, y: 0, duration: 0.7 }, 0.85)
+
+        if (crest && (emphasizeIdle || motionType === 'wordReveal')) {
           gsap.to(crest, {
             rotateY: 5,
             rotateX: -2,
@@ -179,7 +222,9 @@ export function HeroForgeSequence({
             ease: 'sine.inOut',
             delay: 1.5,
           })
+        }
 
+        if (glow) {
           gsap.to(glow, {
             opacity: 0.7,
             scale: 1.06,
@@ -189,40 +234,44 @@ export function HeroForgeSequence({
             ease: 'sine.inOut',
             delay: 1.4,
           })
+        }
 
-          embers.forEach((em, i) => {
-            gsap.to(em, {
-              y: '-=' + gsap.utils.random(40, 100),
-              x: '+=' + gsap.utils.random(-20, 20),
-              opacity: 0.15,
-              duration: gsap.utils.random(4, 7),
-              repeat: -1,
-              yoyo: true,
-              ease: 'sine.inOut',
-              delay: 1.2 + i * 0.06,
-            })
+        embers.forEach((em, i) => {
+          gsap.to(em, {
+            y: '-=' + gsap.utils.random(40, 100),
+            x: '+=' + gsap.utils.random(-20, 20),
+            opacity: 0.15,
+            duration: gsap.utils.random(4, 7),
+            repeat: -1,
+            yoyo: true,
+            ease: 'sine.inOut',
+            delay: 1.2 + i * 0.06,
           })
+        })
 
-          gsap
-            .timeline({
-              scrollTrigger: {
-                trigger: host,
-                start: 'top top+=64',
-                end: 'bottom top',
-                scrub: 0.6,
-              },
-            })
-            .to(crest, { yPercent: -6, scale: 1.85, opacity: 0.4 }, 0)
-            .to(words, { yPercent: -28, stagger: 0.03 }, 0)
-            .to([badge, subtitleEl, ctaEl, meta], { opacity: 0, y: -18 }, 0)
+        if (emphasizeParallax || motionType === 'wordReveal' || motionType === 'fadeUp') {
+          const scrollTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: host,
+              start: 'top top+=64',
+              end: 'bottom top',
+              scrub: tokens.scrub,
+            },
+          })
+          if (crest) scrollTl.to(crest, { yPercent: -6, scale: 1.85, opacity: 0.4 }, 0)
+          scrollTl
+            .to(words, { yPercent: emphasizeParallax ? -36 : -28, stagger: 0.03 }, 0)
+            .to([badge, subtitleEl, ctaEl, metaEl], { opacity: 0, y: -18 }, 0)
             .to(vignette, { opacity: 1 }, 0)
-        },
-        host,
-      )
+        }
+      })
 
       return () => mm.revert()
     },
-    { scope: root },
+    {
+      scope: root,
+      dependencies: [runMotion, motionType, motionIntensity, showCrest],
+    },
   )
 
   return (
@@ -233,7 +282,6 @@ export function HeroForgeSequence({
     >
       <GrainOverlay />
 
-      {/* Forge glow */}
       <div
         data-hero-glow="true"
         aria-hidden="true"
@@ -244,21 +292,21 @@ export function HeroForgeSequence({
         }}
       />
 
-      {/* The Oath — hero centerpiece. Scales up on scroll-out. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-[-22%] top-1/2 z-0 -translate-y-1/2 select-none text-[var(--color-heading)] opacity-[0.18] sm:right-[-14%] sm:opacity-[0.22] md:right-[-6%] md:opacity-[0.28] lg:right-[-2%] lg:opacity-[0.5]"
-      >
-        <span data-hero-crest="true" className="block will-change-transform">
-          <DropEmblemDecor
-            src={emblemSrc}
-            presentationOnly
-            className="h-[62svh] w-auto sm:h-[68svh] md:h-[74svh] lg:h-[80svh]"
-          />
-        </span>
-      </div>
+      {showCrest ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-[-22%] top-1/2 z-0 -translate-y-1/2 select-none text-[var(--color-heading)] opacity-[0.18] sm:right-[-14%] sm:opacity-[0.22] md:right-[-6%] md:opacity-[0.28] lg:right-[-2%] lg:opacity-[0.5]"
+        >
+          <span data-hero-crest="true" className="block will-change-transform">
+            <DropEmblemDecor
+              src={emblemSrc}
+              presentationOnly
+              className="h-[62svh] w-auto sm:h-[68svh] md:h-[74svh] lg:h-[80svh]"
+            />
+          </span>
+        </div>
+      ) : null}
 
-      {/* Ember field */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-[1] overflow-hidden"
@@ -285,7 +333,6 @@ export function HeroForgeSequence({
         })}
       </div>
 
-      {/* Outro vignette */}
       <div
         data-hero-vignette="true"
         aria-hidden="true"
@@ -296,19 +343,28 @@ export function HeroForgeSequence({
         }}
       />
 
-      <Container className="relative z-10 flex h-full flex-col justify-center py-6 sm:py-8">
+      <Container className="anvl-act-content relative z-10 flex h-full flex-col justify-center py-6 sm:py-8">
         <div className="grid w-full grid-cols-12 items-center">
           <div className="col-span-12 lg:col-span-8 xl:col-span-7">
             <div data-hero-badge="true">
               <Badge>{badgeText}</Badge>
             </div>
 
+            {countdownTargetIso ? (
+              <p
+                data-hero-countdown="true"
+                className="anvl-micro mt-3 text-[10px] uppercase tracking-[0.2em] text-[var(--color-accent)]"
+              >
+                <HeroCountdown targetIso={countdownTargetIso} />
+              </p>
+            ) : null}
+
             <h1
               data-hero-title="true"
               className="anvl-heading mt-3 font-normal leading-[0.86] tracking-[-0.01em] text-[clamp(2.25rem,9vw,6.5rem)] sm:mt-4"
             >
-              {title.split(' ').map((word) => (
-                <span key={word} className="block overflow-hidden pb-[0.06em]">
+              {title.split(' ').map((word, i) => (
+                <span key={`${word}-${i}`} className="block overflow-hidden pb-[0.06em]">
                   <span
                     data-hero-word="true"
                     className="inline-block will-change-transform"
@@ -377,4 +433,35 @@ export function HeroForgeSequence({
       </Container>
     </section>
   )
+}
+
+function HeroCountdown({ targetIso }: { targetIso: string }) {
+  const [label, setLabel] = useState('')
+
+  useEffect(() => {
+    const tick = () => {
+      const target = new Date(targetIso).getTime()
+      if (!Number.isFinite(target)) {
+        setLabel('')
+        return
+      }
+      const diff = target - Date.now()
+      if (diff <= 0) {
+        setLabel('Live now')
+        return
+      }
+      const days = Math.floor(diff / 86_400_000)
+      const hours = Math.floor((diff % 86_400_000) / 3_600_000)
+      const mins = Math.floor((diff % 3_600_000) / 60_000)
+      setLabel(
+        days > 0 ? `${days}d ${hours}h ${mins}m` : `${hours}h ${mins}m`,
+      )
+    }
+    tick()
+    const id = window.setInterval(tick, 30_000)
+    return () => window.clearInterval(id)
+  }, [targetIso])
+
+  if (!label) return null
+  return <>Opens in {label}</>
 }

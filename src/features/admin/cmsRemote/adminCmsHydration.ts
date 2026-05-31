@@ -2,12 +2,14 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Drop } from '@/features/admin/drops/drops.types'
 import {
   ensureDropSystemHydrated,
-  mergeDropPartial,
   persistDropsState,
   readDropsArray,
   resetDropSystemHydrationGate,
 } from '@/features/admin/drops/drops.service'
-import { persistedDropSchema } from '@/features/admin/drops/drops.persistence.zod'
+import {
+  parseRemoteDropRecord,
+  resolveRemoteClientDropId,
+} from '@/features/admin/cmsRemote/adminCmsDropRemoteParse'
 import { writeProductsRaw } from '@/features/admin/products/products.storage'
 import type { AdminProduct } from '@/features/admin/products/products.types'
 import { persistedProductSchema } from '@/features/admin/products/products.persistence.zod'
@@ -43,45 +45,28 @@ function resolveActiveClientDropId(
   if (activeDbDropId) {
     const activeRow = rows.find((r) => r.id === activeDbDropId)
     if (activeRow) {
-      const cid =
-        typeof activeRow.client_drop_id === 'string'
-          ? activeRow.client_drop_id.trim()
-          : ''
-      if (cid) return cid
-      const parsed = persistedDropSchema.safeParse(activeRow.body)
-      if (parsed.success) return parsed.data.id
+      return resolveRemoteClientDropId(activeRow.body, activeRow)
     }
   }
   const byStatus = rows.find((r) => r.status === 'active')
   if (byStatus) {
-    const cid =
-      typeof byStatus.client_drop_id === 'string'
-        ? byStatus.client_drop_id.trim()
-        : ''
-    if (cid) return cid
-    const parsed = persistedDropSchema.safeParse(byStatus.body)
-    if (parsed.success) return parsed.data.id
+    return resolveRemoteClientDropId(byStatus.body, byStatus)
   }
   return null
 }
 
 function mapDbDropRow(row: AnvlDropRow): Drop | null {
-  const parsed = persistedDropSchema.safeParse(row.body)
-  if (!parsed.success) return null
-  const clientId =
-    typeof row.client_drop_id === 'string' && row.client_drop_id.trim()
-      ? row.client_drop_id.trim()
-      : parsed.data.id
-  const status = row.status as Drop['status']
-  return mergeDropPartial({
-    ...(parsed.data as Partial<Drop>),
-    id: clientId,
-    slug: row.slug,
-    status,
-    isActive: status === 'active',
-    releaseDate: row.release_date ?? undefined,
-    scheduledActivationAt: row.scheduled_activation_at ?? undefined,
-  })
+  return parseRemoteDropRecord(row.body, row)
+}
+
+function dropUpdatedAtMs(drop: Drop): number {
+  const ms = Date.parse(drop.updatedAt ?? '')
+  return Number.isFinite(ms) ? ms : 0
+}
+
+/** Keep unsynced local edits when remote rehydrate runs (e.g. window refocus). */
+export function preferLocalDropWhenNewer(local: Drop, remote: Drop): Drop {
+  return dropUpdatedAtMs(local) > dropUpdatedAtMs(remote) ? local : remote
 }
 
 /**
@@ -121,23 +106,18 @@ export async function hydrateAdminCmsFromSupabase(
     const localDrops = readDropsArray()
     const remoteClientIds = new Set(
       dropRows
-        .map((row) => {
-          const cid =
-            typeof row.client_drop_id === 'string'
-              ? row.client_drop_id.trim()
-              : ''
-          if (cid) return cid
-          const parsed = persistedDropSchema.safeParse(row.body)
-          return parsed.success ? parsed.data.id : null
-        })
+        .map((row) => resolveRemoteClientDropId(row.body, row))
         .filter((id): id is string => Boolean(id)),
     )
     const localOnlyDrops = localDrops.filter((d) => !remoteClientIds.has(d.id))
 
+    const localById = new Map(localDrops.map((d) => [d.id, d]))
     const drops: Drop[] = []
     for (const row of dropRows) {
-      const d = mapDbDropRow(row)
-      if (d) drops.push(d)
+      const remote = mapDbDropRow(row)
+      if (!remote) continue
+      const local = localById.get(remote.id)
+      drops.push(local ? preferLocalDropWhenNewer(local, remote) : remote)
     }
     for (const local of localOnlyDrops) {
       if (!drops.some((d) => d.id === local.id)) drops.push(local)

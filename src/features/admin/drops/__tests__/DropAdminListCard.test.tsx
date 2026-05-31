@@ -62,9 +62,10 @@ describe('DropAdminListCard', () => {
   it('renders campaign title, slug line, live badge, and metadata', () => {
     renderCard(BASE_ROW)
 
-    expect(screen.getByRole('heading', { name: /60 · TEST/i })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /^TEST$/i })).toBeTruthy()
+    expect(screen.getByText(/Drop 60/i)).toBeTruthy()
     expect(screen.getByText(/\/drop\/oath-slug/)).toBeTruthy()
-    expect(screen.getByText(/4 products/)).toBeTruthy()
+    expect(screen.getByText(/4 pieces/i)).toBeTruthy()
     expect(screen.getByText(/^live$/i)).toBeTruthy()
     expect(screen.queryByText(/storefront drop/i)).toBeNull()
     expect(screen.getByText(/release/i)).toBeTruthy()

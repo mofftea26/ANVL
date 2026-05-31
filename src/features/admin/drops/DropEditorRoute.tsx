@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
+import { AdminLoadingState } from '@/features/admin/components/AdminLoadingState'
 import { DropEditorHeaderMeta } from '@/features/admin/drops/DropEditorHeaderMeta'
 import { DropSitePreviewModal } from '@/features/admin/drops/DropSitePreviewModal'
 import { AdminMicroHeading } from '@/features/admin/components/AdminMicroHeading'
@@ -127,6 +128,26 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const websiteLayout = useWebsiteLayout()
   const saved = useMemo(() => drops.find((d) => d.id === dropId), [drops, dropId])
 
+  const [remoteResolveAttempted, setRemoteResolveAttempted] = useState(false)
+  const [remoteResolveBusy, setRemoteResolveBusy] = useState(false)
+
+  useEffect(() => {
+    if (saved || !getSupabasePublicEnv() || remoteResolveAttempted) return
+    let cancelled = false
+    setRemoteResolveBusy(true)
+    void rehydrateAdminCmsFromRemote()
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) {
+          setRemoteResolveAttempted(true)
+          setRemoteResolveBusy(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [saved, remoteResolveAttempted])
+
   const [draft, setDraft] = useState(saved)
   const [tab, setTab] = useState<TabId>('basics')
   const [persistedActivateAfterSave, setPersistedActivateAfterSave] = useState(false)
@@ -173,9 +194,35 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   const [quickProductGsm, setQuickProductGsm] = useState('')
   const [quickProductImageUrl, setQuickProductImageUrl] = useState('')
 
+  const prevDropIdRef = useRef(dropId)
+  const prevSavedRef = useRef(saved)
+
   useEffect(() => {
-    setDraft(saved)
-  }, [saved])
+    const dropChanged = prevDropIdRef.current !== dropId
+    if (dropChanged) {
+      prevDropIdRef.current = dropId
+      prevSavedRef.current = saved
+      setDraft(saved)
+      return
+    }
+
+    const priorSaved = prevSavedRef.current
+    prevSavedRef.current = saved
+
+    if (saved === undefined) return
+
+    setDraft((current) => {
+      if (current === undefined) return saved
+      if (current.id !== saved.id) return saved
+
+      const wasDirty =
+        priorSaved !== undefined &&
+        JSON.stringify(current) !== JSON.stringify(priorSaved)
+
+      if (wasDirty) return current
+      return saved
+    })
+  }, [saved, dropId])
 
   useEffect(() => {
     if (!confirmSave && confirmSaveWasOpenRef.current) {
@@ -386,6 +433,19 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
   }, [dropToolbarActions, setPageActions])
 
   if (!saved || !draft || !previewLanding) {
+    if (remoteResolveBusy) {
+      return (
+        <AdminLayout
+          title="Loading drop"
+          description="Syncing this drop from Supabase before opening the editor."
+        >
+          <AdminCard title="Loading drop">
+            <AdminLoadingState message="Loading drop editor…" />
+          </AdminCard>
+        </AdminLayout>
+      )
+    }
+
     return (
       <AdminLayout title="Drop not found" description="This drop does not exist in storage.">
         <AdminCard title="Missing drop">
@@ -1208,12 +1268,16 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
 
       <AdminConfirmDialog
         open={confirmActivateToggle === 'activate'}
-        onClose={() => setConfirmActivateToggle(null)}
+        onClose={() => {
+          if (setActiveMut.isPending) return
+          setConfirmActivateToggle(null)
+        }}
         title="Make drop active?"
-        confirmLabel="Activate"
-        confirmDisabled={activateToggleBusy}
+        confirmLabel={setActiveMut.isPending ? 'Activating…' : 'Activate'}
+        confirmLoading={setActiveMut.isPending}
+        confirmDisabled={activateToggleBusy && !setActiveMut.isPending}
         onConfirm={() => {
-          if (!draft || confirmActivateToggle !== 'activate') return
+          if (!draft || confirmActivateToggle !== 'activate' || setActiveMut.isPending) return
           setActiveMut.mutate(draft.id, {
             onSuccess: () => {
               toast.success('Active drop updated.')
@@ -1230,12 +1294,16 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
 
       <AdminConfirmDialog
         open={confirmActivateToggle === 'deactivate'}
-        onClose={() => setConfirmActivateToggle(null)}
+        onClose={() => {
+          if (deactivateMut.isPending) return
+          setConfirmActivateToggle(null)
+        }}
         title="Deactivate drop?"
-        confirmLabel="Deactivate"
-        confirmDisabled={activateToggleBusy}
+        confirmLabel={deactivateMut.isPending ? 'Deactivating…' : 'Deactivate'}
+        confirmLoading={deactivateMut.isPending}
+        confirmDisabled={activateToggleBusy && !deactivateMut.isPending}
         onConfirm={() => {
-          if (!draft || confirmActivateToggle !== 'deactivate') return
+          if (!draft || confirmActivateToggle !== 'deactivate' || deactivateMut.isPending) return
           deactivateMut.mutate(draft.id, {
             onSuccess: () => {
               toast.success('Drop deactivated on storefront.')

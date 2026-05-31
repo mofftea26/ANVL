@@ -31,10 +31,10 @@ function UnknownActNotice({
 }) {
   return (
     <section
-      className="border-b border-[var(--color-line)] bg-[var(--color-bg)] py-10"
+      className="anvl-screen-section border-b border-[var(--color-line)] bg-[var(--color-bg)]"
       aria-label={`Unsupported act: ${nature}`}
     >
-      <Container>
+      <Container className="anvl-act-content flex flex-col justify-center py-6 sm:py-8">
         {cmsPreview ? (
           <div
             role="alert"

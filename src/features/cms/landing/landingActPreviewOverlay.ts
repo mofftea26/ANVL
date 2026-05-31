@@ -1,5 +1,9 @@
 import type { LandingAct } from '@/features/cms/landing/landingActs.types'
-import type { CmsCta, LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
+import type {
+  CmsCta,
+  CmsMetaItem,
+  LandingPageCmsContent,
+} from '@/features/cms/landing/landingPageCms.types'
 
 export function readActStr(
   content: Record<string, unknown> | undefined,
@@ -34,20 +38,73 @@ export function mergeActContentCta(base: CmsCta, content: unknown, key: string):
   }
 }
 
+function previewHeroMeta(
+  landingMeta: CmsMetaItem[],
+  content: Record<string, unknown> | undefined,
+): CmsMetaItem[] {
+  const base = landingMeta.length > 0 ? landingMeta : [
+    { id: 'hero-meta-drop', label: 'Drop', value: '01' },
+    { id: 'hero-meta-pieces', label: 'Pieces', value: '03' },
+    { id: 'hero-meta-status', label: 'Status', value: 'Soon' },
+  ]
+
+  const findValue = (label: string) =>
+    base.find((m) => m.label.toLowerCase() === label.toLowerCase())?.value
+
+  const dropOverride = readActStr(content, 'heroDrop')
+  const piecesOverride = readActStr(content, 'heroPieces')
+  const statusOverride = readActStr(content, 'heroStatus')
+  const hasOverride = Boolean(dropOverride || piecesOverride || statusOverride)
+
+  if (!hasOverride) return base
+
+  return [
+    {
+      id: 'hero-meta-drop',
+      label: 'Drop',
+      value: dropOverride || findValue('drop') || '01',
+    },
+    {
+      id: 'hero-meta-pieces',
+      label: 'Pieces',
+      value: piecesOverride || findValue('pieces') || '03',
+    },
+    {
+      id: 'hero-meta-status',
+      label: 'Status',
+      value: statusOverride || findValue('status') || 'Soon',
+    },
+  ]
+}
+
 export function previewHeroFields(
   landing: LandingPageCmsContent['hero'],
   row: LandingAct | undefined,
 ): Pick<
   LandingPageCmsContent['hero'],
-  'badgeText' | 'title' | 'subtitle' | 'primaryCta' | 'secondaryCta'
-> {
-  const c = row?.content
+  'badgeText' | 'title' | 'subtitle' | 'primaryCta' | 'secondaryCta' | 'meta'
+> & {
+  countdownTargetIso?: string
+  heroDrop?: string
+  heroPieces?: string
+  heroStatus?: string
+  foregroundImageUrl?: string
+  foregroundVideoUrl?: string
+} {
+  const c = row?.content as Record<string, unknown> | undefined
   return {
     badgeText: row?.eyebrow ?? landing.badgeText,
     title: row?.title ?? landing.title,
     subtitle: row?.subtitle ?? landing.subtitle,
     primaryCta: mergeActContentCta(landing.primaryCta, c, 'primaryCta'),
     secondaryCta: mergeActContentCta(landing.secondaryCta, c, 'secondaryCta'),
+    meta: previewHeroMeta(landing.meta, c),
+    countdownTargetIso: readActStr(c, 'countdownTargetIso') || undefined,
+    heroDrop: readActStr(c, 'heroDrop') || undefined,
+    heroPieces: readActStr(c, 'heroPieces') || undefined,
+    heroStatus: readActStr(c, 'heroStatus') || 'Soon',
+    foregroundImageUrl: readActStr(c, 'foregroundImageUrl') || undefined,
+    foregroundVideoUrl: readActStr(c, 'foregroundVideoUrl') || undefined,
   }
 }
 
@@ -116,9 +173,11 @@ export function previewDropRevealFields(
   | 'primaryCta'
   | 'secondaryCta'
   | 'dropIcon'
-> {
+> & { releaseDateIso?: string } {
   const c = row?.content
   const tagline = row?.body ?? landing.tagline
+  const dropVisualSrc = readActStr(c as Record<string, unknown> | undefined, 'dropVisualSrc')
+  const releaseDateIso = readActStr(c as Record<string, unknown> | undefined, 'releaseDateIso')
   return {
     actLabel: row?.eyebrow ?? landing.actLabel,
     counterLabel: row?.subtitle ?? landing.counterLabel,
@@ -129,7 +188,8 @@ export function previewDropRevealFields(
     tagline,
     primaryCta: mergeActContentCta(landing.primaryCta, c, 'primaryCta'),
     secondaryCta: mergeActContentCta(landing.secondaryCta, c, 'secondaryCta'),
-    dropIcon: landing.dropIcon,
+    dropIcon: dropVisualSrc || landing.dropIcon,
+    releaseDateIso: releaseDateIso || undefined,
   }
 }
 

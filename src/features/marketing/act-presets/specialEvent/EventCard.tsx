@@ -2,25 +2,17 @@ import { useRef } from 'react'
 import { previewSpecialEventFields } from '@/features/cms/landing/landingActPreviewOverlay'
 import { Container } from '@/shared/components/ui/Container'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
-import { useActScrollReveal } from '../shared/useActScrollReveal'
+import { ActMediaBackdrop } from '../shared/ActMediaBackdrop'
+import { formatEventDate } from '../shared/actPresetUtils'
+import { useActPresetMotion } from '../shared/useActScrollReveal'
 import type { ActPresetProps } from '../types'
-
-function formatEventDate(iso: string): string {
-  if (!iso.trim()) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
-}
 
 /** Centered event card with date, location, and CTA. */
 export function EventCardPreset({ row }: ActPresetProps) {
   const event = previewSpecialEventFields(row)
   const root = useRef<HTMLElement | null>(null)
 
-  useActScrollReveal(root, {
+  useActPresetMotion(root, row, {
     snapSelectors: ['[data-event-card]'],
     staggerSelector: '[data-event-card-line]',
   })
@@ -28,13 +20,14 @@ export function EventCardPreset({ row }: ActPresetProps) {
   return (
     <section
       ref={root}
-      className="border-b border-[var(--color-line)] bg-[var(--color-bg)] py-16 md:py-24"
+      className="anvl-screen-section relative overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-bg)]"
       aria-label="Special event"
     >
-      <Container className="flex justify-center">
+      <ActMediaBackdrop row={row} />
+      <Container className="anvl-act-content relative z-10 flex flex-col items-center justify-center py-6 sm:py-8">
         <article
           data-event-card
-          className="w-full max-w-xl rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-8 text-center"
+          className="w-full max-w-xl rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]/40 p-8 text-center backdrop-blur-sm"
         >
           <p
             data-event-card-line
@@ -44,20 +37,17 @@ export function EventCardPreset({ row }: ActPresetProps) {
           </p>
           <h2
             data-event-card-line
-            className="anvl-display text-[clamp(1.75rem,3.5vw,2.5rem)]"
+            className="anvl-display text-[clamp(1.75rem,3.5vw,2.5rem)] text-[var(--color-heading)]"
           >
             {event.heading}
           </h2>
           {event.intro ? (
-            <p
-              data-event-card-line
-              className="mt-4 text-sm text-[var(--color-text-muted)]"
-            >
+            <p data-event-card-line className="mt-4 text-sm text-[var(--color-text-muted)]">
               {event.intro}
             </p>
           ) : null}
           {event.startsAtIso ? (
-            <p data-event-card-line className="mt-6 text-sm font-medium">
+            <p data-event-card-line className="mt-6 text-sm font-medium text-[var(--color-text)]">
               {formatEventDate(event.startsAtIso)}
               {event.endsAtIso ? ` — ${formatEventDate(event.endsAtIso)}` : ''}
             </p>
@@ -68,13 +58,16 @@ export function EventCardPreset({ row }: ActPresetProps) {
             </p>
           ) : null}
           {event.rules ? (
-            <p data-event-card-line className="mt-4 text-xs leading-relaxed text-[var(--color-text-muted)]">
+            <p
+              data-event-card-line
+              className="mt-4 whitespace-pre-line text-xs leading-relaxed text-[var(--color-text-muted)]"
+            >
               {event.rules}
             </p>
           ) : null}
           {event.cta.label.trim() ? (
             <div data-event-card-line className="mt-8">
-              <SafeLink href={event.cta.href} className="anvl-btn anvl-btn-primary">
+              <SafeLink data-act-micro href={event.cta.href} className="anvl-btn anvl-btn-primary">
                 {event.cta.label}
               </SafeLink>
             </div>
