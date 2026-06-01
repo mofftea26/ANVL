@@ -25,6 +25,13 @@ function snapFinalState(host: HTMLElement) {
   gsap.set('[data-brand-fog]', { opacity: 0.55 })
   gsap.set('[data-brand-vignette]', { opacity: 0.42 })
   gsap.set('[data-brand-hero-vignette]', { opacity: 0.58 })
+  gsap.set('[data-brand-closing-wordmark]', {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    filter: 'none',
+    clearProps: 'transform,opacity,filter',
+  })
   gsap.set('[data-brand-closing-emblem], [data-brand-close-emblem]', {
     opacity: 1,
     scale: 1,
@@ -309,6 +316,8 @@ function bindClosingBeatShell(timeline: gsap.core.Timeline, beat: HTMLElement | 
 
 function bindClosingParts(timeline: gsap.core.Timeline, stage: HTMLElement) {
   const {
+    wordmarkStart,
+    wordmarkEnd,
     emblemStart,
     emblemEnd,
     eyebrowStart,
@@ -323,12 +332,26 @@ function bindClosingParts(timeline: gsap.core.Timeline, stage: HTMLElement) {
     ctaEnterEnd,
   } = BRAND_SHOWCASE_CLOSING_CHOREO
 
+  const wordmark = stage.querySelector('[data-brand-closing-wordmark]')
   const emblem = stage.querySelector('[data-brand-closing-emblem]')
   const eyebrow = stage.querySelector('[data-brand-closing-eyebrow]')
   const words = gsap.utils.toArray<HTMLElement>('[data-brand-closing-word]', stage)
   const intro = stage.querySelector('[data-brand-closing-intro]')
   const ctaShop = stage.querySelector('[data-brand-closing-cta-shop]')
   const ctaEnter = stage.querySelector('[data-brand-closing-cta-enter]')
+
+  if (wordmark) {
+    revealClosingPart(timeline, wordmark, wordmarkStart, wordmarkEnd, {
+      y: 40,
+      scale: 0.88,
+      blur: 14,
+    })
+    timeline.to(
+      wordmark,
+      { scale: 1, opacity: 1, ease: 'none', duration: ctaEnterEnd - wordmarkEnd },
+      wordmarkEnd,
+    )
+  }
 
   if (emblem) {
     revealClosingPart(timeline, emblem, emblemStart, emblemEnd, {

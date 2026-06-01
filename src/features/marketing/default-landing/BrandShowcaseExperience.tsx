@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import type { Product } from '@/features/products/types/product.types'
 import { pickFeaturedProducts } from '@/features/marketing/act-presets/productShowcase/oathProductUtils'
+import { AnvlStacked, AnvlWordmark } from '@/shared/assets/brand'
 import { BRAND } from '@/shared/constants/brand'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { Container } from '@/shared/components/ui/Container'
@@ -32,6 +33,13 @@ function stripActPrefix(label: string): string {
 function HeroBeatContent({ landing }: { landing: LandingPageCmsContent }) {
   return (
     <div className="mx-auto w-full max-w-2xl text-center lg:max-w-[42rem]">
+      <div
+        data-brand-hero-copy
+        data-brand-hero-stacked
+        className="mx-auto mb-6 flex justify-center md:mb-8"
+      >
+        <AnvlStacked className="h-auto w-[min(58vw,11.5rem)] text-[var(--color-heading)] sm:w-[min(52vw,13rem)] md:w-[min(42vw,15rem)]" />
+      </div>
       <p
         data-brand-hero-copy
         className="text-[length:var(--act-eyebrow-size,0.72rem)] uppercase tracking-[0.32em] text-[var(--color-muted)]"
@@ -190,8 +198,14 @@ function ClosingBeatContent({ landing }: { landing: LandingPageCmsContent }) {
   return (
     <div
       data-brand-closing-root
-      className="mx-auto flex w-full max-w-lg flex-col items-center text-center"
+      className="mx-auto flex w-full max-w-3xl flex-col items-center text-center"
     >
+      <div
+        data-brand-closing-wordmark
+        className="mx-auto mb-6 w-full max-w-[min(96vw,42rem)] px-2 text-[var(--color-heading)] will-change-[transform,opacity,filter] md:mb-8"
+      >
+        <AnvlWordmark className="mx-auto block h-auto w-full" aria-label={BRAND.name} />
+      </div>
       <img
         data-brand-closing-emblem
         data-brand-close-emblem

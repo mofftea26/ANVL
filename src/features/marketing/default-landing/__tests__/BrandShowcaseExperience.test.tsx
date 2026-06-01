@@ -172,7 +172,10 @@ describe('BrandShowcaseExperience', () => {
     expect(BRAND_SHOWCASE_BEATS.closingIn).toBeGreaterThanOrEqual(0.78)
     expect(BRAND_SHOWCASE_BEATS.closingOut).toBe(1)
     expect(BRAND_SHOWCASE_CLOSING_CHOREO.shellIn).toBe(BRAND_SHOWCASE_BEATS.closingIn)
-    expect(BRAND_SHOWCASE_CLOSING_CHOREO.emblemStart).toBe(BRAND_SHOWCASE_BEATS.closingIn)
+    expect(BRAND_SHOWCASE_CLOSING_CHOREO.wordmarkStart).toBe(BRAND_SHOWCASE_BEATS.closingIn)
+    expect(BRAND_SHOWCASE_CLOSING_CHOREO.wordmarkEnd).toBeLessThan(
+      BRAND_SHOWCASE_CLOSING_CHOREO.emblemStart,
+    )
     expect(BRAND_SHOWCASE_CLOSING_CHOREO.ctaEnterEnd).toBe(1)
     expect(BRAND_SHOWCASE_CLOSING_CHOREO.eyebrowStart).toBeGreaterThanOrEqual(
       BRAND_SHOWCASE_CLOSING_CHOREO.emblemEnd,
@@ -197,6 +200,8 @@ describe('BrandShowcaseExperience', () => {
     const stage = document.querySelector('[data-brand-stage]') as HTMLElement
     const closing = stage.querySelector('[data-brand-beat="closing"]') as HTMLElement
 
+    expect(document.querySelector('[data-brand-hero-stacked]')).toBeInTheDocument()
+    expect(closing.querySelector('[data-brand-closing-wordmark]')).toBeInTheDocument()
     expect(closing.querySelector('[data-brand-closing-emblem]')).toBeInTheDocument()
     expect(closing.querySelector('[data-brand-closing-eyebrow]')).toBeInTheDocument()
     expect(closing.querySelectorAll('[data-brand-closing-word]').length).toBe(3)
