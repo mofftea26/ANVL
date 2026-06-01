@@ -6,7 +6,7 @@ import {
   resolveActAnimation,
   shouldRunActMotion,
 } from './actAnimationConfig'
-import { bindMicroHover } from './actMotionHelpers'
+import { applyActMotionByType, bindMicroHover } from './actMotionHelpers'
 
 const MOTION_OK = '(min-width: 768px) and (prefers-reduced-motion: no-preference)'
 const REDUCED = '(max-width: 767px), (prefers-reduced-motion: reduce)'
@@ -23,6 +23,8 @@ export type ActScrollTriggerVars = {
 export type ActScrollRevealOptions = {
   /** Stagger targets relative to root (data attributes or class selectors). */
   staggerSelector?: string
+  /** Per-word reveal selector (also used by applyActMotionByType). */
+  words?: string
   /** Extra selectors forced to final state on mobile / reduced motion. */
   snapSelectors?: string[]
   /** Custom desktop animation; return cleanup if needed. */
@@ -167,6 +169,13 @@ export function useActPresetMotion(
             if (typeof cleanup === 'function') return cleanup
             return
           }
+
+          const typeCleanup = applyActMotionByType(host, animation, tokens, {
+            blocks: options.staggerSelector ?? '[data-act-block]',
+            words: options.words ?? '[data-act-word]',
+            floatTarget: '[data-act-float]',
+          })
+          if (typeCleanup) return typeCleanup
 
           if (!options.staggerSelector) return
           const targets = gsap.utils.toArray<HTMLElement>(options.staggerSelector, host)

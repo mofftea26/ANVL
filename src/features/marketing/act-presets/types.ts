@@ -3,7 +3,7 @@ import type { LandingAct, PublicLandingAct } from '@/features/cms/landing/landin
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import type { Product } from '@/features/products/types/product.types'
 
-/** Act natures wired in the storefront preset registry (PR-8 + PR-9). */
+/** Act natures — oath drop landing only (no lookbook / newsletter). */
 export type LandingActNature =
   | 'hero'
   | 'manifesto'
@@ -12,8 +12,6 @@ export type LandingActNature =
   | 'productShowcase'
   | 'materialShowcase'
   | 'specialEvent'
-  | 'lookbook'
-  | 'newsletterWaitlist'
   | 'finalCTA'
 
 export const LANDING_ACT_NATURES: readonly LandingActNature[] = [
@@ -24,8 +22,6 @@ export const LANDING_ACT_NATURES: readonly LandingActNature[] = [
   'productShowcase',
   'materialShowcase',
   'specialEvent',
-  'lookbook',
-  'newsletterWaitlist',
   'finalCTA',
 ] as const
 

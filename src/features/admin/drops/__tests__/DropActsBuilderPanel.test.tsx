@@ -140,13 +140,13 @@ describe('DropActsBuilderPanel', () => {
     const user = userEvent.setup()
     const acts: LandingAct[] = [
       {
-        id: 'waitlist-act',
-        nature: 'newsletterWaitlist',
-        preset: 'minimalForm',
+        id: 'final-act',
+        nature: 'finalCTA',
+        preset: 'oathForgeClose',
         isEnabled: true,
         sortOrder: 0,
-        title: 'Waitlist',
-        content: safeParseActContent('newsletterWaitlist', {}),
+        title: 'Forge close',
+        content: safeParseActContent('finalCTA', {}),
         animation: mergeActAnimationConfig(),
         media: {},
       },
@@ -163,12 +163,11 @@ describe('DropActsBuilderPanel', () => {
     )
 
     const presetTrigger = screen.getByRole('combobox', { name: /preset/i })
-    expect(presetTrigger.textContent).toMatch(/minimal waitlist/i)
-    expect(presetTrigger.textContent).not.toMatch(/minimalForm/i)
+    expect(presetTrigger.textContent).toMatch(/oath forge close/i)
+    expect(presetTrigger.textContent).not.toMatch(/oathForgeClose/i)
 
     await user.click(presetTrigger)
-    expect(screen.getByRole('option', { name: 'Split waitlist' })).toBeTruthy()
-    expect(screen.queryByRole('option', { name: 'splitForm' })).toBeNull()
+    expect(screen.getByRole('option', { name: 'Oath forge close' })).toBeTruthy()
   })
 
   it('hides body field for hero acts and shows hero stat fields', async () => {

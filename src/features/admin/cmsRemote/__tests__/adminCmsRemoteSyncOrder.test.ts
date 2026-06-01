@@ -5,6 +5,7 @@ import {
   activeDropRowIdsToDemote,
   clampLocalDropsForSync,
   orderDropsForRemoteSync,
+  resolveIntendedActiveClientIdForSync,
   shouldDemoteRemoteActiveRows,
 } from '@/features/admin/cmsRemote/adminCmsRemoteSyncOrder'
 
@@ -47,17 +48,57 @@ describe('clampLocalDropsForSync', () => {
   })
 })
 
-describe('shouldDemoteRemoteActiveRows', () => {
-  it('is false when local has no intentional active drop to push', () => {
-    const scheduled = makeDrop('drop-a', 'scheduled', false)
-    expect(shouldDemoteRemoteActiveRows([scheduled], null)).toBe(false)
-    expect(shouldDemoteRemoteActiveRows([scheduled], 'drop-a')).toBe(false)
+describe('resolveIntendedActiveClientIdForSync', () => {
+  it('returns the clamped active client id', () => {
+    const a = makeDrop('drop-a', 'active', true)
+    const b = makeDrop('drop-b', 'active', true)
+    expect(resolveIntendedActiveClientIdForSync([a, b], 'drop-b')).toBe('drop-b')
   })
 
-  it('is true only when the local active pointer targets an active drop', () => {
+  it('returns null when no drop should be active', () => {
+    const a = makeDrop('drop-a', 'inactive', false)
+    expect(resolveIntendedActiveClientIdForSync([a], null)).toBeNull()
+  })
+})
+
+describe('shouldDemoteRemoteActiveRows', () => {
+  it('is false when remote has no active rows', () => {
+    const scheduled = makeDrop('drop-a', 'scheduled', false)
+    expect(shouldDemoteRemoteActiveRows([scheduled], null, [])).toBe(false)
+  })
+
+  it('is true when remote active differs from intended local active', () => {
     const active = makeDrop('drop-b', 'active', true)
     const scheduled = makeDrop('drop-a', 'scheduled', false)
-    expect(shouldDemoteRemoteActiveRows([active, scheduled], 'drop-b')).toBe(true)
+    expect(
+      shouldDemoteRemoteActiveRows(
+        [active, scheduled],
+        'drop-b',
+        [{ id: 'db-a', client_drop_id: 'drop-a' }],
+      ),
+    ).toBe(true)
+  })
+
+  it('is false when remote active already matches intended', () => {
+    const active = makeDrop('drop-b', 'active', true)
+    expect(
+      shouldDemoteRemoteActiveRows(
+        [active],
+        'drop-b',
+        [{ id: 'db-b', client_drop_id: 'drop-b' }],
+      ),
+    ).toBe(false)
+  })
+
+  it('is true when local has no active but remote still has one', () => {
+    const inactive = makeDrop('drop-a', 'inactive', false)
+    expect(
+      shouldDemoteRemoteActiveRows(
+        [inactive],
+        null,
+        [{ id: 'db-a', client_drop_id: 'drop-a' }],
+      ),
+    ).toBe(true)
   })
 })
 

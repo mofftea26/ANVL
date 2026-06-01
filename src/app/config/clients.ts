@@ -1,6 +1,7 @@
 ﻿import type { Product, ShopDropFilterOption } from '@/features/products/types/product.types'
 import type { HomePageContent, SeoContent } from '@/features/cms/types/cms.types'
 import type { SiteSeoContent } from '@/features/cms/siteSeo.local'
+import type { SiteHomepageSettings } from '@/features/cms/siteHomepage.settings'
 import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import type { Drop } from '@/features/drops/drop.types'
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
@@ -44,6 +45,8 @@ export interface CmsClient {
   deactivateAdminDrop(id: string): Promise<void>
   scheduleAdminDrop(id: string, activationIso: string): Promise<void>
   deleteAdminDrop(id: string): Promise<void>
+  /** Published homepage routing — cinematic vs active drop acts. */
+  getSiteHomepage(): Promise<SiteHomepageSettings>
 }
 
 /** Per-path SEO cards for public routes — replace with CMS/API-backed documents later. */

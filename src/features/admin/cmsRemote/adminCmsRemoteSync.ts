@@ -7,12 +7,14 @@ import { readActiveDropIdRaw } from '@/features/admin/drops/drops.storage'
 import { getAdminProducts } from '@/features/admin/products/products.service'
 import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
 import { getSiteSeoContent } from '@/features/cms/siteSeo.local'
+import { readSiteHomepageFromStorage } from '@/features/cms/siteHomepage.settings'
 import { getGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.service'
 import { isAdminCmsRemoteHydrationLocked } from '@/features/admin/cmsRemote/adminCmsRemoteGate'
 import {
+  activeDropRowIdsToDemote,
   demoteDropBody,
   orderDropsForRemoteSync,
-  shouldDemoteRemoteActiveRows,
+  resolveIntendedActiveClientIdForSync,
 } from '@/features/admin/cmsRemote/adminCmsRemoteSyncOrder'
 import { buildAnvlDropRemoteRow } from '@/features/admin/cmsRemote/adminCmsDropRemoteRow'
 import {
@@ -24,6 +26,7 @@ import {
   listMediaAssets,
 } from '@/features/admin/media/mediaAssets.service'
 import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
+import { isPostgrestMissingColumnError } from '@/features/cms/api/storefrontPublicationColumns'
 
 const isTestRunner = import.meta.env.MODE === 'test'
 
@@ -72,16 +75,20 @@ export async function flushAdminCmsRemoteSync(): Promise<
     return { ok: false, error: activeListErr.message }
   }
 
-  if (shouldDemoteRemoteActiveRows(drops, activeClientId)) {
-    for (const row of dbActiveRows ?? []) {
-      const cid =
-        typeof row.client_drop_id === 'string' ? row.client_drop_id.trim() : ''
-      const shouldStayActive =
-        activeClientId !== null && cid === activeClientId
-      if (shouldStayActive) continue
+  const intendedActiveClientId = resolveIntendedActiveClientIdForSync(
+    drops,
+    activeClientId,
+  )
+  const remoteActiveRows = dbActiveRows ?? []
+  const rowIdsToDemote = activeDropRowIdsToDemote(
+    remoteActiveRows,
+    intendedActiveClientId,
+  )
 
-      const localDrop = drops.find((d) => d.id === cid)
-      if (!localDrop) continue
+  if (rowIdsToDemote.length > 0) {
+    const demoteSet = new Set(rowIdsToDemote)
+    for (const row of remoteActiveRows) {
+      if (!demoteSet.has(row.id)) continue
 
       const bodyRaw = row.body
       const body =
@@ -225,6 +232,7 @@ export async function flushAdminCmsRemoteSync(): Promise<
 
   const layout = getWebsiteLayoutContent()
   const siteSeo = getSiteSeoContent()
+  const siteHomepage = readSiteHomepageFromStorage()
   const globalBrand = getGlobalBrandSettings()
   const { getSiteHomeExtrasContent } = await import(
     '@/features/admin/site-home/siteHome.service'
@@ -237,6 +245,7 @@ export async function flushAdminCmsRemoteSync(): Promise<
   const pubPatch: Record<string, unknown> = {
     website_layout: layout,
     site_seo: siteSeo,
+    site_homepage: siteHomepage,
     global_brand: globalBrand,
     media_index: mediaIndex,
     campaigns: homeExtras.campaigns,
@@ -249,15 +258,41 @@ export async function flushAdminCmsRemoteSync(): Promise<
     .eq('id', 1)
 
   if (pubErr) {
-    if (/global_brand|column/i.test(pubErr.message)) {
+    if (isPostgrestMissingColumnError(pubErr, 'site_homepage')) {
+      const { site_homepage: _omit, ...withoutHomepage } = pubPatch
       const { error: pubErr2 } = await client
         .from('storefront_publication')
-        .update({ website_layout: layout, site_seo: siteSeo })
+        .update(withoutHomepage)
         .eq('id', 1)
       if (pubErr2) return { ok: false, error: pubErr2.message }
-    } else {
-      return { ok: false, error: pubErr.message }
+      return { ok: true }
     }
+    if (
+      isPostgrestMissingColumnError(pubErr, 'global_brand') ||
+      /global_brand|column/i.test(pubErr.message)
+    ) {
+      const { error: pubErr2 } = await client
+        .from('storefront_publication')
+        .update({
+          website_layout: layout,
+          site_seo: siteSeo,
+          site_homepage: siteHomepage,
+        })
+        .eq('id', 1)
+      if (pubErr2) {
+        if (isPostgrestMissingColumnError(pubErr2, 'site_homepage')) {
+          const { error: pubErr3 } = await client
+            .from('storefront_publication')
+            .update({ website_layout: layout, site_seo: siteSeo })
+            .eq('id', 1)
+          if (pubErr3) return { ok: false, error: pubErr3.message }
+          return { ok: true }
+        }
+        return { ok: false, error: pubErr2.message }
+      }
+      return { ok: true }
+    }
+    return { ok: false, error: pubErr.message }
   }
 
   return { ok: true }

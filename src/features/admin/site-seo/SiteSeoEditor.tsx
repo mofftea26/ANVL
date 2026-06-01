@@ -15,10 +15,12 @@ import {
 import { SiteSeoGlobalPanel } from './SiteSeoGlobalPanel'
 import { SiteSeoPreviewPanel, type SiteSeoPreviewState } from './SiteSeoPreviewPanel'
 import { SiteSeoStaticPagesPanel } from './SiteSeoStaticPagesPanel'
+import { SiteMarketingToolsPanel } from './SiteMarketingToolsPanel'
 
 const SEO_TABS = [
   { id: 'defaults' as const, label: 'Defaults' },
   { id: 'pages' as const, label: 'Pages' },
+  { id: 'marketing' as const, label: 'Marketing & technical' },
 ]
 
 type SeoTabId = (typeof SEO_TABS)[number]['id']
@@ -159,14 +161,18 @@ export function SiteSeoEditor() {
 
         {activeTab === 'defaults' ? (
           <SiteSeoGlobalPanel defaults={content.globalDefaults} onChange={patchGlobal} />
-        ) : (
+        ) : null}
+        {activeTab === 'pages' ? (
           <SiteSeoStaticPagesPanel
             activePath={activePath}
             pagePatch={pagePatch}
             onSelectPath={setActivePath}
             onChange={patchStaticPage}
           />
-        )}
+        ) : null}
+        {activeTab === 'marketing' ? (
+          <SiteMarketingToolsPanel content={content} onChange={setContent} />
+        ) : null}
       </div>
 
       <div

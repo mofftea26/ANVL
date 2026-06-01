@@ -12,6 +12,10 @@ import {
 import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import type { Drop } from '@/features/drops/drop.types'
 import { defaultSiteSeoContent } from '@/features/cms/siteSeo.local'
+import {
+  DEFAULT_SITE_HOMEPAGE,
+  type SiteHomepageSettings,
+} from '@/features/cms/siteHomepage.settings'
 
 export type SupabaseCmsPublicReadSlice = Pick<
   CmsClient,
@@ -22,6 +26,7 @@ export type SupabaseCmsPublicReadSlice = Pick<
   | 'getAnnouncementBar'
   | 'getCampaigns'
   | 'getLookbook'
+  | 'getSiteHomepage'
 >
 
 export function createSupabaseCmsPublicReadSlice(
@@ -101,6 +106,16 @@ export function createSupabaseCmsPublicReadSlice(
         /* */
       }
       return cmsMockData.lookbook
+    },
+
+    async getSiteHomepage(): Promise<SiteHomepageSettings> {
+      try {
+        const p = await fetchPublishedStorefrontProjection(env)
+        if (p) return structuredClone(p.siteHomepage)
+      } catch {
+        /* */
+      }
+      return DEFAULT_SITE_HOMEPAGE
     },
   }
 }

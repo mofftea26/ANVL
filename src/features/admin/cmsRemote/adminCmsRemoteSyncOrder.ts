@@ -44,15 +44,24 @@ export function orderDropsForRemoteSync(
   return activeDrop ? [...rest, activeDrop] : rest
 }
 
-/** Only demote remote actives when local is intentionally pushing a different active drop. */
+/** Client id that will be upserted as `status = 'active'` after local clamping. */
+export function resolveIntendedActiveClientIdForSync(
+  drops: Drop[],
+  activeClientId: string | null,
+): string | null {
+  const clamped = clampLocalDropsForSync(drops, activeClientId)
+  return clamped.find((d) => d.status === 'active')?.id ?? null
+}
+
+/** True when remote rows must be demoted before upsert to avoid the single-active index. */
 export function shouldDemoteRemoteActiveRows(
   drops: Drop[],
   activeClientId: string | null,
+  dbActiveRows: AnvlDropActiveRow[] = [],
 ): boolean {
-  if (!activeClientId) return false
-  const intended = drops.find((d) => d.id === activeClientId)
-  if (!intended) return false
-  return intended.status === 'active' || intended.isActive
+  if (dbActiveRows.length === 0) return false
+  const intendedId = resolveIntendedActiveClientIdForSync(drops, activeClientId)
+  return activeDropRowIdsToDemote(dbActiveRows, intendedId).length > 0
 }
 
 export type AnvlDropActiveRow = {

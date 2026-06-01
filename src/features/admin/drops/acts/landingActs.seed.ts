@@ -1,11 +1,19 @@
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
+import { landingCmsDefaults } from '@/features/admin/landing-cms/landingCms.defaults'
 import type { DropLandingContent } from '../drops.types'
 import type { LandingAct } from './landingActs.types'
 import { mergeActAnimationConfig } from './landingActs.types'
 
-/** Bootstrap `Drop.acts` from legacy landing sections when the acts array is empty. */
+/** Bootstrap `Drop.acts` — lean Oath sequence (7 acts). */
 export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[] {
   const anim = mergeActAnimationConfig()
+  const L = landingCmsDefaults
+
+  const tenets = lc.manifesto.tenets.map((t) => ({
+    id: t.id,
+    label: ('text' in t && typeof t.text === 'string' ? t.text : '') || t.id,
+  }))
+
   return [
     {
       id: createCmsId('act'),
@@ -19,68 +27,90 @@ export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[]
       body: '',
       animation: anim,
       content: {},
+      media: { imageUrl: '', videoUrl: '', alt: '' },
     },
     {
       id: createCmsId('act'),
       nature: 'manifesto',
-      preset: 'oathStampLedger',
+      preset: 'oathTenetLedger',
       isEnabled: true,
       sortOrder: 1,
       title: lc.manifesto.heading,
       eyebrow: lc.manifesto.counterLabel,
-      body: lc.manifesto.intro,
       animation: anim,
-      content: {},
+      content: { tenets },
+    },
+    {
+      id: createCmsId('act'),
+      nature: 'storytelling',
+      preset: 'oathNarrativeScroll',
+      isEnabled: true,
+      sortOrder: 2,
+      title: lc.manifesto.heading,
+      eyebrow: 'Story',
+      animation: anim,
+      content: {
+        chapters: [
+          {
+            id: 'ch-1',
+            title: 'Forged under pressure',
+            body: lc.manifesto.intro,
+          },
+        ],
+      },
     },
     {
       id: createCmsId('act'),
       nature: 'dropReveal',
-      preset: 'monolithReveal',
+      preset: 'oathMonolithReveal',
       isEnabled: true,
-      sortOrder: 2,
+      sortOrder: 3,
       title: lc.dropReveal.tagline.slice(0, 120),
       subtitle: lc.dropReveal.counterLabel,
       eyebrow: lc.dropReveal.actLabel,
-      body: lc.dropReveal.tagline,
       animation: anim,
       content: {},
     },
     {
       id: createCmsId('act'),
       nature: 'productShowcase',
-      preset: 'threeCardEditorial',
+      preset: 'oathEditorialThree',
       isEnabled: true,
-      sortOrder: 3,
+      sortOrder: 4,
       title: `${lc.pieces.headingLineOne} ${lc.pieces.headingLineTwo}`.trim(),
       eyebrow: lc.pieces.actLabel,
       animation: anim,
-      content: {},
+      content: {
+        viewAllLabel: lc.pieces.viewAllLabel,
+        viewAllHref: lc.pieces.viewAllHref,
+      },
     },
     {
       id: createCmsId('act'),
       nature: 'materialShowcase',
-      preset: 'fabricRunway',
+      preset: 'oathMaterialFlip',
       isEnabled: true,
-      sortOrder: 4,
+      sortOrder: 5,
       title: lc.materials.heading,
       subtitle: lc.materials.counterSuffix,
       eyebrow: lc.materials.actLabel,
-      body: lc.materials.intro,
       animation: anim,
-      content: {},
+      content: { materialProducts: [] },
     },
     {
       id: createCmsId('act'),
-      nature: 'newsletterWaitlist',
-      preset: 'oathFullWidthForm',
+      nature: 'finalCTA',
+      preset: 'oathForgeClose',
       isEnabled: true,
-      sortOrder: 5,
-      title: lc.waitlist.heading,
-      subtitle: lc.waitlist.rightLabel,
-      eyebrow: lc.waitlist.actLabel,
-      body: lc.waitlist.intro,
+      sortOrder: 6,
+      title: L.waitlist.heading,
+      subtitle: L.waitlist.rightLabel,
+      eyebrow: 'Close',
       animation: anim,
-      content: {},
+      content: {
+        primaryCta: lc.dropReveal.primaryCta,
+        secondaryCta: lc.dropReveal.secondaryCta,
+      },
     },
   ]
 }

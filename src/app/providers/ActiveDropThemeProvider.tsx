@@ -21,6 +21,8 @@ type Props = PropsWithChildren<{
   initialDrop: Drop | null
   /** From published projection — loading emblem fallbacks match SSR without localStorage. */
   initialGlobalBrand?: GlobalBrandSettings
+  /** When false, skip injecting the active drop palette onto `:root`. */
+  applyDropTheme?: boolean
 }>
 
 /**
@@ -30,13 +32,16 @@ type Props = PropsWithChildren<{
 export function ActiveDropThemeProvider({
   initialDrop,
   initialGlobalBrand,
+  applyDropTheme = true,
   children,
 }: Props) {
   const drop = useActiveDrop(initialDrop)
   const globalBrand = initialGlobalBrand ?? createDefaultGlobalBrandSettings()
 
   const themeCss =
-    drop?.theme != null ? serializeDropPaletteForRootStyle(drop.theme) : null
+    applyDropTheme && drop?.theme != null
+      ? serializeDropPaletteForRootStyle(drop.theme)
+      : null
 
   return (
     <StorefrontGlobalBrandContext.Provider value={globalBrand}>

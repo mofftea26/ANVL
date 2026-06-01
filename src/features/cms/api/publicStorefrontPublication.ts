@@ -12,8 +12,13 @@ import type { Drop } from '@/features/drops/drop.types'
 import type { WebsiteLayoutContent } from '@/features/cms/layout/websiteLayout.types'
 import type { SiteSeoContent } from '@/features/cms/siteSeo.local'
 import { parseSiteSeoUnknown } from '@/features/cms/siteSeo.local'
+import {
+  parseSiteHomepageUnknown,
+  type SiteHomepageSettings,
+} from '@/features/cms/siteHomepage.settings'
 import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { createAnvlSupabaseClient } from '@/features/cms/api/createAnvlSupabaseClient'
+import { isPostgrestMissingColumnError } from '@/features/cms/api/storefrontPublicationColumns'
 import type { ShopDropFilterOption } from '@/features/products/types/product.types'
 
 /**
@@ -89,6 +94,7 @@ export type PublishedStorefrontProjection = {
   globalBrand: GlobalBrandSettings
   campaigns: StorefrontCampaign[]
   lookbook: StorefrontLookbookItem[]
+  siteHomepage: SiteHomepageSettings
 }
 
 export type StorefrontPublicationRow = {
@@ -102,10 +108,13 @@ export type StorefrontPublicationRow = {
   global_brand?: unknown
   campaigns?: unknown
   lookbook?: unknown
+  site_homepage?: unknown
 }
 
-const PUBLICATION_SELECT =
+const PUBLICATION_SELECT_BASE =
   'published_drop_snapshot, website_layout, site_seo, revision, published_at, products_snapshot, catalog_drop_index, global_brand, campaigns, lookbook'
+
+const PUBLICATION_SELECT = `${PUBLICATION_SELECT_BASE}, site_homepage`
 
 function parseAdminProductsSnapshot(raw: unknown): AdminProduct[] {
   if (!Array.isArray(raw)) return []
@@ -195,6 +204,7 @@ export function normalizeStorefrontPublicationRow(
   const globalBrand = mergePublicationGlobalBrand(data.global_brand)
   const campaigns = parseCampaigns(data.campaigns)
   const lookbook = parseLookbook(data.lookbook)
+  const siteHomepage = parseSiteHomepageUnknown(data.site_homepage)
 
   return {
     drop: dropResult.data as Drop,
@@ -207,6 +217,7 @@ export function normalizeStorefrontPublicationRow(
     globalBrand,
     campaigns,
     lookbook,
+    siteHomepage,
   }
 }
 
@@ -219,15 +230,34 @@ async function fetchPublishedStorefrontProjectionOnce(
   env: SupabasePublicEnv,
 ): Promise<PublishedStorefrontProjection | null> {
   const supabase = getSupabasePublicationAnonClient(env)
-  const { data, error } = await supabase
+  const full = await supabase
     .from('storefront_publication')
     .select(PUBLICATION_SELECT)
     .eq('id', 1)
     .maybeSingle()
 
-  if (error) throw error
-  if (!data) return null
-  return normalizeStorefrontPublicationRow(data as StorefrontPublicationRow)
+  if (!full.error && full.data) {
+    return normalizeStorefrontPublicationRow(full.data as StorefrontPublicationRow)
+  }
+
+  if (
+    full.error &&
+    isPostgrestMissingColumnError(full.error, 'site_homepage')
+  ) {
+    const legacy = await supabase
+      .from('storefront_publication')
+      .select(PUBLICATION_SELECT_BASE)
+      .eq('id', 1)
+      .maybeSingle()
+    if (legacy.error) throw legacy.error
+    if (!legacy.data) return null
+    return normalizeStorefrontPublicationRow(
+      legacy.data as StorefrontPublicationRow,
+    )
+  }
+
+  if (full.error) throw full.error
+  return null
 }
 
 /**

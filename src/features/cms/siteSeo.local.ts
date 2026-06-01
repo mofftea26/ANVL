@@ -26,9 +26,32 @@ export type SiteSeoGlobalDefaults = {
   structuredDataType?: SeoStructuredDataType
 }
 
+export type MarketingToolProvider =
+  | 'gtm'
+  | 'ga4'
+  | 'metaPixel'
+  | 'hotjar'
+  | 'googleSiteVerification'
+  | 'customScript'
+
+export type MarketingToolEntry = {
+  id: string
+  provider: MarketingToolProvider
+  snippetId: string
+  enabled: boolean
+}
+
+export type SiteTechnicalSeo = {
+  robotsIndex?: boolean
+  sitemapEnabled?: boolean
+  hreflangNotes?: string
+}
+
 export type SiteSeoContent = {
   globalDefaults: SiteSeoGlobalDefaults
   staticPages: Partial<Record<SiteStaticSeoPath, SeoFieldPatch>>
+  marketingTools?: MarketingToolEntry[]
+  technical?: SiteTechnicalSeo
 }
 
 const structuredEnum = z.enum(SEO_STRUCTURED_DATA_TYPES)
@@ -83,14 +106,38 @@ export function sanitizeStaticPagesLoose(
   return out
 }
 
+const marketingToolSchema = z.object({
+  id: z.string(),
+  provider: z.enum([
+    'gtm',
+    'ga4',
+    'metaPixel',
+    'hotjar',
+    'googleSiteVerification',
+    'customScript',
+  ]),
+  snippetId: z.string(),
+  enabled: z.boolean(),
+})
+
+const technicalSeoSchema = z.object({
+  robotsIndex: z.boolean().optional(),
+  sitemapEnabled: z.boolean().optional(),
+  hreflangNotes: z.string().optional(),
+})
+
 const siteSeoSchema = z
   .object({
     globalDefaults: globalDefaultsSchema,
     staticPages: z.unknown().optional(),
+    marketingTools: z.array(marketingToolSchema).optional(),
+    technical: technicalSeoSchema.optional(),
   })
   .transform((data) => ({
     globalDefaults: data.globalDefaults,
     staticPages: sanitizeStaticPagesLoose(data.staticPages),
+    marketingTools: data.marketingTools ?? [],
+    technical: data.technical ?? {},
   }))
 
 function isBrowser(): boolean {
@@ -110,6 +157,8 @@ export function defaultSiteSeoContent(): SiteSeoContent {
       defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.svg`,
     },
     staticPages: {},
+    marketingTools: [],
+    technical: { robotsIndex: true, sitemapEnabled: true },
   }
 }
 
@@ -121,6 +170,8 @@ export function parseSiteSeoUnknown(raw: unknown): SiteSeoContent {
   return {
     globalDefaults: r.data.globalDefaults,
     staticPages: r.data.staticPages,
+    marketingTools: r.data.marketingTools ?? [],
+    technical: r.data.technical ?? {},
   }
 }
 
@@ -128,7 +179,12 @@ function parseStored(raw: string | null): SiteSeoContent {
   if (!raw) return defaultSiteSeoContent()
   try {
     const v = siteSeoSchema.parse(JSON.parse(raw))
-    return { globalDefaults: v.globalDefaults, staticPages: v.staticPages }
+    return {
+      globalDefaults: v.globalDefaults,
+      staticPages: v.staticPages,
+      marketingTools: v.marketingTools ?? [],
+      technical: v.technical ?? {},
+    }
   } catch {
     return defaultSiteSeoContent()
   }
@@ -151,6 +207,8 @@ function stampSiteSeoForPersist(next: SiteSeoContent): SiteSeoContent {
   return {
     globalDefaults: parsed.globalDefaults,
     staticPages: parsed.staticPages,
+    marketingTools: parsed.marketingTools ?? [],
+    technical: parsed.technical ?? {},
   }
 }
 

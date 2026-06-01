@@ -7,6 +7,7 @@ import {
   normalizeStorefrontPublicationRow,
 } from '@/features/cms/api/publicStorefrontPublication'
 import { parseSiteSeoUnknown } from '@/features/cms/siteSeo.local'
+import { DEFAULT_SITE_HOMEPAGE } from '@/features/cms/siteHomepage.settings'
 import type { AdminProduct } from '@/features/admin/products/products.types'
 
 describe('normalizeStorefrontPublicationRow', () => {
@@ -142,6 +143,21 @@ describe('normalizeStorefrontPublicationRow', () => {
       { id: 'c1', title: 'Summer', description: 'Drop' },
     ])
     expect(out!.lookbook).toEqual([{ id: 'l1', alt: 'Look', src: '/look.webp' }])
+    expect(out!.siteHomepage).toEqual(DEFAULT_SITE_HOMEPAGE)
+  })
+
+  it('parses site_homepage mode from publication', () => {
+    const drop = createDefaultTheOathDrop()
+    const layout = createDefaultWebsiteLayout(drop.updatedAt)
+    const out = normalizeStorefrontPublicationRow({
+      published_drop_snapshot: drop,
+      website_layout: layout,
+      site_seo: null,
+      revision: 1,
+      published_at: null,
+      site_homepage: { mode: 'default', updatedAt: '2026-05-01T00:00:00.000Z' },
+    })
+    expect(out?.siteHomepage.mode).toBe('default')
   })
 })
 

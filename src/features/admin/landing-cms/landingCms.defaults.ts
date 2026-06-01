@@ -21,11 +21,11 @@ export const landingCmsDefaults: LandingPageCmsContent = {
   seo: {
     title: 'ANVL Athletics | Forged Under Pressure',
     description:
-      'Premium bodybuilding gymwear built for disciplined lifters. Drop 01: The Oath.',
+      'Premium bodybuilding gymwear forged through pressure, repetition, discipline, and heat. Explore Drop 01 — The Oath.',
     path: '/',
     ogTitle: 'ANVL Athletics | Forged Under Pressure',
     ogDescription:
-      'Premium bodybuilding gymwear built for disciplined lifters. Drop 01: The Oath.',
+      'Premium bodybuilding gymwear forged through pressure, repetition, discipline, and heat. Explore Drop 01 — The Oath.',
     ogImage: '/brand/og-default.svg',
   },
 
@@ -128,7 +128,7 @@ export const landingCmsDefaults: LandingPageCmsContent = {
       { id: 'drop-stat-run', label: 'Run', value: 'Limited' },
     ],
     primaryCta: { label: 'Explore Drop 01', href: '/drop/the-oath' },
-    secondaryCta: { label: 'View the pieces', href: '/shop' },
+    secondaryCta: { label: 'Shop the collection', href: '/shop' },
     dropIcon: {
       src: '',
       alt: 'Drop mark',

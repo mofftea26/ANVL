@@ -11,7 +11,7 @@ export const DROPS_CHANGE_EVENT = 'anvl:drops:change'
 const dropsChannel = createLocalStorageChannel({
   key: DROPS_STORAGE_KEY,
   changeEvent: DROPS_CHANGE_EVENT,
-  alsoListenForKeys: [ACTIVE_DROP_ID_STORAGE_KEY],
+  alsoListenForKeys: [ACTIVE_DROP_ID_STORAGE_KEY, REMOTE_DROP_DELETE_QUEUE_KEY],
 })
 
 export { isBrowser }

@@ -218,10 +218,10 @@ const rawCatalogProducts: CatalogProduct[] = [
   baseProduct({
     id: 'catalog-stringer',
     slug: 'stringer',
-    title: 'Stringer',
+    title: 'Old-school Cut Stringer',
     subtitle: 'Old-school lifter cut',
     description:
-      'Racerback stringer with premium stretch and minimal back branding (seed).',
+      'Revealing lifter-style cut with premium stretch — classic bodybuilding energy (seed).',
     amount: 49,
     sizes: ['S', 'M', 'L', 'XL'],
   }),

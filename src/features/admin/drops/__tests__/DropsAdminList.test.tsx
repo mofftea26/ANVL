@@ -101,7 +101,7 @@ function renderList() {
 }
 
 async function openActivateDialog(user: ReturnType<typeof userEvent.setup>) {
-  const betaCard = screen.getByText(/D02 · Beta internal/).closest('section')!
+  const betaCard = screen.getByText('Beta internal').closest('section')!
   const trigger = within(betaCard).getByRole('button', { name: /actions for beta campaign/i })
   await user.click(trigger)
   await user.click(await screen.findByRole('menuitem', { name: /set active/i }))
@@ -131,15 +131,17 @@ describe('DropsAdminList', () => {
     renderList()
 
     expect(screen.queryByRole('table')).toBeNull()
-    expect(screen.getByText(/D01 · Alpha internal/)).toBeTruthy()
-    expect(screen.getByText(/D02 · Beta internal/)).toBeTruthy()
+    expect(screen.getByText('Alpha internal')).toBeTruthy()
+    expect(screen.getByText('Beta internal')).toBeTruthy()
+    expect(screen.getByText(/Drop D01/)).toBeTruthy()
+    expect(screen.getByText(/Drop D02/)).toBeTruthy()
   })
 
   it('opens the row overflow menu from the card ⋯ trigger', async () => {
     const user = userEvent.setup()
     renderList()
 
-    const betaCard = screen.getByText(/D02 · Beta internal/).closest('section')!
+    const betaCard = screen.getByText('Beta internal').closest('section')!
     const trigger = within(betaCard).getByRole('button', { name: /actions for beta campaign/i })
     await user.click(trigger)
     expect(await screen.findByRole('menu')).toBeTruthy()
@@ -151,15 +153,15 @@ describe('DropsAdminList', () => {
     const user = userEvent.setup()
     renderList()
 
-    const cards = screen.getAllByText(/D0[12] · /)
-    expect(cards[0]?.textContent).toMatch(/D02 · Beta/)
+    const headings = () =>
+      screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent?.trim())
+    expect(headings()[0]).toMatch(/Beta/)
 
     const sortTrigger = screen.getByRole('combobox', { name: /sort drops/i })
     await user.click(sortTrigger)
     await user.click(await screen.findByRole('option', { name: /campaign \(a–z\)/i }))
 
-    const cardsAsc = screen.getAllByText(/D0[12] · /)
-    expect(cardsAsc[0]?.textContent).toMatch(/D01 · Alpha/)
+    expect(headings()[0]).toMatch(/Alpha/)
   })
 
   it('shows Activating… on the confirm button while activation is pending', async () => {

@@ -157,7 +157,7 @@ function ShopPage() {
                 No products match these filters. Try clearing status or price limits.
               </p>
             ) : (
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {deferredFiltered.map((product: Product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}

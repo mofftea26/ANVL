@@ -1,6 +1,8 @@
 import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
+import { resolvePresetAlias } from '@/features/marketing/act-presets/actPresetAliases'
 import type { Drop, DropLandingContent } from './drops.types'
 import type { WebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.types'
+import type { LandingAct } from './acts/landingActs.types'
 import {
   DEFAULT_EMBLEM_URL,
   DEFAULT_OATH_DROP_ID,
@@ -150,4 +152,47 @@ export function landingPageToDrop(landing: LandingPageCmsContent): Drop {
       ogImage: landing.seo.ogImage,
     },
   }
+}
+
+const REMOVED_NATURES = new Set(['lookbook', 'newsletterWaitlist'])
+
+const NATURE_ALIASES: Record<string, string> = {
+  newsletterWaitlist: 'finalCTA',
+}
+
+function migrateAct(act: LandingAct): LandingAct {
+  const nature = NATURE_ALIASES[act.nature] ?? act.nature
+  const preset = resolvePresetAlias(act.preset) ?? act.preset
+  return { ...act, nature, preset }
+}
+
+export function migrateDropActs(drop: Drop): Drop {
+  let acts = drop.acts ?? []
+  acts = acts
+    .filter((a) => !REMOVED_NATURES.has(a.nature))
+    .map((act) => migrateAct(act))
+
+  const hadWaitlist = (drop.acts ?? []).some(
+    (a) => a.nature === 'newsletterWaitlist' || a.preset?.includes('waitlist'),
+  )
+  const hasFinal = acts.some((a) => a.nature === 'finalCTA')
+  if (hadWaitlist && !hasFinal) {
+    const wait = (drop.acts ?? []).find((a) => a.nature === 'newsletterWaitlist')
+    if (wait) {
+      acts.push({
+        ...migrateAct({ ...wait, nature: 'finalCTA', preset: 'oathForgeClose' }),
+        sortOrder: Math.max(...acts.map((a) => a.sortOrder), 0) + 1,
+      })
+    }
+  }
+
+  acts = acts
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((a, i) => ({ ...a, sortOrder: i }))
+
+  return { ...drop, acts }
+}
+
+export function migrateDrop(drop: Drop): Drop {
+  return migrateDropActs(drop)
 }

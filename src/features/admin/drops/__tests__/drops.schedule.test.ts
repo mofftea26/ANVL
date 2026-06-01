@@ -11,7 +11,7 @@ import {
   saveDrop,
   setActiveDrop,
 } from '@/features/admin/drops/drops.service'
-import { readActiveDropIdRaw } from '@/features/admin/drops/drops.storage'
+import { readActiveDropIdRaw, readDropsRaw } from '@/features/admin/drops/drops.storage'
 
 describe('drop schedule persistence', () => {
   beforeEach(() => {
@@ -31,7 +31,7 @@ describe('drop schedule persistence', () => {
 
     persistDropsState([scheduled], null)
 
-    const [saved] = readDropsArray()
+    const [saved] = (JSON.parse(readDropsRaw()!) as { drops: typeof scheduled[] }).drops
     expect(saved.status).toBe('scheduled')
     expect(saved.scheduledActivationAt).toBe(past)
     expect(saved.isActive).toBe(false)
@@ -71,6 +71,20 @@ describe('drop schedule persistence', () => {
     expect(saved.status).toBe('scheduled')
     expect(saved.scheduledActivationAt).toBe(future)
     expect(saved.isActive).toBe(false)
+  })
+
+  it('normalizes multiple local actives to a single active drop', () => {
+    const a = createEmptyDrop()
+    const b = createEmptyDrop()
+    const activeA = { ...a, status: 'active' as const, isActive: true }
+    const activeB = { ...b, status: 'active' as const, isActive: true }
+
+    persistDropsState([activeA, activeB], b.id)
+
+    const body = JSON.parse(readDropsRaw()!) as { drops: typeof activeA[] }
+    expect(body.drops.find((d) => d.id === a.id)?.status).toBe('inactive')
+    expect(body.drops.find((d) => d.id === b.id)?.status).toBe('active')
+    expect(readActiveDropIdRaw()).toBe(b.id)
   })
 
   it('clears schedule when activating on save', () => {

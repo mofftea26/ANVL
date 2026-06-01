@@ -12,7 +12,6 @@ import { defaultLandingActSequence } from '@/features/admin/drops/drops.actSeque
 import type { ActMedia, LandingAct } from '@/features/admin/drops/acts/landingActs.types'
 import { mergeActAnimationConfig } from '@/features/admin/drops/acts/landingActs.types'
 import { safeParseActContent } from '@/features/admin/drops/acts/landingActs.zod'
-import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
 import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
 import { AdminFieldLabel } from '@/features/admin/components/AdminFieldLabel'
@@ -28,12 +27,15 @@ import {
 import { AdminDateTimeField } from '@/features/admin/components/AdminDateTimeField'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 import { IconButton } from '@/shared/components/ui/IconButton'
+import { AdminEditableList } from '@/features/admin/components/AdminEditableList'
+import { AdminMediaField } from '@/features/admin/components/AdminMediaField'
 import { cn } from '@/shared/lib/cn'
 import { ACT_MOTION_TYPE_OPTIONS } from '@/features/marketing/act-presets/shared/actAnimationConfig'
 import {
   ACT_PRESETS_BY_NATURE,
   getActPresetLabel,
 } from '@/features/marketing/act-presets/registry'
+import type { LandingActNature } from '@/features/marketing/act-presets/types'
 import { isLayeredHeroPreset } from '@/features/marketing/act-presets/shared/actLayerMedia'
 
 const NATURE_OPTIONS = [
@@ -44,8 +46,6 @@ const NATURE_OPTIONS = [
   { value: 'productShowcase', label: 'Product showcase' },
   { value: 'materialShowcase', label: 'Material showcase' },
   { value: 'specialEvent', label: 'Special event' },
-  { value: 'lookbook', label: 'Lookbook' },
-  { value: 'newsletterWaitlist', label: 'Newsletter / waitlist' },
   { value: 'finalCTA', label: 'Final CTA' },
 ] as const
 
@@ -64,7 +64,7 @@ function slotKeyForNature(nature: string): LandingActSlot['key'] | null {
       return 'pieces'
     case 'materialShowcase':
       return 'materials'
-    case 'newsletterWaitlist':
+    case 'finalCTA':
       return 'waitlist'
     default:
       return null
@@ -108,12 +108,6 @@ function readCta(
 function readStr(c: Record<string, unknown>, key: string): string {
   const v = c[key]
   return typeof v === 'string' ? v : ''
-}
-
-function readStrList(c: Record<string, unknown>, key: string): string[] {
-  const v = c[key]
-  if (!Array.isArray(v)) return []
-  return v.filter((x): x is string => typeof x === 'string')
 }
 
 type CatalogProduct = { id: string; name: string }
@@ -226,80 +220,80 @@ function NatureContentFields({
   }
 
   if (nature === 'manifesto') {
-    const tenetsRaw = Array.isArray(c.tenets)
-      ? (c.tenets as Array<{ id?: string; label?: string; body?: string }>)
+    type TenetRow = { id: string; label: string; body?: string }
+    const tenets: TenetRow[] = Array.isArray(c.tenets)
+      ? (c.tenets as TenetRow[])
       : []
-    const tenetLine = tenetsRaw
-      .map((t) => [t.label?.trim(), t.body?.trim()].filter(Boolean).join(' — '))
-      .filter(Boolean)
-      .join('\n')
     return (
-      <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
+      <div className="mt-3 space-y-3 border-t border-[var(--color-line)]/60 pt-3">
         <AdminFieldLabel labelStyle="stacked" className="block">
-          Quote
+          Quote (optional)
           <AdminInput
             value={readStr(c, 'quote')}
             onChange={(e) => patchContent({ quote: e.target.value || undefined })}
           />
         </AdminFieldLabel>
-        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-          Story paragraphs
-          <AdminTextarea
-            className="min-h-[72px]"
-            value={readStr(c, 'storyParagraphs')}
-            onChange={(e) =>
-              patchContent({ storyParagraphs: e.target.value || undefined })
-            }
-          />
-        </AdminFieldLabel>
-        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-          Tenets (one per line: label — body)
-          <AdminTextarea
-            className="min-h-[96px]"
-            value={tenetLine}
-            onChange={(e) => {
-              const lines = e.target.value
-                .split('\n')
-                .map((line) => line.trim())
-                .filter(Boolean)
-              const tenets = lines.map((line, i) => {
-                const [label, ...rest] = line.split('—')
-                return {
-                  id: `tenet-${i + 1}`,
-                  label: (label ?? line).trim(),
-                  body: rest.join('—').trim() || undefined,
-                }
-              })
-              patchContent({ tenets: tenets.length ? tenets : undefined })
-            }}
-          />
-        </AdminFieldLabel>
+        <AdminEditableList
+          items={tenets}
+          onChange={(next) => patchContent({ tenets: next.length ? next : undefined })}
+          createItem={(): TenetRow => ({
+            id: createCmsId('tenet'),
+            label: 'New tenet',
+            body: undefined,
+          })}
+          renderLabel={(t) => t.label || 'Untitled tenet'}
+          addLabel="Add tenet"
+          renderEditor={(item, onPatch) => (
+            <div className="space-y-2">
+              <AdminInput
+                value={item.label}
+                onChange={(e) => onPatch({ label: e.target.value })}
+                placeholder="Tenet label"
+              />
+              <AdminInput
+                value={item.body ?? ''}
+                onChange={(e) => onPatch({ body: e.target.value || undefined })}
+                placeholder="Optional detail"
+              />
+            </div>
+          )}
+        />
       </div>
     )
   }
 
   if (nature === 'storytelling') {
+    const chapters = Array.isArray(c.chapters)
+      ? (c.chapters as Array<{ id: string; title: string; body: string }>)
+      : []
     return (
-      <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <AdminFieldLabel labelStyle="stacked" className="block">
-          Chapter title
-          <AdminInput
-                        value={readStr(c, 'chapterTitle')}
-            onChange={(e) =>
-              patchContent({ chapterTitle: e.target.value || undefined })
-            }
-          />
-        </AdminFieldLabel>
-        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-          Chapter body
-          <AdminTextarea
-            className="min-h-[72px]"
-            value={readStr(c, 'chapterBody')}
-            onChange={(e) =>
-              patchContent({ chapterBody: e.target.value || undefined })
-            }
-          />
-        </AdminFieldLabel>
+      <div className="mt-3 border-t border-[var(--color-line)]/60 pt-3">
+        <AdminEditableList
+          items={chapters}
+          onChange={(next) => patchContent({ chapters: next.length ? next : undefined })}
+          createItem={() => ({
+            id: createCmsId('chapter'),
+            title: 'Chapter',
+            body: '',
+          })}
+          renderLabel={(ch) => ch.title || 'Untitled chapter'}
+          addLabel="Add chapter"
+          renderEditor={(item, onPatch) => (
+            <div className="space-y-2">
+              <AdminInput
+                value={item.title}
+                onChange={(e) => onPatch({ title: e.target.value })}
+                placeholder="Chapter title"
+              />
+              <AdminTextarea
+                className="min-h-[72px]"
+                value={item.body}
+                onChange={(e) => onPatch({ body: e.target.value })}
+                placeholder="Chapter body"
+              />
+            </div>
+          )}
+        />
       </div>
     )
   }
@@ -433,53 +427,123 @@ function NatureContentFields({
   }
 
   if (nature === 'materialShowcase') {
+    type MatRow = {
+      id: string
+      productId: string
+      frontLabel?: string
+      materialName?: string
+      gsm?: string
+      composition?: string
+      characteristics: Array<{ id: string; label: string; body?: string; imageUrl?: string }>
+    }
+    const raw = Array.isArray(c.materialProducts) ? c.materialProducts : []
+    const rows: MatRow[] = raw.map((row, i) => {
+      const o = row as Record<string, unknown>
+      const productId = typeof o.productId === 'string' ? o.productId : ''
+      return {
+        id: productId || `mat-${i}`,
+        productId,
+        frontLabel: typeof o.frontLabel === 'string' ? o.frontLabel : undefined,
+        materialName: typeof o.materialName === 'string' ? o.materialName : undefined,
+        gsm: typeof o.gsm === 'string' ? o.gsm : undefined,
+        composition: typeof o.composition === 'string' ? o.composition : undefined,
+        characteristics: Array.isArray(o.characteristics)
+          ? (o.characteristics as MatRow['characteristics'])
+          : [],
+      }
+    })
     return (
-      <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-          Material name
-          <AdminInput
-                        value={readStr(c, 'materialName')}
-            onChange={(e) =>
-              patchContent({ materialName: e.target.value || undefined })
-            }
-          />
-        </AdminFieldLabel>
-        <AdminFieldLabel labelStyle="stacked" className="block">
-          GSM
-          <AdminInput
-                        value={readStr(c, 'gsm')}
-            onChange={(e) => patchContent({ gsm: e.target.value || undefined })}
-          />
-        </AdminFieldLabel>
-        <AdminFieldLabel labelStyle="stacked" className="block">
-          Composition
-          <AdminInput
-                        value={readStr(c, 'composition')}
-            onChange={(e) =>
-              patchContent({ composition: e.target.value || undefined })
-            }
-          />
-        </AdminFieldLabel>
-        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-          Fit notes
-          <AdminTextarea
-            className="min-h-[56px]"
-            value={readStr(c, 'fitNotes')}
-            onChange={(e) =>
-              patchContent({ fitNotes: e.target.value || undefined })
-            }
-          />
-        </AdminFieldLabel>
-        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-          Construction notes
-          <AdminTextarea
-            className="min-h-[56px]"
-            value={readStr(c, 'constructionNotes')}
-            onChange={(e) =>
-              patchContent({ constructionNotes: e.target.value || undefined })
-            }
-          />
-        </AdminFieldLabel>
+      <div className="mt-3 border-t border-[var(--color-line)]/60 pt-3">
+        <AdminEditableList
+          items={rows}
+          onChange={(next) =>
+            patchContent({
+              materialProducts: next.map(
+                ({
+                  productId,
+                  frontLabel,
+                  materialName,
+                  gsm,
+                  composition,
+                  characteristics,
+                }) => ({
+                  productId,
+                  frontLabel,
+                  materialName,
+                  gsm,
+                  composition,
+                  characteristics,
+                }),
+              ),
+            })
+          }
+          createItem={() => {
+            const id = createCmsId('mat')
+            return { id, productId: '', characteristics: [] }
+          }}
+          renderLabel={(r) => r.frontLabel || r.productId || 'Material card'}
+          addLabel="Add product material"
+          renderEditor={(item, onPatch) => (
+            <div className="space-y-3">
+              <AdminInput
+                value={item.productId}
+                onChange={(e) => onPatch({ productId: e.target.value })}
+                placeholder="Product ID (from catalog)"
+              />
+              <AdminInput
+                value={item.frontLabel ?? ''}
+                onChange={(e) => onPatch({ frontLabel: e.target.value || undefined })}
+                placeholder="Front label"
+              />
+              <AdminInput
+                value={item.materialName ?? ''}
+                onChange={(e) => onPatch({ materialName: e.target.value || undefined })}
+                placeholder="Material name"
+              />
+              <div className="grid gap-2 sm:grid-cols-2">
+                <AdminInput
+                  value={item.gsm ?? ''}
+                  onChange={(e) => onPatch({ gsm: e.target.value || undefined })}
+                  placeholder="GSM"
+                />
+                <AdminInput
+                  value={item.composition ?? ''}
+                  onChange={(e) => onPatch({ composition: e.target.value || undefined })}
+                  placeholder="Composition"
+                />
+              </div>
+              <AdminEditableList<{ id: string; label: string; body?: string; imageUrl?: string }>
+                items={item.characteristics}
+                onChange={(chars) => onPatch({ characteristics: chars })}
+                createItem={() => ({
+                  id: createCmsId('char'),
+                  label: 'Characteristic',
+                })}
+                renderLabel={(ch) => ch.label}
+                addLabel="Add characteristic"
+                maxItems={12}
+                renderEditor={(ch, onChPatch) => (
+                  <div className="space-y-2">
+                    <AdminInput
+                      value={ch.label}
+                      onChange={(e) => onChPatch({ label: e.target.value })}
+                    />
+                    <AdminInput
+                      value={ch.body ?? ''}
+                      onChange={(e) => onChPatch({ body: e.target.value || undefined })}
+                      placeholder="Description"
+                    />
+                    <AdminMediaField
+                      label="Image"
+                      value={ch.imageUrl ?? ''}
+                      onChange={(url) => onChPatch({ imageUrl: url || undefined })}
+                    />
+                  </div>
+                )}
+              />
+            </div>
+          )}
+        />
       </div>
     )
   }
@@ -557,140 +621,6 @@ function NatureContentFields({
             onChange={(e) =>
               patchContent({ cta: { ...ct, href: e.target.value } })
             }
-          />
-        </AdminFieldLabel>
-      </div>
-    )
-  }
-
-  if (nature === 'lookbook') {
-    const items = Array.isArray(c.galleryItems)
-      ? (c.galleryItems as Array<{ src?: string; caption?: string }>)
-      : []
-    const pad = (i: number) => items[i] ?? { src: '', caption: '' }
-    const setItem = (
-      index: number,
-      next: { src?: string; caption?: string },
-    ) => {
-      const copy = [pad(0), pad(1), pad(2), pad(3), pad(4)]
-      copy[index] = { ...copy[index], ...next }
-      const galleryItems = copy
-        .filter((it) => (it.src ?? '').trim().length > 0)
-        .map((it) => ({
-          src: (it.src ?? '').trim(),
-          caption: it.caption?.trim() || undefined,
-        }))
-      patchContent({ galleryItems: galleryItems.length ? galleryItems : undefined })
-    }
-    const layoutRaw = readStr(c, 'layout')
-    const layoutValue =
-      layoutRaw === 'masonry' ||
-      layoutRaw === 'carousel' ||
-      layoutRaw === 'editorial'
-        ? layoutRaw
-        : INHERIT_VALUE
-    return (
-      <div className="mt-3 space-y-3 border-t border-[var(--color-line)]/60 pt-3">
-        <div className="text-xs text-[var(--color-text-muted)]">
-          <span className="block" id={`act-${act.id}-lookbook-layout-label`}>
-            Layout
-          </span>
-          <AdminSelect
-            value={layoutValue}
-            onValueChange={(v) => {
-              patchContent({
-                layout:
-                  v === INHERIT_VALUE
-                    ? undefined
-                    : (v as 'masonry' | 'carousel' | 'editorial'),
-              })
-            }}
-          >
-            <AdminSelectTrigger
-              id={`act-${act.id}-lookbook-layout`}
-              aria-labelledby={`act-${act.id}-lookbook-layout-label`}
-              className="mt-1"
-            >
-              <AdminSelectValue placeholder="Layout" />
-            </AdminSelectTrigger>
-            <AdminSelectContent>
-              <AdminSelectItem value={INHERIT_VALUE}>Default</AdminSelectItem>
-              <AdminSelectItem value="masonry">Masonry</AdminSelectItem>
-              <AdminSelectItem value="carousel">Carousel</AdminSelectItem>
-              <AdminSelectItem value="editorial">Editorial</AdminSelectItem>
-            </AdminSelectContent>
-          </AdminSelect>
-        </div>
-        <p className="text-[10px] text-[var(--color-text-muted)]">
-          Up to five gallery entries (image or hosted video URL in src).
-        </p>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="grid gap-3 rounded-lg border border-[var(--color-line)]/50 p-3"
-          >
-            <MediaPickerField
-              label={`Gallery item ${i + 1}`}
-              kind="any"
-              hint="Image or video for this lookbook slot."
-              value={pad(i).src ?? ''}
-              onChange={(next) =>
-                setItem(i, { src: next, caption: pad(i).caption })
-              }
-              fallback="none"
-            />
-            <AdminFieldLabel labelStyle="micro">
-              Caption {i + 1}
-              <AdminInput
-                                value={pad(i).caption ?? ''}
-                onChange={(e) => setItem(i, { src: pad(i).src, caption: e.target.value })}
-              />
-            </AdminFieldLabel>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  if (nature === 'newsletterWaitlist') {
-    const opts = readStrList(c, 'preferredProductOptions')
-    const optLine = opts.join('\n')
-    return (
-      <div className="mt-3 grid gap-3 border-t border-[var(--color-line)]/60 pt-3 md:grid-cols-2">
-        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-          Form intro
-          <AdminTextarea
-            className="min-h-[56px]"
-            value={readStr(c, 'formIntro')}
-            onChange={(e) =>
-              patchContent({ formIntro: e.target.value || undefined })
-            }
-          />
-        </AdminFieldLabel>
-        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-          Consent copy
-          <AdminTextarea
-            className="min-h-[56px]"
-            value={readStr(c, 'consentCopy')}
-            onChange={(e) =>
-              patchContent({ consentCopy: e.target.value || undefined })
-            }
-          />
-        </AdminFieldLabel>
-        <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
-          Preferred product options (one per line)
-          <AdminTextarea
-            className="min-h-[72px]"
-            value={optLine}
-            onChange={(e) => {
-              const lines = e.target.value
-                .split('\n')
-                .map((s) => s.trim())
-                .filter(Boolean)
-              patchContent({
-                preferredProductOptions: lines.length ? lines : undefined,
-              })
-            }}
           />
         </AdminFieldLabel>
       </div>
@@ -979,6 +909,7 @@ export function DropActsBuilderPanel({
   )
   const [animationRemountKey, setAnimationRemountKey] = useState(0)
   const [playingAnimation, setPlayingAnimation] = useState(false)
+  const [motionPreviewLive, setMotionPreviewLive] = useState(false)
 
   useEffect(() => {
     if (selectedActId && sorted.some((a) => a.id === selectedActId)) return
@@ -986,6 +917,16 @@ export function DropActsBuilderPanel({
   }, [selectedActId, sorted])
 
   const selectedAct = sorted.find((a) => a.id === selectedActId) ?? null
+
+  useEffect(() => {
+    if (!selectedAct?.animation) return
+    setAnimationRemountKey((k) => k + 1)
+  }, [
+    selectedAct?.animation?.enabled,
+    selectedAct?.animation?.type,
+    selectedAct?.animation?.intensity,
+    selectedAct?.animation?.desktopOnly,
+  ])
 
   const emit = useCallback(
     (nextActs: LandingAct[]) => {
@@ -1026,7 +967,7 @@ export function DropActsBuilderPanel({
 
   function addAct() {
     const nature = 'hero'
-    const preset = PRESETS[nature]?.[0] ?? 'default'
+    const preset = PRESETS[nature as LandingActNature]?.[0] ?? 'default'
     const next: LandingAct = {
       id: createCmsId('act'),
       nature,
@@ -1044,7 +985,9 @@ export function DropActsBuilderPanel({
 
   const act = selectedAct
   const anim = act ? mergeActAnimationConfig(act.animation) : null
-  const presetChoices = act ? [...(PRESETS[act.nature] ?? ['default'])] : []
+  const presetChoices = act
+    ? [...(PRESETS[act.nature as LandingActNature] ?? ['default'])]
+    : []
   const presetSelectValue =
     act && presetChoices.includes(act.preset)
       ? act.preset
@@ -1080,16 +1023,24 @@ export function DropActsBuilderPanel({
             description={undefined}
             actions={
               selectedActId ? (
-                <IconButton
-                  type="button"
-                  aria-label={playingAnimation ? 'Playing animation' : 'Play animation'}
-                  title={playingAnimation ? 'Playing…' : 'Play animation'}
-                  disabled={playingAnimation}
-                  className="h-8 w-8 border-[var(--color-line)]/70 bg-[var(--color-surface-soft)]"
-                  onClick={playSelectedAnimation}
-                >
-                  <Play size={14} aria-hidden />
-                </IconButton>
+                <div className="flex items-center gap-2">
+                  <AdminCheckbox
+                    className="py-0"
+                    checked={motionPreviewLive}
+                    onChange={(e) => setMotionPreviewLive(e.target.checked)}
+                    label="Live motion"
+                  />
+                  <IconButton
+                    type="button"
+                    aria-label={playingAnimation ? 'Playing animation' : 'Play animation'}
+                    title={playingAnimation ? 'Playing…' : 'Play animation'}
+                    disabled={playingAnimation}
+                    className="h-8 w-8 border-[var(--color-line)]/70 bg-[var(--color-surface-soft)]"
+                    onClick={playSelectedAnimation}
+                  >
+                    <Play size={14} aria-hidden />
+                  </IconButton>
+                </div>
               ) : null
             }
           >
@@ -1103,7 +1054,7 @@ export function DropActsBuilderPanel({
                 wordmarkUrl={wordmarkUrl}
                 draftActs={acts}
                 onlyActIds={[selectedActId]}
-                freezeIntroAnimations={!playingAnimation}
+                freezeIntroAnimations={!playingAnimation && !motionPreviewLive}
                 animationRemountKey={animationRemountKey}
                 compact
               />
@@ -1141,7 +1092,7 @@ export function DropActsBuilderPanel({
                 <AdminSelect
                   value={act.nature}
                   onValueChange={(nature) => {
-                    const preset = PRESETS[nature]?.[0] ?? 'default'
+                    const preset = PRESETS[nature as LandingActNature]?.[0] ?? 'default'
                     updateAct(act.id, {
                       nature,
                       preset,
@@ -1212,7 +1163,7 @@ export function DropActsBuilderPanel({
                   onChange={(e) => updateAct(act.id, { subtitle: e.target.value })}
                 />
               </AdminFieldLabel>
-              {act.nature !== 'hero' ? (
+              {act.nature !== 'hero' && act.nature !== 'manifesto' ? (
                 <AdminFieldLabel labelStyle="stacked" className="block md:col-span-2">
                   Body
                   <AdminTextarea

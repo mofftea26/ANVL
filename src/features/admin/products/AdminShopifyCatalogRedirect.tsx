@@ -4,6 +4,7 @@ import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader'
 import { getShopifyAdminUrl } from '@/features/shopify/config/shopifyPublicEnv'
 import { Button } from '@/shared/components/ui/Button'
+import { AdminShopifyProductGrid } from './AdminShopifyProductGrid'
 
 /**
  * Catalog editing lives in Shopify Admin when Storefront API env is configured.
@@ -58,6 +59,11 @@ export function AdminShopifyCatalogRedirect() {
           ) : null}
         </div>
       </AdminCard>
+      <AdminSectionHeader
+        title="Storefront catalog"
+        description="Live products from Shopify — open any card to view on the storefront."
+      />
+      <AdminShopifyProductGrid />
     </AdminLayout>
   )
 }

@@ -9,6 +9,7 @@ import { adminDropListVisualsFromDrop } from '@/features/admin/drops/adminDropLi
 import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { HomePageContent } from '@/features/cms/types/cms.types'
+import { DEFAULT_SITE_HOMEPAGE } from '@/features/cms/siteHomepage.settings'
 
 function seedDropListItem(): AdminDropListItem {
   return {
@@ -99,5 +100,8 @@ export const seedCmsClient: CmsClient = {
   },
   async deleteAdminDrop() {
     /* SSR seed is read-only */
+  },
+  async getSiteHomepage() {
+    return structuredClone(DEFAULT_SITE_HOMEPAGE)
   },
 }

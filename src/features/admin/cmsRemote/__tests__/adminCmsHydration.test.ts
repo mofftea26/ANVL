@@ -3,7 +3,6 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { hydrateAdminCmsFromSupabase, preferLocalDropWhenNewer } from '@/features/admin/cmsRemote/adminCmsHydration'
-import { fetchAdminDropsListFromSupabase } from '@/features/admin/cmsRemote/adminCmsDropsList'
 import {
   getDropById,
   persistDropsState,
@@ -11,7 +10,7 @@ import {
   resetAllLocalCmsKeys,
   resetDropSystemHydrationGate,
 } from '@/features/admin/drops/drops.service'
-import { createEmptyDrop } from '@/features/admin/drops/drops.defaults'
+import { createEmptyDrop, DEFAULT_OATH_DROP_ID } from '@/features/admin/drops/drops.defaults'
 import { persistedDropSchema } from '@/features/admin/drops/drops.persistence.zod'
 
 const mockFrom = vi.fn()
@@ -88,7 +87,7 @@ describe('hydrateAdminCmsFromSupabase', () => {
     resetAllLocalCmsKeys()
   })
 
-  it('persists legacy remote drop bodies that fail strict schema parsing', async () => {
+  it('replaces legacy remote drops with the stock Oath drop', async () => {
     expect(persistedDropSchema.safeParse(LEGACY_BODY).success).toBe(false)
 
     const dropsQuery = dropsChain({
@@ -120,11 +119,12 @@ describe('hydrateAdminCmsFromSupabase', () => {
       from: mockFrom,
     } as never)
 
-    expect(getDropById(LEGACY_CLIENT_DROP_ID)?.slug).toBe('legacy-campaign')
-    expect(readDropsArray().some((d) => d.id === LEGACY_CLIENT_DROP_ID)).toBe(true)
+    expect(getDropById(LEGACY_CLIENT_DROP_ID)).toBeUndefined()
+    expect(readDropsArray()).toHaveLength(1)
+    expect(readDropsArray()[0]?.id).toBe(DEFAULT_OATH_DROP_ID)
   })
 
-  it('uses the same client drop id as the admin drops list for legacy bodies', async () => {
+  it('keeps only the Oath drop in local storage after hydration cleanup', async () => {
     const dropsQuery = dropsChain({
       data: [
         {
@@ -159,16 +159,12 @@ describe('hydrateAdminCmsFromSupabase', () => {
       from: mockFrom,
     } as never)
 
-    const list = await fetchAdminDropsListFromSupabase()
-    expect(list.ok).toBe(true)
-    if (!list.ok) return
-
-    expect(list.items).toHaveLength(1)
-    expect(list.items[0]?.id).toBe(LEGACY_CLIENT_DROP_ID)
-    expect(getDropById(list.items[0]!.id)?.name).toBe('Legacy Campaign')
+    expect(readDropsArray()).toHaveLength(1)
+    expect(readDropsArray()[0]?.id).toBe(DEFAULT_OATH_DROP_ID)
+    expect(getDropById(DEFAULT_OATH_DROP_ID)?.name).toBe('The Oath')
   })
 
-  it('prefers newer local drop over stale remote during rehydrate', async () => {
+  it('normalizes non-Oath hydration rows to the stock Oath drop', async () => {
     const clientDropId = 'drop_local-newer'
     const localUpdatedAt = '2026-05-28T12:00:00.000Z'
     const remoteUpdatedAt = '2026-05-27T12:00:00.000Z'
@@ -223,8 +219,9 @@ describe('hydrateAdminCmsFromSupabase', () => {
       from: mockFrom,
     } as never)
 
-    expect(getDropById(clientDropId)?.name).toBe('Local edited title')
-    expect(readDropsArray()[0]?.updatedAt).toBe(localUpdatedAt)
+    expect(getDropById(clientDropId)).toBeUndefined()
+    expect(readDropsArray()).toHaveLength(1)
+    expect(readDropsArray()[0]?.id).toBe(DEFAULT_OATH_DROP_ID)
   })
 })
 

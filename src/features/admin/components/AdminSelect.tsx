@@ -87,7 +87,7 @@ export const AdminSelectItem = forwardRef<
     >
       <span className="absolute left-2 flex h-4 w-4 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <Check size={14} aria-hidden="true" />
+          <Check size={12} className="text-[var(--color-accent)]" aria-hidden="true" />
         </SelectPrimitive.ItemIndicator>
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>

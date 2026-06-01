@@ -15,16 +15,16 @@ const SLOT_TO_PUBLIC_NATURE: Record<LandingActSlot['key'], string> = {
   dropReveal: 'dropReveal',
   pieces: 'productShowcase',
   materials: 'materialShowcase',
-  waitlist: 'newsletterWaitlist',
+  waitlist: 'finalCTA',
 }
 
 const SLOT_TO_PRESET: Record<LandingActSlot['key'], string> = {
   hero: 'theOathCinematic',
-  manifesto: 'oathStampLedger',
-  dropReveal: 'monolithReveal',
-  pieces: 'threeCardEditorial',
-  materials: 'fabricRunway',
-  waitlist: 'oathFullWidthForm',
+  manifesto: 'oathTenetLedger',
+  dropReveal: 'oathMonolithReveal',
+  pieces: 'oathEditorialThree',
+  materials: 'oathMaterialFlip',
+  waitlist: 'oathForgeClose',
 }
 
 /**
@@ -72,6 +72,7 @@ function slotKeyFromNature(nature: string): string {
       return 'pieces'
     case 'materialShowcase':
       return 'materials'
+    case 'finalCTA':
     case 'newsletterWaitlist':
       return 'waitlist'
     case 'hero':

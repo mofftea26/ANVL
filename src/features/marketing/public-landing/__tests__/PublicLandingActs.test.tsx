@@ -32,12 +32,12 @@ vi.mock('@/features/marketing/act-presets/hero/TheOathCinematic', () => ({
 
 const piecesGridProducts = vi.hoisted(() => vi.fn())
 
-vi.mock('@/features/marketing/act-presets/productShowcase/ThreeCardEditorial', async () => {
+vi.mock('@/features/marketing/act-presets/productShowcase/OathEditorialThree', async () => {
   const { resolveProductShowcaseProducts } = await import(
     '@/features/marketing/act-presets/resolveProductShowcaseProducts'
   )
   return {
-    ThreeCardEditorialPreset: ({
+    OathEditorialThreePreset: ({
       products,
       row,
     }: {

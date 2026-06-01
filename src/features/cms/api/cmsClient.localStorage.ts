@@ -14,6 +14,7 @@ import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { HomePageContent } from '@/features/cms/types/cms.types'
 import { resolveStorefrontActiveDrop } from '@/features/cms/runtime/storefrontCmsSync'
 import { adminDropListVisualsFromDrop } from '@/features/admin/drops/adminDropListItemVisuals'
+import { readSiteHomepageFromStorage } from '@/features/cms/siteHomepage.settings'
 
 function dropToAdminListItem(d: Drop): AdminDropListItem {
   return {
@@ -152,5 +153,8 @@ export const localStorageCmsClient: CmsClient = {
   async deleteAdminDrop(id) {
     deleteDrop(id)
     await flushAdminCmsToSupabaseIfConfigured()
+  },
+  async getSiteHomepage() {
+    return readSiteHomepageFromStorage()
   },
 }

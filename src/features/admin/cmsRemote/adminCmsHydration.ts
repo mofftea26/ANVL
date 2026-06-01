@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Drop } from '@/features/admin/drops/drops.types'
 import {
   ensureDropSystemHydrated,
+  ensureOnlyTheOathDrop,
+  needsOnlyTheOathDrop,
   persistDropsState,
   readDropsArray,
   resetDropSystemHydrationGate,
@@ -18,15 +20,26 @@ import { saveWebsiteLayoutContent } from '@/features/admin/website-layout/websit
 import { persistedWebsiteLayoutSchema } from '@/features/admin/website-layout/websiteLayout.persistence.zod'
 import { createDefaultWebsiteLayout } from '@/features/admin/website-layout/websiteLayout.defaults'
 import { saveSiteSeoContent, parseSiteSeoUnknown } from '@/features/cms/siteSeo.local'
+import {
+  writeSiteHomepageToStorage,
+  parseSiteHomepageUnknown,
+} from '@/features/cms/siteHomepage.settings'
+import { insertAnvlDropToSupabase } from '@/features/admin/cmsRemote/adminCmsInsertDrop'
 import { saveGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.service'
 import { persistedGlobalBrandSchema } from '@/features/admin/global-brand/globalBrand.persistence.zod'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
-import { createDefaultTheOathDrop } from '@/features/admin/drops/drops.defaults'
+import {
+  createDefaultTheOathDrop,
+  DEFAULT_OATH_DROP_ID,
+} from '@/features/admin/drops/drops.defaults'
+import { flushAdminCmsRemoteSync } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
+import { publishStorefrontDropByClientId } from '@/features/admin/cmsRemote/adminCmsPublish'
 import {
   beginAdminCmsRemoteHydration,
   endAdminCmsRemoteHydration,
 } from '@/features/admin/cmsRemote/adminCmsRemoteGate'
 import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
+import { isPostgrestMissingColumnError } from '@/features/cms/api/storefrontPublicationColumns'
 
 type AnvlDropRow = {
   id: string
@@ -78,19 +91,29 @@ export async function hydrateAdminCmsFromSupabase(
 ): Promise<void> {
   beginAdminCmsRemoteHydration()
   try {
-    const [dropsRes, pubRes] = await Promise.all([
-      client
-        .from('anvl_drops')
-        .select(
-          'id, body, status, slug, client_drop_id, release_date, scheduled_activation_at',
-        )
-        .order('slug'),
-      client
+    const dropsRes = await client
+      .from('anvl_drops')
+      .select(
+        'id, body, status, slug, client_drop_id, release_date, scheduled_activation_at',
+      )
+      .order('slug')
+
+    let pubRes = await client
+      .from('storefront_publication')
+      .select('website_layout, site_seo, site_homepage, global_brand, active_drop_id')
+      .eq('id', 1)
+      .maybeSingle()
+
+    if (
+      pubRes.error &&
+      isPostgrestMissingColumnError(pubRes.error, 'site_homepage')
+    ) {
+      pubRes = await client
         .from('storefront_publication')
         .select('website_layout, site_seo, global_brand, active_drop_id')
         .eq('id', 1)
-        .maybeSingle(),
-    ])
+        .maybeSingle()
+    }
 
     if (dropsRes.error) {
       throw new Error(dropsRes.error.message)
@@ -125,12 +148,21 @@ export async function hydrateAdminCmsFromSupabase(
 
     resetDropSystemHydrationGate()
 
+    let shouldPublishOath = false
+
     if (drops.length === 0) {
       const oath = createDefaultTheOathDrop()
       persistDropsState([oath], oath.id)
+      void insertAnvlDropToSupabase(oath)
+      shouldPublishOath = true
     } else {
       const activeClientId = resolveActiveClientDropId(dropRows, activeDbDropId)
       persistDropsState(drops, activeClientId ?? drops[0]?.id ?? null)
+
+      if (needsOnlyTheOathDrop()) {
+        ensureOnlyTheOathDrop()
+        shouldPublishOath = true
+      }
     }
 
     if (pubRes.error) {
@@ -181,6 +213,17 @@ export async function hydrateAdminCmsFromSupabase(
       saveSiteSeoContent(parseSiteSeoUnknown(pub.site_seo))
     }
 
+    if (pub != null && 'site_homepage' in pub && pub.site_homepage != null) {
+      writeSiteHomepageToStorage(parseSiteHomepageUnknown(pub.site_homepage))
+    }
+
+    if (shouldPublishOath) {
+      writeSiteHomepageToStorage({
+        mode: 'custom',
+        updatedAt: new Date().toISOString(),
+      })
+    }
+
     if (pub != null && 'global_brand' in pub && pub.global_brand != null) {
       const gb = persistedGlobalBrandSchema.safeParse(pub.global_brand)
       if (gb.success) {
@@ -192,6 +235,13 @@ export async function hydrateAdminCmsFromSupabase(
     }
 
     ensureDropSystemHydrated()
+
+    if (shouldPublishOath && import.meta.env.MODE !== 'test') {
+      const flush = await flushAdminCmsRemoteSync()
+      if (flush.ok) {
+        await publishStorefrontDropByClientId(DEFAULT_OATH_DROP_ID)
+      }
+    }
   } finally {
     endAdminCmsRemoteHydration()
   }

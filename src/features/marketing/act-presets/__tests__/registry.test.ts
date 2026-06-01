@@ -26,13 +26,19 @@ describe('act preset registry', () => {
     expect(entry?.preset).toBe('theOathCinematic')
   })
 
-  it('resolves PR-9 nature presets', () => {
-    expect(resolveActPreset('lookbook', 'masonry')?.preset).toBe('masonry')
-    expect(resolveActPreset('specialEvent', 'eventCard')?.preset).toBe('eventCard')
-    expect(resolveActPreset('finalCTA', 'centered')?.preset).toBe('centered')
+  it('resolves oath presets and legacy aliases', () => {
+    expect(resolveActPreset('specialEvent', 'eventCard')?.preset).toBe('oathEventPulse')
+    expect(resolveActPreset('finalCTA', 'centered')?.preset).toBe('oathForgeClose')
+    expect(resolveActPreset('manifesto', 'oathStampLedger')?.preset).toBe('oathTenetLedger')
+    expect(resolveActPreset('productShowcase', 'gridSix')?.preset).toBe('oathEditorialThree')
   })
 
-  it('registers all CMS builder preset keys for PR-8 natures', () => {
+  it('does not expose lookbook or newsletter natures', () => {
+    expect(LANDING_ACT_NATURES).not.toContain('lookbook')
+    expect(LANDING_ACT_NATURES).not.toContain('newsletterWaitlist')
+  })
+
+  it('registers all CMS builder preset keys', () => {
     for (const nature of LANDING_ACT_NATURES) {
       for (const preset of ACT_PRESETS_BY_NATURE[nature]) {
         expect(resolveActPreset(nature, preset)?.preset).toBe(preset)
@@ -41,19 +47,16 @@ describe('act preset registry', () => {
   })
 
   it('maps stored preset ids to user-facing labels', () => {
-    expect(getActPresetLabel('newsletterWaitlist', 'minimalForm')).toBe('Minimal waitlist')
     expect(getActPresetLabel('hero', 'theOathCinematic')).toBe('The Oath cinematic')
-    expect(getActPresetLabel('hero', 'splitProduct')).toBe('Cinematic split hero')
-    expect(getActPresetLabel('hero', 'splitProduct')).toBe('Cinematic split hero')
+    expect(getActPresetLabel('manifesto', 'oathTenetLedger')).toBe('Oath tenet ledger')
     expect(getActPresetLabel('hero', 'legacyUnknown')).toBe('Legacy Unknown')
   })
 
-  it('aliases legacy gridSix product showcase preset', () => {
-    expect(resolveActPreset('productShowcase', 'gridSix')?.preset).toBe('gridSix')
-  })
-
   it('exports a lazy component for every registry entry', () => {
-    expect(ACT_PRESET_ENTRIES.length).toBeGreaterThanOrEqual(LANDING_ACT_NATURES.length)
+    expect(ACT_PRESET_ENTRIES.length).toBe(LANDING_ACT_NATURES.reduce(
+      (n, nature) => n + ACT_PRESETS_BY_NATURE[nature].length,
+      0,
+    ))
     for (const entry of ACT_PRESET_ENTRIES) {
       expect(typeof entry.component).toBe('object')
       expect(entry.label.length).toBeGreaterThan(0)

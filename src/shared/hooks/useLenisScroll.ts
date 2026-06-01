@@ -45,6 +45,23 @@ export function useLenisScroll(enabled: boolean) {
         touchMultiplier: 1.4,
       })
 
+      ScrollTrigger.scrollerProxy(document.documentElement, {
+        scrollTop(value) {
+          if (arguments.length) {
+            lenis.scrollTo(value as number, { immediate: true })
+          }
+          return lenis.scroll
+        },
+        getBoundingClientRect() {
+          return {
+            top: 0,
+            left: 0,
+            width: window.innerWidth,
+            height: window.innerHeight,
+          }
+        },
+      })
+
       const onScroll = () => ScrollTrigger.update()
       lenis.on('scroll', onScroll)
 
@@ -52,14 +69,18 @@ export function useLenisScroll(enabled: boolean) {
       gsap.ticker.add(ticker)
       gsap.ticker.lagSmoothing(0)
 
+      const onRefresh = () => lenis.resize()
+      ScrollTrigger.addEventListener('refresh', onRefresh)
       const refresh = () => ScrollTrigger.refresh()
       if (typeof document !== 'undefined' && document.fonts?.ready) {
         document.fonts.ready.then(refresh).catch(() => {})
       }
       window.addEventListener('load', refresh)
+      refresh()
 
       teardown = () => {
         window.removeEventListener('load', refresh)
+        ScrollTrigger.removeEventListener('refresh', onRefresh)
         lenis.off('scroll', onScroll)
         gsap.ticker.remove(ticker)
         gsap.ticker.lagSmoothing(500, 33)

@@ -14,8 +14,10 @@ import { RouteAnalytics } from "@/app/providers/RouteAnalytics";
 import { AppErrorBoundary } from "@/app/components/AppErrorBoundary";
 import { runtimeClients } from "@/app/config/runtime";
 import { useLandingCms } from "@/features/cms/hooks/useLandingCms";
+import { useBrandShowcaseShell } from "@/features/cms/hooks/useBrandShowcaseShell";
 import { SiteFooter } from "@/shared/components/layout/SiteFooter";
 import { StickyHeader } from "@/shared/components/layout/StickyHeader";
+import { MarketingToolsHead } from "@/shared/components/seo/MarketingToolsHead";
 import appCss from "@/styles.css?url";
 import manropeLatinWoff2 from "@fontsource/manrope/files/manrope-latin-400-normal.woff2?url";
 import bebasLatinWoff2 from "@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2?url";
@@ -41,20 +43,23 @@ export const Route = createRootRoute({
             ),
             activeDrop: p.drop,
             globalBrand: p.globalBrand,
+            siteHomepage: p.siteHomepage,
           };
         }
       } catch {
         /* missing project / network */
       }
     }
-    const [landing, activeDrop] = await Promise.all([
+    const [landing, activeDrop, siteHomepage] = await Promise.all([
       runtimeClients.cms.getLandingCmsContent(),
       runtimeClients.cms.getActiveDrop(),
+      runtimeClients.cms.getSiteHomepage(),
     ]);
     return {
       landing,
       activeDrop,
       globalBrand: createDefaultGlobalBrandSettings(),
+      siteHomepage,
     };
   },
   head: () => ({
@@ -104,13 +109,19 @@ function RootDocument({ children }: { children: ReactNode }) {
 }
 
 function RootLayout() {
-  const { landing: ssrLanding, activeDrop, globalBrand } = Route.useLoaderData();
+  const {
+    landing: ssrLanding,
+    activeDrop,
+    globalBrand,
+    siteHomepage,
+  } = Route.useLoaderData();
   const landing = useLandingCms(ssrLanding);
   const navigation = landing.navigation;
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
   const isAdminRoute = pathname.startsWith("/admin");
+  const isBrandShowcase = useBrandShowcaseShell(siteHomepage.mode);
 
   const devtools =
     IS_DEV ? (
@@ -141,15 +152,20 @@ function RootLayout() {
 
   return (
     <>
-      <ActiveDropThemeProvider initialDrop={activeDrop} initialGlobalBrand={globalBrand}>
+      <MarketingToolsHead />
+      <ActiveDropThemeProvider
+        initialDrop={activeDrop}
+        initialGlobalBrand={globalBrand}
+        applyDropTheme={!isBrandShowcase}
+      >
         <RouteAnalytics />
-        <StickyHeader navigation={navigation} />
+        {!isBrandShowcase ? <StickyHeader navigation={navigation} /> : null}
         <main>
           <AppErrorBoundary resetKey={pathname}>
             <Outlet />
           </AppErrorBoundary>
         </main>
-        <SiteFooter navigation={navigation} />
+        {!isBrandShowcase ? <SiteFooter navigation={navigation} /> : null}
       </ActiveDropThemeProvider>
       {devtools}
     </>

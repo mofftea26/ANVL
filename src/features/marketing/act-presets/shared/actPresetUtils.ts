@@ -4,9 +4,11 @@ import type { LandingAct } from '@/features/cms/landing/landingActs.types'
 export const ACT_SECTION_CLASS =
   'anvl-screen-section relative w-full overflow-hidden border-b border-[var(--color-line)]'
 
-/** Scrollable inner column; centers content when it fits. */
+/** Inner column — one viewport, no nested scroll. */
 export const ACT_CONTENT_CLASS =
-  'anvl-act-content relative z-10 flex flex-col justify-center px-4 py-6 sm:py-8'
+  'anvl-act-content relative z-10 px-4 py-3 sm:py-4 md:px-8'
+
+export const ACT_CONTENT_INNER_CLASS = 'anvl-act-content-inner'
 import { readActStr } from '@/features/cms/landing/landingActPreviewOverlay'
 import {
   hasActLayerMedia,

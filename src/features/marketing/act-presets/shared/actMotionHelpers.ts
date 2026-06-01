@@ -20,7 +20,7 @@ export type ActMotionSelectors = {
 
 export function applyCalmIdleFloat(
   target: Element | null,
-  tokens: ActMotionTokens,
+  _tokens: ActMotionTokens,
   intensity: ActAnimationIntensity,
 ): (() => void) | void {
   if (!target) return

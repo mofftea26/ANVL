@@ -12,8 +12,6 @@ const NATURE_LABEL: Record<string, string> = {
   productShowcase: 'Products',
   materialShowcase: 'Materials',
   specialEvent: 'Event',
-  lookbook: 'Lookbook',
-  newsletterWaitlist: 'Waitlist',
   finalCTA: 'Final CTA',
 }
 

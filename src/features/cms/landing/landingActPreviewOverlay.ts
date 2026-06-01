@@ -147,8 +147,8 @@ export function previewManifestoFields(
         .filter((t) => typeof t.label === 'string' && t.label.trim())
         .map((t, i) => ({
           id: t.id?.trim() || `tenet-${i + 1}`,
-          label: t.label!.trim(),
-          body: typeof t.body === 'string' ? t.body : undefined,
+          text: t.label!.trim(),
+          isVisible: true,
         }))
     : null
 
@@ -188,7 +188,9 @@ export function previewDropRevealFields(
     tagline,
     primaryCta: mergeActContentCta(landing.primaryCta, c, 'primaryCta'),
     secondaryCta: mergeActContentCta(landing.secondaryCta, c, 'secondaryCta'),
-    dropIcon: dropVisualSrc || landing.dropIcon,
+    dropIcon: dropVisualSrc
+      ? { src: dropVisualSrc, alt: landing.dropIcon.alt }
+      : landing.dropIcon,
     releaseDateIso: releaseDateIso || undefined,
   }
 }

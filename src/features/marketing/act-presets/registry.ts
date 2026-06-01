@@ -1,4 +1,5 @@
 import { lazy, type JSX, type LazyExoticComponent } from 'react'
+import { resolvePresetAlias } from './actPresetAliases'
 import {
   LANDING_ACT_NATURES,
   type ActPresetEntry,
@@ -20,18 +21,16 @@ function lazyPreset(
   })
 }
 
-/** Default preset id per nature — matches CMS builder + landing slot seeds. */
+/** Default oath preset per nature. */
 export const DEFAULT_ACT_PRESETS: Record<LandingActNature, string> = {
   hero: 'theOathCinematic',
-  manifesto: 'oathStampLedger',
-  storytelling: 'chapterScroll',
-  dropReveal: 'monolithReveal',
-  productShowcase: 'threeCardEditorial',
-  materialShowcase: 'fabricRunway',
-  specialEvent: 'eventCard',
-  lookbook: 'masonry',
-  newsletterWaitlist: 'oathFullWidthForm',
-  finalCTA: 'centered',
+  manifesto: 'oathTenetLedger',
+  storytelling: 'oathNarrativeScroll',
+  dropReveal: 'oathMonolithReveal',
+  productShowcase: 'oathEditorialThree',
+  materialShowcase: 'oathMaterialFlip',
+  specialEvent: 'oathEventPulse',
+  finalCTA: 'oathForgeClose',
 }
 
 const ENTRIES: ActPresetEntry[] = [
@@ -45,273 +44,84 @@ const ENTRIES: ActPresetEntry[] = [
     ),
   },
   {
-    nature: 'hero',
-    preset: 'splitProduct',
-    label: 'Cinematic split hero',
-    component: lazyPreset(
-      () => import('./hero/SplitProductHero'),
-      'SplitProductHeroPreset',
-    ),
-  },
-  {
-    nature: 'hero',
-    preset: 'minimalEmblem',
-    label: 'Minimal emblem hero',
-    component: lazyPreset(
-      () => import('./hero/MinimalEmblemHero'),
-      'MinimalEmblemHeroPreset',
-    ),
-  },
-  {
     nature: 'manifesto',
-    preset: 'oathStampLedger',
-    label: 'Oath stamp ledger',
+    preset: 'oathTenetLedger',
+    label: 'Oath tenet ledger',
     component: lazyPreset(
-      () => import('./manifesto/OathStampLedger'),
-      'OathStampLedgerPreset',
-    ),
-  },
-  {
-    nature: 'manifesto',
-    preset: 'splitText',
-    label: 'Split text manifesto',
-    component: lazyPreset(
-      () => import('./manifesto/SplitTextManifesto'),
-      'SplitTextManifestoPreset',
-    ),
-  },
-  {
-    nature: 'manifesto',
-    preset: 'scrollStacked',
-    label: 'Scroll stacked manifesto',
-    component: lazyPreset(
-      () => import('./manifesto/ScrollStackedManifesto'),
-      'ScrollStackedManifestoPreset',
+      () => import('./manifesto/OathTenetLedger'),
+      'OathTenetLedgerPreset',
     ),
   },
   {
     nature: 'storytelling',
-    preset: 'chapterScroll',
-    label: 'Chapter scroll',
+    preset: 'oathNarrativeScroll',
+    label: 'Oath narrative scroll',
     component: lazyPreset(
-      () => import('./storytelling/ChapterScroll'),
-      'ChapterScrollPreset',
-    ),
-  },
-  {
-    nature: 'storytelling',
-    preset: 'editorialArticle',
-    label: 'Editorial article',
-    component: lazyPreset(
-      () => import('./storytelling/EditorialArticle'),
-      'EditorialArticlePreset',
-    ),
-  },
-  {
-    nature: 'storytelling',
-    preset: 'imageLed',
-    label: 'Image-led story',
-    component: lazyPreset(
-      () => import('./storytelling/ImageLedStory'),
-      'ImageLedStoryPreset',
+      () => import('./storytelling/OathNarrativeScroll'),
+      'OathNarrativeScrollPreset',
     ),
   },
   {
     nature: 'dropReveal',
-    preset: 'monolithReveal',
-    label: 'Monolith reveal',
+    preset: 'oathMonolithReveal',
+    label: 'Oath monolith reveal',
     component: lazyPreset(
-      () => import('./dropReveal/MonolithReveal'),
-      'MonolithRevealPreset',
-    ),
-  },
-  {
-    nature: 'dropReveal',
-    preset: 'countdownTrio',
-    label: 'Countdown trio',
-    component: lazyPreset(
-      () => import('./dropReveal/CountdownTrioReveal'),
-      'CountdownTrioRevealPreset',
-    ),
-  },
-  {
-    nature: 'dropReveal',
-    preset: 'emblemFirst',
-    label: 'Emblem first reveal',
-    component: lazyPreset(
-      () => import('./dropReveal/EmblemFirstReveal'),
-      'EmblemFirstRevealPreset',
+      () => import('./dropReveal/OathMonolithReveal'),
+      'OathMonolithRevealPreset',
     ),
   },
   {
     nature: 'productShowcase',
-    preset: 'threeCardEditorial',
-    label: 'Three card editorial',
+    preset: 'oathEditorialThree',
+    label: 'Editorial three',
     component: lazyPreset(
-      () => import('./productShowcase/ThreeCardEditorial'),
-      'ThreeCardEditorialPreset',
+      () => import('./productShowcase/OathEditorialThree'),
+      'OathEditorialThreePreset',
     ),
   },
   {
     nature: 'productShowcase',
-    preset: 'gridSix',
-    label: 'Grid six (legacy alias)',
+    preset: 'oathProductRail',
+    label: 'Product rail',
     component: lazyPreset(
-      () => import('./productShowcase/ThreeCardEditorial'),
-      'ThreeCardEditorialPreset',
+      () => import('./productShowcase/OathProductRail'),
+      'OathProductRailPreset',
     ),
   },
   {
     nature: 'productShowcase',
-    preset: 'carousel',
-    label: 'Product carousel',
+    preset: 'oathHeroProduct',
+    label: 'Hero product',
     component: lazyPreset(
-      () => import('./productShowcase/ProductCarousel'),
-      'ProductCarouselPreset',
-    ),
-  },
-  {
-    nature: 'productShowcase',
-    preset: 'productStory',
-    label: 'Product story',
-    component: lazyPreset(
-      () => import('./productShowcase/ProductStory'),
-      'ProductStoryPreset',
+      () => import('./productShowcase/OathHeroProduct'),
+      'OathHeroProductPreset',
     ),
   },
   {
     nature: 'materialShowcase',
-    preset: 'fabricRunway',
-    label: 'Fabric runway',
+    preset: 'oathMaterialFlip',
+    label: 'Material flip cards',
     component: lazyPreset(
-      () => import('./materialShowcase/FabricRunway'),
-      'FabricRunwayPreset',
-    ),
-  },
-  {
-    nature: 'materialShowcase',
-    preset: 'specsGrid',
-    label: 'Specs grid',
-    component: lazyPreset(
-      () => import('./materialShowcase/SpecsGridMaterials'),
-      'SpecsGridMaterialsPreset',
-    ),
-  },
-  {
-    nature: 'materialShowcase',
-    preset: 'splitDetail',
-    label: 'Split detail',
-    component: lazyPreset(
-      () => import('./materialShowcase/SplitDetailMaterials'),
-      'SplitDetailMaterialsPreset',
-    ),
-  },
-  {
-    nature: 'newsletterWaitlist',
-    preset: 'oathFullWidthForm',
-    label: 'Full-width waitlist',
-    component: lazyPreset(
-      () => import('./newsletterWaitlist/OathFullWidthForm'),
-      'OathFullWidthFormPreset',
-    ),
-  },
-  {
-    nature: 'newsletterWaitlist',
-    preset: 'minimalForm',
-    label: 'Minimal waitlist',
-    component: lazyPreset(
-      () => import('./newsletterWaitlist/MinimalWaitlistForm'),
-      'MinimalWaitlistFormPreset',
-    ),
-  },
-  {
-    nature: 'newsletterWaitlist',
-    preset: 'splitForm',
-    label: 'Split waitlist',
-    component: lazyPreset(
-      () => import('./newsletterWaitlist/SplitWaitlistForm'),
-      'SplitWaitlistFormPreset',
-    ),
-  },
-  {
-    nature: 'lookbook',
-    preset: 'masonry',
-    label: 'Masonry lookbook',
-    component: lazyPreset(
-      () => import('./lookbook/MasonryLookbook'),
-      'MasonryLookbookPreset',
-    ),
-  },
-  {
-    nature: 'lookbook',
-    preset: 'carousel',
-    label: 'Carousel lookbook',
-    component: lazyPreset(
-      () => import('./lookbook/CarouselLookbook'),
-      'CarouselLookbookPreset',
-    ),
-  },
-  {
-    nature: 'lookbook',
-    preset: 'editorial',
-    label: 'Editorial lookbook',
-    component: lazyPreset(
-      () => import('./lookbook/EditorialLookbook'),
-      'EditorialLookbookPreset',
+      () => import('./materialShowcase/OathMaterialFlip'),
+      'OathMaterialFlipPreset',
     ),
   },
   {
     nature: 'specialEvent',
-    preset: 'eventCard',
-    label: 'Event card',
+    preset: 'oathEventPulse',
+    label: 'Oath event pulse',
     component: lazyPreset(
-      () => import('./specialEvent/EventCard'),
-      'EventCardPreset',
-    ),
-  },
-  {
-    nature: 'specialEvent',
-    preset: 'countdownEvent',
-    label: 'Countdown event',
-    component: lazyPreset(
-      () => import('./specialEvent/CountdownEvent'),
-      'CountdownEventPreset',
-    ),
-  },
-  {
-    nature: 'specialEvent',
-    preset: 'locationSplit',
-    label: 'Location split',
-    component: lazyPreset(
-      () => import('./specialEvent/LocationSplit'),
-      'LocationSplitPreset',
+      () => import('./specialEvent/OathEventPulse'),
+      'OathEventPulsePreset',
     ),
   },
   {
     nature: 'finalCTA',
-    preset: 'centered',
-    label: 'Centered CTA',
+    preset: 'oathForgeClose',
+    label: 'Oath forge close',
     component: lazyPreset(
-      () => import('./finalCTA/CenteredCta'),
-      'CenteredCtaPreset',
-    ),
-  },
-  {
-    nature: 'finalCTA',
-    preset: 'footerOverlap',
-    label: 'Footer overlap CTA',
-    component: lazyPreset(
-      () => import('./finalCTA/FooterOverlapCta'),
-      'FooterOverlapCtaPreset',
-    ),
-  },
-  {
-    nature: 'finalCTA',
-    preset: 'productCta',
-    label: 'Product CTA',
-    component: lazyPreset(
-      () => import('./finalCTA/ProductCta'),
-      'ProductCtaPreset',
+      () => import('./finalCTA/OathForgeClose'),
+      'OathForgeClosePreset',
     ),
   },
 ]
@@ -321,7 +131,7 @@ const REGISTRY = new Map<string, ActPresetEntry>(
 )
 
 export function isLandingActNature(nature: string): nature is LandingActNature {
-  return nature in DEFAULT_ACT_PRESETS
+  return (LANDING_ACT_NATURES as readonly string[]).includes(nature)
 }
 
 export function resolveActPreset(
@@ -330,7 +140,7 @@ export function resolveActPreset(
 ): ActPresetEntry | null {
   if (!isLandingActNature(nature)) return null
 
-  const requested = preset?.trim()
+  const requested = resolvePresetAlias(preset?.trim())
   if (requested) {
     const hit = REGISTRY.get(`${nature}:${requested}`)
     if (hit) return hit
@@ -344,14 +154,13 @@ export function listActPresetsForNature(nature: LandingActNature): ActPresetEntr
   return ENTRIES.filter((entry) => entry.nature === nature)
 }
 
-/** Preset ids grouped by nature — same order as CMS builder choices. */
-export const ACT_PRESETS_BY_NATURE: Record<LandingActNature, readonly string[]> =
-  Object.fromEntries(
-    LANDING_ACT_NATURES.map((nature) => [
-      nature,
-      listActPresetsForNature(nature).map((entry) => entry.preset),
-    ]),
-  ) as Record<LandingActNature, readonly string[]>
+export const ACT_PRESETS_BY_NATURE = LANDING_ACT_NATURES.reduce(
+  (acc, nature) => {
+    acc[nature] = listActPresetsForNature(nature).map((entry) => entry.preset)
+    return acc
+  },
+  {} as Record<LandingActNature, readonly string[]>,
+)
 
 function humanizePresetId(preset: string): string {
   const spaced = preset
@@ -360,9 +169,8 @@ function humanizePresetId(preset: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
-/** User-facing label for a stored preset id (backend id unchanged). */
 export function getActPresetLabel(nature: string, preset: string): string {
-  const id = preset.trim()
+  const id = resolvePresetAlias(preset.trim()) ?? preset.trim()
   if (!id) return 'Default'
   const hit = REGISTRY.get(`${nature}:${id}`)
   if (hit) return hit.label

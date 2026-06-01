@@ -23,15 +23,18 @@ import {
 import { normalizeLandingCmsImport } from '@/features/admin/landing-cms/landingCms.merge'
 import { readLandingCmsFromStorage } from '@/features/admin/landing-cms/landingCms.storage'
 import {
+  getWebsiteLayoutContent,
   saveWebsiteLayoutContent,
 } from '@/features/admin/website-layout/websiteLayout.service'
 import { createDefaultWebsiteLayout } from '@/features/admin/website-layout/websiteLayout.defaults'
+import { writeSiteHomepageToStorage } from '@/features/cms/siteHomepage.settings'
 import {
   ensureProductsSeededWhenEmpty,
   getAdminProducts,
   saveAdminProducts,
 } from '@/features/admin/products/products.service'
 import { landingContentToSimpleActs } from '@/features/admin/drops/acts/landingActs.seed'
+import { migrateDrop } from '@/features/admin/drops/drops.migrate'
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import { insertAnvlDropToSupabase } from '@/features/admin/cmsRemote/adminCmsInsertDrop'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
@@ -159,7 +162,7 @@ function normalizeDropForPersist(drop: Drop, activeDropId: string | null): Drop 
   }
 
   const isActiveRow = activeDropId !== null && drop.id === activeDropId
-  if (drop.status === 'active' || drop.isActive || isActiveRow) {
+  if (isActiveRow) {
     return {
       ...drop,
       isActive: true,
@@ -168,11 +171,7 @@ function normalizeDropForPersist(drop: Drop, activeDropId: string | null): Drop 
     }
   }
 
-  let nextStatus: DropStatus = drop.status
-  if (nextStatus === 'active' || nextStatus === 'scheduled') {
-    nextStatus = 'inactive'
-  }
-  return { ...drop, isActive: false, status: nextStatus }
+  return { ...drop, isActive: false, status: 'inactive' as DropStatus }
 }
 
 /** Keep product.dropIds aligned with drop.productIds */
@@ -223,10 +222,21 @@ export function persistDropsState(
   activeDropId: string | null,
 ): void {
   bumpDropsPersistGeneration()
-  const synced = drops.map((d) => normalizeDropForPersist(d, activeDropId))
+  let resolvedActiveId = activeDropId
+  if (
+    !resolvedActiveId ||
+    !drops.some((d) => d.id === resolvedActiveId)
+  ) {
+    resolvedActiveId =
+      drops.find((d) => d.isActive)?.id ??
+      drops.find((d) => d.status === 'active')?.id ??
+      null
+  }
+  const synced = drops.map((d) => normalizeDropForPersist(d, resolvedActiveId))
+  const finalActiveId = synced.find((d) => d.status === 'active')?.id ?? null
   const body: DropsPersistedState = { drops: synced }
   writeDropsRaw(JSON.stringify(body))
-  writeActiveDropId(activeDropId)
+  writeActiveDropId(finalActiveId)
   synced.forEach(syncProductsWithDrop)
   if (typeof window !== 'undefined' && import.meta.env.MODE !== 'test') {
     void import('@/features/admin/cmsRemote/adminCmsRemoteSync').then((m) =>
@@ -244,6 +254,10 @@ export function ensureDropSystemHydrated(): void {
 
   if (dropsPayload && dropsPayload.drops.length > 0) {
     ensureProductsSeededWhenEmpty()
+    if (needsOnlyTheOathDropFromList(dropsPayload.drops)) {
+      ensureOnlyTheOathDrop()
+      return
+    }
     let activeRaw = readActiveDropIdRaw()
     if (
       !activeRaw ||
@@ -273,13 +287,17 @@ export function ensureDropSystemHydrated(): void {
   persistDropsState([oath], oath.id)
   saveWebsiteLayoutContent(createDefaultWebsiteLayout(oath.updatedAt))
   ensureProductsSeededWhenEmpty()
+  if (import.meta.env.MODE !== 'test') {
+    void insertAnvlDropToSupabase(oath)
+  }
 }
 
 export function readDropsArray(): Drop[] {
   if (!isBrowser()) return [createDefaultTheOathDrop()]
   ensureDropSystemHydrated()
   const parsed = parseDropsPayload(readDropsRaw())
-  return parsed?.drops?.length ? parsed.drops : [createDefaultTheOathDrop()]
+  const raw = parsed?.drops?.length ? parsed.drops : [createDefaultTheOathDrop()]
+  return raw.map((d) => migrateDrop(d))
 }
 
 export function getActiveDrop(): Drop | null {
@@ -364,6 +382,54 @@ export function deactivateDrop(dropId: string): void {
       : d,
   )
   persistDropsState(drops, null)
+}
+
+function needsOnlyTheOathDropFromList(drops: Drop[]): boolean {
+  if (drops.length !== 1) return true
+  return drops[0]?.id !== DEFAULT_OATH_DROP_ID
+}
+
+/** True when local drops need cleanup to a single active Oath campaign. */
+export function needsOnlyTheOathDrop(): boolean {
+  ensureDropSystemHydrated()
+  return needsOnlyTheOathDropFromList(readDropsArray())
+}
+
+/**
+ * Keep only the stock Oath drop (7-act sequence + linked products), queue remote
+ * deletes for everything else, and point the homepage at the live drop acts.
+ */
+export function ensureOnlyTheOathDrop(): Drop {
+  ensureDropSystemHydrated()
+  const drops = readDropsArray()
+
+  for (const d of drops) {
+    if (d.id !== DEFAULT_OATH_DROP_ID) {
+      queueRemoteDropDelete(d.id)
+    }
+  }
+
+  const existing = drops.find((d) => d.id === DEFAULT_OATH_DROP_ID)
+  const oath = createDefaultTheOathDrop([...DEFAULT_OATH_PRODUCT_IDS])
+  if (existing?.createdAt) {
+    oath.createdAt = existing.createdAt
+  }
+
+  persistDropsState([oath], oath.id)
+  ensureProductsSeededWhenEmpty()
+
+  try {
+    getWebsiteLayoutContent()
+  } catch {
+    saveWebsiteLayoutContent(createDefaultWebsiteLayout(oath.updatedAt))
+  }
+
+  writeSiteHomepageToStorage({
+    mode: 'custom',
+    updatedAt: new Date().toISOString(),
+  })
+
+  return oath
 }
 
 export function deleteDrop(dropId: string): void {
