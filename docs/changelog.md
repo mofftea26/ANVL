@@ -1,4 +1,10 @@
-﻿## 2026-05-20 — Production follow-ups: migrations, scheduler cron, bundle split
+﻿## 2026-06-02 — Cinematic hero as acts preset (MAINT-21)
+
+- **Storefront:** `theOathCinematic` hero preset reads **`backgroundVideoUrl`**, poster, CTAs, meta strip, and emblem override from the hero act row; **`HeroBackgroundMedia`** layers video + poster with mobile / reduced-motion fallbacks; scroll scrub fades video on exit into the next act.
+- **Admin:** **`CinematicHeroEditor`** replaces generic hero fields when preset is **The Oath cinematic** (poster, Supabase video upload, CTAs, meta rows); **`DropActsBuilderPanel`** accepts **`dropSlug`** for media uploads.
+- **Supabase:** migration **`20260602120000_cms_media_video_mime.sql`** allows **`video/mp4`** / **`video/webm`** in **`cms-media`**.
+
+## 2026-05-20 — Production follow-ups: migrations, scheduler cron, bundle split
 
 - **Supabase (project `cptebkgyrfmokklwtrgp`):** applied migrations **`storefront_site_drafts`**, **`cms_media_assets`**, **`cms_scheduled_activation`** (`media_index`, catalog table, `cms_process_scheduled_drops`).
 - **Edge Function:** **`process-scheduled-drops`** deployed (`CRON_SECRET` auth, calls RPC with service role). Schedule in Dashboard every 1–5 min after setting secrets.

@@ -2,6 +2,12 @@ import { z } from 'zod'
 
 const cta = z.object({ label: z.string(), href: z.string() })
 
+const heroMetaItem = z.object({
+  id: z.string(),
+  label: z.string(),
+  value: z.string(),
+})
+
 const galleryItem = z.object({
   src: z.string(),
   caption: z.string().optional(),
@@ -10,8 +16,13 @@ const galleryItem = z.object({
 
 export const heroContentSchema = z.object({
   countdownTargetIso: z.string().optional(),
+  /** Poster / fallback still when video is set or motion is reduced. */
   backgroundImageUrl: z.string().optional(),
+  /** Hosted hero loop (.mp4 / .webm) — prefer Supabase `cms-media` public URL. */
+  backgroundVideoUrl: z.string().optional(),
+  playVideoOnMobile: z.boolean().optional(),
   emblemWatermarkSrc: z.string().optional(),
+  metaItems: z.array(heroMetaItem).max(6).optional(),
   primaryCta: cta.optional(),
   secondaryCta: cta.optional(),
 })

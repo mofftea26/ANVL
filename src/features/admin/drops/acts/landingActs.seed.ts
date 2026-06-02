@@ -18,7 +18,10 @@ export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[]
       eyebrow: lc.hero.badgeText,
       body: '',
       animation: anim,
-      content: {},
+      content: {
+        primaryCta: lc.hero.primaryCta,
+        secondaryCta: lc.hero.secondaryCta,
+      },
     },
     {
       id: createCmsId('act'),

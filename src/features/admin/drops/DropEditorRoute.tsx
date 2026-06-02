@@ -1001,6 +1001,7 @@ export function DropEditorRoute({ dropId }: { dropId: string }) {
                 acts={draft.acts}
                 landingActSequence={draft.landingActSequence}
                 catalogProducts={catalog.map((c) => ({ id: c.id, name: c.name }))}
+                dropSlug={draft.slug}
                 onChange={({ acts, landingActSequence }) =>
                   setDraft((prev) =>
                     prev ? { ...prev, acts, landingActSequence } : prev,

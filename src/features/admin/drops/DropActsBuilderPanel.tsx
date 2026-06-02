@@ -24,6 +24,11 @@ import {
 } from '@/features/admin/components/AdminSelect'
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 import { IconButton } from '@/shared/components/ui/IconButton'
+import { CinematicHeroEditor } from '@/features/admin/drops/acts/editors/CinematicHeroEditor'
+import {
+  heroPresetLabel,
+  isCinematicHeroPreset,
+} from '@/features/admin/drops/acts/editors/actPresetLabels'
 
 const NATURE_OPTIONS = [
   { value: 'hero', label: 'Hero' },
@@ -129,6 +134,9 @@ function NatureContentFields({
   const nature = act.nature
 
   if (nature === 'hero') {
+    if (isCinematicHeroPreset(act.preset)) {
+      return null
+    }
     const p = readCta(c, 'primaryCta')
     const s = readCta(c, 'secondaryCta')
     return (
@@ -804,6 +812,7 @@ type Props = {
   acts: LandingAct[]
   landingActSequence: LandingActSlot[]
   catalogProducts?: CatalogProduct[]
+  dropSlug?: string
   onChange: (next: {
     acts: LandingAct[]
     landingActSequence: LandingActSlot[]
@@ -815,6 +824,7 @@ export function DropActsBuilderPanel({
   acts,
   landingActSequence,
   catalogProducts = [],
+  dropSlug,
   onChange,
 }: Props) {
   const sorted = useMemo(
@@ -1048,7 +1058,7 @@ export function DropActsBuilderPanel({
                     <AdminSelectContent>
                       {presetChoices.map((p) => (
                         <AdminSelectItem key={p} value={p}>
-                          {p}
+                          {act.nature === 'hero' ? heroPresetLabel(p) : p}
                         </AdminSelectItem>
                       ))}
                     </AdminSelectContent>
@@ -1093,10 +1103,12 @@ export function DropActsBuilderPanel({
                 </AdminFieldLabel>
               </div>
 
-              <ActMediaBlock
-                media={act.media}
-                onChange={(next) => updateAct(act.id, { media: next })}
-              />
+              {act.nature === 'hero' && isCinematicHeroPreset(act.preset) ? null : (
+                <ActMediaBlock
+                  media={act.media}
+                  onChange={(next) => updateAct(act.id, { media: next })}
+                />
+              )}
 
               <div className="mt-3 space-y-2 border-t border-[var(--color-line)]/60 pt-3">
                 <AdminMicroHeading as="p" className="text-[10px] tracking-[0.14em] text-[var(--color-heading)]">Animation</AdminMicroHeading>
@@ -1181,7 +1193,15 @@ export function DropActsBuilderPanel({
                 </div>
               </div>
 
-              <NatureContentFields act={act} patchContent={patchContent} />
+              {act.nature === 'hero' && isCinematicHeroPreset(act.preset) ? (
+                <CinematicHeroEditor
+                  act={act}
+                  dropSlug={dropSlug}
+                  patchContent={patchContent}
+                />
+              ) : (
+                <NatureContentFields act={act} patchContent={patchContent} />
+              )}
 
               {act.nature === 'productShowcase' ? (
                 <div className="mt-3 border-t border-[var(--color-line)]/60 pt-3">

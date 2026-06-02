@@ -5,6 +5,7 @@ import { Badge } from '@/shared/components/ui/Badge'
 import { Container } from '@/shared/components/ui/Container'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
+import { HeroBackgroundMedia } from '@/features/marketing/components/HeroBackgroundMedia'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 
 interface HeroForgeSequenceProps {
@@ -15,6 +16,9 @@ interface HeroForgeSequenceProps {
   secondaryCta: { label: string; href: string }
   meta?: CmsMetaItem[]
   emblemSrc?: string
+  backgroundVideoUrl?: string
+  backgroundImageUrl?: string
+  playVideoOnMobile?: boolean
 }
 
 const EMBER_COUNT = 10
@@ -43,6 +47,9 @@ export function HeroForgeSequence({
   secondaryCta,
   meta = DEFAULT_META,
   emblemSrc,
+  backgroundVideoUrl,
+  backgroundImageUrl,
+  playVideoOnMobile = false,
 }: HeroForgeSequenceProps) {
   const metaItems = meta.length > 0 ? meta : DEFAULT_META
   const root = useRef<HTMLElement | null>(null)
@@ -63,6 +70,7 @@ export function HeroForgeSequence({
         const crest = host.querySelector('[data-hero-crest]')
         const glow = host.querySelector('[data-hero-glow]')
         const vignette = host.querySelector('[data-hero-vignette]')
+        const bgVideo = host.querySelector('[data-hero-bg-video]')
         const embers = gsap.utils.toArray<HTMLElement>(
           '[data-hero-ember]',
           host,
@@ -76,6 +84,7 @@ export function HeroForgeSequence({
           crest,
           glow,
           vignette,
+          bgVideo,
           embers,
         }
       }
@@ -102,6 +111,7 @@ export function HeroForgeSequence({
             crest,
             glow,
             vignette,
+            bgVideo,
             embers,
           } = queryElements()
 
@@ -216,6 +226,7 @@ export function HeroForgeSequence({
             .to(words, { yPercent: -28, stagger: 0.03 }, 0)
             .to([badge, subtitleEl, ctaEl, meta], { opacity: 0, y: -18 }, 0)
             .to(vignette, { opacity: 1 }, 0)
+            .to(bgVideo, { opacity: 0.35, scale: 1.08 }, 0)
         },
         host,
       )
@@ -231,6 +242,11 @@ export function HeroForgeSequence({
       className="anvl-screen-section-fixed relative w-full overflow-hidden border-b border-[var(--color-line)]"
       aria-label="ANVL Athletics hero"
     >
+      <HeroBackgroundMedia
+        videoUrl={backgroundVideoUrl}
+        posterUrl={backgroundImageUrl}
+        playVideoOnMobile={playVideoOnMobile}
+      />
       <GrainOverlay />
 
       {/* Forge glow */}

@@ -149,4 +149,34 @@ describe('DropActsBuilderPanel', () => {
     expect((screen.getByRole('button', { name: /^Move act down$/ }) as HTMLButtonElement).disabled).toBe(true)
     expect((screen.getByRole('button', { name: /^Remove act$/ }) as HTMLButtonElement).disabled).toBe(false)
   })
+
+  it('shows cinematic hero editor fields when theOathCinematic preset is selected', () => {
+    const acts: LandingAct[] = [
+      {
+        id: 'cinematic-act',
+        nature: 'hero',
+        preset: 'theOathCinematic',
+        isEnabled: true,
+        sortOrder: 0,
+        title: 'FORGED',
+        content: safeParseActContent('hero', {}),
+        animation: mergeActAnimationConfig(),
+        media: {},
+      },
+    ]
+
+    render(
+      <DropActsBuilderPanel
+        landingContentJson="{}"
+        acts={acts}
+        landingActSequence={defaultLandingActSequence()}
+        dropSlug="the-oath"
+        onChange={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText(/Background video \(optional\)/i)).toBeTruthy()
+    expect(screen.getByText(/Poster image/i)).toBeTruthy()
+    expect(screen.queryByText(/Act video \(optional\)/i)).toBeNull()
+  })
 })
