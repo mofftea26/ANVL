@@ -22,19 +22,23 @@ type LandingAct = {
 };
 ```
 
-## Oath-only act natures (2026 overhaul)
+## Oath act natures
 | Nature | Presets | Notes |
 |--------|---------|-------|
-| `hero` | `theOathCinematic` | Countdown, CTAs, optional foreground media |
+| `hero` | `standardHero`, `editorialHero`, `productHero`, `cinematicScrollHero` | `cinematicScrollHero` uses `content.cinematicConfig` (sections, scroll length, nav mode); edited in **Cinematic hero** panel |
 | `manifesto` | `oathTenetLedger` | Tenets list only (no body field); optional quote |
 | `storytelling` | `oathNarrativeScroll` | Chapters list in CMS |
 | `dropReveal` | `oathMonolithReveal` | Monolith + scroll reveal |
 | `productShowcase` | `oathEditorialThree`, `oathProductRail`, `oathHeroProduct` | Shopify-aware product cards |
 | `materialShowcase` | `oathMaterialFlip` | Per-product flip cards + characteristic lists |
+| `lookbook` | `masonryLookbook` | Gallery items in `content.galleryItems` |
 | `specialEvent` | `oathEventPulse` | Countdown, location, rules |
 | `finalCTA` | `oathForgeClose` | Replaces legacy waitlist acts |
 
-Legacy preset ids map via `actPresetAliases.ts`. `lookbook` and `newsletterWaitlist` are removed on load (`migrateDrop`).
+Legacy preset ids map via `actPresetAliases.ts` (`theOathCinematic` → `editorialHero`, `cinematic-full-screen` → `cinematicScrollHero`). `newsletterWaitlist` migrates to `finalCTA` on load (`migrateDrop`).
+
+## Homepage
+`/` always renders the published drop act sequence via `PublicLandingActs`. The first act may be **Cinematic scroll hero** (pinned GSAP inside the hero act only); following acts scroll normally. Site chrome (`PremiumNav`, footer) is always visible. Lenis smooth scroll applies on `/` only when a enabled `cinematicScrollHero` act is present.
 
 ## Implementation (Drop Editor)
 - UI: `DropActsBuilderPanel` (`src/features/admin/drops/DropActsBuilderPanel.tsx`), lazy-loaded from `DropEditorRoute` (**Acts** tab). Each row: reorder, enable/disable, nature, preset, shared copy (eyebrow/title/subtitle/body), **act-level media** (image upload or URL, optional video URL, alt), **animation** (enabled, desktop-only, motion type key, intensity), nature-specific **content** sub-forms, and optional **product SKUs** for `productShowcase` (catalog checkboxes; empty means "use all drop products"). Nature, preset, animation intensity, and nature-specific enums (e.g. product showcase **card style**, lookbook **layout**) use **AdminSelect** (Radix, portaled dropdown) rather than native **`<select>`**, aligned with Basics field labelling (**`aria-labelledby`** + trigger **`id`**).
@@ -54,6 +58,11 @@ Drop editor preview supports **Live motion** (unfreezes GSAP) and remounts when 
 
 ## Runtime contracts
 `LandingAct`, `ActNature`, and `ActAnimationConfig` (plus `ActMedia`) are defined as Zod schemas in `src/features/landing/schemas/landing-act.schema.ts` with type re-exports in `src/features/landing/types/landing-act.types.ts`. Per-act `content` remains `Record<string, unknown>` until nature-specific content schemas are added.
+
+## Section sizing
+- Storefront acts use `.anvl-screen-section` with **content-driven height** (`overflow: visible`; no inner scroll clamp).
+- `ActPresetShell` accepts `sectionSize`: `default` | `tall` | `compact` | `content` (maps to `.anvl-act-section--*` in `styles.css`).
+- Drop 01 oath presets: manifesto/storytelling/products/materials/lookbook/drop reveal → **tall**; final CTA → **content**.
 
 ## Rendering rules
 - Every act nature maps to a renderer component.

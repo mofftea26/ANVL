@@ -1,8 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { hasActRowMedia, hasActForegroundMedia } from '@/features/marketing/act-presets/shared/actPresetUtils'
+import {
+  ACT_SECTION_SIZE_CLASS,
+  actSectionClassName,
+  hasActRowMedia,
+  hasActForegroundMedia,
+} from '@/features/marketing/act-presets/shared/actPresetUtils'
 import type { LandingAct } from '@/features/cms/landing/landingActs.types'
 
 describe('actPresetUtils', () => {
+  it('actSectionClassName applies tall modifier without overflow clip', () => {
+    const cls = actSectionClassName('tall')
+    expect(cls).toContain('anvl-screen-section')
+    expect(cls).toContain(ACT_SECTION_SIZE_CLASS.tall)
+    expect(cls).toContain('overflow-visible')
+    expect(cls).not.toContain('overflow-hidden')
+  })
+
+  it('actSectionClassName applies standard modifier for default size', () => {
+    const cls = actSectionClassName('default')
+    expect(cls).toContain(ACT_SECTION_SIZE_CLASS.standard)
+  })
+
   it('hasActRowMedia is true when image or video is set', () => {
     const base: LandingAct = {
       id: 'a',

@@ -1,13 +1,14 @@
 import type { LandingAct } from '@/features/cms/landing/landingActs.types'
 import { readActStr } from '@/features/cms/landing/landingActPreviewOverlay'
+import { resolvePresetAlias } from '@/features/marketing/act-presets/actPresetAliases'
 
 /**
- * Layered hero media model (splitProduct, minimalEmblem only):
+ * Layered hero media model (productHero, standardHero only):
  * - `row.media` → background (atmospheric backdrop)
  * - `row.content.foregroundImageUrl` / `foregroundVideoUrl` → foreground focal
  * Each layer accepts image OR video, mutually exclusive within the layer.
  */
-export const HERO_LAYERED_MEDIA_PRESETS = ['splitProduct', 'minimalEmblem'] as const
+export const HERO_LAYERED_MEDIA_PRESETS = ['productHero', 'standardHero'] as const
 
 export type HeroLayeredMediaPreset = (typeof HERO_LAYERED_MEDIA_PRESETS)[number]
 export type ActMediaLayer = 'background' | 'foreground'
@@ -19,7 +20,8 @@ export type ActLayerMediaSources = {
 }
 
 export function isLayeredHeroPreset(preset?: string): preset is HeroLayeredMediaPreset {
-  return HERO_LAYERED_MEDIA_PRESETS.includes(preset as HeroLayeredMediaPreset)
+  const resolved = resolvePresetAlias(preset) ?? preset
+  return HERO_LAYERED_MEDIA_PRESETS.includes(resolved as HeroLayeredMediaPreset)
 }
 
 export function resolveActLayerMedia(

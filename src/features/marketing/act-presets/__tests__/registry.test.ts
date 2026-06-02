@@ -21,20 +21,34 @@ describe('act preset registry', () => {
     }
   })
 
-  it('falls back to the nature default when preset is unknown', () => {
+  it('registers four hero presets', () => {
+    expect(ACT_PRESETS_BY_NATURE.hero).toEqual([
+      'standardHero',
+      'editorialHero',
+      'productHero',
+      'cinematicScrollHero',
+    ])
+  })
+
+  it('falls back to cinematic scroll hero when preset is unknown', () => {
     const entry = resolveActPreset('hero', 'does-not-exist')
-    expect(entry?.preset).toBe('theOathCinematic')
+    expect(entry?.preset).toBe('cinematicScrollHero')
   })
 
   it('resolves oath presets and legacy aliases', () => {
+    expect(resolveActPreset('hero', 'theOathCinematic')?.preset).toBe('editorialHero')
+    expect(resolveActPreset('hero', 'splitProduct')?.preset).toBe('productHero')
+    expect(resolveActPreset('hero', 'minimalEmblem')?.preset).toBe('standardHero')
+    expect(resolveActPreset('hero', 'cinematic-full-screen')?.preset).toBe(
+      'cinematicScrollHero',
+    )
     expect(resolveActPreset('specialEvent', 'eventCard')?.preset).toBe('oathEventPulse')
     expect(resolveActPreset('finalCTA', 'centered')?.preset).toBe('oathForgeClose')
     expect(resolveActPreset('manifesto', 'oathStampLedger')?.preset).toBe('oathTenetLedger')
     expect(resolveActPreset('productShowcase', 'gridSix')?.preset).toBe('oathEditorialThree')
   })
 
-  it('does not expose lookbook or newsletter natures', () => {
-    expect(LANDING_ACT_NATURES).not.toContain('lookbook')
+  it('does not expose newsletter nature', () => {
     expect(LANDING_ACT_NATURES).not.toContain('newsletterWaitlist')
   })
 
@@ -47,16 +61,19 @@ describe('act preset registry', () => {
   })
 
   it('maps stored preset ids to user-facing labels', () => {
-    expect(getActPresetLabel('hero', 'theOathCinematic')).toBe('The Oath cinematic')
+    expect(getActPresetLabel('hero', 'cinematicScrollHero')).toBe('Cinematic scroll hero')
+    expect(getActPresetLabel('hero', 'theOathCinematic')).toBe('Editorial hero')
     expect(getActPresetLabel('manifesto', 'oathTenetLedger')).toBe('Oath tenet ledger')
     expect(getActPresetLabel('hero', 'legacyUnknown')).toBe('Legacy Unknown')
   })
 
   it('exports a lazy component for every registry entry', () => {
-    expect(ACT_PRESET_ENTRIES.length).toBe(LANDING_ACT_NATURES.reduce(
-      (n, nature) => n + ACT_PRESETS_BY_NATURE[nature].length,
-      0,
-    ))
+    expect(ACT_PRESET_ENTRIES.length).toBe(
+      LANDING_ACT_NATURES.reduce(
+        (n, nature) => n + ACT_PRESETS_BY_NATURE[nature].length,
+        0,
+      ),
+    )
     for (const entry of ACT_PRESET_ENTRIES) {
       expect(typeof entry.component).toBe('object')
       expect(entry.label.length).toBeGreaterThan(0)

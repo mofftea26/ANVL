@@ -67,7 +67,7 @@ export function OathMaterialFlipPreset({ landing, row, products }: ActPresetProp
   useActPresetMotion(rootRef, row, { staggerSelector: '[data-act-block]' })
 
   return (
-    <ActPresetShell rootRef={rootRef} row={row} ariaLabel="Materials">
+    <ActPresetShell rootRef={rootRef} row={row} sectionSize="tall" ariaLabel="Materials">
       <p data-act-eyebrow className="uppercase tracking-[0.28em] text-[var(--color-muted)]">
         {m.actLabel}
       </p>
@@ -75,7 +75,7 @@ export function OathMaterialFlipPreset({ landing, row, products }: ActPresetProp
         {m.heading}
       </h2>
       <p data-act-body className="mt-2 max-w-2xl text-[var(--color-muted)]">{m.intro}</p>
-      <div className="mt-[var(--act-gap)] grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-[var(--act-gap-lg)] grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => {
           const img = item.product.images[0]
           const expanded = expandedId === item.productId
@@ -84,7 +84,7 @@ export function OathMaterialFlipPreset({ landing, row, products }: ActPresetProp
               <button
                 type="button"
                 className={cn(
-                  'group relative h-52 w-full text-left [transform-style:preserve-3d] transition-transform duration-700 sm:h-56',
+                  'group relative h-56 w-full text-left [transform-style:preserve-3d] transition-transform duration-700 sm:h-64',
                   expanded && '[transform:rotateY(180deg)]',
                   'hover:[transform:rotateY(180deg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]',
                 )}

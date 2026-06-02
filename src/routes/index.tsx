@@ -13,23 +13,21 @@ import {
 } from "@/shared/components/seo/structuredData";
 import { useLenisScroll } from "@/shared/hooks/useLenisScroll";
 import { PublicLandingActs } from "@/features/marketing/public-landing/PublicLandingActs";
-import { DefaultCinematicLanding } from "@/features/marketing/default-landing/DefaultCinematicLanding";
+import { hasCinematicScrollHeroAct } from "@/features/marketing/cinematic-hero/cinematicHero.utils";
 import { useLandingCms } from "@/features/cms/hooks/useLandingCms";
 import { useHomeProducts } from "@/features/products/hooks/useHomeProducts";
-import { useHomepageMode } from "@/features/cms/hooks/useSiteHomepageMode";
 
 export const Route = createFileRoute("/")({
   loader: async () => {
-    const [products, landing, siteSeo, seoDoc, activeDrop, homepage] =
+    const [products, landing, siteSeo, seoDoc, activeDrop] =
       await Promise.all([
       runtimeClients.commerce.getHomeProducts(),
       runtimeClients.cms.getLandingCmsContent(),
       runtimeClients.seo.getSiteSeo(),
       runtimeClients.seo.getSeoByPath("/"),
       runtimeClients.cms.getActiveDrop(),
-      runtimeClients.cms.getSiteHomepage(),
     ]);
-    return { products, landing, siteSeo, seoDoc, activeDrop, homepage };
+    return { products, landing, siteSeo, seoDoc, activeDrop };
   },
   head: ({ loaderData }) => {
     const site = loaderData?.siteSeo;
@@ -62,27 +60,17 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  useLenisScroll(true);
-  const { products: initialProducts, landing: ssrLanding, activeDrop, homepage: ssrHomepage } =
+  const { products: initialProducts, landing: ssrLanding, activeDrop } =
     Route.useLoaderData();
   const landing = useLandingCms(ssrLanding);
   const products = useHomeProducts(initialProducts);
-  const homepageMode = useHomepageMode(ssrHomepage.mode);
+  useLenisScroll(hasCinematicScrollHeroAct(landing.landingActs));
 
   const emblemSrc = landing.navigation.activeDropEmblemSrc;
 
   const structuredData = activeDrop?.seo.structuredDataType
     ? dropStructuredDataJsonLd(activeDrop.seo.structuredDataType, activeDrop)
     : organizationJsonLd();
-
-  if (homepageMode === 'default') {
-    return (
-      <div>
-        {structuredData ? <JsonLd data={structuredData} /> : null}
-        <DefaultCinematicLanding landing={landing} products={products} />
-      </div>
-    );
-  }
 
   return (
     <div>

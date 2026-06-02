@@ -36,7 +36,7 @@ describe('ensureOnlyTheOathDrop', () => {
 
     expect(oath.id).toBe(DEFAULT_OATH_DROP_ID)
     expect(oath.status).toBe('active')
-    expect(oath.acts).toHaveLength(7)
+    expect(oath.acts).toHaveLength(8)
     expect(readDropsArray()).toHaveLength(1)
     expect(readDropsArray()[0]?.id).toBe(DEFAULT_OATH_DROP_ID)
     expect(readActiveDropIdRaw()).toBe(DEFAULT_OATH_DROP_ID)

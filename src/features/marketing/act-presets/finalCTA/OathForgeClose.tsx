@@ -3,6 +3,7 @@ import { previewFinalCtaFields } from '@/features/cms/landing/landingActPreviewO
 import { ActPresetShell } from '../shared/ActPresetShell'
 import { useActPresetMotion } from '../shared/useActScrollReveal'
 import { useActIdleMotion } from '../shared/useActIdleMotion'
+import { CampaignMark } from '@/shared/components/brand/CampaignMark'
 import type { ActPresetProps } from '../types'
 
 export function OathForgeClosePreset({ row, emblemSrc }: ActPresetProps) {
@@ -19,17 +20,19 @@ export function OathForgeClosePreset({ row, emblemSrc }: ActPresetProps) {
     <ActPresetShell
       rootRef={rootRef}
       row={row}
+      sectionSize="content"
       contentImageKey="backgroundImageUrl"
       ariaLabel="Final call to action"
       className="bg-[var(--color-bg)]"
+      contentClassName="py-8 sm:py-10"
     >
-      <div className="flex flex-col items-center text-center">
+      <div className="flex flex-col items-center px-2 text-center sm:px-4">
         {emblemSrc ? (
-          <img
+          <CampaignMark
             data-act-emblem
             data-act-float
             src={emblemSrc}
-            alt=""
+            onDark
             className="mb-3 size-[var(--act-emblem-size)]"
           />
         ) : null}
@@ -44,7 +47,7 @@ export function OathForgeClosePreset({ row, emblemSrc }: ActPresetProps) {
             {f.intro}
           </p>
         ) : null}
-        <div data-act-block className="mt-8 flex flex-wrap items-center justify-center gap-4">
+        <div data-act-block className="mt-10 flex flex-wrap items-center justify-center gap-4 pb-2">
           <a
             data-act-micro
             href={f.primaryCta.href}

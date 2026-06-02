@@ -157,7 +157,7 @@ describe('normalizeStorefrontPublicationRow', () => {
       published_at: null,
       site_homepage: { mode: 'default', updatedAt: '2026-05-01T00:00:00.000Z' },
     })
-    expect(out?.siteHomepage.mode).toBe('default')
+    expect(out?.siteHomepage.mode).toBe('custom')
   })
 })
 

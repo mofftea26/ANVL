@@ -70,9 +70,24 @@ body {
 .anvl-screen-section,
 .anvl-screen-section-fixed {
   flex: 0 0 auto !important;
-  min-height: var(--anvl-section-h, 100svh) !important;
-  height: var(--anvl-section-h, 100svh) !important;
-  max-height: var(--anvl-section-h, 100svh) !important;
+  min-height: max(28rem, min(70svh, var(--anvl-section-h, 100svh))) !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.anvl-act-section--tall {
+  min-height: max(36rem, min(88svh, var(--anvl-section-h, 100svh))) !important;
+}
+.anvl-act-section--content {
+  min-height: max(28rem, 52svh) !important;
+}
+.anvl-act-section--compact {
+  min-height: max(24rem, min(58svh, var(--anvl-section-h, 100svh))) !important;
+}
+.anvl-act-content,
+.anvl-act-content-inner {
+  max-height: none !important;
+  overflow: visible !important;
 }
 html.anvl-preview-iframe {
   --anvl-header-h: 0px;
@@ -145,9 +160,24 @@ body {
 .anvl-screen-section,
 .anvl-screen-section-fixed {
   flex: 0 0 auto !important;
-  min-height: var(--anvl-section-h, 100svh) !important;
-  height: var(--anvl-section-h, 100svh) !important;
-  max-height: var(--anvl-section-h, 100svh) !important;
+  min-height: max(28rem, min(70svh, var(--anvl-section-h, 100svh))) !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.anvl-act-section--tall {
+  min-height: max(36rem, min(88svh, var(--anvl-section-h, 100svh))) !important;
+}
+.anvl-act-section--content {
+  min-height: max(28rem, 52svh) !important;
+}
+.anvl-act-section--compact {
+  min-height: max(24rem, min(58svh, var(--anvl-section-h, 100svh))) !important;
+}
+.anvl-act-content,
+.anvl-act-content-inner {
+  max-height: none !important;
+  overflow: visible !important;
 }
 html.anvl-preview-iframe {
   --anvl-header-h: 0px;

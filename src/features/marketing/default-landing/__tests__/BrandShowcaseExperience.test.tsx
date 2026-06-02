@@ -221,15 +221,31 @@ describe('BrandShowcaseExperience', () => {
     expect(productsBeat.className).toMatch(/overflow-hidden/)
     expect(productGrid.className).not.toMatch(/overflow-y-auto/)
     expect(productGrid.className).not.toMatch(/52dvh/)
-    expect(productGrid.className).toMatch(/grid-cols-3/)
+    expect(productGrid.className).toMatch(/grid-cols-1/)
+    expect(productGrid.className).toMatch(/sm:grid-cols-3/)
     expect(productGrid.className).toMatch(/flex-1/)
     expect(productGrid.className).toMatch(/auto-rows-fr/)
     expect(productsBeat.querySelectorAll('[data-brand-product]').length).toBe(3)
     expect(productsBeat.querySelectorAll('[data-brand-product-img]').length).toBe(3)
     expect(productsBeat.querySelectorAll('.brand-product-banner').length).toBe(3)
+    expect(productsBeat.querySelectorAll('.aspect-\\[5\\/2\\]').length).toBe(0)
 
     const productsRoot = productsBeat.querySelector('[data-brand-products]') as HTMLElement
     expect(productsRoot.className).toMatch(/h-full/)
     expect(productsRoot.className).toMatch(/min-h-0/)
+  })
+
+  it('renders horizontal product banners on mobile reduced stack', () => {
+    render(<BrandShowcaseExperience landing={landing} products={sampleProducts} />)
+
+    const stack = document.querySelector('[data-brand-reduced-stack]') as HTMLElement
+    const grid = stack.querySelector('[data-brand-product-grid]') as HTMLElement
+
+    expect(grid).toBeInTheDocument()
+    expect(grid.className).toMatch(/grid-cols-1/)
+    expect(grid.className).toMatch(/sm:grid-cols-3/)
+    expect(grid.querySelectorAll('[data-brand-product]').length).toBe(3)
+    expect(grid.querySelectorAll('.brand-product-banner').length).toBe(3)
+    expect(grid.querySelectorAll('.aspect-\\[5\\/2\\]').length).toBeGreaterThanOrEqual(1)
   })
 })

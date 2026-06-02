@@ -154,15 +154,18 @@ export function landingPageToDrop(landing: LandingPageCmsContent): Drop {
   }
 }
 
-const REMOVED_NATURES = new Set(['lookbook', 'newsletterWaitlist'])
+const REMOVED_NATURES = new Set(['newsletterWaitlist'])
 
 const NATURE_ALIASES: Record<string, string> = {
   newsletterWaitlist: 'finalCTA',
 }
 
 function migrateAct(act: LandingAct): LandingAct {
-  const nature = NATURE_ALIASES[act.nature] ?? act.nature
-  const preset = resolvePresetAlias(act.preset) ?? act.preset
+  let nature = NATURE_ALIASES[act.nature] ?? act.nature
+  let preset = resolvePresetAlias(act.preset) ?? act.preset
+  if (nature === 'hero' && preset === 'theOathCinematic') {
+    preset = 'editorialHero'
+  }
   return { ...act, nature, preset }
 }
 

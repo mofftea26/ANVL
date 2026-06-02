@@ -26,6 +26,8 @@
   /* Storefront content column — matches Container + act preset inner width. */
   --anvl-content-max: 80rem;
   --anvl-content-max-wide: 96rem;
+  --anvl-section-py: 4rem;
+  --anvl-content-gap: 1.5rem;
 
   /* Admin CMS — approximate sticky `AdminTopbar` block (padding + title + description slot).
      Used by drop editor live preview `min-height`; raise if top bar layout grows. */
@@ -183,26 +185,45 @@ a {
   color: var(--color-text-muted);
 }
 
-/* Section sizing utilities — each landing act occupies exactly one
-   viewport below the sticky header. Content scales to fit; no inner scroll. */
+/* Landing act sections — min-height floor; height grows with content (no clip). */
 .anvl-screen-section,
 .anvl-screen-section-fixed {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  height: var(--anvl-section-h);
-  min-height: var(--anvl-section-h);
-  max-height: var(--anvl-section-h);
-  overflow: hidden;
-  container-type: size;
+  min-height: max(28rem, min(70svh, var(--anvl-section-h)));
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  container-type: inline-size;
   container-name: act-section;
+}
+
+/* Pinned / legacy full-viewport sequences may still hide bleed. */
+.anvl-screen-section-fixed {
+  overflow: hidden;
+  min-height: var(--anvl-section-h);
+}
+
+.anvl-act-section--standard {
+  min-height: max(28rem, min(70svh, var(--anvl-section-h)));
+}
+
+.anvl-act-section--tall {
+  min-height: max(36rem, min(88svh, var(--anvl-section-h)));
+}
+
+.anvl-act-section--content {
+  min-height: max(28rem, 52svh);
+}
+
+.anvl-act-section--compact {
+  min-height: max(24rem, min(58svh, var(--anvl-section-h)));
 }
 
 .anvl-act-content {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: 100%;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -212,28 +233,11 @@ a {
   width: 100%;
   max-width: var(--anvl-content-max);
   margin-inline: auto;
-  max-height: 100%;
-  min-height: 0;
-  overflow: hidden;
 }
 
 @media (min-width: 1536px) {
   .anvl-act-content-inner {
     max-width: var(--anvl-content-max-wide);
-  }
-}
-
-@container act-section (max-height: 720px) {
-  .anvl-act-content-inner {
-    transform: scale(0.94);
-    transform-origin: center center;
-  }
-}
-
-@container act-section (max-height: 620px) {
-  .anvl-act-content-inner {
-    transform: scale(0.88);
-    transform-origin: center center;
   }
 }
 
@@ -450,21 +454,47 @@ a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11) {
 
 @media (prefers-reduced-motion: no-preference) {
   .brand-product-banner__scale {
-    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
     will-change: transform;
   }
 
   .group:hover .brand-product-banner__scale,
   .group:focus-within .brand-product-banner__scale {
-    transform: scale(1.028);
+    transform: scale(1.034);
   }
+
+  .brand-product-banner__rail {
+    animation: brand-banner-shimmer 5.6s linear infinite;
+  }
+
+  .brand-product-banner:hover .brand-product-banner__rail {
+    opacity: 1;
+    animation-duration: 2.8s;
+  }
+}
+
+.brand-product-banner__wm {
+  font-size: clamp(2rem, 22cqi, 3.75rem);
+}
+
+.brand-product-banner__rail {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-accent) 35%, transparent) 18%,
+    color-mix(in srgb, var(--color-fg) 55%, transparent) 50%,
+    color-mix(in srgb, var(--color-accent) 35%, transparent) 82%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  opacity: 0.72;
 }
 
 .brand-product-banner__frame {
   border: 1px solid color-mix(in srgb, var(--color-line) 55%, transparent);
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 8%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--color-fg) 6%, transparent);
+    inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--color-fg) 8%, transparent);
 }
 
 .brand-product-banner__frame::after {

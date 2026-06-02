@@ -20,9 +20,17 @@ export const DEFAULT_SITE_HOMEPAGE: SiteHomepageSettings = {
   updatedAt: new Date().toISOString(),
 }
 
+function normalizeHomepageMode(mode: HomepageMode): HomepageMode {
+  return mode === 'default' ? 'custom' : mode
+}
+
 export function parseSiteHomepageSettings(raw: unknown): SiteHomepageSettings {
   const r = schema.safeParse(raw)
-  return r.success ? r.data : DEFAULT_SITE_HOMEPAGE
+  if (!r.success) return DEFAULT_SITE_HOMEPAGE
+  return {
+    ...r.data,
+    mode: normalizeHomepageMode(r.data.mode),
+  }
 }
 
 export function parseSiteHomepageUnknown(raw: unknown): SiteHomepageSettings {

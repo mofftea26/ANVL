@@ -37,6 +37,10 @@ import {
 } from '@/features/marketing/act-presets/registry'
 import type { LandingActNature } from '@/features/marketing/act-presets/types'
 import { isLayeredHeroPreset } from '@/features/marketing/act-presets/shared/actLayerMedia'
+import { isCinematicScrollHeroPreset } from '@/features/marketing/cinematic-hero/cinematicHero.types'
+import { CinematicHeroEditor } from '@/features/admin/drops/cinematic/CinematicHeroEditor'
+import { landingDefaultsToDropLandingContent } from '@/features/admin/drops/drops.defaults'
+import { dropLandingContentSchema } from '@/features/admin/drops/drops.persistence.zod'
 
 const NATURE_OPTIONS = [
   { value: 'hero', label: 'Hero' },
@@ -45,6 +49,7 @@ const NATURE_OPTIONS = [
   { value: 'dropReveal', label: 'Drop reveal' },
   { value: 'productShowcase', label: 'Product showcase' },
   { value: 'materialShowcase', label: 'Material showcase' },
+  { value: 'lookbook', label: 'Lookbook' },
   { value: 'specialEvent', label: 'Special event' },
   { value: 'finalCTA', label: 'Final CTA' },
 ] as const
@@ -123,6 +128,9 @@ function NatureContentFields({
   const nature = act.nature
 
   if (nature === 'hero') {
+    if (isCinematicScrollHeroPreset(act.preset)) {
+      return null
+    }
     const p = readCta(c, 'primaryCta')
     const s = readCta(c, 'secondaryCta')
     return (
@@ -886,7 +894,7 @@ type Props = {
 }
 
 export function DropActsBuilderPanel({
-  landingContentJson: _landingContentJson,
+  landingContentJson,
   acts,
   landingActSequence,
   catalogProducts = [],
@@ -899,6 +907,17 @@ export function DropActsBuilderPanel({
   fillViewport = false,
   onChange,
 }: Props) {
+  const landingContent = useMemo(() => {
+    try {
+      const parsed = JSON.parse(landingContentJson) as unknown
+      const res = dropLandingContentSchema.safeParse(parsed)
+      if (res.success) return res.data
+    } catch {
+      /* invalid JSON — fall back to defaults */
+    }
+    return landingDefaultsToDropLandingContent()
+  }, [landingContentJson])
+
   const sorted = useMemo(
     () => [...acts].sort((a, b) => a.sortOrder - b.sortOrder),
     [acts],
@@ -1307,6 +1326,20 @@ export function DropActsBuilderPanel({
                 updateAct(act.id, { content: merged })
               }}
             />
+
+            {act.nature === 'hero' && isCinematicScrollHeroPreset(act.preset) ? (
+              <CinematicHeroEditor
+                act={act}
+                landingContent={landingContent}
+                patchContent={(patch) => {
+                  const merged = safeParseActContent(act.nature, {
+                    ...(act.content ?? {}),
+                    ...patch,
+                  })
+                  updateAct(act.id, { content: merged })
+                }}
+              />
+            ) : null}
 
             {act.nature === 'productShowcase' ? (
               <AdminPanel variant="inset" className="space-y-2">

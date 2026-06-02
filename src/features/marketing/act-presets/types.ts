@@ -12,6 +12,7 @@ export type LandingActNature =
   | 'productShowcase'
   | 'materialShowcase'
   | 'specialEvent'
+  | 'lookbook'
   | 'finalCTA'
 
 export const LANDING_ACT_NATURES: readonly LandingActNature[] = [
@@ -22,6 +23,7 @@ export const LANDING_ACT_NATURES: readonly LandingActNature[] = [
   'productShowcase',
   'materialShowcase',
   'specialEvent',
+  'lookbook',
   'finalCTA',
 ] as const
 

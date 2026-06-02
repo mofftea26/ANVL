@@ -1,12 +1,28 @@
 import type { LandingAct } from '@/features/cms/landing/landingActs.types'
+import { cn } from '@/shared/lib/cn'
 
-/** One viewport per act — subtracts sticky header via `--anvl-section-h`. */
+/** Per-act min-height modifiers (see `styles.css`). */
+export type ActSectionSize = 'default' | 'standard' | 'tall' | 'compact' | 'content'
+
+export const ACT_SECTION_SIZE_CLASS: Record<ActSectionSize, string> = {
+  default: 'anvl-act-section--standard',
+  standard: 'anvl-act-section--standard',
+  tall: 'anvl-act-section--tall',
+  compact: 'anvl-act-section--compact',
+  content: 'anvl-act-section--content',
+}
+
+/** Landing act shell — grows with content; optional size modifier. */
 export const ACT_SECTION_CLASS =
-  'anvl-screen-section relative w-full overflow-hidden border-b border-[var(--color-line)]'
+  'anvl-screen-section relative w-full overflow-visible border-b border-[var(--color-line)]'
 
-/** Inner column — one viewport, no nested scroll. */
+export function actSectionClassName(size: ActSectionSize = 'default', extra?: string): string {
+  return cn(ACT_SECTION_CLASS, ACT_SECTION_SIZE_CLASS[size], extra)
+}
+
+/** Inner column — vertical padding only; no height clamp. */
 export const ACT_CONTENT_CLASS =
-  'anvl-act-content relative z-10 px-4 py-3 sm:py-4 md:px-8'
+  'anvl-act-content relative z-10 px-4 py-5 sm:py-7 md:px-8 md:py-8'
 
 export const ACT_CONTENT_INNER_CLASS = 'anvl-act-content-inner'
 import { readActStr } from '@/features/cms/landing/landingActPreviewOverlay'

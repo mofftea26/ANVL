@@ -18,7 +18,7 @@ export function OathEditorialThreePreset({ landing, row, products }: ActPresetPr
   useActIdleMotion(rootRef, row, { floatSelector: '[data-act-eyebrow]' })
 
   return (
-    <ActPresetShell rootRef={rootRef} row={row} ariaLabel="Product showcase">
+    <ActPresetShell rootRef={rootRef} row={row} sectionSize="tall" ariaLabel="Product showcase">
       <p data-act-eyebrow data-act-float className="text-[length:var(--act-eyebrow-size)] uppercase tracking-[0.28em] text-[var(--color-muted)]">
         {p.actLabel}
       </p>
@@ -27,7 +27,7 @@ export function OathEditorialThreePreset({ landing, row, products }: ActPresetPr
         <br />
         <span className="text-[var(--color-muted)]">{p.headingLineTwo}</span>
       </h2>
-      <div className="mt-[var(--act-gap-lg)] grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-[var(--act-gap-lg)] grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
         {featured.map((product, i) => (
           <OathProductCard key={product.id} product={product} featured={i === 0} />
         ))}

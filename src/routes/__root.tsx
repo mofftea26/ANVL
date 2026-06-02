@@ -14,9 +14,8 @@ import { RouteAnalytics } from "@/app/providers/RouteAnalytics";
 import { AppErrorBoundary } from "@/app/components/AppErrorBoundary";
 import { runtimeClients } from "@/app/config/runtime";
 import { useLandingCms } from "@/features/cms/hooks/useLandingCms";
-import { useBrandShowcaseShell } from "@/features/cms/hooks/useBrandShowcaseShell";
 import { SiteFooter } from "@/shared/components/layout/SiteFooter";
-import { StickyHeader } from "@/shared/components/layout/StickyHeader";
+import { PremiumNav } from "@/shared/components/layout/PremiumNav";
 import { MarketingToolsHead } from "@/shared/components/seo/MarketingToolsHead";
 import appCss from "@/styles.css?url";
 import manropeLatinWoff2 from "@fontsource/manrope/files/manrope-latin-400-normal.woff2?url";
@@ -50,16 +49,15 @@ export const Route = createRootRoute({
         /* missing project / network */
       }
     }
-    const [landing, activeDrop, siteHomepage] = await Promise.all([
+    const [landing, activeDrop] = await Promise.all([
       runtimeClients.cms.getLandingCmsContent(),
       runtimeClients.cms.getActiveDrop(),
-      runtimeClients.cms.getSiteHomepage(),
     ]);
     return {
       landing,
       activeDrop,
       globalBrand: createDefaultGlobalBrandSettings(),
-      siteHomepage,
+      siteHomepage: { mode: 'custom' as const, updatedAt: new Date().toISOString() },
     };
   },
   head: () => ({
@@ -113,7 +111,6 @@ function RootLayout() {
     landing: ssrLanding,
     activeDrop,
     globalBrand,
-    siteHomepage,
   } = Route.useLoaderData();
   const landing = useLandingCms(ssrLanding);
   const navigation = landing.navigation;
@@ -121,7 +118,6 @@ function RootLayout() {
     select: (state) => state.location.pathname,
   });
   const isAdminRoute = pathname.startsWith("/admin");
-  const isBrandShowcase = useBrandShowcaseShell(siteHomepage.mode);
 
   const devtools =
     IS_DEV ? (
@@ -156,16 +152,16 @@ function RootLayout() {
       <ActiveDropThemeProvider
         initialDrop={activeDrop}
         initialGlobalBrand={globalBrand}
-        applyDropTheme={!isBrandShowcase}
+        applyDropTheme
       >
         <RouteAnalytics />
-        {!isBrandShowcase ? <StickyHeader navigation={navigation} /> : null}
+        <PremiumNav navigation={navigation} />
         <main>
           <AppErrorBoundary resetKey={pathname}>
             <Outlet />
           </AppErrorBoundary>
         </main>
-        {!isBrandShowcase ? <SiteFooter navigation={navigation} /> : null}
+        <SiteFooter navigation={navigation} />
       </ActiveDropThemeProvider>
       {devtools}
     </>

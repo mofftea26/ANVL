@@ -9,7 +9,7 @@ describe('publicLandingActsHeroSlotOnly', () => {
     expect(acts[0]).toMatchObject({
       id: 'landing-slot-hero',
       nature: 'hero',
-      preset: 'theOathCinematic',
+      preset: 'cinematicScrollHero',
       slotKey: 'hero',
       enabled: true,
     })

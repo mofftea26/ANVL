@@ -47,6 +47,17 @@ Never change the official header/footer ANVL logo per drop. Campaign logos/emble
 - Tablet/Desktop: cinematic GSAP sections, layered visuals, scroll reveals, parallax, video backgrounds when optimized.
 - Always support `prefers-reduced-motion`.
 
+## Storefront chrome (`PremiumNav`)
+- **`PremiumNav`** (`src/shared/components/layout/PremiumNav.tsx`) replaces `StickyHeader` on all storefront routes.
+- **Cinematic phase:** transparent topbar + optional desktop side rail (section progress from `cinematicConfig.sections`).
+- **Commerce phase:** solid blurred topbar with full CMS nav links, cart badge, and mobile drawer.
+- **`AnnouncementRail`:** phase-aware styling for `navigation.announcement`.
+
+## Premium layout primitives
+- `src/shared/components/premium/` — `SectionShell`, `PageHero`, `ContentPanel`, `SectionEyebrow`, `CTAGroup`, `BrandBadge`.
+- Static pages use `ContentPage` (wraps `PageHero` + `ContentPanel`).
+- Spacing tokens: `--anvl-section-py`, `--anvl-content-gap`.
+
 ## Component style
 - Premium spacing, fewer cramped panels.
 - Large preview surfaces in CMS.

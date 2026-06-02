@@ -6,6 +6,7 @@ import { useActPresetMotion } from '../shared/useActScrollReveal'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 import { getActMotionTokens, resolveActAnimation } from '../shared/actAnimationConfig'
 import { applyActMotionByType } from '../shared/actMotionHelpers'
+import { CampaignMark } from '@/shared/components/brand/CampaignMark'
 import type { ActPresetProps } from '../types'
 
 export function OathMonolithRevealPreset({ landing, row, products, emblemSrc }: ActPresetProps) {
@@ -55,12 +56,11 @@ export function OathMonolithRevealPreset({ landing, row, products, emblemSrc }: 
     <div ref={rootRef as React.RefObject<HTMLDivElement>} className="relative">
       <ActMediaBackdrop row={row} />
       {emblemSrc ? (
-        <img
+        <CampaignMark
           data-oath-emblem
           src={emblemSrc}
-          alt=""
-          className="pointer-events-none absolute left-1/2 top-8 z-10 size-20 -translate-x-1/2 opacity-80 sm:size-28"
-          aria-hidden
+          onDark
+          className="pointer-events-none absolute left-1/2 top-6 z-10 size-[var(--act-emblem-size)] -translate-x-1/2 opacity-80"
         />
       ) : null}
       <DropRevealSection

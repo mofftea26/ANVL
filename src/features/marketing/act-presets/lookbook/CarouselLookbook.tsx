@@ -57,11 +57,11 @@ export function CarouselLookbookPreset({ row }: ActPresetProps) {
   return (
     <section
       ref={root}
-      className="anvl-screen-section relative overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-bg)]"
+      className="anvl-screen-section anvl-act-section--tall relative overflow-visible border-b border-[var(--color-line)] bg-[var(--color-bg)]"
       aria-label="Lookbook carousel"
     >
       <ActMediaBackdrop row={row} />
-      <div className="anvl-act-content relative z-10 flex min-h-0 flex-1 flex-col justify-center gap-6 py-6 sm:py-8">
+      <div className="anvl-act-content relative z-10 flex flex-col justify-center gap-8 py-8 sm:py-10">
         <Container>
           <header className="max-w-xl">
             <p

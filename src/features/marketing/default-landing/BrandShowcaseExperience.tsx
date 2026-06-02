@@ -13,7 +13,6 @@ import { AnimatedSection } from './AnimatedSection'
 import { AmbientEmblemField } from './ParallaxLayer'
 import { BRAND_AMBIENT_EMBLEMS, BRAND_EMBLEM_ASSETS } from './brandShowcaseAssets'
 import { CinematicHero } from './CinematicHero'
-import { ParallaxProductCard } from './ParallaxProductCard'
 import { ProductShowcaseCard } from './ProductShowcaseCard'
 import { useBrandShowcaseTimeline } from './useBrandShowcaseTimeline'
 
@@ -176,17 +175,13 @@ function ProductsBeatContent({
         className={cn(
           'grid w-full min-h-0 [perspective:1200px]',
           compact
-            ? 'flex-1 auto-rows-fr grid-cols-3 items-stretch gap-2 overflow-hidden sm:gap-2.5 md:gap-3 lg:gap-4'
-            : 'grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 md:gap-4',
+            ? 'flex-1 auto-rows-fr grid-cols-1 items-stretch gap-2 overflow-hidden sm:grid-cols-3 sm:gap-2.5 md:gap-3'
+            : 'mx-auto grid-cols-1 gap-2 min-[390px]:gap-2.5 sm:max-w-3xl sm:grid-cols-3',
         )}
       >
-        {featured.map((product, i) =>
-          compact ? (
-            <ProductShowcaseCard key={product.id} product={product} index={i} />
-          ) : (
-            <ParallaxProductCard key={product.id} product={product} index={i} />
-          ),
-        )}
+        {featured.map((product, i) => (
+          <ProductShowcaseCard key={product.id} product={product} index={i} strip={compact} />
+        ))}
       </div>
     </div>
   )

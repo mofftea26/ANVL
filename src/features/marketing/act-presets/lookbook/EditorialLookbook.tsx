@@ -38,11 +38,11 @@ export function EditorialLookbookPreset({ row }: ActPresetProps) {
   return (
     <section
       ref={root}
-      className="anvl-screen-section relative border-b border-[var(--color-line)] bg-[var(--color-surface)]"
+      className="anvl-screen-section anvl-act-section--tall relative overflow-visible border-b border-[var(--color-line)] bg-[var(--color-surface)]"
       aria-label="Editorial lookbook"
     >
       <ActMediaBackdrop row={row} />
-      <Container className="anvl-act-content relative z-10 grid gap-8 py-6 sm:gap-10 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center">
+      <Container className="anvl-act-content relative z-10 grid gap-8 py-8 sm:gap-10 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center">
         <div data-lookbook-editorial-copy>
           <p className="anvl-micro mb-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
             {fields.actLabel}

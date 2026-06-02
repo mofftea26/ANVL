@@ -19,7 +19,7 @@ const SLOT_TO_PUBLIC_NATURE: Record<LandingActSlot['key'], string> = {
 }
 
 const SLOT_TO_PRESET: Record<LandingActSlot['key'], string> = {
-  hero: 'theOathCinematic',
+  hero: 'cinematicScrollHero',
   manifesto: 'oathTenetLedger',
   dropReveal: 'oathMonolithReveal',
   pieces: 'oathEditorialThree',

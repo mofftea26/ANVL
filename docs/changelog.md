@@ -1,4 +1,58 @@
-﻿## 2026-05-20 — Production follow-ups: migrations, scheduler cron, bundle split
+﻿## 2026-06-02 — Landing act section height and clipping fix
+
+- **Root cause:** `.anvl-screen-section` capped acts at `max-height: 100svh` with `overflow-y: auto`, so tenet lists, chapter stacks, and lookbook grids were clipped or trapped in inner scroll instead of growing the page.
+- **Global:** Sections grow with content (`overflow: visible`, `max-height: none`); default floor `min-height: max(28rem, min(70svh, …))`; modifiers `--standard`, `--tall`, `--content`, `--compact`.
+- **Oath presets:** `OathTenetLedger`, `OathNarrativeScroll` use `sectionSize="tall"`; `OathForgeClose` uses `content`; spacing/typography polish; `ACT_RESPONSIVE_STYLE` emblem/padding floors raised.
+- **Lookbook:** `MasonryLookbook`, `EditorialLookbook`, `CarouselLookbook` use `--tall` + `overflow-visible` with roomier vertical padding.
+- **Admin preview:** `DropEditorLivePreview` iframe CSS matches storefront act sizing (no max-height clip).
+- **Tests:** `actPresetUtils` standard/tall class tests; `actResponsiveTokens.test.ts`.
+
+## 2026-06-02 — Landing hero scroll, product banners, act viewport cap
+
+- **Cinematic hero (CRITICAL):** Root cause — pinned beats are `absolute inset-0`; GSAP scrub on scroll-back left multiple beats partially opaque and `onLeaveBack`/`onEnterBack` did not reset timeline progress to 0. Fix: `visibility` + z-index stack sync, `resetToScrollTop()` on re-enter, CSS `invisible` fallback on non-first beats, `syncCinematicBeatStack` during mid-scroll crossfades.
+- **Product cards:** Redesigned as compact horizontal banner strips (`aspect-[5/2]` / height-capped in pinned beat); side-by-side row at `sm:grid-cols-3`; image-left editorial layout; desktop GSAP tilt via `useProductCardParallaxTilt`, CSS hover depth when reduced motion.
+- **Act sections:** `.anvl-screen-section` capped at `max-height: min(100svh, var(--anvl-section-h))` with `overflow-y: auto` (superseded by act clipping fix entry above).
+- **Tests:** `CinematicScrollHero`, `BrandShowcaseExperience`, `actResponsiveTokens`.
+
+
+## 2026-06-02 — Cinematic hero scroll-top visibility + nav overlay
+
+- **Cinematic hero:** First desktop beat defaults to `opacity-100` (SSR/pre-GSAP); `applyCinematicHeroScrollStartState` re-shows section 0 when ScrollTrigger progress is at top (fixes scrub lag hiding beat 0 after scroll-back). Desktop stage drops `--anvl-header-h` vertical padding so the hero fills the viewport under the overlay nav.
+- **PremiumNav:** Mobile height spacer omitted during cinematic overlay so the hero is not pushed down in document flow.
+- **Tests:** `cinematicHero.visibility.test.ts`, extended `CinematicScrollHero` and `PremiumNav` tests.
+
+## 2026-06-02 — Cinematic nav, logos, and act sizing fixes
+
+- **PremiumNav:** Transparent header wrapper and ghost cart button while `cinematic` phase; solid chrome only after hero pin `onLeave` (timeline no longer resets phase on desktop context cleanup).
+- **CampaignMark:** Inline brand SVGs with `onDark` tint; GSAP `data-cinematic-copy` wrapper in cinematic hero; oath act presets (`OathTenetLedger`, `OathForgeClose`, `OathMonolithReveal`, `OathNarrativeScroll`) use `CampaignMark` instead of raw `<img>`.
+- **Act sections:** `.anvl-screen-section` uses content-driven `min-height: clamp(28rem, 62svh, …)` instead of forced full viewport; smaller `--act-emblem-size`; admin live preview CSS aligned.
+- **Tests:** `CampaignMark.test.tsx`, extended `PremiumNav.test.tsx`.
+
+## 2026-06-02 — Premium design system primitives + shop chrome
+
+- **`shared/components/premium/`:** `SectionShell`, `PageHero`, `ContentPanel`, `SectionEyebrow`, `CTAGroup`, `BrandBadge` for consistent storefront hierarchy.
+- **`ContentPage`:** Static pages use `PageHero` + `ContentPanel`.
+- **`/shop`:** Premium page hero and availability badge; mobile filter drawer unchanged.
+- **Tokens:** `--anvl-section-py`, `--anvl-content-gap` in `styles.css`.
+- **Drop 01 seed:** 8-act sequence adds `lookbook` (`masonryLookbook`) between materials and final CTA.
+- **Tests:** `PageHero.test.tsx`.
+
+## 2026-06-02 — PremiumNav replaces StickyHeader
+
+- **`PremiumNav`:** Phase-aware storefront chrome (`PremiumNavTopbar`, `PremiumNavSideRail`, `PremiumNavMobile`, `AnnouncementRail`) driven by `usePremiumNavPhase` + `cinematicHeroPhase` store — transparent topbar and desktop side rail during cinematic scroll; solid commerce chrome after.
+- **`__root.tsx`:** Always renders `PremiumNav` and site footer with drop theme (no brand-showcase shell hide).
+- **Tests:** `PremiumNav.test.tsx`, `usePremiumNavPhase.test.ts`.
+
+## 2026-06-02 — Cinematic scroll hero storefront module
+
+- **`cinematic-hero/`:** Zustand phase store, GSAP pinned timeline (`useCinematicHeroTimeline`), background/section views, and `CinematicScrollHero` act preset wired in the registry (four hero presets; default `cinematicScrollHero`).
+- **Homepage:** `/` always renders `PublicLandingActs`; Lenis smooth scroll only when a enabled `cinematicScrollHero` act is present; drop theme and site chrome always apply (`__root.tsx`).
+- **CMS:** `siteHomepage` mode `default` parses to `custom`; Drop 01 seed hero uses `cinematicScrollHero` + `defaultCinematicConfig`; `drops.migrate` keeps `lookbook` acts; layered hero media presets are `productHero` / `standardHero`.
+- **Supabase:** migration `20260602120000_cinematic_hero_layouts.sql` seeds hero layout rows and normalizes published `site_homepage.mode`.
+- **Admin:** dashboard homepage mode toggle replaced with act-based guidance.
+- **Tests:** `cinematicConfig.zod`, `CinematicScrollHero` SSR render, updated `registry.test.ts`.
+
+## 2026-05-20 — Production follow-ups: migrations, scheduler cron, bundle split
 
 - **Supabase (project `cptebkgyrfmokklwtrgp`):** applied migrations **`storefront_site_drafts`**, **`cms_media_assets`**, **`cms_scheduled_activation`** (`media_index`, catalog table, `cms_process_scheduled_drops`).
 - **Edge Function:** **`process-scheduled-drops`** deployed (`CRON_SECRET` auth, calls RPC with service role). Schedule in Dashboard every 1–5 min after setting secrets.

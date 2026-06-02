@@ -23,12 +23,12 @@ export function MasonryLookbookPreset({ row }: ActPresetProps) {
   return (
     <section
       ref={root}
-      className="anvl-screen-section relative border-b border-[var(--color-line)] bg-[var(--color-bg)]"
+      className="anvl-screen-section anvl-act-section--tall relative overflow-visible border-b border-[var(--color-line)] bg-[var(--color-bg)]"
       aria-label="Lookbook"
     >
       <ActMediaBackdrop row={row} />
-      <Container className="anvl-act-content relative z-10 flex flex-col justify-center py-6 sm:py-8">
-        <header className="mb-10 max-w-xl">
+      <Container className="anvl-act-content relative z-10 flex flex-col justify-center py-8 sm:py-10">
+        <header className="mb-8 max-w-xl sm:mb-10">
           <p
             data-lookbook-heading
             className="anvl-micro mb-3 text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-muted)]"
@@ -47,7 +47,7 @@ export function MasonryLookbookPreset({ row }: ActPresetProps) {
             </p>
           ) : null}
         </header>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {fields.items.map((item, i) => (
             <figure
               key={`${item.src}-${i}`}

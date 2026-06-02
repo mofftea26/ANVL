@@ -1,10 +1,11 @@
 import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
 import { landingCmsDefaults } from '@/features/admin/landing-cms/landingCms.defaults'
+import { defaultCinematicConfig } from '@/features/marketing/cinematic-hero/cinematicHero.defaults'
 import type { DropLandingContent } from '../drops.types'
 import type { LandingAct } from './landingActs.types'
 import { mergeActAnimationConfig } from './landingActs.types'
 
-/** Bootstrap `Drop.acts` — lean Oath sequence (7 acts). */
+/** Bootstrap `Drop.acts` — Oath sequence with cinematic hero + lookbook (8 acts). */
 export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[] {
   const anim = mergeActAnimationConfig()
   const L = landingCmsDefaults
@@ -18,7 +19,7 @@ export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[]
     {
       id: createCmsId('act'),
       nature: 'hero',
-      preset: 'theOathCinematic',
+      preset: 'cinematicScrollHero',
       isEnabled: true,
       sortOrder: 0,
       title: lc.hero.title,
@@ -26,7 +27,7 @@ export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[]
       eyebrow: lc.hero.badgeText,
       body: '',
       animation: anim,
-      content: {},
+      content: { cinematicConfig: defaultCinematicConfig(lc) },
       media: { imageUrl: '', videoUrl: '', alt: '' },
     },
     {
@@ -99,10 +100,26 @@ export function landingContentToSimpleActs(lc: DropLandingContent): LandingAct[]
     },
     {
       id: createCmsId('act'),
+      nature: 'lookbook',
+      preset: 'masonryLookbook',
+      isEnabled: true,
+      sortOrder: 6,
+      title: 'Campaign lookbook',
+      eyebrow: 'The Oath',
+      animation: anim,
+      content: {
+        galleryItems: [
+          { src: '/brand/lookbook-1.webp', caption: 'Forged silhouette', alt: 'Athlete in ANVL tee' },
+          { src: '/brand/lookbook-2.webp', caption: 'Pressure tested', alt: 'Gym floor stance' },
+        ],
+      },
+    },
+    {
+      id: createCmsId('act'),
       nature: 'finalCTA',
       preset: 'oathForgeClose',
       isEnabled: true,
-      sortOrder: 6,
+      sortOrder: 7,
       title: L.waitlist.heading,
       subtitle: L.waitlist.rightLabel,
       eyebrow: 'Close',

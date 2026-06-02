@@ -1,4 +1,4 @@
-﻿import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { buildSeoHeadForSiteStaticPath } from '@/features/cms/seoMeta'
@@ -21,6 +21,8 @@ import {
   ProductCard,
   Section,
 } from '@/shared/components/ui'
+import { PageHero } from '@/shared/components/premium/PageHero'
+import { BrandBadge } from '@/shared/components/premium/BrandBadge'
 
 export const Route = createFileRoute('/shop/')({
   validateSearch: validateShopUrlSearch,
@@ -111,22 +113,21 @@ function ShopPage() {
   const mobileFilters = <ShopFiltersForm {...filterProps} />
 
   return (
-    <Section>
-      <Container>
+    <>
+      <PageHero
+        eyebrow="Catalog"
+        title="Shop"
+        intro="Premium bodybuilding gymwear forged for disciplined lifters. Filter by drop, size, and availability."
+      />
+      <Section className="pt-0">
+      <Container className="pb-[var(--anvl-section-py,4rem)]">
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <BrandBadge tone="accent">{`${deferredFiltered.length} pieces`}</BrandBadge>
+        </div>
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
           <aside className="hidden w-full max-w-xs shrink-0 lg:block">{desktopFilters}</aside>
 
           <div className="min-w-0 flex-1 space-y-6">
-            <header>
-              <h1 className="anvl-heading text-4xl sm:text-5xl md:text-6xl">
-                Shop
-              </h1>
-              <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                {deferredFiltered.length} piece{deferredFiltered.length === 1 ? '' : 's'} match your
-                filters.
-              </p>
-            </header>
-
             <div className="max-w-md space-y-3">
               <label htmlFor="shop-search" className="anvl-micro block">
                 Search
@@ -177,5 +178,6 @@ function ShopPage() {
         {mobileFilters}
       </Drawer>
     </Section>
+    </>
   )
 }

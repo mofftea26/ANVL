@@ -444,7 +444,13 @@ function bindProductCards(
   const exitDuration = fadeOutEnd - holdEnd
   const stagger = Math.min(0.07, enterDuration / Math.max(products.length, 1))
 
-  gsap.set(products, { opacity: 0, y: 40, scale: 0.88, filter: 'blur(8px)' })
+  gsap.set(products, {
+    opacity: 0,
+    y: 52,
+    scale: 0.82,
+    filter: 'blur(10px)',
+    transformOrigin: '50% 85%',
+  })
   timeline.to(
     products,
     {
@@ -462,9 +468,9 @@ function bindProductCards(
     products,
     {
       opacity: 0,
-      y: -28,
-      scale: 0.94,
-      filter: 'blur(5px)',
+      y: -32,
+      scale: 0.9,
+      filter: 'blur(6px)',
       stagger: stagger * 0.5,
       ease: 'power2.in',
       duration: exitDuration,

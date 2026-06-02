@@ -4,7 +4,8 @@ import { ActMediaBackdrop } from './ActMediaBackdrop'
 import {
   ACT_CONTENT_CLASS,
   ACT_CONTENT_INNER_CLASS,
-  ACT_SECTION_CLASS,
+  actSectionClassName,
+  type ActSectionSize,
 } from './actPresetUtils'
 import { ACT_RESPONSIVE_CLASS, ACT_RESPONSIVE_STYLE } from './actResponsiveTokens'
 import type { LandingAct } from '@/features/cms/landing/landingActs.types'
@@ -14,17 +15,19 @@ type ActPresetShellProps = {
   row?: LandingAct
   contentImageKey?: string
   ariaLabel: string
+  sectionSize?: ActSectionSize
   className?: string
   contentClassName?: string
   children: ReactNode
 }
 
-/** Standard act section wrapper — one viewport height with optional CMS media backdrop. */
+/** Standard act section wrapper with optional CMS media backdrop. */
 export function ActPresetShell({
   rootRef,
   row,
   contentImageKey,
   ariaLabel,
+  sectionSize = 'default',
   className = 'bg-[var(--color-bg)]',
   contentClassName,
   children,
@@ -32,7 +35,7 @@ export function ActPresetShell({
   return (
     <section
       ref={rootRef}
-      className={cn(ACT_SECTION_CLASS, ACT_RESPONSIVE_CLASS, className)}
+      className={cn(actSectionClassName(sectionSize), ACT_RESPONSIVE_CLASS, className)}
       style={ACT_RESPONSIVE_STYLE as CSSProperties}
       aria-label={ariaLabel}
     >

@@ -11,15 +11,17 @@ describe('actLayerMedia', () => {
   const base: LandingAct = {
     id: 'a',
     nature: 'hero',
-    preset: 'splitProduct',
+    preset: 'productHero',
     isEnabled: true,
     sortOrder: 0,
   }
 
-  it('isLayeredHeroPreset identifies split and minimal presets only', () => {
+  it('isLayeredHeroPreset identifies product and standard hero presets only', () => {
+    expect(isLayeredHeroPreset('productHero')).toBe(true)
+    expect(isLayeredHeroPreset('standardHero')).toBe(true)
     expect(isLayeredHeroPreset('splitProduct')).toBe(true)
     expect(isLayeredHeroPreset('minimalEmblem')).toBe(true)
-    expect(isLayeredHeroPreset('theOathCinematic')).toBe(false)
+    expect(isLayeredHeroPreset('cinematicScrollHero')).toBe(false)
   })
 
   it('resolveActLayerMedia reads background from row.media', () => {

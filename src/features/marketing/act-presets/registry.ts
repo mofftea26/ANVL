@@ -23,24 +23,52 @@ function lazyPreset(
 
 /** Default oath preset per nature. */
 export const DEFAULT_ACT_PRESETS: Record<LandingActNature, string> = {
-  hero: 'theOathCinematic',
+  hero: 'cinematicScrollHero',
   manifesto: 'oathTenetLedger',
   storytelling: 'oathNarrativeScroll',
   dropReveal: 'oathMonolithReveal',
   productShowcase: 'oathEditorialThree',
   materialShowcase: 'oathMaterialFlip',
   specialEvent: 'oathEventPulse',
+  lookbook: 'masonryLookbook',
   finalCTA: 'oathForgeClose',
 }
 
 const ENTRIES: ActPresetEntry[] = [
   {
     nature: 'hero',
-    preset: 'theOathCinematic',
-    label: 'The Oath cinematic',
+    preset: 'standardHero',
+    label: 'Standard hero',
+    component: lazyPreset(
+      () => import('./hero/MinimalEmblemHero'),
+      'MinimalEmblemHeroPreset',
+    ),
+  },
+  {
+    nature: 'hero',
+    preset: 'editorialHero',
+    label: 'Editorial hero',
     component: lazyPreset(
       () => import('./hero/TheOathCinematic'),
       'TheOathCinematicPreset',
+    ),
+  },
+  {
+    nature: 'hero',
+    preset: 'productHero',
+    label: 'Product hero',
+    component: lazyPreset(
+      () => import('./hero/SplitProductHero'),
+      'SplitProductHeroPreset',
+    ),
+  },
+  {
+    nature: 'hero',
+    preset: 'cinematicScrollHero',
+    label: 'Cinematic scroll hero',
+    component: lazyPreset(
+      () => import('../cinematic-hero/CinematicScrollHero'),
+      'CinematicScrollHeroPreset',
     ),
   },
   {
@@ -113,6 +141,15 @@ const ENTRIES: ActPresetEntry[] = [
     component: lazyPreset(
       () => import('./specialEvent/OathEventPulse'),
       'OathEventPulsePreset',
+    ),
+  },
+  {
+    nature: 'lookbook',
+    preset: 'masonryLookbook',
+    label: 'Masonry lookbook',
+    component: lazyPreset(
+      () => import('./lookbook/MasonryLookbook'),
+      'MasonryLookbookPreset',
     ),
   },
   {

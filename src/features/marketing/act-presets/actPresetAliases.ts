@@ -23,8 +23,10 @@ export const ACT_PRESET_ALIASES: Record<string, string> = {
   oathFullWidthForm: 'oathForgeClose',
   minimalForm: 'oathForgeClose',
   splitForm: 'oathForgeClose',
-  splitProduct: 'theOathCinematic',
-  minimalEmblem: 'theOathCinematic',
+  splitProduct: 'productHero',
+  minimalEmblem: 'standardHero',
+  theOathCinematic: 'editorialHero',
+  'cinematic-full-screen': 'cinematicScrollHero',
   splitText: 'oathTenetLedger',
   scrollStacked: 'oathTenetLedger',
 }
