@@ -26,7 +26,7 @@ export function OathProductCard({ product, className, featured, compact }: OathP
       data-act-block
       data-act-micro
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded border border-[var(--color-line)] bg-[var(--color-surface)]/40 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)]',
+        'group relative flex h-full flex-col overflow-hidden rounded-[var(--act-card-radius)] border border-[var(--color-line)] bg-[var(--color-surface)]/40 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.3)]',
         featured && 'md:col-span-2 md:row-span-2',
         className,
       )}
@@ -34,14 +34,14 @@ export function OathProductCard({ product, className, featured, compact }: OathP
       <div
         className={cn(
           'relative overflow-hidden bg-[var(--color-bg)]',
-          compact ? 'aspect-[4/5]' : 'aspect-[3/4]',
+          compact ? 'aspect-[4/5] max-h-[58%]' : 'aspect-[3/4]',
         )}
       >
         {img ? (
           <img
             src={img.src}
             alt={img.alt}
-            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             loading="lazy"
           />
         ) : (
@@ -50,42 +50,29 @@ export function OathProductCard({ product, className, featured, compact }: OathP
           </div>
         )}
         {sale ? (
-          <span className="absolute left-2 top-2 rounded bg-[var(--color-accent)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-bg)]">
+          <span
+            data-act-card-meta
+            className="absolute left-1.5 top-1.5 rounded bg-[var(--color-accent)] px-1.5 py-0.5 font-semibold text-[var(--color-bg)]"
+          >
             {sale}
           </span>
         ) : null}
       </div>
-      <div className={cn('flex flex-1 flex-col gap-0.5', compact ? 'p-2' : 'gap-1 p-3 sm:p-4')}>
+      <div className={cn('flex min-h-0 flex-1 flex-col gap-0.5', compact ? 'p-1.5' : 'p-2.5')}>
         {!compact ? (
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-muted)]">
-            {product.dropName}
-          </p>
+          <p data-act-eyebrow>{product.dropName}</p>
         ) : null}
-        <h3
-          data-act-title
-          className={cn(
-            'font-display uppercase leading-tight text-[var(--color-fg)]',
-            compact ? 'text-sm' : 'text-lg sm:text-xl',
-          )}
-        >
+        <h3 data-act-card-title className="line-clamp-2">
           {product.name}
         </h3>
-        <p
-          data-act-body
-          className={cn(
-            'text-[var(--color-muted)]',
-            compact ? 'line-clamp-1 text-xs' : 'line-clamp-2 text-sm',
-          )}
-        >
+        <p data-act-card-body className={cn(compact ? 'line-clamp-1' : 'line-clamp-2')}>
           {[product.fit, product.fabric, product.gsm].filter(Boolean).join(' · ')}
         </p>
-        <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="font-medium text-[var(--color-fg)]">
+        <div className="mt-auto flex items-center justify-between gap-1 pt-1">
+          <span data-act-card-title className="font-medium normal-case tracking-normal">
             {formatProductPrice(product)}
           </span>
-          <span className="text-xs uppercase tracking-wider text-[var(--color-muted)]">
-            {productAvailabilityLabel(product)}
-          </span>
+          <span data-act-card-meta>{productAvailabilityLabel(product)}</span>
         </div>
       </div>
     </a>

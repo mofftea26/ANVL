@@ -4,6 +4,7 @@
 @import "@fontsource/manrope/600.css";
 @import "@fontsource/manrope/700.css";
 @import "tailwindcss";
+@import "./features/marketing/act-presets/shared/landingActResponsive.css";
 
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
@@ -180,8 +181,8 @@ a {
 
 .anvl-micro {
   text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  font-size: 0.65rem;
   color: var(--color-text-muted);
 }
 
@@ -219,6 +220,59 @@ a {
 
 .anvl-act-section--compact {
   min-height: max(24rem, min(58svh, var(--anvl-section-h)));
+}
+
+/* Product showcase — never taller than 70% of the viewport; content scales inside. */
+.anvl-act-section--showcase {
+  min-height: 0;
+  max-height: 70svh;
+  height: auto;
+  overflow: hidden;
+}
+
+.anvl-act-section--showcase .anvl-act-content {
+  max-height: 70svh;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: clamp(1rem, 2.5cqi, 1.5rem);
+  padding-bottom: clamp(1rem, 2.5cqi, 1.5rem);
+}
+
+.anvl-act-section--showcase .anvl-act-content-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: calc(70svh - 2rem);
+  gap: clamp(0.625rem, 1.5cqi, 1rem);
+}
+
+/* Banner preset — allow 3D hover bleed without expanding the act. */
+.anvl-act-section--showcase.anvl-act-showcase--banners {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+.anvl-act-section--showcase.anvl-act-showcase--banners .anvl-act-content {
+  overflow: visible;
+}
+
+.anvl-banner-showcase-row {
+  --banner-w: clamp(5.25rem, 11.5cqi, 7.75rem);
+  --banner-h: clamp(9rem, min(22cqi, calc(70svh - 15rem)), 11.75rem);
+}
+
+.anvl-act-section--reveal {
+  min-height: 0;
+  max-height: min(70svh, 44rem);
+  height: auto;
+  overflow: hidden;
+}
+
+.anvl-act-section--reveal .anvl-act-content {
+  max-height: min(70svh, 44rem);
+  min-height: 0;
+  padding-top: clamp(1.25rem, 3cqi, 2rem);
+  padding-bottom: clamp(1.25rem, 3cqi, 2rem);
 }
 
 .anvl-act-content {

@@ -28,6 +28,21 @@ function readActCta(
   }
 }
 
+/** Returns a CTA only when the act row content explicitly defines a label. */
+export function readActContentCtaOptional(
+  content: unknown,
+  key: string,
+): CmsCta | null {
+  if (!content || typeof content !== 'object') return null
+  const p = readActCta(content as Record<string, unknown>, key)
+  const label = p.label?.trim()
+  if (!label) return null
+  return {
+    label,
+    href: p.href?.trim() || '#',
+  }
+}
+
 /** Overlay act CTA fragments from `LandingAct.content` onto persisted landing CTAs. */
 export function mergeActContentCta(base: CmsCta, content: unknown, key: string): CmsCta {
   if (!content || typeof content !== 'object') return base
@@ -153,8 +168,8 @@ export function previewManifestoFields(
     : null
 
   return {
-    actLabel: row?.eyebrow ?? landing.actLabel,
-    counterLabel: row?.subtitle ?? landing.counterLabel,
+    actLabel: row?.eyebrow?.trim() || landing.actLabel,
+    counterLabel: row?.subtitle?.trim() ?? '',
     heading: headingBase,
     intro: introMerged,
     tenets: tenetsFromContent?.length ? tenetsFromContent : landing.tenets,
@@ -166,14 +181,12 @@ export function previewDropRevealFields(
   row: LandingAct | undefined,
 ): Pick<
   LandingPageCmsContent['dropReveal'],
-  | 'actLabel'
-  | 'counterLabel'
-  | 'words'
-  | 'tagline'
-  | 'primaryCta'
-  | 'secondaryCta'
-  | 'dropIcon'
-> & { releaseDateIso?: string } {
+  'actLabel' | 'counterLabel' | 'words' | 'tagline' | 'dropIcon'
+> & {
+  releaseDateIso?: string
+  primaryCta: CmsCta | null
+  secondaryCta: CmsCta | null
+} {
   const c = row?.content
   const tagline = row?.body ?? landing.tagline
   const dropVisualSrc = readActStr(c as Record<string, unknown> | undefined, 'dropVisualSrc')
@@ -186,8 +199,8 @@ export function previewDropRevealFields(
         ? row.title.split(/\s+/).filter(Boolean)
         : landing.words,
     tagline,
-    primaryCta: mergeActContentCta(landing.primaryCta, c, 'primaryCta'),
-    secondaryCta: mergeActContentCta(landing.secondaryCta, c, 'secondaryCta'),
+    primaryCta: readActContentCtaOptional(c, 'primaryCta'),
+    secondaryCta: readActContentCtaOptional(c, 'secondaryCta'),
     dropIcon: dropVisualSrc
       ? { src: dropVisualSrc, alt: landing.dropIcon.alt }
       : landing.dropIcon,

@@ -84,6 +84,37 @@ body {
 .anvl-act-section--compact {
   min-height: max(24rem, min(58svh, var(--anvl-section-h, 100svh))) !important;
 }
+.anvl-act-section--showcase {
+  min-height: 0 !important;
+  max-height: 70svh !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+.anvl-act-section--showcase .anvl-act-content {
+  max-height: 70svh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.anvl-act-section--reveal {
+  min-height: 0 !important;
+  max-height: min(70svh, 44rem) !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+.anvl-act-section--reveal .anvl-act-content {
+  max-height: min(70svh, 44rem) !important;
+  min-height: 0 !important;
+}
+.anvl-act-section--showcase.anvl-act-showcase--banners .anvl-act-content {
+  overflow: visible !important;
+}
+.anvl-act-section--showcase .anvl-act-content-inner {
+  max-height: calc(70svh - 2rem) !important;
+}
+.anvl-screen-section {
+  container-type: inline-size !important;
+  container-name: act-section !important;
+}
 .anvl-act-content,
 .anvl-act-content-inner {
   max-height: none !important;
@@ -173,6 +204,37 @@ body {
 }
 .anvl-act-section--compact {
   min-height: max(24rem, min(58svh, var(--anvl-section-h, 100svh))) !important;
+}
+.anvl-act-section--showcase {
+  min-height: 0 !important;
+  max-height: 70svh !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+.anvl-act-section--showcase .anvl-act-content {
+  max-height: 70svh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.anvl-act-section--reveal {
+  min-height: 0 !important;
+  max-height: min(70svh, 44rem) !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+.anvl-act-section--reveal .anvl-act-content {
+  max-height: min(70svh, 44rem) !important;
+  min-height: 0 !important;
+}
+.anvl-act-section--showcase.anvl-act-showcase--banners .anvl-act-content {
+  overflow: visible !important;
+}
+.anvl-act-section--showcase .anvl-act-content-inner {
+  max-height: calc(70svh - 2rem) !important;
+}
+.anvl-screen-section {
+  container-type: inline-size !important;
+  container-name: act-section !important;
 }
 .anvl-act-content,
 .anvl-act-content-inner {

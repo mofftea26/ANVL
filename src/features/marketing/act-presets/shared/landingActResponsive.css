@@ -1,0 +1,182 @@
+/**
+ * Landing act responsive scale — single source of truth.
+ * All `.anvl-screen-section` acts use container queries (cqi) so type and
+ * cards shrink/grow with the act width, not the full viewport.
+ */
+
+.anvl-screen-section {
+  --act-display-size: clamp(1.2rem, 2.4cqi + 0.45rem, 1.875rem);
+  --act-title-size: clamp(1.05rem, 2.1cqi + 0.4rem, 1.625rem);
+  --act-subtitle-size: clamp(0.72rem, 0.85cqi + 0.32rem, 0.875rem);
+  --act-eyebrow-size: clamp(0.54rem, 0.32cqi + 0.38rem, 0.65rem);
+  --act-body-size: clamp(0.65rem, 0.5cqi + 0.48rem, 0.8125rem);
+  --act-card-title-size: clamp(0.58rem, 0.45cqi + 0.42rem, 0.75rem);
+  --act-card-body-size: clamp(0.52rem, 0.38cqi + 0.38rem, 0.65rem);
+  --act-card-meta-size: clamp(0.48rem, 0.32cqi + 0.36rem, 0.58rem);
+  --act-stat-size: clamp(0.78rem, 1cqi + 0.42rem, 1rem);
+  --act-gap: clamp(0.45rem, 1cqi, 0.875rem);
+  --act-gap-lg: clamp(0.55rem, 1.35cqi, 1.125rem);
+  --act-card-radius: clamp(0.2rem, 0.4cqi, 0.4rem);
+  --act-emblem-size: clamp(2.5rem, 6cqi, 5rem);
+  --act-card-w: clamp(6.75rem, 16cqi, 9.5rem);
+  --banner-w: clamp(5.75rem, 12.5cqi, 8.25rem);
+  --banner-h: clamp(9.75rem, min(24cqi, calc(70svh - 14rem)), 12.25rem);
+  --act-control-h: clamp(2rem, 4cqi, 2.25rem);
+}
+
+.anvl-act-section--showcase {
+  --act-display-size: clamp(1.05rem, 1.9cqi + 0.4rem, 1.5rem);
+  --act-title-size: clamp(0.95rem, 1.65cqi + 0.35rem, 1.35rem);
+  --act-gap: clamp(0.35rem, 0.75cqi, 0.65rem);
+  --act-gap-lg: clamp(0.45rem, 1cqi, 0.75rem);
+  --banner-w: clamp(5.25rem, 11.5cqi, 7.75rem);
+  --banner-h: clamp(9rem, min(22cqi, calc(70svh - 15rem)), 11.75rem);
+  --act-card-w: clamp(6rem, 14cqi, 8.5rem);
+  --material-card-h: clamp(5.25rem, 13cqi, 7rem);
+}
+
+.anvl-act-section--reveal {
+  --act-display-size: clamp(1.35rem, 3.2cqi + 0.5rem, 2.25rem);
+  --act-title-size: clamp(1.2rem, 2.8cqi + 0.45rem, 2rem);
+  --act-body-size: clamp(0.68rem, 0.55cqi + 0.45rem, 0.8125rem);
+  --act-stat-size: clamp(0.72rem, 0.9cqi + 0.4rem, 0.9375rem);
+}
+
+/* Typography cascade — overrides hardcoded Tailwind sizes inside acts. */
+.anvl-screen-section.anvl-act-responsive [data-act-title],
+.anvl-screen-section.anvl-act-responsive :is(h1, h2, h3)[data-act-title] {
+  font-family: var(--font-heading);
+  font-size: var(--act-title-size);
+  line-height: 0.94;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-fg, var(--color-heading));
+}
+
+.anvl-screen-section.anvl-act-responsive [data-act-display],
+.anvl-screen-section.anvl-act-responsive :is(h1, h2, h3).anvl-display {
+  font-family: var(--font-heading);
+  font-size: var(--act-display-size);
+  line-height: 0.92;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-heading);
+}
+
+.anvl-screen-section.anvl-act-responsive [data-act-eyebrow],
+.anvl-screen-section.anvl-act-responsive .anvl-micro {
+  font-size: var(--act-eyebrow-size);
+  letter-spacing: 0.16em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  color: var(--color-muted, var(--color-text-muted));
+}
+
+.anvl-screen-section.anvl-act-responsive [data-act-body] {
+  font-size: var(--act-body-size);
+  line-height: 1.45;
+  color: var(--color-muted, var(--color-text-muted));
+}
+
+.anvl-screen-section.anvl-act-responsive [data-act-card-title] {
+  font-family: var(--font-heading);
+  font-size: var(--act-card-title-size);
+  line-height: 1.05;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-fg, var(--color-heading));
+}
+
+.anvl-screen-section.anvl-act-responsive [data-act-card-body] {
+  font-size: var(--act-card-body-size);
+  line-height: 1.4;
+  color: var(--color-muted, var(--color-text-muted));
+}
+
+.anvl-screen-section.anvl-act-responsive [data-act-card-meta] {
+  font-size: var(--act-card-meta-size);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted, var(--color-text-muted));
+}
+
+.anvl-screen-section.anvl-act-responsive [data-act-stat] {
+  font-family: var(--font-heading);
+  font-size: var(--act-stat-size);
+  line-height: 1.1;
+  color: var(--color-heading);
+}
+
+/* Product showcase cards */
+.anvl-act-showcase-card {
+  width: var(--act-card-w);
+  flex-shrink: 0;
+}
+
+.anvl-banner-card {
+  width: var(--banner-w);
+  height: var(--banner-h);
+  flex-shrink: 0;
+}
+
+.anvl-act-showcase-track {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  align-items: stretch;
+  gap: var(--act-gap);
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.anvl-act-showcase-track::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .anvl-act-showcase-track--grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+    justify-items: center;
+  }
+
+  .anvl-act-showcase-track--grid .anvl-act-showcase-card,
+  .anvl-act-showcase-track--grid .anvl-banner-card {
+    width: 100%;
+    max-width: var(--act-card-w);
+  }
+
+  .anvl-act-showcase-track--grid .anvl-banner-card {
+    max-width: var(--banner-w);
+  }
+}
+
+.anvl-material-card {
+  display: flex;
+  min-width: min(100%, var(--act-card-w));
+  max-width: min(100%, 13rem);
+  height: var(--material-card-h, clamp(5.25rem, 13cqi, 7rem));
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: var(--act-card-radius);
+  border: 1px solid var(--color-line);
+  background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+  padding: clamp(0.45rem, 1cqi, 0.65rem);
+}
+
+@media (min-width: 768px) {
+  .anvl-act-showcase-track--materials {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+    overflow: visible;
+    align-items: stretch;
+  }
+
+  .anvl-act-showcase-track--materials .anvl-material-card {
+    width: 100%;
+    max-width: none;
+  }
+}

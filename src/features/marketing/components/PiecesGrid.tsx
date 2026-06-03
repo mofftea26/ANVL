@@ -1,10 +1,16 @@
-import { useRef } from 'react'
+import { useRef, type CSSProperties } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { Product } from '@/features/products/types/product.types'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { Container } from '@/shared/components/ui/Container'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
+import {
+  ACT_RESPONSIVE_CLASS,
+  ACT_RESPONSIVE_STYLE,
+  LEGACY_ACT_SECTION_CLASS,
+} from '@/features/marketing/act-presets/shared/actResponsiveTokens'
+import { cn } from '@/shared/lib/cn'
 
 interface PiecesGridProps {
   products: Product[]
@@ -128,7 +134,8 @@ export function PiecesGrid({
   return (
     <section
       ref={root}
-      className="anvl-screen-section relative w-full overflow-hidden border-b border-[var(--color-line)] bg-[var(--color-surface)]"
+      className={cn(LEGACY_ACT_SECTION_CLASS, ACT_RESPONSIVE_CLASS, 'anvl-act-section--showcase bg-[var(--color-surface)]')}
+      style={ACT_RESPONSIVE_STYLE as CSSProperties}
       aria-label="Drop 01 pieces"
     >
       <Container className="anvl-act-content relative z-10 flex flex-col justify-center py-6 sm:py-8">
@@ -140,7 +147,7 @@ export function PiecesGrid({
             >
               {actLabel}
             </p>
-            <h2 className="anvl-heading mt-2 font-normal leading-[0.9] text-[clamp(1.75rem,6vw,3.75rem)]">
+            <h2 data-act-title className="anvl-heading mt-2 font-normal leading-[0.9]">
               <span className="block">
                 {headingLineOne.split(' ').map((word, index) => (
                   <span
@@ -218,7 +225,7 @@ export function PiecesGrid({
                 </span>
               </div>
               <div className="flex items-baseline justify-between gap-1 p-2 sm:p-3">
-                <h3 className="anvl-heading truncate text-xs font-normal leading-tight sm:text-sm md:text-base">
+                <h3 data-act-card-title className="anvl-heading truncate font-normal leading-tight">
                   {product.name}
                 </h3>
                 <p className="shrink-0 text-[10px] text-[var(--color-text-muted)] sm:text-xs">

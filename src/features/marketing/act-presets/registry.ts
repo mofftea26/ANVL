@@ -101,7 +101,7 @@ const ENTRIES: ActPresetEntry[] = [
   {
     nature: 'productShowcase',
     preset: 'oathEditorialThree',
-    label: 'Editorial three',
+    label: 'Editorial grid',
     component: lazyPreset(
       () => import('./productShowcase/OathEditorialThree'),
       'OathEditorialThreePreset',
@@ -109,8 +109,35 @@ const ENTRIES: ActPresetEntry[] = [
   },
   {
     nature: 'productShowcase',
+    preset: 'oathBannerShowcase',
+    label: 'Kingdom banners',
+    component: lazyPreset(
+      () => import('./productShowcase/OathBannerShowcase'),
+      'OathBannerShowcasePreset',
+    ),
+  },
+  {
+    nature: 'productShowcase',
+    preset: 'oathProductCarousel',
+    label: 'Shop carousel',
+    component: lazyPreset(
+      () => import('./productShowcase/OathProductCarousel'),
+      'OathProductCarouselPreset',
+    ),
+  },
+  {
+    nature: 'productShowcase',
+    preset: 'oathSpotlightRow',
+    label: 'Spotlight row',
+    component: lazyPreset(
+      () => import('./productShowcase/OathSpotlightRow'),
+      'OathSpotlightRowPreset',
+    ),
+  },
+  {
+    nature: 'productShowcase',
     preset: 'oathProductRail',
-    label: 'Product rail',
+    label: 'Product rail (legacy)',
     component: lazyPreset(
       () => import('./productShowcase/OathProductRail'),
       'OathProductRailPreset',

@@ -1,125 +1,128 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
+import type { CmsMaterialItem } from '@/features/cms/landing/landingPageCms.types'
 import { previewMaterialsFields } from '@/features/cms/landing/landingActPreviewOverlay'
 import { ActPresetShell } from '../shared/ActPresetShell'
 import { useActPresetMotion } from '../shared/useActScrollReveal'
 import type { ActPresetProps } from '../types'
 import type { Product } from '@/features/products/types/product.types'
-import { cn } from '@/shared/lib/cn'
 import { pickFeaturedProducts } from '../productShowcase/oathProductUtils'
 
-type Characteristic = { id: string; label: string; body?: string; imageUrl?: string }
-type MaterialProduct = {
-  productId: string
-  frontLabel?: string
-  materialName?: string
-  gsm?: string
-  composition?: string
-  characteristics: Characteristic[]
+type MaterialCard = {
+  id: string
+  code: string
+  title: string
+  description: string
+  spec?: string
 }
 
-function parseMaterialProducts(
+function cardsFromCmsMaterials(materials: CmsMaterialItem[]): MaterialCard[] {
+  return materials
+    .filter((m) => m.isVisible !== false)
+    .map((m) => ({
+      id: m.id,
+      code: m.code,
+      title: m.title,
+      description: m.description,
+    }))
+}
+
+function cardsFromProducts(products: Product[]): MaterialCard[] {
+  return products.map((product) => ({
+    id: product.id,
+    code: product.slug.slice(0, 4).toUpperCase(),
+    title: product.name,
+    description: product.fabric ?? product.role ?? '',
+    spec: [product.gsm, product.fit].filter(Boolean).join(' · '),
+  }))
+}
+
+function cardsFromMaterialProducts(
   content: Record<string, unknown> | undefined,
   products: Product[],
   productIds?: string[],
-): Array<MaterialProduct & { product: Product }> {
+): MaterialCard[] {
   const raw = content?.materialProducts
   if (Array.isArray(raw) && raw.length) {
     const byId = new Map(products.map((p) => [p.id, p]))
     return raw
-      .map((row) => {
+      .map((row, index) => {
         if (!row || typeof row !== 'object') return null
         const o = row as Record<string, unknown>
         const productId = typeof o.productId === 'string' ? o.productId : ''
         const product = byId.get(productId)
         if (!product) return null
-        const chars = Array.isArray(o.characteristics)
-          ? (o.characteristics as Characteristic[])
-          : []
         return {
-          productId,
-          frontLabel: typeof o.frontLabel === 'string' ? o.frontLabel : undefined,
-          materialName: typeof o.materialName === 'string' ? o.materialName : undefined,
-          gsm: typeof o.gsm === 'string' ? o.gsm : undefined,
-          composition: typeof o.composition === 'string' ? o.composition : undefined,
-          characteristics: chars,
-          product,
+          id: productId || `mat-${index}`,
+          code:
+            (typeof o.frontLabel === 'string' && o.frontLabel.trim()) ||
+            `M.${String(index + 1).padStart(2, '0')}`,
+          title:
+            (typeof o.materialName === 'string' && o.materialName.trim()) || product.name,
+          description: product.fabric ?? product.role ?? '',
+          spec: [
+            typeof o.composition === 'string' ? o.composition : product.fabric,
+            typeof o.gsm === 'string' ? o.gsm : product.gsm,
+          ]
+            .filter(Boolean)
+            .join(' · '),
         }
       })
-      .filter(Boolean) as Array<MaterialProduct & { product: Product }>
+      .filter(Boolean) as MaterialCard[]
   }
-  return pickFeaturedProducts(products, productIds, 4).map((product) => ({
-    productId: product.id,
-    characteristics: [],
-    product,
-  }))
+  return cardsFromProducts(pickFeaturedProducts(products, productIds, 4))
 }
 
 export function OathMaterialFlipPreset({ landing, row, products }: ActPresetProps) {
   const rootRef = useRef<HTMLElement>(null)
   const m = previewMaterialsFields(landing.materials, row)
-  const items = parseMaterialProducts(
+  const cmsCards = cardsFromCmsMaterials(m.materials)
+  const productCards = cardsFromMaterialProducts(
     row?.content as Record<string, unknown>,
     products,
     row?.productIds,
   )
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const cards = cmsCards.length ? cmsCards : productCards
 
   useActPresetMotion(rootRef, row, { staggerSelector: '[data-act-block]' })
 
   return (
-    <ActPresetShell rootRef={rootRef} row={row} sectionSize="tall" ariaLabel="Materials">
-      <p data-act-eyebrow className="uppercase tracking-[0.28em] text-[var(--color-muted)]">
-        {m.actLabel}
-      </p>
-      <h2 data-act-title className="mt-2 font-display uppercase text-[var(--color-fg)]">
-        {m.heading}
-      </h2>
-      <p data-act-body className="mt-2 max-w-2xl text-[var(--color-muted)]">{m.intro}</p>
-      <div className="mt-[var(--act-gap-lg)] grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => {
-          const img = item.product.images[0]
-          const expanded = expandedId === item.productId
-          return (
-            <div key={item.productId} data-act-block className="perspective-[1200px]">
-              <button
-                type="button"
-                className={cn(
-                  'group relative h-56 w-full text-left [transform-style:preserve-3d] transition-transform duration-700 sm:h-64',
-                  expanded && '[transform:rotateY(180deg)]',
-                  'hover:[transform:rotateY(180deg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]',
-                )}
-                onClick={() =>
-                  setExpandedId(expanded ? null : item.productId)
-                }
-              >
-                <div className="absolute inset-0 flex flex-col overflow-hidden rounded border border-[var(--color-line)] bg-[var(--color-surface)] backface-hidden">
-                  {img ? (
-                    <img src={img.src} alt={img.alt} className="h-28 w-full object-cover sm:h-32" />
-                  ) : null}
-                  <div className="p-4">
-                    <p className="text-xs uppercase tracking-wider text-[var(--color-muted)]">
-                      {item.frontLabel ?? item.product.name}
-                    </p>
-                    <p className="mt-1 font-display text-lg uppercase">{item.product.name}</p>
-                  </div>
-                </div>
-                <div className="absolute inset-0 flex flex-col justify-center rounded border border-[var(--color-line)] bg-[var(--color-bg)] p-4 [transform:rotateY(180deg)] backface-hidden">
-                  <p className="text-xs uppercase tracking-wider text-[var(--color-accent)]">
-                    Material
-                  </p>
-                  <p className="mt-2 font-display text-xl uppercase">
-                    {item.materialName ?? item.product.fabric ?? 'Fabric'}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--color-muted)]">
-                    {[item.composition ?? item.product.fabric, item.gsm ?? item.product.gsm]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </p>
-                </div>
-              </button>
+    <ActPresetShell
+      rootRef={rootRef}
+      row={row}
+      sectionSize="showcase"
+      ariaLabel="Materials"
+      contentClassName="overflow-x-clip"
+    >
+      <div className="shrink-0">
+        <p data-act-eyebrow>{m.actLabel}</p>
+        {m.counterSuffix?.trim() ? (
+          <p data-act-subtitle className="mt-0.5 text-[var(--color-muted)]">
+            {m.counterSuffix}
+          </p>
+        ) : null}
+        <h2 data-act-title className="mt-1 font-display uppercase leading-[0.94]">
+          {m.heading}
+        </h2>
+        {m.intro?.trim() ? (
+          <p data-act-body className="mt-1 line-clamp-2 max-w-prose">{m.intro}</p>
+        ) : null}
+      </div>
+
+      <div className="anvl-act-showcase-track anvl-act-showcase-track--materials min-h-0 flex-1">
+        {cards.map((card) => (
+          <article key={card.id} data-act-block className="anvl-material-card">
+            <div className="flex items-start justify-between gap-2">
+              <span data-act-card-meta>{card.code}</span>
             </div>
-          )
-        })}
+            <h3 data-act-card-title className="line-clamp-2">{card.title}</h3>
+            <p data-act-card-body className="line-clamp-2">{card.description}</p>
+            {card.spec ? (
+              <p data-act-card-meta className="line-clamp-1 normal-case tracking-normal">
+                {card.spec}
+              </p>
+            ) : null}
+          </article>
+        ))}
       </div>
     </ActPresetShell>
   )

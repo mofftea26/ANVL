@@ -2,7 +2,14 @@ import type { LandingAct } from '@/features/cms/landing/landingActs.types'
 import { cn } from '@/shared/lib/cn'
 
 /** Per-act min-height modifiers (see `styles.css`). */
-export type ActSectionSize = 'default' | 'standard' | 'tall' | 'compact' | 'content'
+export type ActSectionSize =
+  | 'default'
+  | 'standard'
+  | 'tall'
+  | 'compact'
+  | 'content'
+  | 'showcase'
+  | 'reveal'
 
 export const ACT_SECTION_SIZE_CLASS: Record<ActSectionSize, string> = {
   default: 'anvl-act-section--standard',
@@ -10,6 +17,8 @@ export const ACT_SECTION_SIZE_CLASS: Record<ActSectionSize, string> = {
   tall: 'anvl-act-section--tall',
   compact: 'anvl-act-section--compact',
   content: 'anvl-act-section--content',
+  showcase: 'anvl-act-section--showcase',
+  reveal: 'anvl-act-section--reveal',
 }
 
 /** Landing act shell — grows with content; optional size modifier. */

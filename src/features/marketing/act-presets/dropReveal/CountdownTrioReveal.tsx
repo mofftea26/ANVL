@@ -78,14 +78,20 @@ export function CountdownTrioRevealPreset({ landing, row, products }: ActPresetP
           ))}
         </div>
         <p className="mt-10 max-w-xl text-sm text-[var(--color-text-muted)]">{d.tagline}</p>
-        <div data-countdown-cta className="mt-8 flex flex-wrap gap-3">
-          <SafeLink data-act-micro href={d.primaryCta.href} className="anvl-btn anvl-btn-primary">
-            {d.primaryCta.label}
-          </SafeLink>
-          <SafeLink data-act-micro href={d.secondaryCta.href} className="anvl-btn anvl-btn-ghost">
-            {d.secondaryCta.label}
-          </SafeLink>
-        </div>
+        {d.primaryCta?.label?.trim() || d.secondaryCta?.label?.trim() ? (
+          <div data-countdown-cta className="mt-8 flex flex-wrap gap-3">
+            {d.primaryCta?.label?.trim() ? (
+              <SafeLink data-act-micro href={d.primaryCta.href} className="anvl-btn anvl-btn-primary">
+                {d.primaryCta.label}
+              </SafeLink>
+            ) : null}
+            {d.secondaryCta?.label?.trim() ? (
+              <SafeLink data-act-micro href={d.secondaryCta.href} className="anvl-btn anvl-btn-ghost">
+                {d.secondaryCta.label}
+              </SafeLink>
+            ) : null}
+          </div>
+        ) : null}
       </Container>
     </section>
   )

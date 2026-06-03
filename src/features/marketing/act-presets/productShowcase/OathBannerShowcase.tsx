@@ -3,13 +3,13 @@ import { previewPiecesFields } from '@/features/cms/landing/landingActPreviewOve
 import { ActPresetShell } from '../shared/ActPresetShell'
 import { useActPresetMotion } from '../shared/useActScrollReveal'
 import { useActIdleMotion } from '../shared/useActIdleMotion'
+import { cn } from '@/shared/lib/cn'
 import type { ActPresetProps } from '../types'
-import { OathProductCard } from './OathProductCard'
+import { KingdomBannerProductCard } from './KingdomBannerProductCard'
 import { ProductShowcaseHeader } from './ProductShowcaseHeader'
 import { pickFeaturedProducts } from './oathProductUtils'
 
-/** Editorial three-up grid — clean product cards in a horizontal row. */
-export function OathEditorialThreePreset({ landing, row, products }: ActPresetProps) {
+export function OathBannerShowcasePreset({ landing, row, products }: ActPresetProps) {
   const rootRef = useRef<HTMLElement>(null)
   const p = previewPiecesFields(landing.pieces, row)
   const featured = pickFeaturedProducts(products, row?.productIds, 3)
@@ -22,8 +22,9 @@ export function OathEditorialThreePreset({ landing, row, products }: ActPresetPr
       rootRef={rootRef}
       row={row}
       sectionSize="showcase"
-      ariaLabel="Product showcase"
-      contentClassName="overflow-x-clip"
+      ariaLabel="Product banners"
+      className="anvl-act-showcase--banners bg-[var(--color-bg)]"
+      contentClassName="overflow-visible"
     >
       <ProductShowcaseHeader
         actLabel={p.actLabel}
@@ -33,12 +34,23 @@ export function OathEditorialThreePreset({ landing, row, products }: ActPresetPr
         viewAllLabel={p.viewAllLabel}
       />
 
-      <div className="anvl-act-showcase-track anvl-act-showcase-track--grid min-h-0 flex-1" aria-label="Drop pieces">
-        {featured.map((product) => (
-          <div key={product.id} className="anvl-act-showcase-card h-full min-h-0">
-            <OathProductCard product={product} compact className="h-full" />
-          </div>
-        ))}
+      <div
+        className={cn(
+          'anvl-banner-showcase-row relative min-h-0 flex-1 overflow-visible',
+          '[perspective:1100px]',
+        )}
+        aria-label="Drop pieces as banners"
+      >
+        <div
+          className="pointer-events-none absolute inset-x-[10%] top-1.5 z-0 hidden h-1 rounded-full border border-[color-mix(in_srgb,var(--anvl-bone)_28%,transparent)] bg-gradient-to-b from-[#4a4d52] to-[#222428] md:block"
+          aria-hidden
+        />
+
+        <div className="anvl-act-showcase-track anvl-act-showcase-track--grid relative z-[1] items-end pt-3 md:pt-4">
+          {featured.map((product, i) => (
+            <KingdomBannerProductCard key={product.id} product={product} index={i} />
+          ))}
+        </div>
       </div>
     </ActPresetShell>
   )
