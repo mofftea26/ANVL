@@ -4,14 +4,14 @@ import { forwardRef, type ButtonHTMLAttributes } from 'react'
 import { cn } from '@/shared/lib/cn'
 
 export const buttonVariants = cva(
-  'focus-ring inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold transition',
+  'focus-ring inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] transition',
   {
     variants: {
       variant: {
         primary:
-          'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-bg)] hover:opacity-90',
+          'border-[var(--color-ember)] bg-[var(--color-ember)] text-[var(--color-bg)] hover:opacity-90',
         secondary:
-          'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)]',
+          'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-text)] hover:border-[color-mix(in_oklab,var(--color-ember)_55%,var(--color-line))] hover:bg-[var(--color-surface-elevated)]',
         ghost: 'border-transparent text-[var(--color-text)] hover:bg-[var(--color-chip)]',
         destructive:
           'border-red-500/40 bg-transparent text-red-300 hover:border-red-400/60 hover:bg-red-500/10',

@@ -5,8 +5,6 @@ import {
   type SeoInput,
 } from '@/app/seo/meta'
 import type { SeoContent } from '@/features/cms/types/cms.types'
-import type { DropSeo } from '@/features/drops/drop.types'
-import type { LandingSeoContent } from '@/features/cms/landing/landingPageCms.types'
 import type {
   SiteSeoContent,
   SiteSeoGlobalDefaults,
@@ -63,48 +61,6 @@ export function computeSeoWarnings(input: {
       severity: 'info',
     })
   return w
-}
-
-export function landingSeoToMetaSource(
-  seo: LandingSeoContent,
-  global: SiteSeoGlobalDefaults | undefined,
-): CmsSeoMetaSource {
-  const g = global ?? {}
-  const path = seo.path?.trim() || '/'
-  return {
-    metaTitle: pickStr(seo.metaTitle, seo.title, g.metaTitle),
-    metaDescription: pickStr(seo.metaDescription, seo.description, g.metaDescription),
-    path,
-    canonicalUrl: pickStr(seo.canonicalUrl, g.canonicalUrl),
-    noIndex: seo.noIndex ?? g.noIndex,
-    ogTitle: pickStr(seo.ogTitle, g.ogTitle),
-    ogDescription: pickStr(seo.ogDescription, g.ogDescription),
-    ogImage: pickStr(seo.ogImage, g.ogImage, g.defaultShareImage),
-    twitterTitle: pickStr(seo.twitterTitle, g.twitterTitle),
-    twitterDescription: pickStr(seo.twitterDescription, g.twitterDescription),
-    twitterImage: pickStr(seo.twitterImage, g.twitterImage),
-  }
-}
-
-export function dropSeoToMetaSource(
-  seo: DropSeo,
-  path: string,
-  global: SiteSeoGlobalDefaults | undefined,
-): CmsSeoMetaSource {
-  const g = global ?? {}
-  return {
-    metaTitle: pickStr(seo.metaTitle, seo.title, g.metaTitle),
-    metaDescription: pickStr(seo.metaDescription, seo.description, g.metaDescription),
-    path,
-    canonicalUrl: pickStr(seo.canonicalUrl, g.canonicalUrl),
-    noIndex: seo.noIndex ?? g.noIndex,
-    ogTitle: pickStr(seo.ogTitle, g.ogTitle),
-    ogDescription: pickStr(seo.ogDescription, g.ogDescription),
-    ogImage: pickStr(seo.ogImage, g.ogImage, g.defaultShareImage),
-    twitterTitle: pickStr(seo.twitterTitle, g.twitterTitle),
-    twitterDescription: pickStr(seo.twitterDescription, g.twitterDescription),
-    twitterImage: pickStr(seo.twitterImage, g.twitterImage),
-  }
 }
 
 export function productSeoToMetaSource(input: {

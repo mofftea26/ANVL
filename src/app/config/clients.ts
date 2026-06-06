@@ -1,10 +1,7 @@
 ﻿import type { Product, ShopDropFilterOption } from '@/features/products/types/product.types'
-import type { HomePageContent, SeoContent } from '@/features/cms/types/cms.types'
+import type { SeoContent } from '@/features/cms/types/cms.types'
 import type { SiteSeoContent } from '@/features/cms/siteSeo.local'
 import type { SiteHomepageSettings } from '@/features/cms/siteHomepage.settings'
-import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
-import type { Drop } from '@/features/drops/drop.types'
-import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import type { WebsiteLayoutContent } from '@/features/cms/layout/websiteLayout.types'
 import type { CartLine } from '@/features/cart/types/cart.types'
 import type {
@@ -31,21 +28,11 @@ export interface CommerceClient {
 }
 
 export interface CmsClient {
-  /** Active campaign drop for storefront theming and `/drop/:slug`; null when none. */
-  getActiveDrop(): Promise<Drop | null>
-  getLandingCmsContent(): Promise<LandingPageCmsContent>
-  getHomepageContent(): Promise<HomePageContent>
   getAnnouncementBar(): Promise<{ message: string; ctaLabel: string; ctaHref: string }>
   getNavigation(): Promise<Array<{ label: string; href: string }>>
   getCampaigns(): Promise<Array<{ id: string; title: string; description: string }>>
   getLookbook(): Promise<Array<{ id: string; alt: string; src: string }>>
-  getAdminDropsList(): Promise<AdminDropListItem[]>
-  duplicateAdminDrop(id: string): Promise<AdminDropListItem | null>
-  setAdminActiveDrop(id: string): Promise<void>
-  deactivateAdminDrop(id: string): Promise<void>
-  scheduleAdminDrop(id: string, activationIso: string): Promise<void>
-  deleteAdminDrop(id: string): Promise<void>
-  /** Published homepage routing — cinematic vs active drop acts. */
+  /** Published homepage extras (campaign/lookbook routing metadata). */
   getSiteHomepage(): Promise<SiteHomepageSettings>
 }
 

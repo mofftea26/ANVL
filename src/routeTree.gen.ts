@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as StoryRouteImport } from './routes/story'
 import { Route as SizeGuideRouteImport } from './routes/size-guide'
 import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -26,7 +27,6 @@ import { Route as CheckoutIndexRouteImport } from './routes/checkout/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
 import { Route as ShopSlugRouteImport } from './routes/shop/$slug'
-import { Route as DropSlugRouteImport } from './routes/drop/$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout/success'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
@@ -40,17 +40,19 @@ import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AccountPersonalRouteImport } from './routes/account/personal'
 import { Route as AccountAddressesRouteImport } from './routes/account/addresses'
 import { Route as AdminProductsIndexRouteImport } from './routes/admin/products/index'
-import { Route as AdminDropsIndexRouteImport } from './routes/admin/drops/index'
 import { Route as AccountOrdersIndexRouteImport } from './routes/account/orders/index'
 import { Route as AdminProductsNewRouteImport } from './routes/admin/products/new'
 import { Route as AdminProductsProductIdRouteImport } from './routes/admin/products/$productId'
-import { Route as AdminDropsNewRouteImport } from './routes/admin/drops/new'
-import { Route as AdminDropsDropIdRouteImport } from './routes/admin/drops/$dropId'
 import { Route as AccountOrdersOrderIdRouteImport } from './routes/account/orders/$orderId'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoryRoute = StoryRouteImport.update({
+  id: '/story',
+  path: '/story',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SizeGuideRoute = SizeGuideRouteImport.update({
@@ -133,11 +135,6 @@ const ShopSlugRoute = ShopSlugRouteImport.update({
   path: '/shop/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DropSlugRoute = DropSlugRouteImport.update({
-  id: '/drop/$slug',
-  path: '/drop/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
   id: '/checkout/success',
   path: '/checkout/success',
@@ -203,11 +200,6 @@ const AdminProductsIndexRoute = AdminProductsIndexRouteImport.update({
   path: '/products/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminDropsIndexRoute = AdminDropsIndexRouteImport.update({
-  id: '/drops/',
-  path: '/drops/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
 const AccountOrdersIndexRoute = AccountOrdersIndexRouteImport.update({
   id: '/orders/',
   path: '/orders/',
@@ -221,16 +213,6 @@ const AdminProductsNewRoute = AdminProductsNewRouteImport.update({
 const AdminProductsProductIdRoute = AdminProductsProductIdRouteImport.update({
   id: '/products/$productId',
   path: '/products/$productId',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminDropsNewRoute = AdminDropsNewRouteImport.update({
-  id: '/drops/new',
-  path: '/drops/new',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminDropsDropIdRoute = AdminDropsDropIdRouteImport.update({
-  id: '/drops/$dropId',
-  path: '/drops/$dropId',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AccountOrdersOrderIdRoute = AccountOrdersOrderIdRouteImport.update({
@@ -251,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
   '/size-guide': typeof SizeGuideRoute
+  '/story': typeof StoryRoute
   '/terms': typeof TermsRoute
   '/account/addresses': typeof AccountAddressesRoute
   '/account/personal': typeof AccountPersonalRoute
@@ -264,19 +247,15 @@ export interface FileRoutesByFullPath {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/checkout/success': typeof CheckoutSuccessRoute
-  '/drop/$slug': typeof DropSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/checkout/': typeof CheckoutIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
-  '/admin/drops/$dropId': typeof AdminDropsDropIdRoute
-  '/admin/drops/new': typeof AdminDropsNewRoute
   '/admin/products/$productId': typeof AdminProductsProductIdRoute
   '/admin/products/new': typeof AdminProductsNewRoute
   '/account/orders/': typeof AccountOrdersIndexRoute
-  '/admin/drops/': typeof AdminDropsIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -289,6 +268,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
   '/size-guide': typeof SizeGuideRoute
+  '/story': typeof StoryRoute
   '/terms': typeof TermsRoute
   '/account/addresses': typeof AccountAddressesRoute
   '/account/personal': typeof AccountPersonalRoute
@@ -302,19 +282,15 @@ export interface FileRoutesByTo {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/checkout/success': typeof CheckoutSuccessRoute
-  '/drop/$slug': typeof DropSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/account': typeof AccountIndexRoute
   '/admin': typeof AdminIndexRoute
   '/checkout': typeof CheckoutIndexRoute
   '/shop': typeof ShopIndexRoute
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
-  '/admin/drops/$dropId': typeof AdminDropsDropIdRoute
-  '/admin/drops/new': typeof AdminDropsNewRoute
   '/admin/products/$productId': typeof AdminProductsProductIdRoute
   '/admin/products/new': typeof AdminProductsNewRoute
   '/account/orders': typeof AccountOrdersIndexRoute
-  '/admin/drops': typeof AdminDropsIndexRoute
   '/admin/products': typeof AdminProductsIndexRoute
 }
 export interface FileRoutesById {
@@ -330,6 +306,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
   '/size-guide': typeof SizeGuideRoute
+  '/story': typeof StoryRoute
   '/terms': typeof TermsRoute
   '/account/addresses': typeof AccountAddressesRoute
   '/account/personal': typeof AccountPersonalRoute
@@ -343,19 +320,15 @@ export interface FileRoutesById {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/checkout/success': typeof CheckoutSuccessRoute
-  '/drop/$slug': typeof DropSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/checkout/': typeof CheckoutIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
-  '/admin/drops/$dropId': typeof AdminDropsDropIdRoute
-  '/admin/drops/new': typeof AdminDropsNewRoute
   '/admin/products/$productId': typeof AdminProductsProductIdRoute
   '/admin/products/new': typeof AdminProductsNewRoute
   '/account/orders/': typeof AccountOrdersIndexRoute
-  '/admin/drops/': typeof AdminDropsIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
 }
 export interface FileRouteTypes {
@@ -372,6 +345,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/returns'
     | '/size-guide'
+    | '/story'
     | '/terms'
     | '/account/addresses'
     | '/account/personal'
@@ -385,19 +359,15 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/checkout/success'
-    | '/drop/$slug'
     | '/shop/$slug'
     | '/account/'
     | '/admin/'
     | '/checkout/'
     | '/shop/'
     | '/account/orders/$orderId'
-    | '/admin/drops/$dropId'
-    | '/admin/drops/new'
     | '/admin/products/$productId'
     | '/admin/products/new'
     | '/account/orders/'
-    | '/admin/drops/'
     | '/admin/products/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -410,6 +380,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/returns'
     | '/size-guide'
+    | '/story'
     | '/terms'
     | '/account/addresses'
     | '/account/personal'
@@ -423,19 +394,15 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/checkout/success'
-    | '/drop/$slug'
     | '/shop/$slug'
     | '/account'
     | '/admin'
     | '/checkout'
     | '/shop'
     | '/account/orders/$orderId'
-    | '/admin/drops/$dropId'
-    | '/admin/drops/new'
     | '/admin/products/$productId'
     | '/admin/products/new'
     | '/account/orders'
-    | '/admin/drops'
     | '/admin/products'
   id:
     | '__root__'
@@ -450,6 +417,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/returns'
     | '/size-guide'
+    | '/story'
     | '/terms'
     | '/account/addresses'
     | '/account/personal'
@@ -463,19 +431,15 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/checkout/success'
-    | '/drop/$slug'
     | '/shop/$slug'
     | '/account/'
     | '/admin/'
     | '/checkout/'
     | '/shop/'
     | '/account/orders/$orderId'
-    | '/admin/drops/$dropId'
-    | '/admin/drops/new'
     | '/admin/products/$productId'
     | '/admin/products/new'
     | '/account/orders/'
-    | '/admin/drops/'
     | '/admin/products/'
   fileRoutesById: FileRoutesById
 }
@@ -491,12 +455,12 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ReturnsRoute: typeof ReturnsRoute
   SizeGuideRoute: typeof SizeGuideRoute
+  StoryRoute: typeof StoryRoute
   TermsRoute: typeof TermsRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
-  DropSlugRoute: typeof DropSlugRoute
   ShopSlugRoute: typeof ShopSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
@@ -509,6 +473,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/story': {
+      id: '/story'
+      path: '/story'
+      fullPath: '/story'
+      preLoaderRoute: typeof StoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/size-guide': {
@@ -623,13 +594,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/drop/$slug': {
-      id: '/drop/$slug'
-      path: '/drop/$slug'
-      fullPath: '/drop/$slug'
-      preLoaderRoute: typeof DropSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/checkout/success': {
       id: '/checkout/success'
       path: '/checkout/success'
@@ -721,13 +685,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProductsIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/admin/drops/': {
-      id: '/admin/drops/'
-      path: '/drops'
-      fullPath: '/admin/drops/'
-      preLoaderRoute: typeof AdminDropsIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
     '/account/orders/': {
       id: '/account/orders/'
       path: '/orders'
@@ -747,20 +704,6 @@ declare module '@tanstack/react-router' {
       path: '/products/$productId'
       fullPath: '/admin/products/$productId'
       preLoaderRoute: typeof AdminProductsProductIdRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/drops/new': {
-      id: '/admin/drops/new'
-      path: '/drops/new'
-      fullPath: '/admin/drops/new'
-      preLoaderRoute: typeof AdminDropsNewRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/drops/$dropId': {
-      id: '/admin/drops/$dropId'
-      path: '/drops/$dropId'
-      fullPath: '/admin/drops/$dropId'
-      preLoaderRoute: typeof AdminDropsDropIdRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/account/orders/$orderId': {
@@ -801,11 +744,8 @@ interface AdminRouteRouteChildren {
   AdminThemeRoute: typeof AdminThemeRoute
   AdminWebsiteLayoutRoute: typeof AdminWebsiteLayoutRoute
   AdminIndexRoute: typeof AdminIndexRoute
-  AdminDropsDropIdRoute: typeof AdminDropsDropIdRoute
-  AdminDropsNewRoute: typeof AdminDropsNewRoute
   AdminProductsProductIdRoute: typeof AdminProductsProductIdRoute
   AdminProductsNewRoute: typeof AdminProductsNewRoute
-  AdminDropsIndexRoute: typeof AdminDropsIndexRoute
   AdminProductsIndexRoute: typeof AdminProductsIndexRoute
 }
 
@@ -817,11 +757,8 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminThemeRoute: AdminThemeRoute,
   AdminWebsiteLayoutRoute: AdminWebsiteLayoutRoute,
   AdminIndexRoute: AdminIndexRoute,
-  AdminDropsDropIdRoute: AdminDropsDropIdRoute,
-  AdminDropsNewRoute: AdminDropsNewRoute,
   AdminProductsProductIdRoute: AdminProductsProductIdRoute,
   AdminProductsNewRoute: AdminProductsNewRoute,
-  AdminDropsIndexRoute: AdminDropsIndexRoute,
   AdminProductsIndexRoute: AdminProductsIndexRoute,
 }
 
@@ -841,12 +778,12 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ReturnsRoute: ReturnsRoute,
   SizeGuideRoute: SizeGuideRoute,
+  StoryRoute: StoryRoute,
   TermsRoute: TermsRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
-  DropSlugRoute: DropSlugRoute,
   ShopSlugRoute: ShopSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
   ShopIndexRoute: ShopIndexRoute,

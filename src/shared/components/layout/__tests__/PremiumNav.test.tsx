@@ -3,9 +3,8 @@
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import type { LandingNavigationContent } from '@/features/cms/landing/landingPageCms.types'
+import type { LandingNavigationContent } from '@/features/cms/navigation/navigation.types'
 import { useCartStore } from '@/features/cart/store/cart.store'
-import { useCinematicHeroPhaseStore } from '@/features/marketing/cinematic-hero/cinematicHeroPhase.store'
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
@@ -43,7 +42,6 @@ const baseNavigation: LandingNavigationContent = {
 describe('PremiumNav', () => {
   beforeEach(() => {
     useCartStore.setState({ lines: [] })
-    useCinematicHeroPhaseStore.getState().reset()
   })
 
   it('renders primary navigation links on desktop topbar', () => {
@@ -75,47 +73,14 @@ describe('PremiumNav', () => {
     expect(cartLinks[0]).toHaveTextContent('2')
   })
 
-  it('uses transparent topbar variant during cinematic phase', () => {
-    useCinematicHeroPhaseStore.getState().setPhase('cinematic')
-    const { container } = render(<PremiumNav navigation={baseNavigation} />)
-    expect(
-      container.querySelector('[data-premium-topbar-variant="transparent"]'),
-    ).not.toBeNull()
-  })
-
-  it('keeps header and cart ghost styling during cinematic phase', () => {
-    useCinematicHeroPhaseStore.getState().setPhase('cinematic')
-    const { container } = render(<PremiumNav navigation={baseNavigation} />)
-    const header = container.querySelector('header')
-    expect(header?.className).toMatch(/bg-transparent/)
-    const cart = container.querySelector('a[aria-label^="Cart"]')
-    expect(cart?.className).toMatch(/bg-white\/5/)
-    expect(cart?.className).not.toMatch(/color-surface/)
-  })
-
-  it('overlays the hero with fixed positioning during cinematic phase', () => {
-    useCinematicHeroPhaseStore.getState().setPhase('cinematic')
+  it('renders a fixed transparent overlay header (over the hero) with no bottom border', () => {
     const { container } = render(<PremiumNav navigation={baseNavigation} />)
     const header = container.querySelector('header')
     expect(header).toHaveAttribute('data-premium-nav-position', 'overlay')
     expect(header?.className).toMatch(/\bfixed\b/)
     expect(header?.className).not.toMatch(/\bsticky\b/)
-  })
-
-  it('does not render mobile flow spacer while nav overlays the hero', () => {
-    useCinematicHeroPhaseStore.getState().setPhase('cinematic')
-    const { container } = render(<PremiumNav navigation={baseNavigation} />)
-    expect(
-      container.querySelector('.h-\\[calc\\(56px\\+env\\(safe-area-inset-bottom'),
-    ).toBeNull()
-  })
-
-  it('keeps sticky in-flow header during commerce phase', () => {
-    useCinematicHeroPhaseStore.getState().setPhase('commerce')
-    const { container } = render(<PremiumNav navigation={baseNavigation} />)
-    const header = container.querySelector('header')
-    expect(header).toHaveAttribute('data-premium-nav-position', 'flow')
-    expect(header?.className).toMatch(/\bsticky\b/)
-    expect(header?.className).not.toMatch(/\bfixed\b/)
+    // The topbar must not paint a bottom border in any state.
+    const topbar = container.querySelector('[data-premium-topbar]')
+    expect(topbar?.className).not.toMatch(/border-b/)
   })
 })

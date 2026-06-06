@@ -1,7 +1,5 @@
 import type { CommerceClient } from '@/app/config/clients'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import { fetchPublishedStorefrontProjection } from '@/features/cms/api/publicStorefrontPublication'
-import { getStorefrontOfflineActiveDrop } from '@/features/cms/runtime/storefrontReadFallback'
 import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
 import {
   SHOPIFY_PRODUCT_BY_HANDLE_QUERY,
@@ -11,13 +9,13 @@ import {
 import {
   mapShopifyProductNodeToStorefront,
   parseShopifyProductNode,
-  productMatchesDropId,
 } from '@/features/shopify/mappers/shopifyProductToStorefront'
 import { supabaseCommerceClient } from '@/features/products/api/commerceClient.supabase'
 import { seedCommerceClient } from '@/features/products/api/commerceClient.seed'
-import type { Product, ShopDropFilterOption } from '@/features/products/types/product.types'
+import type { Product } from '@/features/products/types/product.types'
 
 const LIST_FIRST = 100
+const DROP_NAME = 'ANVL Athletics'
 
 type ProductsListData = {
   products: {
@@ -27,19 +25,6 @@ type ProductsListData = {
 
 type ProductByHandleData = {
   product: unknown | null
-}
-
-async function resolveActiveDropForCommerce() {
-  const env = getSupabasePublicEnv()
-  if (env) {
-    try {
-      const p = await fetchPublishedStorefrontProjection(env)
-      if (p) return p.drop
-    } catch {
-      /* */
-    }
-  }
-  return getStorefrontOfflineActiveDrop()
 }
 
 async function fetchAllShopifyProducts(): Promise<Product[]> {
@@ -52,33 +37,13 @@ async function fetchAllShopifyProducts(): Promise<Product[]> {
     { first: LIST_FIRST },
   )
 
-  const active = await resolveActiveDropForCommerce()
-  const dropName = active?.name ?? 'ANVL Athletics'
-
   const out: Product[] = []
   for (const edge of data.products.edges) {
     const node = parseShopifyProductNode(edge.node)
     if (!node) continue
-    out.push(mapShopifyProductNodeToStorefront(node, { dropName }))
+    out.push(mapShopifyProductNodeToStorefront(node, { dropName: DROP_NAME }))
   }
   return out
-}
-
-function buildDropFilterOptions(
-  items: Product[],
-  activeDrop: Awaited<ReturnType<typeof resolveActiveDropForCommerce>>,
-): ShopDropFilterOption[] {
-  if (!activeDrop) return []
-  const used = items.some((p) => productMatchesDropId(p, activeDrop.id))
-  if (!used) return []
-  return [
-    {
-      id: activeDrop.id,
-      slug: activeDrop.slug,
-      name: activeDrop.name,
-      dropNumber: activeDrop.dropNumber,
-    },
-  ]
 }
 
 /** When Shopify env is unset or the API fails, use publication/local/seed commerce. */
@@ -111,11 +76,8 @@ export const shopifyCommerceClient: CommerceClient = {
 
   async getHomeProducts() {
     return withCommerceFallback(async () => {
-      const active = await resolveActiveDropForCommerce()
       const all = await fetchAllShopifyProducts()
-      if (!active) return all.slice(0, 8)
-      const linked = all.filter((p) => productMatchesDropId(p, active.id))
-      return linked.length > 0 ? linked : all.slice(0, 8)
+      return all.slice(0, 8)
     }, () => offlineCommerce().getHomeProducts())
   },
 
@@ -131,10 +93,7 @@ export const shopifyCommerceClient: CommerceClient = {
       )
       const node = parseShopifyProductNode(data.product)
       if (!node) return null
-      const active = await resolveActiveDropForCommerce()
-      return mapShopifyProductNodeToStorefront(node, {
-        dropName: active?.name ?? 'ANVL Athletics',
-      })
+      return mapShopifyProductNodeToStorefront(node, { dropName: DROP_NAME })
     }, () => offlineCommerce().getProductBySlug(slug))
   },
 
@@ -148,11 +107,7 @@ export const shopifyCommerceClient: CommerceClient = {
   async getShopListingCatalog() {
     return withCommerceFallback(async () => {
       const items = await fetchAllShopifyProducts()
-      const active = await resolveActiveDropForCommerce()
-      return {
-        items,
-        drops: buildDropFilterOptions(items, active),
-      }
+      return { items, drops: [] }
     }, () => offlineCommerce().getShopListingCatalog())
   },
 }

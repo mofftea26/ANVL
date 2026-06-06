@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { BRAND } from "@/shared/constants/brand";
 import {
   buildSeoHeadForSiteStaticPath,
@@ -7,32 +7,26 @@ import {
 } from "@/features/cms/seoMeta";
 import { runtimeClients } from "@/app/config/runtime";
 import { JsonLd } from "@/shared/components/seo/JsonLd";
-import {
-  dropStructuredDataJsonLd,
-  organizationJsonLd,
-} from "@/shared/components/seo/structuredData";
+import { organizationJsonLd } from "@/shared/components/seo/structuredData";
 import { useLenisScroll } from "@/shared/hooks/useLenisScroll";
-import { PublicLandingActs } from "@/features/marketing/public-landing/PublicLandingActs";
-import { hasCinematicScrollHeroAct } from "@/features/marketing/cinematic-hero/cinematicHero.utils";
-import { useLandingCms } from "@/features/cms/hooks/useLandingCms";
 import { useHomeProducts } from "@/features/products/hooks/useHomeProducts";
+import { LandingPageRenderer } from "@/features/landingPages";
+import { readActiveLandingPageKeyForLoader } from "@/features/cms/landingPageActiveKey.settings";
+import { useActiveLandingPageKey } from "@/features/cms/hooks/useActiveLandingPageKey";
 
 export const Route = createFileRoute("/")({
   loader: async () => {
-    const [products, landing, siteSeo, seoDoc, activeDrop] =
-      await Promise.all([
+    const [products, siteSeo, seoDoc, activeLandingKey] = await Promise.all([
       runtimeClients.commerce.getHomeProducts(),
-      runtimeClients.cms.getLandingCmsContent(),
       runtimeClients.seo.getSiteSeo(),
       runtimeClients.seo.getSeoByPath("/"),
-      runtimeClients.cms.getActiveDrop(),
+      readActiveLandingPageKeyForLoader(),
     ]);
-    return { products, landing, siteSeo, seoDoc, activeDrop };
+    return { products, siteSeo, seoDoc, activeLandingKey };
   },
   head: ({ loaderData }) => {
     const site = loaderData?.siteSeo;
     const doc = loaderData?.seoDoc;
-    const landing = loaderData?.landing;
     const fb = {
       defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.svg`,
     };
@@ -40,14 +34,10 @@ export const Route = createFileRoute("/")({
       return buildSeoMetaFromCmsSource(
         seoContentToMetaSource(
           {
-            title: landing?.seo.title ?? "ANVL Athletics | Forged Under Pressure",
+            title: "ANVL Athletics | Forged Under Pressure",
             description:
-              landing?.seo.description ??
-              "Premium bodybuilding gymwear built for disciplined lifters.",
-            canonicalPath: landing?.seo.path ?? "/",
-            ogImage: landing?.seo.ogImage,
-            ogTitle: landing?.seo.ogTitle,
-            ogDescription: landing?.seo.ogDescription,
+              "Premium bodybuilding gymwear built through pressure, repetition, discipline, and heat.",
+            canonicalPath: "/",
           },
           fb,
         ),
@@ -60,26 +50,18 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const { products: initialProducts, landing: ssrLanding, activeDrop } =
-    Route.useLoaderData();
-  const landing = useLandingCms(ssrLanding);
+  const { products: initialProducts, activeLandingKey } = Route.useLoaderData();
   const products = useHomeProducts(initialProducts);
-  useLenisScroll(hasCinematicScrollHeroAct(landing.landingActs));
+  const landingKey = useActiveLandingPageKey(activeLandingKey);
 
-  const emblemSrc = landing.navigation.activeDropEmblemSrc;
-
-  const structuredData = activeDrop?.seo.structuredDataType
-    ? dropStructuredDataJsonLd(activeDrop.seo.structuredDataType, activeDrop)
-    : organizationJsonLd();
+  // Landing pages are cinematic scroll experiences — enable Lenis (the hook
+  // self-gates to desktop + no-reduced-motion).
+  useLenisScroll(true);
 
   return (
     <div>
-      {structuredData ? <JsonLd data={structuredData} /> : null}
-      <PublicLandingActs
-        landing={landing}
-        products={products}
-        emblemSrc={emblemSrc}
-      />
+      <JsonLd data={organizationJsonLd()} />
+      <LandingPageRenderer activeKey={landingKey} products={products} />
     </div>
   );
 }

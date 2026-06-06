@@ -1,5 +1,7 @@
-import { DEFAULT_EMBLEM_URL } from '@/features/admin/drops/drops.defaults'
 import type { GlobalBrandSettings } from './globalBrand.types'
+
+/** ANVL emblem fallback used when no published brand emblem is set. */
+const DEFAULT_EMBLEM_URL = '/brand/the-oath-shape.svg'
 
 export function createDefaultGlobalBrandSettings(): GlobalBrandSettings {
   return {

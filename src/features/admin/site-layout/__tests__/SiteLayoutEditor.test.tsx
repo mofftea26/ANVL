@@ -24,11 +24,6 @@ vi.mock('@/features/admin/hooks/useSaveSuccessFlash', () => ({
   useSaveSuccessFlash: () => ({ showSuccess: false, flashSuccess: flashSuccessMock }),
 }))
 
-vi.mock('@/features/admin/drops/drops.service', () => ({
-  ensureDropSystemHydrated: vi.fn(),
-  getActiveDrop: () => ({ title: 'The Oath', slug: 'the-oath' }),
-}))
-
 vi.mock('@/features/admin/website-layout/websiteLayout.service', () => ({
   getWebsiteLayoutContent: () => layout,
   getWebsiteLayoutSaveError: () => getSaveError(),

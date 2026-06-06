@@ -9,7 +9,7 @@ import {
   verifyAdminPassword,
 } from '@/features/admin/auth/adminAuth.storage'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
-import { resetAllLocalCmsKeys } from '@/features/admin/drops/drops.service'
+import { resetAllLocalCmsKeys } from '@/features/admin/lib/resetLocalCms'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'

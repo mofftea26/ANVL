@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { createDefaultTheOathDrop } from '@/features/admin/drops/drops.defaults'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
 import { createDefaultWebsiteLayout } from '@/features/admin/website-layout/websiteLayout.defaults'
 import {
@@ -10,52 +9,44 @@ import { parseSiteSeoUnknown } from '@/features/cms/siteSeo.local'
 import { DEFAULT_SITE_HOMEPAGE } from '@/features/cms/siteHomepage.settings'
 import type { AdminProduct } from '@/features/admin/products/products.types'
 
+const STAMP = '2026-01-01T00:00:00.000Z'
+
 describe('normalizeStorefrontPublicationRow', () => {
-  it('returns null when snapshot is missing', () => {
-    expect(
-      normalizeStorefrontPublicationRow({
-        published_drop_snapshot: null,
-        website_layout: {},
-        site_seo: null,
-        revision: 0,
-        published_at: null,
-      }),
-    ).toBeNull()
+  it('resolves a projection from layout/SEO alone (no drop snapshot)', () => {
+    const out = normalizeStorefrontPublicationRow({
+      website_layout: {},
+      site_seo: null,
+      revision: 0,
+      published_at: null,
+    })
+    expect(out).not.toBeNull()
+    expect(out!.adminProducts).toEqual([])
+    expect(out!.catalogDropIndex).toEqual([])
   })
 
-  it('parses published oath drop, layout, and site SEO', () => {
-    const drop = createDefaultTheOathDrop()
-    const layout = createDefaultWebsiteLayout(drop.updatedAt)
+  it('parses layout and site SEO', () => {
+    const layout = createDefaultWebsiteLayout(STAMP)
     const out = normalizeStorefrontPublicationRow({
-      published_drop_snapshot: drop,
       website_layout: layout,
       site_seo: { globalDefaults: { metaTitle: 'Campaign' } },
       revision: '4',
-      published_at: '2026-01-01T00:00:00.000Z',
+      published_at: STAMP,
     })
     expect(out).not.toBeNull()
     expect(out!.revision).toBe(4)
-    expect(out!.drop.id).toBe(drop.id)
     expect(out!.layout.version).toBe(layout.version)
     expect(out!.siteSeo.globalDefaults.metaTitle).toBe('Campaign')
   })
 
-  it('returns null on invalid drop snapshot (tamper guard)', () => {
-    expect(
-      normalizeStorefrontPublicationRow({
-        published_drop_snapshot: { bogus: true },
-        website_layout: {},
-        site_seo: null,
-        revision: 0,
-        published_at: null,
-      }),
-    ).toBeNull()
-  })
-
   it('parses products_snapshot, catalog_drop_index, global_brand, campaigns, lookbook', () => {
-    const drop = createDefaultTheOathDrop()
-    const layout = createDefaultWebsiteLayout(drop.updatedAt)
+    const layout = createDefaultWebsiteLayout(STAMP)
     const defaults = createDefaultGlobalBrandSettings()
+    const dropIndexRow = {
+      id: 'drop-oath',
+      slug: 'the-oath',
+      name: 'The Oath',
+      dropNumber: 'Drop 01',
+    }
     const productRow: AdminProduct = {
       id: 'prod-1',
       slug: 'oversized-tee',
@@ -96,27 +87,19 @@ describe('normalizeStorefrontPublicationRow', () => {
           isAvailable: true,
         },
       ],
-      dropIds: [drop.id],
+      dropIds: [dropIndexRow.id],
       details: {},
       seo: {},
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
+      createdAt: STAMP,
+      updatedAt: STAMP,
     }
     const out = normalizeStorefrontPublicationRow({
-      published_drop_snapshot: drop,
       website_layout: layout,
       site_seo: null,
       revision: 1,
       published_at: null,
       products_snapshot: [productRow, { bogus: true }],
-      catalog_drop_index: [
-        {
-          id: drop.id,
-          slug: drop.slug,
-          name: drop.name,
-          dropNumber: drop.dropNumber,
-        },
-      ],
+      catalog_drop_index: [dropIndexRow],
       global_brand: {
         emblemFallbackUrl: 'https://cdn.example/emblem.svg',
         loadingEmblemFallbackUrl: '',
@@ -127,14 +110,7 @@ describe('normalizeStorefrontPublicationRow', () => {
     expect(out).not.toBeNull()
     expect(out!.adminProducts).toHaveLength(1)
     expect(out!.adminProducts[0]!.slug).toBe('oversized-tee')
-    expect(out!.catalogDropIndex).toEqual([
-      {
-        id: drop.id,
-        slug: drop.slug,
-        name: drop.name,
-        dropNumber: drop.dropNumber,
-      },
-    ])
+    expect(out!.catalogDropIndex).toEqual([dropIndexRow])
     expect(out!.globalBrand.emblemFallbackUrl).toBe('https://cdn.example/emblem.svg')
     expect(out!.globalBrand.loadingEmblemFallbackUrl).toBe(
       defaults.loadingEmblemFallbackUrl,
@@ -147,10 +123,8 @@ describe('normalizeStorefrontPublicationRow', () => {
   })
 
   it('parses site_homepage mode from publication', () => {
-    const drop = createDefaultTheOathDrop()
-    const layout = createDefaultWebsiteLayout(drop.updatedAt)
+    const layout = createDefaultWebsiteLayout(STAMP)
     const out = normalizeStorefrontPublicationRow({
-      published_drop_snapshot: drop,
       website_layout: layout,
       site_seo: null,
       revision: 1,

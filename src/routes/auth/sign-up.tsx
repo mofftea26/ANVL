@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { Button } from '@/shared/components/ui/Button'
@@ -13,6 +13,12 @@ import {
   useSignUpForm,
   useStorefrontAccountSession,
 } from '@/features/storefront-account'
+import {
+  SocialAuthButtons,
+  isStorefrontAuthEnabled,
+  signUpStorefront,
+} from '@/features/storefront-account/auth'
+import { setSessionCustomerId } from '@/app/config/accountSession'
 
 type SignUpSearch = { redirect?: string }
 
@@ -36,6 +42,8 @@ function SignUpPage() {
   const customerId = useStorefrontAccountSession((s) => s.customerId)
   const mutation = useDemoSignUpMutation()
   const form = useSignUpForm()
+  const supabaseAuth = isStorefrontAuthEnabled()
+  const [supaPending, setSupaPending] = useState(false)
 
   useEffect(() => {
     if (customerId) {
@@ -43,7 +51,27 @@ function SignUpPage() {
     }
   }, [customerId, redirect])
 
-  const onSubmit = form.handleSubmit((values) => {
+  const onSubmit = form.handleSubmit(async (values) => {
+    if (supabaseAuth) {
+      setSupaPending(true)
+      const fullName = `${values.firstName} ${values.lastName}`.trim()
+      const res = await signUpStorefront(values.email, values.password, fullName)
+      if (res.ok) {
+        if (res.needsConfirmation) {
+          toast.success('Account created. Check your email to confirm.')
+          setSupaPending(false)
+        } else {
+          if (res.userId) setSessionCustomerId(res.userId)
+          toast.success('Welcome to ANVL.')
+          window.location.assign(sanitizeInternalRedirect(redirect))
+        }
+      } else {
+        // SEC-13 — neutral message; never disclose whether the email exists.
+        toast.error('Could not create account. Check your details and try again.')
+        setSupaPending(false)
+      }
+      return
+    }
     mutation.mutate(
       {
         email: values.email,
@@ -70,11 +98,14 @@ function SignUpPage() {
     )
   })
 
+  const pending = mutation.isPending || supaPending
+
   return (
     <AuthPageChrome
       title="Create account"
       subtitle="Optional — you can still check out as a guest."
     >
+      <SocialAuthButtons verb="Sign up with" />
       <form className="space-y-4" onSubmit={onSubmit} noValidate>
         <FormField label="First name" error={form.formState.errors.firstName?.message} htmlFor="su-first">
           <Input id="su-first" autoComplete="given-name" {...form.register('firstName')} />
@@ -100,8 +131,8 @@ function SignUpPage() {
             {...form.register('confirmPassword')}
           />
         </FormField>
-        <Button type="submit" className="w-full" disabled={mutation.isPending}>
-          {mutation.isPending ? 'Creating…' : 'Create account'}
+        <Button type="submit" className="w-full" disabled={pending}>
+          {pending ? 'Creating…' : 'Create account'}
         </Button>
       </form>
       <p className="mt-4 text-center text-xs text-[var(--color-text-muted)]">

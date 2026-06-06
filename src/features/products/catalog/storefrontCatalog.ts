@@ -6,7 +6,6 @@
 export {
   getRelatedStorefrontProducts,
   getStorefrontProductBySlug,
-  getStorefrontProductsForDropSlug,
   getStorefrontProductsForHome,
   getStorefrontShopListingCatalog,
 } from '@/features/admin/products/products.commerce'

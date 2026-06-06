@@ -5,6 +5,7 @@ import { AdminForgedLink } from '@/features/admin/components/AdminForgedLink'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminStatusBadge } from '@/features/admin/components/AdminStatusBadge'
 import { adminNavItems } from '@/features/admin/components/adminNav'
+import { LandingPagePickerCard } from '@/features/admin/landing-picker/LandingPagePickerCard'
 
 const dashboardCards = adminNavItems.filter((i) => i.href !== '/admin')
 
@@ -20,19 +21,9 @@ function DashboardContent() {
   return (
     <AdminLayout
       title="Dashboard"
-      description="Campaign drops, catalog, and site chrome."
+      description="Landing page, catalog, and site chrome."
     >
-      <AdminCard
-        title="Homepage"
-        description="The live site at / is driven by the active drop’s act sequence."
-      >
-        <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-          Configure the homepage in <strong>Drops</strong> → open the active drop →{' '}
-          <strong>Acts</strong>. Use the <strong>Cinematic scroll hero</strong> preset for a
-          pinned GSAP scroll intro; other acts render below in builder order. Publish the drop
-          so changes reach the storefront.
-        </p>
-      </AdminCard>
+      <LandingPagePickerCard />
       <div className="grid items-stretch gap-6 sm:grid-cols-2 xl:grid-cols-3">
         {dashboardCards.map((card) => (
           <AdminCard

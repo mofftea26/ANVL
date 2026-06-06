@@ -1,5 +1,5 @@
-import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
-import type { CmsLinkItem } from '@/features/admin/landing-cms/landingCms.types'
+import { createCmsId } from '@/features/admin/lib/cmsId'
+import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 import type {
   WebsiteFooterLinkGroup,
   WebsiteSocialLink,
@@ -27,14 +27,5 @@ export function emptyGroup(): WebsiteFooterLinkGroup {
     id: createCmsId('fg'),
     title: 'Group',
     links: [emptyLink()],
-  }
-}
-
-export function emptyDropCampaignLink(): CmsLinkItem {
-  return {
-    id: createCmsId('nav'),
-    label: 'Active campaign',
-    href: '/drop/the-oath',
-    isVisible: true,
   }
 }

@@ -1,38 +1,11 @@
-import type { Drop } from '@/features/drops/drop.types'
-import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import type { SeoContent } from '@/features/cms/types/cms.types'
 
-export type SeoPathResolutionContext = {
-  loadLanding: () => LandingPageCmsContent
-  getActiveDrop: () => Drop | null
-  getDropBySlug: (slug: string) => Drop | undefined
-}
-
-export function resolveSeoByPath(
-  path: string,
-  ctx: SeoPathResolutionContext,
-): SeoContent | null {
-  if (path === '/') {
-    const landing = ctx.loadLanding()
-    return {
-      title: landing.seo.title,
-      description: landing.seo.description,
-      canonicalPath: landing.seo.path,
-      ogImage: landing.seo.ogImage,
-    }
-  }
-  if (path.startsWith('/drop/')) {
-    const slug = path.replace('/drop/', '').split('/')[0] ?? ''
-    const drop = ctx.getDropBySlug(slug)
-    const active = ctx.getActiveDrop()
-    if (!drop || !active || drop.id !== active.id) return null
-    return {
-      title: drop.seo.title,
-      description: drop.seo.description,
-      canonicalPath: path,
-      ogImage: drop.seo.ogImage,
-    }
-  }
+/**
+ * Per-path SEO cards for public routes. Drop-builder paths were removed in the
+ * CMS teardown; `/` and other static routes resolve from the mock SEO map until
+ * a CMS/API-backed SEO document store ships.
+ */
+export function resolveSeoByPath(path: string): SeoContent | null {
   return cmsMockData.seoByPath[path] ?? null
 }

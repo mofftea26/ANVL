@@ -21,8 +21,7 @@ import {
   ProductCard,
   Section,
 } from '@/shared/components/ui'
-import { PageHero } from '@/shared/components/premium/PageHero'
-import { BrandBadge } from '@/shared/components/premium/BrandBadge'
+import { ForgeAtmosphere } from '@/shared/components/premium/ForgeAtmosphere'
 
 export const Route = createFileRoute('/shop/')({
   validateSearch: validateShopUrlSearch,
@@ -112,72 +111,108 @@ function ShopPage() {
   const desktopFilters = <ShopFiltersForm {...filterProps} />
   const mobileFilters = <ShopFiltersForm {...filterProps} />
 
+  const count = deferredFiltered.length
+
   return (
     <>
-      <PageHero
-        eyebrow="Catalog"
-        title="Shop"
-        intro="Premium bodybuilding gymwear forged for disciplined lifters. Filter by drop, size, and availability."
-      />
-      <Section className="pt-0">
-      <Container className="pb-[var(--anvl-section-py,4rem)]">
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          <BrandBadge tone="accent">{`${deferredFiltered.length} pieces`}</BrandBadge>
-        </div>
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-          <aside className="hidden w-full max-w-xs shrink-0 lg:block">{desktopFilters}</aside>
-
-          <div className="min-w-0 flex-1 space-y-6">
-            <div className="max-w-md space-y-3">
-              <label htmlFor="shop-search" className="anvl-micro block">
-                Search
-              </label>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-                <Input
-                  id="shop-search"
-                  type="search"
-                  value={draftQuery}
-                  onChange={(e) => setDraftQuery(e.target.value)}
-                  placeholder="Name, color, categoryΓÇª"
-                  className="min-w-0 flex-1"
-                  autoComplete="off"
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="shrink-0 sm:max-w-[8rem] lg:hidden"
-                  onClick={() => setFiltersOpen(true)}
-                >
-                  Filters
-                </Button>
-              </div>
-            </div>
-
-            {deferredFiltered.length === 0 ? (
-              <p className="text-sm text-[var(--color-text-muted)]">
-                No products match these filters. Try clearing status or price limits.
-              </p>
-            ) : (
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                {deferredFiltered.map((product: Product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            )}
+      {/* Forge hero. */}
+      <section className="relative overflow-hidden border-b border-[var(--color-line)]">
+        <ForgeAtmosphere />
+        <Container className="relative z-10 py-16 md:py-24">
+          <p className="anvl-display inline-flex items-center gap-2.5 text-xs tracking-[0.32em] text-[var(--color-ember-bright)] before:h-px before:w-8 before:bg-[var(--color-ember)] before:content-['']">
+            Drop 01 — The Oath
+          </p>
+          <h1 className="anvl-heading mt-5 max-w-3xl font-normal leading-[0.88] tracking-[-0.01em] text-[clamp(2.75rem,9vw,6.5rem)] text-[var(--color-heading)]">
+            The Armory
+          </h1>
+          <p className="mt-6 max-w-2xl text-base leading-relaxed text-[var(--color-text-muted)] md:text-lg">
+            Premium bodybuilding gymwear forged for disciplined lifters. Choose your pieces — filter
+            by drop, size, and availability.
+          </p>
+          <div className="anvl-display mt-9 flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] tracking-[0.28em] text-[var(--color-text-muted)]">
+            <span className="text-[var(--color-ember-bright)]">DR-01</span>
+            <span>Forged in Lebanon</span>
+            <span>Beirut · LB</span>
           </div>
-        </div>
-      </Container>
+        </Container>
+      </section>
 
-      <Drawer
-        open={filtersOpen}
-        onClose={() => setFiltersOpen(false)}
-        title="Filters"
-        placement="bottom"
-        aria-label="Shop filters"
-      >
-        {mobileFilters}
-      </Drawer>
-    </Section>
+      <Section className="pt-0">
+        <Container className="pb-[var(--anvl-section-py,4rem)]">
+          {/* Armory toolbar — count + search + mobile filter toggle. */}
+          <div className="mb-8 flex flex-col gap-4 border-b border-[var(--color-line)] pb-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="anvl-display text-sm tracking-[0.18em] text-[var(--color-text)]">
+              <span className="text-[var(--color-ember-bright)]">{String(count).padStart(2, '0')}</span>{' '}
+              {count === 1 ? 'piece' : 'pieces'}
+              <span className="ml-3 text-[var(--color-text-muted)]">in the armory</span>
+            </p>
+            <div className="flex w-full gap-3 sm:max-w-md">
+              <Input
+                id="shop-search"
+                type="search"
+                value={draftQuery}
+                onChange={(e) => setDraftQuery(e.target.value)}
+                placeholder="Search name, color, category…"
+                className="min-w-0 flex-1"
+                autoComplete="off"
+                aria-label="Search the armory"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                className="shrink-0 lg:hidden"
+                onClick={() => setFiltersOpen(true)}
+              >
+                Filters
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+            <aside className="hidden w-full max-w-xs shrink-0 lg:block">
+              <div className="sticky top-[calc(var(--anvl-header-h)+1.5rem)] rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] p-5">
+                <p className="anvl-display inline-flex items-center gap-2 text-[11px] tracking-[0.26em] text-[var(--color-ember-bright)] before:h-px before:w-5 before:bg-[var(--color-ember)] before:content-['']">
+                  Refine the armory
+                </p>
+                <hr className="anvl-ember-rule my-4" />
+                {desktopFilters}
+              </div>
+            </aside>
+
+            <div className="min-w-0 flex-1">
+              {count === 0 ? (
+                <div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] p-10 text-center">
+                  <p className="anvl-display text-sm tracking-[0.2em] text-[var(--color-ember-bright)]">
+                    The armory is empty
+                  </p>
+                  <p className="mt-3 text-sm text-[var(--color-text-muted)]">
+                    No pieces match these filters. Try clearing status or price limits.
+                  </p>
+                  <Button type="button" variant="secondary" className="mt-6" onClick={resetSearch}>
+                    Reset filters
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {deferredFiltered.map((product: Product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </Container>
+
+        <Drawer
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          title="Filters"
+          placement="bottom"
+          aria-label="Shop filters"
+        >
+          {mobileFilters}
+        </Drawer>
+      </Section>
     </>
   )
 }

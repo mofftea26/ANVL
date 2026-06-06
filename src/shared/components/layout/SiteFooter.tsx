@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import type { LandingNavigationContent } from '@/features/cms/landing/landingPageCms.types'
+import type { LandingNavigationContent } from '@/features/cms/navigation/navigation.types'
 import { DropEmblemDecor } from '@/shared/components/brand/DropEmblemDecor'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Container } from '@/shared/components/ui/Container'

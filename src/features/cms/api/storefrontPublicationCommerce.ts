@@ -4,22 +4,17 @@ import {
   adminProductIsPubliclyVisible,
   adminProductToLegacy,
 } from '@/features/admin/products/products.mapper'
-import type { Drop } from '@/features/drops/drop.types'
 import type { Product, ShopDropFilterOption } from '@/features/products/types/product.types'
 
-function resolveDropDisplayNameFromPublication(
+/** Product drop label from the catalog drop index (no active-drop dependency). */
+function resolveDropDisplayName(
   product: AdminProduct,
   dropIndex: ShopDropFilterOption[],
-  activeDrop: Drop,
 ): string {
   const firstId = product.dropIds[0]
   if (!firstId) return 'ANVL Athletics'
   const row = dropIndex.find((d) => d.id === firstId)
-  if (row) return `${row.dropNumber}: ${row.name}`
-  if (firstId === activeDrop.id) {
-    return `${activeDrop.dropNumber}: ${activeDrop.name}`
-  }
-  return 'ANVL Athletics'
+  return row ? `${row.dropNumber}: ${row.name}` : 'ANVL Athletics'
 }
 
 function buildShopDropFilterOptionsFromIndex(
@@ -44,29 +39,22 @@ export function buildStorefrontShopCatalogFromProjection(
   const visible = p.adminProducts.filter(adminProductIsPubliclyVisible)
   const idx = p.catalogDropIndex
   const items = visible.map((prod) =>
-    adminProductToLegacy(
-      prod,
-      resolveDropDisplayNameFromPublication(prod, idx, p.drop),
-      { dropIndex: idx },
-    ),
+    adminProductToLegacy(prod, resolveDropDisplayName(prod, idx), {
+      dropIndex: idx,
+    }),
   )
   const drops = buildShopDropFilterOptionsFromIndex(visible, idx)
   return { items, drops }
 }
 
+/**
+ * Home products. New model: the landing page surfaces the publicly-visible
+ * catalog (the page itself picks how many) — no active-drop `productIds`.
+ */
 export function getStorefrontProductsForHomeFromProjection(
   p: PublishedStorefrontProjection,
 ): Product[] {
-  const drop = p.drop
-  const label = `${drop.dropNumber}: ${drop.name}`
-  const map = new Map(p.adminProducts.map((x) => [x.id, x]))
-  return drop.productIds
-    .map((id) => map.get(id))
-    .filter((row): row is AdminProduct => Boolean(row))
-    .filter(adminProductIsPubliclyVisible)
-    .map((row) =>
-      adminProductToLegacy(row, label, { dropIndex: p.catalogDropIndex }),
-    )
+  return buildStorefrontShopCatalogFromProjection(p).items
 }
 
 export function getStorefrontProductBySlugFromProjection(
@@ -77,7 +65,7 @@ export function getStorefrontProductBySlugFromProjection(
   if (!match || !adminProductIsPubliclyVisible(match)) return null
   return adminProductToLegacy(
     match,
-    resolveDropDisplayNameFromPublication(match, p.catalogDropIndex, p.drop),
+    resolveDropDisplayName(match, p.catalogDropIndex),
     { dropIndex: p.catalogDropIndex },
   )
 }

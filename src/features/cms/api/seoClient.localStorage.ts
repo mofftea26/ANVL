@@ -1,18 +1,10 @@
-﻿import type { SeoClient } from '@/app/config/clients'
-import { getActiveDrop, getDropBySlug } from '@/features/cms/read/dropRuntime'
-import { getLandingCmsContent } from '@/features/admin/landing-cms/landingCms.service'
+import type { SeoClient } from '@/app/config/clients'
 import { resolveSeoByPath } from '@/features/cms/api/resolveSeoByPath'
 import { getSiteSeoContent } from '@/features/cms/siteSeo.local'
 
-const browserSeoCtx = {
-  loadLanding: () => getLandingCmsContent(),
-  getActiveDrop: () => getActiveDrop(),
-  getDropBySlug: (slug: string) => getDropBySlug(slug),
-}
-
 export const localStorageSeoClient: SeoClient = {
   async getSeoByPath(path: string) {
-    return resolveSeoByPath(path, browserSeoCtx)
+    return resolveSeoByPath(path)
   },
   async getSiteSeo() {
     return getSiteSeoContent()

@@ -1,37 +1,29 @@
-import { useCinematicHeroPhaseStore } from '@/features/marketing/cinematic-hero/cinematicHeroPhase.store'
-import type { CinematicHeroSection } from '@/features/marketing/cinematic-hero/cinematicHero.types'
-import type { NavScrollPhase } from '@/features/marketing/cinematic-hero/cinematicHeroPhase.store'
+import { useEffect, useState } from 'react'
 
 export type PremiumNavTopbarVariant = 'transparent' | 'solid'
 
 export type PremiumNavPhase = {
-  phase: NavScrollPhase
   topbarVariant: PremiumNavTopbarVariant
-  isCinematic: boolean
-  sections: CinematicHeroSection[]
-  activeSectionId: string | null
-  showSideRail: boolean
 }
 
+/** Scroll distance (px) before the header turns solid. */
+const SOLID_AFTER = 48
+
+/**
+ * The storefront header floats **transparent over the first/hero section** while
+ * the page is at the top, then turns solid (blurred forge panel) once scrolled.
+ * SSR + first client render are 'transparent' (page loads at the top), so there
+ * is no hydration mismatch; a passive scroll listener flips it after mount.
+ */
 export function usePremiumNavPhase(): PremiumNavPhase {
-  const phase = useCinematicHeroPhaseStore((s) => s.phase)
-  const navMode = useCinematicHeroPhaseStore((s) => s.navMode)
-  const sections = useCinematicHeroPhaseStore((s) => s.sections)
-  const activeSectionId = useCinematicHeroPhaseStore((s) => s.activeSectionId)
+  const [solid, setSolid] = useState(false)
 
-  const isCinematic = phase === 'cinematic'
-  const topbarVariant: PremiumNavTopbarVariant = isCinematic ? 'transparent' : 'solid'
-  const showSideRail =
-    isCinematic &&
-    sections.length > 0 &&
-    (navMode === 'auto' || navMode === 'sideRail')
+  useEffect(() => {
+    const onScroll = () => setSolid(window.scrollY > SOLID_AFTER)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
-  return {
-    phase,
-    topbarVariant,
-    isCinematic,
-    sections,
-    activeSectionId,
-    showSideRail,
-  }
+  return { topbarVariant: solid ? 'solid' : 'transparent' }
 }

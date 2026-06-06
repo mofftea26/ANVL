@@ -45,11 +45,15 @@ function PersonalPage() {
   })
 
   return (
-    <div>
-      <h2 className="anvl-heading text-3xl">Personal info</h2>
+    <div className="max-w-md">
+      <h2 className="anvl-heading text-2xl font-normal sm:text-3xl">Personal info</h2>
       <p className="mt-2 text-sm text-[var(--color-text-muted)]">How we reach you about your orders.</p>
 
-      <form className="mt-8 max-w-md space-y-4" onSubmit={onSubmit} noValidate>
+      <form
+        className="mt-8 space-y-4 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] p-6"
+        onSubmit={onSubmit}
+        noValidate
+      >
         <FormField label="First name" error={form.formState.errors.firstName?.message} htmlFor="pi-first">
           <Input id="pi-first" autoComplete="given-name" {...form.register('firstName')} />
         </FormField>

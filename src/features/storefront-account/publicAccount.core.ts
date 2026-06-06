@@ -12,6 +12,11 @@ import {
   mockAccountSignUp,
 } from '@/app/config/accountMock'
 import { setSessionCustomerId } from '@/app/config/accountSession'
+import {
+  getStorefrontSupabaseClient,
+  isStorefrontAuthEnabled,
+  signOutStorefront,
+} from './auth'
 
 export const accountQueryKeys = {
   all: ['storefrontAccount'] as const,
@@ -105,6 +110,7 @@ export const useStorefrontAccountSession = create<StorefrontAccountSessionState>
   logout: () => {
     setSessionCustomerId(null)
     set({ customerId: null })
+    if (isStorefrontAuthEnabled()) void signOutStorefront()
   },
 }))
 
@@ -223,6 +229,27 @@ export function useHydrateStorefrontAccountSession() {
   useLayoutEffect(() => {
     const id = getSessionCustomerId()
     if (id) setCustomerId(id)
+  }, [setCustomerId])
+
+  // Supabase: reconcile the account session with the GoTrue session + subscribe
+  // (handles OAuth returns to /account). No-op when Supabase is not configured.
+  useEffect(() => {
+    if (!isStorefrontAuthEnabled()) return
+    const client = getStorefrontSupabaseClient()
+    if (!client) return
+    let active = true
+    void client.auth.getSession().then(({ data }) => {
+      if (!active) return
+      const uid = data.session?.user.id ?? null
+      if (uid) setCustomerId(uid)
+    })
+    const { data: sub } = client.auth.onAuthStateChange((_event, session) => {
+      setCustomerId(session?.user.id ?? null)
+    })
+    return () => {
+      active = false
+      sub.subscription.unsubscribe()
+    }
   }, [setCustomerId])
 }
 

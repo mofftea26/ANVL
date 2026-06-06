@@ -1,7 +1,5 @@
 import { BRAND } from '@/shared/constants/brand'
 import { upgradeHttpToHttps } from '@/shared/lib/url'
-import type { SeoStructuredDataType } from '@/features/cms/types/cms.types'
-import type { Drop } from '@/features/drops/drop.types'
 import type { Product } from '@/features/products/types/product.types'
 
 /**
@@ -79,57 +77,5 @@ export function breadcrumbJsonLd(items: Array<{ name: string; path: string }>) {
       name: item.name,
       item: `${BRAND.canonicalBaseUrl}${item.path}`,
     })),
-  }
-}
-
-function dropPageUrl(drop: Drop): string {
-  return `${BRAND.canonicalBaseUrl}/drop/${drop.slug}`
-}
-
-function dropShareImage(drop: Drop): string | undefined {
-  const src = drop.seo.ogImage?.trim()
-  return src ? absoluteImageUrl(src) : undefined
-}
-
-/** JSON-LD payload for a drop page when `drop.seo.structuredDataType` is set. */
-export function dropStructuredDataJsonLd(
-  type: SeoStructuredDataType,
-  drop: Drop,
-): Record<string, unknown> | null {
-  const name = drop.seo.title?.trim() || drop.title
-  const description = drop.seo.description?.trim() || ''
-  const url = dropPageUrl(drop)
-  const image = dropShareImage(drop)
-
-  switch (type) {
-    case 'Organization':
-      return organizationJsonLd()
-    case 'CollectionPage':
-      return {
-        '@context': 'https://schema.org',
-        '@type': 'CollectionPage',
-        name,
-        description,
-        url,
-        ...(image ? { image } : {}),
-      }
-    case 'WebPage':
-      return {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        name,
-        description,
-        url,
-        ...(image ? { primaryImageOfPage: image } : {}),
-      }
-    case 'BreadcrumbList':
-      return breadcrumbJsonLd([
-        { name: 'Home', path: '/' },
-        { name: drop.title, path: `/drop/${drop.slug}` },
-      ])
-    case 'Product':
-      return null
-    default:
-      return null
   }
 }

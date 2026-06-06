@@ -3,7 +3,7 @@ import type {
   StorefrontCampaign,
   StorefrontLookbookItem,
 } from '@/features/cms/api/publicStorefrontPublication'
-import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
+import { createCmsId } from '@/features/admin/lib/cmsId'
 import {
   readSiteHomeExtrasRaw,
   writeSiteHomeExtrasRaw,

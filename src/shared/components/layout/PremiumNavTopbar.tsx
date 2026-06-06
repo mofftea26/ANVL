@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { ShoppingBag } from 'lucide-react'
 import type { ReactNode } from 'react'
-import type { CmsLinkItem } from '@/features/cms/landing/landingPageCms.types'
+import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Container } from '@/shared/components/ui/Container'
@@ -45,10 +45,8 @@ export function PremiumNavTopbar({
   return (
     <div
       className={cn(
-        'border-b transition-[background-color,border-color,backdrop-filter] duration-300',
-        isSolid
-          ? 'border-[var(--color-line)] bg-[rgba(11,11,12,0.92)] backdrop-blur-md'
-          : 'border-transparent bg-transparent',
+        'transition-[background-color,backdrop-filter] duration-300',
+        isSolid ? 'bg-[rgba(11,11,12,0.92)] backdrop-blur-md' : 'bg-transparent',
       )}
       data-premium-topbar
       data-premium-topbar-variant={variant}

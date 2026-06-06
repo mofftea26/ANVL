@@ -35,7 +35,7 @@ import {
   adminFieldClearButtonClass,
   adminFieldControlClass,
   fieldErrorClass,
-} from '@/features/admin/drops/dropEditorRoute.shared'
+} from '@/shared/lib/cmsFieldStyles'
 import {
   coerceToDate,
   isoToDatetimeLocalValue,

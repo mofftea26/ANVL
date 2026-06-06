@@ -1,5 +1,6 @@
 ﻿import type { RuntimeClients } from '@/app/config/clients'
 import { mockAccountClient } from '@/app/config/accountMock'
+import { supabaseAccountClient } from '@/features/storefront-account/auth/supabaseAccountClient'
 import { mockAnalyticsClient } from '@/features/analytics/api/analyticsClient.mock'
 import { mockPaymentClient } from '@/features/checkout/api/paymentGateway.mock'
 import { SEED_WEBSITE_LAYOUT } from '@/features/cms/api/seedSnapshots'
@@ -15,10 +16,6 @@ import {
   createSupabaseSeoReadSlice,
   createSupabaseSiteSettingsReadSlice,
 } from '@/features/cms/api/supabaseStorefrontReaders'
-import {
-  getStorefrontOfflineActiveDrop,
-  getStorefrontOfflineLandingCms,
-} from '@/features/cms/runtime/storefrontReadFallback'
 import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
 import { createCommerceClient } from '@/features/products/api/createCommerceClient'
 
@@ -35,14 +32,15 @@ import { createCommerceClient } from '@/features/products/api/createCommerceClie
 export function createRuntimeClients(options: { isServer: boolean }): RuntimeClients {
   const supabase = getSupabasePublicEnv()
   const commerce = createCommerceClient(options)
+  // Storefront account: Supabase (storefront_profiles) when configured, else mock.
+  const accountClient = supabase ? supabaseAccountClient : mockAccountClient
 
   if (options.isServer) {
     const cms = supabase
       ? {
           ...seedCmsClient,
           ...createSupabaseCmsPublicReadSlice(supabase, {
-            landingFallback: () => getStorefrontOfflineLandingCms(),
-            activeDropFallback: () => getStorefrontOfflineActiveDrop(),
+            layoutFallback: () => structuredClone(SEED_WEBSITE_LAYOUT),
           }),
         }
       : seedCmsClient
@@ -71,7 +69,7 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
       siteSettings,
       analytics: mockAnalyticsClient,
       payment: mockPaymentClient,
-      account: mockAccountClient,
+      account: accountClient,
     }
   }
 
@@ -79,8 +77,7 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
     ? {
         ...localStorageCmsClient,
         ...createSupabaseCmsPublicReadSlice(supabase, {
-          landingFallback: () => getStorefrontOfflineLandingCms(),
-          activeDropFallback: () => getStorefrontOfflineActiveDrop(),
+          layoutFallback: () => getWebsiteLayoutContent(),
         }),
       }
     : localStorageCmsClient

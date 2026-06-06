@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { Menu, ShoppingBag, X } from 'lucide-react'
 import type { ReactNode } from 'react'
-import type { CmsLinkItem } from '@/features/cms/landing/landingPageCms.types'
+import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Drawer } from '@/shared/components/ui/Drawer'

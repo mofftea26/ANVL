@@ -2,25 +2,13 @@ import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { canWriteCmsDraftsToSupabase } from '@/features/cms/api/cmsPersistenceMode'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { fetchCmsProfileRole } from '@/features/admin/auth/adminCmsProfileRole'
-import { readDropsArray } from '@/features/admin/drops/drops.service'
-import { readActiveDropIdRaw } from '@/features/admin/drops/drops.storage'
 import { getAdminProducts } from '@/features/admin/products/products.service'
 import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
 import { getSiteSeoContent } from '@/features/cms/siteSeo.local'
 import { readSiteHomepageFromStorage } from '@/features/cms/siteHomepage.settings'
+import { readActiveLandingPageFromStorage } from '@/features/cms/landingPageActiveKey.settings'
 import { getGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.service'
 import { isAdminCmsRemoteHydrationLocked } from '@/features/admin/cmsRemote/adminCmsRemoteGate'
-import {
-  activeDropRowIdsToDemote,
-  demoteDropBody,
-  orderDropsForRemoteSync,
-  resolveIntendedActiveClientIdForSync,
-} from '@/features/admin/cmsRemote/adminCmsRemoteSyncOrder'
-import { buildAnvlDropRemoteRow } from '@/features/admin/cmsRemote/adminCmsDropRemoteRow'
-import {
-  readRemoteDropDeleteQueue,
-  removeRemoteDropDeleteQueueIds,
-} from '@/features/admin/drops/drops.storage'
 import {
   buildMediaIndex,
   listMediaAssets,
@@ -61,131 +49,8 @@ export async function flushAdminCmsRemoteSync(): Promise<
   const { role } = await fetchCmsProfileRole(client)
   if (!canWriteCmsDraftsToSupabase(role)) return { ok: true }
 
-  const drops = readDropsArray()
-  const activeClientId = readActiveDropIdRaw()
   const syncProductsToSupabase = !getShopifyPublicEnv()
   const products = syncProductsToSupabase ? getAdminProducts() : []
-
-  const { data: dbActiveRows, error: activeListErr } = await client
-    .from('anvl_drops')
-    .select('id, client_drop_id, body')
-    .eq('status', 'active')
-
-  if (activeListErr) {
-    return { ok: false, error: activeListErr.message }
-  }
-
-  const intendedActiveClientId = resolveIntendedActiveClientIdForSync(
-    drops,
-    activeClientId,
-  )
-  const remoteActiveRows = dbActiveRows ?? []
-  const rowIdsToDemote = activeDropRowIdsToDemote(
-    remoteActiveRows,
-    intendedActiveClientId,
-  )
-
-  if (rowIdsToDemote.length > 0) {
-    const demoteSet = new Set(rowIdsToDemote)
-    for (const row of remoteActiveRows) {
-      if (!demoteSet.has(row.id)) continue
-
-      const bodyRaw = row.body
-      const body =
-        typeof bodyRaw === 'object' && bodyRaw !== null
-          ? (bodyRaw as Record<string, unknown>)
-          : {}
-
-      const { error: demoteErr } = await client
-        .from('anvl_drops')
-        .update({
-          status: 'inactive',
-          body: demoteDropBody(body),
-        })
-        .eq('id', row.id)
-
-      if (demoteErr) return { ok: false, error: demoteErr.message }
-    }
-  }
-
-  const orderedDrops = orderDropsForRemoteSync(drops, activeClientId)
-
-  for (const drop of orderedDrops) {
-    const row = buildAnvlDropRemoteRow(drop)
-
-    const { data: existing, error: selErr } = await client
-      .from('anvl_drops')
-      .select('id')
-      .eq('client_drop_id', drop.id)
-      .maybeSingle()
-
-    if (selErr) {
-      return { ok: false, error: selErr.message }
-    }
-
-    if (existing?.id) {
-      const { data: current, error: curErr } = await client
-        .from('anvl_drops')
-        .select('status, updated_at')
-        .eq('id', existing.id)
-        .maybeSingle()
-
-      if (curErr) return { ok: false, error: curErr.message }
-
-      // Cron may have promoted this row while localStorage still says scheduled.
-      if (current?.status === 'active' && drop.status === 'scheduled') {
-        const serverMs = current.updated_at
-          ? new Date(current.updated_at).getTime()
-          : 0
-        const localMs = drop.updatedAt
-          ? new Date(drop.updatedAt).getTime()
-          : 0
-        if (
-          Number.isFinite(serverMs) &&
-          serverMs > 0 &&
-          localMs <= serverMs
-        ) {
-          continue
-        }
-      }
-
-      const { error: upErr } = await client
-        .from('anvl_drops')
-        .update(row)
-        .eq('id', existing.id)
-      if (upErr) return { ok: false, error: upErr.message }
-    } else {
-      const { error: insErr } = await client.from('anvl_drops').insert(row)
-      if (insErr) return { ok: false, error: insErr.message }
-    }
-  }
-
-  const deleteQueue = readRemoteDropDeleteQueue()
-  const deletedClientIds: string[] = []
-
-  for (const clientId of deleteQueue) {
-    const { data: row, error: selDelErr } = await client
-      .from('anvl_drops')
-      .select('id')
-      .eq('client_drop_id', clientId)
-      .maybeSingle()
-
-    if (selDelErr) return { ok: false, error: selDelErr.message }
-
-    if (row?.id) {
-      const { error: delErr } = await client
-        .from('anvl_drops')
-        .delete()
-        .eq('id', row.id)
-      if (delErr) return { ok: false, error: delErr.message }
-    }
-
-    deletedClientIds.push(clientId)
-  }
-
-  if (deletedClientIds.length > 0) {
-    removeRemoteDropDeleteQueueIds(deletedClientIds)
-  }
 
   if (syncProductsToSupabase) {
     for (const p of products) {
@@ -233,7 +98,19 @@ export async function flushAdminCmsRemoteSync(): Promise<
   const layout = getWebsiteLayoutContent()
   const siteSeo = getSiteSeoContent()
   const siteHomepage = readSiteHomepageFromStorage()
+  const activeLandingPageKey = readActiveLandingPageFromStorage().key
   const globalBrand = getGlobalBrandSettings()
+
+  // Canonical new-model write (best-effort — ignored on un-migrated DBs). The
+  // storefront reads the mirrored `storefront_publication.active_landing_page_key`.
+  await client
+    .from('cms_settings')
+    .update({ active_landing_page_key: activeLandingPageKey })
+    .eq('id', 1)
+    .then(
+      () => {},
+      () => {},
+    )
   const { getSiteHomeExtrasContent } = await import(
     '@/features/admin/site-home/siteHome.service'
   )
@@ -242,14 +119,27 @@ export async function flushAdminCmsRemoteSync(): Promise<
   const mediaList = await listMediaAssets(client)
   const mediaIndex = mediaList.ok ? buildMediaIndex(mediaList.assets) : []
 
+  // Products snapshot + catalog drop index — formerly written by the
+  // `cms_publish_drop` RPC, now published here so the storefront catalog stays
+  // fresh once the drop RPC is gone. The drop-builder is removed, so the index
+  // has no name source and is empty (products surface the brand name).
+  const productsSnapshot = syncProductsToSupabase
+    ? products.map((p) => JSON.parse(JSON.stringify(p)) as Record<string, unknown>)
+    : undefined
+
   const pubPatch: Record<string, unknown> = {
     website_layout: layout,
     site_seo: siteSeo,
     site_homepage: siteHomepage,
+    active_landing_page_key: activeLandingPageKey,
     global_brand: globalBrand,
     media_index: mediaIndex,
     campaigns: homeExtras.campaigns,
     lookbook: homeExtras.lookbook,
+    catalog_drop_index: [],
+  }
+  if (productsSnapshot) {
+    pubPatch.products_snapshot = productsSnapshot
   }
 
   const { error: pubErr } = await client
@@ -258,11 +148,18 @@ export async function flushAdminCmsRemoteSync(): Promise<
     .eq('id', 1)
 
   if (pubErr) {
-    if (isPostgrestMissingColumnError(pubErr, 'site_homepage')) {
-      const { site_homepage: _omit, ...withoutHomepage } = pubPatch
+    if (
+      isPostgrestMissingColumnError(pubErr, 'site_homepage') ||
+      isPostgrestMissingColumnError(pubErr, 'active_landing_page_key')
+    ) {
+      const {
+        site_homepage: _omit,
+        active_landing_page_key: _omitKey,
+        ...withoutNewCols
+      } = pubPatch
       const { error: pubErr2 } = await client
         .from('storefront_publication')
-        .update(withoutHomepage)
+        .update(withoutNewCols)
         .eq('id', 1)
       if (pubErr2) return { ok: false, error: pubErr2.message }
       return { ok: true }

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { Button } from '@/shared/components/ui/Button'
@@ -14,6 +14,12 @@ import {
   useSignInForm,
   useStorefrontAccountSession,
 } from '@/features/storefront-account'
+import {
+  SocialAuthButtons,
+  isStorefrontAuthEnabled,
+  signInWithPasswordStorefront,
+} from '@/features/storefront-account/auth'
+import { setSessionCustomerId } from '@/app/config/accountSession'
 
 type SignInSearch = { redirect?: string }
 
@@ -37,6 +43,8 @@ function SignInPage() {
   const customerId = useStorefrontAccountSession((s) => s.customerId)
   const mutation = useDemoSignInMutation()
   const form = useSignInForm()
+  const supabaseAuth = isStorefrontAuthEnabled()
+  const [supaPending, setSupaPending] = useState(false)
 
   useEffect(() => {
     if (customerId) {
@@ -44,7 +52,20 @@ function SignInPage() {
     }
   }, [customerId, redirect])
 
-  const onSubmit = form.handleSubmit((values) => {
+  const onSubmit = form.handleSubmit(async (values) => {
+    if (supabaseAuth) {
+      setSupaPending(true)
+      const res = await signInWithPasswordStorefront(values.email, values.password)
+      if (res.ok) {
+        if (res.userId) setSessionCustomerId(res.userId)
+        toast.success('Signed in.')
+        window.location.assign(sanitizeInternalRedirect(redirect))
+      } else {
+        toast.error(res.error)
+        setSupaPending(false)
+      }
+      return
+    }
     mutation.mutate(values, {
       onSuccess: () => {
         toast.success('Signed in.')
@@ -60,11 +81,18 @@ function SignInPage() {
     })
   })
 
+  const pending = mutation.isPending || supaPending
+
   return (
     <AuthPageChrome
       title="Sign in"
-      subtitle={`Demo: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`}
+      subtitle={
+        supabaseAuth
+          ? 'Welcome back. Sign in to your ANVL account.'
+          : `Demo: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`
+      }
     >
+      <SocialAuthButtons verb="Sign in with" />
       <form className="space-y-4" onSubmit={onSubmit} noValidate>
         <FormField label="Email" error={form.formState.errors.email?.message} htmlFor="auth-in-email">
           <Input id="auth-in-email" type="email" autoComplete="email" {...form.register('email')} />
@@ -81,8 +109,8 @@ function SignInPage() {
             {...form.register('password')}
           />
         </FormField>
-        <Button type="submit" className="w-full" disabled={mutation.isPending}>
-          {mutation.isPending ? 'Signing in…' : 'Sign in'}
+        <Button type="submit" className="w-full" disabled={pending}>
+          {pending ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>
       <p className="mt-4 text-center text-xs text-[var(--color-text-muted)]">

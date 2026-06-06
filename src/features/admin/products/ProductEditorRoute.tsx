@@ -12,12 +12,7 @@ import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
-import {
-  detachProductFromAllDrops,
-  persistProductDropLinks,
-} from '@/features/admin/drops/drops.service'
-import { useDropsList } from '@/features/admin/drops/useDrops'
-import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
+import { createCmsId } from '@/features/admin/lib/cmsId'
 import {
   deleteAdminProduct,
   deriveSourceType,
@@ -61,12 +56,9 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
   const navigate = useNavigate()
   const setPageActions = useAdminPageActions()
   const remote = useAdminProductById(productId)
-  const drops = useDropsList()
   const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const [draft, setDraft] = useState<AdminProduct | null>(null)
-  const [tab, setTab] = useState<
-    'basics' | 'variants' | 'drops' | 'seo'
-  >('basics')
+  const [tab, setTab] = useState<'basics' | 'variants' | 'seo'>('basics')
   const [confirmDelete, setConfirmDelete] = useState(false)
   useEffect(() => {
     if (!remote) {
@@ -107,7 +99,6 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
     if (!draft) return
     const rebuilt = rebuildAvailabilityMatrix(draft)
     upsertAdminProduct(rebuilt)
-    persistProductDropLinks(rebuilt)
     toast.success('Product saved.')
     flashSuccess()
     setDraft(cloneProduct(rebuilt))
@@ -198,7 +189,6 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
           [
             ['basics', 'Basics'],
             ['variants', 'Variants'],
-            ['drops', 'Drops'],
             ['seo', 'SEO'],
           ] as const
         ).map(([id, label]) => (
@@ -852,47 +842,6 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
         </div>
       ) : null}
 
-      {tab === 'drops' ? (
-        <AdminCard
-          title="Drop assignments"
-          description="Toggle drops that sell this silhouette — assignments sync both ways."
-        >
-          <div className="grid gap-3 md:grid-cols-2">
-            {drops.map((drop) => {
-              const checked = draft.dropIds.includes(drop.id)
-              return (
-                <AdminCheckbox
-                  key={drop.id}
-                  className="items-start rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]/40 p-4"
-                  label={
-                    <>
-                      <span className="block font-semibold text-[var(--color-heading)]">
-                        {drop.dropNumber} · {drop.name}
-                      </span>
-                      <span className="mt-1 block text-xs font-normal text-[var(--color-text-muted)]">
-                        /drop/{drop.slug}
-                      </span>
-                    </>
-                  }
-                  checked={checked}
-                  onChange={(e) => {
-                    const next = e.target.checked
-                    const nextIds = next
-                      ? [...draft.dropIds, drop.id]
-                      : draft.dropIds.filter((id) => id !== drop.id)
-                    setDraft({
-                      ...draft,
-                      dropIds: nextIds,
-                      sourceType: deriveSourceType(nextIds),
-                    })
-                  }}
-                />
-              )
-            })}
-          </div>
-        </AdminCard>
-      ) : null}
-
       {tab === 'seo' ? (
         <AdminCard title="SEO" description="Overrides passed through commerce mocks.">
           <div className="grid gap-4 md:grid-cols-2">
@@ -943,14 +892,13 @@ export function ProductEditorRoute({ productId }: { productId: string }) {
         confirmLabel="Delete"
         confirmVariant="destructive"
         onConfirm={() => {
-          detachProductFromAllDrops(draft.id)
           deleteAdminProduct(draft.id)
           toast.success('Product deleted.')
           setConfirmDelete(false)
           navigate({ to: '/admin/products' })
         }}
       >
-        Removes this SKU everywhere and strips it from every drop roster.
+        Removes this SKU from the catalog.
       </AdminConfirmDialog>
     </AdminLayout>
   )

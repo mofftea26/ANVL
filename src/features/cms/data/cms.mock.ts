@@ -5,7 +5,7 @@ const homepageContent: HomePageContent = {
     title: 'FORGED UNDER PRESSURE',
     subtitle:
       'Premium bodybuilding gymwear built through pressure, repetition, discipline, and heat.',
-    primaryCta: { label: 'Explore Drop 01', href: '/drop/the-oath' },
+    primaryCta: { label: 'Explore Drop 01', href: '/shop' },
     secondaryCta: { label: 'Join Waitlist', href: '#waitlist' },
   },
   manifesto: {
@@ -52,10 +52,10 @@ const seoByPath: Record<string, SeoContent> = {
     description: 'Explore Drop 01: The Oath premium bodybuilding gymwear.',
     canonicalPath: '/shop',
   },
-  '/drop/the-oath': {
-    title: 'Drop 01: The Oath - ANVL Athletics',
-    description: 'The first ANVL drop. Oversized Tee, Stringer, and Compression Tee.',
-    canonicalPath: '/drop/the-oath',
+  '/story': {
+    title: 'The Oath — Story | ANVL Athletics',
+    description: 'The story of Drop 01 — The Oath. Oversized Tee, Stringer, and Compression Tee.',
+    canonicalPath: '/story',
   },
 }
 
@@ -68,7 +68,7 @@ export const cmsMockData = {
   },
   navigation: [
     { label: 'Shop', href: '/shop' },
-    { label: 'The Oath', href: '/drop/the-oath' },
+    { label: 'The Oath', href: '/story' },
     { label: 'About', href: '/about' },
     { label: 'Size Guide', href: '/size-guide' },
   ],

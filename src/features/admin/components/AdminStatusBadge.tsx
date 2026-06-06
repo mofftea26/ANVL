@@ -1,6 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 import type { PropsWithChildren } from 'react'
-import type { DropStatus } from '@/features/drops/drop.types'
 import { cn } from '@/shared/lib/cn'
 
 export const adminStatusBadgeVariants = cva(
@@ -45,34 +44,4 @@ export function AdminStatusBadge({
       {children}
     </span>
   )
-}
-
-const DROP_STATUS_LABEL: Record<DropStatus, string> = {
-  active: 'Active',
-  inactive: 'Inactive',
-  scheduled: 'Scheduled',
-}
-
-/** Single badge label: live storefront wins over CMS status. */
-export function dropStatusBadgeLabel(status: DropStatus, isLive: boolean): string {
-  if (isLive) return 'Live'
-  return DROP_STATUS_LABEL[status] ?? status
-}
-
-/** Maps drop lifecycle to forged badge tones (drops list + editor). */
-export function dropStatusBadgeTone(
-  status: DropStatus,
-  isLive: boolean,
-): NonNullable<VariantProps<typeof adminStatusBadgeVariants>['tone']> {
-  if (isLive) return 'live'
-  switch (status) {
-    case 'scheduled':
-      return 'scheduled'
-    case 'inactive':
-      return 'neutral'
-    case 'active':
-      return 'success'
-    default:
-      return 'neutral'
-  }
 }

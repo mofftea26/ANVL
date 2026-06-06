@@ -1,11 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import {
-  AdminStatusBadge,
-  dropStatusBadgeLabel,
-  dropStatusBadgeTone,
-} from '../AdminStatusBadge'
+import { AdminStatusBadge } from '../AdminStatusBadge'
 
 describe('AdminStatusBadge', () => {
   it('renders children with live tone classes', () => {
@@ -23,15 +19,5 @@ describe('AdminStatusBadge', () => {
     const el = screen.getByText('Live')
     expect(el.className.includes('h-9')).toBe(true)
     expect(el.className.includes('text-xs')).toBe(true)
-  })
-
-  it('maps drop status to badge tone', () => {
-    expect(dropStatusBadgeTone('scheduled', false)).toBe('scheduled')
-    expect(dropStatusBadgeTone('inactive', true)).toBe('live')
-  })
-
-  it('prefers live label over CMS status when storefront-active', () => {
-    expect(dropStatusBadgeLabel('active', true)).toBe('Live')
-    expect(dropStatusBadgeLabel('inactive', false)).toBe('Inactive')
   })
 })

@@ -5,7 +5,11 @@ import { AdminLoadingState } from '@/features/admin/components/AdminLoadingState
 import { createCommerceClient } from '@/features/products/api/createCommerceClient'
 import type { Product } from '@/features/products/types/product.types'
 import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
-import { resolveProductHref } from '@/features/marketing/act-presets/productShowcase/oathProductUtils'
+
+/** Storefront PDP path for a catalog product. */
+function resolveProductHref(p: Product): string {
+  return `/shop/${p.slug}`
+}
 
 export function AdminShopifyProductGrid() {
   const [products, setProducts] = useState<Product[]>([])

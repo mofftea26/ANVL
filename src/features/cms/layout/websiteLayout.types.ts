@@ -1,4 +1,4 @@
-import type { CmsLinkItem } from '@/features/cms/landing/landingPageCms.types'
+import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 
 export type WebsiteFooterLinkGroup = {
   id: string

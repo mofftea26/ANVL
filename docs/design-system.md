@@ -3,6 +3,14 @@
 ## Brand direction
 ANVL is premium bodybuilding gymwear: dark, forged, disciplined, industrial, warrior-inspired, and refined.
 
+## Warrior accent layer (2026-06-06)
+An **additive** layer on top of the locked palette/fonts — it does not replace bone/steel/black or Bebas/Manrope.
+
+- **Ember tokens** (both themes): `--color-ember` (forged bronze), `--color-ember-bright`, `--color-ember-soft`. Decorative only — banner hardware, ember glows, rules, small labels. Keep ember off long body copy (use it where AA contrast holds).
+- **Heraldic display:** `--font-display` → Cinzel (self-hosted `@fontsource/cinzel`, preloaded in `__root.tsx`). Apply via `.anvl-display` — inscriptional caps for *accent moments only* (eyebrows, numerals, banner labels). Bebas (`.anvl-heading`) stays the workhorse. No blackletter (avoids costume).
+- **Utilities:** `.anvl-ember-rule` (glowing hairline divider), `.anvl-ember` (drifting ember particle), `.anvl-banner-sway` (idle hang sway). All motion auto-disabled under `prefers-reduced-motion`.
+- **Primitives** (`src/shared/components/premium/`): `WarBanner` — 3D medieval hanging banner (forged crossbar + gonfalon `clip-path` + ember frame) that wraps an image or a duotone + emblem placeholder; `ForgeAtmosphere` — persistent ember/grain backdrop (deterministic ember field, SSR-safe) used to make stacked scenes read as one continuous environment. `SectionEyebrow` has an `ember` variant.
+
 ## Theme model
 Use CSS variables so the active drop can theme the full storefront without rewriting styles.
 

@@ -5,10 +5,6 @@ import {
   invalidateStorefrontPublication,
   registerStorefrontPublicationInvalidator,
 } from '@/features/cms/hooks/invalidateStorefrontPublication'
-import {
-  invalidateAdminDropsList,
-  registerAdminDropsListInvalidator,
-} from '@/features/admin/cmsRemote/invalidateAdminDropsList'
 
 export function AppProviders({ children }: PropsWithChildren) {
   const [queryClient] = useState(
@@ -27,12 +23,8 @@ export function AppProviders({ children }: PropsWithChildren) {
     const unregStorefront = registerStorefrontPublicationInvalidator(() =>
       invalidateStorefrontPublication(queryClient),
     )
-    const unregDrops = registerAdminDropsListInvalidator(() =>
-      invalidateAdminDropsList(queryClient),
-    )
     return () => {
       unregStorefront()
-      unregDrops()
     }
   }, [queryClient])
 

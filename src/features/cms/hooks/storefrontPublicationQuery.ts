@@ -1,5 +1,3 @@
-import type { LandingPageCmsContent } from '@/features/cms/landing/landingPageCms.types'
-import { composeLandingPageFromDrop } from '@/features/cms/landing/composeLandingPageFromDrop'
 import {
   fetchPublishedStorefrontProjection,
   type PublishedStorefrontProjection,
@@ -12,7 +10,6 @@ export const STOREFRONT_PUBLICATION_QUERY_KEY = [
 ] as const
 
 export type StorefrontPublicationView = {
-  landing: LandingPageCmsContent
   projection: PublishedStorefrontProjection
 }
 
@@ -21,11 +18,5 @@ export async function fetchStorefrontPublicationView(): Promise<StorefrontPublic
   if (!env) return null
   const projection = await fetchPublishedStorefrontProjection(env)
   if (!projection) return null
-  return {
-    projection,
-    landing: composeLandingPageFromDrop(
-      structuredClone(projection.drop),
-      structuredClone(projection.layout),
-    ),
-  }
+  return { projection }
 }

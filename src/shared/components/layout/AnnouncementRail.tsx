@@ -1,4 +1,4 @@
-import type { LandingAnnouncementBar } from '@/features/cms/landing/landingPageCms.types'
+import type { LandingAnnouncementBar } from '@/features/cms/navigation/navigation.types'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { Container } from '@/shared/components/ui/Container'
 import { SafeLink } from '@/shared/components/ui/SafeLink'

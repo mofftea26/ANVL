@@ -27,6 +27,8 @@ import {
   Section,
   SizeSelector,
 } from '@/shared/components/ui'
+import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
+import { RevealOnScroll } from '@/shared/components/motion/RevealOnScroll'
 
 function colorHasNoStock(product: Product, colorName: string): boolean {
   const m = product.shop?.availabilityByColorAndSize[colorName]
@@ -143,14 +145,18 @@ function ProductPage() {
         <div className="grid gap-10 lg:grid-cols-2">
           <ProductGallery product={product} images={galleryImages} />
           <article className="space-y-6">
-            <h1 className="anvl-heading text-4xl sm:text-5xl md:text-6xl">
+            <p className="anvl-display inline-flex items-center gap-2 text-[11px] tracking-[0.28em] text-[var(--color-ember-bright)] before:h-px before:w-6 before:bg-[var(--color-ember)] before:content-['']">
+              {product.dropName}
+            </p>
+            <h1 className="anvl-heading text-4xl font-normal leading-[0.92] sm:text-5xl md:text-6xl">
               {product.name}
             </h1>
-            <p className="text-sm text-[var(--color-text-muted)]">{product.dropName}</p>
+            <hr className="anvl-ember-rule max-w-[7rem]" />
+            <p className="anvl-micro text-[var(--color-text-muted)]">{product.role}</p>
             <div className="flex flex-wrap items-baseline gap-3">
               {saleActive ? (
                 <>
-                  <p className="text-2xl font-semibold text-[var(--color-accent)]">
+                  <p className="anvl-heading text-3xl font-normal text-[var(--color-accent)]">
                     ${displayPrice}
                   </p>
                   <p className="text-lg text-[var(--color-text-muted)] line-through">
@@ -163,7 +169,7 @@ function ProductPage() {
                   ) : null}
                 </>
               ) : (
-                <p className="text-2xl font-semibold">${displayPrice}</p>
+                <p className="anvl-heading text-3xl font-normal">${displayPrice}</p>
               )}
             </div>
             {adminProduct.status === 'sale' && !saleActive ? (
@@ -295,11 +301,57 @@ function ProductPage() {
           </article>
         </div>
 
+        {product.storytelling || product.designDetails.length > 0 ? (
+          <section className="relative mt-16 overflow-hidden rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] p-8 md:p-12">
+            <GrainOverlay />
+            <div className="relative z-10 grid gap-10 md:grid-cols-[1.15fr_1fr]">
+              {product.storytelling ? (
+                <div>
+                  <p className="anvl-display text-[11px] tracking-[0.28em] text-[var(--color-ember-bright)]">
+                    The piece
+                  </p>
+                  <p className="anvl-heading mt-4 max-w-2xl text-2xl font-normal leading-snug md:text-3xl">
+                    {product.storytelling}
+                  </p>
+                </div>
+              ) : (
+                <div />
+              )}
+              {product.designDetails.length > 0 ? (
+                <div>
+                  <p className="anvl-display text-[11px] tracking-[0.28em] text-[var(--color-text-muted)]">
+                    Forged details
+                  </p>
+                  <ul className="mt-5 space-y-3">
+                    {product.designDetails.map((detail, i) => (
+                      <li key={detail} className="flex gap-3 text-sm text-[var(--color-text-muted)]">
+                        <span className="anvl-display shrink-0 text-[var(--color-ember-bright)]">
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <span>{detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {product.gsm ? (
+                    <p className="anvl-micro mt-6 border-t border-[var(--color-line)] pt-4 text-[var(--color-text-muted)]">
+                      {product.gsm}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
         <div className="mt-16">
-          <h2 className="anvl-heading text-5xl">Related Products</h2>
-          <div className="mt-5 grid gap-5 md:grid-cols-2">
+          <h2 className="anvl-heading text-[clamp(2rem,5vw,3.5rem)] font-normal">
+            Related Products
+          </h2>
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((item) => (
-              <ProductCard key={item.id} product={item} />
+              <RevealOnScroll key={item.id}>
+                <ProductCard product={item} />
+              </RevealOnScroll>
             ))}
           </div>
         </div>

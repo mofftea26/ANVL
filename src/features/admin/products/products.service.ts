@@ -1,4 +1,4 @@
-import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
+import { createCmsId } from '@/features/admin/lib/cmsId'
 import type { AdminProduct, ProductSourceType } from './products.types'
 import {
   createEmptyAdminProduct,

@@ -27,6 +27,9 @@ export const adminFieldControlFineClass = [
   adminFieldChromeBase,
 ].join(' ')
 
+/** Invalid-field border treatment shared by admin form controls. */
+export const fieldErrorClass = 'border-red-500/60 bg-red-500/5'
+
 /** Native checkbox inside `AdminCheckbox` and MediaPicker “leave empty” toggle. */
 export const adminCheckboxControlClass =
   'focus-ring mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-accent)] accent-[var(--color-accent)]'

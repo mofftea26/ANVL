@@ -1,4 +1,4 @@
-import { landingCmsDefaults } from '@/features/admin/landing-cms/landingCms.defaults'
+import { navigationDefaults } from '@/features/cms/navigation/navigation.defaults'
 import type { WebsiteLayoutContent } from './websiteLayout.types'
 
 export const WEBSITE_LAYOUT_VERSION = 1
@@ -6,7 +6,7 @@ export const WEBSITE_LAYOUT_VERSION = 1
 export function createDefaultWebsiteLayout(
   nowIso = new Date().toISOString(),
 ): WebsiteLayoutContent {
-  const nav = landingCmsDefaults.navigation
+  const nav = navigationDefaults
   return {
     version: WEBSITE_LAYOUT_VERSION,
     updatedAt: nowIso,

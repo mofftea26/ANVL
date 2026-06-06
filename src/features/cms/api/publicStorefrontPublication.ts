@@ -2,13 +2,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { createDefaultWebsiteLayout } from '@/features/admin/website-layout/websiteLayout.defaults'
 import { persistedWebsiteLayoutSchema } from '@/features/admin/website-layout/websiteLayout.persistence.zod'
-import { persistedDropSchema } from '@/features/admin/drops/drops.persistence.zod'
 import { persistedProductSchema } from '@/features/admin/products/products.persistence.zod'
 import { persistedGlobalBrandSchema } from '@/features/admin/global-brand/globalBrand.persistence.zod'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
 import type { GlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.types'
 import type { AdminProduct } from '@/features/admin/products/products.types'
-import type { Drop } from '@/features/drops/drop.types'
 import type { WebsiteLayoutContent } from '@/features/cms/layout/websiteLayout.types'
 import type { SiteSeoContent } from '@/features/cms/siteSeo.local'
 import { parseSiteSeoUnknown } from '@/features/cms/siteSeo.local'
@@ -20,6 +18,7 @@ import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { createAnvlSupabaseClient } from '@/features/cms/api/createAnvlSupabaseClient'
 import { isPostgrestMissingColumnError } from '@/features/cms/api/storefrontPublicationColumns'
 import type { ShopDropFilterOption } from '@/features/products/types/product.types'
+import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
 
 /**
  * Dedicated auth storage key so this anon client never shares GoTrue's default
@@ -81,7 +80,6 @@ export type StorefrontCampaign = z.infer<typeof storefrontCampaignSchema>
 export type StorefrontLookbookItem = z.infer<typeof storefrontLookbookItemSchema>
 
 export type PublishedStorefrontProjection = {
-  drop: Drop
   layout: WebsiteLayoutContent
   siteSeo: SiteSeoContent
   revision: number
@@ -95,10 +93,11 @@ export type PublishedStorefrontProjection = {
   campaigns: StorefrontCampaign[]
   lookbook: StorefrontLookbookItem[]
   siteHomepage: SiteHomepageSettings
+  /** Active code-owned landing page key (validated at render via the registry). */
+  activeLandingPageKey: string
 }
 
 export type StorefrontPublicationRow = {
-  published_drop_snapshot: unknown
   website_layout: unknown
   site_seo: unknown
   revision: number | string | null | undefined
@@ -109,12 +108,13 @@ export type StorefrontPublicationRow = {
   campaigns?: unknown
   lookbook?: unknown
   site_homepage?: unknown
+  active_landing_page_key?: unknown
 }
 
 const PUBLICATION_SELECT_BASE =
-  'published_drop_snapshot, website_layout, site_seo, revision, published_at, products_snapshot, catalog_drop_index, global_brand, campaigns, lookbook'
+  'website_layout, site_seo, revision, published_at, products_snapshot, catalog_drop_index, global_brand, campaigns, lookbook'
 
-const PUBLICATION_SELECT = `${PUBLICATION_SELECT_BASE}, site_homepage`
+const PUBLICATION_SELECT = `${PUBLICATION_SELECT_BASE}, site_homepage, active_landing_page_key`
 
 function parseAdminProductsSnapshot(raw: unknown): AdminProduct[] {
   if (!Array.isArray(raw)) return []
@@ -175,11 +175,8 @@ function mergePublicationGlobalBrand(raw: unknown): GlobalBrandSettings {
 export function normalizeStorefrontPublicationRow(
   data: StorefrontPublicationRow,
 ): PublishedStorefrontProjection | null {
-  if (data.published_drop_snapshot == null) return null
-
-  const dropResult = persistedDropSchema.safeParse(data.published_drop_snapshot)
-  if (!dropResult.success) return null
-
+  // The publication resolves from layout/SEO/products/landing key alone — the
+  // drop-builder snapshot was removed in the CMS teardown.
   const stamp =
     typeof data.published_at === 'string' && data.published_at.length > 0
       ? data.published_at
@@ -205,9 +202,13 @@ export function normalizeStorefrontPublicationRow(
   const campaigns = parseCampaigns(data.campaigns)
   const lookbook = parseLookbook(data.lookbook)
   const siteHomepage = parseSiteHomepageUnknown(data.site_homepage)
+  const activeLandingPageKey =
+    typeof data.active_landing_page_key === 'string' &&
+    data.active_landing_page_key.length > 0
+      ? data.active_landing_page_key
+      : DEFAULT_LANDING_PAGE_KEY
 
   return {
-    drop: dropResult.data as Drop,
     layout,
     siteSeo,
     revision,
@@ -218,6 +219,7 @@ export function normalizeStorefrontPublicationRow(
     campaigns,
     lookbook,
     siteHomepage,
+    activeLandingPageKey,
   }
 }
 
@@ -242,7 +244,8 @@ async function fetchPublishedStorefrontProjectionOnce(
 
   if (
     full.error &&
-    isPostgrestMissingColumnError(full.error, 'site_homepage')
+    (isPostgrestMissingColumnError(full.error, 'site_homepage') ||
+      isPostgrestMissingColumnError(full.error, 'active_landing_page_key'))
   ) {
     const legacy = await supabase
       .from('storefront_publication')

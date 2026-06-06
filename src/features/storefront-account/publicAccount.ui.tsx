@@ -1,11 +1,15 @@
 import { Outlet, useRouterState } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
+import { AnvlWordmark } from '@/shared/assets/brand'
+import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import {
   useHydrateStorefrontAccountSession,
   useStorefrontAccountSession,
 } from './publicAccount.core'
+import { isStorefrontAuthEnabled } from './auth'
 
+/** Premium auth card — used by sign-in / sign-up / forgot-password. */
 export function AuthPageChrome({
   title,
   subtitle,
@@ -16,10 +20,26 @@ export function AuthPageChrome({
   children: ReactNode
 }) {
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <h1 className="anvl-heading text-4xl">{title}</h1>
-      {subtitle ? <p className="mt-2 text-sm text-[var(--color-text-muted)]">{subtitle}</p> : null}
-      <div className="mt-8">{children}</div>
+    <div className="relative flex min-h-[80svh] items-center justify-center overflow-hidden px-4 py-16">
+      <GrainOverlay />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 60% 50% at 50% 30%, rgba(52,55,58,0.45), transparent 65%)',
+        }}
+      />
+      <div className="relative z-10 w-full max-w-md rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] p-8 shadow-[0_30px_70px_-45px_rgba(0,0,0,0.9)]">
+        <a href="/" className="focus-ring inline-block no-underline">
+          <AnvlWordmark className="h-5 w-auto text-[var(--color-heading)]" />
+        </a>
+        <h1 className="anvl-heading mt-6 text-3xl font-normal">{title}</h1>
+        {subtitle ? (
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">{subtitle}</p>
+        ) : null}
+        <div className="mt-7">{children}</div>
+      </div>
     </div>
   )
 }
@@ -27,13 +47,13 @@ export function AuthPageChrome({
 export function AccountMockBanner() {
   return (
     <div
-      className="mb-6 rounded-xl border border-amber-700/35 bg-amber-950/25 px-4 py-3 text-xs text-amber-50/95"
+      className="mb-6 rounded-md border border-amber-700/35 bg-amber-950/25 px-4 py-3 text-xs text-amber-50/95"
       role="status"
     >
       <p className="font-semibold uppercase tracking-wide text-amber-100/90">Demo account</p>
       <p className="mt-1 leading-relaxed text-[var(--color-text-muted)]">
-        Storefront sign-in is mocked in the browser only. TODO: Medusa customer auth with httpOnly sessions
-        or a trusted provider — never ship real credentials like this.
+        Storefront sign-in is mocked in the browser. Configure Supabase auth to enable real
+        accounts (Google / Facebook / Apple + email) — see <code>docs/storefront-auth.md</code>.
       </p>
     </div>
   )
@@ -50,7 +70,7 @@ export function AccountSubnav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   return (
     <nav
-      className="mb-8 flex flex-wrap gap-2 border-b border-[var(--color-line)] pb-4"
+      className="mb-8 flex flex-wrap gap-2 border-b border-[var(--color-line)] pb-5"
       aria-label="Account sections"
     >
       {SUBNAV.map((item) => {
@@ -62,10 +82,10 @@ export function AccountSubnav() {
             key={item.href}
             href={item.href}
             aria-current={active ? 'page' : undefined}
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-heading)] ${
+            className={`focus-ring rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] no-underline transition-colors ${
               active
-                ? 'bg-[var(--color-surface)] text-[var(--color-heading)]'
-                : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-heading)]'
+                ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-bg)]'
+                : 'border-[var(--color-line)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text)]'
             }`}
           >
             {item.label}
@@ -96,25 +116,26 @@ export function AccountShellLayout() {
 
   if (!ready || !customerId) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-16">
-        <p className="text-sm text-[var(--color-text-muted)]">Loading your account…</p>
+      <div className="mx-auto max-w-4xl px-4 py-20">
+        <p className="anvl-micro text-[var(--color-text-muted)]">Loading your account…</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <AccountMockBanner />
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="mx-auto max-w-4xl px-4 py-12 md:py-16">
+      {!isStorefrontAuthEnabled() ? <AccountMockBanner /> : null}
+      <div className="flex flex-col gap-4 border-b border-[var(--color-line)] pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="anvl-heading text-4xl">Account</h1>
-          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+          <p className="anvl-micro text-[var(--color-accent)]">ANVL Account</p>
+          <h1 className="anvl-heading mt-2 text-4xl font-normal sm:text-5xl">Your account</h1>
+          <p className="mt-2 max-w-xl text-sm text-[var(--color-text-muted)]">
             Profile, addresses, and orders — Lebanon-first delivery and payment options at checkout.
           </p>
         </div>
         <button
           type="button"
-          className="rounded-lg border border-[var(--color-line)] px-4 py-2 text-sm font-medium text-[var(--color-heading)] transition-colors hover:border-[var(--color-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-heading)]"
+          className="focus-ring shrink-0 self-start rounded-md border border-[var(--color-line)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)] sm:self-auto"
           onClick={() => {
             logout()
             window.location.assign('/auth/sign-in')
@@ -123,7 +144,9 @@ export function AccountShellLayout() {
           Sign out
         </button>
       </div>
-      <AccountSubnav />
+      <div className="mt-8">
+        <AccountSubnav />
+      </div>
       <Outlet />
     </div>
   )

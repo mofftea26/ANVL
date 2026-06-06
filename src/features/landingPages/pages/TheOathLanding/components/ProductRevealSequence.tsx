@@ -1,0 +1,153 @@
+import { useMemo } from 'react'
+import { ArrowUpRight } from 'lucide-react'
+import type { Product } from '@/features/products/types/product.types'
+import { Container } from '@/shared/components/ui/Container'
+import { SafeLink } from '@/shared/components/ui/SafeLink'
+import { WarBanner } from '@/shared/components/premium/WarBanner'
+import { OATH_PRODUCTS, OATH_PRODUCTS_HEADING, type OathProductCopy } from '../data'
+import { oathProductImage, OATH_LOGO_PLACEHOLDER } from '../theOathAssets'
+
+interface ResolvedProduct extends OathProductCopy {
+  href: string
+  image?: string
+  price?: string
+}
+
+function formatPrice(product: Product): string | undefined {
+  const amount = product.shop?.listPrice ?? product.price
+  const currency = product.shop?.currency ?? 'USD'
+  if (!amount || amount <= 0) return undefined
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  } catch {
+    return `${amount}`
+  }
+}
+
+function BannerColumn({ product, index }: { product: ResolvedProduct; index: number }) {
+  const numeral = String(index + 1).padStart(2, '0')
+  return (
+    <li
+      data-banner
+      data-banner-index={index}
+      data-reveal-m
+      className="flex w-full max-w-[13rem] flex-col items-center will-change-transform md:max-w-[clamp(9rem,15vw,12.5rem)]"
+    >
+      <SafeLink
+        href={product.href}
+        className="focus-ring block w-full no-underline"
+        aria-label={`${product.name} — view piece`}
+      >
+        <WarBanner
+          tone={product.tone}
+          media={product.image}
+          alt={product.name}
+          label={numeral}
+          placeholderSrc={oathProductImage(product.slug) ?? OATH_LOGO_PLACEHOLDER}
+          aspectClassName="aspect-[3/4]"
+          sway
+          className="transition-transform duration-500 md:hover:-translate-y-1"
+        />
+      </SafeLink>
+
+      <div className="mt-4 w-full text-center">
+        <p className="anvl-micro text-[var(--color-ember-bright)]">{product.role}</p>
+        <h3 className="anvl-heading mt-1.5 text-lg font-normal leading-[0.95] md:text-xl">
+          {product.name}
+        </h3>
+        <p className="mx-auto mt-2 hidden max-w-[14rem] text-xs leading-relaxed text-[var(--color-text-muted)] lg:block">
+          {product.line}
+        </p>
+        <div className="mt-3 flex items-center justify-center gap-3">
+          <SafeLink
+            href={product.href}
+            className="focus-ring inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text)] no-underline transition-colors hover:text-[var(--color-ember-bright)]"
+          >
+            View piece
+            <ArrowUpRight size={13} aria-hidden="true" className="shrink-0" />
+          </SafeLink>
+          {product.price ? (
+            <span className="anvl-display text-sm text-[var(--color-text)]">{product.price}</span>
+          ) : null}
+        </div>
+      </div>
+    </li>
+  )
+}
+
+/**
+ * Scene 04 — the three pieces, raised as war banners. On desktop/tablet the
+ * section pins and the banners **assemble horizontally**: the outer two slide in
+ * from the left and right edges while the centre one drops into place, so the
+ * eye reads a sideways march even though the page scrolls vertically (the motion
+ * lives in `buildProducts` in `useTheOathScrollTimeline`). On mobile / reduced
+ * motion they stack into a vertical column and reveal lightly. The page bleeds
+ * through the shared `ForgeAtmosphere` behind — no opaque section background.
+ */
+export function ProductRevealSequence({ products }: { products: Product[] }) {
+  const resolved = useMemo<ResolvedProduct[]>(() => {
+    const bySlug = new Map(products.map((p) => [p.slug, p]))
+    return OATH_PRODUCTS.map((copy) => {
+      const live = bySlug.get(copy.slug)
+      return {
+        ...copy,
+        href: live ? `/shop/${live.slug}` : OATH_PRODUCTS_HEADING.viewAll.href,
+        image: live?.images?.[0]?.src ?? oathProductImage(copy.slug),
+        price: live ? formatPrice(live) : undefined,
+      }
+    })
+  }, [products])
+
+  return (
+    <section
+      data-scene="products"
+      data-product-reveal
+      id="products"
+      className="relative flex min-h-[var(--anvl-section-h)] w-full flex-col justify-center overflow-hidden py-12 md:py-0"
+      aria-label="The first three pieces"
+    >
+      <Container className="relative z-10 w-full">
+        <div data-products-heading data-reveal-m className="mx-auto max-w-3xl text-center will-change-transform">
+          <p className="anvl-display text-xs tracking-[0.3em] text-[var(--color-ember-bright)]">
+            {OATH_PRODUCTS_HEADING.eyebrow}
+          </p>
+          <h2 className="anvl-heading mt-3 font-normal leading-[0.9] tracking-[-0.01em] text-[clamp(1.75rem,5vw,3.5rem)]">
+            {OATH_PRODUCTS_HEADING.title}
+          </h2>
+        </div>
+
+        {/* Shared forged rail the banners hang from. */}
+        <div
+          aria-hidden="true"
+          data-banner-rail
+          className="mx-auto mt-8 hidden h-1 w-[82%] max-w-4xl rounded-full md:block"
+          style={{
+            background:
+              'linear-gradient(90deg, transparent, #45484c 12%, #6b6e72 50%, #45484c 88%, transparent)',
+            boxShadow: '0 2px 10px -3px rgba(0,0,0,0.8)',
+          }}
+        />
+
+        <ul className="mx-auto mt-8 flex w-full flex-col items-center gap-10 [perspective:1600px] md:mt-6 md:flex-row md:items-start md:justify-center md:gap-6 lg:gap-10">
+          {resolved.map((product, i) => (
+            <BannerColumn key={product.slug} product={product} index={i} />
+          ))}
+        </ul>
+
+        <div data-reveal-m className="mt-9 text-center md:mt-10">
+          <SafeLink
+            href={OATH_PRODUCTS_HEADING.viewAll.href}
+            className="focus-ring inline-flex items-center gap-2 border-b border-[var(--color-ember)]/50 pb-1 text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-text)] no-underline transition-colors hover:text-[var(--color-ember-bright)]"
+          >
+            {OATH_PRODUCTS_HEADING.viewAll.label}
+            <ArrowUpRight size={15} aria-hidden="true" />
+          </SafeLink>
+        </div>
+      </Container>
+    </section>
+  )
+}

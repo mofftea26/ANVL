@@ -1,17 +1,4 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Drop } from '@/features/admin/drops/drops.types'
-import {
-  ensureDropSystemHydrated,
-  ensureOnlyTheOathDrop,
-  needsOnlyTheOathDrop,
-  persistDropsState,
-  readDropsArray,
-  resetDropSystemHydrationGate,
-} from '@/features/admin/drops/drops.service'
-import {
-  parseRemoteDropRecord,
-  resolveRemoteClientDropId,
-} from '@/features/admin/cmsRemote/adminCmsDropRemoteParse'
 import { writeProductsRaw } from '@/features/admin/products/products.storage'
 import type { AdminProduct } from '@/features/admin/products/products.types'
 import { persistedProductSchema } from '@/features/admin/products/products.persistence.zod'
@@ -24,16 +11,10 @@ import {
   writeSiteHomepageToStorage,
   parseSiteHomepageUnknown,
 } from '@/features/cms/siteHomepage.settings'
-import { insertAnvlDropToSupabase } from '@/features/admin/cmsRemote/adminCmsInsertDrop'
+import { writeActiveLandingPageToStorage } from '@/features/cms/landingPageActiveKey.settings'
 import { saveGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.service'
 import { persistedGlobalBrandSchema } from '@/features/admin/global-brand/globalBrand.persistence.zod'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
-import {
-  createDefaultTheOathDrop,
-  DEFAULT_OATH_DROP_ID,
-} from '@/features/admin/drops/drops.defaults'
-import { flushAdminCmsRemoteSync } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
-import { publishStorefrontDropByClientId } from '@/features/admin/cmsRemote/adminCmsPublish'
 import {
   beginAdminCmsRemoteHydration,
   endAdminCmsRemoteHydration,
@@ -41,66 +22,20 @@ import {
 import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
 import { isPostgrestMissingColumnError } from '@/features/cms/api/storefrontPublicationColumns'
 
-type AnvlDropRow = {
-  id: string
-  body: unknown
-  status: string
-  slug: string
-  client_drop_id?: string | null
-  release_date?: string | null
-  scheduled_activation_at?: string | null
-}
-
-function resolveActiveClientDropId(
-  rows: AnvlDropRow[],
-  activeDbDropId: string | null,
-): string | null {
-  if (activeDbDropId) {
-    const activeRow = rows.find((r) => r.id === activeDbDropId)
-    if (activeRow) {
-      return resolveRemoteClientDropId(activeRow.body, activeRow)
-    }
-  }
-  const byStatus = rows.find((r) => r.status === 'active')
-  if (byStatus) {
-    return resolveRemoteClientDropId(byStatus.body, byStatus)
-  }
-  return null
-}
-
-function mapDbDropRow(row: AnvlDropRow): Drop | null {
-  return parseRemoteDropRecord(row.body, row)
-}
-
-function dropUpdatedAtMs(drop: Drop): number {
-  const ms = Date.parse(drop.updatedAt ?? '')
-  return Number.isFinite(ms) ? ms : 0
-}
-
-/** Keep unsynced local edits when remote rehydrate runs (e.g. window refocus). */
-export function preferLocalDropWhenNewer(local: Drop, remote: Drop): Drop {
-  return dropUpdatedAtMs(local) > dropUpdatedAtMs(remote) ? local : remote
-}
-
 /**
  * Pull canonical CMS rows from Supabase into the same localStorage keys the
- * admin editors already use, then re-run drop hydration.
+ * admin editors use. The drop-builder was removed in the CMS teardown, so this
+ * hydrates products, website layout, site SEO, homepage, global brand, and the
+ * active landing-page key only.
  */
 export async function hydrateAdminCmsFromSupabase(
   client: SupabaseClient,
 ): Promise<void> {
   beginAdminCmsRemoteHydration()
   try {
-    const dropsRes = await client
-      .from('anvl_drops')
-      .select(
-        'id, body, status, slug, client_drop_id, release_date, scheduled_activation_at',
-      )
-      .order('slug')
-
     let pubRes = await client
       .from('storefront_publication')
-      .select('website_layout, site_seo, site_homepage, global_brand, active_drop_id')
+      .select('website_layout, site_seo, site_homepage, global_brand')
       .eq('id', 1)
       .maybeSingle()
 
@@ -110,59 +45,9 @@ export async function hydrateAdminCmsFromSupabase(
     ) {
       pubRes = await client
         .from('storefront_publication')
-        .select('website_layout, site_seo, global_brand, active_drop_id')
+        .select('website_layout, site_seo, global_brand')
         .eq('id', 1)
         .maybeSingle()
-    }
-
-    if (dropsRes.error) {
-      throw new Error(dropsRes.error.message)
-    }
-
-    const dropRows = (dropsRes.data ?? []) as AnvlDropRow[]
-    const activeDbDropId =
-      typeof pubRes.data?.active_drop_id === 'string'
-        ? pubRes.data.active_drop_id
-        : null
-
-    ensureDropSystemHydrated()
-    const localDrops = readDropsArray()
-    const remoteClientIds = new Set(
-      dropRows
-        .map((row) => resolveRemoteClientDropId(row.body, row))
-        .filter((id): id is string => Boolean(id)),
-    )
-    const localOnlyDrops = localDrops.filter((d) => !remoteClientIds.has(d.id))
-
-    const localById = new Map(localDrops.map((d) => [d.id, d]))
-    const drops: Drop[] = []
-    for (const row of dropRows) {
-      const remote = mapDbDropRow(row)
-      if (!remote) continue
-      const local = localById.get(remote.id)
-      drops.push(local ? preferLocalDropWhenNewer(local, remote) : remote)
-    }
-    for (const local of localOnlyDrops) {
-      if (!drops.some((d) => d.id === local.id)) drops.push(local)
-    }
-
-    resetDropSystemHydrationGate()
-
-    let shouldPublishOath = false
-
-    if (drops.length === 0) {
-      const oath = createDefaultTheOathDrop()
-      persistDropsState([oath], oath.id)
-      void insertAnvlDropToSupabase(oath)
-      shouldPublishOath = true
-    } else {
-      const activeClientId = resolveActiveClientDropId(dropRows, activeDbDropId)
-      persistDropsState(drops, activeClientId ?? drops[0]?.id ?? null)
-
-      if (needsOnlyTheOathDrop()) {
-        ensureOnlyTheOathDrop()
-        shouldPublishOath = true
-      }
     }
 
     if (pubRes.error) {
@@ -217,11 +102,23 @@ export async function hydrateAdminCmsFromSupabase(
       writeSiteHomepageToStorage(parseSiteHomepageUnknown(pub.site_homepage))
     }
 
-    if (shouldPublishOath) {
-      writeSiteHomepageToStorage({
-        mode: 'custom',
-        updatedAt: new Date().toISOString(),
-      })
+    // Canonical active landing-page key lives in cms_settings. Best-effort —
+    // the table is absent on un-migrated DBs.
+    try {
+      const settingsRes = await client
+        .from('cms_settings')
+        .select('active_landing_page_key')
+        .eq('id', 1)
+        .maybeSingle()
+      const key = settingsRes.data?.active_landing_page_key
+      if (typeof key === 'string' && key.length > 0) {
+        writeActiveLandingPageToStorage({
+          key,
+          updatedAt: new Date().toISOString(),
+        })
+      }
+    } catch {
+      /* cms_settings missing on un-migrated DB */
     }
 
     if (pub != null && 'global_brand' in pub && pub.global_brand != null) {
@@ -231,15 +128,6 @@ export async function hydrateAdminCmsFromSupabase(
           ...createDefaultGlobalBrandSettings(),
           ...gb.data,
         })
-      }
-    }
-
-    ensureDropSystemHydrated()
-
-    if (shouldPublishOath && import.meta.env.MODE !== 'test') {
-      const flush = await flushAdminCmsRemoteSync()
-      if (flush.ok) {
-        await publishStorefrontDropByClientId(DEFAULT_OATH_DROP_ID)
       }
     }
   } finally {

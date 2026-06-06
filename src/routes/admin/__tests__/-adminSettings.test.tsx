@@ -33,7 +33,7 @@ vi.mock('@/features/admin/auth/adminAuth.storage', async (importOriginal) => {
 
 const resetKeys = vi.hoisted(() => vi.fn())
 
-vi.mock('@/features/admin/drops/drops.service', () => ({
+vi.mock('@/features/admin/lib/resetLocalCms', () => ({
   resetAllLocalCmsKeys: () => resetKeys(),
 }))
 

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { useCart } from '@/features/cart/hooks/useCart'
@@ -22,12 +22,20 @@ export const Route = createFileRoute('/cart')({
 
 function CartPage() {
   const navigate = useNavigate()
-  const { lines, subtotal, updateQuantity, removeLine } = useCart()
+  const { lines, subtotal, quantity, updateQuantity, removeLine } = useCart()
 
   return (
     <Section>
       <Container>
-        <h1 className="anvl-heading text-4xl sm:text-5xl md:text-6xl">Cart</h1>
+        <div className="flex items-end justify-between gap-4 border-b border-[var(--color-line)] pb-6">
+          <h1 className="anvl-heading text-4xl font-normal sm:text-5xl md:text-6xl">Cart</h1>
+          {lines.length > 0 ? (
+            <p className="anvl-micro text-[var(--color-text-muted)]">
+              {quantity} {quantity === 1 ? 'piece' : 'pieces'}
+            </p>
+          ) : null}
+        </div>
+
         {lines.length === 0 ? (
           <div className="mt-8">
             <EmptyState
@@ -38,42 +46,81 @@ function CartPage() {
             />
           </div>
         ) : (
-          <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
-            <div className="space-y-4">
+          <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
+            <ul className="space-y-4">
               {lines.map((line) => (
-                <article
+                <li
                   key={`${line.productId}:${line.size}:${line.colorway}`}
-                  className="grid gap-4 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4 md:grid-cols-[90px_1fr_auto]"
+                  className="grid gap-4 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[color-mix(in_oklab,var(--color-accent)_30%,var(--color-line))] md:grid-cols-[96px_1fr_auto]"
                 >
-                  <img src={line.image} alt={`${line.name} in ${line.colorway}`} className="aspect-square w-full rounded-md object-cover" />
+                  <Link
+                    to="/shop/$slug"
+                    params={{ slug: line.slug }}
+                    className="focus-ring block overflow-hidden rounded-md border border-[var(--color-line)]"
+                  >
+                    <img
+                      src={line.image}
+                      alt={`${line.name} in ${line.colorway}`}
+                      className="aspect-square w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </Link>
                   <div className="min-w-0">
-                    <h2 className="anvl-heading break-words text-2xl sm:text-3xl">
-                      {line.name}
-                    </h2>
-                    <p className="text-xs text-[var(--color-text-muted)]">{line.colorway} / {line.size}</p>
-                    <p className="mt-1 text-sm">${line.price}</p>
+                    <Link
+                      to="/shop/$slug"
+                      params={{ slug: line.slug }}
+                      className="focus-ring no-underline"
+                    >
+                      <h2 className="anvl-heading break-words text-xl font-normal sm:text-2xl">
+                        {line.name}
+                      </h2>
+                    </Link>
+                    <p className="anvl-micro mt-1 text-[var(--color-text-muted)]">
+                      {line.colorway} · {line.size}
+                    </p>
+                    <p className="anvl-heading mt-2 text-base font-normal">${line.price}</p>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
+                  <div className="flex flex-col items-end justify-between gap-3">
                     <QuantityStepper
                       value={line.quantity}
-                      onChange={(value) => updateQuantity(line.productId, line.size, line.colorway, value)}
+                      onChange={(value) =>
+                        updateQuantity(line.productId, line.size, line.colorway, value)
+                      }
                     />
                     <button
-                      className="text-xs text-[var(--color-text-muted)] underline"
+                      className="focus-ring text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)] underline underline-offset-4 transition-colors hover:text-[var(--color-text)]"
                       onClick={() => removeLine(line.productId, line.size, line.colorway)}
                     >
                       Remove
                     </button>
                   </div>
-                </article>
+                </li>
               ))}
-            </div>
-            <aside className="h-fit rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-5">
-              <p className="anvl-micro">Subtotal</p>
-              <p className="mt-2 text-3xl font-semibold">${subtotal.toFixed(2)}</p>
-              <Button className="mt-5 w-full" onClick={() => navigate({ to: '/checkout' })}>
+            </ul>
+
+            <aside className="h-fit rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] p-6">
+              <p className="anvl-micro text-[var(--color-text-muted)]">Order summary</p>
+              <dl className="mt-4 space-y-2 border-b border-[var(--color-line)] pb-4 text-sm">
+                <div className="flex items-center justify-between">
+                  <dt className="text-[var(--color-text-muted)]">Subtotal</dt>
+                  <dd className="anvl-heading font-normal">${subtotal.toFixed(2)}</dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-[var(--color-text-muted)]">Shipping</dt>
+                  <dd className="text-[var(--color-text-muted)]">Calculated at checkout</dd>
+                </div>
+              </dl>
+              <div className="mt-4 flex items-center justify-between">
+                <span className="anvl-micro text-[var(--color-text-muted)]">Total</span>
+                <span className="anvl-heading text-2xl font-normal">${subtotal.toFixed(2)}</span>
+              </div>
+              <Button className="mt-6 w-full" onClick={() => navigate({ to: '/checkout' })}>
                 Checkout
               </Button>
+              <p className="anvl-micro mt-3 text-center text-[10px] text-[var(--color-text-muted)]">
+                Forged in Beirut · Secure checkout
+              </p>
             </aside>
           </div>
         )}

@@ -13,15 +13,16 @@ import { ActiveDropThemeProvider } from "@/app/providers/ActiveDropThemeProvider
 import { RouteAnalytics } from "@/app/providers/RouteAnalytics";
 import { AppErrorBoundary } from "@/app/components/AppErrorBoundary";
 import { runtimeClients } from "@/app/config/runtime";
-import { useLandingCms } from "@/features/cms/hooks/useLandingCms";
+import { useWebsiteNavigation } from "@/features/cms/hooks/useWebsiteNavigation";
+import { buildWebsiteNavigation } from "@/features/cms/navigation/websiteNavigation";
 import { SiteFooter } from "@/shared/components/layout/SiteFooter";
 import { PremiumNav } from "@/shared/components/layout/PremiumNav";
 import { MarketingToolsHead } from "@/shared/components/seo/MarketingToolsHead";
 import appCss from "@/styles.css?url";
-import manropeLatinWoff2 from "@fontsource/manrope/files/manrope-latin-400-normal.woff2?url";
-import bebasLatinWoff2 from "@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2?url";
+import soraLatinWoff2 from "@fontsource/sora/files/sora-latin-400-normal.woff2?url";
+import antonLatinWoff2 from "@fontsource/anton/files/anton-latin-400-normal.woff2?url";
+import cinzelLatinWoff2 from "@fontsource/cinzel/files/cinzel-latin-600-normal.woff2?url";
 
-import { composeLandingPageFromDrop } from '@/features/cms/landing/composeLandingPageFromDrop'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { fetchPublishedStorefrontProjection } from '@/features/cms/api/publicStorefrontPublication'
 import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
@@ -36,11 +37,10 @@ export const Route = createRootRoute({
         const p = await fetchPublishedStorefrontProjection(env);
         if (p) {
           return {
-            landing: composeLandingPageFromDrop(
-              structuredClone(p.drop),
-              structuredClone(p.layout),
-            ),
-            activeDrop: p.drop,
+            navigation: buildWebsiteNavigation(p.layout, {
+              emblemSrc: p.globalBrand.emblemFallbackUrl,
+              emblemAlt: "ANVL",
+            }),
             globalBrand: p.globalBrand,
             siteHomepage: p.siteHomepage,
           };
@@ -49,14 +49,14 @@ export const Route = createRootRoute({
         /* missing project / network */
       }
     }
-    const [landing, activeDrop] = await Promise.all([
-      runtimeClients.cms.getLandingCmsContent(),
-      runtimeClients.cms.getActiveDrop(),
-    ]);
+    const layout = await runtimeClients.siteSettings.getWebsiteLayout();
+    const globalBrand = createDefaultGlobalBrandSettings();
     return {
-      landing,
-      activeDrop,
-      globalBrand: createDefaultGlobalBrandSettings(),
+      navigation: buildWebsiteNavigation(layout, {
+        emblemSrc: globalBrand.emblemFallbackUrl,
+        emblemAlt: "ANVL",
+      }),
+      globalBrand,
       siteHomepage: { mode: 'custom' as const, updatedAt: new Date().toISOString() },
     };
   },
@@ -70,14 +70,21 @@ export const Route = createRootRoute({
       { rel: "stylesheet", href: appCss },
       {
         rel: "preload",
-        href: manropeLatinWoff2,
+        href: soraLatinWoff2,
         as: "font",
         type: "font/woff2",
         crossOrigin: "anonymous",
       },
       {
         rel: "preload",
-        href: bebasLatinWoff2,
+        href: antonLatinWoff2,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        href: cinzelLatinWoff2,
         as: "font",
         type: "font/woff2",
         crossOrigin: "anonymous",
@@ -107,13 +114,8 @@ function RootDocument({ children }: { children: ReactNode }) {
 }
 
 function RootLayout() {
-  const {
-    landing: ssrLanding,
-    activeDrop,
-    globalBrand,
-  } = Route.useLoaderData();
-  const landing = useLandingCms(ssrLanding);
-  const navigation = landing.navigation;
+  const { navigation: ssrNavigation, globalBrand } = Route.useLoaderData();
+  const navigation = useWebsiteNavigation(ssrNavigation);
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -149,14 +151,10 @@ function RootLayout() {
   return (
     <>
       <MarketingToolsHead />
-      <ActiveDropThemeProvider
-        initialDrop={activeDrop}
-        initialGlobalBrand={globalBrand}
-        applyDropTheme
-      >
+      <ActiveDropThemeProvider initialGlobalBrand={globalBrand}>
         <RouteAnalytics />
         <PremiumNav navigation={navigation} />
-        <main>
+        <main className="pt-[var(--anvl-header-h)]">
           <AppErrorBoundary resetKey={pathname}>
             <Outlet />
           </AppErrorBoundary>

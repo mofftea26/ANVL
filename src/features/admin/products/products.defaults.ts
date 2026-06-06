@@ -1,7 +1,6 @@
 ﻿import { productsMock } from '@/features/products/data/products.mock'
 import type { Product } from '@/features/products/types/product.types'
-import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
-import { DEFAULT_OATH_DROP_ID } from '@/features/admin/drops/drops.defaults'
+import { createCmsId } from '@/features/admin/lib/cmsId'
 import type { AdminProduct, ProductVariantAvailability } from './products.types'
 import { rebuildAvailabilityMatrix } from './products.matrix'
 
@@ -55,13 +54,13 @@ function legacyProductToAdmin(p: Product, nowIso: string): AdminProduct {
     saleStartsAt: undefined,
     saleEndsAt: undefined,
     currency: 'USD',
-    sourceType: 'drop',
+    sourceType: 'individual',
     category: 'Apparel',
     tags: [],
     colors,
     sizes,
     availability,
-    dropIds: [DEFAULT_OATH_DROP_ID],
+    dropIds: [],
     details: {
       fit: p.fit,
       fabric: p.fabric,

@@ -15,8 +15,6 @@ import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminMediaThumbPlaceholder } from '@/features/admin/components/AdminEmptyState'
 import { AdminPanel } from '@/features/admin/components/AdminPanel'
 import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
-import type { Drop } from '@/features/admin/drops/drops.types'
-import { useDropsList } from '@/features/admin/drops/useDrops'
 import {
   deleteAdminProduct,
   duplicateAdminProduct,
@@ -29,7 +27,6 @@ import type {
   ProductStatus,
 } from '@/features/admin/products/products.types'
 import { effectiveSellableUnits } from '@/features/admin/products/products.matrix'
-import { detachProductFromAllDrops } from '@/features/admin/drops/drops.service'
 import { AdminInput } from '@/features/admin/components/AdminInput'
 import { cn } from '@/shared/lib/cn'
 import { Modal } from '@/shared/components/ui/Modal'
@@ -54,8 +51,6 @@ type SortKey =
   | 'price_desc'
   | 'price_asc'
   | 'status'
-
-type GroupMode = 'flat' | 'by_drop'
 
 type StockFilter = 'all' | 'in_stock' | 'out_of_stock'
 
@@ -92,15 +87,6 @@ function stockSummary(p: AdminProduct): string {
   return `${total} units · ${avail}/${combinations} sellable combos`
 }
 
-function dropsLabel(dropIds: string[], drops: Drop[]): string {
-  if (!dropIds.length) return 'Unassigned'
-  const labels = dropIds
-    .map((id) => drops.find((d) => d.id === id)?.dropNumber ?? id)
-    .slice(0, 3)
-  const extra = dropIds.length > 3 ? ` +${dropIds.length - 3}` : ''
-  return `${labels.join(', ')}${extra}`
-}
-
 function hasSellableVariant(p: AdminProduct): boolean {
   return p.availability.some((row) => effectiveSellableUnits(row) > 0)
 }
@@ -110,7 +96,6 @@ function matchesFilters(
   opts: {
     q: string
     status: ProductStatus | 'all'
-    dropFilter: 'all' | 'none' | string
     sourceType: ProductSourceType | 'all'
     categoryQ: string
     colorQ: string
@@ -131,13 +116,6 @@ function matchesFilters(
     return false
   if (opts.stockFilter === 'in_stock' && !hasSellableVariant(p)) return false
   if (opts.stockFilter === 'out_of_stock' && hasSellableVariant(p))
-    return false
-  if (opts.dropFilter === 'none' && p.dropIds.length > 0) return false
-  if (
-    opts.dropFilter !== 'all' &&
-    opts.dropFilter !== 'none' &&
-    !p.dropIds.includes(opts.dropFilter)
-  )
     return false
   if (opts.updatedFrom) {
     const from = new Date(opts.updatedFrom)
@@ -188,12 +166,10 @@ function sortProducts(list: AdminProduct[], sortKey: SortKey): AdminProduct[] {
 function ProductsIndex() {
   const navigate = useNavigate()
   const products = useAdminProductsList()
-  const drops = useDropsList()
 
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search.trim().toLowerCase())
   const [status, setStatus] = useState<ProductStatus | 'all'>('all')
-  const [dropFilter, setDropFilter] = useState<'all' | 'none' | string>('all')
   const [sourceType, setSourceType] = useState<ProductSourceType | 'all'>(
     'all',
   )
@@ -203,7 +179,6 @@ function ProductsIndex() {
   const [updatedFrom, setUpdatedFrom] = useState('')
   const [updatedTo, setUpdatedTo] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('updated_desc')
-  const [groupMode, setGroupMode] = useState<GroupMode>('flat')
   const [pendingDelete, setPendingDelete] = useState<AdminProduct | null>(null)
   const deleteModalTitleId = useId()
 
@@ -216,7 +191,6 @@ function ProductsIndex() {
         {
           q: deferredSearch,
           status,
-          dropFilter,
           sourceType,
           categoryQ: cat,
           colorQ: col,
@@ -228,10 +202,8 @@ function ProductsIndex() {
     )
   }, [
     products,
-    drops,
     deferredSearch,
     status,
-    dropFilter,
     sourceType,
     categoryQ,
     colorQ,
@@ -244,23 +216,6 @@ function ProductsIndex() {
     () => sortProducts(filtered, sortKey),
     [filtered, sortKey],
   )
-
-  const grouped = useMemo(() => {
-    if (groupMode === 'flat') return null
-    const byDrop: { title: string; id: string; items: AdminProduct[] }[] = []
-    for (const d of drops) {
-      const items = sorted.filter((p) => p.dropIds.includes(d.id))
-      if (items.length) {
-        byDrop.push({
-          id: d.id,
-          title: `${d.dropNumber} · ${d.name}`,
-          items,
-        })
-      }
-    }
-    const individuals = sorted.filter((p) => p.dropIds.length === 0)
-    return { byDrop, individuals }
-  }, [groupMode, sorted, drops])
 
   const fieldClass = adminStackedFieldClass
 
@@ -317,10 +272,10 @@ function ProductsIndex() {
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
-                Drops
+                Category
               </p>
               <p className="text-[var(--color-text)]">
-                {dropsLabel(p.dropIds, drops)}
+                {p.category || '—'}
               </p>
             </div>
             <div>
@@ -421,23 +376,6 @@ function ProductsIndex() {
           </AdminNativeSelect>
         </label>
         <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-          Drop
-          <AdminNativeSelect
-            className={fieldClass}
-            value={dropFilter}
-            onChange={(e) => setDropFilter(e.target.value)}
-            aria-label="Filter by drop"
-          >
-            <option value="all">All drops</option>
-            <option value="none">Unassigned only</option>
-            {drops.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.dropNumber} · {d.name}
-              </option>
-            ))}
-          </AdminNativeSelect>
-        </label>
-        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
           Source
           <AdminNativeSelect
             className={fieldClass}
@@ -520,18 +458,6 @@ function ProductsIndex() {
             <option value="status">Status (A–Z)</option>
           </AdminNativeSelect>
         </label>
-        <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-          Grouping
-          <AdminNativeSelect
-            className={fieldClass}
-            value={groupMode}
-            onChange={(e) => setGroupMode(e.target.value as GroupMode)}
-            aria-label="Group products"
-          >
-            <option value="flat">Flat list</option>
-            <option value="by_drop">By drop + individuals</option>
-          </AdminNativeSelect>
-        </label>
       </AdminPanel>
 
       <p className="mb-6 text-sm text-[var(--color-text-muted)]">
@@ -540,34 +466,7 @@ function ProductsIndex() {
       </p>
 
       <div className="grid gap-5">
-        {groupMode === 'flat'
-          ? sorted.map((p) => renderCard(p))
-          : grouped ? (
-            <>
-              {grouped.byDrop.map((section) => (
-                <div key={section.id} className="space-y-3">
-                  <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--color-heading)]">
-                    {section.title}
-                  </h2>
-                  <div className="grid gap-5">{section.items.map((p) => renderCard(p))}</div>
-                </div>
-              ))}
-              <div className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--color-heading)]">
-                  Individual releases
-                </h2>
-                {grouped.individuals.length === 0 ? (
-                  <p className="text-sm text-[var(--color-text-muted)]">
-                    No unassigned products in this view.
-                  </p>
-                ) : (
-                  <div className="grid gap-5">
-                    {grouped.individuals.map((p) => renderCard(p))}
-                  </div>
-                )}
-              </div>
-            </>
-          ) : null}
+        {sorted.map((p) => renderCard(p))}
       </div>
 
       <Modal
@@ -580,8 +479,7 @@ function ProductsIndex() {
             Delete product?
           </h3>
           <p className="text-sm text-[var(--color-text-muted)]">
-            Removes {pendingDelete?.name ?? 'this product'} from the catalog and
-            every drop roster.
+            Removes {pendingDelete?.name ?? 'this product'} from the catalog.
           </p>
           <div className="flex justify-end gap-2">
             <AdminButton variant="ghost" size="sm" onClick={() => setPendingDelete(null)}>
@@ -592,7 +490,6 @@ function ProductsIndex() {
               size="sm"
               onClick={() => {
                 if (!pendingDelete) return
-                detachProductFromAllDrops(pendingDelete.id)
                 deleteAdminProduct(pendingDelete.id)
                 toast.success('Product deleted.')
                 setPendingDelete(null)

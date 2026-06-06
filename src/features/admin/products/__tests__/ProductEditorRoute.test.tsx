@@ -14,7 +14,6 @@ sampleProduct.id = 'prod-test-1'
 sampleProduct.name = 'Compression tee'
 
 const upsertMock = vi.fn()
-const persistLinksMock = vi.fn()
 const deleteMock = vi.fn()
 const flashSuccessMock = vi.fn()
 
@@ -27,19 +26,10 @@ vi.mock('@/features/admin/products/useAdminProducts', () => ({
     id === sampleProduct.id ? sampleProduct : undefined,
 }))
 
-vi.mock('@/features/admin/drops/useDrops', () => ({
-  useDropsList: () => [],
-}))
-
 vi.mock('@/features/admin/products/products.service', () => ({
   deleteAdminProduct: (...args: unknown[]) => deleteMock(...args),
   deriveSourceType: () => 'individual',
   upsertAdminProduct: (...args: unknown[]) => upsertMock(...args),
-}))
-
-vi.mock('@/features/admin/drops/drops.service', () => ({
-  detachProductFromAllDrops: vi.fn(),
-  persistProductDropLinks: (...args: unknown[]) => persistLinksMock(...args),
 }))
 
 vi.mock('@/features/admin/components/AdminLayout', async () => {
@@ -106,7 +96,6 @@ function renderProductEditor() {
 describe('ProductEditorRoute topbar actions', () => {
   beforeEach(() => {
     upsertMock.mockReset()
-    persistLinksMock.mockReset()
     deleteMock.mockReset()
   })
 
@@ -124,7 +113,6 @@ describe('ProductEditorRoute topbar actions', () => {
 
     await user.click(actions.getByRole('button', { name: /save product/i }))
     expect(upsertMock).toHaveBeenCalled()
-    expect(persistLinksMock).toHaveBeenCalled()
   })
 
   it('does not duplicate save controls in the page body', () => {

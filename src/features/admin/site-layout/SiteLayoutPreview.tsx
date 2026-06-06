@@ -1,16 +1,13 @@
-import { isActiveDropNavTemplateHref } from '@/features/admin/website-layout/websiteLayout.nav'
 import type { WebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.types'
 import { cn } from '@/shared/lib/cn'
 
 export type SiteLayoutPreviewProps = {
   layout: WebsiteLayoutContent
-  activeDropTitle: string
   className?: string
 }
 
 export function SiteLayoutPreview({
   layout,
-  activeDropTitle,
   className,
 }: SiteLayoutPreviewProps) {
   const visibleNav = layout.header.headerLinks.filter((l) => l.isVisible)
@@ -49,21 +46,14 @@ export function SiteLayoutPreview({
             No visible nav links
           </span>
         ) : (
-          visibleNav.map((link) => {
-            const dropSlot = isActiveDropNavTemplateHref(link.href)
-            const label = dropSlot ? activeDropTitle : link.label
-            return (
-              <span
-                key={link.id}
-                className="rounded-full border border-[var(--color-line)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text)]"
-              >
-                {label}
-                {dropSlot ? (
-                  <span className="ml-1 text-[var(--color-text-muted)]">/drop</span>
-                ) : null}
-              </span>
-            )
-          })
+          visibleNav.map((link) => (
+            <span
+              key={link.id}
+              className="rounded-full border border-[var(--color-line)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text)]"
+            >
+              {link.label}
+            </span>
+          ))
         )}
       </nav>
 

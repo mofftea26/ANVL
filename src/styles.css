@@ -1,14 +1,20 @@
-@import "@fontsource/bebas-neue/400.css";
-@import "@fontsource/manrope/400.css";
-@import "@fontsource/manrope/500.css";
-@import "@fontsource/manrope/600.css";
-@import "@fontsource/manrope/700.css";
+@import "@fontsource/anton/400.css";
+@import "@fontsource/sora/400.css";
+@import "@fontsource/sora/500.css";
+@import "@fontsource/sora/600.css";
+@import "@fontsource/sora/700.css";
+@import "@fontsource/cinzel/400.css";
+@import "@fontsource/cinzel/600.css";
 @import "tailwindcss";
-@import "./features/marketing/act-presets/shared/landingActResponsive.css";
 
 @theme {
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Bebas Neue", "Anton", "Oswald", "Impact", sans-serif;
+  /* Type pair chosen to echo the angular, condensed, blade-like ANVL logo.
+     Anton — heavy condensed industrial display (single weight, so `font-normal`
+     headings still read bold like the old Bebas). Sora — modern geometric
+     grotesk for body/UI. Cinzel stays only as the small heraldic accent. */
+  --font-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Anton", "Oswald", "Impact", sans-serif;
+  --font-display: "Cinzel", "Trajan Pro", "Anton", serif;
 }
 
 :root {
@@ -62,6 +68,11 @@
   --color-accent: #c7c2b8;
   --color-chip: rgba(52, 55, 58, 0.9);
   --color-hero-glow: rgba(231, 228, 223, 0.08);
+  /* Forged warrior accent — hot-iron bronze. Decorative layer on top of the
+     bone accent; used for banner hardware, ember glows, rules, small labels. */
+  --color-ember: #c2703d;
+  --color-ember-bright: #e08a4a;
+  --color-ember-soft: rgba(194, 112, 61, 0.16);
 }
 
 :root[data-theme="bone-light"] {
@@ -75,6 +86,10 @@
   --color-accent: #2f3135;
   --color-chip: rgba(29, 31, 33, 0.08);
   --color-hero-glow: rgba(29, 31, 33, 0.08);
+  /* Darker ember holds contrast on the bone-light backdrop. */
+  --color-ember: #9a4f24;
+  --color-ember-bright: #b8642f;
+  --color-ember-soft: rgba(154, 79, 36, 0.14);
 }
 
 /* Scrollbars — thin rails themed off `--color-*` (Firefox `scrollbar-color` + WebKit). */
@@ -184,6 +199,156 @@ a {
   letter-spacing: 0.16em;
   font-size: 0.65rem;
   color: var(--color-text-muted);
+}
+
+/* Heraldic display — inscriptional caps for warrior accent moments. Pair with
+   Bebas (`.anvl-heading`), never as body. Tight tracking keeps it monumental. */
+.anvl-display {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+/* Ember rule — a forged hairline that glows from a hot center (warrior dividers). */
+.anvl-ember-rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-ember) 70%, transparent) 50%,
+    transparent
+  );
+}
+
+/* Forge atmosphere motion — drifting embers + a faint banner sway. All gated
+   behind motion-safe via the reduced-motion block at the bottom of this file. */
+@keyframes anvl-ember-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate3d(var(--ember-dx, 12px), -120px, 0) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes anvl-banner-sway {
+  0%,
+  100% {
+    transform: rotate(-0.6deg);
+  }
+  50% {
+    transform: rotate(0.6deg);
+  }
+}
+
+.anvl-ember {
+  animation: anvl-ember-drift var(--ember-dur, 7s) linear infinite;
+}
+
+.anvl-banner-sway {
+  transform-origin: top center;
+  animation: anvl-banner-sway var(--sway-dur, 7s) ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anvl-ember,
+  .anvl-banner-sway {
+    animation: none !important;
+  }
+}
+
+/* ── Themed native form controls ────────────────────────────────────────────
+   Native checkboxes / radios / selects across the whole site pick up the forge
+   theme with no per-use class — restyle once here, reused everywhere. */
+:root {
+  accent-color: var(--color-ember);
+  color-scheme: dark;
+}
+:root[data-theme="bone-light"] {
+  color-scheme: light;
+}
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%23c2703d' stroke-width='1.6'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 0.7rem;
+  padding-right: 2.1rem;
+  cursor: pointer;
+}
+:root[data-theme="bone-light"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%239a4f24' stroke-width='1.6'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  display: inline-grid;
+  place-content: center;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition:
+    border-color var(--anvl-control-transition-duration) var(--anvl-control-transition-ease),
+    background-color var(--anvl-control-transition-duration) var(--anvl-control-transition-ease);
+}
+input[type="checkbox"] {
+  border-radius: 0.3rem;
+}
+input[type="radio"] {
+  border-radius: 9999px;
+}
+input[type="checkbox"]::before,
+input[type="radio"]::before {
+  content: "";
+  transform: scale(0);
+  transition: transform 140ms var(--anvl-control-transition-ease);
+  background: var(--color-bg);
+}
+input[type="checkbox"]::before {
+  width: 0.62rem;
+  height: 0.62rem;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+}
+input[type="radio"]::before {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+}
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+  border-color: var(--color-ember);
+  background: var(--color-ember);
+}
+input[type="checkbox"]:checked::before,
+input[type="radio"]:checked::before {
+  transform: scale(1);
+}
+input[type="checkbox"]:hover:not(:disabled),
+input[type="radio"]:hover:not(:disabled),
+select:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--color-ember) 55%, var(--color-line));
+}
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled,
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Landing act sections — min-height floor; height grows with content (no clip). */
@@ -591,6 +756,73 @@ a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11) {
   .brand-product-banner:hover .brand-product-banner__frame::after {
     animation-duration: 2.4s;
   }
+}
+
+/*
+ * The Oath landing — entry preloader + scroll cue. CSS-driven so the preloader
+ * works without JS and auto-dismisses under reduced motion (the global clamp
+ * collapses the veil to its final hidden state). No hydration risk (no JS state).
+ */
+@keyframes anvl-preloader-veil {
+  0%,
+  58% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes anvl-preloader-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes anvl-preloader-bar {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes anvl-scrollcue {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(250%);
+    opacity: 0;
+  }
+}
+
+.anvl-preloader {
+  animation: anvl-preloader-veil 2.4s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+
+.anvl-preloader-rise {
+  animation: anvl-preloader-rise 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.anvl-preloader-bar {
+  transform-origin: left center;
+  animation: anvl-preloader-bar 1.8s cubic-bezier(0.5, 0, 0.2, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

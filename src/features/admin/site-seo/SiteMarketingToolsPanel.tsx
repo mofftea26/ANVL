@@ -2,7 +2,7 @@ import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminEditableList } from '@/features/admin/components/AdminEditableList'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminInput } from '@/features/admin/components/AdminInput'
-import { createCmsId } from '@/features/admin/landing-cms/landingCms.ids'
+import { createCmsId } from '@/features/admin/lib/cmsId'
 import type {
   MarketingToolProvider,
   SiteSeoContent,

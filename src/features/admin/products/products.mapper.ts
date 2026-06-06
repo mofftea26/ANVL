@@ -1,4 +1,3 @@
-import { readDropsArray } from '@/features/admin/drops/drops.service'
 import type {
   Product,
   ProductShopMeta,
@@ -58,18 +57,7 @@ function computeStorefrontStatus(p: AdminProduct): StorefrontProductStatus {
   return 'available'
 }
 
-function dropsToShopFilterOptions(
-  drops: ReturnType<typeof readDropsArray>,
-): ShopDropFilterOption[] {
-  return drops.map((d) => ({
-    id: d.id,
-    slug: d.slug,
-    name: d.name,
-    dropNumber: d.dropNumber,
-  }))
-}
-
-/** Published storefront catalog uses {@link ShopDropFilterOption} rows instead of full {@link readDropsArray}. */
+/** Published storefront catalog uses {@link ShopDropFilterOption} rows from `catalog_drop_index`. */
 export function buildProductShopMetaFromDropIndex(
   p: AdminProduct,
   dropIndex: ShopDropFilterOption[],
@@ -124,7 +112,9 @@ export function buildProductShopMetaFromDropIndex(
 }
 
 function buildProductShopMeta(p: AdminProduct): ProductShopMeta {
-  return buildProductShopMetaFromDropIndex(p, dropsToShopFilterOptions(readDropsArray()))
+  // Local/seed catalog has no drop metadata source (the drop-builder was removed
+  // in the CMS teardown). The published Supabase path passes `catalog_drop_index`.
+  return buildProductShopMetaFromDropIndex(p, [])
 }
 
 export function adminProductToLegacy(

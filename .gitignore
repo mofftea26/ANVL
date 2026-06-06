@@ -11,3 +11,6 @@ dist-ssr
 .vinxi
 __unconfig*
 todos.json
+
+# MCP server config (local-only)
+.mcp.json

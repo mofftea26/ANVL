@@ -9,12 +9,7 @@ import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInpu
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
-import {
-  ensureDropSystemHydrated,
-  getActiveDrop,
-} from '@/features/admin/drops/drops.service'
-import type { CmsLinkItem } from '@/features/admin/landing-cms/landingCms.types'
-import { isActiveDropNavTemplateHref } from '@/features/admin/website-layout/websiteLayout.nav'
+import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 import {
   getWebsiteLayoutContent,
   getWebsiteLayoutSaveError,
@@ -28,7 +23,6 @@ import type {
 import { MediaPickerField } from '@/shared/components/ui/MediaPickerField'
 import { cn } from '@/shared/lib/cn'
 import {
-  emptyDropCampaignLink,
   emptyGroup,
   emptyLink,
   emptySocial,
@@ -50,34 +44,16 @@ const LAYOUT_TABS = [
 
 type LayoutTabId = (typeof LAYOUT_TABS)[number]['id']
 
-const DROP_SLOT_NOTE =
-  'Active campaign slot — live site uses the active drop title and /drop/<slug>.'
-
 export function SiteLayoutEditor() {
   const setPageActions = useAdminPageActions()
   const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const [layout, setLayout] = useState<WebsiteLayoutContent>(() =>
     getWebsiteLayoutContent(),
   )
-  const [activeDropTitle, setActiveDropTitle] = useState('')
   const [activeTab, setActiveTab] = useState<LayoutTabId>('header')
   const [saving, setSaving] = useState(false)
   const [homeExtras, setHomeExtras] = useState<SiteHomeExtrasContent>(() =>
     getSiteHomeExtrasContent(),
-  )
-
-  useEffect(() => {
-    ensureDropSystemHydrated()
-    const drop = getActiveDrop()
-    setActiveDropTitle(drop?.title?.trim() ? drop.title : 'No active drop')
-  }, [])
-
-  const headerDropSlotCount = useMemo(
-    () =>
-      layout.header.headerLinks.filter((l) =>
-        isActiveDropNavTemplateHref(l.href),
-      ).length,
-    [layout.header.headerLinks],
   )
 
   const saveError = getWebsiteLayoutSaveError(layout)
@@ -245,58 +221,29 @@ export function SiteLayoutEditor() {
             </div>
 
             <div className="mt-8 space-y-4">
-              <p className="text-xs text-[var(--color-text-muted)]">
-                URLs starting with{' '}
-                <code className="rounded bg-[var(--color-surface)] px-1">
-                  /drop/
-                </code>{' '}
-                are the campaign slot — the storefront uses the active drop (
-                {activeDropTitle}).
-              </p>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs uppercase tracking-[0.26em] text-[var(--color-text-muted)]">
                   Desktop navigation
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {saveError ? (
-                    <AdminButton
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      onClick={() =>
-                        patchHeader({
-                          headerLinks: [
-                            ...layout.header.headerLinks,
-                            emptyDropCampaignLink(),
-                          ],
-                        })
-                      }
-                    >
-                      <Plus size={14} className="mr-1" aria-hidden="true" />
-                      Add /drop/ campaign slot
-                    </AdminButton>
-                  ) : null}
-                  <AdminButton
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      patchHeader({
-                        headerLinks: [...layout.header.headerLinks, emptyLink()],
-                      })
-                    }
-                  >
-                    <Plus size={14} className="mr-1" aria-hidden="true" />
-                    Add link
-                  </AdminButton>
-                </div>
+                <AdminButton
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    patchHeader({
+                      headerLinks: [...layout.header.headerLinks, emptyLink()],
+                    })
+                  }
+                >
+                  <Plus size={14} className="mr-1" aria-hidden="true" />
+                  Add link
+                </AdminButton>
               </div>
               <div className="space-y-3">
                 {layout.header.headerLinks.map((link, index) => (
                   <NavLinkRow
                     key={link.id}
                     link={link}
-                    dropSlotCount={headerDropSlotCount}
                     onUpdate={(next) => updateHeaderLink(index, next)}
                     onRemove={() =>
                       patchHeader({
@@ -522,7 +469,7 @@ export function SiteLayoutEditor() {
               <AdminFormField label="Announcement link (optional)">
                 <AdminInput
                   value={layout.header.announcement.href ?? ''}
-                  placeholder="/drop/the-oath"
+                  placeholder="/shop"
                   onChange={(e) =>
                     patchHeader({
                       announcement: {
@@ -562,10 +509,7 @@ export function SiteLayoutEditor() {
             Preview
           </summary>
           <div className="border-t border-[var(--color-line)] p-0 sm:p-4 lg:border-0 lg:p-0">
-            <SiteLayoutPreview
-              layout={layout}
-              activeDropTitle={activeDropTitle}
-            />
+            <SiteLayoutPreview layout={layout} />
           </div>
         </details>
       </div>
@@ -573,51 +517,31 @@ export function SiteLayoutEditor() {
   )
 }
 
-function DropSlotNote() {
-  return (
-    <div className="md:col-span-2 rounded-lg border border-dashed border-[var(--color-line)] bg-[var(--color-bg)]/60 p-3 text-xs text-[var(--color-text-muted)]">
-      <p className="font-medium text-[var(--color-text)]">{DROP_SLOT_NOTE}</p>
-    </div>
-  )
-}
-
 function NavLinkRow({
   link,
-  dropSlotCount,
   onUpdate,
   onRemove,
 }: {
   link: CmsLinkItem
-  dropSlotCount?: number
   onUpdate: (next: Partial<CmsLinkItem>) => void
   onRemove: () => void
 }) {
-  const dropSlot = isActiveDropNavTemplateHref(link.href)
-  const blockDeleteDropSlot =
-    dropSlot && dropSlotCount !== undefined && dropSlotCount === 1
-
   return (
     <div
       className="grid gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-bg)]/40 p-4 md:grid-cols-[1fr_1fr_auto_auto]"
     >
-      {dropSlot ? (
-        <DropSlotNote />
-      ) : (
-        <>
-          <AdminFormField label="Label">
-            <AdminInput
-              value={link.label}
-              onChange={(e) => onUpdate({ label: e.target.value })}
-            />
-          </AdminFormField>
-          <AdminFormField label="Href">
-            <AdminInput
-              value={link.href}
-              onChange={(e) => onUpdate({ href: e.target.value })}
-            />
-          </AdminFormField>
-        </>
-      )}
+      <AdminFormField label="Label">
+        <AdminInput
+          value={link.label}
+          onChange={(e) => onUpdate({ label: e.target.value })}
+        />
+      </AdminFormField>
+      <AdminFormField label="Href">
+        <AdminInput
+          value={link.href}
+          onChange={(e) => onUpdate({ href: e.target.value })}
+        />
+      </AdminFormField>
       <AdminCheckbox
         label="Visible"
         className="text-xs"
@@ -628,12 +552,6 @@ function NavLinkRow({
         type="button"
         variant="ghost"
         size="sm"
-        disabled={blockDeleteDropSlot}
-        title={
-          blockDeleteDropSlot
-            ? 'Desktop navigation must keep at least one /drop/ campaign slot.'
-            : undefined
-        }
         onClick={onRemove}
       >
         <Trash2 size={14} aria-hidden="true" />
@@ -721,36 +639,29 @@ function FooterGroupsSection({
           </div>
           <div className="space-y-3">
             {group.links.map((link, li) => {
-              const dropSlot = isActiveDropNavTemplateHref(link.href)
               return (
                 <div
                   key={link.id}
                   className="grid gap-3 rounded-xl border border-[var(--color-line)]/80 p-3 md:grid-cols-[1fr_1fr_auto_auto]"
                 >
-                  {dropSlot ? (
-                    <DropSlotNote />
-                  ) : (
-                    <>
-                      <AdminFormField label="Label">
-                        <AdminInput
-                          value={link.label}
-                          onChange={(e) =>
-                            onUpdateGroupLink(gi, li, {
-                              label: e.target.value,
-                            })
-                          }
-                        />
-                      </AdminFormField>
-                      <AdminFormField label="Href">
-                        <AdminInput
-                          value={link.href}
-                          onChange={(e) =>
-                            onUpdateGroupLink(gi, li, { href: e.target.value })
-                          }
-                        />
-                      </AdminFormField>
-                    </>
-                  )}
+                  <AdminFormField label="Label">
+                    <AdminInput
+                      value={link.label}
+                      onChange={(e) =>
+                        onUpdateGroupLink(gi, li, {
+                          label: e.target.value,
+                        })
+                      }
+                    />
+                  </AdminFormField>
+                  <AdminFormField label="Href">
+                    <AdminInput
+                      value={link.href}
+                      onChange={(e) =>
+                        onUpdateGroupLink(gi, li, { href: e.target.value })
+                      }
+                    />
+                  </AdminFormField>
                   <AdminCheckbox
                     label="Visible"
                     className="text-xs"

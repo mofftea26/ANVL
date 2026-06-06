@@ -1,99 +1,31 @@
 import type { CmsClient } from '@/app/config/clients'
-import type { Drop } from '@/features/drops/drop.types'
-import {
-  deleteDrop,
-  duplicateDrop,
-  readDropsArray,
-  scheduleDropActivation,
-  deactivateDrop,
-  setActiveDrop,
-} from '@/features/admin/drops/drops.service'
-import { getLandingCmsContent } from '@/features/admin/landing-cms/landingCms.service'
-import type { AdminDropListItem } from '@/features/cms/types/adminDrops.types'
-import { cmsMockData } from '@/features/cms/data/cms.mock'
-import type { HomePageContent } from '@/features/cms/types/cms.types'
-import { resolveStorefrontActiveDrop } from '@/features/cms/runtime/storefrontCmsSync'
-import { adminDropListVisualsFromDrop } from '@/features/admin/drops/adminDropListItemVisuals'
+import type { WebsiteLayoutContent } from '@/features/cms/layout/websiteLayout.types'
+import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
 import { readSiteHomepageFromStorage } from '@/features/cms/siteHomepage.settings'
 
-function dropToAdminListItem(d: Drop): AdminDropListItem {
-  return {
-    id: d.id,
-    slug: d.slug,
-    title: d.title,
-    name: d.name,
-    dropNumber: d.dropNumber,
-    status: d.status,
-    isActive: d.isActive,
-    releaseDate: d.releaseDate,
-    scheduledActivationAt: d.scheduledActivationAt,
-    productCount: d.productIds.length,
-    updatedAt: d.updatedAt,
-    createdAt: d.createdAt,
-    ...adminDropListVisualsFromDrop(d),
+function announcementBarFromLayout(layout: WebsiteLayoutContent) {
+  const a = layout.header.announcement
+  if (a?.enabled && a.message.trim()) {
+    return {
+      message: a.message,
+      ctaLabel: a.href?.trim() ? 'Open' : '',
+      ctaHref: a.href?.trim() ?? '#',
+    }
   }
-}
-
-/** Push local drop mutations to Supabase before the list refetches remote rows. */
-async function flushAdminCmsToSupabaseIfConfigured(): Promise<void> {
-  const { getSupabasePublicEnv } = await import(
-    '@/features/cms/api/supabasePublicEnv'
-  )
-  if (!getSupabasePublicEnv()) return
-  const { flushAdminCmsRemoteSync } = await import(
-    '@/features/admin/cmsRemote/adminCmsRemoteSync'
-  )
-  const result = await flushAdminCmsRemoteSync()
-  if (!result.ok) {
-    throw new Error(result.error)
-  }
-}
-
-function toLegacyHomepage(): HomePageContent {
-  const landing = getLandingCmsContent()
-  return {
-    hero: {
-      title: landing.hero.title,
-      subtitle: landing.hero.subtitle,
-      primaryCta: landing.hero.primaryCta,
-      secondaryCta: landing.hero.secondaryCta,
-    },
-    manifesto: {
-      heading: landing.manifesto.heading,
-      lines: landing.manifesto.tenets
-        .filter((tenet) => tenet.isVisible)
-        .map((tenet) => tenet.text),
-    },
-    materials: landing.materials.materials
-      .filter((material) => material.isVisible)
-      .map((material) => ({
-        title: material.title,
-        description: material.description,
-      })),
-  }
+  return { message: '', ctaLabel: '', ctaHref: '#' }
 }
 
 /**
- * Browser CMS adapter — reads persisted admin/editor state from localStorage-backed services.
- * Do not import this module from SSR entrypoints; use `seedCmsClient` via `createRuntimeClients`.
- * TODO: replace with authenticated CMS/API client when the backend ships.
+ * Browser CMS adapter — chrome (nav/announcement) reads the persisted website
+ * layout; campaigns/lookbook from the site-home service. Do not import from SSR
+ * entrypoints; use `seedCmsClient` via `createRuntimeClients`.
  */
 export const localStorageCmsClient: CmsClient = {
-  async getActiveDrop() {
-    return resolveStorefrontActiveDrop()
-  },
-  async getLandingCmsContent() {
-    return getLandingCmsContent()
-  },
-  async getHomepageContent() {
-    return toLegacyHomepage()
-  },
   async getAnnouncementBar() {
-    return cmsMockData.announcementBar
+    return announcementBarFromLayout(getWebsiteLayoutContent())
   },
   async getNavigation() {
-    const landing = getLandingCmsContent()
-    return landing.navigation.headerLinks
+    return getWebsiteLayoutContent().header.headerLinks
       .filter((link) => link.isVisible)
       .map((link) => ({ label: link.label, href: link.href }))
   },
@@ -108,51 +40,6 @@ export const localStorageCmsClient: CmsClient = {
       '@/features/admin/site-home/siteHome.service'
     )
     return getSiteHomeLookbook()
-  },
-  async getAdminDropsList() {
-    return readDropsArray().map(dropToAdminListItem)
-  },
-  async duplicateAdminDrop(id) {
-    const created = duplicateDrop(id)
-    if (!created) return null
-    await flushAdminCmsToSupabaseIfConfigured()
-    return dropToAdminListItem(created)
-  },
-  async setAdminActiveDrop(id) {
-    setActiveDrop(id)
-    const { publishStorefrontDropByClientId } = await import(
-      '@/features/admin/cmsRemote/adminCmsPublish'
-    )
-    const published = await publishStorefrontDropByClientId(id)
-    if (!published.ok) {
-      throw new Error(published.error)
-    }
-    const { rehydrateAdminCmsFromRemote } = await import(
-      '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'
-    )
-    await rehydrateAdminCmsFromRemote()
-  },
-  async deactivateAdminDrop(id) {
-    deactivateDrop(id)
-    const { clearStorefrontActiveDrop } = await import(
-      '@/features/admin/cmsRemote/adminCmsPublish'
-    )
-    const cleared = await clearStorefrontActiveDrop()
-    if (!cleared.ok) {
-      throw new Error(cleared.error)
-    }
-    const { rehydrateAdminCmsFromRemote } = await import(
-      '@/features/admin/cmsRemote/rehydrateAdminCmsFromRemote'
-    )
-    await rehydrateAdminCmsFromRemote()
-  },
-  async scheduleAdminDrop(id, activationIso) {
-    scheduleDropActivation(id, activationIso)
-    await flushAdminCmsToSupabaseIfConfigured()
-  },
-  async deleteAdminDrop(id) {
-    deleteDrop(id)
-    await flushAdminCmsToSupabaseIfConfigured()
   },
   async getSiteHomepage() {
     return readSiteHomepageFromStorage()
