@@ -5,30 +5,31 @@ import { OathCtaLink } from './OathCtaLink'
 import { ScrollCue } from './ScrollCue'
 
 /**
- * Scene 01 — Hero. A forge film plays as a full-bleed background at normal
- * playback (smooth — no frame-by-frame scroll seeking, which stuttered). Scroll
- * drives only GPU transforms: the media does a slow Ken-Burns push while the
- * title card drifts up, the veil deepens, and the section releases into the
- * forge. The headline masks in word-by-word with a drawing ember underline and a
- * one-shot light sweep. Mobile loops muted; reduced motion holds a still frame.
+ * Scene 01 — Hero. The forge film is anchored to the **right** of the title and
+ * rendered smaller than full-bleed (so a low-res source upscales less and stays
+ * crisp), then **blended into the dark title column** by a left→right fade so it
+ * still reads as one continuous background rather than a panel. The frame is
+ * driven by scroll progress (see `buildHero`); cropping favours the top
+ * (`object-top`) so the important upper part is never cut. On mobile it falls
+ * back to a full-bleed backdrop with a bottom veil for legibility.
  */
 export function CinematicHero() {
   return (
     <section
       data-scene="hero"
-      className="relative -mt-[var(--anvl-header-h)] flex h-[100svh] w-full items-end overflow-hidden bg-[var(--color-bg)]"
+      className="relative flex h-[var(--anvl-section-h)] w-full items-end bg-[var(--color-bg)]"
       aria-label="ANVL Athletics — Drop 01, The Oath"
     >
-      {/* Media layer extends up behind the transparent header (which sits over
-          the hero) while the content below stays clear of it. The video frame
-          is driven by scroll progress — see `buildHero`. */}
+      {/* Media: full-bleed on mobile, right ~58% on desktop. Extends up behind
+          the transparent header so it reaches the top edge. Crops from the
+          bottom (`object-top`). Frame driven by scroll — see `buildHero`. */}
       <div
         data-hero-media
-        className="absolute inset-x-0 bottom-0 top-[calc(-1*var(--anvl-header-h))] z-0 will-change-transform"
+        className="hero-media-blend absolute inset-x-0 bottom-0 top-[calc(-1*var(--anvl-header-h))] z-0 will-change-transform md:left-[18%]"
       >
         <video
           data-hero-video
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover object-top"
           src="/videos/WarriorHero1.mp4"
           muted
           playsInline
@@ -38,28 +39,40 @@ export function CinematicHero() {
         />
       </div>
 
-      {/* Legibility veil — deepens as you scroll away. */}
+      {/* Desktop legibility wash under the title (the video itself is masked to
+          fade, so this is gentle). Tagged as the veil so the scroll deepen
+          still applies. */}
       <div
         data-hero-veil
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-[1]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 top-[calc(-1*var(--anvl-header-h))] z-[1] hidden md:block"
         style={{
           background:
-            'linear-gradient(0deg, rgba(11,11,12,0.92) 0%, rgba(11,11,12,0.45) 38%, rgba(11,11,12,0.12) 70%, rgba(11,11,12,0.35) 100%)',
+            'linear-gradient(90deg, rgba(11,11,12,0.92) 0%, rgba(11,11,12,0.55) 34%, rgba(11,11,12,0.12) 58%, transparent 76%)',
+        }}
+      />
+      {/* Mobile legibility veil — bottom-up over the full-bleed video. */}
+      <div
+        data-hero-veil
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-[1] md:hidden"
+        style={{
+          background:
+            'linear-gradient(0deg, rgba(11,11,12,0.94) 0%, rgba(11,11,12,0.45) 42%, rgba(11,11,12,0.15) 80%)',
+        }}
+      />
+      {/* Shared vignette + ember floor glow. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 top-[calc(-1*var(--anvl-header-h))] z-[1]"
+        style={{
+          background:
+            'radial-gradient(ellipse 110% 90% at 60% 55%, transparent 38%, rgba(0,0,0,0.5) 100%)',
         }}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-[1]"
-        style={{
-          background:
-            'radial-gradient(ellipse 100% 90% at 50% 60%, transparent 32%, rgba(0,0,0,0.6) 100%)',
-        }}
-      />
-      {/* Ember floor glow rising from the bottom edge. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[45%]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[40%]"
         style={{
           background:
             'radial-gradient(120% 100% at 50% 100%, var(--color-ember-soft) 0%, transparent 60%)',
@@ -68,8 +81,7 @@ export function CinematicHero() {
       <GrainOverlay />
 
       <Container className="relative z-10 w-full pb-16 md:pb-24">
-        <div data-hero-content className="max-w-5xl will-change-transform">
-          {/* Eyebrow + side index. */}
+        <div data-hero-content className="max-w-xl will-change-transform md:max-w-[48%]">
           <div data-hero-fade className="flex items-center gap-4">
             <span className="anvl-display inline-flex items-center gap-2.5 text-xs tracking-[0.34em] text-[var(--color-ember-bright)] before:h-px before:w-10 before:bg-[var(--color-ember)] before:content-['']">
               {OATH_HERO.eyebrow}
@@ -77,7 +89,7 @@ export function CinematicHero() {
           </div>
 
           {/* Title — word mask-in. */}
-          <h1 className="anvl-heading mt-5 font-normal leading-[0.8] tracking-[-0.01em] text-[clamp(3rem,12vw,10rem)]">
+          <h1 className="anvl-heading mt-5 font-normal leading-[0.82] tracking-[-0.01em] text-[clamp(2.75rem,8vw,7rem)]">
             {OATH_HERO.title.split(' ').map((word, i) => (
               <span key={`${word}-${i}`} data-hero-line className="block overflow-hidden pb-[0.06em]">
                 <span data-hero-line-inner className="inline-block will-change-transform">
@@ -88,7 +100,7 @@ export function CinematicHero() {
           </h1>
 
           {/* Drawing ember underline. */}
-          <div className="mt-4 h-[2px] w-full max-w-md origin-left">
+          <div className="mt-4 h-[2px] w-full max-w-sm origin-left">
             <div
               data-hero-underline
               className="h-full w-full origin-left"
@@ -101,7 +113,7 @@ export function CinematicHero() {
 
           <p
             data-hero-fade
-            className="mt-7 max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-[15px] md:text-base"
+            className="mt-7 max-w-md text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-[15px] md:text-base"
           >
             {OATH_HERO.subhead}
           </p>

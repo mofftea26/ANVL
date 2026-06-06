@@ -22,10 +22,23 @@ const STATIC = '(max-width: 767.98px), (prefers-reduced-motion: reduce)'
 
 type Selector = (sel: string) => HTMLElement[]
 
+/** Pixel height of the fixed header, read from `--anvl-header-h` (SSR-safe). */
+function headerOffsetPx(): number {
+  if (typeof window === 'undefined') return 64
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--anvl-header-h')
+    .trim()
+  if (raw.endsWith('rem')) return parseFloat(raw) * 16
+  if (raw.endsWith('px')) return parseFloat(raw)
+  return 64
+}
+
 function pinTrigger(trigger: Element, endPct: number) {
   return {
     trigger,
-    start: 'top top',
+    // Pin just below the fixed header so the pinned frame fills the area under
+    // the bar (no gap, content never hidden behind the nav).
+    start: () => `top top+=${headerOffsetPx()}`,
     end: `+=${Math.round(endPct)}%`,
     pin: true,
     scrub: 1 as const,
@@ -56,25 +69,30 @@ function buildHero(host: HTMLElement, q: Selector, intensity: number) {
     if (primed && typeof primed.then === 'function') primed.then(() => video.pause()).catch(() => {})
     else video.pause()
 
-    // Pin the hero; scroll progress drives the video's playback frame-by-frame,
-    // while the title card parallaxes up and the veil deepens into the forge.
+    // Pin the hero just below the fixed header (so the pinned frame fills the
+    // area under the bar, no gap); scroll progress drives the video playback
+    // frame-by-frame, while the title card parallaxes up and the veil deepens.
     const proxy = { p: 0 }
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: hero,
-        start: 'top top',
-        end: `+=${Math.round(180 * intensity)}%`,
+        start: () => `top top+=${headerOffsetPx()}`,
+        end: `+=${Math.round(150 * intensity)}%`,
         pin: true,
         scrub: 1,
         anticipatePin: 1,
         invalidateOnRefresh: true,
       },
     })
+    // Video progress spans the ENTIRE pin (explicit duration:1) so it never
+    // finishes early and stalls — it reaches the last frame exactly as the
+    // title card bleeds out and the section releases into the forge.
     tl.to(
       proxy,
       {
         p: 1,
         ease: 'none',
+        duration: 1,
         onUpdate: () => {
           const d = video.duration
           if (d && Number.isFinite(d)) {
@@ -91,9 +109,9 @@ function buildHero(host: HTMLElement, q: Selector, intensity: number) {
       },
       0,
     )
-    tl.to(q('[data-hero-veil]'), { opacity: 1.1, ease: 'none' }, 0)
-    tl.to(q('[data-hero-content]'), { yPercent: -12 * intensity, ease: 'none' }, 0)
-    tl.to(q('[data-hero-content]'), { opacity: 0, y: -24, duration: 0.2 }, 0.82)
+    tl.to(q('[data-hero-veil]'), { opacity: 1.1, ease: 'none', duration: 1 }, 0)
+    tl.to(q('[data-hero-content]'), { yPercent: -12 * intensity, ease: 'none', duration: 1 }, 0)
+    tl.to(q('[data-hero-content]'), { opacity: 0, y: -24, duration: 0.2 }, 0.8)
     return
   }
 
