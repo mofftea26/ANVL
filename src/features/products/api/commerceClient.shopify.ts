@@ -1,5 +1,4 @@
 import type { CommerceClient } from '@/app/config/clients'
-import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
 import {
   SHOPIFY_PRODUCT_BY_HANDLE_QUERY,
@@ -10,8 +9,8 @@ import {
   mapShopifyProductNodeToStorefront,
   parseShopifyProductNode,
 } from '@/features/shopify/mappers/shopifyProductToStorefront'
-import { supabaseCommerceClient } from '@/features/products/api/commerceClient.supabase'
 import { seedCommerceClient } from '@/features/products/api/commerceClient.seed'
+import { localStorageCommerceClient } from '@/features/products/api/commerceClient.localStorage'
 import type { Product } from '@/features/products/types/product.types'
 
 const LIST_FIRST = 100
@@ -62,8 +61,7 @@ async function withCommerceFallback<T>(
 }
 
 function offlineCommerce(): CommerceClient {
-  if (getSupabasePublicEnv()) return supabaseCommerceClient
-  return seedCommerceClient
+  return typeof window === 'undefined' ? seedCommerceClient : localStorageCommerceClient
 }
 
 export const shopifyCommerceClient: CommerceClient = {

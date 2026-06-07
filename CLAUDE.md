@@ -26,7 +26,7 @@ The current phase uses local/mock adapters where a real backend does not yet exi
   - `--anvl-washed-charcoal: #34373A`
   - `--anvl-graphite: #5B5E61`
   - `--anvl-bone: #E7E4DF`
-- **Fonts:** Bebas Neue (headings — bold condensed uppercase), Manrope (body — clean modern sans)
+- **Fonts:** Anton (headings — heavy condensed uppercase), Sora (body — clean modern sans), Cinzel (heraldic display accent)
 - **Themes:** `oath-dark` (default), `bone-light` (future editorial mode) — driven by `data-theme` on `:root`
 - The global ANVL logo (header/footer) must never change per drop. Campaign logos/emblems are drop-section-only visuals.
 
@@ -116,11 +116,11 @@ src/
   app/
     config/          clients.ts (interfaces), runtime.ts (wiring), publicEnv.ts (env validation)
     components/      AppErrorBoundary, AdminErrorBoundary
-    providers/       AppProviders, ActiveDropThemeProvider, RouteAnalytics
+    providers/       AppProviders, SiteThemeProvider, RouteAnalytics
     seo/             meta.ts (buildSeoMeta)
   content/           seed data + mocks
   features/
-    admin/           Full CMS editor — auth, drops editor, products editor, media, seo, site settings
+    admin/           Slim CMS — active drop, theme, fonts, assets, settings (+ auth)
     analytics/       Analytics client mock + hooks
     cart/            Zustand cart store + hooks
     checkout/        Forms, schemas, payment config + mock adapters
@@ -141,7 +141,7 @@ src/
     checkout/
     account/         Customer account (stub)
     auth/            Sign in / sign up / forgot password
-    admin/           Full CMS admin (lazy loaded routes)
+    admin/           Slim CMS admin routes: dashboard, theme, fonts, assets, settings
   shared/
     api/contracts/   Typed DTOs for future REST/BFF
     assets/brand/    Inline SVG logo components (AnvlWordmark, AnvlCrest, etc.)
@@ -162,7 +162,7 @@ src/
   routeTree.gen.ts   AUTO-GENERATED — never edit directly
 supabase/
   migrations/        Ordered SQL migration files
-  functions/         Edge Functions (process-scheduled-drops, publish-storefront, shopify-webhook)
+  functions/         Edge Functions (shopify-webhook)
 scripts/
   repatch-admin-route-tree.mjs  Patches routeTree.gen.ts for admin segment (runs before dev/build/typecheck)
 public/brand/        Raster + downloadable logo/asset exports
@@ -211,28 +211,25 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 | Table | Purpose | RLS |
 |---|---|---|
 | `public.cms_profiles` | Links `auth.users` to CMS role (`viewer\|editor\|admin`) | Read own row |
-| `public.anvl_drops` | Campaign drop rows; `draft_body` is editor source of truth | CMS roles only (no anon) |
-| `public.storefront_publication` | Singleton published snapshot for storefront SSR | Public read, editor update |
-| `public.cms_admin_products` | Editorial product catalog | CMS roles only |
-| `public.cms_media_assets` | Media library (added in later migration) | CMS roles only |
+| `public.cms_settings` | Singleton: active drop key, theme, fonts, asset slot map | Public read, editor update |
+| `public.landing_pages` | Picker metadata (keys must match code registry) | Public read available rows |
+| `public.storefront_publication` | Anon-readable mirror: theme, fonts, assets, media_index, active key | Public read, editor update |
+| `public.cms_media_assets` | Media library + asset assignments | CMS roles only |
 
 ### Rules
 
 - **Row Level Security is always on.** Never disable RLS on a table.
-- Only users with `cms_profiles.role = 'admin'` may access `/admin`. Editors may edit drops; viewers read-only.
-- `storefront_publication` is the **only** Supabase table readable by `anon`. Storefront SSR reads from it.
+- Only users with `cms_profiles.role = 'admin'` may access `/admin`. Editors may edit CMS config; viewers read-only.
+- `storefront_publication` is the **primary** Supabase read for storefront SSR (anon-safe). `cms_settings` is the editor source of truth.
 - Admin Supabase client uses browser storage key `anvl.supabase.admin.v1`.
 - `SUPABASE_SERVICE_ROLE_KEY` is **never** bundled in client code. It is for migrations and privileged server scripts only.
-- All data written to `anvl_drops` must pass Zod validation before insert/update.
+- All CMS JSON writes must pass Zod validation (`cmsSiteConfig.zod.ts`) before Supabase upsert.
 - Before any schema change: document current schema → target schema → migration steps → risks → rollback plan.
-- Published storefront state flows: admin edits `draft_body` → publishes → `cms_publish_drop()` RPC atomically promotes to `active` and writes to `storefront_publication`.
+- Published storefront state flows: admin edits local working copy → `adminCmsRemoteSync` → `cms_settings` + `storefront_publication` mirror.
 
 ### Edge Functions
 
-- `publish-storefront` — Publishes drop to storefront publication table
-- `process-scheduled-drops` — Activates drops at scheduled time (via pg_cron)
-- `shopify-webhook` — Handles Shopify product sync webhooks
-- `medusa-webhook-stub` — Stub for future Medusa integration
+- `shopify-webhook` — Ack-only webhook receiver (no product snapshot writes)
 
 ---
 
@@ -241,12 +238,22 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 ### Architecture
 
 The CMS is split into two surfaces:
-1. **Admin CMS** (`src/features/admin/`) — Full editor UI, draft management, product editor, site settings
-2. **Storefront CMS reads** (`src/features/cms/`) — Read-only public-facing adapters
+1. **Admin CMS** (`src/features/admin/`) — Four editors: active drop, theme & colors, fonts, assets (+ settings)
+2. **Storefront CMS reads** (`src/features/cms/`) — Read-only projection: theme, fonts, assets, active landing key
 
-**Flow:** `admin edits draft → publishes → storefront reads published snapshot`
+**Flow:** `admin edits → adminCmsRemoteSync → cms_settings + storefront_publication mirror → SSR reads projection`
 
-Storefront never reads admin draft data. The `storefront_publication` table is the only bridge.
+Storefront never reads admin draft data directly. Landing page **content** is code-owned; CMS only picks which page is active and overrides theme/fonts/asset slots.
+
+### Admin routes
+
+| Route | Purpose |
+|---|---|
+| `/admin` | Active drop picker (Supabase `landing_pages` ∩ registry) |
+| `/admin/theme` | Palette + `dataTheme` mode |
+| `/admin/fonts` | `--font-sans`, `--font-heading`, `--font-display` family names |
+| `/admin/assets` | Media library + general/per-drop slot assignments |
+| `/admin/settings` | Session + local reset |
 
 ### localStorage Adapter Pattern
 
@@ -258,12 +265,10 @@ Every localStorage-backed adapter uses `createJsonStore<TSchema>({ key, schema, 
 ### CMS Data Flow
 
 ```
-Admin editor (localStorage draft)
-  → sync debounce → Supabase anvl_drops.draft_body
-  → admin publishes → cms_publish_drop() RPC
-  → storefront_publication updated
-  → SSR reads storefront_publication (anon-safe)
-  → browser reads same + local overrides for preview
+Admin editor (localStorage working copy)
+  → adminCmsRemoteSync → cms_settings + storefront_publication
+  → SSR loadStorefrontProjection()
+  → SiteThemeProvider (CSS vars) + resolvePublishedAssets → LandingPageRenderer
 ```
 
 ### Rules
@@ -271,23 +276,21 @@ Admin editor (localStorage draft)
 - Do **not** import `src/features/admin/**` in storefront/marketing code (runtime code). Type-only imports are discouraged too.
 - CMS-driven `href`/`src` values going into the DOM must go through `sanitizeHref()` in `src/shared/lib/url.ts`.
 - New `dangerouslySetInnerHTML` requires: justification comment + sanitizer + Vitest test.
-- The landing page system uses acts. Active landing page is controlled from the CMS (drop selection).
-- `landingPageCms.types.ts` is the canonical content shape for landing pages.
-- `composeLandingPageFromDrop.ts` converts a Drop document to `LandingPageCmsContent`.
+- Landing pages are **code-owned** (`src/features/landingPages/`). CMS controls active key + asset overrides only.
+- Asset slots are defined in code per drop (`assetSlots.ts`); CMS assigns media IDs to slots.
+- Nav/footer/SEO use code defaults — not CMS-editable.
 
 ---
 
 ## Landing Page Rules
 
-- Landing pages are driven by **acts** — ordered sections with `nature` and `preset` keys.
-- Each act maps to a lazy-loaded preset component via `src/features/marketing/act-presets/registry.ts`.
-- The active drop controls which landing page is shown.
-- `CinematicScrollHero` is the default hero — it is a GSAP ScrollTrigger experience, desktop-only in full form.
-- Storefront renders acts via `PublicLandingActs` (`src/features/marketing/public-landing/PublicLandingActs.tsx`).
-- Do not hardcode landing page content in route files — it must flow through the CMS/act system.
-- Static landing pages for early drops are acceptable if they keep the system simpler.
+- Landing pages are **static, code-owned** React components registered in `src/features/landingPages/registry.ts`.
+- The home route renders `<LandingPageRenderer>` with `products` + `assets` from the storefront loader.
+- Active page key comes from `storefront_publication.active_landing_page_key` (fallback: `the-oath`).
+- `TheOathLanding` is the reference implementation — GSAP scroll timeline in `hooks/useTheOathScrollTimeline.ts`.
+- Do not hardcode landing content in route files — use the page folder + registry pattern.
 - Always support SEO metadata for landing pages (via `buildSeoMeta()` + route loaders).
-- Act preset components receive: `{ act, landing, products, emblemSrc }`.
+- Landing page components receive: `{ products, assets }` via `LandingPageComponentProps`.
 
 ---
 

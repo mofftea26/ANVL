@@ -1,11 +1,12 @@
 import { Suspense } from 'react'
 import type { Product } from '@/features/products/types/product.types'
+import type { ResolvedDropAssets } from '@/features/cms/assets/resolvePublishedAssets'
 import { resolveLandingPage } from './registry'
 
 interface LandingPageRendererProps {
-  /** Active key from the CMS (`cms_settings.activeLandingPageKey`). */
   activeKey: string | null | undefined
   products: Product[]
+  assets: ResolvedDropAssets
 }
 
 function LandingFallback() {
@@ -24,20 +25,16 @@ function LandingFallback() {
   )
 }
 
-/**
- * Resolves the active landing page from the registry and renders it. Only the
- * active page's chunk is fetched (lazy). Falls back to the default page for any
- * unknown/disabled key — never renders blank.
- */
 export function LandingPageRenderer({
   activeKey,
   products,
+  assets,
 }: LandingPageRendererProps) {
   const definition = resolveLandingPage(activeKey)
   const Page = definition.component
   return (
     <Suspense fallback={<LandingFallback />}>
-      <Page products={products} />
+      <Page products={products} assets={assets} />
     </Suspense>
   )
 }

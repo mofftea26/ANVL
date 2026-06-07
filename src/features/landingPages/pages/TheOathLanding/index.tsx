@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { ForgeAtmosphere } from '@/shared/components/premium/ForgeAtmosphere'
+import { bindOathCmsAssets } from './theOathAssets'
 import type { LandingPageComponentProps } from '../../types'
 import { LandingPreloader } from './components/LandingPreloader'
 import { CinematicHero } from './components/CinematicHero'
@@ -23,7 +24,8 @@ import { usePreloadLandingAssets } from './hooks/usePreloadLandingAssets'
  * Code-owned content; the CMS only chooses that this page is active.
  * See `docs/landing-pages.md`.
  */
-export function TheOathLanding({ products }: LandingPageComponentProps) {
+export function TheOathLanding({ products, assets }: LandingPageComponentProps) {
+  bindOathCmsAssets(assets)
   const root = useRef<HTMLDivElement | null>(null)
   useTheOathScrollTimeline(root)
   usePreloadLandingAssets()

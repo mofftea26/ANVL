@@ -1,9 +1,6 @@
 /**
  * Shopify Admin webhook receiver (products/inventory). Verifies HMAC and acknowledges.
- * Configure in Shopify Admin → Notifications → Webhooks with secret SHOPIFY_API_SECRET_KEY.
  */
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -67,21 +64,8 @@ Deno.serve(async (req) => {
   const topic =
     req.headers.get('x-shopify-topic') ?? req.headers.get('X-Shopify-Topic') ?? 'unknown'
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  if (supabaseUrl && serviceKey) {
-    const supabase = createClient(supabaseUrl, serviceKey)
-    await supabase
-      .from('storefront_publication')
-      .update({ shopify_catalog_synced_at: new Date().toISOString() })
-      .eq('id', 1)
-  }
-
-  return new Response(
-    JSON.stringify({ ok: true, topic, note: 'Catalog cache stamp updated' }),
-    {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    },
-  )
+  return new Response(JSON.stringify({ ok: true, topic }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
 })

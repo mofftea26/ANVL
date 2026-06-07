@@ -1,356 +1,159 @@
 # CMS Architecture
 
-> **Architecture transition (in progress).** The CMS is moving from a
-> drop-builder / acts model to **code-owned landing pages** (see
-> `docs/landing-pages.md`). The new model is live: the public home route renders
-> the active page from the in-code registry, and the admin **Dashboard** picks
-> which page is active (`cms_settings.active_landing_page_key`, mirrored onto
-> `storefront_publication.active_landing_page_key`). The drop-builder + acts
-> system below is **deprecated** and scheduled for removal — see
-> `docs/cms-teardown-plan.md`.
+The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing page content lives in the codebase (`src/features/landingPages/`); Supabase stores **which page is active**, **theme**, **fonts**, **asset slot assignments**, and the **media library**.
 
-## Overview
+## Admin surfaces (4 + settings)
 
-The ANVL CMS is split into two distinct surfaces with a clean publish-gate between them:
+| Surface | Route | Persists to |
+|---|---|---|
+| Dashboard — Active drop | `/admin` | `cms_settings.active_landing_page_key` |
+| Theme & Colors | `/admin/theme` | `cms_settings.theme_config` |
+| Fonts | `/admin/fonts` | `cms_settings.font_config` |
+| Assets | `/admin/assets` | `cms_settings.asset_config` + `cms_media_assets` |
+| Settings | `/admin/settings` | Session + local reset only |
 
-1. **Admin CMS** — `src/features/admin/` — full editor UI for internal use
-2. **Storefront CMS reads** — `src/features/cms/` — read-only public-facing adapters
-
-The storefront **never** reads from admin draft state. All storefront reads go through published snapshots.
+Removed from CMS: Products editor, website layout, SEO, drop-builder, campaigns, lookbook, global brand.
 
 ---
 
-## Data Flow
+## Data flow
 
 ```
 Admin browser
-  └── edits drop draft (localStorage working copy)
-        └── syncs to Supabase anvl_drops.draft_body (debounced write-through)
-
-Admin publishes
-  └── calls cms_publish_drop(drop_id) RPC
-        ├── promotes drop to 'active' status
-        ├── demotes previous active drop to 'inactive'
-        └── writes published_drop_snapshot to storefront_publication
+  └── edits theme / fonts / assets / active drop (localStorage working copy)
+        └── adminCmsRemoteSync → cms_settings + storefront_publication mirror
 
 Storefront (SSR + browser)
-  └── reads storefront_publication (anon-readable)
-        ├── published_drop_snapshot → active drop + landing CMS content
-        ├── website_layout → nav, footer
-        └── site_seo → global SEO
+  └── loadStorefrontProjection()
+        ├── active_landing_page_key → resolveLandingPage (code registry)
+        ├── theme_config + font_config → SiteThemeProvider (CSS vars on :root)
+        ├── asset_config + media_index → resolvePublishedAssets → landing page props
+        └── commerce → Shopify when configured, else seed/mock catalog
 ```
+
+Nav, footer, and SEO use **code defaults** (`navigation.defaults.ts` → `staticWebsiteNavigation.ts`, `websiteLayout.defaults.ts`, per-route `head` meta) — not CMS-editable and not read from Supabase.
 
 ---
 
-## Supabase Schema
+## Supabase schema
 
-### Key Tables
+### Keep
 
 #### `public.cms_profiles`
-Links `auth.users` to a CMS role. Required for any CMS operation.
+Admin auth roles (`viewer` | `editor` | `admin`). Required for CMS writes.
+
+#### `public.cms_settings` (singleton, id=1)
+Editor source of truth for site config:
 
 ```sql
-CREATE TABLE public.cms_profiles (
-  user_id uuid PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
-  role text NOT NULL CHECK (role IN ('viewer', 'editor', 'admin')),
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+active_landing_page_key text NOT NULL DEFAULT 'the-oath'
+theme_config jsonb NOT NULL   -- { dataTheme, palette }
+font_config jsonb NOT NULL    -- { sans, heading, display }
+asset_config jsonb NOT NULL   -- { general: { slot: mediaId }, drops: { dropKey: { slot: mediaId } } }
+updated_at timestamptz
 ```
 
-Bootstrap via service role: `INSERT INTO cms_profiles (user_id, role) VALUES ('<user-id>', 'admin')`
-
-#### `public.anvl_drops`
-Canonical campaign drop rows.
-
-```sql
-CREATE TABLE public.anvl_drops (
-  id uuid PRIMARY KEY,
-  slug text UNIQUE NOT NULL,
-  status text NOT NULL CHECK (status IN ('draft', 'active', 'inactive', 'scheduled', 'archived')),
-  draft_body jsonb NOT NULL,     -- editor source of truth
-  published_body jsonb,          -- last published snapshot (nullable until first publish)
-  release_date timestamptz,
-  scheduled_activation_at timestamptz,
-  created_at timestamptz NOT NULL,
-  updated_at timestamptz NOT NULL
-);
-```
-
-Only one row may be `status = 'active'` (enforced by partial unique index + publish RPC).
-
-**Access:** CMS roles only (no anon).
-
-#### `public.storefront_publication`
-Singleton row (id=1). The only Supabase table readable by anonymous users.
-
-```sql
-CREATE TABLE public.storefront_publication (
-  id smallint PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-  published_at timestamptz,
-  revision bigint NOT NULL DEFAULT 0,
-  active_drop_id uuid REFERENCES public.anvl_drops (id) ON DELETE SET NULL,
-  website_layout jsonb NOT NULL DEFAULT '{}',
-  published_drop_snapshot jsonb,   -- DEPRECATED — removed in teardown
-  site_seo jsonb,
-  published_manifest jsonb,        -- DEPRECATED — removed in teardown
-  site_homepage jsonb,             -- added in later migration
-  active_landing_page_key text     -- active code-owned landing page (new model)
-);
-```
-
-**Access:** public SELECT (anon + authenticated), UPDATE only for editor/admin roles.
-
-> `active_drop_id`, `published_drop_snapshot`, and `published_manifest` are
-> drop-builder columns removed by `supabase/teardown/2026_drop_builder_teardown.sql`.
-
-#### `public.cms_settings` (new model)
-Singleton row (id=1). Public-readable simple CMS config — the storefront reads
-the active landing page key + theme here.
-
-```sql
-CREATE TABLE public.cms_settings (
-  id smallint PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-  active_landing_page_key text NOT NULL DEFAULT 'the-oath',
-  theme_config jsonb NOT NULL DEFAULT '{}',
-  seo_config jsonb NOT NULL DEFAULT '{}',
-  asset_config jsonb NOT NULL DEFAULT '{}',
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-```
-
-**Access:** public SELECT; UPDATE for editor/admin roles.
-
-#### `public.landing_pages` (new model)
-Picker **metadata only** — page content lives in the code registry
-(`src/features/landingPages/registry.ts`), never here.
-
-```sql
-CREATE TABLE public.landing_pages (
-  id uuid PRIMARY KEY,
-  key text UNIQUE NOT NULL,
-  name text NOT NULL,
-  description text NOT NULL DEFAULT '',
-  preview_image text NOT NULL DEFAULT '',
-  is_available boolean NOT NULL DEFAULT true,
-  created_at timestamptz NOT NULL,
-  updated_at timestamptz NOT NULL
-);
-```
-
-**Access:** public SELECT of available rows; admin manages metadata.
-
-#### `public.cms_admin_products`
-Editorial product catalog (until full commerce backend exists).
-
-```sql
-CREATE TABLE public.cms_admin_products (
-  id uuid PRIMARY KEY,
-  slug text UNIQUE NOT NULL,
-  body jsonb NOT NULL,
-  medusa_product_id text,   -- nullable until Medusa sync
-  created_at timestamptz NOT NULL,
-  updated_at timestamptz NOT NULL
-);
-```
-
-**Access:** CMS roles only (no anon).
+#### `public.landing_pages`
+Picker metadata only (key, name, description, preview_image, is_available). Content lives in the code registry; rows must intersect with registry keys.
 
 #### `public.cms_media_assets`
-Media library for uploaded assets (added in `20260620120000_cms_media_assets.sql`).
+Uploaded files for the media library and asset slot assignments.
 
-**Access:** CMS roles only (no anon).
+#### `public.storefront_publication` (singleton, id=1)
+Anon-readable mirror for a single SSR round-trip:
 
-### RLS Summary
-
-| Table | anon | viewer | editor | admin |
-|---|---|---|---|---|
-| `cms_profiles` | — | SELECT own | SELECT own | SELECT own |
-| `anvl_drops` | — | SELECT | SELECT + INSERT + UPDATE + DELETE | same |
-| `storefront_publication` | SELECT | SELECT | SELECT + UPDATE | same |
-| `cms_admin_products` | — | SELECT | SELECT + INSERT + UPDATE + DELETE | same |
-| `cms_media_assets` | — | SELECT | SELECT + INSERT + UPDATE + DELETE | same |
-
-### `cms_publish_drop(p_drop_id uuid)` RPC
-
-Atomic publish operation:
-1. Verifies caller has `editor` or `admin` role (from `cms_profiles`)
-2. Demotes all currently `active` drops to `inactive`
-3. Sets the target drop to `active`
-4. Writes published snapshot to `storefront_publication.published_drop_snapshot`
-5. Increments revision counter
-6. Returns `{ revision, publishedAt, dropId }`
-
----
-
-## Client Abstraction
-
-### Interfaces (`src/app/config/clients.ts`)
-
-```ts
-interface CmsClient {
-  getActiveDrop(): Promise<Drop | null>
-  getLandingCmsContent(): Promise<LandingPageCmsContent>
-  getHomepageContent(): Promise<HomePageContent>
-  getAnnouncementBar(): Promise<...>
-  getNavigation(): Promise<...>
-  getAdminDropsList(): Promise<AdminDropListItem[]>
-  // ... admin mutations
-}
+```sql
+active_landing_page_key text
+theme_config jsonb
+font_config jsonb
+asset_config jsonb
+media_index jsonb          -- denormalized public URLs for assigned assets
+revision bigint
+published_at timestamptz
 ```
 
-### Adapters
+#### `public.storefront_profiles`
+Customer accounts (unchanged; not CMS).
 
-| Adapter | File | When used |
-|---|---|---|
-| Seed (server) | `cmsClient.seed.ts` | SSR without Supabase env |
-| localStorage (browser) | `cmsClient.localStorage.ts` | Browser without Supabase env |
-| Supabase (server + browser) | `supabaseStorefrontReaders.ts` | When `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` are set |
+### Dropped (2026-06-07 cleanup)
 
-Wiring: `src/app/config/runtime.ts` — `createRuntimeClients({ isServer })` picks the right combination.
+- Tables: `cms_admin_products`, `shopify_product_links`, `anvl_drops`
+- `cms_settings.seo_config`
+- `storefront_publication` columns: `website_layout`, `site_seo`, `products_snapshot`, `catalog_drop_index`, `global_brand`, `campaigns`, `lookbook`, `legacy_landing_cms`, `site_homepage`, `shopify_catalog_synced_at`, drop-builder columns
 
-### Storefront Offline Fallback
-
-If Supabase is configured but the request fails (network error, project paused):
-- `storefrontReadFallback.ts` returns the local seed/localStorage data
-- Ensures the storefront never shows a blank page
+Migration: `supabase/migrations/20260607120000_cms_minimal_cleanup.sql`
 
 ---
 
-## localStorage Adapter Pattern
+## Code modules
 
-All `localStorage` adapters use `createJsonStore<TSchema>` from `src/shared/lib/storage/createJsonStore.ts`:
-
-```ts
-const store = createJsonStore({
-  key: 'anvl:drops',
-  schema: dropsSchema,
-  defaults: defaultDrops,
-  merge: (saved, defaults) => ({ ...defaults, ...saved })
-})
-```
-
-This ensures:
-- **Zod validation** before merging (prevents `__proto__` injection, type corruption)
-- **Cross-tab sync** via `createLocalStorageChannel` events
-- **Consistent migration** path via Zod transforms on the schema
-
-Rules:
-- Use `z.strict()` on persistence schemas
-- Never spread raw `JSON.parse()` output directly into trusted state
-- Never use `JSON.parse(...) as T` casts — always go through Zod
+| Concern | Location |
+|---|---|
+| Zod schemas + CSS var mappers | `src/features/cms/config/cmsSiteConfig.zod.ts` |
+| localStorage + Supabase save | `src/features/cms/config/cmsSiteConfig.settings.ts` |
+| Slim publication read/normalize | `src/features/cms/api/publicStorefrontPublication.ts` |
+| Loader helper | `src/features/cms/api/loadStorefrontProjection.ts` |
+| Remote sync (writes only slim fields) | `src/features/admin/cmsRemote/adminCmsRemoteSync.ts` |
+| Theme/fonts on storefront | `src/app/providers/SiteThemeProvider.tsx` |
+| Asset resolution | `src/features/cms/assets/resolvePublishedAssets.ts` |
+| Per-drop asset slot registry | `src/features/landingPages/assetSlots.ts` |
+| Landing page registry | `src/features/landingPages/registry.ts` |
+| Active drop picker (Supabase + registry) | `src/features/admin/landing-picker/` |
 
 ---
 
-## Landing Page / Acts System
+## Asset slots
 
-### Content Shape
+Slots are **defined in code** per drop. The CMS assigns media library IDs to slots; it cannot invent new slots without a deploy.
 
-```ts
-type LandingPageCmsContent = {
-  acts: LandingAct[]
-  globalSettings: LandingGlobalSettings
-  // ...
-}
+- **General slots** (`GENERAL_ASSET_SLOTS`): emblem fallback, loading emblem, shared textures
+- **Per-drop slots** (`DROP_ASSET_SLOTS`): e.g. `the-oath` → hero media, drop logo, product images
 
-type LandingAct = {
-  id: string
-  nature: LandingActNature
-  preset: string
-  content: Record<string, unknown>  // preset-specific content
-  isEnabled: boolean
-  sortOrder: number
-}
-```
-
-### Rendering Pipeline
-
-```
-Admin sets active drop
-  └── Drop.landing contains ordered acts
-        └── composeLandingPageFromDrop() → LandingPageCmsContent
-              └── storefront_publication.published_drop_snapshot
-                    └── root loader reads it
-                          └── PublicLandingActs renders acts
-                                └── resolveActPreset(nature, preset) → lazy component
-```
-
-### Act Natures
-
-| Nature | Purpose | Default preset |
-|---|---|---|
-| `hero` | Page hero (full-viewport) | `cinematicScrollHero` |
-| `manifesto` | Brand manifesto / tenets | `oathTenetLedger` |
-| `storytelling` | Narrative scroll | `oathNarrativeScroll` |
-| `dropReveal` | Drop reveal + countdown | `oathMonolithReveal` |
-| `productShowcase` | Product grid/carousel | `oathEditorialThree` |
-| `materialShowcase` | Fabric/material detail | `oathMaterialFlip` |
-| `specialEvent` | Event countdown | `oathEventPulse` |
-| `lookbook` | Photo lookbook | `masonryLookbook` |
-| `finalCTA` | Closing call to action | `oathForgeClose` |
-
-### Adding a New Act Preset
-
-1. Create the component in the appropriate subfolder under `src/features/marketing/act-presets/<nature>/`
-2. Export a named component with the `ActPresetProps` interface
-3. Add an entry to `ENTRIES` in `src/features/marketing/act-presets/registry.ts`
-4. Run `pnpm test` to confirm registry tests pass
+`resolvePublishedAssets` merges `asset_config.general` + `asset_config.drops[activeKey]`, resolves IDs via `media_index`, and falls back to code defaults in each page's `*Assets.ts` file.
 
 ---
 
-## Admin Auth
+## Landing page sync workflow
 
-### With Supabase env set
+When adding a new coded landing page:
 
-- Uses Supabase email+password auth
-- Only users with `cms_profiles.role = 'admin'` may access `/admin`
-- Browser client uses storage key `anvl.supabase.admin.v1`
-- Auth flow: `src/features/admin/auth/adminSupabaseAuthFlow.ts`
-
-### Without Supabase env (local/demo)
-
-- Falls back to static env-file gate: `VITE_ANVL_ADMIN_USER` + `VITE_ANVL_ADMIN_PASSWORD`
-- **This is not production-grade security** (credentials bundled in client)
-- Do not refactor the auth model — it is a known temporary compromise until Phase J production hardening
-
-### ProtectedAdminRoute
-
-`src/features/admin/auth/ProtectedAdminRoute.tsx` — wraps admin routes and redirects to `/admin/login` if not authenticated.
+1. Register in `src/features/landingPages/registry.ts`
+2. Export asset slots in the page folder; add to `DROP_ASSET_SLOTS` in `assetSlots.ts`
+3. Insert a matching row into `landing_pages` (key must match registry)
+4. Picker lists `landing_pages` rows **intersected** with the registry (registry guards render; DB drives dropdown)
 
 ---
 
-## Write-Through Pattern (Supabase sync)
+## Commerce
 
-When Supabase is configured, admin saves write to:
-1. **localStorage** (immediate local update, working copy)
-2. **Supabase `anvl_drops.draft_body`** (debounced — typically 1–3s after edits stop)
+Products are **not** CMS-edited. `createCommerceClient` returns:
 
-Read-back: admin editor always reads from localStorage (fast). Supabase is the persistence layer, not the render source.
-
-The `cmsWriteThrough.ts` module in `src/features/admin/cmsRemote/` orchestrates this flow.
+- **Shopify Storefront API** when `VITE_SHOPIFY_*` is set
+- **Seed/mock catalog** otherwise (`products.mock.ts`)
 
 ---
 
-## Edge Functions
+## Admin auth
 
-### `publish-storefront`
+### With Supabase env
+Supabase email+password; `cms_profiles.role` must be `editor` or `admin` for writes.
 
-Called when admin publishes a drop. Updates `storefront_publication` with the new drop snapshot.
+### Without Supabase (local/demo)
+Static env gate: `VITE_ANVL_ADMIN_USER` + `VITE_ANVL_ADMIN_PASSWORD` (not production-grade).
 
-### `process-scheduled-drops`
+---
 
-Run by pg_cron at regular intervals. Finds drops with `scheduled_activation_at <= now()` and activates them via `cms_publish_drop()`.
+## Edge functions
 
 ### `shopify-webhook`
-
-Receives product update webhooks from Shopify and syncs product data to `cms_admin_products`.
+Ack-only receiver; no longer writes product snapshots to `storefront_publication`.
 
 ---
 
-## Security Checklist
+## Security checklist
 
-- [ ] All writes to `anvl_drops` go through Zod validation
-- [ ] `storefront_publication` is only updated via the `cms_publish_drop` RPC or service-role trusted paths
-- [ ] CMS-driven `href`/`src` values pass through `sanitizeHref()` before DOM insertion
-- [ ] `dangerouslySetInnerHTML` is limited to the drop palette `<style>` tag (via `sanitizeCssValue`) and JSON-LD (escaped)
-- [ ] No `VITE_SUPABASE_SERVICE_ROLE_KEY` or similar secrets in client code
-- [ ] New localStorage stores use `createJsonStore` with `z.strict()` schemas
+- [ ] All CMS JSON writes validated with Zod before Supabase upsert
+- [ ] `storefront_publication` updated only via authenticated admin sync paths
+- [ ] CMS-driven `href`/`src` pass through `sanitizeHref()` before DOM insertion
+- [ ] No service-role keys in client code
+- [ ] localStorage stores use `createJsonStore` with strict Zod schemas

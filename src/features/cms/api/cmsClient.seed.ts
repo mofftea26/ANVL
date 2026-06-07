@@ -1,11 +1,15 @@
 import type { CmsClient } from '@/app/config/clients'
-import type { WebsiteLayoutContent } from '@/features/cms/layout/websiteLayout.types'
-import { SEED_WEBSITE_LAYOUT } from '@/features/cms/api/seedSnapshots'
 import { cmsMockData } from '@/features/cms/data/cms.mock'
 import { DEFAULT_SITE_HOMEPAGE } from '@/features/cms/siteHomepage.settings'
+import {
+  buildStaticWebsiteNavigation,
+  staticHeaderNavLinks,
+} from '@/features/cms/navigation/staticWebsiteNavigation'
 
-function announcementBarFromLayout(layout: WebsiteLayoutContent) {
-  const a = layout.header.announcement
+const STATIC_NAV = buildStaticWebsiteNavigation()
+
+function announcementBarFromStaticNav() {
+  const a = STATIC_NAV.announcement
   if (a?.enabled && a.message.trim()) {
     return {
       message: a.message,
@@ -16,23 +20,19 @@ function announcementBarFromLayout(layout: WebsiteLayoutContent) {
   return { message: '', ctaLabel: '', ctaHref: '#' }
 }
 
-function navigationFromLayout(layout: WebsiteLayoutContent) {
-  return layout.header.headerLinks
-    .filter((link) => link.isVisible)
-    .map((link) => ({ label: link.label, href: link.href }))
-}
-
 /**
- * SSR-safe storefront CMS adapter — chrome (nav/announcement) reads from the
- * seed website layout; campaigns/lookbook from mock data. Drop-builder reads
- * were removed in the CMS teardown (see `docs/cms-teardown-plan.md`).
+ * SSR-safe storefront CMS adapter — nav/announcement from static code defaults;
+ * campaigns/lookbook from mock data.
  */
 export const seedCmsClient: CmsClient = {
   async getAnnouncementBar() {
-    return announcementBarFromLayout(SEED_WEBSITE_LAYOUT)
+    return announcementBarFromStaticNav()
   },
   async getNavigation() {
-    return navigationFromLayout(SEED_WEBSITE_LAYOUT)
+    return staticHeaderNavLinks().map((link) => ({
+      label: link.label,
+      href: link.href,
+    }))
   },
   async getCampaigns() {
     return cmsMockData.campaigns

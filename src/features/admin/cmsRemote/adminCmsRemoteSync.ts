@@ -2,19 +2,17 @@ import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { canWriteCmsDraftsToSupabase } from '@/features/cms/api/cmsPersistenceMode'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { fetchCmsProfileRole } from '@/features/admin/auth/adminCmsProfileRole'
-import { getAdminProducts } from '@/features/admin/products/products.service'
-import { getWebsiteLayoutContent } from '@/features/admin/website-layout/websiteLayout.service'
-import { getSiteSeoContent } from '@/features/cms/siteSeo.local'
-import { readSiteHomepageFromStorage } from '@/features/cms/siteHomepage.settings'
 import { readActiveLandingPageFromStorage } from '@/features/cms/landingPageActiveKey.settings'
-import { getGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.service'
+import {
+  readAssetConfigFromStorage,
+  readFontConfigFromStorage,
+  readThemeConfigFromStorage,
+} from '@/features/cms/config/cmsSiteConfig.settings'
 import { isAdminCmsRemoteHydrationLocked } from '@/features/admin/cmsRemote/adminCmsRemoteGate'
 import {
   buildMediaIndex,
   listMediaAssets,
 } from '@/features/admin/media/mediaAssets.service'
-import { getShopifyPublicEnv } from '@/features/shopify/config/shopifyPublicEnv'
-import { isPostgrestMissingColumnError } from '@/features/cms/api/storefrontPublicationColumns'
 
 const isTestRunner = import.meta.env.MODE === 'test'
 
@@ -49,97 +47,37 @@ export async function flushAdminCmsRemoteSync(): Promise<
   const { role } = await fetchCmsProfileRole(client)
   if (!canWriteCmsDraftsToSupabase(role)) return { ok: true }
 
-  const syncProductsToSupabase = !getShopifyPublicEnv()
-  const products = syncProductsToSupabase ? getAdminProducts() : []
-
-  if (syncProductsToSupabase) {
-    for (const p of products) {
-      const body = JSON.parse(JSON.stringify(p)) as Record<string, unknown>
-      const { data: ex, error: pSelErr } = await client
-        .from('cms_admin_products')
-        .select('id')
-        .eq('slug', p.slug)
-        .maybeSingle()
-
-      if (pSelErr) return { ok: false, error: pSelErr.message }
-
-      if (ex?.id) {
-        const { error: pUp } = await client
-          .from('cms_admin_products')
-          .update({ body, slug: p.slug })
-          .eq('id', ex.id)
-        if (pUp) return { ok: false, error: pUp.message }
-      } else {
-        const { error: pIn } = await client
-          .from('cms_admin_products')
-          .insert({ slug: p.slug, body })
-        if (pIn) return { ok: false, error: pIn.message }
-      }
-    }
-    const { data: remoteProd, error: rpErr } = await client
-      .from('cms_admin_products')
-      .select('id, slug')
-
-    if (rpErr) return { ok: false, error: rpErr.message }
-
-    const localSlugs = new Set(products.map((p) => p.slug))
-    for (const r of remoteProd ?? []) {
-      const slug = typeof r.slug === 'string' ? r.slug : ''
-      if (slug && !localSlugs.has(slug)) {
-        const { error: dErr } = await client
-          .from('cms_admin_products')
-          .delete()
-          .eq('id', r.id)
-        if (dErr) return { ok: false, error: dErr.message }
-      }
-    }
-  }
-
-  const layout = getWebsiteLayoutContent()
-  const siteSeo = getSiteSeoContent()
-  const siteHomepage = readSiteHomepageFromStorage()
   const activeLandingPageKey = readActiveLandingPageFromStorage().key
-  const globalBrand = getGlobalBrandSettings()
-
-  // Canonical new-model write (best-effort — ignored on un-migrated DBs). The
-  // storefront reads the mirrored `storefront_publication.active_landing_page_key`.
-  await client
-    .from('cms_settings')
-    .update({ active_landing_page_key: activeLandingPageKey })
-    .eq('id', 1)
-    .then(
-      () => {},
-      () => {},
-    )
-  const { getSiteHomeExtrasContent } = await import(
-    '@/features/admin/site-home/siteHome.service'
-  )
-  const homeExtras = getSiteHomeExtrasContent()
+  const themeConfig = readThemeConfigFromStorage()
+  const fontConfig = readFontConfigFromStorage()
+  const assetConfig = readAssetConfigFromStorage()
 
   const mediaList = await listMediaAssets(client)
   const mediaIndex = mediaList.ok ? buildMediaIndex(mediaList.assets) : []
 
-  // Products snapshot + catalog drop index — formerly written by the
-  // `cms_publish_drop` RPC, now published here so the storefront catalog stays
-  // fresh once the drop RPC is gone. The drop-builder is removed, so the index
-  // has no name source and is empty (products surface the brand name).
-  const productsSnapshot = syncProductsToSupabase
-    ? products.map((p) => JSON.parse(JSON.stringify(p)) as Record<string, unknown>)
-    : undefined
-
-  const pubPatch: Record<string, unknown> = {
-    website_layout: layout,
-    site_seo: siteSeo,
-    site_homepage: siteHomepage,
+  const settingsPatch = {
     active_landing_page_key: activeLandingPageKey,
-    global_brand: globalBrand,
-    media_index: mediaIndex,
-    campaigns: homeExtras.campaigns,
-    lookbook: homeExtras.lookbook,
-    catalog_drop_index: [],
+    theme_config: themeConfig,
+    font_config: fontConfig,
+    asset_config: assetConfig,
+    updated_at: new Date().toISOString(),
   }
-  if (productsSnapshot) {
-    pubPatch.products_snapshot = productsSnapshot
+
+  const { error: settingsErr } = await client
+    .from('cms_settings')
+    .update(settingsPatch)
+    .eq('id', 1)
+
+  if (settingsErr) return { ok: false, error: settingsErr.message }
+
+  const pubPatch = {
+    active_landing_page_key: activeLandingPageKey,
+    theme_config: themeConfig,
+    font_config: fontConfig,
+    asset_config: assetConfig,
+    media_index: mediaIndex,
+    published_at: new Date().toISOString(),
+    revision: Date.now(),
   }
 
   const { error: pubErr } = await client
@@ -147,50 +85,7 @@ export async function flushAdminCmsRemoteSync(): Promise<
     .update(pubPatch)
     .eq('id', 1)
 
-  if (pubErr) {
-    if (
-      isPostgrestMissingColumnError(pubErr, 'site_homepage') ||
-      isPostgrestMissingColumnError(pubErr, 'active_landing_page_key')
-    ) {
-      const {
-        site_homepage: _omit,
-        active_landing_page_key: _omitKey,
-        ...withoutNewCols
-      } = pubPatch
-      const { error: pubErr2 } = await client
-        .from('storefront_publication')
-        .update(withoutNewCols)
-        .eq('id', 1)
-      if (pubErr2) return { ok: false, error: pubErr2.message }
-      return { ok: true }
-    }
-    if (
-      isPostgrestMissingColumnError(pubErr, 'global_brand') ||
-      /global_brand|column/i.test(pubErr.message)
-    ) {
-      const { error: pubErr2 } = await client
-        .from('storefront_publication')
-        .update({
-          website_layout: layout,
-          site_seo: siteSeo,
-          site_homepage: siteHomepage,
-        })
-        .eq('id', 1)
-      if (pubErr2) {
-        if (isPostgrestMissingColumnError(pubErr2, 'site_homepage')) {
-          const { error: pubErr3 } = await client
-            .from('storefront_publication')
-            .update({ website_layout: layout, site_seo: siteSeo })
-            .eq('id', 1)
-          if (pubErr3) return { ok: false, error: pubErr3.message }
-          return { ok: true }
-        }
-        return { ok: false, error: pubErr2.message }
-      }
-      return { ok: true }
-    }
-    return { ok: false, error: pubErr.message }
-  }
+  if (pubErr) return { ok: false, error: pubErr.message }
 
   return { ok: true }
 }

@@ -9,11 +9,10 @@ import {
   AdminPageActionsProvider,
   useAdminPageActionsSlot,
 } from '@/features/admin/components/AdminPageActionsContext'
-import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
+import { DEFAULT_THEME_CONFIG } from '@/features/cms/config/cmsSiteConfig.zod'
 import { SiteThemeEditor } from '../SiteThemeEditor'
 
 const saveAsync = vi.fn()
-const defaultSettings = createDefaultGlobalBrandSettings()
 const flashSuccessMock = vi.fn()
 
 vi.mock('sonner', () => ({
@@ -24,19 +23,10 @@ vi.mock('@/features/admin/hooks/useSaveSuccessFlash', () => ({
   useSaveSuccessFlash: () => ({ showSuccess: false, flashSuccess: flashSuccessMock }),
 }))
 
-vi.mock('@/features/admin/global-brand/globalBrand.service', () => ({
-  getGlobalBrandSettings: () => defaultSettings,
-  saveGlobalBrandSettingsAsync: (...args: unknown[]) => saveAsync(...args),
-}))
-
-vi.mock('@/features/admin/global-brand/globalBrand.storage', () => ({
-  subscribeGlobalBrandChange: () => () => {},
-}))
-
-vi.mock('@/shared/components/ui/MediaPickerField', () => ({
-  MediaPickerField: ({ label }: { label: string }) => (
-    <div data-testid={`media-${label}`} />
-  ),
+vi.mock('@/features/cms/config/cmsSiteConfig.settings', () => ({
+  readThemeConfigFromStorage: () => DEFAULT_THEME_CONFIG,
+  subscribeCmsSiteConfigChange: () => () => {},
+  saveThemeConfigAsync: (...args: unknown[]) => saveAsync(...args),
 }))
 
 function TopbarActionsProbe() {
@@ -61,29 +51,24 @@ function renderEditor() {
 describe('SiteThemeEditor', () => {
   beforeEach(() => {
     saveAsync.mockReset()
-    saveAsync.mockResolvedValue(defaultSettings)
+    saveAsync.mockResolvedValue(undefined)
   })
 
-  it('renders intro copy and emblem fallback tiles', () => {
+  it('renders intro copy and theme mode selector', () => {
     renderEditor()
-
     expect(
-      screen.getByText(/Global brand fallbacks shown before page assets load\./i),
+      screen.getByText(/Colors apply site-wide via CSS variables/i),
     ).toBeTruthy()
-    expect(screen.getByTestId('media-Default emblem')).toBeTruthy()
-    expect(screen.getByTestId('media-Loading emblem')).toBeTruthy()
+    expect(screen.getByText('Theme mode')).toBeTruthy()
   })
 
-  it('registers Save fallbacks in the admin topbar actions slot', async () => {
+  it('registers Save theme in the admin topbar actions slot', async () => {
     const user = userEvent.setup()
     renderEditor()
 
     const actions = within(screen.getByTestId('admin-page-actions'))
-    const saveBtn = actions.getByRole('button', { name: /save brand fallbacks/i })
-    expect(saveBtn).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /save fallbacks/i })).toBeNull()
-
+    const saveBtn = actions.getByRole('button', { name: /save theme/i })
     await user.click(saveBtn)
-    expect(saveAsync).toHaveBeenCalledWith(defaultSettings)
+    expect(saveAsync).toHaveBeenCalled()
   })
 })

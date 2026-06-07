@@ -1,1 +1,1 @@
-export { subscribeWebsiteLayoutChange } from '@/features/admin/website-layout/websiteLayout.storage'
+export { subscribeCmsSiteConfigChange as subscribeWebsiteLayoutChange } from '@/features/cms/config/cmsSiteConfig.settings'

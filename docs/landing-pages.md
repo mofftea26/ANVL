@@ -18,7 +18,7 @@ CMS (activeLandingPageKey)
 
 - **Registry** (`src/features/landingPages/registry.ts`) is the single source of truth. Each entry is metadata + a `lazy()` component, so only the active page's JS chunk ships to the browser.
 - **Resolution never throws.** An unknown, missing, or disabled key degrades to the default page — the storefront is never blank.
-- **Products flow in at runtime** (`LandingPageComponentProps.products`) from the storefront commerce client (Supabase/Shopify-published when configured, else seed/mock). Pages must render gracefully with an empty array using their own fallback copy.
+- **Products flow in at runtime** (`LandingPageComponentProps.products` + `props.assets`) from the storefront loader. Commerce: Shopify when configured, else seed/mock. CMS asset overrides merge via `resolvePublishedAssets`.
 
 The home route (`src/routes/index.tsx`) resolves the key in its loader and renders `<LandingPageRenderer>`.
 
@@ -63,7 +63,9 @@ The Oath is composed to read as **one continuous scene**, not stacked sections:
    },
    ```
 
-3. (Optional) Activate it from the CMS picker (below).
+3. Insert a `landing_pages` row (key must match registry) and add asset slots to `assetSlots.ts`.
+
+4. (Optional) Activate from the CMS Dashboard picker.
 
 ### Animation rules (non-negotiable)
 
@@ -78,16 +80,24 @@ Mirror `pages/TheOathLanding/hooks/useTheOathScrollTimeline.ts`:
 
 ## Activating a landing page from the CMS
 
-> **Status:** the simplified CMS picker (SEO / assets / theme / landing-page picker) lands in the CMS-cleanup phase. The seam is already in place.
+1. Admin **Dashboard** loads picker options from Supabase `landing_pages`, intersected with the code registry (fallback: registry only when offline).
+2. Editor selects a drop → confirms in a modal → writes `cms_settings.active_landing_page_key`.
+3. `adminCmsRemoteSync` mirrors the key onto `storefront_publication`.
+4. Storefront loader calls `getActiveLandingPageKey()` → `resolveLandingPage(key)` with registry fallback.
 
-Intended flow:
+---
 
-1. CMS reads `listLandingPages()` for the picker dropdown (metadata only — no React components).
-2. Editor selects a page → sees its name/description/preview → confirms in a modal.
-3. On confirm, the CMS writes `cms_settings.activeLandingPageKey`.
-4. The storefront reads that value through `getActiveLandingPageKey(rawCmsKey)` — the **one** place to wire the CMS read. `resolveActiveLandingPageKey` validates it against the registry, so a stale/disabled key always falls back to the default.
+## CMS asset overrides
 
-Until the CMS write path exists, `getActiveLandingPageKey()` returns the default key (`the-oath`).
+Asset slots are **code-defined**; the CMS assigns media library IDs to slots.
+
+1. Each page exports slots (e.g. `theOathAssetSlots.ts`) and registers them in `src/features/landingPages/assetSlots.ts`.
+2. Admin **Assets** (`/admin/assets`) uploads files and assigns slots under **General** or per-drop tabs.
+3. Assignments persist to `cms_settings.asset_config` as `{ general: { slot: mediaId }, drops: { dropKey: { slot: mediaId } } }`.
+4. On publish/sync, `media_index` on `storefront_publication` carries public URLs.
+5. `resolvePublishedAssets` merges general + active-drop slots; landing components read `props.assets` first, then code fallbacks in `theOathAssets.ts`.
+
+When adding a new drop landing page, add slots in code and `INSERT INTO landing_pages` with a matching `key`.
 
 ---
 
@@ -118,7 +128,7 @@ Until the CMS write path exists, `getActiveLandingPageKey()` returns the default
 ## Entry moment + assets
 
 - **Preloader** (`components/LandingPreloader.tsx`) — the Drop 01 mark resolves with a thin progress line, then the veil lifts. Pure CSS (`.anvl-preloader*` in `styles.css`): renders in SSR, no hydration state, `pointer-events-none` (never traps the page), auto-dismisses, and collapses instantly under `prefers-reduced-motion`.
-- **Asset fallback** (`theOathAssets.ts`) — every asset is optional; missing media resolves to a duotone gradient + Drop-logo placeholder via `MediaPlane`. Helpers: `oathAsset`, `oathSceneMedia`, `oathChapterMedia`, `oathProductImage(slug)`, `duotonePlaceholder(tone)`, `criticalOathAssets`. Scenes consume `MediaPlane`, so swapping in real photos/video needs zero component changes.
+- **Asset fallback** (`theOathAssets.ts`) — code defaults; CMS overrides via `bindOathCmsAssets(props.assets)`. Missing media resolves to duotone + Drop-logo placeholder via `MediaPlane`.
 - **Hooks** — `usePreloadLandingAssets` (warms only assets that exist), `useResponsiveMotionConfig` (component-level tier/reduced/cinematic view).
 
 ### Required assets (drop real exports in, then fill `theOathAssets.ts`)

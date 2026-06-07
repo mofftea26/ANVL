@@ -1,4 +1,20 @@
-﻿## 2026-06-06 — Drop-builder teardown completed (code green + DB applied)
+﻿## 2026-06-07 — Static storefront navigation
+
+- **Nav chrome is code-owned:** header, footer, and mobile drawer links come from `staticWebsiteNavigation.ts` / `navigation.defaults.ts` — never Supabase or CMS layout editors.
+- **Links:** Story (`/story`) and Care Guide (`/care-guide`) in header + footer; removed legacy `/drop/the-oath` nav target (no drop route).
+- **`useWebsiteNavigation`** is now a pass-through (no CMS config subscription for nav).
+- **Sitemap:** replaced `/drop/the-oath` with `/story`.
+
+## 2026-06-07 — CMS + Supabase minimal cleanup
+
+- **Slim CMS:** Admin reduced to four surfaces — Active drop (`/admin`), Theme & Colors (`/admin/theme`), Fonts (`/admin/fonts`), Assets (`/admin/assets`) — plus Settings. Removed Products, website layout, SEO, drop-builder, campaigns, lookbook, and global-brand editors.
+- **Supabase:** Migration `20260607120000_cms_minimal_cleanup` — dropped `cms_admin_products`, `shopify_product_links`, bloated `storefront_publication` columns; added `theme_config`, `font_config`, reshaped `asset_config`; dropped `cms_settings.seo_config`; seeded Anton/Sora/Cinzel + oath-dark palette defaults.
+- **Storefront:** `SiteThemeProvider` applies published theme/fonts via CSS variables; `resolvePublishedAssets` merges general + per-drop slot assignments; `LandingPageRenderer` passes `assets` to code-owned pages. Nav/footer/SEO use hardcoded defaults.
+- **Commerce:** Shopify when configured, else seed/mock — no CMS product editor or `products_snapshot`.
+- **Docs:** Rewrote `docs/cms-architecture.md`; updated `docs/landing-pages.md`, `CLAUDE.md`.
+- **Gates:** `pnpm verify` green (279 tests, build OK).
+
+## 2026-06-06 — Drop-builder teardown completed (code green + DB applied)
 
 - **Repaired the half-finished deletion.** A prior session deleted ~40 drop-builder files but left ~20 dangling imports (Vite + `tsc` red). Repointed relocated helpers (`createCmsId` → `admin/lib/cmsId`, `resetAllLocalCmsKeys` → `admin/lib/resetLocalCms`); `products.mapper` no longer calls `readDropsArray` (empty local drop index); seed products are drop-free individuals.
 - **Removed drop UI from admin editors:** `ProductEditorRoute` (Drops tab + drop-link persistence gone), `-adminProductsIndex` (drop filter/grouping/column gone), `SiteLayoutEditor` + `SiteLayoutPreview` (active-drop "campaign slot" concept gone), `AdminShopifyProductGrid` (inlined `/shop/$slug`). Stale tests updated; dead `ActiveDropThemeBridge.test` + the `cms_publish_drop` RPC helpers (`adminCmsPublish.ts`, `adminCmsProcessScheduledDrops.ts` + test) deleted. `getActiveDrop`/`getLandingCmsContent`/`getHomepageContent` now have zero source references.

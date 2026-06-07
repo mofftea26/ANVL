@@ -1,6 +1,16 @@
-import { Navigate } from '@tanstack/react-router'
+import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
+import { AdminLayout } from '@/features/admin/components/AdminLayout'
+import { SiteThemeEditor } from '@/features/admin/site-theme/SiteThemeEditor'
 
-/** Brand fallbacks removed — loading emblem lives on Website layout. */
 export function AdminThemePageRoute() {
-  return <Navigate to="/admin/website-layout" replace />
+  return (
+    <ProtectedAdminRoute>
+      <AdminLayout
+        title="Theme & Colors"
+        description="Site-wide palette and theme mode."
+      >
+        <SiteThemeEditor />
+      </AdminLayout>
+    </ProtectedAdminRoute>
+  )
 }

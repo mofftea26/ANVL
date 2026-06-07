@@ -1,4 +1,4 @@
-import type { StorefrontCampaign } from '@/features/cms/api/publicStorefrontPublication'
+import type { StorefrontCampaign } from '@/features/cms/types/cms.types'
 import { Container } from '@/shared/components/ui/Container'
 
 export type CampaignCardsSectionProps = {

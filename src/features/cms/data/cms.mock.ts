@@ -68,8 +68,9 @@ export const cmsMockData = {
   },
   navigation: [
     { label: 'Shop', href: '/shop' },
-    { label: 'The Oath', href: '/story' },
+    { label: 'Story', href: '/story' },
     { label: 'About', href: '/about' },
+    { label: 'Care Guide', href: '/care-guide' },
     { label: 'Size Guide', href: '/size-guide' },
   ],
   campaigns: [

@@ -1,41 +1,23 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
-import { createDefaultWebsiteLayout } from '@/features/admin/website-layout/websiteLayout.defaults'
-import { persistedWebsiteLayoutSchema } from '@/features/admin/website-layout/websiteLayout.persistence.zod'
-import { persistedProductSchema } from '@/features/admin/products/products.persistence.zod'
-import { persistedGlobalBrandSchema } from '@/features/admin/global-brand/globalBrand.persistence.zod'
-import { createDefaultGlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.defaults'
-import type { GlobalBrandSettings } from '@/features/admin/global-brand/globalBrand.types'
-import type { AdminProduct } from '@/features/admin/products/products.types'
-import type { WebsiteLayoutContent } from '@/features/cms/layout/websiteLayout.types'
-import type { SiteSeoContent } from '@/features/cms/siteSeo.local'
-import { parseSiteSeoUnknown } from '@/features/cms/siteSeo.local'
+import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
 import {
-  parseSiteHomepageUnknown,
-  type SiteHomepageSettings,
-} from '@/features/cms/siteHomepage.settings'
+  parseAssetConfig,
+  parseFontConfig,
+  parseThemeConfig,
+  type AssetConfig,
+  type FontConfig,
+  type ThemeConfig,
+} from '@/features/cms/config/cmsSiteConfig.zod'
 import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { createAnvlSupabaseClient } from '@/features/cms/api/createAnvlSupabaseClient'
-import { isPostgrestMissingColumnError } from '@/features/cms/api/storefrontPublicationColumns'
-import type { ShopDropFilterOption } from '@/features/products/types/product.types'
 import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
 
-/**
- * Dedicated auth storage key so this anon client never shares GoTrue's default
- * `sb-<ref>-auth-token` bucket with other in-memory clients (admin uses
- * `anvl.supabase.admin.v1`). Prevents "Multiple GoTrueClient instances" warnings
- * when publication fetch runs alongside other Supabase usage.
- */
 export const SUPABASE_PUBLICATION_ANON_AUTH_STORAGE_KEY =
   'anvl.supabase.storefront-public.v1'
 
 const publicationAnonClients = new Map<string, SupabaseClient>()
 
-/**
- * Singleton anon Supabase client for published storefront reads. Reused across
- * SSR loaders, TanStack Query refetches, and concurrent callers (see also
- * {@link fetchPublishedStorefrontProjection} coalescing).
- */
 export function getSupabasePublicationAnonClient(
   env: SupabasePublicEnv,
 ): SupabaseClient {
@@ -54,140 +36,52 @@ export function getSupabasePublicationAnonClient(
   return client
 }
 
-/** Public homepage campaign cards — stored on `storefront_publication.campaigns`. */
-export const storefrontCampaignSchema = z.object({
+const mediaIndexEntrySchema = z.object({
   id: z.string(),
-  title: z.string(),
-  description: z.string(),
-})
-
-/** Lookbook strip — `storefront_publication.lookbook`. */
-export const storefrontLookbookItemSchema = z.object({
-  id: z.string(),
+  path: z.string(),
   alt: z.string(),
-  src: z.string(),
+  mime: z.string(),
+  w: z.number().nullable(),
+  h: z.number().nullable(),
+  updatedAt: z.string(),
 })
-
-/** Matches `ShopDropFilterOption` + SQL `catalog_drop_index` rows. */
-export const catalogDropIndexRowSchema = z.object({
-  id: z.string(),
-  slug: z.string(),
-  name: z.string(),
-  dropNumber: z.string(),
-})
-
-export type StorefrontCampaign = z.infer<typeof storefrontCampaignSchema>
-export type StorefrontLookbookItem = z.infer<typeof storefrontLookbookItemSchema>
 
 export type PublishedStorefrontProjection = {
-  layout: WebsiteLayoutContent
-  siteSeo: SiteSeoContent
+  activeLandingPageKey: string
+  theme: ThemeConfig
+  fonts: FontConfig
+  assets: AssetConfig
+  mediaIndex: MediaIndexEntry[]
   revision: number
   publishedAt: string | null
-  /** Parsed `products_snapshot` (persistedProductSchema rows). */
-  adminProducts: AdminProduct[]
-  /** Parsed `catalog_drop_index` for PDP/shop meta + filters. */
-  catalogDropIndex: ShopDropFilterOption[]
-  /** Parsed `global_brand` merged with defaults when null/invalid. */
-  globalBrand: GlobalBrandSettings
-  campaigns: StorefrontCampaign[]
-  lookbook: StorefrontLookbookItem[]
-  siteHomepage: SiteHomepageSettings
-  /** Active code-owned landing page key (validated at render via the registry). */
-  activeLandingPageKey: string
 }
 
 export type StorefrontPublicationRow = {
-  website_layout: unknown
-  site_seo: unknown
   revision: number | string | null | undefined
   published_at: string | null
-  products_snapshot?: unknown
-  catalog_drop_index?: unknown
-  global_brand?: unknown
-  campaigns?: unknown
-  lookbook?: unknown
-  site_homepage?: unknown
   active_landing_page_key?: unknown
+  theme_config?: unknown
+  font_config?: unknown
+  asset_config?: unknown
+  media_index?: unknown
 }
 
-const PUBLICATION_SELECT_BASE =
-  'website_layout, site_seo, revision, published_at, products_snapshot, catalog_drop_index, global_brand, campaigns, lookbook'
+const PUBLICATION_SELECT =
+  'revision, published_at, active_landing_page_key, theme_config, font_config, asset_config, media_index'
 
-const PUBLICATION_SELECT = `${PUBLICATION_SELECT_BASE}, site_homepage, active_landing_page_key`
-
-function parseAdminProductsSnapshot(raw: unknown): AdminProduct[] {
+function parseMediaIndex(raw: unknown): MediaIndexEntry[] {
   if (!Array.isArray(raw)) return []
-  const out: AdminProduct[] = []
+  const out: MediaIndexEntry[] = []
   for (const row of raw) {
-    const r = persistedProductSchema.safeParse(row)
-    if (r.success) out.push(r.data as AdminProduct)
-  }
-  return out
-}
-
-function parseCatalogDropIndex(raw: unknown): ShopDropFilterOption[] {
-  if (!Array.isArray(raw)) return []
-  const out: ShopDropFilterOption[] = []
-  for (const row of raw) {
-    const r = catalogDropIndexRowSchema.safeParse(row)
+    const r = mediaIndexEntrySchema.safeParse(row)
     if (r.success) out.push(r.data)
   }
   return out
 }
 
-function parseCampaigns(raw: unknown): StorefrontCampaign[] {
-  if (!Array.isArray(raw)) return []
-  const out: StorefrontCampaign[] = []
-  for (const row of raw) {
-    const r = storefrontCampaignSchema.safeParse(row)
-    if (r.success) out.push(r.data)
-  }
-  return out
-}
-
-function parseLookbook(raw: unknown): StorefrontLookbookItem[] {
-  if (!Array.isArray(raw)) return []
-  const out: StorefrontLookbookItem[] = []
-  for (const row of raw) {
-    const r = storefrontLookbookItemSchema.safeParse(row)
-    if (r.success) out.push(r.data)
-  }
-  return out
-}
-
-function mergePublicationGlobalBrand(raw: unknown): GlobalBrandSettings {
-  const defaults = createDefaultGlobalBrandSettings()
-  if (raw == null) return defaults
-  const r = persistedGlobalBrandSchema.safeParse(raw)
-  if (!r.success) return defaults
-  return {
-    ...defaults,
-    emblemFallbackUrl:
-      r.data.emblemFallbackUrl.trim() || defaults.emblemFallbackUrl,
-    loadingEmblemFallbackUrl:
-      r.data.loadingEmblemFallbackUrl.trim() ||
-      defaults.loadingEmblemFallbackUrl,
-  }
-}
-
-/** Pure normalizer for tests and RPC shaping — no network. */
 export function normalizeStorefrontPublicationRow(
   data: StorefrontPublicationRow,
 ): PublishedStorefrontProjection | null {
-  // The publication resolves from layout/SEO/products/landing key alone — the
-  // drop-builder snapshot was removed in the CMS teardown.
-  const stamp =
-    typeof data.published_at === 'string' && data.published_at.length > 0
-      ? data.published_at
-      : new Date().toISOString()
-
-  const layoutParsed = persistedWebsiteLayoutSchema.safeParse(data.website_layout)
-  const layout: WebsiteLayoutContent = layoutParsed.success
-    ? layoutParsed.data
-    : createDefaultWebsiteLayout(stamp)
-
-  const siteSeo = parseSiteSeoUnknown(data.site_seo)
   const revRaw = data.revision
   const revision =
     typeof revRaw === 'number'
@@ -196,12 +90,6 @@ export function normalizeStorefrontPublicationRow(
         ? Number.parseInt(revRaw, 10) || 0
         : 0
 
-  const adminProducts = parseAdminProductsSnapshot(data.products_snapshot)
-  const catalogDropIndex = parseCatalogDropIndex(data.catalog_drop_index)
-  const globalBrand = mergePublicationGlobalBrand(data.global_brand)
-  const campaigns = parseCampaigns(data.campaigns)
-  const lookbook = parseLookbook(data.lookbook)
-  const siteHomepage = parseSiteHomepageUnknown(data.site_homepage)
   const activeLandingPageKey =
     typeof data.active_landing_page_key === 'string' &&
     data.active_landing_page_key.length > 0
@@ -209,17 +97,13 @@ export function normalizeStorefrontPublicationRow(
       : DEFAULT_LANDING_PAGE_KEY
 
   return {
-    layout,
-    siteSeo,
+    activeLandingPageKey,
+    theme: parseThemeConfig(data.theme_config),
+    fonts: parseFontConfig(data.font_config),
+    assets: parseAssetConfig(data.asset_config),
+    mediaIndex: parseMediaIndex(data.media_index),
     revision,
     publishedAt: data.published_at,
-    adminProducts,
-    catalogDropIndex,
-    globalBrand,
-    campaigns,
-    lookbook,
-    siteHomepage,
-    activeLandingPageKey,
   }
 }
 
@@ -232,41 +116,17 @@ async function fetchPublishedStorefrontProjectionOnce(
   env: SupabasePublicEnv,
 ): Promise<PublishedStorefrontProjection | null> {
   const supabase = getSupabasePublicationAnonClient(env)
-  const full = await supabase
+  const { data, error } = await supabase
     .from('storefront_publication')
     .select(PUBLICATION_SELECT)
     .eq('id', 1)
     .maybeSingle()
 
-  if (!full.error && full.data) {
-    return normalizeStorefrontPublicationRow(full.data as StorefrontPublicationRow)
-  }
-
-  if (
-    full.error &&
-    (isPostgrestMissingColumnError(full.error, 'site_homepage') ||
-      isPostgrestMissingColumnError(full.error, 'active_landing_page_key'))
-  ) {
-    const legacy = await supabase
-      .from('storefront_publication')
-      .select(PUBLICATION_SELECT_BASE)
-      .eq('id', 1)
-      .maybeSingle()
-    if (legacy.error) throw legacy.error
-    if (!legacy.data) return null
-    return normalizeStorefrontPublicationRow(
-      legacy.data as StorefrontPublicationRow,
-    )
-  }
-
-  if (full.error) throw full.error
-  return null
+  if (error) throw error
+  if (!data) return null
+  return normalizeStorefrontPublicationRow(data as StorefrontPublicationRow)
 }
 
-/**
- * Coalesces in-flight fetches per env so parallel loaders (landing + active drop + SEO)
- * share one round-trip.
- */
 export async function fetchPublishedStorefrontProjection(
   env: SupabasePublicEnv,
 ): Promise<PublishedStorefrontProjection | null> {

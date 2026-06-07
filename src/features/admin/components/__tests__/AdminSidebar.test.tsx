@@ -120,11 +120,11 @@ describe('AdminSidebar', () => {
 
     expect(dashboard.className).not.toContain('rounded-full')
 
-    expect(screen.getByText('Shortcuts to every CMS surface.')).toBeInTheDocument()
+    expect(screen.getByText('Active drop and CMS shortcuts.')).toBeInTheDocument()
 
 
 
-    for (const cluster of ['Overview', 'Campaigns', 'Catalog', 'Site & discovery']) {
+    for (const cluster of ['Overview', 'Site & discovery']) {
 
       expect(screen.getByText(cluster)).toBeInTheDocument()
 
@@ -132,7 +132,7 @@ describe('AdminSidebar', () => {
 
 
 
-    for (const badge of ['Global', 'Discovery', 'Assets']) {
+    for (const badge of ['Theme', 'Type', 'Media']) {
       expect(screen.queryByText(badge)).not.toBeInTheDocument()
     }
 

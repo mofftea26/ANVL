@@ -1,8 +1,6 @@
 import {
   ExternalLink,
   LayoutDashboard,
-  Layers,
-  Package,
   Globe,
   Search,
   Image,
@@ -31,11 +29,9 @@ interface AdminSidebarProps {
 
 const NAV_ICONS: Record<string, typeof LayoutDashboard> = {
   '/admin': LayoutDashboard,
-  '/admin/drops': Layers,
-  '/admin/products': Package,
-  '/admin/website-layout': Globe,
-  '/admin/seo': Search,
-  '/admin/media': Image,
+  '/admin/theme': Globe,
+  '/admin/fonts': Search,
+  '/admin/assets': Image,
   '/admin/settings': Settings,
 }
 

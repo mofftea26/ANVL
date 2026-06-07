@@ -7,55 +7,38 @@ export interface AdminNavItem {
   badge: string
 }
 
-/** Primary destinations; sidebar groups by `cluster`. */
 export const adminNavItems: AdminNavItem[] = [
   {
     label: 'Dashboard',
     href: '/admin',
-    description: 'Shortcuts to every CMS surface.',
+    description: 'Active drop and CMS shortcuts.',
     cluster: 'Workspace',
     cta: 'Open',
     badge: 'Overview',
   },
   {
-    label: 'Drops',
-    href: '/admin/drops',
-    description: 'Campaign landing, acts, theme, products.',
-    cluster: 'Campaigns',
+    label: 'Theme & Colors',
+    href: '/admin/theme',
+    description: 'Site-wide palette and theme mode.',
+    cluster: 'Site',
+    cta: 'Edit',
+    badge: 'Theme',
+  },
+  {
+    label: 'Fonts',
+    href: '/admin/fonts',
+    description: 'Heading, body, and display typefaces.',
+    cluster: 'Site',
+    cta: 'Edit',
+    badge: 'Type',
+  },
+  {
+    label: 'Assets',
+    href: '/admin/assets',
+    description: 'Upload media and assign slots per drop.',
+    cluster: 'Site',
     cta: 'Manage',
-    badge: 'Campaigns',
-  },
-  {
-    label: 'Products',
-    href: '/admin/products',
-    description: 'Catalog SKUs and drop links.',
-    cluster: 'Catalog',
-    cta: 'Open',
-    badge: 'Catalog',
-  },
-  {
-    label: 'Website layout',
-    href: '/admin/website-layout',
-    description: 'Header, footer, nav, announcement.',
-    cluster: 'Site',
-    cta: 'Edit',
-    badge: 'Global',
-  },
-  {
-    label: 'Media',
-    href: '/admin/media',
-    description: 'Shared asset library for uploads.',
-    cluster: 'Site',
-    cta: 'Browse',
-    badge: 'Assets',
-  },
-  {
-    label: 'SEO',
-    href: '/admin/seo',
-    description: 'Site and page metadata.',
-    cluster: 'Site',
-    cta: 'Edit',
-    badge: 'Discovery',
+    badge: 'Media',
   },
   {
     label: 'Settings',
@@ -67,7 +50,7 @@ export const adminNavItems: AdminNavItem[] = [
   },
 ]
 
-const CLUSTER_ORDER = ['Workspace', 'Campaigns', 'Catalog', 'Site'] as const
+const CLUSTER_ORDER = ['Workspace', 'Site'] as const
 
 export function adminNavItemsByCluster(): {
   cluster: string

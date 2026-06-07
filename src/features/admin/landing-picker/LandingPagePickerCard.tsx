@@ -1,4 +1,4 @@
-import { useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { Button } from '@/shared/components/ui/Button'
@@ -10,6 +10,8 @@ import {
   saveActiveLandingPageKeyAsync,
   subscribeActiveLandingPageChange,
 } from '@/features/cms/landingPageActiveKey.settings'
+import { fetchLandingPagePickerOptions } from './fetchLandingPagePickerOptions'
+import type { LandingPagePickerOption } from './fetchLandingPagePickerOptions'
 
 function useStagedActiveKey(): string {
   return useSyncExternalStore(
@@ -19,17 +21,23 @@ function useStagedActiveKey(): string {
   )
 }
 
-/**
- * The new CMS landing control: pick which code-owned landing page is live.
- * Lists the in-code registry (metadata only), shows the current active page,
- * and requires explicit confirmation before activating.
- */
 export function LandingPagePickerCard() {
-  const pages = useMemo(() => listLandingPages(), [])
+  const fallbackPages = useMemo(() => listLandingPages(), [])
+  const [pages, setPages] = useState<LandingPagePickerOption[]>(fallbackPages)
   const activeKey = useStagedActiveKey()
   const [selected, setSelected] = useState(activeKey)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    void fetchLandingPagePickerOptions().then(setPages).catch(() => {
+      setPages(fallbackPages)
+    })
+  }, [fallbackPages])
+
+  useEffect(() => {
+    setSelected(activeKey)
+  }, [activeKey])
 
   const activePage = pages.find((p) => p.key === activeKey) ?? pages[0]
   const selectedPage = pages.find((p) => p.key === selected) ?? activePage
@@ -43,7 +51,7 @@ export function LandingPagePickerCard() {
       setConfirmOpen(false)
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : 'Failed to activate landing page',
+        err instanceof Error ? err.message : 'Failed to activate drop',
       )
     } finally {
       setSaving(false)
@@ -52,7 +60,7 @@ export function LandingPagePickerCard() {
 
   return (
     <AdminCard
-      title="Active landing page"
+      title="Active drop"
       description="The live homepage at / renders the selected code-owned landing experience."
     >
       <div className="flex flex-col gap-4">
@@ -64,9 +72,7 @@ export function LandingPagePickerCard() {
         </p>
 
         <label className="flex flex-col gap-1.5">
-          <span className="anvl-micro text-[var(--color-text-muted)]">
-            Landing page
-          </span>
+          <span className="anvl-micro text-[var(--color-text-muted)]">Drop</span>
           <Select
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
@@ -117,7 +123,7 @@ export function LandingPagePickerCard() {
       <Modal
         open={confirmOpen}
         onClose={() => (saving ? undefined : setConfirmOpen(false))}
-        title="Activate landing page?"
+        title="Activate drop?"
       >
         <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
           Set{' '}

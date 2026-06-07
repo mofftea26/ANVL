@@ -27,6 +27,19 @@ export interface SeoContent {
 
 export type SeoFieldPatch = Partial<SeoContent>
 
+export type StorefrontCampaign = {
+  id: string
+  title: string
+  description: string
+}
+
+export type StorefrontLookbookItem = {
+  id: string
+  alt: string
+  src: string
+}
+
+
 export interface HomePageContent {
   hero: {
     title: string

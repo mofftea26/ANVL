@@ -21,7 +21,7 @@ function DashboardContent() {
   return (
     <AdminLayout
       title="Dashboard"
-      description="Landing page, catalog, and site chrome."
+      description="Active drop, theme, fonts, and assets."
     >
       <LandingPagePickerCard />
       <div className="grid items-stretch gap-6 sm:grid-cols-2 xl:grid-cols-3">

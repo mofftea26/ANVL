@@ -4,7 +4,6 @@ import { buildSeoMeta } from '@/app/seo/meta'
 import { runtimeClients } from '@/app/config/runtime'
 import {
   effectivePrice,
-  getAdminProductBySlug,
   variantIsPurchasable,
 } from '@/features/products/catalog/storefrontCatalog'
 import { useCart } from '@/features/cart/hooks/useCart'
@@ -50,28 +49,24 @@ function disabledSizesForColor(product: Product, colorName: string): ReadonlySet
 export const Route = createFileRoute('/shop/$slug')({
   loader: async ({ params }) => {
     const product = await runtimeClients.commerce.getProductBySlug(params.slug)
-    const adminProduct = getAdminProductBySlug(params.slug)
-    if (!product || !adminProduct) throw notFound()
+    if (!product) throw notFound()
     const related = await runtimeClients.commerce.getRelatedProducts(params.slug)
-    return { product, adminProduct, related }
+    return { product, related }
   },
   head: ({ loaderData }) =>
     buildSeoMeta({
-      title:
-        loaderData?.adminProduct.seo.title ??
-        `${loaderData?.product.name ?? 'Product'} | ANVL Athletics`,
+      title: `${loaderData?.product.name ?? 'Product'} | ANVL Athletics`,
       description:
-        loaderData?.adminProduct.seo.description ??
         loaderData?.product.storytelling ??
         'ANVL Athletics product details',
       path: `/shop/${loaderData?.product.slug ?? ''}`,
-      image: loaderData?.adminProduct.seo.ogImage,
+      image: loaderData?.product.images[0]?.src,
     }),
   component: ProductPage,
 })
 
 function ProductPage() {
-  const { product, adminProduct, related } = Route.useLoaderData()
+  const { product, related } = Route.useLoaderData()
   const [colorwayIndex, setColorwayIndex] = useState(0)
   const [size, setSize] = useState(product.sizes[0] ?? 'M')
   const [quantity, setQuantity] = useState(1)
@@ -81,7 +76,7 @@ function ProductPage() {
   useTrackProductView(product)
 
   const colorway = product.colorways[colorwayIndex] ?? product.colorways[0]
-  const displayPrice = effectivePrice(adminProduct)
+  const displayPrice = effectivePrice(product)
   const galleryImages = useMemo(() => {
     const byColor = colorway
       ? product.shop?.imagesByColorName[colorway.name]
@@ -100,27 +95,25 @@ function ProductPage() {
     if (next) setSize(next)
   }, [disabledSizes, product.sizes, size])
 
-  const canPurchaseVariant = variantIsPurchasable(
-    adminProduct,
-    colorwayIndex,
-    size,
-  )
+  const canPurchaseVariant = variantIsPurchasable(product, colorwayIndex, size)
   const canPurchase = canPurchaseVariant
 
+  const shopStatus = product.shop?.storefrontStatus ?? 'available'
   const statusNote =
-    adminProduct.status === 'comingSoon'
+    shopStatus === 'comingSoon'
       ? 'Coming soon — not available for purchase yet.'
-      : adminProduct.status === 'outOfStock'
+      : shopStatus === 'outOfStock'
         ? 'Currently out of stock online.'
         : null
 
+  const compareAt = product.shop?.compareAtPrice
   const saleActive =
-    adminProduct.isOnSale &&
-    typeof adminProduct.compareAtPrice === 'number' &&
-    adminProduct.compareAtPrice > displayPrice
+    shopStatus === 'sale' &&
+    typeof compareAt === 'number' &&
+    compareAt > displayPrice
 
-  const yt = extractYoutubeVideoId(adminProduct.videoUrl)
-  const modelUrl = adminProduct.model3dUrl?.trim()
+  const yt = extractYoutubeVideoId(product.shop?.videoUrl)
+  const modelUrl = product.shop?.model3dUrl?.trim()
 
   const heroImageSrc = galleryImages[0]?.src ?? product.images[0]?.src ?? ''
 
@@ -160,11 +153,11 @@ function ProductPage() {
                     ${displayPrice}
                   </p>
                   <p className="text-lg text-[var(--color-text-muted)] line-through">
-                    ${adminProduct.compareAtPrice}
+                    ${compareAt}
                   </p>
-                  {adminProduct.saleLabel ? (
+                  {product.shop?.saleLabel ? (
                     <span className="rounded-full border border-[var(--color-line)] px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-[var(--color-heading)]">
-                      {adminProduct.saleLabel}
+                      {product.shop.saleLabel}
                     </span>
                   ) : null}
                 </>
@@ -172,7 +165,7 @@ function ProductPage() {
                 <p className="anvl-heading text-3xl font-normal">${displayPrice}</p>
               )}
             </div>
-            {adminProduct.status === 'sale' && !saleActive ? (
+            {shopStatus === 'sale' && !saleActive ? (
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-accent)]">
                 Sale
               </p>
