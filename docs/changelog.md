@@ -1,4 +1,12 @@
-﻿## 2026-06-07 — Static storefront navigation
+﻿## 2026-06-08 — Responsive landing + chrome polish (mobile/tablet)
+
+- **The Oath landing:** tablet now runs the **same** cinematic (pins + bleed) as desktop at full intensity — only CSS layout differs (hero `md:`/`lg:` split). Mobile reworked: the four tenets collapse into a one-screen 2×2 grid of translucent cards (forge bleeds through), products render as a 2-col grid (odd last item centred), and reveals use a staggered `ScrollTrigger.batch`. Hero video plays **once** on mobile then holds the last frame (no loop); the DR-01/coords metadata strip is hidden on mobile (decluttered + no scroll-cue overlap). CTA buttons redesigned (forged ember slab + nudging arrow, smaller on mobile).
+- **Storefront nav:** removed the fixed mobile **bottom bar**; the burger + cart now live in `PremiumNavTopbar` (variant-aware, slightly smaller on mobile). Inline desktop links moved to `lg:`; `PremiumNavMobile` is now purely the drawer.
+- **Footer:** complete redesign — removed the placeholder newsletter form and dead `#` social links (+ admin-leak fallback text). Brand block + multi-column nav grid + thin legal bar; emblem watermark, tagline, and "Forged Under Pressure" micro-caption retained.
+- **Docs:** updated `docs/responsive-design-guidelines.md` (nav section).
+- **Gates:** `pnpm typecheck` + `pnpm build` green; landing + layout test suites pass. (Pre-existing unrelated failure: `publicStorefrontPublication.test.ts`, tied to the in-progress font-library migration on this branch.)
+
+## 2026-06-07 — Static storefront navigation
 
 - **Nav chrome is code-owned:** header, footer, and mobile drawer links come from `staticWebsiteNavigation.ts` / `navigation.defaults.ts` — never Supabase or CMS layout editors.
 - **Links:** Story (`/story`) and Care Guide (`/care-guide`) in header + footer; removed legacy `/drop/the-oath` nav target (no drop route).

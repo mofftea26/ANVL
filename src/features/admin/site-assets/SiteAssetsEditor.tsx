@@ -4,8 +4,7 @@ import { toast } from 'sonner'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { Select } from '@/shared/components/ui/Select'
+import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { MediaLibraryPage } from '@/features/admin/media/MediaLibraryPage'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import {
@@ -21,6 +20,7 @@ import {
   DROP_ASSET_SLOTS,
   GENERAL_ASSET_SLOTS,
 } from '@/features/landingPages/assetSlots'
+import { fetchLandingPagePickerOptions } from '@/features/admin/landing-picker/fetchLandingPagePickerOptions'
 import { listLandingPages } from '@/features/landingPages/registry'
 
 function useAssetConfig(): AssetConfig {
@@ -39,7 +39,16 @@ export function SiteAssetsEditor() {
   const [scope, setScope] = useState<'general' | string>('general')
   const [saving, setSaving] = useState(false)
   const mediaQuery = useMediaAssetsQuery()
-  const drops = useMemo(() => listLandingPages(), [])
+  const fallbackDrops = useMemo(() => listLandingPages(), [])
+  const [drops, setDrops] = useState(fallbackDrops)
+
+  useEffect(() => {
+    void fetchLandingPagePickerOptions()
+      .then(setDrops)
+      .catch(() => {
+        setDrops(fallbackDrops)
+      })
+  }, [fallbackDrops])
 
   useEffect(() => {
     setConfig(stored)
@@ -86,6 +95,8 @@ export function SiteAssetsEditor() {
       ? GENERAL_ASSET_SLOTS
       : (DROP_ASSET_SLOTS[scope] ?? [])
 
+  const UNASSIGNED = '__unassigned__'
+
   const assignments =
     scope === 'general'
       ? config.general
@@ -119,35 +130,33 @@ export function SiteAssetsEditor() {
           Map uploaded media to code-defined slots. Unassigned slots use built-in fallbacks.
         </p>
 
-        <AdminFormField label="Scope">
-          <Select
-            value={scope}
-            onChange={(e) => setScope(e.target.value)}
-          >
-            <option value="general">General (site-wide)</option>
-            {drops.map((d) => (
-              <option key={d.key} value={d.key}>
-                {d.name}
-              </option>
-            ))}
-          </Select>
-        </AdminFormField>
+        <AdminFieldSelect
+          label="Scope"
+          value={scope}
+          onChange={setScope}
+          options={[
+            { value: 'general', label: 'General (site-wide)' },
+            ...drops.map((d) => ({ value: d.key, label: d.name })),
+          ]}
+        />
 
         <div className="grid gap-4 sm:grid-cols-2">
           {slots.map((slot) => (
-            <AdminFormField key={slot.key} label={slot.label}>
-              <Select
-                value={assignments[slot.key] ?? ''}
-                onChange={(e) => setSlot(slot.key, e.target.value)}
-              >
-                <option value="">— Not assigned —</option>
-                {(mediaQuery.data ?? []).map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.filename}
-                  </option>
-                ))}
-              </Select>
-            </AdminFormField>
+            <AdminFieldSelect
+              key={slot.key}
+              label={slot.label}
+              value={assignments[slot.key] ? assignments[slot.key] : UNASSIGNED}
+              onChange={(value) =>
+                setSlot(slot.key, value === UNASSIGNED ? '' : value)
+              }
+              options={[
+                { value: UNASSIGNED, label: '— Not assigned —' },
+                ...(mediaQuery.data ?? []).map((asset) => ({
+                  value: asset.id,
+                  label: asset.filename,
+                })),
+              ]}
+            />
           ))}
         </div>
       </section>

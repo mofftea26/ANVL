@@ -1,6 +1,7 @@
 import { Container } from '@/shared/components/ui/Container'
 import { WarBanner } from '@/shared/components/premium/WarBanner'
 import { OATH_FINAL } from '../data'
+import { oathCrestEmblem, oathThemedMarkup } from '../theOathAssets'
 import { MediaPlane } from './MediaPlane'
 import { OathCtaLink } from './OathCtaLink'
 
@@ -15,7 +16,7 @@ export function FinalDropCTA() {
     <section
       data-scene="final"
       id="oath"
-      className="relative flex min-h-[var(--anvl-section-h)] w-full scroll-mt-[var(--anvl-header-h)] flex-col items-center justify-center overflow-hidden bg-transparent py-24 text-center"
+      className="relative flex w-full scroll-mt-[var(--anvl-header-h)] flex-col items-center overflow-hidden bg-transparent pt-20 pb-10 text-center md:pt-24 md:pb-12"
       aria-labelledby="oath-final-heading"
     >
       <MediaPlane tone="#0d0e10" showLogo={false} grain transparent vignette={false} />
@@ -31,7 +32,12 @@ export function FinalDropCTA() {
       <Container className="relative z-10 flex flex-col items-center">
         {/* Crest banner — drops in from above. */}
         <div data-final-crest className="mb-10 w-[clamp(8rem,22vw,12rem)] will-change-transform [perspective:1200px]">
-          <WarBanner tone="#1b130d" label="DR-01">
+          <WarBanner
+            tone="#1b130d"
+            label="DR-01"
+            placeholderSrc={oathCrestEmblem()}
+            placeholderThemedMarkup={oathThemedMarkup('crestSvg')}
+          >
             <p className="anvl-display text-center text-[9px] tracking-[0.3em] text-[var(--color-ember-bright)]">
               The Oath
             </p>

@@ -5,8 +5,8 @@ import { fetchCmsProfileRole } from '@/features/admin/auth/adminCmsProfileRole'
 import { readActiveLandingPageFromStorage } from '@/features/cms/landingPageActiveKey.settings'
 import {
   readAssetConfigFromStorage,
-  readFontConfigFromStorage,
-  readThemeConfigFromStorage,
+  readFontLibraryFromStorage,
+  readThemeLibraryFromStorage,
 } from '@/features/cms/config/cmsSiteConfig.settings'
 import { isAdminCmsRemoteHydrationLocked } from '@/features/admin/cmsRemote/adminCmsRemoteGate'
 import {
@@ -48,8 +48,8 @@ export async function flushAdminCmsRemoteSync(): Promise<
   if (!canWriteCmsDraftsToSupabase(role)) return { ok: true }
 
   const activeLandingPageKey = readActiveLandingPageFromStorage().key
-  const themeConfig = readThemeConfigFromStorage()
-  const fontConfig = readFontConfigFromStorage()
+  const themeConfig = readThemeLibraryFromStorage()
+  const fontConfig = readFontLibraryFromStorage()
   const assetConfig = readAssetConfigFromStorage()
 
   const mediaList = await listMediaAssets(client)

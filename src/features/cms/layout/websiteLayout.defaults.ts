@@ -1,4 +1,5 @@
 import { navigationDefaults } from '@/features/cms/navigation/navigation.defaults'
+import { DEFAULT_EMBLEM_SRC } from '@/shared/constants/brandAssets'
 import type { WebsiteLayoutContent } from '@/features/cms/layout/websiteLayout.types'
 
 export const WEBSITE_LAYOUT_VERSION = 1
@@ -17,7 +18,7 @@ export function createDefaultWebsiteLayout(
       mobileExtraLinks: [],
     },
     footer: {
-      decorativeEmblemFallbackSrc: '/brand/the-oath-shape.svg',
+      decorativeEmblemFallbackSrc: DEFAULT_EMBLEM_SRC,
       tagline: nav.footerTagline,
       microCaption: nav.footerMicroCaption,
       linkGroups: [

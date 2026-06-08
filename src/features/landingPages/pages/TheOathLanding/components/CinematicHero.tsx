@@ -1,5 +1,6 @@
 import { Container } from '@/shared/components/ui/Container'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
+import { OathCmsMark } from './OathCmsMark'
 import { OATH_HERO, OATH_META } from '../data'
 import { OathCtaLink } from './OathCtaLink'
 import { ScrollCue } from './ScrollCue'
@@ -20,12 +21,15 @@ export function CinematicHero() {
       className="relative flex h-[var(--anvl-section-h)] w-full items-end bg-[var(--color-bg)]"
       aria-label="ANVL Athletics — Drop 01, The Oath"
     >
-      {/* Media: full-bleed on mobile, right ~58% on desktop. Extends up behind
-          the transparent header so it reaches the top edge. Crops from the
-          bottom (`object-top`). Frame driven by scroll — see `buildHero`. */}
+      {/* Media: full-bleed on mobile, anchored to the right on tablet/desktop and
+          **capped in width** (`lg:max-w-*`) so a low-res source is not stretched
+          across large monitors — the smaller the rendered box, the crisper it
+          reads. Sized to the hero section (`inset-0`, no header overhang) so its
+          height fits exactly; crops from the bottom (`object-top`). Frame driven
+          by scroll — see `buildHero`. */}
       <div
         data-hero-media
-        className="hero-media-blend absolute inset-x-0 bottom-0 top-[calc(-1*var(--anvl-header-h))] z-0 will-change-transform md:left-[18%]"
+        className="hero-media-blend absolute inset-0 z-0 will-change-transform md:left-[28%] lg:left-auto lg:right-0 lg:w-[64%] lg:max-w-[980px] 2xl:max-w-[1080px]"
       >
         <video
           data-hero-video
@@ -33,7 +37,6 @@ export function CinematicHero() {
           src="/videos/WarriorHero1.mp4"
           muted
           playsInline
-          loop
           preload="auto"
           aria-hidden="true"
         />
@@ -80,10 +83,20 @@ export function CinematicHero() {
       />
       <GrainOverlay />
 
-      <Container className="relative z-10 w-full pb-16 md:pb-24">
-        <div data-hero-content className="max-w-xl will-change-transform md:max-w-[48%]">
-          <div data-hero-fade className="flex items-center gap-4">
-            <span className="anvl-display inline-flex items-center gap-2.5 text-xs tracking-[0.34em] text-[var(--color-ember-bright)] before:h-px before:w-10 before:bg-[var(--color-ember)] before:content-['']">
+      <Container className="relative z-10 w-full pb-28 md:pb-24">
+        <div data-hero-content className="mx-auto max-w-xl text-center will-change-transform md:mx-0 md:max-w-[62%] md:text-left lg:max-w-[48%]">
+          {/* Small ANVL stacked lockup, sitting above the drop tag. */}
+          <div data-hero-fade className="flex justify-center md:justify-start">
+            <OathCmsMark
+              slot="dropLogo"
+              className="h-[4.5rem] w-[4.5rem] sm:h-[5.25rem] sm:w-[5.25rem] md:h-[6.75rem] md:w-[6.75rem]"
+              width={108}
+              height={108}
+            />
+          </div>
+
+          <div data-hero-fade className="mt-5 flex items-center justify-center gap-4 md:justify-start">
+            <span className="anvl-display inline-flex items-center gap-2.5 text-xs tracking-[0.34em] text-[var(--color-ember-bright)] before:h-px before:w-10 before:bg-[var(--color-ember)] before:content-[''] max-md:after:h-px max-md:after:w-10 max-md:after:bg-[var(--color-ember)] max-md:after:content-['']">
               {OATH_HERO.eyebrow}
             </span>
           </div>
@@ -100,10 +113,10 @@ export function CinematicHero() {
           </h1>
 
           {/* Drawing ember underline. */}
-          <div className="mt-4 h-[2px] w-full max-w-sm origin-left">
+          <div className="mx-auto mt-4 h-[2px] w-full max-w-sm md:mx-0">
             <div
               data-hero-underline
-              className="h-full w-full origin-left"
+              className="h-full w-full origin-center md:origin-left"
               style={{
                 background:
                   'linear-gradient(90deg, var(--color-ember-bright), var(--color-ember) 60%, transparent)',
@@ -113,24 +126,35 @@ export function CinematicHero() {
 
           <p
             data-hero-fade
-            className="mt-7 max-w-md text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-[15px] md:text-base"
+            className="mx-auto mt-7 max-w-md text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-[15px] md:mx-0 md:text-base"
           >
             {OATH_HERO.subhead}
           </p>
 
-          <div data-hero-fade className="mt-8 flex flex-wrap items-center gap-3">
-            <OathCtaLink href={OATH_HERO.primaryCta.href} variant="primary">
+          {/* Mobile: buttons sit side by side (each fills half the row), centred.
+              They return to natural left-aligned width once there is room at md+. */}
+          <div data-hero-fade className="mt-8 flex items-center justify-center gap-3 sm:flex-wrap md:justify-start">
+            <OathCtaLink
+              href={OATH_HERO.primaryCta.href}
+              variant="primary"
+              className="flex-1 sm:flex-none"
+            >
               {OATH_HERO.primaryCta.label}
             </OathCtaLink>
-            <OathCtaLink href={OATH_HERO.secondaryCta.href} variant="secondary">
+            <OathCtaLink
+              href={OATH_HERO.secondaryCta.href}
+              variant="secondary"
+              className="flex-1 sm:flex-none"
+            >
               {OATH_HERO.secondaryCta.label}
             </OathCtaLink>
           </div>
 
-          {/* Technical metadata strip. */}
+          {/* Technical metadata strip — desktop/tablet only; on mobile it just
+              clutters the frame and collided with the scroll cue. */}
           <div
             data-hero-fade
-            className="anvl-display mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[var(--color-line)] pt-5 text-[10px] tracking-[0.28em] text-[var(--color-text-muted)]"
+            className="anvl-display mt-10 hidden flex-wrap items-center gap-x-6 gap-y-2 border-t border-[var(--color-line)] pt-5 text-[10px] tracking-[0.28em] text-[var(--color-text-muted)] md:flex"
           >
             <span className="text-[var(--color-ember-bright)]">{OATH_META.drop}</span>
             <span>{OATH_META.coords}</span>

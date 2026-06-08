@@ -132,10 +132,13 @@ Always include safe area inset and page spacer:
 
 ### Storefront nav (PremiumNav)
 
-- **Mobile:** hamburger/drawer navigation
-- **Desktop:** full topbar with nav links, cart badge
+- **Mobile + tablet (<1024px):** the topbar carries the logo, cart, and a burger
+  that opens the nav drawer (`PremiumNavMobile`). There is **no** fixed bottom bar.
+- **Desktop (≥1024px):** full topbar with inline nav links + cart badge; the burger
+  is hidden.
 - **Cinematic mode:** transparent topbar + optional side rail (desktop only)
-- The `PremiumNavMobile` and `PremiumNavTopbar` components handle the different layouts
+- `PremiumNavTopbar` owns all triggers (logo / links / cart / burger);
+  `PremiumNavMobile` is purely the slide-out drawer.
 
 ### Admin nav
 

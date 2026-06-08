@@ -13,4 +13,5 @@ export type {
   LandingPageComponentProps,
   LandingPageDefinition,
   LandingPageMeta,
+  LandingPageThemedMarkups,
 } from './types'

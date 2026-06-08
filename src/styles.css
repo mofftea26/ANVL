@@ -1,3 +1,5 @@
+/* Bootstrap fallbacks before SSR projection inline CSS + SiteThemeProvider hydrate.
+   Published theme, fonts, and colors come from Supabase via loadStorefrontProjection. */
 @import "@fontsource/anton/400.css";
 @import "@fontsource/sora/400.css";
 @import "@fontsource/sora/500.css";
@@ -242,10 +244,65 @@ a {
 @keyframes anvl-banner-sway {
   0%,
   100% {
-    transform: rotate(-0.6deg);
+    transform: rotate(-0.75deg) translateX(-2px);
   }
   50% {
-    transform: rotate(0.6deg);
+    transform: rotate(0.75deg) translateX(2px);
+  }
+}
+
+@keyframes anvl-banner-sway-rich {
+  0%,
+  100% {
+    transform: rotate(-1.1deg) translateX(-4px) scale(1);
+  }
+  33% {
+    transform: rotate(0.35deg) translateX(1px) scale(1.008);
+  }
+  66% {
+    transform: rotate(1.1deg) translateX(4px) scale(1);
+  }
+}
+
+@keyframes anvl-banner-emblem-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-ember) 28%, transparent));
+  }
+  50% {
+    transform: scale(1.045);
+    filter: drop-shadow(0 0 28px color-mix(in srgb, var(--color-ember) 48%, transparent));
+  }
+}
+
+@keyframes anvl-banner-sheen {
+  0% {
+    transform: translateX(-120%) skewX(-12deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.55;
+  }
+  45% {
+    transform: translateX(120%) skewX(-12deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(120%) skewX(-12deg);
+    opacity: 0;
+  }
+}
+
+@keyframes anvl-banner-ground-pulse {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: translateX(-50%) scaleX(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scaleX(1.08);
   }
 }
 
@@ -253,15 +310,92 @@ a {
   animation: anvl-ember-drift var(--ember-dur, 7s) linear infinite;
 }
 
+.anvl-banner-root {
+  --banner-shadow:
+    0 10px 28px -8px rgba(0, 0, 0, 0.72),
+    0 22px 56px -18px rgba(0, 0, 0, 0.58),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  --banner-shadow-active:
+    0 14px 36px -8px rgba(0, 0, 0, 0.78),
+    0 26px 64px -14px color-mix(in srgb, var(--color-ember) 16%, transparent),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.anvl-banner-root--elevated {
+  --banner-shadow:
+    0 18px 44px -10px rgba(0, 0, 0, 0.84),
+    0 32px 80px -18px rgba(0, 0, 0, 0.68),
+    0 0 56px -14px color-mix(in srgb, var(--color-ember) 18%, transparent),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  --banner-shadow-active:
+    0 22px 52px -8px rgba(0, 0, 0, 0.86),
+    0 38px 96px -14px color-mix(in srgb, var(--color-ember) 28%, transparent),
+    0 0 72px -10px color-mix(in srgb, var(--color-ember) 22%, transparent),
+    0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+
+.anvl-banner-fabric {
+  transform-style: preserve-3d;
+  transform-origin: top center;
+  transition: transform 0.28s cubic-bezier(0.34, 1.25, 0.64, 1);
+  will-change: transform;
+}
+
+.anvl-banner-body {
+  box-shadow: var(--banner-shadow);
+  transition: box-shadow 0.28s cubic-bezier(0.34, 1.25, 0.64, 1);
+}
+
+.anvl-banner-root--tilting .anvl-banner-body {
+  box-shadow: var(--banner-shadow-active);
+}
+
+.anvl-banner-emblem {
+  animation: anvl-banner-emblem-breathe 5s ease-in-out infinite;
+}
+
+.anvl-banner-sheen {
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.14) 50%,
+    transparent 58%
+  );
+  animation: anvl-banner-sheen 7.5s ease-in-out infinite;
+}
+
+.anvl-banner-ground-glow {
+  animation: anvl-banner-ground-pulse 4.2s ease-in-out infinite;
+}
+
+.anvl-banner-sway-paused {
+  animation-play-state: paused;
+}
+
 .anvl-banner-sway {
   transform-origin: top center;
-  animation: anvl-banner-sway var(--sway-dur, 7s) ease-in-out infinite;
+  animation: anvl-banner-sway var(--sway-dur, 6.5s) ease-in-out infinite;
+  animation-delay: var(--sway-delay, 0s);
+}
+
+.anvl-banner-sway-rich {
+  transform-origin: top center;
+  animation: anvl-banner-sway-rich var(--sway-dur, 5.5s) ease-in-out infinite;
+  animation-delay: var(--sway-delay, 0s);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .anvl-ember,
-  .anvl-banner-sway {
+  .anvl-banner-sway,
+  .anvl-banner-sway-rich,
+  .anvl-banner-emblem,
+  .anvl-banner-sheen,
+  .anvl-banner-ground-glow {
     animation: none !important;
+  }
+
+  .anvl-banner-fabric {
+    transition: none;
   }
 }
 
@@ -783,13 +917,11 @@ a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11) {
 }
 
 /*
- * The Oath landing — entry preloader + scroll cue. CSS-driven so the preloader
- * works without JS and auto-dismisses under reduced motion (the global clamp
- * collapses the veil to its final hidden state). No hydration risk (no JS state).
+ * Landing entry overlay — one loader for chunk + critical assets.
+ * Progress bar width is driven by JS; exit veil runs once load completes.
  */
-@keyframes anvl-preloader-veil {
-  0%,
-  58% {
+@keyframes anvl-entry-overlay-exit {
+  0% {
     opacity: 1;
     visibility: visible;
   }
@@ -799,13 +931,10 @@ a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11) {
   }
 }
 
-@keyframes anvl-preloader-rise {
+@keyframes anvl-entry-overlay-rise {
   0% {
     opacity: 0;
     transform: translate3d(0, 14px, 0);
-  }
-  60% {
-    opacity: 1;
   }
   100% {
     opacity: 1;
@@ -813,13 +942,38 @@ a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11) {
   }
 }
 
-@keyframes anvl-preloader-bar {
-  0% {
-    transform: scaleX(0);
-  }
+@keyframes anvl-emblem-pulse {
+  0%,
   100% {
-    transform: scaleX(1);
+    transform: scale(1);
+    opacity: 0.86;
   }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+.anvl-entry-overlay-exit {
+  animation: anvl-entry-overlay-exit 680ms cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+
+.anvl-entry-overlay-rise {
+  animation: anvl-entry-overlay-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.anvl-emblem-pulse {
+  animation: anvl-emblem-pulse 2.1s ease-in-out infinite;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+/* Homepage entry loader — scroll locked before React hydrates (see LANDING_ENTRY_LOCK_SCRIPT). */
+html[data-landing-entry='active'],
+html[data-landing-entry='active'] body {
+  overflow: hidden !important;
+  height: 100%;
+  overscroll-behavior: none;
 }
 
 @keyframes anvl-scrollcue {
@@ -834,19 +988,6 @@ a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11) {
     transform: translateY(250%);
     opacity: 0;
   }
-}
-
-.anvl-preloader {
-  animation: anvl-preloader-veil 2.4s cubic-bezier(0.7, 0, 0.3, 1) forwards;
-}
-
-.anvl-preloader-rise {
-  animation: anvl-preloader-rise 1s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.anvl-preloader-bar {
-  transform-origin: left center;
-  animation: anvl-preloader-bar 1.8s cubic-bezier(0.5, 0, 0.2, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

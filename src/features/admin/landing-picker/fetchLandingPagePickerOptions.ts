@@ -6,14 +6,14 @@ export type LandingPagePickerOption = LandingPageMeta
 
 /**
  * Fetch landing page picker options from Supabase, intersected with the code registry.
- * Falls back to registry-only when Supabase is unavailable.
+ * Supabase is the source of truth for labels; registry metadata is offline fallback only.
  */
 export async function fetchLandingPagePickerOptions(): Promise<
   LandingPagePickerOption[]
 > {
-  const registry = listLandingPages()
+  const registryFallback = listLandingPages()
   const client = getAdminSupabaseBrowserClient()
-  if (!client) return registry
+  if (!client) return registryFallback
 
   const { data, error } = await client
     .from('landing_pages')
@@ -21,27 +21,30 @@ export async function fetchLandingPagePickerOptions(): Promise<
     .eq('is_available', true)
     .order('name')
 
-  if (error || !data?.length) return registry
+  if (error || !data?.length) return registryFallback
 
-  const registryByKey = new Map(registry.map((p) => [p.key, p]))
+  const registryByKey = new Map(registryFallback.map((p) => [p.key, p]))
   const out: LandingPagePickerOption[] = []
 
   for (const row of data) {
     const key = typeof row.key === 'string' ? row.key : ''
     const reg = registryByKey.get(key)
     if (!reg) continue
+
+    const dbName = typeof row.name === 'string' ? row.name.trim() : ''
+    const dbDescription =
+      typeof row.description === 'string' ? row.description : ''
+    const dbPreview =
+      typeof row.preview_image === 'string' ? row.preview_image.trim() : ''
+
     out.push({
       key,
-      name: typeof row.name === 'string' ? row.name : reg.name,
-      description:
-        typeof row.description === 'string' ? row.description : reg.description,
-      previewImage:
-        typeof row.preview_image === 'string' && row.preview_image.length > 0
-          ? row.preview_image
-          : reg.previewImage,
+      name: dbName || reg.name,
+      description: dbDescription || reg.description,
+      previewImage: dbPreview || reg.previewImage,
       isAvailable: true,
     })
   }
 
-  return out.length > 0 ? out : registry
+  return out.length > 0 ? out : registryFallback
 }

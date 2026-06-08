@@ -2,14 +2,12 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { writeActiveLandingPageToStorage } from '@/features/cms/landingPageActiveKey.settings'
 import {
   writeAssetConfigToStorage,
-  writeFontConfigToStorage,
-  writeThemeConfigToStorage,
+  writeFontLibraryToStorage,
+  writeThemeLibraryToStorage,
 } from '@/features/cms/config/cmsSiteConfig.settings'
-import {
-  parseAssetConfig,
-  parseFontConfig,
-  parseThemeConfig,
-} from '@/features/cms/config/cmsSiteConfig.zod'
+import { parseAssetConfig } from '@/features/cms/config/cmsSiteConfig.zod'
+import { parseFontLibrary } from '@/features/cms/config/fontLibrary'
+import { parseThemeLibrary } from '@/features/cms/config/themeLibrary'
 import {
   beginAdminCmsRemoteHydration,
   endAdminCmsRemoteHydration,
@@ -44,8 +42,8 @@ export async function hydrateAdminCmsFromSupabase(
       })
     }
 
-    writeThemeConfigToStorage(parseThemeConfig(settings.theme_config))
-    writeFontConfigToStorage(parseFontConfig(settings.font_config))
+    writeThemeLibraryToStorage(parseThemeLibrary(settings.theme_config))
+    writeFontLibraryToStorage(parseFontLibrary(settings.font_config))
     writeAssetConfigToStorage(parseAssetConfig(settings.asset_config))
   } finally {
     endAdminCmsRemoteHydration()

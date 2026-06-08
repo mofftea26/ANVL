@@ -53,15 +53,14 @@ export function PremiumNav({
           logoSrc={logoSrc}
           visibleLinks={visibleLinks}
           showCart={showCart}
+          onMenuOpen={() => setMobileOpen(true)}
         />
       </header>
 
       <PremiumNavMobile
         logoSrc={logoSrc}
         drawerLinks={drawerLinks}
-        showCart={showCart}
         open={mobileOpen}
-        onOpen={() => setMobileOpen(true)}
         onClose={() => setMobileOpen(false)}
       />
     </>

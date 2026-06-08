@@ -38,9 +38,9 @@ export function AdminMediaField({
             type="button"
             variant="secondary"
             size="sm"
+            icon={<ImageIcon className="size-3.5" aria-hidden="true" />}
             onClick={() => setPickerOpen(true)}
           >
-            <ImageIcon className="size-3.5" />
             Library
           </AdminButton>
         </div>

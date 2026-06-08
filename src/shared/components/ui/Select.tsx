@@ -1,4 +1,6 @@
 import type { SelectHTMLAttributes } from 'react'
+import { ChevronDown } from 'lucide-react'
+import { adminFieldControlClass } from '@/shared/lib/cmsFieldStyles'
 import { cn } from '@/shared/lib/cn'
 
 export function Select({
@@ -7,14 +9,22 @@ export function Select({
   ...props
 }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select
-      className={cn(
-        'focus-ring h-11 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)]',
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </select>
+    <div className="relative">
+      <select
+        className={cn(
+          adminFieldControlClass,
+          'h-11 appearance-none rounded-xl pr-9',
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        size={14}
+        aria-hidden
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
+      />
+    </div>
   )
 }

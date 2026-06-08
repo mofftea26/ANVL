@@ -3,12 +3,11 @@ import { z } from 'zod'
 import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
 import {
   parseAssetConfig,
-  parseFontConfig,
-  parseThemeConfig,
   type AssetConfig,
-  type FontConfig,
   type ThemeConfig,
 } from '@/features/cms/config/cmsSiteConfig.zod'
+import { parseFontLibrary, type FontLibraryConfig } from '@/features/cms/config/fontLibrary'
+import { parseThemeLibrary, resolveThemeConfig } from '@/features/cms/config/themeLibrary'
 import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { createAnvlSupabaseClient } from '@/features/cms/api/createAnvlSupabaseClient'
 import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
@@ -49,7 +48,8 @@ const mediaIndexEntrySchema = z.object({
 export type PublishedStorefrontProjection = {
   activeLandingPageKey: string
   theme: ThemeConfig
-  fonts: FontConfig
+  /** Full font library for storefront @font-face / Google Fonts loading. */
+  fonts: FontLibraryConfig
   assets: AssetConfig
   mediaIndex: MediaIndexEntry[]
   revision: number
@@ -98,8 +98,8 @@ export function normalizeStorefrontPublicationRow(
 
   return {
     activeLandingPageKey,
-    theme: parseThemeConfig(data.theme_config),
-    fonts: parseFontConfig(data.font_config),
+    theme: resolveThemeConfig(parseThemeLibrary(data.theme_config)),
+    fonts: parseFontLibrary(data.font_config),
     assets: parseAssetConfig(data.asset_config),
     mediaIndex: parseMediaIndex(data.media_index),
     revision,

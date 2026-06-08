@@ -41,4 +41,28 @@ describe('AdminPageActionsProvider', () => {
 
     expect(screen.getByTestId('slot').textContent).toBe('')
   })
+
+  it('does not re-render registrars when the slot value is unchanged', () => {
+    let registrarRenders = 0
+
+    function CountingRegistrar() {
+      registrarRenders += 1
+      const setActions = useAdminPageActions()
+      useEffect(() => {
+        setActions(<span>hello</span>)
+        return () => setActions(null)
+      }, [setActions])
+      return null
+    }
+
+    render(
+      <AdminPageActionsProvider>
+        <SlotProbe />
+        <CountingRegistrar />
+      </AdminPageActionsProvider>,
+    )
+
+    expect(registrarRenders).toBe(1)
+    expect(screen.getByTestId('slot').textContent).toBe('hello')
+  })
 })

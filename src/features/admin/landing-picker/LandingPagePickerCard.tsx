@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { Button } from '@/shared/components/ui/Button'
 import { Modal } from '@/shared/components/ui/Modal'
-import { Select } from '@/shared/components/ui/Select'
+import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { listLandingPages } from '@/features/landingPages/registry'
 import {
   readActiveLandingPageFromStorage,
@@ -25,7 +25,7 @@ export function LandingPagePickerCard() {
   const fallbackPages = useMemo(() => listLandingPages(), [])
   const [pages, setPages] = useState<LandingPagePickerOption[]>(fallbackPages)
   const activeKey = useStagedActiveKey()
-  const [selected, setSelected] = useState(activeKey)
+  const [pendingKey, setPendingKey] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -35,27 +35,27 @@ export function LandingPagePickerCard() {
     })
   }, [fallbackPages])
 
-  useEffect(() => {
-    setSelected(activeKey)
-  }, [activeKey])
-
   const activePage = pages.find((p) => p.key === activeKey) ?? pages[0]
-  const selectedPage = pages.find((p) => p.key === selected) ?? activePage
-  const isDirty = selected !== activeKey
+  const pendingPage = pages.find((p) => p.key === pendingKey) ?? activePage
 
-  async function activate() {
+  async function activate(key: string) {
     setSaving(true)
     try {
-      await saveActiveLandingPageKeyAsync(selected)
-      toast.success(`Activated “${selectedPage?.name ?? selected}”`)
+      await saveActiveLandingPageKeyAsync(key)
+      toast.success(`Activated “${pages.find((p) => p.key === key)?.name ?? key}”`)
       setConfirmOpen(false)
+      setPendingKey(null)
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : 'Failed to activate drop',
-      )
+      toast.error(err instanceof Error ? err.message : 'Failed to activate drop')
     } finally {
       setSaving(false)
     }
+  }
+
+  function handlePick(nextKey: string) {
+    if (nextKey === activeKey) return
+    setPendingKey(nextKey)
+    setConfirmOpen(true)
   }
 
   return (
@@ -71,25 +71,21 @@ export function LandingPagePickerCard() {
           </strong>
         </p>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="anvl-micro text-[var(--color-text-muted)]">Drop</span>
-          <Select
-            value={selected}
-            onChange={(e) => setSelected(e.target.value)}
-          >
-            {pages.map((page) => (
-              <option key={page.key} value={page.key}>
-                {page.name}
-                {page.key === activeKey ? ' (live)' : ''}
-              </option>
-            ))}
-          </Select>
-        </label>
+        <AdminFieldSelect
+          label="Drop"
+          value={activeKey}
+          onChange={handlePick}
+          options={pages.map((page) => ({
+            value: page.key,
+            label: page.name,
+            description: page.key === activeKey ? 'Live on storefront' : page.description,
+          }))}
+        />
 
-        {selectedPage ? (
+        {activePage ? (
           <div className="flex items-start gap-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-3">
             <img
-              src={selectedPage.previewImage}
+              src={activePage.previewImage}
               alt=""
               width={64}
               height={64}
@@ -98,26 +94,13 @@ export function LandingPagePickerCard() {
               className="h-16 w-16 shrink-0 rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] object-contain p-2"
             />
             <div className="min-w-0">
-              <p className="anvl-heading text-base font-normal">
-                {selectedPage.name}
-              </p>
+              <p className="anvl-heading text-base font-normal">{activePage.name}</p>
               <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-muted)]">
-                {selectedPage.description}
+                {activePage.description}
               </p>
             </div>
           </div>
         ) : null}
-
-        <div className="flex items-center justify-end">
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={!isDirty}
-            onClick={() => setConfirmOpen(true)}
-          >
-            Activate
-          </Button>
-        </div>
       </div>
 
       <Modal
@@ -128,7 +111,7 @@ export function LandingPagePickerCard() {
         <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
           Set{' '}
           <strong className="text-[var(--color-text)]">
-            {selectedPage?.name ?? selected}
+            {pendingPage?.name ?? pendingKey}
           </strong>{' '}
           as the live homepage. Visitors will see it on their next page load.
         </p>
@@ -137,7 +120,10 @@ export function LandingPagePickerCard() {
             variant="secondary"
             size="sm"
             disabled={saving}
-            onClick={() => setConfirmOpen(false)}
+            onClick={() => {
+              setConfirmOpen(false)
+              setPendingKey(null)
+            }}
           >
             Cancel
           </Button>
@@ -145,7 +131,8 @@ export function LandingPagePickerCard() {
             variant="primary"
             size="sm"
             loading={saving}
-            onClick={() => void activate()}
+            disabled={!pendingKey}
+            onClick={() => pendingKey && void activate(pendingKey)}
           >
             Activate
           </Button>

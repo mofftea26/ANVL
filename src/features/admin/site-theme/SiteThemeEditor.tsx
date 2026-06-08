@@ -1,62 +1,58 @@
-import { Check, Save } from 'lucide-react'
+import { Check, Plus, Save, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
+import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
+import { AdminFormField } from '@/features/admin/components/AdminFormField'
+import { AdminInput } from '@/features/admin/components/AdminInput'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { Select } from '@/shared/components/ui/Select'
 import {
-  readThemeConfigFromStorage,
+  readThemeLibraryFromStorage,
   saveThemeConfigAsync,
   subscribeCmsSiteConfigChange,
 } from '@/features/cms/config/cmsSiteConfig.settings'
+import type { ThemePalette } from '@/features/cms/config/cmsSiteConfig.zod'
 import {
-  DEFAULT_BONE_LIGHT_PALETTE,
-  DEFAULT_THEME_CONFIG,
-  DEFAULT_THEME_PALETTE,
-  type ThemeConfig,
-  type ThemeMode,
-  type ThemePalette,
-} from '@/features/cms/config/cmsSiteConfig.zod'
+  createThemePreset,
+  finalizeThemePalette,
+  THEME_EDITOR_COLOR_FIELDS,
+  type ThemeAppearance,
+  type ThemeLibraryConfig,
+  type ThemePreset,
+} from '@/features/cms/config/themeLibrary'
+import { SiteThemePreview } from './SiteThemePreview'
 
-function useThemeConfig(): ThemeConfig {
+function useThemeLibrary(): ThemeLibraryConfig {
   return useSyncExternalStore(
     subscribeCmsSiteConfigChange,
-    () => readThemeConfigFromStorage(),
-    () => DEFAULT_THEME_CONFIG,
+    () => readThemeLibraryFromStorage(),
+    () => readThemeLibraryFromStorage(),
   )
 }
-
-const PALETTE_FIELDS: { key: keyof ThemePalette; label: string }[] = [
-  { key: 'colorBg', label: 'Background' },
-  { key: 'colorSurface', label: 'Surface' },
-  { key: 'colorText', label: 'Text' },
-  { key: 'colorTextMuted', label: 'Muted text' },
-  { key: 'colorHeading', label: 'Headings' },
-  { key: 'colorAccent', label: 'Accent' },
-  { key: 'colorEmber', label: 'Ember' },
-  { key: 'colorEmberBright', label: 'Ember bright' },
-  { key: 'anvlBone', label: 'Bone' },
-]
 
 export function SiteThemeEditor() {
   const setPageActions = useAdminPageActions()
   const { showSuccess, flashSuccess } = useSaveSuccessFlash()
-  const stored = useThemeConfig()
-  const [settings, setSettings] = useState<ThemeConfig>(stored)
+  const stored = useThemeLibrary()
+  const [library, setLibrary] = useState<ThemeLibraryConfig>(stored)
+  const [editingId, setEditingId] = useState(stored.activeThemeId)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    setSettings(stored)
+    setLibrary(stored)
+    setEditingId(stored.activeThemeId)
   }, [stored])
+
+  const editingPreset =
+    library.themes.find((t) => t.id === editingId) ?? library.themes[0]
 
   const save = useCallback(() => {
     void (async () => {
       setSaving(true)
       try {
-        await saveThemeConfigAsync(settings)
-        toast.success('Theme saved.')
+        await saveThemeConfigAsync(library)
+        toast.success('Theme saved to Supabase.')
         flashSuccess()
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Could not save theme.')
@@ -64,7 +60,7 @@ export function SiteThemeEditor() {
         setSaving(false)
       }
     })()
-  }, [settings, flashSuccess])
+  }, [library, flashSuccess])
 
   const toolbar = useMemo(
     () => (
@@ -87,45 +83,158 @@ export function SiteThemeEditor() {
     return () => setPageActions(null)
   }, [toolbar, setPageActions])
 
-  function setMode(mode: ThemeMode) {
-    setSettings({
-      dataTheme: mode,
-      palette: mode === 'bone-light' ? DEFAULT_BONE_LIGHT_PALETTE : DEFAULT_THEME_PALETTE,
-    })
+  function updatePreset(updater: (preset: ThemePreset) => ThemePreset) {
+    if (!editingPreset) return
+    setLibrary((prev) => ({
+      ...prev,
+      themes: prev.themes.map((t) => (t.id === editingPreset.id ? updater(t) : t)),
+    }))
   }
+
+  function setPaletteField(key: keyof ThemePalette, value: string) {
+    updatePreset((preset) => ({
+      ...preset,
+      palette: finalizeThemePalette({ ...preset.palette, [key]: value }, preset.appearance),
+    }))
+  }
+
+  function addTheme() {
+    const name = window.prompt('Theme name', 'New theme')
+    if (!name?.trim()) return
+    const appearance: ThemeAppearance =
+      window.confirm('Use light appearance? Cancel for dark.') ? 'light' : 'dark'
+    const preset = createThemePreset(name.trim(), appearance)
+    setLibrary((prev) => ({
+      ...prev,
+      themes: [...prev.themes, preset],
+    }))
+    setEditingId(preset.id)
+  }
+
+  function removeTheme() {
+    if (library.themes.length <= 1) {
+      toast.error('Keep at least one theme.')
+      return
+    }
+    if (!editingPreset) return
+    if (!window.confirm(`Delete “${editingPreset.name}”?`)) return
+    setLibrary((prev) => {
+      const themes = prev.themes.filter((t) => t.id !== editingPreset.id)
+      const activeThemeId =
+        prev.activeThemeId === editingPreset.id ? themes[0].id : prev.activeThemeId
+      return { activeThemeId, themes }
+    })
+    setEditingId(library.themes.find((t) => t.id !== editingPreset.id)?.id ?? '')
+  }
+
+  function setLiveTheme(themeId: string) {
+    setLibrary((prev) => ({ ...prev, activeThemeId: themeId }))
+    setEditingId(themeId)
+  }
+
+  if (!editingPreset) return null
 
   return (
     <div className="space-y-6" data-testid="site-theme-editor">
       <p className="text-sm text-[var(--color-text-muted)]">
-        Colors apply site-wide via CSS variables on the storefront.
+        Create color themes, pick which one is live on the storefront, and save to Supabase.
       </p>
 
-      <AdminFormField label="Theme mode">
-        <Select
-          value={settings.dataTheme}
-          onChange={(e) => setMode(e.target.value as ThemeMode)}
-        >
-          <option value="oath-dark">Oath dark</option>
-          <option value="bone-light">Bone light</option>
-        </Select>
-      </AdminFormField>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] xl:items-start">
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[12rem] flex-1">
+              <AdminFieldSelect
+                label="Editing theme"
+                value={editingId}
+                onChange={setEditingId}
+                options={library.themes.map((t) => ({
+                  value: t.id,
+                  label: t.name,
+                  description:
+                    t.id === library.activeThemeId ? 'Live on storefront' : undefined,
+                }))}
+              />
+            </div>
+            <AdminFieldSelect
+              label="Live storefront theme"
+              value={library.activeThemeId}
+              onChange={setLiveTheme}
+              options={library.themes.map((t) => ({
+                value: t.id,
+                label: t.name,
+              }))}
+            />
+          </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {PALETTE_FIELDS.map(({ key, label }) => (
-          <AdminFormField key={key} label={label}>
-            <input
-              type="color"
-              value={settings.palette[key].startsWith('#') ? settings.palette[key] : '#0b0b0c'}
+          <div className="flex flex-wrap gap-2">
+            <AdminTopbarChipButton type="button" icon={<Plus size={14} />} onClick={addTheme}>
+              New theme
+            </AdminTopbarChipButton>
+            <AdminTopbarChipButton
+              type="button"
+              variant="destructive"
+              icon={<Trash2 size={14} />}
+              onClick={removeTheme}
+            >
+              Delete
+            </AdminTopbarChipButton>
+          </div>
+
+          <AdminFormField label="Theme name">
+            <AdminInput
+              value={editingPreset.name}
               onChange={(e) =>
-                setSettings((prev) => ({
-                  ...prev,
-                  palette: { ...prev.palette, [key]: e.target.value },
-                }))
+                updatePreset((preset) => ({ ...preset, name: e.target.value }))
               }
-              className="h-10 w-full cursor-pointer rounded-lg border border-[var(--color-line)] bg-transparent"
             />
           </AdminFormField>
-        ))}
+
+          <AdminFieldSelect
+            label="Appearance"
+            value={editingPreset.appearance}
+            onChange={(value) =>
+              updatePreset((preset) => ({
+                ...preset,
+                appearance: value as ThemeAppearance,
+                palette: finalizeThemePalette(preset.palette, value as ThemeAppearance),
+              }))
+            }
+            options={[
+              { value: 'dark', label: 'Dark' },
+              { value: 'light', label: 'Light' },
+            ]}
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {THEME_EDITOR_COLOR_FIELDS.map(({ key, label, input }) => (
+              <AdminFormField key={key} label={label}>
+                {input === 'color' ? (
+                  <input
+                    type="color"
+                    value={
+                      editingPreset.palette[key].startsWith('#')
+                        ? editingPreset.palette[key]
+                        : '#0b0b0c'
+                    }
+                    onChange={(e) => setPaletteField(key, e.target.value)}
+                    className="h-10 w-full cursor-pointer rounded-lg border border-[var(--color-line)] bg-transparent"
+                  />
+                ) : (
+                  <AdminInput
+                    value={editingPreset.palette[key]}
+                    onChange={(e) => setPaletteField(key, e.target.value)}
+                    placeholder="rgba(231, 228, 223, 0.14)"
+                  />
+                )}
+              </AdminFormField>
+            ))}
+          </div>
+        </div>
+
+        <div className="xl:sticky xl:top-6">
+          <SiteThemePreview preset={editingPreset} />
+        </div>
       </div>
     </div>
   )

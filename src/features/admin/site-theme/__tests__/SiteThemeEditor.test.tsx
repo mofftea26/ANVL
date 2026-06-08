@@ -9,7 +9,7 @@ import {
   AdminPageActionsProvider,
   useAdminPageActionsSlot,
 } from '@/features/admin/components/AdminPageActionsContext'
-import { DEFAULT_THEME_CONFIG } from '@/features/cms/config/cmsSiteConfig.zod'
+import { DEFAULT_THEME_LIBRARY } from '@/features/cms/config/themeLibrary'
 import { SiteThemeEditor } from '../SiteThemeEditor'
 
 const saveAsync = vi.fn()
@@ -24,7 +24,7 @@ vi.mock('@/features/admin/hooks/useSaveSuccessFlash', () => ({
 }))
 
 vi.mock('@/features/cms/config/cmsSiteConfig.settings', () => ({
-  readThemeConfigFromStorage: () => DEFAULT_THEME_CONFIG,
+  readThemeLibraryFromStorage: () => DEFAULT_THEME_LIBRARY,
   subscribeCmsSiteConfigChange: () => () => {},
   saveThemeConfigAsync: (...args: unknown[]) => saveAsync(...args),
 }))
@@ -54,12 +54,10 @@ describe('SiteThemeEditor', () => {
     saveAsync.mockResolvedValue(undefined)
   })
 
-  it('renders intro copy and theme mode selector', () => {
+  it('renders intro copy and live preview', () => {
     renderEditor()
-    expect(
-      screen.getByText(/Colors apply site-wide via CSS variables/i),
-    ).toBeTruthy()
-    expect(screen.getByText('Theme mode')).toBeTruthy()
+    expect(screen.getByText(/Create color themes/i)).toBeTruthy()
+    expect(screen.getByTestId('site-theme-preview')).toBeTruthy()
   })
 
   it('registers Save theme in the admin topbar actions slot', async () => {

@@ -1,6 +1,7 @@
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { cn } from '@/shared/lib/cn'
-import { duotonePlaceholder, OATH_LOGO_PLACEHOLDER } from '../theOathAssets'
+import { duotonePlaceholder } from '../theOathAssets'
+import { OathCmsMark } from './OathCmsMark'
 
 interface MediaPlaneProps {
   /** Image or video URL. When absent, a duotone + Drop-logo placeholder renders. */
@@ -81,13 +82,12 @@ export function MediaPlane({
             className="h-full w-full object-cover"
           />
         ) : showLogo ? (
-          <div className="flex h-full w-full items-center justify-center">
-            <img
-              src={OATH_LOGO_PLACEHOLDER}
-              alt=""
-              aria-hidden="true"
-              className="h-[26%] w-auto opacity-[0.14]"
-              style={{ filter: 'drop-shadow(0 0 24px rgba(199,194,184,0.25))' }}
+          <div className="flex h-full w-full items-center justify-center opacity-[0.14]">
+            <OathCmsMark
+              slot="dropLogo"
+              className="h-[26%] w-auto"
+              width={96}
+              height={96}
             />
           </div>
         ) : null}

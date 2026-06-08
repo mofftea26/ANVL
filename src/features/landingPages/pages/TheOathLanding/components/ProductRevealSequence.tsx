@@ -2,10 +2,11 @@ import { useMemo } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import type { Product } from '@/features/products/types/product.types'
 import { Container } from '@/shared/components/ui/Container'
+import { cn } from '@/shared/lib/cn'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { WarBanner } from '@/shared/components/premium/WarBanner'
 import { OATH_PRODUCTS, OATH_PRODUCTS_HEADING, type OathProductCopy } from '../data'
-import { oathProductImage, OATH_LOGO_PLACEHOLDER } from '../theOathAssets'
+import { oathCrestEmblem, oathProductImage, oathThemedMarkup } from '../theOathAssets'
 
 interface ResolvedProduct extends OathProductCopy {
   href: string
@@ -28,14 +29,28 @@ function formatPrice(product: Product): string | undefined {
   }
 }
 
-function BannerColumn({ product, index }: { product: ResolvedProduct; index: number }) {
+function BannerColumn({
+  product,
+  index,
+  total,
+}: {
+  product: ResolvedProduct
+  index: number
+  total: number
+}) {
   const numeral = String(index + 1).padStart(2, '0')
+  // On the mobile 2-col grid, an odd last item is centred across both columns so
+  // a 3-piece drop never leaves a lopsided gap. (Scoped to <768px; flex on md+.)
+  const isLonelyLast = total % 2 === 1 && index === total - 1
   return (
     <li
       data-banner
       data-banner-index={index}
       data-reveal-m
-      className="flex w-full max-w-[13rem] flex-col items-center will-change-transform md:max-w-[clamp(9rem,15vw,12.5rem)]"
+      className={cn(
+        'flex w-full max-w-[14.5rem] flex-col items-center will-change-transform max-[767px]:mx-auto md:max-w-[clamp(10.5rem,17vw,15rem)]',
+        isLonelyLast && 'max-[767px]:col-span-2',
+      )}
     >
       <SafeLink
         href={product.href}
@@ -47,10 +62,14 @@ function BannerColumn({ product, index }: { product: ResolvedProduct; index: num
           media={product.image}
           alt={product.name}
           label={numeral}
-          placeholderSrc={oathProductImage(product.slug) ?? OATH_LOGO_PLACEHOLDER}
-          aspectClassName="aspect-[3/4]"
+          placeholderSrc={oathProductImage(product.slug) ?? oathCrestEmblem()}
+          placeholderThemedMarkup={
+            oathProductImage(product.slug) ? null : oathThemedMarkup('crestSvg')
+          }
+          aspectClassName="aspect-[3/4.75]"
+          elevated
           sway
-          className="transition-transform duration-500 md:hover:-translate-y-1"
+          swayDelay={index * 0.45}
         />
       </SafeLink>
 
@@ -132,11 +151,24 @@ export function ProductRevealSequence({ products }: { products: Product[] }) {
           }}
         />
 
-        <ul className="mx-auto mt-8 flex w-full flex-col items-center gap-10 [perspective:1600px] md:mt-6 md:flex-row md:items-start md:justify-center md:gap-6 lg:gap-10">
-          {resolved.map((product, i) => (
-            <BannerColumn key={product.slug} product={product} index={i} />
-          ))}
-        </ul>
+        <div className="relative mx-auto mt-8 md:mt-6">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-[2%] -top-6 bottom-4 rounded-[1.75rem] md:inset-x-[6%] md:-top-8 md:bottom-2"
+            style={{
+              background:
+                'radial-gradient(ellipse 88% 76% at 50% 38%, color-mix(in srgb, var(--color-ember) 10%, transparent) 0%, transparent 68%), linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 72%, #141518) 0%, color-mix(in srgb, var(--color-bg) 92%, transparent) 100%)',
+              boxShadow:
+                'inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -24px 48px rgba(0,0,0,0.35), 0 28px 80px -32px rgba(0,0,0,0.85)',
+            }}
+          />
+
+          <ul className="relative z-[1] mx-auto grid w-full grid-cols-2 gap-x-5 gap-y-10 [perspective:1600px] md:flex md:flex-row md:items-start md:justify-center md:gap-8 lg:gap-12">
+            {resolved.map((product, i) => (
+              <BannerColumn key={product.slug} product={product} index={i} total={resolved.length} />
+            ))}
+          </ul>
+        </div>
 
         <div data-reveal-m className="mt-9 text-center md:mt-10">
           <SafeLink

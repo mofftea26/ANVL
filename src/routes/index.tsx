@@ -9,6 +9,13 @@ import { useHomeProducts } from "@/features/products/hooks/useHomeProducts";
 import { LandingPageRenderer } from "@/features/landingPages";
 import { loadStorefrontProjection } from "@/features/cms/api/loadStorefrontProjection";
 import { resolvePublishedAssets } from "@/features/cms/assets/resolvePublishedAssets";
+import {
+  resolveLoadingEmblemUrl,
+  resolveThemedLoadingEmblemMarkup,
+  resolveThemedSvgMarkup,
+} from "@/features/landingPages/landingEntryLoad";
+import { OATH_LOGO_PLACEHOLDER } from "@/features/landingPages/pages/TheOathLanding/theOathAssets";
+import { useLandingEntry } from "@/features/landingPages/LandingEntryContext";
 import { useActiveLandingPageKey } from "@/features/cms/hooks/useActiveLandingPageKey";
 
 export const Route = createFileRoute("/")({
@@ -22,10 +29,25 @@ export const Route = createFileRoute("/")({
       projection.activeLandingPageKey,
       projection.mediaIndex,
     );
+    const loadingEmblemUrl = resolveLoadingEmblemUrl(resolvedAssets);
+    const dropLogoUrl =
+      resolvedAssets.dropLogo?.trim() || OATH_LOGO_PLACEHOLDER;
+    const crestSvgUrl = resolvedAssets.crestSvg?.trim() || dropLogoUrl;
+    const [loadingEmblemMarkup, dropLogoMarkup, crestSvgMarkup] =
+      await Promise.all([
+        resolveThemedLoadingEmblemMarkup(loadingEmblemUrl),
+        resolveThemedSvgMarkup(dropLogoUrl),
+        resolveThemedSvgMarkup(crestSvgUrl),
+      ]);
     return {
       products,
       activeLandingKey: projection.activeLandingPageKey,
       resolvedAssets,
+      loadingEmblemMarkup,
+      themedMarkups: {
+        dropLogo: dropLogoMarkup,
+        crestSvg: crestSvgMarkup,
+      },
     };
   },
   head: () =>
@@ -45,12 +67,18 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const { products: initialProducts, activeLandingKey, resolvedAssets } =
-    Route.useLoaderData();
+  const {
+    products: initialProducts,
+    activeLandingKey,
+    resolvedAssets,
+    loadingEmblemMarkup,
+    themedMarkups,
+  } = Route.useLoaderData();
   const products = useHomeProducts(initialProducts);
   const landingKey = useActiveLandingPageKey(activeLandingKey);
+  const { homeEntryComplete } = useLandingEntry();
 
-  useLenisScroll(true);
+  useLenisScroll(homeEntryComplete);
 
   return (
     <div>
@@ -59,6 +87,8 @@ function HomePage() {
         activeKey={landingKey}
         products={products}
         assets={resolvedAssets}
+        loadingEmblemMarkup={loadingEmblemMarkup}
+        themedMarkups={themedMarkups}
       />
     </div>
   );

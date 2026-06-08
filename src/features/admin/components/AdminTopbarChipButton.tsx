@@ -61,7 +61,16 @@ export const AdminTopbarChipButton = forwardRef<HTMLButtonElement, AdminTopbarCh
             {icon}
           </span>
         ) : null}
-        {children ? <span className={cn('truncate', loading && icon && 'sr-only')}>{children}</span> : null}
+        {children ? (
+          <span
+            className={cn(
+              'inline-flex min-w-0 items-center gap-1.5 truncate',
+              loading && icon && 'sr-only',
+            )}
+          >
+            {children}
+          </span>
+        ) : null}
       </button>
     )
   },

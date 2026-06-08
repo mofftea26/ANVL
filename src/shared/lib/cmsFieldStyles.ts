@@ -46,11 +46,11 @@ export const adminSelectTriggerClass = [
 
 /** Select dropdown panel — elevated surface, readable list. */
 export const adminSelectContentClass =
-  'z-[85] max-h-[min(280px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-1 shadow-[inset_0_1px_0_rgba(231,228,223,0.06),0_12px_32px_rgba(0,0,0,0.5)] outline-none'
+  'z-[85] max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-1.5 shadow-[inset_0_1px_0_rgba(231,228,223,0.08),0_16px_40px_rgba(0,0,0,0.55)] outline-none backdrop-blur-sm'
 
 /** Select item row inside dropdown. */
 export const adminSelectItemClass =
-  'relative flex cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-2.5 text-xs leading-snug outline-none transition-colors focus:bg-[var(--color-chip)] focus:text-[var(--color-text)] data-[highlighted]:bg-[var(--color-chip)] data-[highlighted]:text-[var(--color-text)] data-[state=checked]:text-[var(--color-accent)] data-[disabled]:pointer-events-none data-[disabled]:opacity-40'
+  'relative flex cursor-pointer select-none flex-col gap-0.5 rounded-lg py-2.5 pl-8 pr-3 text-xs leading-snug outline-none transition-colors focus:bg-[var(--color-chip)] focus:text-[var(--color-text)] data-[highlighted]:bg-[var(--color-chip)] data-[highlighted]:text-[var(--color-text)] data-[state=checked]:bg-[var(--color-accent)]/10 data-[state=checked]:text-[var(--color-heading)] data-[disabled]:pointer-events-none data-[disabled]:opacity-40'
 
 /** Small adjunct button (clear date/time). */
 export const adminFieldClearButtonClass = [

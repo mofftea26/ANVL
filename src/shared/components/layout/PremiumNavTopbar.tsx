@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ShoppingBag } from 'lucide-react'
+import { Menu, ShoppingBag } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 import { useCart } from '@/features/cart/hooks/useCart'
@@ -15,14 +15,26 @@ export function PremiumNavTopbar({
   logoSrc,
   visibleLinks,
   showCart,
+  onMenuOpen,
 }: {
   variant: PremiumNavTopbarVariant
   logoSrc?: string
   visibleLinks: CmsLinkItem[]
   showCart: boolean
+  /** Opens the mobile/tablet navigation drawer (burger trigger lives here now). */
+  onMenuOpen: () => void
 }) {
   const { quantity } = useCart()
   const isSolid = variant === 'solid'
+
+  // Shared variant-aware chrome for the right-side icon controls so the cart and
+  // burger read cleanly over both the transparent hero and the solid bar.
+  const iconChrome = cn(
+    'focus-ring relative inline-flex h-9 w-9 items-center justify-center rounded-md border backdrop-blur-sm transition-colors sm:h-11 sm:w-11',
+    isSolid
+      ? 'border-[var(--color-line)] bg-[var(--color-surface)]/80 text-[var(--color-text)]'
+      : 'border-white/15 bg-white/5 text-[var(--color-heading)] hover:bg-white/10',
+  )
 
   const LogoMark: ReactNode = logoSrc?.trim() ? (
     <img
@@ -36,8 +48,8 @@ export function PremiumNavTopbar({
     />
   ) : (
     <AnvlLogoImage
-      variant="stacked"
-      className="h-11 w-auto text-[var(--color-heading)] md:h-12"
+      variant="wordmark"
+      className="h-5 w-auto text-[var(--color-heading)] sm:h-6 md:h-7"
       fetchPriority="high"
     />
   )
@@ -59,7 +71,7 @@ export function PremiumNavTopbar({
           {LogoMark}
         </Link>
         <nav
-          className="ml-6 hidden items-center gap-6 md:flex"
+          className="ml-6 hidden items-center gap-6 lg:flex"
           aria-label="Primary"
         >
           {visibleLinks.map((item) => (
@@ -77,24 +89,28 @@ export function PremiumNavTopbar({
             </SafeLink>
           ))}
         </nav>
-        <div className="ml-auto hidden items-center gap-2 md:flex">
+        <div className="ml-auto flex items-center gap-2">
           {showCart ? (
-            <Link
-              to="/cart"
-              className={cn(
-                'focus-ring relative inline-flex h-11 w-11 items-center justify-center rounded-md border backdrop-blur-sm transition-colors',
-                isSolid
-                  ? 'border-[var(--color-line)] bg-[var(--color-surface)]/80'
-                  : 'border-white/15 bg-white/5 hover:bg-white/10',
-              )}
-              aria-label={`Cart, ${quantity} items`}
-            >
+            <Link to="/cart" className={iconChrome} aria-label={`Cart, ${quantity} items`}>
               <ShoppingBag size={16} aria-hidden="true" />
-              <span className="absolute -right-1 -top-1 min-w-[1.125rem] rounded-full bg-[var(--color-accent)] px-1.5 text-center text-[10px] font-medium text-[var(--color-bg)]">
-                {quantity}
-              </span>
+              {quantity > 0 ? (
+                <span className="absolute -right-1 -top-1 min-w-[1.125rem] rounded-full bg-[var(--color-accent)] px-1.5 text-center text-[10px] font-medium text-[var(--color-bg)]">
+                  {quantity}
+                </span>
+              ) : null}
             </Link>
           ) : null}
+
+          {/* Burger — replaces the old fixed bottom bar; opens the nav drawer on
+              mobile + tablet. Hidden once the inline links appear at lg. */}
+          <button
+            type="button"
+            onClick={onMenuOpen}
+            className={cn(iconChrome, 'lg:hidden')}
+            aria-label="Open navigation menu"
+          >
+            <Menu size={16} aria-hidden="true" />
+          </button>
         </div>
       </Container>
     </div>

@@ -46,6 +46,7 @@ export type ThemeConfig = z.infer<typeof themeConfigSchema>
 export type FontConfig = z.infer<typeof fontConfigSchema>
 export type AssetConfig = z.infer<typeof assetConfigSchema>
 
+/** Offline / empty-Supabase fallback — live values come from `storefront_publication`. */
 export const DEFAULT_THEME_PALETTE: ThemePalette = {
   anvlBlack: '#0b0b0c',
   anvlDarkSteelGrey: '#1d1f21',
@@ -91,6 +92,7 @@ export const DEFAULT_THEME_CONFIG: ThemeConfig = {
   palette: DEFAULT_THEME_PALETTE,
 }
 
+/** Legacy v1 font fallback when `font_config` is missing or invalid. */
 export const DEFAULT_FONT_CONFIG: FontConfig = {
   sans: 'Sora',
   heading: 'Anton',

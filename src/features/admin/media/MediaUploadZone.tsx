@@ -85,12 +85,14 @@ export function MediaUploadZone({ disabled }: MediaUploadZoneProps) {
           size="sm"
           disabled={disabled || busy}
           onClick={() => fileRef.current?.click()}
+          icon={
+            busy ? (
+              <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Upload size={14} aria-hidden="true" />
+            )
+          }
         >
-          {busy ? (
-            <Loader2 size={14} className="mr-1.5 animate-spin" aria-hidden="true" />
-          ) : (
-            <Upload size={14} className="mr-1.5" aria-hidden="true" />
-          )}
           {busy ? 'Uploading…' : 'Upload files'}
         </AdminButton>
         <span className="text-xs text-[var(--color-text-muted)]">

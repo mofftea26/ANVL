@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { gsap, useGSAP } from '@/shared/lib/gsap'
+import { gsap, ScrollTrigger, useGSAP } from '@/shared/lib/gsap'
 
 /**
  * The Oath — master scroll choreography (one continuous cinematic film).
@@ -213,14 +213,16 @@ function buildProducts(host: HTMLElement, q: Selector, intensity: number) {
   banners.forEach((banner, i) => {
     const isLeft = i === 0
     const isRight = i === banners.length - 1 && banners.length > 1
+    const isCenter = !isLeft && !isRight
     gsap.set(banner, {
       opacity: 0,
       transformPerspective: 1600,
       transformOrigin: 'top center',
-      xPercent: isLeft ? -190 : isRight ? 190 : 0,
-      yPercent: isLeft || isRight ? -8 : 34,
-      rotateY: isLeft ? 38 : isRight ? -38 : 0,
-      scale: isLeft || isRight ? 1 : 0.88,
+      xPercent: isLeft ? -210 : isRight ? 210 : 0,
+      yPercent: isLeft || isRight ? -12 : 42,
+      rotateY: isLeft ? 48 : isRight ? -48 : 0,
+      rotateX: isCenter ? -22 : isLeft ? 8 : -8,
+      scale: isCenter ? 0.82 : 0.92,
     })
   })
   if (heading.length) gsap.set(heading, { opacity: 0, y: 28 })
@@ -236,12 +238,13 @@ function buildProducts(host: HTMLElement, q: Selector, intensity: number) {
       xPercent: 0,
       yPercent: 0,
       rotateY: 0,
+      rotateX: 0,
       scale: 1,
-      duration: 0.9,
-      ease: 'power3.out',
-      stagger: 0.18,
+      duration: 1.05,
+      ease: 'back.out(1.15)',
+      stagger: { each: 0.16, from: 'edges' },
     },
-    0.4,
+    0.38,
   )
 }
 
@@ -275,22 +278,30 @@ function buildCinematic(host: HTMLElement, intensity: number) {
   buildFinal(host, q)
 }
 
-/** Mobile + reduced motion: no pinning. Content is CSS-visible; reveal lightly. */
+/**
+ * Mobile + reduced motion: no pinning. Content is CSS-visible; reveal lightly.
+ * Elements are revealed in **batches** (`ScrollTrigger.batch`) so a grid of cards
+ * that share the same row — the tenets, the product grid — rise together with a
+ * short stagger instead of each firing its own trigger.
+ */
 function buildStatic(host: HTMLElement) {
-  const q: Selector = (sel) => gsap.utils.toArray<HTMLElement>(sel, host)
-  q('[data-reveal-m]').forEach((el) => {
-    gsap.fromTo(
-      el,
-      { opacity: 0, y: 24 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.7,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: el, start: 'top 88%', once: true },
-      },
-    )
-  })
+  const items = gsap.utils.toArray<HTMLElement>('[data-reveal-m]', host)
+  if (items.length) {
+    gsap.set(items, { opacity: 0, y: 24 })
+    ScrollTrigger.batch(items, {
+      start: 'top 90%',
+      once: true,
+      onEnter: (batch) =>
+        gsap.to(batch, {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+          ease: 'power3.out',
+          stagger: 0.09,
+          overwrite: true,
+        }),
+    })
+  }
 
   // Hero video: loop muted on mobile; hold the first frame under reduced motion
   // (no scroll-scrub — that's desktop-only).
@@ -308,7 +319,9 @@ function buildStatic(host: HTMLElement) {
         /* not seekable yet */
       }
     } else {
-      video.loop = true
+      // Mobile: play through exactly once per page load, then hold the final
+      // frame (no loop) — a single cinematic pass rather than a restless loop.
+      video.loop = false
       void video.play().catch(() => {})
     }
   }
@@ -321,7 +334,9 @@ export function useTheOathScrollTimeline(root: RefObject<HTMLElement | null>) {
       if (!host) return
       const mm = gsap.matchMedia()
       mm.add(STATIC, () => buildStatic(host))
-      mm.add(TABLET, () => buildCinematic(host, 0.7))
+      // Tablet runs the SAME cinematic as desktop (full intensity) — only the
+      // CSS layout differs (handled per-scene with md:/lg: breakpoints).
+      mm.add(TABLET, () => buildCinematic(host, 1))
       mm.add(DESKTOP, () => buildCinematic(host, 1))
       return () => mm.revert()
     },

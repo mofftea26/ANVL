@@ -20,22 +20,24 @@ function lazyPage(
 }
 
 /**
- * The single source of truth for code-owned landing pages.
+ * Code-owned landing page components and routing keys.
+ *
+ * Picker labels, descriptions, and preview images come from Supabase
+ * (`landing_pages`). Values here are offline fallbacks only.
  *
  * To add a new landing page:
  *   1. Create `pages/<PascalName>/index.tsx` exporting a component that takes
  *      {@link LandingPageComponentProps}.
  *   2. Add an entry here keyed by a stable slug.
- *   3. (Optional) Activate it from the CMS landing-page picker.
+ *   3. Insert a matching row in `landing_pages`.
  *
  * See `docs/landing-pages.md`.
  */
 export const landingPageRegistry: Record<string, LandingPageDefinition> = {
   'the-oath': {
     key: 'the-oath',
-    name: 'Drop 01 — The Oath',
-    description:
-      'Static cinematic launch experience for ANVL Drop 01 — forge atmosphere, manifesto, tenets, and the first three pieces.',
+    name: 'The Oath',
+    description: '',
     previewImage: '/brand/the-oath-shape.svg',
     isAvailable: true,
     component: lazyPage(
@@ -45,7 +47,7 @@ export const landingPageRegistry: Record<string, LandingPageDefinition> = {
   },
 }
 
-/** Fallback key used whenever the CMS key is missing/invalid/unavailable. */
+/** Fallback key when Supabase `active_landing_page_key` is missing or invalid. */
 export const DEFAULT_LANDING_PAGE_KEY = 'the-oath'
 
 export function isLandingPageKey(key: string | null | undefined): key is string {

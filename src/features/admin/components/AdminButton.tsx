@@ -10,8 +10,8 @@ import type { AdminChipButtonVariant } from '@/features/admin/components/adminCh
 
 export {
   buttonVariants as adminButtonVariants,
-  type ButtonProps as AdminButtonProps,
 } from '@/shared/components/ui/Button'
+export type { ButtonProps as AdminLegacyButtonProps } from '@/shared/components/ui/Button'
 
 const TAB_VARIANTS = new Set<NonNullable<ButtonProps['variant']>>([
   'adminTabList',
@@ -53,8 +53,12 @@ function resolveChipSize(
   return 'default'
 }
 
-export const AdminButton = forwardRef<HTMLButtonElement, ButtonProps>(function AdminButton(
-  { variant = 'primary', size, loading, className, children, ...props },
+export type AdminButtonProps = ButtonProps & {
+  icon?: ReactNode
+}
+
+export const AdminButton = forwardRef<HTMLButtonElement, AdminButtonProps>(function AdminButton(
+  { variant = 'primary', size, loading, className, children, icon, ...props },
   ref,
 ) {
   if (variant && TAB_VARIANTS.has(variant)) {
@@ -81,6 +85,7 @@ export const AdminButton = forwardRef<HTMLButtonElement, ButtonProps>(function A
         variant={chipVariant}
         size={chipSize}
         loading={loading}
+        icon={icon}
         className={className}
         {...props}
       >

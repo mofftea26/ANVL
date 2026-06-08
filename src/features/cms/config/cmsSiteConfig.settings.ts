@@ -1,16 +1,20 @@
 import {
-  type AssetConfig,
-  type FontConfig,
-  type ThemeConfig,
+  DEFAULT_THEME_LIBRARY,
+  parseThemeLibrary,
+  resolveThemeConfig,
+  type ThemeLibraryConfig,
+} from '@/features/cms/config/themeLibrary'
+import {
+  DEFAULT_FONT_LIBRARY_CONFIG,
+  parseFontLibrary,
+  resolveFontConfig,
+  type FontLibraryConfig,
+} from '@/features/cms/config/fontLibrary'
+import {
   assetConfigSchema,
   DEFAULT_ASSET_CONFIG,
-  DEFAULT_FONT_CONFIG,
-  DEFAULT_THEME_CONFIG,
-  fontConfigSchema,
   parseAssetConfig,
-  parseFontConfig,
-  parseThemeConfig,
-  themeConfigSchema,
+  type AssetConfig,
 } from '@/features/cms/config/cmsSiteConfig.zod'
 
 export const THEME_CONFIG_STORAGE_KEY = 'anvl.themeConfig.v1'
@@ -22,7 +26,64 @@ function isBrowser(): boolean {
   return typeof window !== 'undefined'
 }
 
+type SnapshotCache<T> = {
+  raw: string | null | undefined
+  value: T
+}
+
+function createSnapshotCache<T>(
+  key: string,
+  parse: (raw: unknown) => T,
+  fallback: T,
+): { read: () => T; invalidate: () => void } {
+  const cache: SnapshotCache<T> = { raw: undefined, value: fallback }
+
+  return {
+    read(): T {
+      if (!isBrowser()) return fallback
+      try {
+        const raw = window.localStorage.getItem(key)
+        if (raw === cache.raw) return cache.value
+        cache.raw = raw
+        cache.value = raw ? parse(JSON.parse(raw)) : fallback
+        return cache.value
+      } catch {
+        return fallback
+      }
+    },
+    invalidate() {
+      cache.raw = undefined
+    },
+  }
+}
+
+const themeSnapshotCache = createSnapshotCache(
+  THEME_CONFIG_STORAGE_KEY,
+  (raw) => parseThemeLibrary(raw),
+  DEFAULT_THEME_LIBRARY,
+)
+const fontSnapshotCache = createSnapshotCache(
+  FONT_CONFIG_STORAGE_KEY,
+  (raw) => parseFontLibrary(raw),
+  DEFAULT_FONT_LIBRARY_CONFIG,
+)
+const assetSnapshotCache = createSnapshotCache(
+  ASSET_CONFIG_STORAGE_KEY,
+  parseAssetConfig,
+  DEFAULT_ASSET_CONFIG,
+)
+
+function invalidateSnapshotCacheForKey(key: string): void {
+  if (key === THEME_CONFIG_STORAGE_KEY) themeSnapshotCache.invalidate()
+  if (key === FONT_CONFIG_STORAGE_KEY) fontSnapshotCache.invalidate()
+  if (key === ASSET_CONFIG_STORAGE_KEY) assetSnapshotCache.invalidate()
+}
+
 function readJson<T>(key: string, parse: (raw: unknown) => T, fallback: T): T {
+  if (key === THEME_CONFIG_STORAGE_KEY) return themeSnapshotCache.read() as T
+  if (key === FONT_CONFIG_STORAGE_KEY) return fontSnapshotCache.read() as T
+  if (key === ASSET_CONFIG_STORAGE_KEY) return assetSnapshotCache.read() as T
+
   if (!isBrowser()) return fallback
   try {
     const raw = window.localStorage.getItem(key)
@@ -36,23 +97,42 @@ function readJson<T>(key: string, parse: (raw: unknown) => T, fallback: T): T {
 function writeJson(key: string, value: unknown): void {
   if (!isBrowser()) return
   window.localStorage.setItem(key, JSON.stringify(value))
+  invalidateSnapshotCacheForKey(key)
   window.dispatchEvent(new CustomEvent(CMS_SITE_CONFIG_CHANGE_EVENT))
 }
 
-export function readThemeConfigFromStorage(): ThemeConfig {
-  return readJson(THEME_CONFIG_STORAGE_KEY, parseThemeConfig, DEFAULT_THEME_CONFIG)
+export function readThemeLibraryFromStorage(): ThemeLibraryConfig {
+  return readJson(THEME_CONFIG_STORAGE_KEY, (raw) => parseThemeLibrary(raw), DEFAULT_THEME_LIBRARY)
 }
 
-export function writeThemeConfigToStorage(next: ThemeConfig): void {
-  writeJson(THEME_CONFIG_STORAGE_KEY, themeConfigSchema.parse(next))
+export function writeThemeLibraryToStorage(next: ThemeLibraryConfig): void {
+  writeJson(THEME_CONFIG_STORAGE_KEY, next)
 }
 
-export function readFontConfigFromStorage(): FontConfig {
-  return readJson(FONT_CONFIG_STORAGE_KEY, parseFontConfig, DEFAULT_FONT_CONFIG)
+/** Resolved active theme for storefront-style consumers. */
+export function readThemeConfigFromStorage(): import('@/features/cms/config/cmsSiteConfig.zod').ThemeConfig {
+  return resolveThemeConfig(readThemeLibraryFromStorage())
 }
 
-export function writeFontConfigToStorage(next: FontConfig): void {
-  writeJson(FONT_CONFIG_STORAGE_KEY, fontConfigSchema.parse(next))
+export function writeThemeConfigToStorage(next: ThemeLibraryConfig): void {
+  writeThemeLibraryToStorage(next)
+}
+
+export function readFontLibraryFromStorage(): FontLibraryConfig {
+  return readJson(FONT_CONFIG_STORAGE_KEY, (raw) => parseFontLibrary(raw), DEFAULT_FONT_LIBRARY_CONFIG)
+}
+
+export function writeFontLibraryToStorage(next: FontLibraryConfig): void {
+  writeJson(FONT_CONFIG_STORAGE_KEY, next)
+}
+
+/** Resolved font family names (legacy shape). */
+export function readFontConfigFromStorage(): import('@/features/cms/config/cmsSiteConfig.zod').FontConfig {
+  return resolveFontConfig(readFontLibraryFromStorage())
+}
+
+export function writeFontConfigToStorage(next: FontLibraryConfig): void {
+  writeFontLibraryToStorage(next)
 }
 
 export function readAssetConfigFromStorage(): AssetConfig {
@@ -83,8 +163,8 @@ export function subscribeCmsSiteConfigChange(listener: () => void): () => void {
   }
 }
 
-export async function saveThemeConfigAsync(next: ThemeConfig): Promise<void> {
-  writeThemeConfigToStorage(next)
+export async function saveThemeConfigAsync(next: ThemeLibraryConfig): Promise<void> {
+  writeThemeLibraryToStorage(next)
   const { afterLocalCmsMutation } = await import(
     '@/features/admin/cmsRemote/cmsWriteThrough'
   )
@@ -92,8 +172,8 @@ export async function saveThemeConfigAsync(next: ThemeConfig): Promise<void> {
   if (!sync.ok) throw new Error(sync.error)
 }
 
-export async function saveFontConfigAsync(next: FontConfig): Promise<void> {
-  writeFontConfigToStorage(next)
+export async function saveFontConfigAsync(next: FontLibraryConfig): Promise<void> {
+  writeFontLibraryToStorage(next)
   const { afterLocalCmsMutation } = await import(
     '@/features/admin/cmsRemote/cmsWriteThrough'
   )

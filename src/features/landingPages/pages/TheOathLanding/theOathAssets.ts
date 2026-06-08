@@ -7,6 +7,11 @@
  */
 
 import type { ResolvedDropAssets } from '@/features/cms/assets/resolvePublishedAssets'
+import type { LandingPageThemedMarkups } from '@/features/landingPages/types'
+import {
+  criticalLandingAssetUrls,
+  resolveLoadingEmblemUrl,
+} from '@/features/landingPages/landingEntryLoad'
 
 export interface OathAssetConfig {
   dropLogo?: string
@@ -37,9 +42,20 @@ export const OATH_ASSETS: OathAssetConfig = {
 }
 
 let cmsResolvedAssets: ResolvedDropAssets = {}
+let cmsThemedMarkups: LandingPageThemedMarkups = {}
 
 export function bindOathCmsAssets(assets: ResolvedDropAssets): void {
   cmsResolvedAssets = assets
+}
+
+export function bindOathCmsThemedMarkups(markups: LandingPageThemedMarkups): void {
+  cmsThemedMarkups = markups
+}
+
+export function oathThemedMarkup(
+  key: keyof LandingPageThemedMarkups,
+): string | null {
+  return cmsThemedMarkups[key] ?? null
 }
 
 function cmsOrDefault(key: string, fallback?: string): string | undefined {
@@ -71,12 +87,22 @@ export function oathProductImage(slug: string): string | undefined {
   return cmsOrDefault(`productImages.${slug}`, OATH_ASSETS.productImages?.[slug])
 }
 
+export function oathDropLogo(): string {
+  return oathAsset('dropLogo') ?? OATH_LOGO_PLACEHOLDER
+}
+
+export function oathCrestEmblem(): string {
+  return oathAsset('crestSvg') ?? oathDropLogo()
+}
+
 export function duotonePlaceholder(tone = '#1a1c1f'): string {
   return `linear-gradient(155deg, ${tone} 0%, #0b0b0c 80%)`
 }
 
+export function oathLoadingEmblem(): string {
+  return resolveLoadingEmblemUrl(cmsResolvedAssets)
+}
+
 export function criticalOathAssets(): string[] {
-  return [oathAsset('dropLogo'), oathAsset('heroPoster'), oathAsset('heroMedia')].filter(
-    (v): v is string => Boolean(v),
-  )
+  return criticalLandingAssetUrls(cmsResolvedAssets)
 }

@@ -1,15 +1,13 @@
 import { useRef } from 'react'
 import { ForgeAtmosphere } from '@/shared/components/premium/ForgeAtmosphere'
-import { bindOathCmsAssets } from './theOathAssets'
+import { bindOathCmsAssets, bindOathCmsThemedMarkups } from './theOathAssets'
 import type { LandingPageComponentProps } from '../../types'
-import { LandingPreloader } from './components/LandingPreloader'
 import { CinematicHero } from './components/CinematicHero'
 import { ManifestoScene } from './components/ManifestoScene'
 import { ChapterGallery } from './components/ChapterGallery'
 import { ProductRevealSequence } from './components/ProductRevealSequence'
 import { FinalDropCTA } from './components/FinalDropCTA'
 import { useTheOathScrollTimeline } from './hooks/useTheOathScrollTimeline'
-import { usePreloadLandingAssets } from './hooks/usePreloadLandingAssets'
 
 /**
  * Drop 01 — The Oath.
@@ -24,19 +22,18 @@ import { usePreloadLandingAssets } from './hooks/usePreloadLandingAssets'
  * Code-owned content; the CMS only chooses that this page is active.
  * See `docs/landing-pages.md`.
  */
-export function TheOathLanding({ products, assets }: LandingPageComponentProps) {
+export function TheOathLanding({ products, assets, themedMarkups }: LandingPageComponentProps) {
   bindOathCmsAssets(assets)
+  bindOathCmsThemedMarkups(themedMarkups ?? {})
   const root = useRef<HTMLDivElement | null>(null)
   useTheOathScrollTimeline(root)
-  usePreloadLandingAssets()
 
   return (
-    <div ref={root} className="relative bg-[var(--color-bg)]">
+    <div ref={root} className="relative isolate bg-[var(--color-bg)]">
       {/* One persistent forge environment behind every scene — transparent
           scenes bleed through it so the page reads as a single continuous film
           rather than stacked sections. */}
-      <ForgeAtmosphere className="fixed" />
-      <LandingPreloader />
+      <ForgeAtmosphere />
       <CinematicHero />
       <ManifestoScene />
       <ChapterGallery />
