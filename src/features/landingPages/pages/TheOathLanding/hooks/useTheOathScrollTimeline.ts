@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import { useLayoutEffect, useRef, type RefObject } from 'react'
 import { gsap, ScrollTrigger, useGSAP } from '@/shared/lib/gsap'
 
 /**
@@ -21,6 +21,50 @@ const TABLET =
 const STATIC = '(max-width: 767.98px), (prefers-reduced-motion: reduce)'
 
 type Selector = (sel: string) => HTMLElement[]
+
+function heroIntroSelector(host: HTMLElement): Selector {
+  return (sel) => gsap.utils.toArray<HTMLElement>(sel, host)
+}
+
+function setHeroIntroVisible(host: HTMLElement): void {
+  const q = heroIntroSelector(host)
+  gsap.set(q('[data-hero-line-inner]'), { yPercent: 0 })
+  gsap.set(q('[data-hero-underline]'), { scaleX: 1 })
+  gsap.set(q('[data-hero-fade]'), { opacity: 1, y: 0 })
+}
+
+function clearHeroIntroVisual(host: HTMLElement): void {
+  const q = heroIntroSelector(host)
+  gsap.set(q('[data-hero-line-inner]'), { clearProps: 'transform' })
+  gsap.set(q('[data-hero-underline]'), { clearProps: 'transform' })
+  gsap.set(q('[data-hero-fade]'), { clearProps: 'opacity,transform' })
+}
+
+/** Load-in title choreography — runs once after the entry overlay releases. */
+function runHeroIntro(host: HTMLElement): gsap.core.Timeline | null {
+  if (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    setHeroIntroVisible(host)
+    return null
+  }
+
+  const q = heroIntroSelector(host)
+  gsap.set(q('[data-hero-line-inner]'), { yPercent: 120 })
+  gsap.set(q('[data-hero-underline]'), { scaleX: 0 })
+  gsap.set(q('[data-hero-fade]'), { opacity: 0, y: 24 })
+  return gsap
+    .timeline({
+      defaults: { ease: 'expo.out' },
+      delay: 0.15,
+      onComplete: () => setHeroIntroVisible(host),
+      onInterrupt: () => setHeroIntroVisible(host),
+    })
+    .to(q('[data-hero-line-inner]'), { yPercent: 0, duration: 1.1, stagger: 0.12 }, 0)
+    .to(q('[data-hero-underline]'), { scaleX: 1, duration: 0.9, ease: 'power3.inOut' }, 0.6)
+    .to(q('[data-hero-fade]'), { opacity: 1, y: 0, duration: 0.7, stagger: 0.09 }, 0.5)
+}
 
 /** Pixel height of the fixed header, read from `--anvl-header-h` (SSR-safe). */
 function headerOffsetPx(): number {
@@ -47,20 +91,108 @@ function pinTrigger(trigger: Element, endPct: number) {
   }
 }
 
+/** When the hero layout exit begins (0–1 along the pinned scroll). */
+const HERO_LAYOUT_EXIT_START = 0.56
+/** How much of the pin timeline the exit occupies — longer = slower, smoother drift. */
+const HERO_LAYOUT_EXIT_DURATION = 0.44
+/** Text fades out much faster than the slide so copy clears before it drifts far. */
+const HERO_COPY_FADE_DURATION = 0.09
+/** Subtle scale-up on the hero video as it centers. */
+const HERO_MEDIA_EXIT_SCALE = 1.1
+/** Fine-tune: measured center can sit slightly right once scaled — nudge left. */
+const HERO_MEDIA_CENTER_NUDGE_PX = 40
+/** Post-pin dissolve as the hero section scrolls off screen. */
+const HERO_LEAVE_SCROLL_VH = 0.48
+
+type HeroExitOffsets = { copyX: number; mediaX: number }
+
+/** Left mask stops — fixed via CSS; only the right edge is animated on exit. */
+const HERO_MASK_LEFT = { l1: 14, l2: 34, l3: 52 }
+
+function applyHeroMediaMaskRight(
+  el: HTMLElement,
+  rightSolid: number,
+  rightFade: number,
+): void {
+  const { l1, l2, l3 } = HERO_MASK_LEFT
+  const horizontal = `linear-gradient(90deg, transparent 0%, transparent ${l1}%, rgba(0,0,0,0.4) ${l2}%, #000 ${l3}%, #000 ${rightSolid}%, transparent ${rightFade}%)`
+  const vertical = 'linear-gradient(0deg, transparent 0%, #000 9%)'
+  el.style.setProperty('-webkit-mask-image', `${vertical}, ${horizontal}`)
+  el.style.setProperty('-webkit-mask-composite', 'source-in')
+  el.style.setProperty('mask-image', `${vertical}, ${horizontal}`)
+  el.style.setProperty('mask-composite', 'intersect')
+}
+
+function clearHeroMediaMask(el: HTMLElement): void {
+  el.style.removeProperty('-webkit-mask-image')
+  el.style.removeProperty('-webkit-mask-composite')
+  el.style.removeProperty('mask-image')
+  el.style.removeProperty('mask-composite')
+}
+
+/** Pixel shifts for the hero layout exit — transform-only so layout never snaps. */
+function measureHeroExitOffsets(
+  hero: HTMLElement,
+  heroMedia: HTMLElement,
+  heroCopy: HTMLElement,
+): HeroExitOffsets {
+  gsap.set([heroMedia, heroCopy], { x: 0, xPercent: 0, scale: 1, force3D: true })
+  const heroRect = hero.getBoundingClientRect()
+  const mediaRect = heroMedia.getBoundingClientRect()
+  const copyRect = heroCopy.getBoundingClientRect()
+  const heroCenterX = heroRect.left + heroRect.width / 2
+  const mediaCenterX = mediaRect.left + mediaRect.width / 2
+  return {
+    mediaX: heroCenterX - mediaCenterX - HERO_MEDIA_CENTER_NUDGE_PX,
+    copyX: -(copyRect.right - heroRect.left + 48),
+  }
+}
+
+/** Cinematic dissolve once the hero pin releases and the section exits upward. */
+function buildHeroLeave(hero: HTMLElement, heroMedia: HTMLElement, pinScrollTrigger: ScrollTrigger | null) {
+  const heroVignette = hero.querySelector('[data-hero-vignette]')
+  const leaveState = { baseScale: 1 }
+
+  ScrollTrigger.create({
+    trigger: hero,
+    start: () => (pinScrollTrigger?.end ?? 0) + 1,
+    end: () =>
+      (pinScrollTrigger?.end ?? 0) + window.innerHeight * HERO_LEAVE_SCROLL_VH,
+    scrub: 1,
+    invalidateOnRefresh: true,
+    onEnter: () => {
+      leaveState.baseScale = Number(gsap.getProperty(heroMedia, 'scale')) || 1
+    },
+    onUpdate: (self) => {
+      const p = self.progress
+      gsap.set(heroMedia, {
+        opacity: 1 - p,
+        filter: `blur(${p * 14}px)`,
+        scale: leaveState.baseScale * (1 - p * 0.12),
+      })
+      if (heroVignette) gsap.set(heroVignette, { opacity: 1 - p })
+    },
+    onLeaveBack: () => {
+      gsap.set(heroMedia, { clearProps: 'opacity,filter' })
+      gsap.set(heroMedia, { scale: leaveState.baseScale })
+      if (heroVignette) gsap.set(heroVignette, { opacity: 1 })
+    },
+  })
+}
+
 function buildHero(host: HTMLElement, q: Selector, intensity: number) {
   const hero = host.querySelector('[data-scene="hero"]')
   if (!hero) return
-  const video = host.querySelector('[data-hero-video]') as HTMLVideoElement | null
-
-  // Intro choreography (plays on load): title masks up, underline draws, lines rise.
-  gsap.set(q('[data-hero-line-inner]'), { yPercent: 120 })
-  gsap.set(q('[data-hero-underline]'), { scaleX: 0 })
-  gsap.set(q('[data-hero-fade]'), { opacity: 0, y: 24 })
-  gsap
-    .timeline({ defaults: { ease: 'expo.out' }, delay: 0.15 })
-    .to(q('[data-hero-line-inner]'), { yPercent: 0, duration: 1.1, stagger: 0.12 }, 0)
-    .to(q('[data-hero-underline]'), { scaleX: 1, duration: 0.9, ease: 'power3.inOut' }, 0.6)
-    .to(q('[data-hero-fade]'), { opacity: 1, y: 0, duration: 0.7, stagger: 0.09 }, 0.5)
+  const video = host.querySelector(
+    '[data-hero-video-desktop]',
+  ) as HTMLVideoElement | null
+  const heroMedia = host.querySelector('[data-hero-media]') as HTMLElement | null
+  const heroCopy = host.querySelector('[data-hero-copy]') as HTMLElement | null
+  const sideVeil = hero.querySelector('[data-hero-veil-side]')
+  const heroVignette = hero.querySelector('[data-hero-vignette]')
+  const heroMediaEdgeRight = heroMedia?.querySelector(
+    '[data-hero-media-edge-right]',
+  ) as HTMLElement | null
 
   if (video) {
     // Prime for frame-accurate seeking (Safari needs a play() before scrubbing).
@@ -73,15 +205,26 @@ function buildHero(host: HTMLElement, q: Selector, intensity: number) {
     // area under the bar, no gap); scroll progress drives the video playback
     // frame-by-frame, while the title card parallaxes up and the veil deepens.
     const proxy = { p: 0 }
+    let exitOffsets: HeroExitOffsets | null = null
+    if (heroMedia && heroCopy) {
+      exitOffsets = measureHeroExitOffsets(hero as HTMLElement, heroMedia, heroCopy)
+    }
+
     const tl = gsap.timeline({
       scrollTrigger: {
+        id: 'hero-pin',
         trigger: hero,
         start: () => `top top+=${headerOffsetPx()}`,
-        end: `+=${Math.round(150 * intensity)}%`,
+        end: `+=${Math.round(200 * intensity)}%`,
         pin: true,
         scrub: 1,
         anticipatePin: 1,
         invalidateOnRefresh: true,
+        onRefresh: () => {
+          if (heroMedia && heroCopy) {
+            exitOffsets = measureHeroExitOffsets(hero as HTMLElement, heroMedia, heroCopy)
+          }
+        },
       },
     })
     // Video progress spans the ENTIRE pin (explicit duration:1) so it never
@@ -109,9 +252,100 @@ function buildHero(host: HTMLElement, q: Selector, intensity: number) {
       },
       0,
     )
-    tl.to(q('[data-hero-veil]'), { opacity: 1.1, ease: 'none', duration: 1 }, 0)
+    tl.to(
+      [...q('[data-hero-veil]'), ...(sideVeil ? [sideVeil as HTMLElement] : [])],
+      { opacity: 1.1, ease: 'none', duration: 1 },
+      0,
+    )
     tl.to(q('[data-hero-content]'), { yPercent: -12 * intensity, ease: 'none', duration: 1 }, 0)
-    tl.to(q('[data-hero-content]'), { opacity: 0, y: -24, duration: 0.2 }, 0.8)
+
+    if (heroCopy && exitOffsets) {
+      gsap.set(heroCopy, { x: 0, opacity: 1, force3D: true })
+      tl.to(
+        heroCopy,
+        {
+          x: () => exitOffsets!.copyX,
+          ease: 'none',
+          duration: HERO_LAYOUT_EXIT_DURATION,
+        },
+        HERO_LAYOUT_EXIT_START,
+      )
+      tl.to(
+        heroCopy,
+        {
+          opacity: 0,
+          ease: 'none',
+          duration: HERO_COPY_FADE_DURATION,
+        },
+        HERO_LAYOUT_EXIT_START,
+      )
+    }
+
+    if (heroMedia && exitOffsets) {
+      gsap.set(heroMedia, {
+        x: 0,
+        scale: 1,
+        transformOrigin: '50% 50%',
+        force3D: true,
+      })
+      const maskRight = { solid: 100, fade: 100 }
+      tl.to(
+        heroMedia,
+        {
+          x: () => exitOffsets!.mediaX,
+          scale: HERO_MEDIA_EXIT_SCALE,
+          ease: 'none',
+          duration: HERO_LAYOUT_EXIT_DURATION,
+        },
+        HERO_LAYOUT_EXIT_START,
+      )
+      tl.to(
+        maskRight,
+        {
+          solid: 90,
+          fade: 100,
+          ease: 'none',
+          duration: HERO_LAYOUT_EXIT_DURATION,
+          onStart: () => applyHeroMediaMaskRight(heroMedia, maskRight.solid, maskRight.fade),
+          onUpdate: () => applyHeroMediaMaskRight(heroMedia, maskRight.solid, maskRight.fade),
+          onReverseComplete: () => clearHeroMediaMask(heroMedia),
+        },
+        HERO_LAYOUT_EXIT_START,
+      )
+      if (heroMediaEdgeRight) {
+        gsap.set(heroMediaEdgeRight, { '--hero-edge-right': 0 })
+        tl.to(
+          heroMediaEdgeRight,
+          {
+            '--hero-edge-right': 0.92,
+            ease: 'none',
+            duration: HERO_LAYOUT_EXIT_DURATION,
+          },
+          HERO_LAYOUT_EXIT_START,
+        )
+      }
+    }
+
+    if (sideVeil) {
+      tl.to(
+        sideVeil,
+        { opacity: 0, ease: 'none', duration: HERO_LAYOUT_EXIT_DURATION },
+        HERO_LAYOUT_EXIT_START,
+      )
+    }
+
+    if (heroVignette) {
+      tl.to(
+        heroVignette,
+        { opacity: 0, ease: 'none', duration: HERO_LAYOUT_EXIT_DURATION },
+        HERO_LAYOUT_EXIT_START,
+      )
+    }
+
+    if (heroMedia) {
+      buildHeroLeave(hero as HTMLElement, heroMedia, tl.scrollTrigger ?? null)
+    }
+
     return
   }
 
@@ -305,7 +539,9 @@ function buildStatic(host: HTMLElement) {
 
   // Hero video: loop muted on mobile; hold the first frame under reduced motion
   // (no scroll-scrub — that's desktop-only).
-  const video = host.querySelector('[data-hero-video]') as HTMLVideoElement | null
+  const video =
+    (host.querySelector('[data-hero-video-mobile]') as HTMLVideoElement | null) ??
+    (host.querySelector('[data-hero-video-desktop]') as HTMLVideoElement | null)
   if (video) {
     video.muted = true
     const reduced =
@@ -327,7 +563,13 @@ function buildStatic(host: HTMLElement) {
   }
 }
 
-export function useTheOathScrollTimeline(root: RefObject<HTMLElement | null>) {
+export function useTheOathScrollTimeline(
+  root: RefObject<HTMLElement | null>,
+  entryComplete: boolean,
+) {
+  const heroIntroPlayed = useRef(false)
+  const heroIntroTimeline = useRef<gsap.core.Timeline | null>(null)
+
   useGSAP(
     () => {
       const host = root.current
@@ -342,4 +584,21 @@ export function useTheOathScrollTimeline(root: RefObject<HTMLElement | null>) {
     },
     { scope: root },
   )
+
+  useLayoutEffect(() => {
+    const host = root.current
+    if (!host) return
+
+    if (!entryComplete) {
+      heroIntroPlayed.current = false
+      heroIntroTimeline.current?.kill()
+      heroIntroTimeline.current = null
+      clearHeroIntroVisual(host)
+      return
+    }
+
+    if (heroIntroPlayed.current) return
+    heroIntroPlayed.current = true
+    heroIntroTimeline.current = runHeroIntro(host)
+  }, [entryComplete, root])
 }

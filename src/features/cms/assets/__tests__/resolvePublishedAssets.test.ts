@@ -23,4 +23,13 @@ describe('resolvePublishedAssets', () => {
     const resolved = resolvePublishedAssets(config, 'the-oath', mediaIndex)
     expect(resolved.loadingEmblem).toContain('library/loading-1.svg')
   })
+
+  it('passes through select slots like heroMediaMode without media resolution', () => {
+    const config: AssetConfig = {
+      general: {},
+      drops: { 'the-oath': { heroMediaMode: 'image' } },
+    }
+    const resolved = resolvePublishedAssets(config, 'the-oath', mediaIndex)
+    expect(resolved.heroMediaMode).toBe('image')
+  })
 })

@@ -45,6 +45,7 @@ The current phase uses local/mock adapters where a real backend does not yet exi
 | Forms | React Hook Form + Zod v4 |
 | Animation | GSAP 3 + `@gsap/react` useGSAP + ScrollTrigger |
 | Motion (lightweight) | Framer Motion |
+| 3D / WebGL | three.js + `@react-three/fiber` v9 + `@react-three/drei` v10 — Story chapter book only, lazy `vendor-three` chunk |
 | Smooth scroll | Lenis |
 | Icons | lucide-react (named imports only) |
 | Toasts | sonner |
@@ -148,17 +149,16 @@ src/
     api/contracts/   Typed DTOs for future REST/BFF
     assets/brand/    Inline SVG logo components (AnvlWordmark, AnvlCrest, etc.)
     components/
-      brand/         Logo image, campaign mark, hero spinning mark
-      layout/        PremiumNav, SiteFooter, AnnouncementBar, StickyHeader
-      motion/        AnimatedText, RevealOnScroll
-      premium/       SectionShell, PageHero, ContentPanel, SectionEyebrow, CTAGroup
+      brand/         AnvlLogoImage, DropEmblemDecor
+      layout/        PremiumNav (+ mobile/topbar), AnnouncementRail, SiteFooter, ContentPage, GrainOverlay
+      motion/        RevealOnScroll
+      premium/       SectionShell, PageHero, ContentPanel, SectionEyebrow, ForgeAtmosphere, WarBanner
       seo/           JsonLd, MarketingToolsHead, structuredData
       ui/            Button, Input, Modal, Drawer, Select, Skeleton, SafeLink, etc.
     constants/       brand.ts, brandLogos.ts
-    hooks/           useDialogFocusTrap, useLenisScroll, useReducedMotion, useStickyHeader
+    hooks/           useDialogFocusTrap, useLenisScroll, useLockPageScroll, useReducedMotion
     lib/             cn.ts, gsap.ts, url.ts, stripAngleBracketTags.ts, color.ts, storage/
-    schemas/         media, money, navigation, site-settings
-    types/           media, money, navigation, site-settings
+    schemas/         media, money, navigation
   styles.css         Global tokens, themes, scrollbars, reduced-motion rules
   router.tsx         TanStack Router setup
   routeTree.gen.ts   AUTO-GENERATED — never edit directly
@@ -666,7 +666,7 @@ Every code change must check whether documentation needs updating. After any:
 | SEC-11 | Admin auth | Supabase auth replaces static gate when env is set, but session handling still needs HttpOnly cookies + server validation for production. |
 | PERF-01 | Admin routes | All admin routes must use `lazyRouteComponent`. |
 | PERF-02 | DropActsBuilderPanel | 600+ line editor needs `React.lazy` + `Suspense` split by tab visibility. |
-| PERF-11 | Bundle size | `framer-motion`, `@tanstack/react-table`, `@tanstack/react-virtual` are installed but may not be actively used — audit before adding new usage. |
+| PERF-11 | Bundle size | Resolved 2026-06-11: removed unused `@tanstack/react-table` + `@radix-ui/react-dropdown-menu`; `@tanstack/react-virtual` (admin media grid) and `framer-motion` (RevealOnScroll) remain in active use. |
 | MAINT-01 | Large files | Several admin editor files exceed 500 lines (tracked refactor candidates). |
 | MAINT-02 | Feature boundary | Some storefront code may import from `admin/**` — Phase D cleanup pending. |
 | Phase I | Router repatch | `scripts/repatch-admin-route-tree.mjs` is a workaround for TanStack Start upstream limitation. |

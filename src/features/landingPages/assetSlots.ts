@@ -1,9 +1,25 @@
-export type AssetSlotKind = 'image' | 'video' | 'svg'
+export type AssetSlotKind = 'image' | 'video' | 'svg' | 'select'
 
 export type AssetSlotDefinition = {
   key: string
   label: string
   kind: AssetSlotKind
+  /** Group heading in the assets editor (e.g. "Hero"). */
+  section?: string
+  /** Select options when `kind` is `select`. */
+  options?: { value: string; label: string }[]
+  /** Show this slot only when another assignment equals `equals`. */
+  visibleWhen?: { key: string; equals: string }
+  /** Stored as a raw string, not resolved through the media library. */
+  passthrough?: boolean
+}
+
+export function getPassthroughSlotKeys(dropKey: string): Set<string> {
+  return new Set(
+    getDropAssetSlots(dropKey)
+      .filter((slot) => slot.passthrough)
+      .map((slot) => slot.key),
+  )
 }
 
 export const GENERAL_ASSET_SLOTS: AssetSlotDefinition[] = [

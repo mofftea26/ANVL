@@ -6,8 +6,13 @@ import {
   oathCrestEmblem,
   oathDropLogo,
   oathLoadingEmblem,
+  oathHeroDesktopVideo,
+  oathHeroImage,
+  oathHeroMediaMode,
+  oathHeroMobileVideo,
   oathSceneMedia,
   oathThemedMarkup,
+  DEFAULT_HERO_VIDEO,
 } from '../theOathAssets'
 
 describe('theOathAssets loading emblem', () => {
@@ -68,18 +73,63 @@ describe('theOathAssets drop logo and crest emblem', () => {
   })
 })
 
+describe('theOathAssets hero media', () => {
+  beforeEach(() => {
+    bindOathCmsAssets({})
+  })
+
+  it('defaults to video mode with built-in fallback videos', () => {
+    expect(oathHeroMediaMode()).toBe('video')
+    expect(oathHeroDesktopVideo()).toBe(DEFAULT_HERO_VIDEO)
+    expect(oathHeroMobileVideo()).toBe(DEFAULT_HERO_VIDEO)
+  })
+
+  it('reads separate desktop and mobile hero videos from CMS', () => {
+    bindOathCmsAssets({
+      heroMediaMode: 'video',
+      heroDesktopVideo: 'https://cdn.test/hero-desktop.mp4',
+      heroMobileVideo: 'https://cdn.test/hero-mobile.mp4',
+    })
+    expect(oathHeroMediaMode()).toBe('video')
+    expect(oathHeroDesktopVideo()).toBe('https://cdn.test/hero-desktop.mp4')
+    expect(oathHeroMobileVideo()).toBe('https://cdn.test/hero-mobile.mp4')
+  })
+
+  it('falls back mobile video to desktop then legacy heroMedia', () => {
+    bindOathCmsAssets({
+      heroDesktopVideo: 'https://cdn.test/hero-desktop.mp4',
+    })
+    expect(oathHeroMobileVideo()).toBe('https://cdn.test/hero-desktop.mp4')
+
+    bindOathCmsAssets({ heroMedia: 'https://cdn.test/legacy.mp4' })
+    expect(oathHeroDesktopVideo()).toBe('https://cdn.test/legacy.mp4')
+    expect(oathHeroMobileVideo()).toBe('https://cdn.test/legacy.mp4')
+  })
+
+  it('reads image mode and hero image assignment', () => {
+    bindOathCmsAssets({
+      heroMediaMode: 'image',
+      heroImage: 'https://cdn.test/hero.jpg',
+    })
+    expect(oathHeroMediaMode()).toBe('image')
+    expect(oathHeroImage()).toBe('https://cdn.test/hero.jpg')
+  })
+
+  it('infers image mode from legacy non-video heroMedia', () => {
+    bindOathCmsAssets({ heroMedia: 'https://cdn.test/hero.jpg' })
+    expect(oathHeroMediaMode()).toBe('image')
+    expect(oathHeroImage()).toBe('https://cdn.test/hero.jpg')
+  })
+})
+
 describe('theOathAssets scene media', () => {
   beforeEach(() => {
     bindOathCmsAssets({})
   })
 
-  it('oathSceneMedia prefers CMS heroMedia assignment', () => {
-    bindOathCmsAssets({ heroMedia: 'https://cdn.test/hero.mp4' })
-    expect(oathSceneMedia('heroMedia')).toBe('https://cdn.test/hero.mp4')
-  })
-
-  it('oathSceneMedia returns undefined when hero slot is unassigned', () => {
-    expect(oathSceneMedia('heroMedia')).toBeUndefined()
+  it('oathSceneMedia resolves manifestoMedia from CMS', () => {
+    bindOathCmsAssets({ manifestoMedia: 'https://cdn.test/manifesto.jpg' })
+    expect(oathSceneMedia('manifestoMedia')).toBe('https://cdn.test/manifesto.jpg')
   })
 })
 

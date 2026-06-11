@@ -7,6 +7,7 @@ import { ManifestoScene } from './components/ManifestoScene'
 import { ChapterGallery } from './components/ChapterGallery'
 import { ProductRevealSequence } from './components/ProductRevealSequence'
 import { FinalDropCTA } from './components/FinalDropCTA'
+import { useLandingEntry } from '@/features/landingPages/LandingEntryContext'
 import { useTheOathScrollTimeline } from './hooks/useTheOathScrollTimeline'
 
 /**
@@ -26,14 +27,13 @@ export function TheOathLanding({ products, assets, themedMarkups }: LandingPageC
   bindOathCmsAssets(assets)
   bindOathCmsThemedMarkups(themedMarkups ?? {})
   const root = useRef<HTMLDivElement | null>(null)
-  useTheOathScrollTimeline(root)
+  const { homeEntryComplete } = useLandingEntry()
+  useTheOathScrollTimeline(root, homeEntryComplete)
 
   return (
-    <div ref={root} className="relative isolate bg-[var(--color-bg)]">
-      {/* One persistent forge environment behind every scene — transparent
-          scenes bleed through it so the page reads as a single continuous film
-          rather than stacked sections. */}
-      <ForgeAtmosphere />
+    <div ref={root} className="relative isolate min-h-full">
+      {/* Fixed forge — one backdrop for the entire scroll, not per-section fills. */}
+      <ForgeAtmosphere className="fixed inset-0 -z-10" />
       <CinematicHero />
       <ManifestoScene />
       <ChapterGallery />

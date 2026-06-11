@@ -83,7 +83,8 @@ Relational content for the `/story` page. Each **chapter** is a drop; each chapt
 
 ```sql
 story_chapters(id, slug UNIQUE, chapter_number, title, subtitle, description,
-               cover_asset jsonb, sort_order, is_published)
+               cover_asset jsonb, cover_logo jsonb, cover_colors jsonb,
+               sort_order, is_published)
 story_acts(id, chapter_id FK→story_chapters, act_number, title, story,
            asset jsonb, sort_order)
 story_cast(id, chapter_id FK, act_id FK→story_acts (nullable),
@@ -126,7 +127,8 @@ Migration: `supabase/migrations/20260607120000_cms_minimal_cleanup.sql`
 | Story schemas (Zod, shared) | `src/features/story/schemas/story.schema.ts` |
 | Story client (interface + seed/Supabase adapters) | `src/app/config/clients.ts` (`StoryClient`), `src/features/story/api/` |
 | Story asset resolve + media URL | `src/features/story/lib/` |
-| Story page components + paged book overlay | `src/features/story/components/` (`ChapterBook` = hardcover + page turns) |
+| Story 3D shelf + book overlay | `src/features/story/components/` (`StoryShelf` → `StoryShelf3D`/`ChapterShelf` fallback; `ChapterBook` → `ChapterBook3D`/`ChapterBookFlat` fallback) |
+| Shared 3D book primitives (Stripe-style) | `src/features/story/components/book3d/` (`StudioStage` IBL+shadows, `ClosedBook`, `BookCanvas`, `useBookTextures`) |
 | Story admin editor + services | `src/features/admin/story/` |
 
 ---

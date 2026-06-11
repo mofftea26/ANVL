@@ -30,16 +30,36 @@ describe('landingEntryLoad', () => {
     expect(await resolveThemedSvgMarkup('')).toBeNull()
   })
 
-  it('collects critical asset urls without duplicates', () => {
+  it('collects critical hero video urls for desktop and mobile', () => {
     const urls = criticalLandingAssetUrls({
       loadingEmblem: 'https://cdn/emblem.svg',
+      heroMediaMode: 'video',
       heroPoster: 'https://cdn/poster.jpg',
-      heroMedia: 'https://cdn/hero.mp4',
+      heroDesktopVideo: 'https://cdn/hero-desktop.mp4',
+      heroMobileVideo: 'https://cdn/hero-mobile.mp4',
     })
     expect(urls).toEqual([
       'https://cdn/emblem.svg',
       'https://cdn/poster.jpg',
-      'https://cdn/hero.mp4',
+      'https://cdn/hero-desktop.mp4',
+      'https://cdn/hero-mobile.mp4',
     ])
+  })
+
+  it('collects a single hero image url in image mode', () => {
+    const urls = criticalLandingAssetUrls({
+      loadingEmblem: 'https://cdn/emblem.svg',
+      heroMediaMode: 'image',
+      heroImage: 'https://cdn/hero.jpg',
+    })
+    expect(urls).toEqual(['https://cdn/emblem.svg', 'https://cdn/hero.jpg'])
+  })
+
+  it('falls back to legacy heroMedia for critical preload', () => {
+    const urls = criticalLandingAssetUrls({
+      loadingEmblem: 'https://cdn/emblem.svg',
+      heroMedia: 'https://cdn/legacy.mp4',
+    })
+    expect(urls).toEqual(['https://cdn/emblem.svg', 'https://cdn/legacy.mp4'])
   })
 })

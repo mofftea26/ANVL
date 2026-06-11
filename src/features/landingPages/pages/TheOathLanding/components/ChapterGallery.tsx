@@ -3,6 +3,7 @@ import { parseColor, rgbaToCss } from '@/shared/lib/color'
 import { OATH_CHAPTERS, OATH_MANIFESTO } from '../data'
 import { oathChapterMedia } from '../theOathAssets'
 import { MediaPlane } from './MediaPlane'
+import { SceneSeamBlend } from './SceneSeamBlend'
 
 /**
  * Translucent duotone for a mobile tenet card — keeps the chapter's tone but lets
@@ -11,8 +12,10 @@ import { MediaPlane } from './MediaPlane'
  */
 function tenetCardBg(tone: string): string {
   const c = parseColor(tone)
-  if (!c) return 'linear-gradient(158deg, rgba(20,22,25,0.6) 0%, rgba(11,11,12,0.42) 100%)'
-  return `linear-gradient(158deg, ${rgbaToCss({ ...c, a: 0.62 })} 0%, rgba(11,11,12,0.4) 100%)`
+  if (!c) {
+    return 'linear-gradient(158deg, color-mix(in srgb, var(--color-bg) 60%, var(--color-surface-elevated)) 0%, color-mix(in srgb, var(--color-bg) 42%, transparent) 100%)'
+  }
+  return `linear-gradient(158deg, ${rgbaToCss({ ...c, a: 0.62 })} 0%, color-mix(in srgb, var(--color-bg) 40%, transparent) 100%)`
 }
 
 /**
@@ -39,6 +42,8 @@ export function ChapterGallery() {
       className="relative w-full overflow-hidden bg-transparent md:h-[var(--anvl-section-h)]"
       aria-label="The tenets of The Oath"
     >
+      <SceneSeamBlend edge="top" />
+      <SceneSeamBlend edge="bottom" />
       {/* ---- Mobile: one-screen 2×2 tenet grid ---- */}
       <div className="px-5 pb-16 pt-12 md:hidden">
         <p
@@ -95,7 +100,8 @@ export function ChapterGallery() {
               media={oathChapterMedia(chapter.id)}
               tone={chapter.tone}
               showLogo={false}
-              grain
+              transparent
+              vignette={false}
               mediaAttrs={{ 'data-chapter-media': 'true' }}
             />
 

@@ -52,7 +52,7 @@ const FORGE_METAL =
   'linear-gradient(180deg, #7a7d81 0%, #45484c 38%, #26282b 70%, #161719 100%)'
 
 function duotone(tone = '#1a1c1f'): string {
-  return `linear-gradient(158deg, ${tone} 0%, #0b0b0c 82%)`
+  return `linear-gradient(158deg, ${tone} 0%, var(--color-bg) 82%)`
 }
 
 const TILT_RX = 13

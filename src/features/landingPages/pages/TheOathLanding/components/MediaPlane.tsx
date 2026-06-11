@@ -59,7 +59,7 @@ export function MediaPlane({
       <div
         {...mediaAttrs}
         className={cn('absolute inset-0 will-change-transform', mediaClassName)}
-        style={transparent && !hasMedia ? undefined : { background: duotonePlaceholder(tone) }}
+        style={transparent ? undefined : { background: duotonePlaceholder(tone) }}
       >
         {hasMedia && isVideo(media as string) ? (
           <video

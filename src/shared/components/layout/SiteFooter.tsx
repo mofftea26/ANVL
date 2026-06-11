@@ -64,7 +64,7 @@ export function SiteFooter({ navigation, className }: SiteFooterProps) {
     navigation.copyrightSuffix?.trim() || 'ANVL Athletics. All rights reserved.'
 
   return (
-    <footer className={cn('relative mt-16 overflow-hidden border-t border-[var(--color-line)]', className)}>
+    <footer className={cn('relative overflow-hidden border-t border-[var(--color-line)]', className)}>
       <DropEmblemDecor
         src={emblemSrc}
         alt=""

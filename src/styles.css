@@ -178,8 +178,12 @@ body {
   overflow-x: clip;
   font-family: var(--font-sans);
   background:
-    radial-gradient(circle at 20% -10%, #282b30 0%, transparent 35%),
-    linear-gradient(180deg, #111214 0%, var(--color-bg) 75%);
+    radial-gradient(
+      circle at 20% -10%,
+      color-mix(in srgb, var(--color-bg) 35%, var(--color-surface-elevated)) 0%,
+      transparent 35%
+    ),
+    var(--color-bg);
   color: var(--color-text);
   line-height: 1.45;
   text-rendering: optimizeLegibility;
@@ -223,6 +227,35 @@ a {
     color-mix(in srgb, var(--color-ember) 70%, transparent) 50%,
     transparent
   );
+}
+
+/* Ink-on-parchment recolour for the 3D book's open pages — the storefront
+   content components inherit these tokens so they read like a printed page. */
+.story-book-page {
+  --color-surface: #efe6cd;
+  --color-bg: #e6d9b8;
+  --color-text: #2b2317;
+  --color-text-muted: #4c4030;
+  --color-heading: #221b10;
+  --color-line: #cbb98f;
+}
+
+/* Flat-reader page entrance — cheap CSS only (mobile path has no GSAP/three);
+   duration is clamped to 0.01ms by the global reduced-motion rule. */
+@keyframes anvl-story-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.story-page-enter {
+  animation: anvl-story-page-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Forge atmosphere motion — drifting embers + a faint banner sway. All gated
@@ -488,23 +521,51 @@ select:disabled {
 /* Hero media blend — on desktop the video's left edge fades to transparent so it
    melts into the dark title column (no hard seam between video and text). Mobile
    keeps the full-bleed backdrop. */
+/* Trim the last few px of the hero player — kills the hard decoder floor line. */
+.hero-video-crop {
+  clip-path: inset(0 0 5px 0);
+}
+
 @media (min-width: 768px) {
   .hero-media-blend {
+    -webkit-mask-image:
+      linear-gradient(0deg, transparent 0%, #000 9%),
+      linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent 14%,
+        rgba(0, 0, 0, 0.4) 34%,
+        #000 52%,
+        #000 100%
+      );
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(0deg, transparent 0%, #000 9%),
+      linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent 14%,
+        rgba(0, 0, 0, 0.4) 34%,
+        #000 52%,
+        #000 100%
+      );
+    mask-composite: intersect;
+  }
+
+  .hero-media-blend.hero-media-centered {
     -webkit-mask-image: linear-gradient(
       90deg,
       transparent 0%,
-      transparent 14%,
-      rgba(0, 0, 0, 0.4) 34%,
-      #000 52%,
-      #000 100%
+      #000 8%,
+      #000 92%,
+      transparent 100%
     );
     mask-image: linear-gradient(
       90deg,
       transparent 0%,
-      transparent 14%,
-      rgba(0, 0, 0, 0.4) 34%,
-      #000 52%,
-      #000 100%
+      #000 8%,
+      #000 92%,
+      transparent 100%
     );
   }
 }
@@ -641,26 +702,6 @@ html.anvl-preview-iframe {
 
 .focus-ring:focus-visible {
   outline-color: var(--color-accent);
-}
-
-/* Admin Radix dropdown — subtle scale/opacity only when motion is OK (global reduced-motion clamp still applies separately). */
-@keyframes admin-dropdown-menu-in {
-  from {
-    opacity: 0;
-    transform: scale(0.97);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .admin-dropdown-menu-content[data-state='open'] {
-    animation: admin-dropdown-menu-in 120ms cubic-bezier(0.22, 1, 0.36, 1);
-    transform-origin: var(--radix-dropdown-menu-content-transform-origin);
-  }
 }
 
 /* Drawer — backdrop fade + panel slide (respects global reduced-motion clamp). */

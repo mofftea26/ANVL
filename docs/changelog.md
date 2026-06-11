@@ -1,4 +1,109 @@
-﻿## 2026-06-09 — Story saga: chapters → acts → cast (CMS + cinematic book)
+﻿## 2026-06-11 — Story book: real gutter, sunken spine, flutter ordering + back-turn fix
+
+- **Backward grab-turn fixed**: releasing a back-dragged page sprang it forward again — the release handler XOR'd the landing side with the turn direction (double-counting it). The paper now falls to whichever side it is physically on (flick can override); whether that commits or cancels is decided per direction in `finishTurn`. Verified headlessly with simulated mouse drags both ways (Act 02 → 01 and 02 → 03).
+- **No more "second cover" during opening**: the flutter leaves chased the cover on their own clock and could overtake it mid-swing. They now start later and are **hard-clamped to trail the cover** (`angle ≤ coverAngle − 0.07·(i+1)`), so the cover always leads and the pages follow, like a real book.
+- **Soft gutter instead of a hard ridge**: the cloth spine box used to stand proud between the open pages. The spine now **sinks beneath the page block as the book opens**, and the page surfaces are **curved geometries that dip toward the binding** (`makeGutterPageGeometry`, gaussian dip ≈0.055 world) — the pages visibly join in the middle like paper sewn into a spine.
+- Gates: typecheck + story suite 15/15 green; settled-book capture confirms the gutter.
+- **Follow-up — true seam:** the two page meshes actually stopped **0.036 world short of the spine on each side**, exposing a cloth strip that read as a hard divider; and the first gutter dip's slope on the right page caught the key light as a white band. Pages now **extend to meet exactly at the spine at the same height** (`GUTTER_EXT`; left page carries the deep shadow-side roll 0.07, right page a shallow 0.012 crease), and the gilded block is narrowed so the dipped paper clears it. The open spread reads as one continuous sheet.
+- **Follow-up — leaf hinge + gutter shading:** the turning leaf had the same 0.036 inner-edge gap (a visible slot at the spine during every flip) — it now reaches the pivot exactly and its hinge edge **droops into the binding** while turning (`LEAF_DROOP`, like sewn-in paper). Both pages and the leaf carry **baked vertex-color gutter shading** (paper darkens ~30% rolling into the binding, σ 0.2) so the spread visibly curves into the middle like a real open book. Verified via settled + mid-turn captures.
+
+## 2026-06-11 — Story book: grab-to-turn pages, instant cover dissolve, mobile trims + app-wide cleanup
+
+- **Grab the paper, not the book.** Pages now turn by **grabbing with the cursor**: invisible grab zones over each page; the leaf's hinge angle follows the held point (`acos(x/grab)` — hold it anywhere, even the middle, and it tracks), curling as it moves. On release it **falls to whichever side position + flick velocity dictate** (commit past the spine or flick ≥1.6 rad/s), then the spread advances (`onTurned` → `ChapterBook`). Arrows/keyboard still work. `PresentationControls` removed — the book itself can no longer be dragged/rotated.
+- **Cover content no longer visible while opening**: the foil stamp now dissolves within the **first quarter** of the cover swing.
+- **drei `<Html>` screen-space scale-loss fix**: after pointer-event churn, drei's mount effect could reset the overlay's `cssText` and its `eps` position-guard then never restored the `scale()` (content rendered unscaled). `eps={-1}` forces a per-frame transform refresh — verified by drag-turning headlessly (spread advances, layout stays pixel-locked).
+- **Mobile story page trims**: shelf is a **2-up grid** with compact cards (description hidden); the tall hero war-banner and the closing "saga never ends" CTA are desktop/tablet-only.
+- **GSAP "target not found" spam fixed** — page-reveal tweens now only target selectors present on the page variant (this warn, forwarded by vite, once filled a 10GB dev log).
+- **App-wide cleanup**: removed **42 dead files** (old admin form components incl. `AdminDropdownMenu` + its orphan CSS, drop-builder-era CMS hooks/sync (`storefrontCmsSync`, `cmsSubscriptions`, `useStorefrontPublication`), waitlist mock/hook/types, unused `shared/types/*` + `site-settings.schema`, unused layout/motion/premium components (`AnnouncementBar`, `StickyHeader`, `AnimatedText`, `CTAGroup`, `EditorialHero`, `BrandBadge`, `HeroSpinningMark`, `IndustrialDivider`), `SceneMeta` + `useResponsiveMotionConfig` (unwired TheOath leftovers), and more). Removed unused deps **`@tanstack/react-table`** and **`@radix-ui/react-dropdown-menu`** (PERF-11 resolved). No `console.log` in src. CLAUDE.md folder map updated.
+- **Gates:** `pnpm typecheck` + build green; story suite 15/15; full suite 327 passed with only the 4 pre-existing unrelated failures.
+
+## 2026-06-11 — Story book: page content finally locked to the pages (all screen sizes)
+
+- **Root cause found and fixed.** The page content drifted off the pages **proportionally to the window size** because drei `<Html transform>` (CSS-3D) mixes pixel and world units: the scene ends up ~4.6px from the CSS eye plane, where Chromium's painted projection diverges from WebGL canvas-size-dependently (and `getBoundingClientRect` reports the un-diverged position, which hid it from DOM probes).
+- **Fix:** page content now renders via drei `<Html>` **screen-space mode** — position is a true camera projection (identical math to the WebGL paint) and scale is computed per canvas height (`size.height × HTML_DISTANCE / 400`), so the content **tracks the page meshes exactly at every window size and on resize**. Supporting geometry: the open book recenters so the page planes sit at z≈0, faces the camera dead-on (no tilt), camera on-axis, gentler PresentationControls range.
+- **Remastered opening:** auto-open now waits for the fly-in to land (was opening mid-flight); fly-in arcs gently upward with a slight roll (1.1s); cover foil stamp dissolves in the first half of the swing; flutter pages tinted parchment; OpenFlash softened.
+- Removed the interim runtime-calibration hack (superseded by the deterministic fix).
+- **Verified:** headless-Chrome captures at 950×650 and 1600×1000 — content pixel-locked to the pages at both; `pnpm typecheck` + build green; story suite 15/15.
+
+## 2026-06-11 — Story book: ancient cover tooling + cover fade on open
+
+- **Ancient ornamental cover** (`coverTexture.ts`): the baked foil stamp now carries a **double frame**, **corner scroll flourishes with diamonds**, **side/bottom midpoint ornaments**, and a **faint compass medallion** (twin rings + 15° ticks + cardinal diamonds) behind the logo. All foil-coloured, alpha-tuned to read as worn hand tooling. Applies to the shelf and fullscreen book automatically (shared texture).
+- **Cover content no longer lingers while the book opens**: the foil stamp **dissolves during the first half of the cover swing** (`opacity = 1 − 1.6t`, reversible on close).
+- Verified via headless-Chrome captures of the shelf cover and mid-open frame; `pnpm typecheck` + build green; story suite 15/15.
+
+## 2026-06-11 — Story book: real spreads, realistic open/turn, mobile flat reader
+
+- **True facing-page spreads** (`bookSpreads.ts`, replaces `bookLeaves.ts`): the **left (verso) page is always visual** — the act's Supabase asset as a framed plate (with foil act caption + sheen sweep) or an **illuminated emblem plate** (crest, foil numeral, chapter + act titles); the **right (recto) page carries the act's text**. Both pages have their own running header and **printed-book folios** (left page = outer-left `2i-1`, right page = outer-right `2i`). Long acts **flow onto further spreads automatically** (even a single oversized paragraph is split at sentence boundaries).
+- **Layout actually pinned.** Header/footer are now **absolutely positioned** inside a fixed-size page box (`overflow:hidden`), body strictly bounded between them — header can no longer escape the page top nor the footer float mid-page, regardless of content.
+- **Realistic cover open**: timed eased swing (not an exponential lerp) with a soft **landing bounce**, **3 thin pages fluttering** after the cover, and the book breathing up as it opens; the facing pages reveal only once the cover has fully landed.
+- **Realistic leaf turn** both directions: eased flip, the leaf **lifts off the stack**, and the curl is a **wave traveling free-edge → spine** (mirrored when turning back) instead of a static bow.
+- **Magical reveals** after the leaf lands: words rise from the parchment, the rule draws itself, crest/numeral bloom in, and media gets a **random pose + foil sheen sweep** each turn.
+- **Mobile (<768px)**: no three.js / GSAP at all — book **and** shelf use the lean CSS readers (single scrollable parchment page per spread, CSS-only entrance clamped by reduced-motion, safe-area-aware controls). **Tablets keep the full 3D book** with DPR capped at 1.5 for smoothness.
+- **Gates:** `pnpm typecheck` + `pnpm build` green; story suite 15/15; vendor-three still lazy.
+
+## 2026-06-10 — Story book: turn-then-reveal content (GSAP)
+
+- **Decoupled the turn from the content.** The page-turn is now a clean **blank parchment flip**; the new page's content is hidden during the turn and **animates in only after the flip finishes** — text rises **word-by-word** (manual word-split + GSAP stagger, blur→sharp), and media gets a **random magical pose** each time (one of six). Honors reduced motion.
+- **Header/footer fixed.** It was a flexbox `min-height:auto` bug — the body grew past the page and pushed the header/footer off. Body is now `min-h-0 flex-1 overflow-hidden`, so the header pins to the top and the footer to the bottom of the page.
+- **Bigger page type** (12.5→14px) with pagination density retuned (`DEFAULT_PAGE_METRICS`) so it still fits.
+- **Gates:** `pnpm typecheck` + `pnpm build` green; story suite 15/15; `/story` SSR 200.
+
+## 2026-06-10 — Story book: coverage-based page reveal + page fit
+
+- **Coverage-based reveal (true 3D turn).** Static pages are no longer drawn through the turning leaf. Each page's opacity is now driven by how much the leaf covers it: the **incoming page is hidden until the leaf lifts** (no more overlapping/overflowing text), the **leaf carries its content only while front-facing**, and the **left page hides as the leaf sweeps over it**. Drives a real crossfade outgoing→incoming as the page lifts.
+- **Page fit.** Reduced the `<Html>` content scale (`distanceFactor` 1.2→1.1, ~84% of the page) so the **header sits inside the top margin and the footer at the bottom** instead of spilling past the page edges.
+- **Gates:** `pnpm typecheck` + `pnpm build` green; story suite 15/15.
+
+## 2026-06-10 — Story book: page-turn carries its content
+
+- **The turning page now carries its content.** Previously a *blank* leaf flipped while the text sat static and swapped — disconnected. The turn state is now centralised in `Book` and the **leaf renders its own page** (`BookPageView` on the leaf), curling + flipping away to reveal the next page underneath. Content visibility is gated to when the leaf front faces the camera (no mirrored text).
+- **Direction fixed.** Direction was read from a prop that could go stale across renders (pages turning the wrong way). It's now set synchronously in the turn effect. Forward: outgoing page flips away → incoming revealed; backward: incoming flips in from the left (content swaps at mid-flip). Softer curl + tuned speed to de-glitch.
+- **Cleaner page layout.** Refined `BookPageView` — running header (chapter · act), drop-cap on the act's first paragraph, better line spacing, `16/9` media, ornamented page-number footer. Inlined the leaf (removed `CurlingLeaf`).
+- **Gates:** `pnpm typecheck` + `pnpm build` green; story suite 15/15.
+
+## 2026-06-10 — Story book: one book that opens + pages that fit
+
+- **One book, not two.** Merged the shelf book and the opened book into a single `Book` component driven by an `open` flag — the *same* cloth hardcover (loved closed look, baked foil cover, gilded block, rounded spine) physically swings its front cover open and recentres on the spine. No more swapping to a separate, lower-quality open book.
+- **Content fits the pages.** The page overflow was a drei `<Html transform>` scaling mismatch (`world = px × distanceFactor / 400`). Sized the page DOM (420×600) at `distanceFactor 1.2` so the header/body/footer render at ~92% of the actual page mesh — fully inside the page instead of spilling out.
+- Removed `ClosedBook` (folded into `Book`). Shelf (`BookCanvas`) and overlay (`ChapterBook3D`) now both render `Book`.
+- **Gates:** `pnpm typecheck` + `pnpm build` green; story suite 15/15; `/story` SSR 200.
+
+## 2026-06-10 — Story book: baked cover, pagination, header/footer
+
+- **Fixed the cover "jump to bottom".** The cover (drop label + logo + foil title + brand) is now **baked to a canvas texture** stamped on the cloth (`coverTexture.ts`) instead of a drei `<Html>` overlay, which mis-anchored/jumped on mount. SVG logos are tinted to the foil colour; the stamp is lit like real foil. Retired `CoverFace`/`ChapterPageContent`.
+- **No more cheap-book flash.** Opening no longer flashes the flat CSS reader — the 3D `Suspense` fallback is now `null` (three.js is already warm from the shelf). The flat reader remains only for no-WebGL / reduced-motion.
+- **Pagination + fit.** Page content is **paginated into leaves** (`bookLeaves.ts`): an act that doesn't fit one page **continues on the next** (`Act 01 (1/2)`…). Smaller book type and an `overflow-hidden` body so nothing spills.
+- **Header + footer.** Each page has a running **header** (chapter · act) and a **footer** with the page number (`n / total`) — shared by the 3D and flat books via `BookPageView`.
+- **Better open.** The book flies in as the **real closed shelf book**, gently rotates into place (`easeInOutCubic`), blooms (`OpenFlash`), then swings open with the **curling** leaf turn. Open-page **heading/text colours are CMS-driven**.
+- **Gates:** `pnpm typecheck` + `pnpm build` green; story suite 15/15; `/story` SSR 200.
+
+## 2026-06-10 — Story book: cover polish, realistic open + page-turn
+
+- **Cover face** now anchors the drop logo + foil title to the **top** (padded), with a **bigger logo**; **SVG logos are tinted to the foil colour** (CSS mask) so they read as a stamped foil mark, raster logos render as-is.
+- **CMS page colours.** Book colours gain **page heading** + **page text** (open-book ink), alongside cover/foil/edge — `bookColorsSchema` + `BookColorsField`; applied to the open pages via CSS-var overrides.
+- **Bigger, realistic open book.** Larger book + pages so text/media fit; **vertex-curling page-turn** (`CurlingLeaf` billows + re-lit normals) instead of a flat flip.
+- **Magical open-from-card.** The overlay now flies in as the **exact closed shelf book** (`ClosedBook` reused for continuity), eased (`easeInOutCubic`) from the card toward the viewer, then an additive **`OpenFlash`** bloom (foil-tinted) masks the cover swing into the open spread.
+- **Gates:** `pnpm typecheck` + `pnpm build` green; story suite 15/15; `/story` SSR 200.
+
+## 2026-06-10 — Story book: branded cover + physical open-from-card
+
+- **Reusable book cover.** The 3D book now stamps the **drop logo + foil title** on its cloth cover (shared `CoverFace` + `resolveBookCover`, used by both the shelf book and the opened book so they're unmistakably the same object). Logo falls back to cover art, then the ANVL crest.
+- **CMS colours + logo.** Story editor (`/admin/story`) gains a **drop-logo upload** and a **Book colours** panel (cloth cover / foil / gilded page-edge) via `BookColorsField`. Persisted to new `story_chapters.cover_logo` + `cover_colors` jsonb (migration `20260626120002_story_book_cover`); threaded through schema (`bookColorsSchema`, `coverLogo`), mapper, service, and the anon reader.
+- **Physical open-from-card.** Clicking a shelf book hands its on-screen rect to the overlay (`openOrigin`), and the opened book **flies in from that card**, swings its cover open, and turns leaves — **drag to rotate** (`PresentationControls`). The pages are now **ink-on-parchment** (`.story-book-page` recolours the content tokens) instead of the old dark modal panel, so it reads like a real book.
+- **Gates:** `pnpm typecheck` + `pnpm build` green; story suite 15/15; `/story` SSR 200. (Also unblocked a pre-existing, unrelated type error in the in-flight `useTheOathScrollTimeline.ts` — `tl.scrollTrigger ?? null`.)
+
+## 2026-06-10 — Story books: premium 3D (Stripe-Press style)
+
+- **Premium 3D book objects** (three.js / `react-three-fiber` + `drei`), modelled on the Stripe Press showcase. **Materials are the point:** cloth-bound `MeshPhysicalMaterial` covers (sheen + clearcoat), **foil-stamped ANVL crest** (gold-metal `alphaMap` of `mark.svg`), **gilded page block** (per-face material array), rounded covers + spine. Lit by a shared **studio rig** — image-based lighting from baked `Lightformer`s (no HDR download) + soft `ContactShadows` — which gives the cloth/foil their reflective sheen and grounding.
+- **3D shelf.** `/story`'s chapter shelf now renders each chapter as a **live 3D book** (`StoryShelf3D` → `ChapterShelfCard` → `BookCanvas` → `ClosedBook`) that turns to show its spine and lifts on hover/focus. Semantics stay in the DOM (real `<button>` per card) so it's keyboard/SR-accessible; the canvas is purely visual. CMS image covers map onto the cover; otherwise the foil crest shows.
+- **Opened book.** Click → a cloth hardcover with foil title/crest (+ cover art) that **flies in, swings its cover open, and turns a parchment leaf per act**, with **drag-to-rotate** (`PresentationControls`). Act/roster content renders as crisp `drei <Html>` on the page meshes.
+- **Graceful degradation.** WebGL probe + `prefers-reduced-motion` gate both surfaces: no-WebGL/reduced-motion/SSR get the accessible **CSS shelf** (`ChapterShelf`) and **flat reader** (`ChapterBookFlat`). Dialog a11y (focus trap, Escape, scroll lock, page controls, arrow keys) lives in the `ChapterBook` orchestrator.
+- **Bundle:** three.js is code-split into a lazy **`vendor-three`** chunk (~939 KB / ~245 KB gz) loaded **only on capable clients when the shelf/book mounts** — the `story` route chunk stays ~15 KB, storefront entry unchanged. New shared 3D modules live under `src/features/story/components/book3d/`.
+- **Dependencies:** `three`, `@react-three/fiber` (v9, React 19), `@react-three/drei` (v10), `@types/three`. New `vendor-three` manual chunk in `vite.config.ts`.
+- **Fix:** `AdminMicroHeading` renders its polymorphic `as` tag via `createElement` — three.js's global JSX element augmentation collapsed the `ElementType` children type to `never` under the old JSX form.
+- **Gates:** `pnpm typecheck` + `pnpm build` green; story suite passes (15); `/story` SSR verified (200, content crawlable, no three.js on the server). Pre-existing unrelated failures remain: `publicStorefrontPublication.test.ts` (font migration) and `-adminDashboard.test.tsx` (landing-picker `QueryClient` in tests).
+
+## 2026-06-09 — Story saga: chapters → acts → cast (CMS + cinematic book)
 
 - **Story reimagined as a living saga.** `/story` is now a kingdom-and-army narrative told in **chapters** (one per drop), each with ordered **acts** and an authored **cast** (generals/recruits/loyal members). The old hardcoded four-section page became the seeded "Chapter 01 — The Oath" with four acts.
 - **Cinematic book overlay.** The shelf shows chapter covers; clicking one opens a full-screen, deep-linkable overlay (`/story?chapter=<slug>`) where a forged cover **flips open (GSAP + CSS 3D)** to reveal the reader. Desktop/tablet get the flip; mobile/reduced-motion get the final state instantly (`gsap.matchMedia` both gates). Accessible dialog (focus trap, Escape, focus restore). **No three.js added** — pure CSS 3D + GSAP.

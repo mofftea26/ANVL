@@ -20,25 +20,21 @@ const LandingEntryContext = createContext<LandingEntryContextValue>({
   resetHomeEntry: () => {},
 })
 
-/** Inline in `<head>` / `<body>` — locks scroll before React hydrates on `/`. */
-export const LANDING_ENTRY_LOCK_SCRIPT = `(function(){try{var p=location.pathname;if(p!=='/'&&p!=='')return;var d=document.documentElement;d.setAttribute('${LANDING_ENTRY_ATTR}','active');d.style.overflow='hidden';d.style.height='100%';var b=document.body;if(b){b.style.overflow='hidden';b.style.height='100%';}}catch(e){}})();`
+/**
+ * Inline in `<head>` — sets the scroll-lock attribute before React hydrates on `/`.
+ * Overflow is handled in CSS (`styles.css`) so we never mutate inline styles here
+ * (inline styles caused hydration mismatches on `<html>` / `<body>`).
+ */
+export const LANDING_ENTRY_LOCK_SCRIPT = `(function(){try{var p=location.pathname;if(p!=='/'&&p!=='')return;document.documentElement.setAttribute('${LANDING_ENTRY_ATTR}','active');}catch(e){}})();`
 
 export function applyLandingEntryLock(): void {
   if (typeof document === 'undefined') return
   document.documentElement.setAttribute(LANDING_ENTRY_ATTR, 'active')
-  document.documentElement.style.overflow = 'hidden'
-  document.documentElement.style.height = '100%'
-  document.body.style.overflow = 'hidden'
-  document.body.style.height = '100%'
 }
 
 export function releaseLandingEntryLock(): void {
   if (typeof document === 'undefined') return
   document.documentElement.removeAttribute(LANDING_ENTRY_ATTR)
-  document.documentElement.style.overflow = ''
-  document.documentElement.style.height = ''
-  document.body.style.overflow = ''
-  document.body.style.height = ''
   document.body.style.position = ''
   document.body.style.top = ''
   document.body.style.width = ''

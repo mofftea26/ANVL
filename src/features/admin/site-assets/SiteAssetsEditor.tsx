@@ -90,7 +90,7 @@ export function SiteAssetsEditor() {
     return () => setPageActions(null)
   }, [toolbar, setPageActions])
 
-  const slots =
+  const allSlots =
     scope === 'general'
       ? GENERAL_ASSET_SLOTS
       : (DROP_ASSET_SLOTS[scope] ?? [])
@@ -101,6 +101,32 @@ export function SiteAssetsEditor() {
     scope === 'general'
       ? config.general
       : (config.drops[scope] ?? {})
+
+  function assignmentValue(key: string): string {
+    return assignments[key] ?? ''
+  }
+
+  function visibleSlot(slot: (typeof allSlots)[number]): boolean {
+    if (!slot.visibleWhen) return true
+    const current = assignmentValue(slot.visibleWhen.key) || 'video'
+    return current === slot.visibleWhen.equals
+  }
+
+  const slots = allSlots.filter(visibleSlot)
+
+  const slotSections = useMemo(() => {
+    const sections: { title: string | null; slots: typeof slots }[] = []
+    for (const slot of slots) {
+      const title = slot.section ?? null
+      const last = sections[sections.length - 1]
+      if (last && last.title === title) {
+        last.slots.push(slot)
+      } else {
+        sections.push({ title, slots: [slot] })
+      }
+    }
+    return sections
+  }, [slots])
 
   function setSlot(slotKey: string, mediaId: string) {
     setConfig((prev) => {
@@ -140,23 +166,44 @@ export function SiteAssetsEditor() {
           ]}
         />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {slots.map((slot) => (
-            <AdminFieldSelect
-              key={slot.key}
-              label={slot.label}
-              value={assignments[slot.key] ? assignments[slot.key] : UNASSIGNED}
-              onChange={(value) =>
-                setSlot(slot.key, value === UNASSIGNED ? '' : value)
-              }
-              options={[
-                { value: UNASSIGNED, label: '— Not assigned —' },
-                ...(mediaQuery.data ?? []).map((asset) => ({
-                  value: asset.id,
-                  label: asset.filename,
-                })),
-              ]}
-            />
+        <div className="space-y-6">
+          {slotSections.map((section, sectionIndex) => (
+            <div key={section.title ?? `section-${sectionIndex}`} className="space-y-4">
+              {section.title ? (
+                <h3 className="anvl-heading text-base font-normal text-[var(--color-heading)]">
+                  {section.title}
+                </h3>
+              ) : null}
+              <div className="grid gap-4 sm:grid-cols-2">
+                {section.slots.map((slot) =>
+                  slot.kind === 'select' ? (
+                    <AdminFieldSelect
+                      key={slot.key}
+                      label={slot.label}
+                      value={assignmentValue(slot.key) || slot.options?.[0]?.value || ''}
+                      onChange={(value) => setSlot(slot.key, value)}
+                      options={slot.options ?? []}
+                    />
+                  ) : (
+                    <AdminFieldSelect
+                      key={slot.key}
+                      label={slot.label}
+                      value={assignments[slot.key] ? assignments[slot.key] : UNASSIGNED}
+                      onChange={(value) =>
+                        setSlot(slot.key, value === UNASSIGNED ? '' : value)
+                      }
+                      options={[
+                        { value: UNASSIGNED, label: '— Not assigned —' },
+                        ...(mediaQuery.data ?? []).map((asset) => ({
+                          value: asset.id,
+                          label: asset.filename,
+                        })),
+                      ]}
+                    />
+                  ),
+                )}
+              </div>
+            </div>
           ))}
         </div>
       </section>

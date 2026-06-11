@@ -4,6 +4,7 @@ import { OATH_FINAL } from '../data'
 import { oathCrestEmblem, oathThemedMarkup } from '../theOathAssets'
 import { MediaPlane } from './MediaPlane'
 import { OathCtaLink } from './OathCtaLink'
+import { SceneSeamBlend } from './SceneSeamBlend'
 
 /**
  * Scene 05 — The Drop, as a closing vow. A war-banner crest drops from above,
@@ -16,10 +17,11 @@ export function FinalDropCTA() {
     <section
       data-scene="final"
       id="oath"
-      className="relative flex w-full scroll-mt-[var(--anvl-header-h)] flex-col items-center overflow-hidden bg-transparent pt-20 pb-10 text-center md:pt-24 md:pb-12"
+      className="relative flex w-full scroll-mt-[var(--anvl-header-h)] flex-col items-center overflow-hidden bg-transparent pt-20 pb-4 text-center md:pt-24 md:pb-6"
       aria-labelledby="oath-final-heading"
     >
-      <MediaPlane tone="#0d0e10" showLogo={false} grain transparent vignette={false} />
+      <SceneSeamBlend edge="top" />
+      <MediaPlane tone="#0d0e10" showLogo={false} transparent vignette={false} />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 bottom-[-25%] z-[1] h-[80%]"

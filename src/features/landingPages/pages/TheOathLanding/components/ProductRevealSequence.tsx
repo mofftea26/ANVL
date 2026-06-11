@@ -7,6 +7,7 @@ import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { WarBanner } from '@/shared/components/premium/WarBanner'
 import { OATH_PRODUCTS, OATH_PRODUCTS_HEADING, type OathProductCopy } from '../data'
 import { oathCrestEmblem, oathProductImage, oathThemedMarkup } from '../theOathAssets'
+import { SceneSeamBlend } from './SceneSeamBlend'
 
 interface ResolvedProduct extends OathProductCopy {
   href: string
@@ -126,9 +127,30 @@ export function ProductRevealSequence({ products }: { products: Product[] }) {
       data-scene="products"
       data-product-reveal
       id="products"
-      className="relative flex min-h-[var(--anvl-section-h)] w-full flex-col justify-center overflow-hidden py-12 md:py-0"
+      className="relative flex min-h-[var(--anvl-section-h)] w-full flex-col justify-center overflow-hidden bg-transparent py-12 md:py-0"
       aria-label="The first three pieces"
     >
+      <SceneSeamBlend edge="top" className="h-[min(18rem,28%)]" />
+      <SceneSeamBlend edge="bottom" />
+      {/* Oversized blurred ember wash — no boxed gradient edges. */}
+      <div
+        data-products-glow
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-20 -left-16 -right-16 -top-20 z-0"
+      >
+        <div
+          className="absolute left-1/2 top-[38%] h-[min(42rem,95%)] w-[min(72rem,125%)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] opacity-90 blur-[72px] md:blur-[96px]"
+          style={{ background: 'var(--color-ember-soft)' }}
+        />
+        <div
+          className="absolute left-1/2 top-[40%] h-[min(28rem,70%)] w-[min(48rem,92%)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] opacity-70 blur-[48px] md:blur-[64px]"
+          style={{
+            background:
+              'color-mix(in srgb, var(--color-ember) 22%, transparent)',
+          }}
+        />
+      </div>
+
       <Container className="relative z-10 w-full">
         <div data-products-heading data-reveal-m className="mx-auto max-w-3xl text-center will-change-transform">
           <p className="anvl-display text-xs tracking-[0.3em] text-[var(--color-ember-bright)]">
@@ -152,17 +174,6 @@ export function ProductRevealSequence({ products }: { products: Product[] }) {
         />
 
         <div className="relative mx-auto mt-8 md:mt-6">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-[2%] -top-6 bottom-4 rounded-[1.75rem] md:inset-x-[6%] md:-top-8 md:bottom-2"
-            style={{
-              background:
-                'radial-gradient(ellipse 88% 76% at 50% 38%, color-mix(in srgb, var(--color-ember) 10%, transparent) 0%, transparent 68%), linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 72%, #141518) 0%, color-mix(in srgb, var(--color-bg) 92%, transparent) 100%)',
-              boxShadow:
-                'inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -24px 48px rgba(0,0,0,0.35), 0 28px 80px -32px rgba(0,0,0,0.85)',
-            }}
-          />
-
           <ul className="relative z-[1] mx-auto grid w-full grid-cols-2 gap-x-5 gap-y-10 [perspective:1600px] md:flex md:flex-row md:items-start md:justify-center md:gap-8 lg:gap-12">
             {resolved.map((product, i) => (
               <BannerColumn key={product.slug} product={product} index={i} total={resolved.length} />

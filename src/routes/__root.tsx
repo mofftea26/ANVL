@@ -86,7 +86,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   const inlineCss = publishedProjectionInlineCss(theme, fonts)
 
   return (
-    <html lang="en" data-theme={theme.dataTheme}>
+    <html lang="en" data-theme={theme.dataTheme} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: LANDING_ENTRY_LOCK_SCRIPT }} />
         <style
@@ -95,8 +95,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         />
         <HeadContent />
       </head>
-      <body>
-        <script dangerouslySetInnerHTML={{ __html: LANDING_ENTRY_LOCK_SCRIPT }} />
+      <body suppressHydrationWarning>
         <AppProviders>{children}</AppProviders>
         <Scripts />
       </body>
@@ -139,7 +138,7 @@ function StorefrontLayout() {
         </AppErrorBoundary>
       </main>
       {showChrome ? (
-        <SiteFooter navigation={navigation} className={isHome ? 'mt-0' : undefined} />
+        <SiteFooter navigation={navigation} />
       ) : null}
     </SiteThemeProvider>
   )

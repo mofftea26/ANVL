@@ -20,8 +20,24 @@ export function criticalLandingAssetUrls(assets: ResolvedDropAssets): string[] {
   const urls = new Set<string>()
   const emblem = resolveLoadingEmblemUrl(assets)
   if (emblem) urls.add(emblem)
-  if (assets.heroPoster?.trim()) urls.add(assets.heroPoster.trim())
-  if (assets.heroMedia?.trim()) urls.add(assets.heroMedia.trim())
+  const heroMode = assets.heroMediaMode === 'image' ? 'image' : 'video'
+
+  if (heroMode === 'image') {
+    const heroImage =
+      assets.heroImage?.trim() ||
+      (assets.heroMedia?.trim() && !isVideoUrl(assets.heroMedia.trim())
+        ? assets.heroMedia.trim()
+        : undefined)
+    if (heroImage) urls.add(heroImage)
+  } else {
+    if (assets.heroPoster?.trim()) urls.add(assets.heroPoster.trim())
+    const desktop =
+      assets.heroDesktopVideo?.trim() || assets.heroMedia?.trim()
+    const mobile =
+      assets.heroMobileVideo?.trim() || desktop
+    if (desktop) urls.add(desktop)
+    if (mobile && mobile !== desktop) urls.add(mobile)
+  }
   return [...urls]
 }
 

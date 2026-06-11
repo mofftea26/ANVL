@@ -2,6 +2,7 @@ import { Container } from '@/shared/components/ui/Container'
 import { OATH_MANIFESTO } from '../data'
 import { oathSceneMedia } from '../theOathAssets'
 import { MediaPlane } from './MediaPlane'
+import { SceneSeamBlend } from './SceneSeamBlend'
 
 /**
  * Scene 02 — Manifesto. A slow media push-in behind two lines that mask up.
@@ -14,6 +15,8 @@ export function ManifestoScene() {
       className="relative flex min-h-[var(--anvl-section-h)] w-full items-center overflow-hidden bg-transparent"
       aria-label="The ANVL manifesto"
     >
+      <SceneSeamBlend edge="top" />
+      <SceneSeamBlend edge="bottom" />
       <MediaPlane
         media={oathSceneMedia('manifestoMedia')}
         tone="#101113"

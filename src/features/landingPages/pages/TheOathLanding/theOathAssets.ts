@@ -13,11 +13,21 @@ import {
   resolveLoadingEmblemUrl,
 } from '@/features/landingPages/landingEntryLoad'
 
+export type OathHeroMediaMode = 'video' | 'image'
+
+export const DEFAULT_HERO_VIDEO = '/videos/WarriorHero1.mp4'
+
 export interface OathAssetConfig {
   dropLogo?: string
   anvlWordmark?: string
   crestSvg?: string
+  heroMediaMode?: OathHeroMediaMode
+  heroImage?: string
+  heroDesktopVideo?: string
+  heroMobileVideo?: string
+  /** @deprecated Legacy single hero slot — still read as fallback. */
   heroMedia?: string
+  /** @deprecated Legacy poster — still read for desktop video poster. */
   heroPoster?: string
   manifestoMedia?: string
   chapterMedia?: Record<string, string>
@@ -32,6 +42,10 @@ export const OATH_ASSETS: OathAssetConfig = {
   dropLogo: '/brand/the-oath-shape.svg',
   anvlWordmark: '/brand/wordmark.svg',
   crestSvg: undefined,
+  heroMediaMode: 'video',
+  heroImage: undefined,
+  heroDesktopVideo: undefined,
+  heroMobileVideo: undefined,
   heroMedia: undefined,
   heroPoster: undefined,
   manifestoMedia: undefined,
@@ -73,9 +87,47 @@ export function oathAsset<K extends keyof OathAssetConfig>(
   return cmsOrDefault(key, OATH_ASSETS[key] as string | undefined) as OathAssetConfig[K]
 }
 
-export function oathSceneMedia(
-  key: 'heroMedia' | 'manifestoMedia',
-): string | undefined {
+function isVideoUrl(url: string): boolean {
+  return /\.(mp4|webm|mov)(\?|#|$)/i.test(url)
+}
+
+export function oathHeroMediaMode(): OathHeroMediaMode {
+  const mode = cmsResolvedAssets.heroMediaMode
+  if (mode === 'image' || mode === 'video') return mode
+
+  const legacy = cmsResolvedAssets.heroMedia?.trim()
+  if (legacy && !isVideoUrl(legacy)) return 'image'
+  if (cmsResolvedAssets.heroImage?.trim()) return 'image'
+  return 'video'
+}
+
+export function oathHeroImage(): string | undefined {
+  const assigned = cmsResolvedAssets.heroImage?.trim()
+  if (assigned) return assigned
+
+  const legacy = cmsResolvedAssets.heroMedia?.trim()
+  if (legacy && !isVideoUrl(legacy)) return legacy
+  return undefined
+}
+
+export function oathHeroDesktopVideo(): string {
+  return (
+    cmsResolvedAssets.heroDesktopVideo?.trim() ||
+    cmsResolvedAssets.heroMedia?.trim() ||
+    DEFAULT_HERO_VIDEO
+  )
+}
+
+export function oathHeroMobileVideo(): string {
+  return (
+    cmsResolvedAssets.heroMobileVideo?.trim() ||
+    cmsResolvedAssets.heroDesktopVideo?.trim() ||
+    cmsResolvedAssets.heroMedia?.trim() ||
+    DEFAULT_HERO_VIDEO
+  )
+}
+
+export function oathSceneMedia(key: 'manifestoMedia'): string | undefined {
   return cmsOrDefault(key, OATH_ASSETS[key])
 }
 
@@ -96,7 +148,7 @@ export function oathCrestEmblem(): string {
 }
 
 export function duotonePlaceholder(tone = '#1a1c1f'): string {
-  return `linear-gradient(155deg, ${tone} 0%, #0b0b0c 80%)`
+  return `linear-gradient(155deg, ${tone} 0%, var(--color-bg) 80%)`
 }
 
 export function oathLoadingEmblem(): string {

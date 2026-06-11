@@ -38,7 +38,7 @@ export function ForgeAtmosphere({ className }: { className?: string }) {
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(120% 80% at 50% 120%, var(--color-ember-soft) 0%, transparent 55%), radial-gradient(100% 60% at 50% -10%, #202327 0%, transparent 50%), var(--color-bg)',
+            'radial-gradient(120% 80% at 50% 120%, var(--color-ember-soft) 0%, transparent 55%), radial-gradient(100% 60% at 50% -10%, color-mix(in srgb, var(--color-bg) 42%, var(--color-surface-elevated)) 0%, transparent 50%), var(--color-bg)',
         }}
       />
 
