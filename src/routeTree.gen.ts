@@ -32,6 +32,7 @@ import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AdminThemeRouteImport } from './routes/admin/theme'
+import { Route as AdminStoryRouteImport } from './routes/admin/story'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminFontsRouteImport } from './routes/admin/fonts'
@@ -156,6 +157,11 @@ const AdminThemeRoute = AdminThemeRouteImport.update({
   path: '/theme',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminStoryRoute = AdminStoryRouteImport.update({
+  id: '/story',
+  path: '/story',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -217,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
@@ -248,6 +255,7 @@ export interface FileRoutesByTo {
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
@@ -282,6 +290,7 @@ export interface FileRoutesById {
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
@@ -317,6 +326,7 @@ export interface FileRouteTypes {
     | '/admin/fonts'
     | '/admin/login'
     | '/admin/settings'
+    | '/admin/story'
     | '/admin/theme'
     | '/auth/forgot-password'
     | '/auth/sign-in'
@@ -348,6 +358,7 @@ export interface FileRouteTypes {
     | '/admin/fonts'
     | '/admin/login'
     | '/admin/settings'
+    | '/admin/story'
     | '/admin/theme'
     | '/auth/forgot-password'
     | '/auth/sign-in'
@@ -381,6 +392,7 @@ export interface FileRouteTypes {
     | '/admin/fonts'
     | '/admin/login'
     | '/admin/settings'
+    | '/admin/story'
     | '/admin/theme'
     | '/auth/forgot-password'
     | '/auth/sign-in'
@@ -581,6 +593,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminThemeRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/story': {
+      id: '/admin/story'
+      path: '/story'
+      fullPath: '/admin/story'
+      preLoaderRoute: typeof AdminStoryRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -665,6 +684,7 @@ interface AdminRouteRouteChildren {
   AdminFontsRoute: typeof AdminFontsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminStoryRoute: typeof AdminStoryRoute
   AdminThemeRoute: typeof AdminThemeRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -674,6 +694,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminFontsRoute: AdminFontsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminStoryRoute: AdminStoryRoute,
   AdminThemeRoute: AdminThemeRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

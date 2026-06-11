@@ -9,6 +9,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { useEffect, type ReactNode } from 'react'
 import { AppProviders } from '@/app/providers/AppProviders'
+import { AdminAuthProvider } from '@/features/admin/auth/AdminAuthProvider'
 import { SiteThemeProvider } from '@/app/providers/SiteThemeProvider'
 import { RouteAnalytics } from '@/app/providers/RouteAnalytics'
 import { AppErrorBoundary } from '@/app/components/AppErrorBoundary'
@@ -164,7 +165,7 @@ function RootLayout() {
 
   if (isAdminRoute) {
     return (
-      <>
+      <AdminAuthProvider>
         <RouteAnalytics />
         <main>
           <AppErrorBoundary resetKey={pathname}>
@@ -172,7 +173,7 @@ function RootLayout() {
           </AppErrorBoundary>
         </main>
         {devtools}
-      </>
+      </AdminAuthProvider>
     )
   }
 

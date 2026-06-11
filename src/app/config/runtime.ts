@@ -16,11 +16,14 @@ import {
   createSupabaseSiteSettingsReadSlice,
 } from '@/features/cms/api/supabaseStorefrontReaders'
 import { createCommerceClient } from '@/features/products/api/createCommerceClient'
+import { seedStoryClient } from '@/features/story/api/storyClient.seed'
+import { createSupabaseStoryReadSlice } from '@/features/story/api/storyClient.supabase'
 
 export function createRuntimeClients(options: { isServer: boolean }): RuntimeClients {
   const supabase = getSupabasePublicEnv()
   const commerce = createCommerceClient(options)
   const accountClient = supabase ? supabaseAccountClient : mockAccountClient
+  const story = supabase ? createSupabaseStoryReadSlice(supabase) : seedStoryClient
 
   if (options.isServer) {
     const cms = supabase
@@ -49,6 +52,7 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
       commerce,
       seo,
       siteSettings,
+      story,
       analytics: mockAnalyticsClient,
       payment: mockPaymentClient,
       account: accountClient,
@@ -81,6 +85,7 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
     commerce,
     seo,
     siteSettings,
+    story,
     analytics: mockAnalyticsClient,
     payment: mockPaymentClient,
     account: mockAccountClient,

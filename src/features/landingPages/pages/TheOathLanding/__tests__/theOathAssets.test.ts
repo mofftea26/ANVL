@@ -6,6 +6,7 @@ import {
   oathCrestEmblem,
   oathDropLogo,
   oathLoadingEmblem,
+  oathSceneMedia,
   oathThemedMarkup,
 } from '../theOathAssets'
 
@@ -64,6 +65,21 @@ describe('theOathAssets drop logo and crest emblem', () => {
 
     bindOathCmsAssets({})
     expect(oathCrestEmblem()).toBe(OATH_LOGO_PLACEHOLDER)
+  })
+})
+
+describe('theOathAssets scene media', () => {
+  beforeEach(() => {
+    bindOathCmsAssets({})
+  })
+
+  it('oathSceneMedia prefers CMS heroMedia assignment', () => {
+    bindOathCmsAssets({ heroMedia: 'https://cdn.test/hero.mp4' })
+    expect(oathSceneMedia('heroMedia')).toBe('https://cdn.test/hero.mp4')
+  })
+
+  it('oathSceneMedia returns undefined when hero slot is unassigned', () => {
+    expect(oathSceneMedia('heroMedia')).toBeUndefined()
   })
 })
 

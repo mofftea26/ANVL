@@ -131,6 +131,7 @@ src/
     products/        Commerce adapters (localStorage, seed, Shopify, Supabase), catalog, hooks
     seo/             SEO document schema + types
     shopify/         Shopify Storefront API client + mappers
+    story/           Story saga: schemas, seed, asset resolver, page components + book overlay, Supabase/seed clients
     storefront-account/ Public account UI stubs
   routes/
     __root.tsx       Root layout loader — fetches storefront projection from Supabase or runtime clients
@@ -140,8 +141,9 @@ src/
     cart.tsx
     checkout/
     account/         Customer account (stub)
+    story.tsx        Story saga page (chapter shelf + deep-linkable book overlay)
     auth/            Sign in / sign up / forgot password
-    admin/           Slim CMS admin routes: dashboard, theme, fonts, assets, settings
+    admin/           Slim CMS admin routes: dashboard, theme, fonts, assets, story, settings
   shared/
     api/contracts/   Typed DTOs for future REST/BFF
     assets/brand/    Inline SVG logo components (AnvlWordmark, AnvlCrest, etc.)
@@ -215,6 +217,9 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 | `public.landing_pages` | Picker metadata (keys must match code registry) | Public read available rows |
 | `public.storefront_publication` | Anon-readable mirror: theme, fonts, assets, media_index, active key | Public read, editor update |
 | `public.cms_media_assets` | Media library + asset assignments | CMS roles only |
+| `public.story_chapters` | Story saga chapters (one per drop) | Public read published; editor write |
+| `public.story_acts` | Ordered story beats within a chapter | Public read (parent published); editor write |
+| `public.story_cast` | CMS-authored characters (army roster) | Public read (parent published); editor write |
 
 ### Rules
 
@@ -253,6 +258,7 @@ Storefront never reads admin draft data directly. Landing page **content** is co
 | `/admin/theme` | Palette + `dataTheme` mode |
 | `/admin/fonts` | `--font-sans`, `--font-heading`, `--font-display` family names |
 | `/admin/assets` | Media library + general/per-drop slot assignments |
+| `/admin/story` | Story saga editor — chapters, acts, cast (relational; Supabase CRUD) |
 | `/admin/settings` | Session + local reset |
 
 ### localStorage Adapter Pattern

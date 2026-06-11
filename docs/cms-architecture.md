@@ -2,7 +2,7 @@
 
 The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing page content lives in the codebase (`src/features/landingPages/`); Supabase stores **which page is active**, **theme**, **fonts**, **asset slot assignments**, and the **media library**.
 
-## Admin surfaces (4 + settings)
+## Admin surfaces (5 + settings)
 
 | Surface | Route | Persists to |
 |---|---|---|
@@ -10,9 +10,12 @@ The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing p
 | Theme & Colors | `/admin/theme` | `cms_settings.theme_config` |
 | Fonts | `/admin/fonts` | `cms_settings.font_config` |
 | Assets | `/admin/assets` | `cms_settings.asset_config` + `cms_media_assets` |
+| Story | `/admin/story` | `story_chapters` + `story_acts` + `story_cast` (+ `story-media` bucket) |
 | Settings | `/admin/settings` | Session + local reset only |
 
 Removed from CMS: Products editor, website layout, SEO, drop-builder, campaigns, lookbook, global brand.
+
+> **Story is the one relational CMS surface.** Unlike the singleton-JSON config above, the saga is many rows across three tables with direct Supabase CRUD (editor-role RLS). It is **not** mirrored into `storefront_publication`; the storefront reads published rows directly via anon RLS (`is_published`).
 
 ---
 
@@ -75,6 +78,27 @@ published_at timestamptz
 #### `public.storefront_profiles`
 Customer accounts (unchanged; not CMS).
 
+#### Story saga tables (`story_chapters` → `story_acts` → `story_cast`)
+Relational content for the `/story` page. Each **chapter** is a drop; each chapter has ordered **acts**; **cast** are CMS-authored characters attached to a chapter (or a specific act).
+
+```sql
+story_chapters(id, slug UNIQUE, chapter_number, title, subtitle, description,
+               cover_asset jsonb, sort_order, is_published)
+story_acts(id, chapter_id FK→story_chapters, act_number, title, story,
+           asset jsonb, sort_order)
+story_cast(id, chapter_id FK, act_id FK→story_acts (nullable),
+           name, rank, blurb, avatar_asset jsonb, sort_order)
+```
+
+Asset jsonb shape (validated by `storyAssetSchema`):
+`{ kind: image|video|embed|none, mediaId, storagePath, url, alt, width, height, poster }`.
+Uploaded media → `storagePath` in the `story-media` bucket; external players → `url` (kind `embed`).
+
+**RLS:** anon SELECT only published rows (acts/cast gated on parent `is_published`); CMS roles read all; `editor`/`admin` write. Migration: `supabase/migrations/20260626120000_story_tables.sql`.
+
+#### `story-media` storage bucket
+Public bucket for story images + short video clips (mp4/webm/mov, 500 MB cap). Public read; `editor`/`admin` write — mirrors the `cms-media` policy set. Migration: `20260626120001_story_media_bucket.sql`.
+
 ### Dropped (2026-06-07 cleanup)
 
 - Tables: `cms_admin_products`, `shopify_product_links`, `anvl_drops`
@@ -99,6 +123,11 @@ Migration: `supabase/migrations/20260607120000_cms_minimal_cleanup.sql`
 | Per-drop asset slot registry | `src/features/landingPages/assetSlots.ts` |
 | Landing page registry | `src/features/landingPages/registry.ts` |
 | Active drop picker (Supabase + registry) | `src/features/admin/landing-picker/` |
+| Story schemas (Zod, shared) | `src/features/story/schemas/story.schema.ts` |
+| Story client (interface + seed/Supabase adapters) | `src/app/config/clients.ts` (`StoryClient`), `src/features/story/api/` |
+| Story asset resolve + media URL | `src/features/story/lib/` |
+| Story page components + paged book overlay | `src/features/story/components/` (`ChapterBook` = hardcover + page turns) |
+| Story admin editor + services | `src/features/admin/story/` |
 
 ---
 

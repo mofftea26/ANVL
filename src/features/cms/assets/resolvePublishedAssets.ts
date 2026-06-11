@@ -10,10 +10,11 @@ function resolveMediaId(
 ): string | undefined {
   if (!mediaId?.trim()) return undefined
   const entry = mediaIndex.find((m) => m.id === mediaId)
-  if (!entry) return undefined
-  const url = publicCmsMediaUrl(entry.path)
+  const objectPath = entry?.path?.trim()
+  if (!objectPath) return undefined
+  const url = publicCmsMediaUrl(objectPath)
   if (url) return url
-  return entry.path.startsWith('/') ? entry.path : `/${entry.path}`
+  return objectPath.startsWith('/') ? objectPath : `/${objectPath}`
 }
 
 export function resolvePublishedAssets(

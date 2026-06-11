@@ -27,6 +27,12 @@ interface WarBannerProps {
   placeholderSrc?: string
   /** Pre-themed inline SVG for the placeholder — renders tinted on first paint. */
   placeholderThemedMarkup?: string | null
+  /** Override placeholder emblem layout (e.g. taller stacked lockup). */
+  placeholderEmblemClassName?: string
+  placeholderWidth?: number
+  placeholderHeight?: number
+  /** Custom inline mark (e.g. themed React SVG) instead of a placeholder URL. */
+  placeholderMark?: ReactNode
   /** Aspect ratio of the fabric body. Defaults to a tall gonfalon. */
   aspectClassName?: string
   /** Stronger drop shadow + ground glow (product showcase). */
@@ -72,6 +78,10 @@ export function WarBanner({
   sway = false,
   placeholderSrc = '/brand/the-oath-shape.svg',
   placeholderThemedMarkup = null,
+  placeholderEmblemClassName,
+  placeholderWidth,
+  placeholderHeight,
+  placeholderMark,
   aspectClassName = 'aspect-[3/5]',
   elevated = false,
   interactive3d = true,
@@ -110,7 +120,12 @@ export function WarBanner({
     setTilt({ rx: 0, ry: 0, active: false })
   }, [])
 
-  const emblem = elevated ? EMBLEM_SIZE.elevated : EMBLEM_SIZE.default
+  const emblemPreset = elevated ? EMBLEM_SIZE.elevated : EMBLEM_SIZE.default
+  const emblem = {
+    className: placeholderEmblemClassName ?? emblemPreset.className,
+    px: placeholderWidth ?? emblemPreset.px,
+    py: placeholderHeight ?? emblemPreset.px,
+  }
 
   const fabricTransform =
     canTilt && tilt.active
@@ -206,6 +221,10 @@ export function WarBanner({
                 decoding="async"
                 className="absolute inset-0 h-full w-full object-cover"
               />
+            ) : placeholderMark ? (
+              <div className="anvl-banner-emblem absolute inset-0 flex items-center justify-center">
+                {placeholderMark}
+              </div>
             ) : useThemedPlaceholder ? (
               <div className="anvl-banner-emblem absolute inset-0 flex items-center justify-center">
                 <ThemeTintedMediaMark
@@ -213,7 +232,7 @@ export function WarBanner({
                   themedSvgMarkup={placeholderThemedMarkup}
                   className={emblem.className}
                   width={emblem.px}
-                  height={emblem.px}
+                  height={emblem.py}
                   tint="var(--color-heading)"
                   glow="var(--color-ember)"
                 />

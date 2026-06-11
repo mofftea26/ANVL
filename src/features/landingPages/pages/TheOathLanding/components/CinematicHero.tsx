@@ -1,9 +1,16 @@
 import { Container } from '@/shared/components/ui/Container'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
+import { oathAsset, oathSceneMedia } from '../theOathAssets'
 import { OathCmsMark } from './OathCmsMark'
 import { OATH_HERO, OATH_META } from '../data'
 import { OathCtaLink } from './OathCtaLink'
 import { ScrollCue } from './ScrollCue'
+
+const DEFAULT_HERO_VIDEO = '/videos/WarriorHero1.mp4'
+
+function isVideoSrc(src: string): boolean {
+  return /\.(mp4|webm|mov)(\?|#|$)/i.test(src)
+}
 
 /**
  * Scene 01 — Hero. The forge film is anchored to the **right** of the title and
@@ -15,6 +22,10 @@ import { ScrollCue } from './ScrollCue'
  * back to a full-bleed backdrop with a bottom veil for legibility.
  */
 export function CinematicHero() {
+  const heroMedia = oathSceneMedia('heroMedia') ?? DEFAULT_HERO_VIDEO
+  const heroPoster = oathAsset('heroPoster')
+  const heroIsVideo = isVideoSrc(heroMedia)
+
   return (
     <section
       data-scene="hero"
@@ -31,15 +42,26 @@ export function CinematicHero() {
         data-hero-media
         className="hero-media-blend absolute inset-0 z-0 will-change-transform md:left-[28%] lg:left-auto lg:right-0 lg:w-[64%] lg:max-w-[980px] 2xl:max-w-[1080px]"
       >
-        <video
-          data-hero-video
-          className="h-full w-full object-cover object-top"
-          src="/videos/WarriorHero1.mp4"
-          muted
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-        />
+        {heroIsVideo ? (
+          <video
+            data-hero-video
+            className="h-full w-full object-cover object-top"
+            src={heroMedia}
+            poster={heroPoster}
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+          />
+        ) : (
+          <img
+            src={heroMedia}
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover object-top"
+            decoding="async"
+          />
+        )}
       </div>
 
       {/* Desktop legibility wash under the title (the video itself is masked to

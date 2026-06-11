@@ -1,4 +1,14 @@
-﻿## 2026-06-08 — Responsive landing + chrome polish (mobile/tablet)
+﻿## 2026-06-09 — Story saga: chapters → acts → cast (CMS + cinematic book)
+
+- **Story reimagined as a living saga.** `/story` is now a kingdom-and-army narrative told in **chapters** (one per drop), each with ordered **acts** and an authored **cast** (generals/recruits/loyal members). The old hardcoded four-section page became the seeded "Chapter 01 — The Oath" with four acts.
+- **Cinematic book overlay.** The shelf shows chapter covers; clicking one opens a full-screen, deep-linkable overlay (`/story?chapter=<slug>`) where a forged cover **flips open (GSAP + CSS 3D)** to reveal the reader. Desktop/tablet get the flip; mobile/reduced-motion get the final state instantly (`gsap.matchMedia` both gates). Accessible dialog (focus trap, Escape, focus restore). **No three.js added** — pure CSS 3D + GSAP.
+- **Supabase:** new relational tables `story_chapters` / `story_acts` / `story_cast` with RLS (anon reads published only; `editor`/`admin` write) and a dedicated public **`story-media`** bucket (image + video, 500 MB). Migrations `20260626120000_story_tables` + `20260626120001_story_media_bucket`. Advisors: no new RLS gaps.
+- **Dependency inversion:** new `StoryClient` interface in `clients.ts`, wired in `runtime.ts` with a Supabase reader + a bundled **seed fallback** (works with no env). Assets resolve through `sanitizeHref`/`isLikelySafeMediaSrc` allowlists; external video supports Mux/YouTube/Vimeo embeds.
+- **Admin:** new **Story** editor at `/admin/story` (lazy route) — chapter CRUD + per-chapter acts and cast, image/video upload to `story-media` or paste an embed URL, publish toggle.
+- **Tests:** schema/asset-resolver/seed-client/row-mapper specs (15 tests). **Docs:** `docs/cms-architecture.md` updated (Story surface + schema + modules).
+- **Gates:** `pnpm typecheck` + `pnpm build` green; story suite passes.
+
+## 2026-06-08 — Responsive landing + chrome polish (mobile/tablet)
 
 - **The Oath landing:** tablet now runs the **same** cinematic (pins + bleed) as desktop at full intensity — only CSS layout differs (hero `md:`/`lg:` split). Mobile reworked: the four tenets collapse into a one-screen 2×2 grid of translucent cards (forge bleeds through), products render as a 2-col grid (odd last item centred), and reveals use a staggered `ScrollTrigger.batch`. Hero video plays **once** on mobile then holds the last frame (no loop); the DR-01/coords metadata strip is hidden on mobile (decluttered + no scroll-cue overlap). CTA buttons redesigned (forged ember slab + nudging arrow, smaller on mobile).
 - **Storefront nav:** removed the fixed mobile **bottom bar**; the burger + cart now live in `PremiumNavTopbar` (variant-aware, slightly smaller on mobile). Inline desktop links moved to `lg:`; `PremiumNavMobile` is now purely the drawer.

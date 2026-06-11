@@ -35,6 +35,14 @@ const config = defineConfig({
           if (id.includes('node_modules/gsap')) return 'vendor-gsap'
           if (id.includes('node_modules/lenis')) return 'vendor-lenis'
           if (id.includes('node_modules/framer-motion')) return 'vendor-framer-motion'
+          if (
+            id.includes('node_modules/three/') ||
+            id.includes('node_modules/@react-three/') ||
+            id.includes('node_modules/troika-three-text') ||
+            id.includes('node_modules/maath')
+          ) {
+            return 'vendor-three'
+          }
           if (id.includes('/features/marketing/act-presets/')) {
             const natureMatch = id.match(
               /\/features\/marketing\/act-presets\/([^/]+)\//,

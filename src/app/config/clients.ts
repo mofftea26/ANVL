@@ -13,6 +13,7 @@ import type {
   CustomerProfileUpdate,
   Order,
 } from '@/app/config/accountContracts'
+import type { StoryChapter } from '@/features/story/schemas/story.schema'
 
 export interface CommerceClient {
   /** Full shop listing — publicly visible catalog items. */
@@ -47,6 +48,13 @@ export interface SiteSettingsClient {
   getWebsiteLayout(): Promise<WebsiteLayoutContent>
 }
 
+/** Published Story saga (chapters → acts → cast) for the `/story` page. */
+export interface StoryClient {
+  /** Ordered, published chapters with their acts + cast. */
+  getPublishedChapters(): Promise<StoryChapter[]>
+  getChapterBySlug(slug: string): Promise<StoryChapter | null>
+}
+
 export interface AnalyticsClient {
   trackPageView(payload: { path: string; title?: string }): void
   trackProductView(payload: { slug: string; name: string }): void
@@ -73,6 +81,7 @@ export type RuntimeClients = {
   commerce: CommerceClient
   seo: SeoClient
   siteSettings: SiteSettingsClient
+  story: StoryClient
   analytics: AnalyticsClient
   payment: PaymentClient
   account: AccountClient

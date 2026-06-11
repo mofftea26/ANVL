@@ -78,11 +78,15 @@ export async function deleteCmsMediaByPublicUrl(
   await client.storage.from(CMS_MEDIA_BUCKET).remove([objectPath])
 }
 
-export function publicCmsMediaUrl(objectPath: string): string | null {
+export function publicCmsMediaUrl(
+  objectPath: string | null | undefined,
+): string | null {
+  const trimmed = objectPath?.trim()
+  if (!trimmed) return null
   const env = getSupabasePublicEnv()
   if (!env) return null
   const base = env.url.replace(/\/$/, '')
-  const encoded = objectPath
+  const encoded = trimmed
     .split('/')
     .map((seg) => encodeURIComponent(seg))
     .join('/')

@@ -4,12 +4,24 @@ import { AdminCard } from '@/features/admin/components/AdminCard'
 import { Button } from '@/shared/components/ui/Button'
 import { Modal } from '@/shared/components/ui/Modal'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
+import { buildMediaIndex } from '@/features/admin/media/mediaAssets.service'
+import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
+import { resolvePublishedAssets } from '@/features/cms/assets/resolvePublishedAssets'
+import {
+  readAssetConfigFromStorage,
+  subscribeCmsSiteConfigChange,
+} from '@/features/cms/config/cmsSiteConfig.settings'
+import {
+  DEFAULT_ASSET_CONFIG,
+  type AssetConfig,
+} from '@/features/cms/config/cmsSiteConfig.zod'
 import { listLandingPages } from '@/features/landingPages/registry'
 import {
   readActiveLandingPageFromStorage,
   saveActiveLandingPageKeyAsync,
   subscribeActiveLandingPageChange,
 } from '@/features/cms/landingPageActiveKey.settings'
+import { AdminDropLogoMark } from './AdminDropLogoMark'
 import { fetchLandingPagePickerOptions } from './fetchLandingPagePickerOptions'
 import type { LandingPagePickerOption } from './fetchLandingPagePickerOptions'
 
@@ -21,13 +33,29 @@ function useStagedActiveKey(): string {
   )
 }
 
+function useAssetConfig(): AssetConfig {
+  return useSyncExternalStore(
+    subscribeCmsSiteConfigChange,
+    () => readAssetConfigFromStorage(),
+    () => DEFAULT_ASSET_CONFIG,
+  )
+}
+
 export function LandingPagePickerCard() {
   const fallbackPages = useMemo(() => listLandingPages(), [])
   const [pages, setPages] = useState<LandingPagePickerOption[]>(fallbackPages)
   const activeKey = useStagedActiveKey()
+  const assetConfig = useAssetConfig()
+  const mediaQuery = useMediaAssetsQuery()
   const [pendingKey, setPendingKey] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  const dropLogoSrc = useMemo(() => {
+    const mediaIndex = buildMediaIndex(mediaQuery.data ?? [])
+    const resolved = resolvePublishedAssets(assetConfig, activeKey, mediaIndex)
+    return resolved.dropLogo
+  }, [assetConfig, activeKey, mediaQuery.data])
 
   useEffect(() => {
     void fetchLandingPagePickerOptions().then(setPages).catch(() => {
@@ -84,15 +112,12 @@ export function LandingPagePickerCard() {
 
         {activePage ? (
           <div className="flex items-start gap-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-3">
-            <img
-              src={activePage.previewImage}
-              alt=""
-              width={64}
-              height={64}
-              loading="lazy"
-              decoding="async"
-              className="h-16 w-16 shrink-0 rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] object-contain p-2"
-            />
+            <div
+              aria-hidden
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] p-2"
+            >
+              <AdminDropLogoMark src={dropLogoSrc} size={48} />
+            </div>
             <div className="min-w-0">
               <p className="anvl-heading text-base font-normal">{activePage.name}</p>
               <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-muted)]">

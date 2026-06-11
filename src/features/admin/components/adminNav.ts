@@ -41,6 +41,14 @@ export const adminNavItems: AdminNavItem[] = [
     badge: 'Media',
   },
   {
+    label: 'Story',
+    href: '/admin/story',
+    description: 'Author the saga — chapters, acts, and cast.',
+    cluster: 'Site',
+    cta: 'Author',
+    badge: 'Saga',
+  },
+  {
     label: 'Settings',
     href: '/admin/settings',
     description: 'Session and local reset.',

@@ -39,6 +39,13 @@ describe('publicCmsMediaUrl', () => {
     expect(publicCmsMediaUrl('drops/test/hero.png')).toBeNull()
   })
 
+  it('returns null for empty or missing object paths', () => {
+    expect(publicCmsMediaUrl(undefined)).toBeNull()
+    expect(publicCmsMediaUrl(null)).toBeNull()
+    expect(publicCmsMediaUrl('')).toBeNull()
+    expect(publicCmsMediaUrl('   ')).toBeNull()
+  })
+
   it('builds a public storage URL when env is set', () => {
     mockGetEnv.mockReturnValue({
       url: 'https://project.supabase.co',
