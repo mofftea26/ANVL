@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, type CSSProperties, type ReactNode } from 'react'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { AdminAuthProvider } from '@/features/admin/auth/AdminAuthProvider'
 import { SiteThemeProvider } from '@/app/providers/SiteThemeProvider'
@@ -19,6 +19,7 @@ import { loadStorefrontProjection } from '@/features/cms/api/loadStorefrontProje
 import {
   buildPublishedFontPreloadLinks,
   publishedProjectionInlineCss,
+  publishedProjectionStyleVars,
   publishedThemeColor,
 } from '@/features/cms/api/storefrontProjectionHead'
 import { resolvePublishedAssets } from '@/features/cms/assets/resolvePublishedAssets'
@@ -51,6 +52,7 @@ export const Route = createRootRoute({
         emblemSrc,
         emblemAlt: 'ANVL',
       }),
+      // A single global CMS theme drives the whole storefront.
       theme: projection.theme,
       fonts: projection.fonts,
     }
@@ -84,9 +86,17 @@ export const Route = createRootRoute({
 function RootDocument({ children }: { children: ReactNode }) {
   const { theme, fonts } = Route.useLoaderData()
   const inlineCss = publishedProjectionInlineCss(theme, fonts)
+  // Element-level style beats the stylesheet's `:root` defaults, so the
+  // published palette paints on the first frame (no ember→theme flash).
+  const themeVars = publishedProjectionStyleVars(theme, fonts) as CSSProperties
 
   return (
-    <html lang="en" data-theme={theme.dataTheme} suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme={theme.dataTheme}
+      style={themeVars}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: LANDING_ENTRY_LOCK_SCRIPT }} />
         <style

@@ -340,7 +340,7 @@ export function MediaPickerField({
     }
     if (isUnsafeSrc) {
       return (
-        <span className="px-2 text-center text-[10px] uppercase tracking-[0.16em] text-red-300">
+        <span className="px-2 text-center text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-danger)]">
           Unsafe URL blocked
         </span>
       )
@@ -535,7 +535,7 @@ export function MediaPickerField({
       </div>
 
       {isUnsafeSrc ? (
-        <p role="alert" className="text-xs text-red-300">
+        <p role="alert" className="text-xs text-[color:var(--color-danger)]">
           That URL scheme isn&rsquo;t allowed for media. Use a public path
           (<code className="rounded bg-[var(--color-surface)] px-1">/brand/...</code>),
           an https URL, or a <code className="rounded bg-[var(--color-surface)] px-1">data:image/*</code>
@@ -543,7 +543,7 @@ export function MediaPickerField({
         </p>
       ) : null}
       {error ? (
-        <p role="alert" className="text-xs text-red-300">
+        <p role="alert" className="text-xs text-[color:var(--color-danger)]">
           {error}
         </p>
       ) : null}

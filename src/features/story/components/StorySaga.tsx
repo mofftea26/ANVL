@@ -16,9 +16,9 @@ interface StorySagaProps {
 }
 
 const CTA_FORGE =
-  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-ember)] bg-[var(--color-ember)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-bg)] no-underline transition-opacity hover:opacity-90'
+  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-highlight)] bg-[var(--color-highlight)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-bg)] no-underline transition-opacity hover:opacity-90'
 const CTA_STEEL =
-  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-ember)_60%,var(--color-line))]'
+  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-highlight)_60%,var(--color-line))]'
 
 /** Composes the Story page: intro → chapter shelf → deep-linkable book overlay. */
 export function StorySaga({
@@ -63,7 +63,7 @@ export function StorySaga({
           <h2 className="anvl-heading text-[clamp(2.25rem,7vw,5rem)] font-normal leading-[0.9]">
             The saga never ends.
           </h2>
-          <hr className="anvl-ember-rule mx-auto max-w-[12rem]" />
+          <hr className="anvl-highlight-rule mx-auto max-w-[12rem]" />
           <p className="mx-auto max-w-xl text-base leading-relaxed text-[var(--color-text-muted)]">
             Each drop forges the next chapter. Take the oath, and march with the army that builds it.
           </p>

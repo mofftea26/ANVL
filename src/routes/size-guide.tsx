@@ -18,7 +18,7 @@ function TableWrap({ children }: { children: ReactNode }) {
 function Th({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <th
-      className={`border-b-2 border-[color-mix(in_oklab,var(--color-ember)_40%,var(--color-line))] bg-[var(--color-surface)] px-4 py-3 font-semibold text-[var(--color-text)] ${className}`}
+      className={`border-b-2 border-[color-mix(in_oklab,var(--color-highlight)_40%,var(--color-line))] bg-[var(--color-surface)] px-4 py-3 font-semibold text-[var(--color-text)] ${className}`}
     >
       {children}
     </th>
@@ -37,7 +37,7 @@ function SectionHeading({ children }: { children: ReactNode }) {
   return (
     <div>
       <h2 className="anvl-heading text-4xl">{children}</h2>
-      <hr className="anvl-ember-rule mt-4 max-w-[6rem]" />
+      <hr className="anvl-highlight-rule mt-4 max-w-[6rem]" />
     </div>
   )
 }
@@ -80,7 +80,7 @@ function SizeGuidePage() {
       <section className="relative overflow-hidden border-b border-[var(--color-line)]">
         <ForgeAtmosphere />
         <Container className="relative z-10 py-20 md:py-28">
-          <p className="anvl-display inline-flex items-center gap-2.5 text-xs tracking-[0.32em] text-[var(--color-ember-bright)] before:h-px before:w-8 before:bg-[var(--color-ember)] before:content-['']">
+          <p className="anvl-display inline-flex items-center gap-2.5 text-xs tracking-[0.32em] text-[var(--color-highlight-bright)] before:h-px before:w-8 before:bg-[var(--color-highlight)] before:content-['']">
             Fit & sizing
           </p>
           <h1 className="anvl-heading mt-5 max-w-3xl font-normal leading-[0.88] tracking-[-0.01em] text-[clamp(2.75rem,9vw,6rem)] text-[var(--color-heading)]">
@@ -302,7 +302,7 @@ function SizeGuidePage() {
               </tr>
             </tbody>
           </TableWrap>
-          <hr className="anvl-ember-rule max-w-[10rem]" />
+          <hr className="anvl-highlight-rule max-w-[10rem]" />
           <p className="text-xs text-[var(--color-text-muted)]">
             Measurements are developed for ANVL patterns and may differ from imported basics sold under the same EU
             number—always compare to your chest tape reading first.
@@ -318,13 +318,13 @@ function SizeGuidePage() {
             <Link
               to="/shop"
               search={defaultShopUrlSearch}
-              className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-ember)] bg-[var(--color-ember)] px-4 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-bg)] no-underline hover:opacity-90"
+              className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-highlight)] bg-[var(--color-highlight)] px-4 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-bg)] no-underline hover:opacity-90"
             >
               Shop
             </Link>
             <Link
               to="/care-guide"
-              className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-4 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-ember)_60%,var(--color-line))]"
+              className="focus-ring inline-flex h-10 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-4 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-highlight)_60%,var(--color-line))]"
             >
               Care guide
             </Link>

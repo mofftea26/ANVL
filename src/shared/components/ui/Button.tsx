@@ -8,20 +8,26 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // NOTE: text colors use the explicit `text-[color:var(...)]` form. A
+        // bare `text-[var(--color-bg)]` is ambiguous to tailwind-merge, which
+        // can classify it as a font-size, conflict with the base `text-sm`,
+        // and drop the color — leaving a light inherited label on bone/light
+        // backgrounds. The `color:` hint keeps it a color.
         primary:
-          'border-[var(--color-ember)] bg-[var(--color-ember)] text-[var(--color-bg)] hover:opacity-90',
+          'border-[var(--color-highlight)] bg-[var(--color-highlight)] text-[color:var(--color-on-highlight)] hover:opacity-90',
         secondary:
-          'border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-text)] hover:border-[color-mix(in_oklab,var(--color-ember)_55%,var(--color-line))] hover:bg-[var(--color-surface-elevated)]',
-        ghost: 'border-transparent text-[var(--color-text)] hover:bg-[var(--color-chip)]',
+          'border-[var(--color-line)] bg-[var(--color-surface)] text-[color:var(--color-text)] hover:border-[color-mix(in_oklab,var(--color-highlight)_55%,var(--color-line))] hover:bg-[var(--color-surface-elevated)]',
+        ghost:
+          'border-transparent text-[color:var(--color-text)] hover:bg-[var(--color-chip)]',
         destructive:
-          'border-red-500/40 bg-transparent text-red-300 hover:border-red-400/60 hover:bg-red-500/10',
+          'border-[color-mix(in_oklab,var(--color-danger)_40%,transparent)] bg-transparent text-[color:var(--color-danger)] hover:border-[var(--color-danger)] hover:bg-[color-mix(in_oklab,var(--color-danger)_12%,transparent)]',
         /** Use with `data-active="true" | "false"` for selected vs idle segmented tabs. */
         adminTabList:
-          'shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-text-muted)] data-[active=true]:border-[var(--color-accent)] data-[active=true]:bg-[var(--color-accent)] data-[active=true]:text-[var(--color-bg)] data-[active=false]:hover:bg-[var(--color-surface-elevated)] data-[active=false]:hover:text-[var(--color-text)]',
+          'shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] border-[var(--color-line)] bg-[var(--color-surface)] text-[color:var(--color-text-muted)] data-[active=true]:border-[var(--color-accent)] data-[active=true]:bg-[var(--color-accent)] data-[active=true]:text-[color:var(--color-bg)] data-[active=false]:hover:bg-[var(--color-surface-elevated)] data-[active=false]:hover:text-[color:var(--color-text)]',
         adminTabEditor:
-          'gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-text-muted)] data-[active=true]:border-[var(--color-accent)] data-[active=true]:bg-[var(--color-accent)] data-[active=true]:text-[var(--color-bg)] data-[active=false]:hover:bg-[var(--color-surface-elevated)] data-[active=false]:hover:text-[var(--color-text)]',
+          'gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] border-[var(--color-line)] bg-[var(--color-surface)] text-[color:var(--color-text-muted)] data-[active=true]:border-[var(--color-accent)] data-[active=true]:bg-[var(--color-accent)] data-[active=true]:text-[color:var(--color-bg)] data-[active=false]:hover:bg-[var(--color-surface-elevated)] data-[active=false]:hover:text-[color:var(--color-text)]',
         adminTabProduct:
-          'rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] border-[var(--color-line)] text-[var(--color-text-muted)] data-[active=true]:border-[var(--color-accent)] data-[active=true]:bg-[var(--color-accent)] data-[active=true]:text-[var(--color-bg)] data-[active=false]:hover:border-[color-mix(in_oklab,var(--color-accent)_40%,transparent)]',
+          'rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] border-[var(--color-line)] text-[color:var(--color-text-muted)] data-[active=true]:border-[var(--color-accent)] data-[active=true]:bg-[var(--color-accent)] data-[active=true]:text-[color:var(--color-bg)] data-[active=false]:hover:border-[color-mix(in_oklab,var(--color-accent)_40%,transparent)]',
       },
       size: {
         none: '',

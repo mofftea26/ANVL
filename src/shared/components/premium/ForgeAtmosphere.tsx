@@ -8,7 +8,7 @@ import { cn } from '@/shared/lib/cn'
  * Pure CSS: a deep radial bg, a warm ember glow, drifting embers, and grain.
  * Ember positions are a fixed table (no `Math.random` → SSR-safe, no hydration
  * mismatch); the drift animation is disabled under `prefers-reduced-motion`
- * via `.anvl-ember`.
+ * via `.anvl-spark`.
  */
 
 /** Deterministic ember field — [leftPct, bottomStartPct, dxPx, durSec, delaySec, size]. */
@@ -38,7 +38,7 @@ export function ForgeAtmosphere({ className }: { className?: string }) {
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(120% 80% at 50% 120%, var(--color-ember-soft) 0%, transparent 55%), radial-gradient(100% 60% at 50% -10%, color-mix(in srgb, var(--color-bg) 42%, var(--color-surface-elevated)) 0%, transparent 50%), var(--color-bg)',
+            'radial-gradient(120% 80% at 50% 120%, var(--color-highlight-soft) 0%, transparent 55%), radial-gradient(100% 60% at 50% -10%, color-mix(in srgb, var(--color-bg) 42%, var(--color-surface-elevated)) 0%, transparent 50%), var(--color-bg)',
         }}
       />
 
@@ -47,16 +47,16 @@ export function ForgeAtmosphere({ className }: { className?: string }) {
         {EMBERS.map(([left, bottom, dx, dur, delay, size], i) => (
           <span
             key={i}
-            className="anvl-ember absolute rounded-full"
+            className="anvl-spark absolute rounded-full"
             style={{
               left: `${left}%`,
               bottom: `${bottom}%`,
               width: `${size}px`,
               height: `${size}px`,
-              background: 'var(--color-ember-bright)',
-              boxShadow: '0 0 6px 1px var(--color-ember-soft)',
+              background: 'var(--color-highlight-bright)',
+              boxShadow: '0 0 6px 1px var(--color-highlight-soft)',
               ['--ember-dx' as string]: `${dx}px`,
-              ['--ember-dur' as string]: `${dur}s`,
+              ['--spark-dur' as string]: `${dur}s`,
               animationDelay: `${delay}s`,
             }}
           />

@@ -4,6 +4,7 @@ import {
   useId,
   useRef,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/shared/lib/cn'
 import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 
@@ -57,13 +58,18 @@ export function Modal({
 
   useDialogFocusTrap({ open, panelRef, onClose })
 
-  if (!open) return null
+  // Dialogs are interaction-driven (never open during SSR), but guard anyway.
+  if (!open || typeof document === 'undefined') return null
 
   const labelledByProp =
     ariaLabelledBy && ariaLabelledBy.trim() ? ariaLabelledBy.trim() : undefined
 
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-4">
+  // Portal to <body>: callers render modals inside cards/sections that create
+  // stacking contexts (e.g. AdminCard's z-[1]), which trapped the fixed
+  // overlay beneath sibling content. z-[90] clears admin chrome (topbar z-30,
+  // sync indicator z-50, popovers z-[85]).
+  return createPortal(
+    <div className="fixed inset-0 z-[90] grid place-items-center p-4">
       <button
         className="absolute inset-0 bg-black/70"
         onClick={onClose}
@@ -96,6 +102,7 @@ export function Modal({
         ) : null}
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

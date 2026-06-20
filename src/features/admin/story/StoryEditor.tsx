@@ -76,7 +76,7 @@ export function StoryEditor() {
     return <p className="text-sm text-[var(--color-text-muted)]">Loading the saga…</p>
   }
   if (error) {
-    return <p className="text-sm text-red-300">{error}</p>
+    return <p className="text-sm text-[color:var(--color-danger)]">{error}</p>
   }
 
   return (
@@ -101,11 +101,11 @@ export function StoryEditor() {
                   className={cn(
                     'focus-ring flex w-full flex-col rounded-xl border px-4 py-3 text-left transition-colors',
                     c.id === selectedId
-                      ? 'border-[var(--color-ember)] bg-[var(--color-surface)]'
+                      ? 'border-[var(--color-highlight)] bg-[var(--color-surface)]'
                       : 'border-[var(--color-line)] hover:border-[var(--color-graphite)]',
                   )}
                 >
-                  <span className="anvl-display text-[11px] tracking-[0.22em] text-[var(--color-ember-bright)]">
+                  <span className="anvl-display text-[11px] tracking-[0.22em] text-[var(--color-highlight-bright)]">
                     {formatChapterNumber(c.chapterNumber)} · {c.isPublished ? 'Published' : 'Draft'}
                   </span>
                   <span className="anvl-heading mt-1 text-base font-normal leading-tight">{c.title}</span>

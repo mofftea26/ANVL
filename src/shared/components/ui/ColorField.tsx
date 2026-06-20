@@ -42,7 +42,7 @@ function fineInputClassName(
     fineInputControlClass ?? adminFieldControlFineClass,
     'focus-ring w-full font-mono',
     extra,
-    invalid && 'border-red-500/60',
+    invalid && 'border-[color-mix(in_oklab,var(--color-danger)_60%,transparent)]',
   )
 }
 
@@ -389,7 +389,7 @@ export function ColorField({
       <div className={cn('space-y-2', className)}>
         <ColorFieldPopoverForm {...popoverFormBase} />
         {isInvalid ? (
-          <p role="alert" className="text-[11px] text-red-300">
+          <p role="alert" className="text-[11px] text-[color:var(--color-danger)]">
             Unrecognized color value — using fallback. Edit to fix.
           </p>
         ) : null}
@@ -612,7 +612,7 @@ export function ColorField({
       </PopoverPrimitive.Root>
 
       {isInvalid ? (
-        <p role="alert" className="text-[11px] text-red-300">
+        <p role="alert" className="text-[11px] text-[color:var(--color-danger)]">
           Unrecognized color value — using fallback. Edit to fix.
         </p>
       ) : null}

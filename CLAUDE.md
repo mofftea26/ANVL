@@ -121,13 +121,14 @@ src/
     seo/             meta.ts (buildSeoMeta)
   content/           seed data + mocks
   features/
-    admin/           Slim CMS — active drop, theme, fonts, assets, settings (+ auth)
+    admin/           Slim CMS — active drop, theme, fonts, assets, landing content, settings (+ auth)
     analytics/       Analytics client mock + hooks
     cart/            Zustand cart store + hooks
     checkout/        Forms, schemas, payment config + mock adapters
-    cms/             Storefront CMS reads, landing page composition, Supabase readers
+    cms/             Storefront CMS reads, landing page composition, landing content envelope, Supabase readers
     drops/           Drop types, schemas, act sequence, theme palette types
     landing/         Landing act schemas + types
+    landingPages/    Code-owned landing pages: registry, renderer, asset slots, pages/ (TheOathLanding — the single merged Drop 01 WebGL + GSAP + CMS-content cinematic)
     marketing/       Act presets (lazy loaded), cinematic hero, marketing components
     products/        Commerce adapters (localStorage, seed, Shopify, Supabase), catalog, hooks
     seo/             SEO document schema + types
@@ -213,7 +214,7 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 | Table | Purpose | RLS |
 |---|---|---|
 | `public.cms_profiles` | Links `auth.users` to CMS role (`viewer\|editor\|admin`) | Read own row |
-| `public.cms_settings` | Singleton: active drop key, theme, fonts, asset slot map | Public read, editor update |
+| `public.cms_settings` | Singleton: active drop key, theme, fonts, asset slot map, landing content blobs | Public read, editor update |
 | `public.landing_pages` | Picker metadata (keys must match code registry) | Public read available rows |
 | `public.storefront_publication` | Anon-readable mirror: theme, fonts, assets, media_index, active key | Public read, editor update |
 | `public.cms_media_assets` | Media library + asset assignments | CMS roles only |
@@ -258,6 +259,7 @@ Storefront never reads admin draft data directly. Landing page **content** is co
 | `/admin/theme` | Palette + `dataTheme` mode |
 | `/admin/fonts` | `--font-sans`, `--font-heading`, `--font-display` family names |
 | `/admin/assets` | Media library + general/per-drop slot assignments |
+| `/admin/content` | Landing content editor — per-scene copy overrides with code-default fallbacks |
 | `/admin/story` | Story saga editor — chapters, acts, cast (relational; Supabase CRUD) |
 | `/admin/settings` | Session + local reset |
 
@@ -282,7 +284,7 @@ Admin editor (localStorage working copy)
 - Do **not** import `src/features/admin/**` in storefront/marketing code (runtime code). Type-only imports are discouraged too.
 - CMS-driven `href`/`src` values going into the DOM must go through `sanitizeHref()` in `src/shared/lib/url.ts`.
 - New `dangerouslySetInnerHTML` requires: justification comment + sanitizer + Vitest test.
-- Landing pages are **code-owned** (`src/features/landingPages/`). CMS controls active key + asset overrides only.
+- Landing pages are **code-owned** (`src/features/landingPages/`). CMS controls the active key, asset slot overrides, and — for pages that define a content schema (The Forge) — per-scene **copy overrides** via `landing_content`, where every field falls back to designed code defaults when blank.
 - Asset slots are defined in code per drop (`assetSlots.ts`); CMS assigns media IDs to slots.
 - Nav/footer/SEO use code defaults — not CMS-editable.
 

@@ -24,6 +24,7 @@
   --anvl-dark-steel-grey: #1d1f21;
   --anvl-washed-charcoal: #34373a;
   --anvl-graphite: #5b5e61;
+  --color-graphite: #5b5e61;
   --anvl-bone: #e7e4df;
 
   /* Sticky header is h-16 (4rem) on all breakpoints. Centralizing it
@@ -66,15 +67,48 @@
   --color-line: rgba(231, 228, 223, 0.14);
   --color-text: #f5f4f2;
   --color-text-muted: #bab8b3;
-  --color-heading: var(--anvl-bone);
+  /* Headings share the foreground in the normalized palette. */
+  --color-heading: var(--color-text);
   --color-accent: #c7c2b8;
   --color-chip: rgba(52, 55, 58, 0.9);
   --color-hero-glow: rgba(231, 228, 223, 0.08);
   /* Forged warrior accent — hot-iron bronze. Decorative layer on top of the
      bone accent; used for banner hardware, ember glows, rules, small labels. */
-  --color-ember: #c2703d;
-  --color-ember-bright: #e08a4a;
-  --color-ember-soft: rgba(194, 112, 61, 0.16);
+  --color-highlight: #c2703d;
+  --color-highlight-bright: #e08a4a;
+  --color-highlight-soft: rgba(194, 112, 61, 0.16);
+
+  /* Foreground tokens for colored surfaces (§6) — never assume white. */
+  --color-on-accent: #141414;
+  --color-on-highlight: #ffffff;
+  --color-on-highlight-bright: #141414;
+  --color-on-surface: #f5f4f2;
+  /* Semantic status tokens (§7) — distinct from branded ember. */
+  --color-success: #5f9e6b;
+  --color-warning: #d8a657;
+  --color-danger: #cf5a4e;
+  --color-info: #7f9fc4;
+  --color-on-success: #0c130e;
+  --color-on-warning: #1a1305;
+  --color-on-danger: #150403;
+  --color-focus-ring: #c7c2b8;
+  --color-disabled: #5b5e61;
+  --color-overlay: rgba(8, 9, 10, 0.72);
+  /* Hero glows + overlays (§10). */
+  --hero-background: var(--color-bg);
+  --hero-accent-glow: var(--color-hero-glow);
+  --hero-highlight-glow: var(--color-highlight-soft);
+  --hero-glow: var(--color-hero-glow);
+  --hero-overlay: var(--color-overlay);
+  --hero-vignette: rgba(11, 11, 12, 0.78);
+  --hero-text-shadow: 0 1px 28px rgba(0, 0, 0, 0.55);
+  /* Particle field (§9). */
+  --particle-primary: var(--color-highlight);
+  --particle-secondary: var(--color-accent);
+  --particle-highlight: var(--color-highlight-bright);
+  --particle-glow: var(--color-highlight-soft);
+  /* Sticky-nav scrim. */
+  --nav-scrim: rgba(11, 11, 12, 0.92);
 }
 
 :root[data-theme="bone-light"] {
@@ -89,29 +123,55 @@
   --color-chip: rgba(29, 31, 33, 0.08);
   --color-hero-glow: rgba(29, 31, 33, 0.08);
   /* Darker ember holds contrast on the bone-light backdrop. */
-  --color-ember: #9a4f24;
-  --color-ember-bright: #b8642f;
-  --color-ember-soft: rgba(154, 79, 36, 0.14);
+  --color-highlight: #9a4f24;
+  --color-highlight-bright: #b8642f;
+  --color-highlight-soft: rgba(154, 79, 36, 0.14);
+
+  --color-on-accent: #f5f2ec;
+  --color-on-highlight: #ffffff;
+  --color-on-highlight-bright: #ffffff;
+  --color-on-surface: #151618;
+  --color-success: #2f7d4f;
+  --color-warning: #9a6b1f;
+  --color-danger: #b23b30;
+  --color-info: #3f5f86;
+  --color-on-success: #ffffff;
+  --color-on-warning: #ffffff;
+  --color-on-danger: #ffffff;
+  --color-focus-ring: #2f3135;
+  --color-disabled: #9a958d;
+  --color-overlay: rgba(11, 11, 12, 0.45);
+  --hero-vignette: rgba(245, 242, 236, 0.78);
+  --particle-primary: var(--color-highlight);
+  --particle-secondary: #5b4a36;
+  --particle-highlight: var(--color-highlight-bright);
+  --particle-glow: var(--color-highlight-soft);
+  --nav-scrim: rgba(245, 242, 236, 0.92);
 }
 
-/* Scrollbars — thin rails themed off `--color-*` (Firefox `scrollbar-color` + WebKit). */
+/* Scrollbars (§11) + motion tokens (§18).
+   The SSR projection sets concrete `--scrollbar-*` per active theme on <html>;
+   these are bootstrap fallbacks derived off `--color-*`. `--anvl-scrollbar-*`
+   are kept as back-compat aliases. */
 :root {
   color-scheme: dark;
-  --anvl-scrollbar-thumb: color-mix(
-    in srgb,
-    var(--color-accent) 56%,
-    var(--color-heading) 44%
-  );
-  --anvl-scrollbar-thumb-hover: color-mix(
-    in srgb,
-    var(--color-accent) 68%,
-    var(--color-heading) 32%
-  );
-  --anvl-scrollbar-track: color-mix(
-    in srgb,
-    var(--color-surface) 88%,
-    var(--color-bg) 12%
-  );
+  /* `--color-fg` mirrors body text — derived tokens (themeConfigToCssVars) emit
+     it at runtime; this keeps it resolvable during the pre-hydration bootstrap. */
+  --color-fg: var(--color-text);
+  --scrollbar-track: color-mix(in srgb, var(--color-surface) 88%, var(--color-bg) 12%);
+  --scrollbar-thumb: color-mix(in srgb, var(--color-accent) 56%, var(--color-heading) 44%);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--color-accent) 68%, var(--color-heading) 32%);
+  --scrollbar-thumb-active: var(--color-accent);
+  --anvl-scrollbar-track: var(--scrollbar-track);
+  --anvl-scrollbar-thumb: var(--scrollbar-thumb);
+  --anvl-scrollbar-thumb-hover: var(--scrollbar-thumb-hover);
+
+  --motion-duration-fast: 140ms;
+  --motion-duration-normal: 220ms;
+  --motion-duration-slow: 320ms;
+  --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
 }
 
 :root[data-theme="bone-light"] {
@@ -122,7 +182,7 @@
 *::before,
 *::after {
   scrollbar-width: thin;
-  scrollbar-color: var(--anvl-scrollbar-thumb) var(--anvl-scrollbar-track);
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 *::-webkit-scrollbar {
@@ -131,19 +191,23 @@
 }
 
 *::-webkit-scrollbar-track {
-  background: var(--anvl-scrollbar-track);
+  background: var(--scrollbar-track);
   border-radius: 9999px;
 }
 
 *::-webkit-scrollbar-thumb {
   border-radius: 9999px;
-  border: 2px solid var(--anvl-scrollbar-track);
-  background-color: var(--anvl-scrollbar-thumb);
-  transition: background-color 140ms ease;
+  border: 2px solid var(--scrollbar-track);
+  background-color: var(--scrollbar-thumb);
+  transition: background-color var(--motion-duration-fast, 140ms) ease;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: var(--anvl-scrollbar-thumb-hover);
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -164,7 +228,7 @@ body,
 
 html {
   scrollbar-width: thin;
-  scrollbar-color: var(--anvl-scrollbar-thumb) var(--anvl-scrollbar-track);
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   scroll-behavior: smooth;
   /* Prevent any horizontal scroll from off-canvas brand shapes,
      pinned scroll tracks, or 3D crest transforms. `clip` clips
@@ -189,8 +253,13 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-a {
-  color: inherit;
+/* Base layer so a text-color utility on a link (e.g. button-styled CTAs)
+   wins — unlayered, this `inherit` overrode Tailwind utilities on every <a>,
+   making bone-bg link buttons render a light, inherited label. */
+@layer base {
+  a {
+    color: inherit;
+  }
 }
 
 .anvl-heading {
@@ -218,13 +287,13 @@ a {
 }
 
 /* Ember rule — a forged hairline that glows from a hot center (warrior dividers). */
-.anvl-ember-rule {
+.anvl-highlight-rule {
   height: 1px;
   border: 0;
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--color-ember) 70%, transparent) 50%,
+    color-mix(in srgb, var(--color-highlight) 70%, transparent) 50%,
     transparent
   );
 }
@@ -260,7 +329,7 @@ a {
 
 /* Forge atmosphere motion — drifting embers + a faint banner sway. All gated
    behind motion-safe via the reduced-motion block at the bottom of this file. */
-@keyframes anvl-ember-drift {
+@keyframes anvl-spark-drift {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
     opacity: 0;
@@ -301,11 +370,11 @@ a {
   0%,
   100% {
     transform: scale(1);
-    filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-ember) 28%, transparent));
+    filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-highlight) 28%, transparent));
   }
   50% {
     transform: scale(1.045);
-    filter: drop-shadow(0 0 28px color-mix(in srgb, var(--color-ember) 48%, transparent));
+    filter: drop-shadow(0 0 28px color-mix(in srgb, var(--color-highlight) 48%, transparent));
   }
 }
 
@@ -339,8 +408,16 @@ a {
   }
 }
 
-.anvl-ember {
-  animation: anvl-ember-drift var(--ember-dur, 7s) linear infinite;
+.anvl-spark {
+  animation: anvl-spark-drift var(--spark-dur, 7s) linear infinite;
+}
+
+/* The Forge landing — DOM → WebGL handoff. When the canvas gate mounts the
+   shader layer it sets data-webgl="on" on the page root; the duplicate DOM
+   molten fallback fades out (opacity only) so the two never double-paint. */
+[data-webgl='on'] [data-hero-molten-fallback] {
+  opacity: 0;
+  transition: opacity 0.6s ease;
 }
 
 .anvl-banner-root {
@@ -350,7 +427,7 @@ a {
     0 0 0 1px rgba(255, 255, 255, 0.04);
   --banner-shadow-active:
     0 14px 36px -8px rgba(0, 0, 0, 0.78),
-    0 26px 64px -14px color-mix(in srgb, var(--color-ember) 16%, transparent),
+    0 26px 64px -14px color-mix(in srgb, var(--color-highlight) 16%, transparent),
     0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
@@ -358,12 +435,12 @@ a {
   --banner-shadow:
     0 18px 44px -10px rgba(0, 0, 0, 0.84),
     0 32px 80px -18px rgba(0, 0, 0, 0.68),
-    0 0 56px -14px color-mix(in srgb, var(--color-ember) 18%, transparent),
+    0 0 56px -14px color-mix(in srgb, var(--color-highlight) 18%, transparent),
     0 0 0 1px rgba(255, 255, 255, 0.06);
   --banner-shadow-active:
     0 22px 52px -8px rgba(0, 0, 0, 0.86),
-    0 38px 96px -14px color-mix(in srgb, var(--color-ember) 28%, transparent),
-    0 0 72px -10px color-mix(in srgb, var(--color-ember) 22%, transparent),
+    0 38px 96px -14px color-mix(in srgb, var(--color-highlight) 28%, transparent),
+    0 0 72px -10px color-mix(in srgb, var(--color-highlight) 22%, transparent),
     0 0 0 1px rgba(255, 255, 255, 0.07);
 }
 
@@ -418,7 +495,7 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .anvl-ember,
+  .anvl-spark,
   .anvl-banner-sway,
   .anvl-banner-sway-rich,
   .anvl-banner-emblem,
@@ -436,7 +513,7 @@ a {
    Native checkboxes / radios / selects across the whole site pick up the forge
    theme with no per-use class — restyle once here, reused everywhere. */
 :root {
-  accent-color: var(--color-ember);
+  accent-color: var(--color-highlight);
   color-scheme: dark;
 }
 :root[data-theme="bone-light"] {
@@ -499,8 +576,8 @@ input[type="radio"]::before {
 }
 input[type="checkbox"]:checked,
 input[type="radio"]:checked {
-  border-color: var(--color-ember);
-  background: var(--color-ember);
+  border-color: var(--color-highlight);
+  background: var(--color-highlight);
 }
 input[type="checkbox"]:checked::before,
 input[type="radio"]:checked::before {
@@ -509,7 +586,7 @@ input[type="radio"]:checked::before {
 input[type="checkbox"]:hover:not(:disabled),
 input[type="radio"]:hover:not(:disabled),
 select:hover:not(:disabled) {
-  border-color: color-mix(in oklab, var(--color-ember) 55%, var(--color-line));
+  border-color: color-mix(in oklab, var(--color-highlight) 55%, var(--color-line));
 }
 input[type="checkbox"]:disabled,
 input[type="radio"]:disabled,
@@ -835,7 +912,7 @@ a.focus-ring.inline-flex:is(.h-9, .h-10, .h-11, .h-12, .min-h-10, .min-h-11) {
   }
 }
 
-@keyframes brand-ember-drift {
+@keyframes brand-spark-drift {
   from {
     opacity: 0.15;
     transform: translate3d(0, 0, 0) scale(0.85);

@@ -38,6 +38,23 @@ export function publishedProjectionInlineCss(
   })
 }
 
+/**
+ * Theme + font CSS custom properties as a style object for the `<html>`
+ * element. Element inline styles beat any stylesheet `:root` rule, so the
+ * published (per-landing-page) palette paints correctly on the very first
+ * frame — no flash of the default ember tokens before hydration.
+ */
+export function publishedProjectionStyleVars(
+  theme: ThemeConfig,
+  fonts: FontLibraryConfig | unknown,
+): Record<string, string> {
+  const library = parseFontLibrary(fonts)
+  return {
+    ...themeConfigToCssVars(theme),
+    ...fontLibraryToCssVars(library),
+  }
+}
+
 export type FontPreloadLink = {
   rel: 'preload'
   href: string
@@ -70,5 +87,5 @@ export function buildPublishedFontPreloadLinks(
 }
 
 export function publishedThemeColor(theme: ThemeConfig): string {
-  return theme.palette.colorBg || theme.palette.anvlBlack
+  return theme.palette.background
 }

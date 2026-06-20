@@ -1,12 +1,14 @@
 import { Suspense, lazy, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
-import { buildBookSpreads, spreadLabel } from '@/features/story/lib/bookSpreads'
+import { buildBookSpreads } from '@/features/story/lib/bookSpreads'
 import { isWebglAvailable } from '@/features/story/lib/webgl'
 import { takeOpenOrigin } from '@/features/story/components/book3d/openOrigin'
+import { resolveBookCover } from '@/features/story/components/book3d/bookConfig'
 import { ChapterBookFlat } from '@/features/story/components/ChapterBookFlat'
+import { BookControls } from '@/features/story/components/BookControls'
 
 /** The WebGL book is heavy (three.js) — load it only when actually rendered. */
 const ChapterBook3D = lazy(() => import('@/features/story/components/ChapterBook3D'))
@@ -38,8 +40,6 @@ export function ChapterBook({ chapter, onClose }: ChapterBookProps) {
 
   const spreads = useMemo(() => buildBookSpreads(chapter), [chapter])
   const lastIndex = spreads.length - 1
-  const canPrev = current > 0
-  const canNext = current < lastIndex
 
   useDialogFocusTrap({ open: true, panelRef, onClose })
 
@@ -102,7 +102,7 @@ export function ChapterBook({ chapter, onClose }: ChapterBookProps) {
       <button
         type="button"
         onClick={onClose}
-        className="focus-ring absolute right-3 top-3 z-[60] inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface)]/80 text-[var(--color-text)] hover:border-[var(--color-ember)] sm:right-4 sm:top-4"
+        className="focus-ring absolute right-3 top-3 z-[60] inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface)]/80 text-[var(--color-text)] hover:border-[var(--color-highlight)] sm:right-4 sm:top-4"
         aria-label="Close chapter"
       >
         <X className="h-5 w-5" aria-hidden="true" />
@@ -124,30 +124,14 @@ export function ChapterBook({ chapter, onClose }: ChapterBookProps) {
         )}
       </div>
 
-      {/* Page-turn controls */}
-      <div className="z-[60] flex items-center gap-3 pb-[max(env(safe-area-inset-bottom),0px)] sm:gap-4">
-        <button
-          type="button"
-          onClick={() => setCurrent((c) => Math.max(0, c - 1))}
-          disabled={!canPrev}
-          className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-text)] enabled:hover:border-[var(--color-ember)] disabled:opacity-35"
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-        </button>
-        <p className="min-w-[9rem] text-center text-xs uppercase tracking-[0.18em] text-[var(--color-text-muted)] sm:min-w-[12rem]">
-          {spreadLabel(spreads[current])}
-        </p>
-        <button
-          type="button"
-          onClick={() => setCurrent((c) => Math.min(lastIndex, c + 1))}
-          disabled={!canNext}
-          className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-text)] enabled:hover:border-[var(--color-ember)] disabled:opacity-35"
-          aria-label="Next page"
-        >
-          <ChevronRight className="h-5 w-5" aria-hidden="true" />
-        </button>
-      </div>
+      {/* Page-turn controls + gilded reading progress (CMS foil color) */}
+      <BookControls
+        spreads={spreads}
+        current={current}
+        foil={resolveBookCover(chapter).colors.foil}
+        onPrev={() => setCurrent((c) => Math.max(0, c - 1))}
+        onNext={() => setCurrent((c) => Math.min(lastIndex, c + 1))}
+      />
     </div>
   )
 }

@@ -21,12 +21,12 @@ export function BookColorsField({ colors, onChange }: BookColorsFieldProps) {
 
   return (
     <fieldset className="space-y-3 rounded-xl border border-[var(--color-line)] p-4">
-      <legend className="flex items-center gap-3 px-1 text-xs uppercase tracking-[0.18em] text-[var(--color-ember-bright)]">
+      <legend className="flex items-center gap-3 px-1 text-xs uppercase tracking-[0.18em] text-[var(--color-highlight-bright)]">
         Book colours
         <button
           type="button"
           onClick={() => onChange(DEFAULT_BOOK_COLORS)}
-          className="rounded border border-[var(--color-line)] px-2 py-0.5 text-[10px] normal-case tracking-normal text-[var(--color-text-muted)] hover:border-[var(--color-ember)]"
+          className="rounded border border-[var(--color-line)] px-2 py-0.5 text-[10px] normal-case tracking-normal text-[var(--color-text-muted)] hover:border-[var(--color-highlight)]"
         >
           Reset
         </button>

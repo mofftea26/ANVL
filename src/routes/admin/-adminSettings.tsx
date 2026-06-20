@@ -108,8 +108,8 @@ function SettingsPage() {
               onClick={() => setConfirmReset(true)}
               className={cn(
                 'focus-ring min-h-11 w-full max-w-xl whitespace-normal px-4 py-3 text-center leading-snug sm:min-h-12',
-                'border-red-500/45 bg-red-950/30 text-red-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] ring-1 ring-inset ring-red-500/25',
-                'hover:border-red-400/55 hover:bg-red-500/15 hover:text-red-50',
+                'border-[color-mix(in_oklab,var(--color-danger)_45%,transparent)] bg-[color-mix(in_oklab,var(--color-danger)_18%,var(--color-surface))] text-[color:var(--color-danger)] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--color-danger)_25%,transparent)]',
+                'hover:border-[color-mix(in_oklab,var(--color-danger)_55%,transparent)] hover:bg-[color-mix(in_oklab,var(--color-danger)_28%,var(--color-surface))]',
               )}
             >
               <RotateCcw size={18} className="mr-2 shrink-0" aria-hidden="true" />
@@ -212,7 +212,7 @@ function SettingsPage() {
                 disabled={!canSubmit}
                 className={cn(
                   'min-h-11 sm:min-w-[12rem]',
-                  'border-red-500/50 bg-red-950/35 text-red-100 hover:bg-red-500/20',
+                  'border-[color-mix(in_oklab,var(--color-danger)_50%,transparent)] bg-[color-mix(in_oklab,var(--color-danger)_20%,var(--color-surface))] text-[color:var(--color-danger)] hover:bg-[color-mix(in_oklab,var(--color-danger)_30%,var(--color-surface))]',
                   'disabled:pointer-events-none disabled:opacity-40',
                 )}
               >

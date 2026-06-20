@@ -10,7 +10,7 @@ import {
   oathHeroImage,
   oathHeroMediaMode,
   oathHeroMobileVideo,
-  oathSceneMedia,
+  oathManifestoMedia,
   oathThemedMarkup,
   DEFAULT_HERO_VIDEO,
 } from '../theOathAssets'
@@ -127,9 +127,9 @@ describe('theOathAssets scene media', () => {
     bindOathCmsAssets({})
   })
 
-  it('oathSceneMedia resolves manifestoMedia from CMS', () => {
+  it('oathManifestoMedia resolves manifestoMedia from CMS', () => {
     bindOathCmsAssets({ manifestoMedia: 'https://cdn.test/manifesto.jpg' })
-    expect(oathSceneMedia('manifestoMedia')).toBe('https://cdn.test/manifesto.jpg')
+    expect(oathManifestoMedia()).toBe('https://cdn.test/manifesto.jpg')
   })
 })
 

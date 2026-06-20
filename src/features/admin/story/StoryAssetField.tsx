@@ -68,7 +68,7 @@ export function StoryAssetField({ label, asset, scope, onChange }: StoryAssetFie
 
   return (
     <fieldset className="space-y-3 rounded-xl border border-[var(--color-line)] p-4">
-      <legend className="px-1 text-xs uppercase tracking-[0.18em] text-[var(--color-ember-bright)]">
+      <legend className="px-1 text-xs uppercase tracking-[0.18em] text-[var(--color-highlight-bright)]">
         {label}
       </legend>
 

@@ -1,104 +1,42 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { Html, RoundedBox } from '@react-three/drei'
+import { RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
-import { spreadPageNumbers, type BookSpread } from '@/features/story/lib/bookSpreads'
-import { BookLeftPage, BookRightPage } from '@/features/story/components/BookPageView'
+import type { BookSpread } from '@/features/story/lib/bookSpreads'
 import { resolveBookCover } from '@/features/story/components/book3d/bookConfig'
 import { useCoverTexture } from '@/features/story/components/book3d/coverTexture'
 import { useBookTextures } from '@/features/story/components/book3d/useBookTextures'
+import { BookPagesHtml } from '@/features/story/components/book3d/BookPagesHtml'
+import {
+  applyCornerPeel,
+  BLOCK_T,
+  BOOK_T,
+  clamp,
+  COVER_H,
+  COVER_T,
+  COVER_W,
+  easeInOutCubic,
+  FLICK_VELOCITY,
+  FLUTTER_COUNT,
+  LEAF_DROOP,
+  makeGutterPageGeometry,
+  makeLeafGeometry,
+  makeRadialShadowTexture,
+  OPEN_DURATION,
+  PAGE_FULL_W,
+  PAGE_H,
+  PAGE_PLANE_Z,
+  PAGE_W,
+  SETTLE_RATE,
+  SPINE_X,
+  TOP_Z,
+  TURN_SPEED,
+} from '@/features/story/components/book3d/bookGeometry'
 
-/* --- One book. Closed on the shelf; the SAME object swings open to read. --- */
-const COVER_W = 1.45
-const COVER_H = 2.05
-const BOOK_T = 0.42
-const COVER_T = 0.05
-const SPINE_X = -COVER_W / 2
-const PAGE_W = COVER_W * 0.95
-const PAGE_H = COVER_H * 0.96
-const BLOCK_T = BOOK_T - COVER_T * 2
-const TOP_Z = BOOK_T / 2 - COVER_T // top of the right page block
-/* When open, the book recenters so the page surfaces sit on the z=0 plane —
-   the CSS page layer only matches WebGL exactly there (see the Html note). */
-const PAGE_PLANE_Z = (TOP_Z + 0.002 + BOOK_T / 2 + 0.012) / 2
-/* drei <Html> screen-space content: world = px * factor / 400 (factor below). */
-const HTML_DISTANCE = 1.24
-const PAGE_PX_W = 430
-const PAGE_PX_H = 610
-const OPEN_DURATION = 1.05
-const TURN_SPEED = 1.2
-/** Released paper falls/settles with this exponential rate (per second). */
-const SETTLE_RATE = 9
-/** Flick this fast (rad/s) and the page commits regardless of position. */
-const FLICK_VELOCITY = 1.6
-const FLUTTER_COUNT = 3
-
-function easeInOutCubic(p: number): number {
-  return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
-}
-
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
-
-/** Pages extend past their nominal width so the two sheets MEET at the spine
-    (they used to stop 0.036 short on each side, exposing a cloth strip). */
-const GUTTER_EXT = 0.036
-/* The two page planes rest at different heights (right on the block, left on
-   air above the opened cover). Their dips are tuned so both inner edges land
-   at the SAME z — paper joining in one continuous valley:
-   right: 0.164 − 0.012 = 0.152;  left: 0.222 − 0.070 = 0.152. */
-const GUTTER_DIP_RIGHT = 0.012
-const GUTTER_DIP_LEFT = 0.07
-
-/**
- * An open-book page surface that curves down toward the spine — paper joining
- * the binding in a soft gutter instead of lying dead flat against a ridge.
- * The right page's crease is shallow/narrow (its slope faces the key light and
- * would otherwise read as a bright band); the left page carries the deep roll
- * (its slope falls in shadow, like a real gutter).
- */
-/** Gutter curvature shading — paper darkens as it rolls into the binding. */
-function applyGutterShade(geo: THREE.PlaneGeometry, innerEdge: number): void {
-  const pos = geo.attributes.position as THREE.BufferAttribute
-  const colors = new Float32Array(pos.count * 3)
-  for (let i = 0; i < pos.count; i++) {
-    const d = Math.abs(pos.getX(i) - innerEdge)
-    const shade = 1 - 0.3 * Math.exp(-(d * d) / (2 * 0.2 * 0.2))
-    colors[i * 3] = shade
-    colors[i * 3 + 1] = shade
-    colors[i * 3 + 2] = shade
-  }
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-}
-
-function makeGutterPageGeometry(side: 'left' | 'right'): THREE.PlaneGeometry {
-  const w = PAGE_W + GUTTER_EXT
-  const geo = new THREE.PlaneGeometry(w, PAGE_H, 28, 1)
-  const sign = side === 'right' ? -1 : 1
-  geo.translate((sign * GUTTER_EXT) / 2, 0, 0)
-  const innerEdge = (sign * (w + GUTTER_EXT)) / 2
-  const amp = side === 'right' ? GUTTER_DIP_RIGHT : GUTTER_DIP_LEFT
-  const sigma = side === 'right' ? 0.07 : 0.16
-  const pos = geo.attributes.position as THREE.BufferAttribute
-  for (let i = 0; i < pos.count; i++) {
-    const d = Math.abs(pos.getX(i) - innerEdge)
-    pos.setZ(i, -amp * Math.exp(-(d * d) / (2 * sigma * sigma)))
-  }
-  applyGutterShade(geo, innerEdge)
-  geo.computeVertexNormals()
-  return geo
-}
-
-/** The turning leaf — reaches the spine pivot exactly (no slot at the hinge)
-    and carries the same gutter shading as the resting pages. */
-function makeLeafGeometry(): THREE.PlaneGeometry {
-  const w = PAGE_W + GUTTER_EXT
-  const geo = new THREE.PlaneGeometry(w, PAGE_H, 36, 1)
-  applyGutterShade(geo, -w / 2)
-  return geo
-}
-/** How far the leaf's hinge edge droops into the binding while turning. */
-const LEAF_DROOP = 0.045
+/** Tiny scale that keeps a mesh rendered (shaders stay compiled) but sub-pixel
+    and parked inside the opaque page block — pre-warmed, never visible. */
+const WARM = 0.0001
 
 /** One leaf turn in flight — programmatic, cursor-held, or settling after release. */
 interface TurnState {
@@ -112,10 +50,19 @@ interface TurnState {
   grab: number
   /** Settle target angle (0 or π). */
   target: number
-  /** Last drag samples for flick detection. */
-  lastAngle: number
+  /** Last drag sample time for flick detection. */
   lastTime: number
   velocity: number
+  /** onTurned already fired for this turn (frames keep running until the
+      parent's index lands — the commit must not fire twice). */
+  notified: boolean
+}
+
+/** Which spreads the two sides show while a leaf is in flight. */
+interface TurnInfo {
+  dir: 1 | -1
+  from: number
+  to: number
 }
 
 interface BookProps {
@@ -135,11 +82,17 @@ interface BookProps {
 /**
  * The book — a cloth hardcover with a baked foil cover, gilded page block and
  * rounded spine. On the shelf it idles closed; when `open`, the *same* book
- * swings its cover open (the foil stamp dissolves first, thin pages flutter
- * after the cover) and pages turn as curling parchment leaves — either
- * programmatically (arrows) or **grabbed with the cursor**: the paper follows
- * the hand from wherever it is held, and on release it falls to whichever
- * side gravity (position + flick velocity) says.
+ * swings its cover open and pages turn as curling parchment leaves — either
+ * programmatically (arrows) or **grabbed with the cursor**. The opening is a
+ * multipage flourish: the cover swings, then thin leaves flutter open in its
+ * wake onto the resting spread. The open book is alive: hovering paper peels
+ * its corner up in invitation, a turning leaf catches a traveling sheen + casts
+ * a shadow on the sheet below, the side not covered keeps its content (and the
+ * incoming side inks in mid-turn), and the two sheets dive into a shared gutter
+ * crease. The right page is laid in before the cover finishes lifting so the
+ * binding is never seen empty; once open the book sits perfectly still (the page
+ * DOM rides the meshes, so idle drift would float the text). Every interactive
+ * mesh is pre-warmed so no shader compiles mid-gesture.
  */
 export function Book({
   chapter,
@@ -154,20 +107,36 @@ export function Book({
   const coverHinge = useRef<THREE.Group>(null)
   const coverArtMat = useRef<THREE.MeshStandardMaterial>(null)
   const spineRef = useRef<THREE.Mesh>(null)
+  const leafShadow = useRef<THREE.Mesh>(null)
+  const rightPage = useRef<THREE.Mesh>(null)
+  const leftPage = useRef<THREE.Mesh>(null)
 
   // Open-book page surfaces curve into the binding (soft gutter, no hard ridge).
-  const gutterGeos = useMemo(
-    () => [makeGutterPageGeometry('right'), makeGutterPageGeometry('left')] as const,
-    [],
-  )
-  const leafGeometry = useMemo(() => makeLeafGeometry(), [])
+  const geos = useMemo(() => {
+    const right = makeGutterPageGeometry('right')
+    const left = makeGutterPageGeometry('left')
+    const leaf = makeLeafGeometry()
+    return {
+      right,
+      left,
+      leaf,
+      // Undeformed snapshots — corner peel and leaf curl rebuild from these.
+      rightBase: Float32Array.from((right.attributes.position as THREE.BufferAttribute).array),
+      leftBase: Float32Array.from((left.attributes.position as THREE.BufferAttribute).array),
+      leafBase: Float32Array.from((leaf.attributes.position as THREE.BufferAttribute).array),
+      // Baked gutter shade of the leaf — the flip sheen modulates a copy of it.
+      leafBaseColor: Float32Array.from((leaf.attributes.color as THREE.BufferAttribute).array),
+    }
+  }, [])
+  const shadowTex = useMemo(() => makeRadialShadowTexture(), [])
   useEffect(
     () => () => {
-      gutterGeos[0].dispose()
-      gutterGeos[1].dispose()
-      leafGeometry.dispose()
+      geos.right.dispose()
+      geos.left.dispose()
+      geos.leaf.dispose()
+      shadowTex.dispose()
     },
-    [gutterGeos, leafGeometry],
+    [geos, shadowTex],
   )
   const { cloth, parchment, pageEdge } = useBookTextures()
   const cover = resolveBookCover(chapter)
@@ -178,32 +147,37 @@ export function Book({
   const openT = useRef(open ? 1 : 0)
   const [shown, setShown] = useState(current)
   const [revealed, setRevealed] = useState(open)
-  const [turning, setTurning] = useState(false)
+  const [turnInfo, setTurnInfo] = useState<TurnInfo | null>(null)
+  const [leafOnLeft, setLeafOnLeft] = useState(false)
   const revealedRef = useRef(open)
+  const leafOnLeftRef = useRef(false)
+  const turning = turnInfo !== null
 
-  /* Page content uses drei <Html> in SCREEN-SPACE mode (no `transform`):
-     position comes from a true camera projection of the anchor — the exact
-     math WebGL paints with — so the content tracks the page meshes on every
-     screen size. (transform-mode CSS-3D placed the scene ~4.6px from the CSS
-     eye plane, where Chromium's compositor paints diverge canvas-dependently.)
-     The scale must include the canvas height (drei's objectScale is pure
-     camera math): world = px · HTML_DISTANCE/400 → factor = h·HTML_DISTANCE/400. */
-  const { size, camera, gl } = useThree()
-  const dfScreen = (size.height * HTML_DISTANCE) / 400
+  const { camera, gl } = useThree()
 
-  // Flutter pages that chase the cover while it swings open.
+  // Thin leaves that flutter open in the cover's wake (the multipage opening).
   const flutters = useRef<Array<THREE.Group | null>>([])
 
   // Curling-leaf turn — shared by programmatic turns and cursor drags.
   const leafHinge = useRef<THREE.Group>(null)
-  const leafBase = useRef<Float32Array | null>(null)
   const turn = useRef<TurnState | null>(null)
   const suppressNextTurn = useRef(false)
   const prevCurrent = useRef(current)
 
+  // Corner-peel invitation — hovered paper lifts its outer-bottom corner.
+  const peel = useRef({ nextT: 0, prevT: 0, next: 0, prev: 0, lastNext: 0, lastPrev: 0 })
+
   const lastIndex = (spreads?.length ?? 1) - 1
   const canNext = open && current >= 1 && current < lastIndex
   const canPrev = open && current > 1
+
+  function startTurn(info: TurnInfo) {
+    leafOnLeftRef.current = info.dir === -1
+    setLeafOnLeft(info.dir === -1)
+    setTurnInfo(info)
+    peel.current.nextT = 0
+    peel.current.prevT = 0
+  }
 
   useEffect(() => {
     const prev = prevCurrent.current
@@ -218,7 +192,7 @@ export function Book({
       suppressNextTurn.current = false
       turn.current = null
       setShown(current)
-      setTurning(false)
+      setTurnInfo(null)
       return
     }
     if (prev >= 1 && current >= 1) {
@@ -230,12 +204,12 @@ export function Book({
         prog: 0,
         grab: PAGE_W * 0.85,
         target: dir === 1 ? Math.PI : 0,
-        lastAngle: 0,
         lastTime: 0,
         velocity: 0,
+        notified: false,
       }
-      setTurning(true)
-      setShown(current) // content stays hidden until the turn finishes
+      startTurn({ dir, from: prev, to: current })
+      setShown(current)
     } else {
       setShown(current)
     }
@@ -270,11 +244,11 @@ export function Book({
       prog: 0,
       grab,
       target: angle,
-      lastAngle: angle,
       lastTime: performance.now(),
       velocity: 0,
+      notified: false,
     }
-    setTurning(true)
+    startTurn({ dir, from: current, to: current + dir })
     gl.domElement.style.cursor = 'grabbing'
 
     const onMove = (ev: PointerEvent) => {
@@ -285,7 +259,6 @@ export function Book({
       const now = performance.now()
       const dt = Math.max(1, now - t.lastTime) / 1000
       t.velocity = (next - t.angle) / dt
-      t.lastAngle = t.angle
       t.lastTime = now
       t.angle = next
     }
@@ -313,12 +286,15 @@ export function Book({
     if (!t) return
     const committed = t.dir === 1 ? landedLeft : !landedLeft
     if (committed && t.mode !== 'anim') {
-      suppressNextTurn.current = true
-      onTurned?.(t.dir) // parent advances `current`; effect lands the content
+      if (!t.notified) {
+        t.notified = true
+        suppressNextTurn.current = true
+        onTurned?.(t.dir) // parent advances `current`; effect lands the content
+      }
       return
     }
     turn.current = null
-    setTurning(false)
+    setTurnInfo(null)
   }
 
   useFrame((state, delta) => {
@@ -341,29 +317,53 @@ export function Book({
       coverArtMat.current.opacity = clamp(1 - t * 4, 0, 1)
     }
 
-    // Flutter leaves follow the cover, each a beat behind the last — and are
-    // hard-clamped to stay BEHIND it (a leaf overtaking the cover read as a
-    // second cover flipping between the pages).
+    // Lay the page sheets in as the cover uncovers them. The right sheet rides
+    // on the gilded block, so it appears early (while the barely-cracked cover
+    // still hides it) — that is what fills the spine before the cover lifts, so
+    // the binding is never seen empty. The left sheet only exists once the cover
+    // has swung flat beneath it (nothing to rest on before that). Scaling to a
+    // sub-pixel point keeps both meshes rendered every frame (shaders stay
+    // compiled — no hitch on first show) without being visible.
+    if (rightPage.current) rightPage.current.scale.setScalar(t > 0.16 ? 1 : WARM)
+    if (leftPage.current) leftPage.current.scale.setScalar(t > 0.95 ? 1 : WARM)
+
+    // Multipage opening: a few thin leaves flutter over the resting right sheet
+    // in the cover's wake, each a beat behind the last — hard-clamped to stay
+    // BEHIND the cover so none ever reads as a second cover flipping.
     const coverAngle = Math.PI * 0.99 * oa
     flutters.current.forEach((g, i) => {
       if (!g) return
-      const visible = t > 0.18 && t < 0.97
+      const visible = t > 0.2 && t < 0.99
       g.visible = visible
       if (!visible) return
-      const p = clamp((t - 0.22 - i * 0.1) / 0.55, 0, 1)
-      const own = Math.PI * easeInOutCubic(p)
-      const angle = Math.min(own, Math.max(0, coverAngle - 0.07 * (i + 1)))
+      const fp = clamp((t - 0.26 - i * 0.11) / 0.5, 0, 1)
+      const own = Math.PI * easeInOutCubic(fp)
+      const angle = Math.min(own, Math.max(0, coverAngle - 0.06 * (i + 1)))
       g.rotation.y = -angle
-      g.position.z = TOP_Z + 0.012 + i * 0.006 + Math.sin((angle / Math.PI) * Math.PI) * 0.04
+      g.position.z = TOP_Z + 0.014 + i * 0.006 + Math.sin(angle) * 0.05
     })
 
-    // Reveal pages only once the cover has fully landed (and hide on close).
+    // Reveal page content + interaction only once the cover has fully landed.
     if (t >= 0.97 && open && !revealedRef.current) {
       revealedRef.current = true
       setRevealed(true)
     } else if ((t <= 0.9 || !open) && revealedRef.current) {
       revealedRef.current = false
       setRevealed(false)
+    }
+
+    // --- Corner peel: hovered paper lifts its outer corner in invitation. ---
+    const pl = peel.current
+    const kp = Math.min(1, delta * 9)
+    pl.next += (pl.nextT - pl.next) * kp
+    pl.prev += (pl.prevT - pl.prev) * kp
+    if (Math.abs(pl.next - pl.lastNext) > 0.0015) {
+      applyCornerPeel(geos.right, geos.rightBase, pl.next, 'right')
+      pl.lastNext = pl.next
+    }
+    if (Math.abs(pl.prev - pl.lastPrev) > 0.0015) {
+      applyCornerPeel(geos.left, geos.leftBase, pl.prev, 'left')
+      pl.lastPrev = pl.prev
     }
 
     // --- Leaf turn: angle-driven flip + a curl wave traveling along the page. ---
@@ -382,28 +382,54 @@ export function Book({
       leafHinge.current.rotation.y = -Math.PI * p
       leafHinge.current.position.z = TOP_Z + Math.sin(p * Math.PI) * 0.05
 
-      const geo = leafGeometry
+      // The side the leaf occupies swaps mid-flight (with hysteresis so a
+      // wavering hand never strobes the page content).
+      const onLeft = p > (leafOnLeftRef.current ? 0.45 : 0.55)
+      if (onLeft !== leafOnLeftRef.current) {
+        leafOnLeftRef.current = onLeft
+        setLeafOnLeft(onLeft)
+      }
+
+      // Traveling contact shadow under the airborne paper — it carries weight.
+      if (leafShadow.current) {
+        const mid = SPINE_X + (PAGE_FULL_W / 2) * Math.cos(tn.angle)
+        leafShadow.current.position.set(mid, 0, BOOK_T / 2 + 0.02)
+        leafShadow.current.scale.set(0.45 + 0.85 * Math.abs(Math.cos(tn.angle)), 1.15, 1)
+        const mat = leafShadow.current.material as THREE.MeshBasicMaterial
+        mat.opacity = 0.3 * Math.sin(tn.angle)
+      }
+
+      const geo = geos.leaf
       const pos = geo.attributes.position as THREE.BufferAttribute
-      if (!leafBase.current) leafBase.current = Float32Array.from(pos.array as Float32Array)
-      const w = PAGE_W + GUTTER_EXT
+      const col = geo.attributes.color as THREE.BufferAttribute
+      const w = PAGE_FULL_W
       const q = tn.dir === 1 ? p : 1 - p // curl shape mirrors going back
-      const amp = 0.17 * Math.sin(p * Math.PI)
+      const amp = 0.19 * Math.sin(p * Math.PI)
       const center = 0.8 - 0.6 * q
-      const b = leafBase.current
+      const b = geos.leafBase
+      const bc = geos.leafBaseColor
       for (let i = 0; i < pos.count; i++) {
         const x = b[i * 3]
         const u = (x + w / 2) / w
-        const wave = Math.exp(-((u - center) * (u - center)) / 0.09)
+        const wave = Math.exp(-((u - center) * (u - center)) / 0.085)
         const bow = Math.sin(u * Math.PI) * 0.35
         // The hinge edge stays drooped into the binding — paper is sewn in.
         const droop = -LEAF_DROOP * Math.exp(-((x + w / 2) * (x + w / 2)) / (2 * 0.1 * 0.1))
         pos.setXYZ(i, x, b[i * 3 + 1], b[i * 3 + 2] + droop + amp * (wave + bow))
+        // Traveling sheen: the curl's lit crest brightens, its far flank falls
+        // into self-shadow — the flipping sheet reads as dimensional paper, not
+        // a flat card. Modulates the baked gutter shade (clamped to stay paper).
+        const sheen = clamp(1 + amp * (1.7 * wave - 0.9 * bow), 0.72, 1.32)
+        col.setXYZ(i, bc[i * 3] * sheen, bc[i * 3 + 1] * sheen, bc[i * 3 + 2] * sheen)
       }
       pos.needsUpdate = true
+      col.needsUpdate = true
       geo.computeVertexNormals()
 
       if (tn.mode === 'anim' && tn.prog >= 1) finishTurn(tn.dir === 1)
       else if (tn.mode === 'settle' && tn.angle === tn.target) finishTurn(tn.target === Math.PI)
+    } else if (leafShadow.current) {
+      ;(leafShadow.current.material as THREE.MeshBasicMaterial).opacity = 0
     }
 
     // --- Whole-book pose: recenter when open, idle/hover when shelved. ---
@@ -413,7 +439,10 @@ export function Book({
     r.position.z = -PAGE_PLANE_Z * oa // pages land on z=0 (see PAGE_PLANE_Z)
     const k = Math.min(1, delta * 5)
     if (open) {
-      const lift = Math.sin(oa * Math.PI) * 0.07 // breathes up as it opens
+      // Lifts gently as it opens, then sits perfectly still while reading — the
+      // page DOM tracks the meshes per frame, so any idle drift would make the
+      // text float (the user found that unfriendly). Dead-on, no tilt.
+      const lift = Math.sin(oa * Math.PI) * 0.07
       r.rotation.y += (0 - r.rotation.y) * k
       r.rotation.x += (0 - r.rotation.x) * k // dead-on — tilt also skews the CSS layer
       r.position.y += (lift - r.position.y) * k
@@ -425,16 +454,24 @@ export function Book({
     }
   })
 
-  const shownSpread = spreads?.[shown]
-  const numbers = spreads ? spreadPageNumbers(spreads, shown) : null
-  const pageBox: CSSProperties = {
-    ['--color-heading']: cover.colors.heading,
-    ['--color-text']: cover.colors.text,
-    ['--color-text-muted']: cover.colors.text,
-    width: PAGE_PX_W,
-    height: PAGE_PX_H,
-    overflow: 'hidden',
-  } as CSSProperties
+  // Which spread each side shows. While a leaf is airborne the side it covers
+  // shows nothing; the free side keeps the outgoing spread until the leaf
+  // crosses the spine, then the incoming spread inks in under the settling
+  // paper (DOM paints above WebGL, so covered sides must truly unmount).
+  const leftIndex = !turnInfo
+    ? shown
+    : leafOnLeft
+      ? null
+      : turnInfo.dir === 1
+        ? turnInfo.from
+        : turnInfo.to
+  const rightIndex = !turnInfo
+    ? shown
+    : leafOnLeft
+      ? turnInfo.dir === 1
+        ? turnInfo.to
+        : turnInfo.from
+      : null
 
   return (
     <group ref={root}>
@@ -445,8 +482,8 @@ export function Book({
 
       {/* Gilded page block — narrowed at the spine so the dipped page can
           curve past its corner without the block poking through the paper. */}
-      <mesh position={[0.07, 0, 0]}>
-        <boxGeometry args={[PAGE_W - 0.12, PAGE_H, BLOCK_T]} />
+      <mesh position={[0.08, 0, 0]}>
+        <boxGeometry args={[PAGE_W - 0.16, PAGE_H, BLOCK_T]} />
         <meshStandardMaterial attach="material-0" map={pageEdge} color={edgeColor} roughness={0.85} />
         <meshStandardMaterial attach="material-1" color="#d9cba6" roughness={0.9} />
         <meshStandardMaterial attach="material-2" map={pageEdge} color={edgeColor} roughness={0.85} />
@@ -460,7 +497,18 @@ export function Book({
         <meshPhysicalMaterial map={cloth} color={clothColor} roughness={0.6} clearcoat={0.2} envMapIntensity={0.6} />
       </RoundedBox>
 
-      {/* Thin pages that flutter open behind the cover (visible mid-swing only) */}
+      {/* Parchment page surfaces — laid at their open layout and scaled in by
+          the frame loop as the cover uncovers each side (pre-warmed via a
+          sub-pixel scale while closed, so the reveal never compiles a shader). */}
+      <mesh ref={rightPage} position={[0, 0, TOP_Z + 0.002]} geometry={geos.right}>
+        <meshStandardMaterial map={parchment} vertexColors roughness={0.96} side={THREE.DoubleSide} envMapIntensity={0.3} />
+      </mesh>
+      <mesh ref={leftPage} position={[-COVER_W, 0, BOOK_T / 2 + 0.012]} geometry={geos.left}>
+        <meshStandardMaterial map={parchment} vertexColors roughness={0.96} side={THREE.DoubleSide} envMapIntensity={0.3} />
+      </mesh>
+
+      {/* Thin leaves that flutter open in the cover's wake (visible mid-swing
+          only) — the multipage opening, hinged at the spine over the right sheet. */}
       {Array.from({ length: FLUTTER_COUNT }, (_, i) => (
         <group
           key={i}
@@ -471,34 +519,25 @@ export function Book({
           visible={false}
         >
           <mesh position={[COVER_W / 2, 0, 0]}>
-            <planeGeometry args={[PAGE_W * (1 - i * 0.008), PAGE_H * (1 - i * 0.006)]} />
-            <meshStandardMaterial map={parchment} color="#efe5c9" roughness={0.97} side={THREE.DoubleSide} envMapIntensity={0.2} />
+            <planeGeometry args={[PAGE_W * (1 - i * 0.01), PAGE_H * (1 - i * 0.008)]} />
+            <meshStandardMaterial map={parchment} color="#efe5c9" roughness={0.97} side={THREE.DoubleSide} envMapIntensity={0.25} />
           </mesh>
         </group>
       ))}
 
-      {/* Parchment page surfaces (open only) — curving into the spine gutter */}
-      {revealed ? (
-        <>
-          <mesh position={[0, 0, TOP_Z + 0.002]} geometry={gutterGeos[0]}>
-            <meshStandardMaterial map={parchment} vertexColors roughness={0.96} side={THREE.DoubleSide} envMapIntensity={0.3} />
-          </mesh>
-          <mesh position={[-COVER_W, 0, BOOK_T / 2 + 0.012]} geometry={gutterGeos[1]}>
-            <meshStandardMaterial map={parchment} vertexColors roughness={0.96} side={THREE.DoubleSide} envMapIntensity={0.3} />
-          </mesh>
-        </>
-      ) : null}
-
-      {/* Grab zones — the paper is what you grab, never the book itself. */}
+      {/* Grab zones — the paper is what you grab, never the book itself.
+          Hovering peels the page corner up: an invitation to turn. */}
       {revealed && !turning && canNext ? (
         <mesh
           position={[0, 0, TOP_Z + 0.004]}
           onPointerDown={(e) => beginDrag(e, 1)}
           onPointerOver={() => {
             gl.domElement.style.cursor = 'grab'
+            peel.current.nextT = 1
           }}
           onPointerOut={() => {
             gl.domElement.style.cursor = ''
+            peel.current.nextT = 0
           }}
         >
           <planeGeometry args={[PAGE_W, PAGE_H]} />
@@ -511,9 +550,11 @@ export function Book({
           onPointerDown={(e) => beginDrag(e, -1)}
           onPointerOver={() => {
             gl.domElement.style.cursor = 'grab'
+            peel.current.prevT = 1
           }}
           onPointerOut={() => {
             gl.domElement.style.cursor = ''
+            peel.current.prevT = 0
           }}
         >
           <planeGeometry args={[PAGE_W, PAGE_H]} />
@@ -521,45 +562,30 @@ export function Book({
         </mesh>
       ) : null}
 
-      {/* Facing pages — hidden during a turn, animate in after (keyed per spread) */}
-      {revealed && !turning && shownSpread && shownSpread.kind === 'spread' && numbers ? (
-        <>
-          {/* eps=-1 → refresh transform every frame; drei's position-guard can
-              otherwise leave the overlay unscaled after its mount effect re-runs. */}
-          <Html center eps={-1} distanceFactor={dfScreen} position={[-COVER_W, 0, BOOK_T / 2 + 0.012]} style={{ pointerEvents: 'none' }} occlude={false}>
-            <div className="story-book-page" style={pageBox}>
-              <BookLeftPage
-                key={shownSpread.key}
-                spread={shownSpread}
-                pageNo={numbers.left}
-                total={numbers.total}
-                foil={cover.colors.foil}
-              />
-            </div>
-          </Html>
-          <Html center eps={-1} distanceFactor={dfScreen} position={[0, 0, TOP_Z + 0.002]} style={{ pointerEvents: 'none' }} occlude={false}>
-            <div className="story-book-page" style={pageBox}>
-              <BookRightPage
-                key={shownSpread.key}
-                spread={shownSpread}
-                chapter={chapter}
-                pageNo={numbers.right}
-                total={numbers.total}
-                foil={cover.colors.foil}
-              />
-            </div>
-          </Html>
-        </>
+      {/* Facing page content — each side holds its spread independently so a
+          turn keeps the uncovered side alive and inks the new side mid-flight. */}
+      {revealed && spreads ? (
+        <BookPagesHtml
+          chapter={chapter}
+          cover={cover}
+          spreads={spreads}
+          leftIndex={leftIndex}
+          rightIndex={rightIndex}
+        />
       ) : null}
 
-      {/* Curling turning leaf (follows the hand or the animation, then settles) */}
-      {turning ? (
+      {/* Curling turning leaf + its traveling shadow — pre-warmed when idle. */}
+      <group scale={turning ? 1 : WARM}>
+        <mesh ref={leafShadow} position={[0, 0, BOOK_T / 2 + 0.02]} renderOrder={1}>
+          <planeGeometry args={[PAGE_FULL_W, PAGE_H * 1.04]} />
+          <meshBasicMaterial map={shadowTex} transparent opacity={0} depthWrite={false} />
+        </mesh>
         <group ref={leafHinge} position={[SPINE_X, 0, TOP_Z]}>
-          <mesh position={[(PAGE_W + GUTTER_EXT) / 2, 0, 0.03]} geometry={leafGeometry}>
+          <mesh position={[PAGE_FULL_W / 2, 0, 0.03]} geometry={geos.leaf}>
             <meshStandardMaterial map={parchment} vertexColors roughness={0.96} side={THREE.DoubleSide} envMapIntensity={0.3} />
           </mesh>
         </group>
-      ) : null}
+      </group>
 
       {/* Front cover — hinged at the spine, baked foil cover, swings open */}
       <group ref={coverHinge} position={[SPINE_X, 0, 0]}>

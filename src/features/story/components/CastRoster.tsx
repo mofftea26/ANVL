@@ -30,7 +30,7 @@ export function CastRoster({ cast, title = 'The Roster', className }: CastRoster
 
   return (
     <section className={cn('mt-12', className)} aria-label={title}>
-      <p className="anvl-display flex items-center gap-2.5 text-[11px] tracking-[0.3em] text-[var(--color-ember-bright)] before:h-px before:w-8 before:bg-[var(--color-ember)] before:content-['']">
+      <p className="anvl-display flex items-center gap-2.5 text-[11px] tracking-[0.3em] text-[var(--color-highlight-bright)] before:h-px before:w-8 before:bg-[var(--color-highlight)] before:content-['']">
         {title}
       </p>
       <ul className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -40,7 +40,7 @@ export function CastRoster({ cast, title = 'The Roster', className }: CastRoster
           return (
             <li
               key={member.id}
-              className="flex gap-4 border border-[var(--color-line)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[color-mix(in_oklab,var(--color-ember)_45%,var(--color-line))]"
+              className="flex gap-4 border border-[var(--color-line)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[color-mix(in_oklab,var(--color-highlight)_45%,var(--color-line))]"
             >
               <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-[var(--color-line)] bg-[var(--color-bg)]">
                 {avatar.type === 'image' ? (
@@ -54,7 +54,7 @@ export function CastRoster({ cast, title = 'The Roster', className }: CastRoster
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center text-[var(--color-ember)]">
+                  <span className="flex h-full w-full items-center justify-center text-[var(--color-highlight)]">
                     <Icon className="h-6 w-6" aria-hidden="true" />
                   </span>
                 )}
@@ -63,7 +63,7 @@ export function CastRoster({ cast, title = 'The Roster', className }: CastRoster
                 <p className="anvl-heading truncate text-lg leading-tight text-[var(--color-heading)]">
                   {member.name}
                 </p>
-                <p className="mt-0.5 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-[var(--color-ember-bright)]">
+                <p className="mt-0.5 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-[var(--color-highlight-bright)]">
                   <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                   {member.rank}
                 </p>

@@ -8,6 +8,7 @@ import {
   DEFAULT_THEME_CONFIG,
 } from '@/features/cms/config/cmsSiteConfig.zod'
 import { DEFAULT_FONT_LIBRARY_CONFIG } from '@/features/cms/config/fontLibrary'
+import { DEFAULT_LANDING_CONTENT } from '@/features/cms/landingContent/landingContent.zod'
 import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
 
 /** Last-resort projection when Supabase is unconfigured or the publication row is missing. */
@@ -18,6 +19,7 @@ export function defaultStorefrontProjection(): PublishedStorefrontProjection {
     fonts: DEFAULT_FONT_LIBRARY_CONFIG,
     assets: DEFAULT_ASSET_CONFIG,
     mediaIndex: [],
+    landingContent: DEFAULT_LANDING_CONTENT,
     revision: 0,
     publishedAt: null,
   }
@@ -28,8 +30,20 @@ export async function loadStorefrontProjection(): Promise<PublishedStorefrontPro
   if (!env) return defaultStorefrontProjection()
   try {
     const p = await fetchPublishedStorefrontProjection(env)
-    return p ?? defaultStorefrontProjection()
-  } catch {
+    if (!p) {
+      // Row id=1 missing or unreadable → storefront silently used the default
+      // (ember) theme. Surface it so the publish/read loop is debuggable.
+      console.warn(
+        '[storefront] storefront_publication row id=1 returned no data — using default theme/assets.',
+      )
+      return defaultStorefrontProjection()
+    }
+    return p
+  } catch (err) {
+    console.error(
+      '[storefront] failed to read storefront_publication — using default theme/assets.',
+      err,
+    )
     return defaultStorefrontProjection()
   }
 }

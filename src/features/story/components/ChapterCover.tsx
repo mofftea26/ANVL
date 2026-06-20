@@ -21,13 +21,13 @@ export function ChapterCover({ chapter, onOpen }: ChapterCoverProps) {
     <button
       type="button"
       onClick={() => onOpen(chapter.slug)}
-      className="focus-ring group relative flex w-full flex-col overflow-hidden rounded-sm border border-[var(--color-line)] bg-[var(--color-surface)] text-left transition-all duration-300 hover:-translate-y-1 hover:border-[color-mix(in_oklab,var(--color-ember)_55%,var(--color-line))]"
+      className="focus-ring group relative flex w-full flex-col overflow-hidden rounded-sm border border-[var(--color-line)] bg-[var(--color-surface)] text-left transition-all duration-300 hover:-translate-y-1 hover:border-[color-mix(in_oklab,var(--color-highlight)_55%,var(--color-line))]"
       aria-label={`Open Chapter ${number} — ${chapter.title}`}
     >
       {/* Spine accent. */}
       <span
         aria-hidden="true"
-        className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-[var(--color-ember)] via-[color-mix(in_oklab,var(--color-ember)_45%,transparent)] to-transparent opacity-80"
+        className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-[var(--color-highlight)] via-[color-mix(in_oklab,var(--color-highlight)_45%,transparent)] to-transparent opacity-80"
       />
 
       <span className="relative block aspect-[3/4] w-full overflow-hidden bg-[var(--color-bg)]">
@@ -45,13 +45,13 @@ export function ChapterCover({ chapter, onOpen }: ChapterCoverProps) {
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-t from-[var(--color-bg)] via-transparent to-transparent opacity-90"
         />
-        <span className="anvl-display absolute left-4 top-3 text-[clamp(2rem,5vw,3.5rem)] leading-none text-[var(--color-ember)] opacity-90">
+        <span className="anvl-display absolute left-4 top-3 text-[clamp(2rem,5vw,3.5rem)] leading-none text-[var(--color-highlight)] opacity-90">
           {number}
         </span>
       </span>
 
       <span className="relative flex flex-1 flex-col p-3 sm:p-5">
-        <span className="anvl-display text-[10px] tracking-[0.28em] text-[var(--color-ember-bright)] sm:text-[11px]">
+        <span className="anvl-display text-[10px] tracking-[0.28em] text-[var(--color-highlight-bright)] sm:text-[11px]">
           {chapter.subtitle || `Chapter ${number}`}
         </span>
         <span className="anvl-heading mt-1.5 text-xl font-normal leading-[0.95] text-[var(--color-heading)] sm:mt-2 sm:text-[clamp(1.5rem,3vw,2.25rem)]">
@@ -62,7 +62,7 @@ export function ChapterCover({ chapter, onOpen }: ChapterCoverProps) {
             {chapter.description}
           </span>
         ) : null}
-        <span className="mt-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text)] transition-colors group-hover:text-[var(--color-ember-bright)] sm:mt-4 sm:text-xs">
+        <span className="mt-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text)] transition-colors group-hover:text-[var(--color-highlight-bright)] sm:mt-4 sm:text-xs">
           <BookOpen className="h-4 w-4" aria-hidden="true" />
           Open the chapter
         </span>

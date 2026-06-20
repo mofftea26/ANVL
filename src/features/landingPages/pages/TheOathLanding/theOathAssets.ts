@@ -1,9 +1,11 @@
 /**
- * Asset registry + fallback system for The Oath landing.
+ * Asset registry + fallback system for Drop 01 — The Oath (key `the-oath`).
  *
- * CMS-resolved assets override code defaults when set in the admin Assets editor.
- * Missing media falls back to a duotone gradient plane with the Drop 01 logo
- * placeholder (via {@link MediaPlane}) — the page never breaks on a missing file.
+ * CMS-resolved assets override code defaults when set in the admin Assets
+ * editor. Missing media falls back to a duotone gradient plane with the drop
+ * mark (via {@link OathMediaFallback}) in the DOM and a procedural texture /
+ * the void in WebGL — the page never breaks on a missing file. The 3D emblem
+ * extrudes the `dropLogo` SVG; the cursor spotlight reveals `heroRevealMedia`.
  */
 
 import type { ResolvedDropAssets } from '@/features/cms/assets/resolvePublishedAssets'
@@ -16,44 +18,7 @@ import {
 export type OathHeroMediaMode = 'video' | 'image'
 
 export const DEFAULT_HERO_VIDEO = '/videos/WarriorHero1.mp4'
-
-export interface OathAssetConfig {
-  dropLogo?: string
-  anvlWordmark?: string
-  crestSvg?: string
-  heroMediaMode?: OathHeroMediaMode
-  heroImage?: string
-  heroDesktopVideo?: string
-  heroMobileVideo?: string
-  /** @deprecated Legacy single hero slot — still read as fallback. */
-  heroMedia?: string
-  /** @deprecated Legacy poster — still read for desktop video poster. */
-  heroPoster?: string
-  manifestoMedia?: string
-  chapterMedia?: Record<string, string>
-  metalTexture?: string
-  noiseTexture?: string
-  productImages?: Record<string, string>
-}
-
 export const OATH_LOGO_PLACEHOLDER = '/brand/the-oath-shape.svg'
-
-export const OATH_ASSETS: OathAssetConfig = {
-  dropLogo: '/brand/the-oath-shape.svg',
-  anvlWordmark: '/brand/wordmark.svg',
-  crestSvg: undefined,
-  heroMediaMode: 'video',
-  heroImage: undefined,
-  heroDesktopVideo: undefined,
-  heroMobileVideo: undefined,
-  heroMedia: undefined,
-  heroPoster: undefined,
-  manifestoMedia: undefined,
-  chapterMedia: {},
-  metalTexture: undefined,
-  noiseTexture: undefined,
-  productImages: {},
-}
 
 let cmsResolvedAssets: ResolvedDropAssets = {}
 let cmsThemedMarkups: LandingPageThemedMarkups = {}
@@ -72,24 +37,27 @@ export function oathThemedMarkup(
   return cmsThemedMarkups[key] ?? null
 }
 
-function cmsOrDefault(key: string, fallback?: string): string | undefined {
-  const cms = cmsResolvedAssets[key]
-  if (typeof cms === 'string' && cms.length > 0) return cms
-  return fallback
-}
-
-export function oathAsset<K extends keyof OathAssetConfig>(
-  key: K,
-): OathAssetConfig[K] {
-  if (key === 'chapterMedia' || key === 'productImages') {
-    return OATH_ASSETS[key]
-  }
-  return cmsOrDefault(key, OATH_ASSETS[key] as string | undefined) as OathAssetConfig[K]
+function cmsAsset(key: string): string | undefined {
+  const value = cmsResolvedAssets[key]
+  const trimmed = typeof value === 'string' ? value.trim() : ''
+  return trimmed.length > 0 ? trimmed : undefined
 }
 
 function isVideoUrl(url: string): boolean {
   return /\.(mp4|webm|mov)(\?|#|$)/i.test(url)
 }
+
+/* — Brand marks ——————————————————————————————————————————————— */
+
+export function oathDropLogo(): string {
+  return cmsAsset('dropLogo') ?? OATH_LOGO_PLACEHOLDER
+}
+
+export function oathCrestEmblem(): string {
+  return cmsAsset('crestSvg') ?? oathDropLogo()
+}
+
+/* — Hero media ————————————————————————————————————————————————— */
 
 export function oathHeroMediaMode(): OathHeroMediaMode {
   const mode = cmsResolvedAssets.heroMediaMode
@@ -127,29 +95,37 @@ export function oathHeroMobileVideo(): string {
   )
 }
 
-export function oathSceneMedia(key: 'manifestoMedia'): string | undefined {
-  return cmsOrDefault(key, OATH_ASSETS[key])
+export function oathHeroPoster(): string | undefined {
+  return cmsAsset('heroPoster')
 }
 
-export function oathChapterMedia(id: string): string | undefined {
-  return OATH_ASSETS.chapterMedia?.[id]
+/** The image revealed under the cursor spotlight; undefined → ember gradient. */
+export function oathHeroRevealMedia(): string | undefined {
+  return cmsAsset('heroRevealMedia')
 }
 
-export function oathProductImage(slug: string): string | undefined {
-  return cmsOrDefault(`productImages.${slug}`, OATH_ASSETS.productImages?.[slug])
+/* — Scene media ———————————————————————————————————————————————— */
+
+export function oathManifestoMedia(): string | undefined {
+  return cmsAsset('manifestoMedia')
 }
 
-export function oathDropLogo(): string {
-  return oathAsset('dropLogo') ?? OATH_LOGO_PLACEHOLDER
+/** Tenet media by 1-based position; undefined → duotone placeholder plane.
+ *  Keyed `chapterMedia*` to match the Oath II asset data merged in (no rename). */
+export function oathTenetMedia(position: number): string | undefined {
+  return cmsAsset(`chapterMedia${position}`)
 }
 
-export function oathCrestEmblem(): string {
-  return oathAsset('crestSvg') ?? oathDropLogo()
+/** Product render by 1-based position; falls back to the live product image. */
+export function oathProductImage(position: number): string | undefined {
+  return cmsAsset(`productImage${position}`)
 }
 
-export function duotonePlaceholder(tone = '#1a1c1f'): string {
+export function oathDuotone(tone = '#1a1c1f'): string {
   return `linear-gradient(155deg, ${tone} 0%, var(--color-bg) 80%)`
 }
+
+/* — Loading / preload (home entry overlay) ————————————————————— */
 
 export function oathLoadingEmblem(): string {
   return resolveLoadingEmblemUrl(cmsResolvedAssets)

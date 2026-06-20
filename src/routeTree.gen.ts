@@ -36,6 +36,7 @@ import { Route as AdminStoryRouteImport } from './routes/admin/story'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminFontsRouteImport } from './routes/admin/fonts'
+import { Route as AdminContentRouteImport } from './routes/admin/content'
 import { Route as AdminAssetsRouteImport } from './routes/admin/assets'
 import { Route as AccountPersonalRouteImport } from './routes/account/personal'
 import { Route as AccountAddressesRouteImport } from './routes/account/addresses'
@@ -177,6 +178,11 @@ const AdminFontsRoute = AdminFontsRouteImport.update({
   path: '/fonts',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminContentRoute = AdminContentRouteImport.update({
+  id: '/content',
+  path: '/content',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminAssetsRoute = AdminAssetsRouteImport.update({
   id: '/assets',
   path: '/assets',
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/account/addresses': typeof AccountAddressesRoute
   '/account/personal': typeof AccountPersonalRoute
   '/admin/assets': typeof AdminAssetsRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -252,6 +259,7 @@ export interface FileRoutesByTo {
   '/account/addresses': typeof AccountAddressesRoute
   '/account/personal': typeof AccountPersonalRoute
   '/admin/assets': typeof AdminAssetsRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -287,6 +295,7 @@ export interface FileRoutesById {
   '/account/addresses': typeof AccountAddressesRoute
   '/account/personal': typeof AccountPersonalRoute
   '/admin/assets': typeof AdminAssetsRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -323,6 +332,7 @@ export interface FileRouteTypes {
     | '/account/addresses'
     | '/account/personal'
     | '/admin/assets'
+    | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
     | '/admin/settings'
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/account/addresses'
     | '/account/personal'
     | '/admin/assets'
+    | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
     | '/admin/settings'
@@ -389,6 +400,7 @@ export interface FileRouteTypes {
     | '/account/addresses'
     | '/account/personal'
     | '/admin/assets'
+    | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
     | '/admin/settings'
@@ -621,6 +633,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFontsRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/content': {
+      id: '/admin/content'
+      path: '/content'
+      fullPath: '/admin/content'
+      preLoaderRoute: typeof AdminContentRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/assets': {
       id: '/admin/assets'
       path: '/assets'
@@ -681,6 +700,7 @@ const AccountRouteRouteWithChildren = AccountRouteRoute._addFileChildren(
 
 interface AdminRouteRouteChildren {
   AdminAssetsRoute: typeof AdminAssetsRoute
+  AdminContentRoute: typeof AdminContentRoute
   AdminFontsRoute: typeof AdminFontsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -691,6 +711,7 @@ interface AdminRouteRouteChildren {
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminAssetsRoute: AdminAssetsRoute,
+  AdminContentRoute: AdminContentRoute,
   AdminFontsRoute: AdminFontsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSettingsRoute: AdminSettingsRoute,

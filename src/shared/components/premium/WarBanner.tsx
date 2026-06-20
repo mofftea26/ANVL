@@ -47,11 +47,18 @@ interface WarBannerProps {
 /** Gonfalon silhouette — rectangle tapering to a single downward point. */
 const BANNER_CLIP = 'polygon(0 0, 100% 0, 100% 84%, 50% 100%, 0 84%)'
 
-/** Forged-metal gradient for the crossbar + finials. */
+/**
+ * Forged-metal gradient for the crossbar + finials — derived from the theme's
+ * graphite/surface tokens so it tracks the assigned CMS palette instead of a
+ * fixed steel grey.
+ */
 const FORGE_METAL =
-  'linear-gradient(180deg, #7a7d81 0%, #45484c 38%, #26282b 70%, #161719 100%)'
+  'linear-gradient(180deg, color-mix(in srgb, var(--color-graphite) 62%, var(--anvl-bone)) 0%, var(--color-graphite) 38%, color-mix(in srgb, var(--color-graphite) 52%, var(--color-bg)) 70%, var(--color-surface-elevated) 100%)'
 
-function duotone(tone = '#1a1c1f'): string {
+/** Default fabric tone follows the theme's elevated surface. */
+const DEFAULT_BANNER_TONE = 'var(--color-surface-elevated)'
+
+function duotone(tone = DEFAULT_BANNER_TONE): string {
   return `linear-gradient(158deg, ${tone} 0%, var(--color-bg) 82%)`
 }
 
@@ -70,7 +77,7 @@ const EMBLEM_SIZE = {
  * product reveal and across the warrior pages.
  */
 export function WarBanner({
-  tone = '#1a1c1f',
+  tone = DEFAULT_BANNER_TONE,
   media,
   alt = '',
   label,
@@ -154,7 +161,7 @@ export function WarBanner({
           className="anvl-banner-ground-glow pointer-events-none absolute -bottom-2 left-1/2 z-0 h-12 w-[88%] -translate-x-1/2 rounded-[100%] opacity-90"
           style={{
             background:
-              'radial-gradient(ellipse, color-mix(in srgb, var(--color-ember) 26%, transparent) 0%, transparent 72%)',
+              'radial-gradient(ellipse, color-mix(in srgb, var(--color-highlight) 26%, transparent) 0%, transparent 72%)',
             filter: 'blur(10px)',
           }}
         />
@@ -183,12 +190,12 @@ export function WarBanner({
       {/* Two hang-straps from the bar to the fabric. */}
       <span
         aria-hidden="true"
-        className="anvl-banner-strap-left absolute left-[22%] top-1 z-10 h-5 w-1.5 origin-top rounded-sm bg-[var(--color-ember)]/70 transition-transform duration-300 ease-out"
+        className="anvl-banner-strap-left absolute left-[22%] top-1 z-10 h-5 w-1.5 origin-top rounded-sm bg-[var(--color-highlight)]/70 transition-transform duration-300 ease-out"
         style={{ transform: tilt.active ? `rotate(${-strapTilt}deg)` : undefined }}
       />
       <span
         aria-hidden="true"
-        className="anvl-banner-strap-right absolute right-[22%] top-1 z-10 h-5 w-1.5 origin-top rounded-sm bg-[var(--color-ember)]/70 transition-transform duration-300 ease-out"
+        className="anvl-banner-strap-right absolute right-[22%] top-1 z-10 h-5 w-1.5 origin-top rounded-sm bg-[var(--color-highlight)]/70 transition-transform duration-300 ease-out"
         style={{ transform: tilt.active ? `rotate(${strapTilt}deg)` : undefined }}
       />
 
@@ -234,7 +241,7 @@ export function WarBanner({
                   width={emblem.px}
                   height={emblem.py}
                   tint="var(--color-heading)"
-                  glow="var(--color-ember)"
+                  glow="var(--color-highlight)"
                 />
               </div>
             ) : (
@@ -246,7 +253,7 @@ export function WarBanner({
                   className={cn(
                     elevated ? 'h-[68%] w-auto opacity-70' : 'h-[58%] w-auto opacity-65',
                   )}
-                  style={{ filter: 'drop-shadow(0 0 22px var(--color-ember-soft))' }}
+                  style={{ filter: 'drop-shadow(0 0 22px var(--color-highlight-soft))' }}
                 />
               </div>
             )}
@@ -277,15 +284,15 @@ export function WarBanner({
             {/* Side ember rails only. */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-[14%] left-[6px] top-[8%] w-px bg-gradient-to-b from-[var(--color-ember)]/50 via-[var(--color-ember)]/28 to-transparent"
+              className="pointer-events-none absolute bottom-[14%] left-[6px] top-[8%] w-px bg-gradient-to-b from-[var(--color-highlight)]/50 via-[var(--color-highlight)]/28 to-transparent"
             />
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-[14%] right-[6px] top-[8%] w-px bg-gradient-to-b from-[var(--color-ember)]/50 via-[var(--color-ember)]/28 to-transparent"
+              className="pointer-events-none absolute bottom-[14%] right-[6px] top-[8%] w-px bg-gradient-to-b from-[var(--color-highlight)]/50 via-[var(--color-highlight)]/28 to-transparent"
             />
 
             {label ? (
-              <span className="anvl-display absolute left-1/2 top-4 z-10 -translate-x-1/2 text-[11px] tracking-[0.28em] text-[var(--color-ember-bright)]">
+              <span className="anvl-display absolute left-1/2 top-4 z-10 -translate-x-1/2 text-[11px] tracking-[0.28em] text-[var(--color-highlight-bright)]">
                 {label}
               </span>
             ) : null}

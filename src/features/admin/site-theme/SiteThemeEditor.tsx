@@ -1,4 +1,4 @@
-import { Check, Plus, Save, Trash2 } from 'lucide-react'
+import { Check, Copy, Monitor, Plus, RotateCcw, Save, Smartphone, Sparkles, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
@@ -14,14 +14,19 @@ import {
 } from '@/features/cms/config/cmsSiteConfig.settings'
 import type { ThemePalette } from '@/features/cms/config/cmsSiteConfig.zod'
 import {
+  ANVL_PRESETS,
   createThemePreset,
   finalizeThemePalette,
-  THEME_EDITOR_COLOR_FIELDS,
   type ThemeAppearance,
   type ThemeLibraryConfig,
   type ThemePreset,
 } from '@/features/cms/config/themeLibrary'
-import { SiteThemePreview } from './SiteThemePreview'
+import { THEME_EDITOR_SECTIONS } from '@/features/cms/config/themeTokens'
+import { ThemeColorField } from './ThemeColorField'
+import { ThemeComponentPreview } from './ThemeComponentPreview'
+import { ThemeContrastReport } from './ThemeContrastReport'
+
+type PreviewMode = 'desktop' | 'mobile'
 
 function useThemeLibrary(): ThemeLibraryConfig {
   return useSyncExternalStore(
@@ -38,6 +43,7 @@ export function SiteThemeEditor() {
   const [library, setLibrary] = useState<ThemeLibraryConfig>(stored)
   const [editingId, setEditingId] = useState(stored.activeThemeId)
   const [saving, setSaving] = useState(false)
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop')
 
   useEffect(() => {
     setLibrary(stored)
@@ -46,6 +52,10 @@ export function SiteThemeEditor() {
 
   const editingPreset =
     library.themes.find((t) => t.id === editingId) ?? library.themes[0]
+  const isDirty = useMemo(
+    () => JSON.stringify(library) !== JSON.stringify(stored),
+    [library, stored],
+  )
 
   const save = useCallback(() => {
     void (async () => {
@@ -72,10 +82,10 @@ export function SiteThemeEditor() {
         loading={saving}
         onClick={save}
       >
-        {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save theme'}
+        {saving ? 'Saving…' : showSuccess ? 'Saved' : isDirty ? 'Save theme •' : 'Save theme'}
       </AdminTopbarChipButton>
     ),
-    [save, saving, showSuccess],
+    [save, saving, showSuccess, isDirty],
   )
 
   useEffect(() => {
@@ -104,11 +114,33 @@ export function SiteThemeEditor() {
     const appearance: ThemeAppearance =
       window.confirm('Use light appearance? Cancel for dark.') ? 'light' : 'dark'
     const preset = createThemePreset(name.trim(), appearance)
-    setLibrary((prev) => ({
-      ...prev,
-      themes: [...prev.themes, preset],
-    }))
+    setLibrary((prev) => ({ ...prev, themes: [...prev.themes, preset] }))
     setEditingId(preset.id)
+  }
+
+  function duplicateTheme() {
+    if (!editingPreset) return
+    const copy: ThemePreset = {
+      ...editingPreset,
+      id: `theme-${Date.now()}`,
+      name: `${editingPreset.name} copy`,
+      recommended: undefined,
+    }
+    setLibrary((prev) => ({ ...prev, themes: [...prev.themes, copy] }))
+    setEditingId(copy.id)
+    toast.success(`Duplicated “${editingPreset.name}.”`)
+  }
+
+  function resetTheme() {
+    if (!editingPreset) return
+    const builtIn = ANVL_PRESETS.find((p) => p.id === editingPreset.id)
+    if (!builtIn) {
+      toast.error('Only built-in presets can be reset.')
+      return
+    }
+    if (!window.confirm(`Reset “${editingPreset.name}” to its brand defaults?`)) return
+    updatePreset(() => ({ ...builtIn }))
+    toast.success(`Reset “${editingPreset.name}.”`)
   }
 
   function removeTheme() {
@@ -122,7 +154,7 @@ export function SiteThemeEditor() {
       const themes = prev.themes.filter((t) => t.id !== editingPreset.id)
       const activeThemeId =
         prev.activeThemeId === editingPreset.id ? themes[0].id : prev.activeThemeId
-      return { activeThemeId, themes }
+      return { ...prev, activeThemeId, themes }
     })
     setEditingId(library.themes.find((t) => t.id !== editingPreset.id)?.id ?? '')
   }
@@ -137,10 +169,14 @@ export function SiteThemeEditor() {
   return (
     <div className="space-y-6" data-testid="site-theme-editor">
       <p className="text-sm text-[var(--color-text-muted)]">
-        Create color themes, pick which one is live on the storefront, and save to Supabase.
+        Ten brand presets ship ready to use. Edit colors, validate contrast, pick
+        the live storefront theme, and save to Supabase.
+        {isDirty ? (
+          <span className="ml-1 text-[var(--color-highlight)]">Unsaved changes.</span>
+        ) : null}
       </p>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] xl:items-start">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] xl:items-start">
         <div className="space-y-6">
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[12rem] flex-1">
@@ -150,9 +186,9 @@ export function SiteThemeEditor() {
                 onChange={setEditingId}
                 options={library.themes.map((t) => ({
                   value: t.id,
-                  label: t.name,
+                  label: t.recommended ? `${t.name} ★` : t.name,
                   description:
-                    t.id === library.activeThemeId ? 'Live on storefront' : undefined,
+                    t.id === library.activeThemeId ? 'Live on storefront' : t.description,
                 }))}
               />
             </div>
@@ -160,26 +196,50 @@ export function SiteThemeEditor() {
               label="Live storefront theme"
               value={library.activeThemeId}
               onChange={setLiveTheme}
-              options={library.themes.map((t) => ({
-                value: t.id,
-                label: t.name,
-              }))}
+              options={library.themes.map((t) => ({ value: t.id, label: t.name }))}
             />
+            <div className="flex gap-2">
+              <AdminTopbarChipButton
+                type="button"
+                size="icon"
+                icon={<Plus size={16} />}
+                onClick={addTheme}
+                aria-label="New theme"
+                title="New theme"
+              />
+              <AdminTopbarChipButton
+                type="button"
+                size="icon"
+                icon={<Copy size={16} />}
+                onClick={duplicateTheme}
+                aria-label="Duplicate theme"
+                title="Duplicate theme"
+              />
+              <AdminTopbarChipButton
+                type="button"
+                size="icon"
+                icon={<RotateCcw size={16} />}
+                onClick={resetTheme}
+                aria-label="Reset to preset"
+                title="Reset to brand preset"
+              />
+              <AdminTopbarChipButton
+                type="button"
+                size="icon"
+                variant="destructive"
+                icon={<Trash2 size={16} />}
+                onClick={removeTheme}
+                aria-label="Delete theme"
+                title="Delete theme"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <AdminTopbarChipButton type="button" icon={<Plus size={14} />} onClick={addTheme}>
-              New theme
-            </AdminTopbarChipButton>
-            <AdminTopbarChipButton
-              type="button"
-              variant="destructive"
-              icon={<Trash2 size={14} />}
-              onClick={removeTheme}
-            >
-              Delete
-            </AdminTopbarChipButton>
-          </div>
+          {editingPreset.recommended ? (
+            <p className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-3 py-1 text-xs text-[var(--color-accent)]">
+              <Sparkles size={12} /> Recommended for Drop 01
+            </p>
+          ) : null}
 
           <AdminFormField label="Theme name">
             <AdminInput
@@ -206,34 +266,66 @@ export function SiteThemeEditor() {
             ]}
           />
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {THEME_EDITOR_COLOR_FIELDS.map(({ key, label, input }) => (
-              <AdminFormField key={key} label={label}>
-                {input === 'color' ? (
-                  <input
-                    type="color"
-                    value={
-                      editingPreset.palette[key].startsWith('#')
-                        ? editingPreset.palette[key]
-                        : '#0b0b0c'
-                    }
-                    onChange={(e) => setPaletteField(key, e.target.value)}
-                    className="h-10 w-full cursor-pointer rounded-lg border border-[var(--color-line)] bg-transparent"
+          {/* Normalized palette (§12) — a small, conventional token set. Every
+              other effect color is derived from these by themeConfigToCssVars. */}
+          {THEME_EDITOR_SECTIONS.map((section) => (
+            <section key={section.id} className="space-y-3">
+              <div>
+                <h2 className="text-sm font-medium text-[var(--color-heading)]">
+                  {section.title}
+                </h2>
+                {section.description ? (
+                  <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+                    {section.description}
+                  </p>
+                ) : null}
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {section.fields.map(({ key, label, allowAlpha }) => (
+                  <ThemeColorField
+                    key={key}
+                    label={label}
+                    value={editingPreset.palette[key] ?? ''}
+                    allowAlpha={allowAlpha}
+                    onChange={(value) => setPaletteField(key, value)}
                   />
-                ) : (
-                  <AdminInput
-                    value={editingPreset.palette[key]}
-                    onChange={(e) => setPaletteField(key, e.target.value)}
-                    placeholder="rgba(231, 228, 223, 0.14)"
-                  />
-                )}
-              </AdminFormField>
-            ))}
-          </div>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
 
-        <div className="xl:sticky xl:top-6">
-          <SiteThemePreview preset={editingPreset} />
+        <div className="space-y-4 xl:sticky xl:top-6">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+              Live preview
+            </span>
+            <div className="flex gap-1.5">
+              <AdminTopbarChipButton
+                type="button"
+                size="icon"
+                variant={previewMode === 'desktop' ? 'primary' : undefined}
+                icon={<Monitor size={15} />}
+                onClick={() => setPreviewMode('desktop')}
+                aria-label="Desktop preview"
+                title="Desktop preview"
+              />
+              <AdminTopbarChipButton
+                type="button"
+                size="icon"
+                variant={previewMode === 'mobile' ? 'primary' : undefined}
+                icon={<Smartphone size={15} />}
+                onClick={() => setPreviewMode('mobile')}
+                aria-label="Mobile preview"
+                title="Mobile preview"
+              />
+            </div>
+          </div>
+          <ThemeComponentPreview preset={editingPreset} mode={previewMode} />
+          <ThemeContrastReport
+            palette={editingPreset.palette}
+            onApplyFix={(key, value) => setPaletteField(key, value)}
+          />
         </div>
       </div>
     </div>

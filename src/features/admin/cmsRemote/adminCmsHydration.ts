@@ -8,6 +8,8 @@ import {
 import { parseAssetConfig } from '@/features/cms/config/cmsSiteConfig.zod'
 import { parseFontLibrary } from '@/features/cms/config/fontLibrary'
 import { parseThemeLibrary } from '@/features/cms/config/themeLibrary'
+import { writeLandingContentToStorage } from '@/features/cms/landingContent/landingContent.settings'
+import { parseLandingContentConfig } from '@/features/cms/landingContent/landingContent.zod'
 import {
   beginAdminCmsRemoteHydration,
   endAdminCmsRemoteHydration,
@@ -23,7 +25,9 @@ export async function hydrateAdminCmsFromSupabase(
   try {
     const settingsRes = await client
       .from('cms_settings')
-      .select('active_landing_page_key, theme_config, font_config, asset_config')
+      .select(
+        'active_landing_page_key, theme_config, font_config, asset_config, landing_content',
+      )
       .eq('id', 1)
       .maybeSingle()
 
@@ -45,6 +49,9 @@ export async function hydrateAdminCmsFromSupabase(
     writeThemeLibraryToStorage(parseThemeLibrary(settings.theme_config))
     writeFontLibraryToStorage(parseFontLibrary(settings.font_config))
     writeAssetConfigToStorage(parseAssetConfig(settings.asset_config))
+    writeLandingContentToStorage(
+      parseLandingContentConfig(settings.landing_content),
+    )
   } finally {
     endAdminCmsRemoteHydration()
   }

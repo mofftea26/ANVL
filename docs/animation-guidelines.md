@@ -47,16 +47,41 @@ Best for: purely presentational, immediate, state-driven.
 // src/shared/lib/gsap.ts — the ONLY place plugins are registered
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { SplitText } from 'gsap/SplitText'
 import { useGSAP } from '@gsap/react'
 
 if (typeof window !== 'undefined') {
-  gsap.registerPlugin(useGSAP, ScrollTrigger)
+  gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText)
 }
 
-export { gsap, ScrollTrigger, useGSAP }
+export { gsap, ScrollTrigger, SplitText, useGSAP }
 ```
 
 Always import from `src/shared/lib/gsap.ts`, never directly from the `gsap` package in component files.
+
+### SplitText (char/word/line reveals)
+
+SplitText is free since GSAP 3.13 and registered alongside ScrollTrigger. Use
+the page-level wrapper (`TheOathLanding/motion/splitTextReveal.ts` is the
+reference — it also drives the hero's blur-rise) with `mask` for the
+overflow-clipped reveal look; SplitText's
+default `aria: 'auto'` keeps the original text readable to assistive tech.
+**Always call the returned `revert()` in the matchMedia cleanup** so static
+branches get the untouched DOM back. Only split inside desktop/tablet motion
+branches — static branches reveal the unsplit block.
+
+### DOM ⇄ WebGL motion bridge (The Oath pattern)
+
+When GSAP must drive WebGL uniforms, never subscribe React state to scroll.
+Use a plain mutable object held in a ref (`motion/oathMotionState.ts`):
+ScrollTrigger `onUpdate` **writes** progress numbers; the R3F `useFrame`
+**reads** and lerps real uniforms toward them. The lerp smooths scrub jitter
+and the bridge costs zero re-renders. The same object also carries the single
+smoothed **pointer** position (`usePointerMotion`), so the custom cursor and
+the hero spotlight reveal share one source instead of running parallel RAF
+loops. WebGL itself mounts only behind a gate: client + `isWebglAvailable()` +
+`≥768px` + `prefers-reduced-motion: no-preference`, with the three.js import
+behind `React.lazy` so it stays in the `vendor-three` chunk.
 
 ### useGSAP hook
 

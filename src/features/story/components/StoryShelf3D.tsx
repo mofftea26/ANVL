@@ -14,7 +14,7 @@ export default function StoryShelf3D({ chapters, onOpen }: StoryShelf3DProps) {
     <Section>
       <Container>
         <RevealOnScroll>
-          <p className="anvl-display flex items-center gap-2.5 text-xs tracking-[0.3em] text-[var(--color-ember-bright)] before:h-px before:w-8 before:bg-[var(--color-ember)] before:content-['']">
+          <p className="anvl-display flex items-center gap-2.5 text-xs tracking-[0.3em] text-[var(--color-highlight-bright)] before:h-px before:w-8 before:bg-[var(--color-highlight)] before:content-['']">
             The Chronicle
           </p>
           <h2 className="anvl-heading mt-4 max-w-2xl text-[clamp(2rem,5vw,3.25rem)] font-normal leading-[0.95]">

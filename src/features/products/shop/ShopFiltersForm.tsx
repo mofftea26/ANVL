@@ -59,8 +59,8 @@ export function ShopFiltersForm({
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="anvl-micro mb-3">Status</p>
+      <fieldset>
+        <legend className="anvl-micro mb-3">Status</legend>
         <div className="flex flex-col gap-2">
           {SHOP_STATUS_FILTERS.map((s) => (
             <label key={s} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -74,7 +74,7 @@ export function ShopFiltersForm({
             </label>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       <div>
         <label htmlFor="shop-filter-drop" className="anvl-micro mb-2 block">
@@ -95,8 +95,8 @@ export function ShopFiltersForm({
         </select>
       </div>
 
-      <div>
-        <p className="anvl-micro mb-3">Listing source</p>
+      <fieldset>
+        <legend className="anvl-micro mb-3">Listing source</legend>
         <div className="flex flex-col gap-2 text-sm">
           {(
             [
@@ -117,7 +117,7 @@ export function ShopFiltersForm({
             </label>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       <div>
         <label htmlFor="shop-filter-color" className="anvl-micro mb-2 block">

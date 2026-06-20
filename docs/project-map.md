@@ -157,6 +157,7 @@ Heavy CMS editor split into subfolders:
 | `seo/` | `SeoCmsHub` — per-page SEO editor |
 | `site-home/` | Site homepage mode editor |
 | `site-layout/` | Site layout editor (nav links, footer) |
+| `landing-content/` | Landing Content editor (`/admin/content`): RHF form over each page's content schema, defaults as placeholders |
 | `site-seo/` | Global site SEO editor, marketing tools |
 | `site-theme/` | Site theme editor |
 | `website-layout/` | Website layout service + storage (nav + footer JSON) |
@@ -171,7 +172,8 @@ Static, cinematic landing experiences live in code (one folder per page). The CM
 | `registry.ts` | Single source of truth: lazy page components + `resolveLandingPage`, `resolveActiveLandingPageKey`, `listLandingPages`, `DEFAULT_LANDING_PAGE_KEY` |
 | `activeLandingPage.ts` | `getActiveLandingPageKey()` — seam for the CMS `activeLandingPageKey` read |
 | `LandingPageRenderer.tsx` | Suspense + branded fallback; renders the active page's lazy chunk |
-| `pages/TheOathLanding/` | Drop 01 — The Oath: `index.tsx` (composition), `data.ts` (copy + product fallback), `animations.ts` (GSAP hooks), `components/` (Hero, Manifesto, Tenets, Pieces, banner card, Close, CTA) |
+| `assetSlots.ts` | Code-defined asset slots (general + per-drop) the admin Assets editor assigns media to |
+| `pages/TheOathLanding/` | Drop 01 — The Oath (the single merged WebGL + GSAP film): `index.tsx` (composition), `theOathAssets.ts` / `theOathAssetSlots.ts` (asset binding + slots), `content/` (Zod schema + designed defaults + `resolveOathContent`), `components/` (OathHero, OathManifesto, OathTenets, ProductRevealSequence, OathFinale, OathCursor, OathProgressRail, OathCtaLink, OathMediaFallback, OathCmsMark), `motion/` (`oathMotionState` bridge, per-scene `buildOath*` builders, spotlight, SplitText wrapper, magnetics), `hooks/` (scroll timeline, pointer), `webgl/` (canvas gate, lazy `OathCanvas`, `Monolith`/`AnvlOath3D`/`DustMotes`, dust shader, brand colors) |
 | `__tests__/registry.test.ts` | Registry resolution + fallback behavior |
 
 > The legacy act/drop-builder landing system (`marketing/act-presets`, `marketing/public-landing`, `cms/landing`) is still present for the admin drop editor and is slated for removal in the CMS-cleanup phase. The public home route no longer uses it.
@@ -186,6 +188,7 @@ Storefront-safe CMS reads:
 | `data/cms.mock.ts` | Mock CMS data for development |
 | `hooks/` | `useLandingCms`, `useStorefrontActiveDrop`, `useSiteHomepageMode`, `useStorefrontPublication`, `useActiveLandingPageKey` (new model) |
 | `landingPageActiveKey.settings.ts` | **New model:** local store + parse + loader/sync for the active landing-page key |
+| `landingContent/` | Landing content envelope: Zod parse (`landingContent.zod.ts`) + local store/sync (`landingContent.settings.ts`) for per-landing-key copy blobs |
 | `landing/` | `composeLandingPageFromDrop`, `landingCmsRead`, `landingActs.normalize`, `landingActs.types`, constants |
 | `layout/websiteLayout.types.ts` | Website layout type (nav, footer, announcement) |
 | `read/` | Thin read facades: `dropRuntime`, `landingCmsRuntime`, `cmsSubscriptions` |

@@ -54,10 +54,11 @@ describe('SiteThemeEditor', () => {
     saveAsync.mockResolvedValue(undefined)
   })
 
-  it('renders intro copy and live preview', () => {
+  it('renders intro copy, component preview, and contrast report', () => {
     renderEditor()
-    expect(screen.getByText(/Create color themes/i)).toBeTruthy()
-    expect(screen.getByTestId('site-theme-preview')).toBeTruthy()
+    expect(screen.getByText(/Ten brand presets/i)).toBeTruthy()
+    expect(screen.getByTestId('theme-component-preview')).toBeTruthy()
+    expect(screen.getByTestId('theme-contrast-report')).toBeTruthy()
   })
 
   it('registers Save theme in the admin topbar actions slot', async () => {

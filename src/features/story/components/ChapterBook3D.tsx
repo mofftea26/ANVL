@@ -7,6 +7,8 @@ import { StudioStage } from '@/features/story/components/book3d/StudioStage'
 import { resolveBookCover } from '@/features/story/components/book3d/bookConfig'
 import { Book } from '@/features/story/components/book3d/Book'
 import { OpenFlash } from '@/features/story/components/book3d/OpenFlash'
+import { EmberField } from '@/features/story/components/book3d/EmberField'
+import { readThemeCssColor } from '@/shared/lib/themeColor'
 
 function easeInOutCubic(p: number): number {
   return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
@@ -35,7 +37,7 @@ export default function ChapterBook3D(props: ChapterBook3DProps) {
     <div className="relative h-[min(90svh,64rem)] w-[min(98vw,80rem)]">
       <Canvas
         camera={{ position: [0, 0, 4.6], fov: 38 }}
-        gl={{ alpha: true, antialias: true }}
+        gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
         dpr={[1, maxDpr]}
         style={{ touchAction: 'none' }}
       >
@@ -92,17 +94,49 @@ function BookScene({ chapter, spreads, current, originRect, onTurn }: ChapterBoo
   })
 
   return (
-    <group ref={introRef}>
-      <Book
-        chapter={chapter}
-        open={opened}
-        hovered
-        spin={false}
-        spreads={spreads}
-        current={current}
-        onTurned={onTurn}
-      />
-      <OpenFlash color={cover.colors.foil} seq={flashSeq} />
-    </group>
+    <>
+      <group ref={introRef}>
+        <Book
+          chapter={chapter}
+          open={opened}
+          hovered
+          spin={false}
+          spreads={spreads}
+          current={current}
+          onTurned={onTurn}
+        />
+        <OpenFlash color={cover.colors.foil} seq={flashSeq} />
+      </group>
+      {/* The reading room: drifting forge embers + a candle-warm flicker. The
+          atmosphere stays outside the fly-in group so it never travels. */}
+      <EmberField color={cover.colors.foil} active={opened} />
+      <CandleFlicker active={opened} />
+    </>
+  )
+}
+
+/** A faint warm key that breathes like candlelight once the book lies open. */
+function CandleFlicker({ active }: { active: boolean }) {
+  const light = useRef<THREE.PointLight>(null)
+  // Candle glow follows the active theme ember (CMS-controlled).
+  const candleColor = useMemo(() => readThemeCssColor('--color-highlight', '#ffb066'), [])
+  useFrame((state, delta) => {
+    const l = light.current
+    if (!l) return
+    const t = state.clock.elapsedTime
+    const target = active
+      ? 0.5 + 0.07 * Math.sin(t * 7.3) + 0.05 * Math.sin(t * 13.1) + 0.03 * Math.sin(t * 23.7)
+      : 0
+    l.intensity += (target - l.intensity) * Math.min(1, delta * 6)
+  })
+  return (
+    <pointLight
+      ref={light}
+      position={[1.5, 0.6, 1.9]}
+      color={candleColor}
+      intensity={0}
+      distance={7}
+      decay={1.7}
+    />
   )
 }

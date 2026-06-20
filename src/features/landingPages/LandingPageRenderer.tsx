@@ -27,6 +27,7 @@ interface LandingPageRendererProps {
   assets: ResolvedDropAssets
   loadingEmblemMarkup?: string | null
   themedMarkups?: LandingPageThemedMarkups
+  landingContent?: Record<string, unknown>
 }
 
 const EXIT_MS = 680
@@ -65,6 +66,7 @@ export function LandingPageRenderer({
   assets,
   loadingEmblemMarkup = null,
   themedMarkups,
+  landingContent,
 }: LandingPageRendererProps) {
   const { completeHomeEntry } = useLandingEntry()
   const definition = resolveLandingPage(activeKey)
@@ -146,7 +148,12 @@ export function LandingPageRenderer({
             onProgress={handleProgress}
             onReady={handleReady}
           >
-            <Page products={products} assets={assets} themedMarkups={themedMarkups} />
+            <Page
+              products={products}
+              assets={assets}
+              themedMarkups={themedMarkups}
+              landingContent={landingContent}
+            />
           </LandingPageReadyGate>
         </Suspense>
       </div>

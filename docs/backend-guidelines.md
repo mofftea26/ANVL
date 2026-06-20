@@ -47,6 +47,20 @@ Commerce is handled by **Shopify** (when `VITE_SHOPIFY_*` are set) or falls back
 
 Created via `createAnvlSupabaseClient()` in `src/features/cms/api/createAnvlSupabaseClient.ts`. Uses the anon key. Safe in browser. Reads only `storefront_publication`.
 
+> **2026-06-12:** `cms_settings` and `storefront_publication` gained a
+> `landing_content jsonb NOT NULL DEFAULT '{}'` column (migration
+> `20260612073914_landing_content_the_forge`) carrying per-landing-key copy
+> blobs `{ [landingKey]: {...} }`. Validated client-side by each landing
+> page's Zod schema; code defaults fill any gap. Existing row RLS covers the
+> column — no policy changes.
+>
+> **2026-06-20:** the two Drop 01 pages were merged into one key, `the-oath`
+> (migration `20260628120000_consolidate_oath_landing_pages`): the extra
+> `the-oath-2` asset slots (`chapterMedia1–4`, `manifestoMedia`) were folded
+> into the `the-oath` drop (existing values win; dead `interludeVideo`
+> dropped), the `the-oath-2` `landing_pages` row was deleted, and the active
+> key was forced to `the-oath`. RLS unchanged.
+
 ### Admin browser client
 
 Created in `src/features/admin/auth/adminSupabaseBrowserClient.ts`. Uses anon key + session from Supabase Auth. Admin operations are protected by RLS (requires `cms_profiles.role = 'admin'`).

@@ -11,6 +11,12 @@ export interface LandingPageComponentProps {
   products: Product[]
   assets: ResolvedDropAssets
   themedMarkups?: LandingPageThemedMarkups
+  /**
+   * CMS copy overrides for this page (raw slice from
+   * `storefront_publication.landing_content[pageKey]`). Each page parses its
+   * own slice with its own Zod schema; code defaults fill every gap.
+   */
+  landingContent?: Record<string, unknown>
 }
 
 export type LandingPageComponent = ComponentType<LandingPageComponentProps>

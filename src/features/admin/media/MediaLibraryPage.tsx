@@ -66,7 +66,7 @@ export function MediaLibraryPage() {
       {query.isLoading ? (
         <p className="text-sm text-[var(--color-text-muted)]">Loading library…</p>
       ) : query.isError ? (
-        <p role="alert" className="text-sm text-red-300">
+        <p role="alert" className="text-sm text-[color:var(--color-danger)]">
           {(query.error as Error).message}
         </p>
       ) : (

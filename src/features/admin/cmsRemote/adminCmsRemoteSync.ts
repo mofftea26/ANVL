@@ -3,6 +3,7 @@ import { canWriteCmsDraftsToSupabase } from '@/features/cms/api/cmsPersistenceMo
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { fetchCmsProfileRole } from '@/features/admin/auth/adminCmsProfileRole'
 import { readActiveLandingPageFromStorage } from '@/features/cms/landingPageActiveKey.settings'
+import { readLandingContentFromStorage } from '@/features/cms/landingContent/landingContent.settings'
 import {
   readAssetConfigFromStorage,
   readFontLibraryFromStorage,
@@ -51,6 +52,7 @@ export async function flushAdminCmsRemoteSync(): Promise<
   const themeConfig = readThemeLibraryFromStorage()
   const fontConfig = readFontLibraryFromStorage()
   const assetConfig = readAssetConfigFromStorage()
+  const landingContent = readLandingContentFromStorage()
 
   const mediaList = await listMediaAssets(client)
   const mediaIndex = mediaList.ok ? buildMediaIndex(mediaList.assets) : []
@@ -60,6 +62,7 @@ export async function flushAdminCmsRemoteSync(): Promise<
     theme_config: themeConfig,
     font_config: fontConfig,
     asset_config: assetConfig,
+    landing_content: landingContent,
     updated_at: new Date().toISOString(),
   }
 
@@ -75,6 +78,7 @@ export async function flushAdminCmsRemoteSync(): Promise<
     theme_config: themeConfig,
     font_config: fontConfig,
     asset_config: assetConfig,
+    landing_content: landingContent,
     media_index: mediaIndex,
     published_at: new Date().toISOString(),
     revision: Date.now(),

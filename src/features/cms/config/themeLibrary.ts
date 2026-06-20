@@ -1,5 +1,7 @@
 import { z } from 'zod'
+import { bestForeground, mix } from '@/shared/lib/color'
 import {
+  collectPaletteOverrides,
   DEFAULT_BONE_LIGHT_PALETTE,
   DEFAULT_THEME_PALETTE,
   themeModeSchema,
@@ -8,6 +10,7 @@ import {
   type ThemeMode,
   type ThemePalette,
 } from './cmsSiteConfig.zod'
+import { ANVL_THEME_PRESETS, type RawThemePreset } from './themePresets'
 
 export const themeAppearanceSchema = z.enum(['dark', 'light'])
 
@@ -16,6 +19,10 @@ export const themePresetSchema = z.object({
   name: z.string().min(1),
   appearance: themeAppearanceSchema,
   palette: themePaletteSchema,
+  /** Marks the recommended Drop 01 launch theme (§4.1). */
+  recommended: z.boolean().optional(),
+  description: z.string().optional(),
+  recommendedFor: z.array(z.string()).optional(),
 })
 
 export const themeLibraryConfigSchema = z.object({
@@ -29,95 +36,144 @@ export type ThemeLibraryConfig = z.infer<typeof themeLibraryConfigSchema>
 
 export const DEFAULT_THEME_PRESET_ID = 'oath-dark-default'
 
-/** Offline / empty-Supabase fallback — live values come from `storefront_publication.theme_config`. */
+export function appearanceToDataTheme(appearance: ThemeAppearance): ThemeMode {
+  return appearance === 'light' ? 'bone-light' : 'oath-dark'
+}
+
+/**
+ * Fill a palette into a complete, normalized 15-token set.
+ *
+ * Accepts current, pre-consolidation, or pre-ember-rename shapes — legacy keys
+ * are mapped onto the normalized palette. Anything the editor/preset did not set
+ * explicitly is derived from the appearance default + the palette's own colors:
+ * foregrounds are contrast-chosen (never assume white) and the muted surface is
+ * mixed from the card so it tracks custom themes. Explicit values always win
+ * (fill-only) so editor edits stick.
+ */
+export function finalizeThemePalette(
+  input: Partial<ThemePalette> | Record<string, unknown> | undefined,
+  appearance: ThemeAppearance,
+): ThemePalette {
+  const base = appearance === 'light' ? DEFAULT_BONE_LIGHT_PALETTE : DEFAULT_THEME_PALETTE
+  const overrides = collectPaletteOverrides(input ?? {})
+  const provided = (key: keyof ThemePalette) => overrides[key] !== undefined
+  const p: ThemePalette = { ...base, ...overrides }
+
+  // Muted surface tracks the card so custom themes stay cohesive.
+  if (!provided('muted')) p.muted = mix(p.card, p.foreground, 0.05)
+  // Contrast-chosen foregrounds for colored surfaces — never assume white.
+  if (!provided('cardForeground')) p.cardForeground = p.foreground
+  if (!provided('primaryForeground')) p.primaryForeground = bestForeground(p.primary)
+  if (!provided('accentForeground')) p.accentForeground = bestForeground(p.accent)
+  // Focus ring follows the primary brand color by default.
+  if (!provided('ring')) p.ring = p.primary
+
+  return p
+}
+
+/** Finalize a brand-authored raw preset into a complete `ThemePreset`. */
+export function buildPreset(raw: RawThemePreset): ThemePreset {
+  return {
+    id: raw.key,
+    name: raw.label,
+    appearance: raw.appearance,
+    palette: finalizeThemePalette(raw.palette, raw.appearance),
+    recommended: raw.recommended,
+    description: raw.description,
+    recommendedFor: raw.recommendedFor,
+  }
+}
+
+/** All brand-authored presets, finalized (§4). */
+export const ANVL_PRESETS: ThemePreset[] = ANVL_THEME_PRESETS.map(buildPreset)
+
+/**
+ * Offline / empty-Supabase fallback — live values come from
+ * `storefront_publication.theme_config`.
+ *
+ * Ships the two legacy presets (active default unchanged) plus all ten
+ * brand-authored presets. Oath Obsidian is marked `recommended` but is NOT the
+ * live default — editors switch to it from `/admin/theme` when ready (decision 1).
+ */
 export const DEFAULT_THEME_LIBRARY: ThemeLibraryConfig = {
   activeThemeId: DEFAULT_THEME_PRESET_ID,
   themes: [
     {
       id: DEFAULT_THEME_PRESET_ID,
-      name: 'Oath dark',
+      name: 'Oath dark (legacy)',
       appearance: 'dark',
       palette: DEFAULT_THEME_PALETTE,
     },
     {
       id: 'bone-light-default',
-      name: 'Bone light',
+      name: 'Bone light (legacy)',
       appearance: 'light',
       palette: DEFAULT_BONE_LIGHT_PALETTE,
     },
+    ...ANVL_PRESETS,
   ],
 }
 
-/** Semantic color fields shown in the CMS theme editor. */
-export const THEME_EDITOR_COLOR_FIELDS: {
-  key: keyof ThemePalette
-  label: string
-  input: 'color' | 'text'
-}[] = [
-  { key: 'colorBg', label: 'Background', input: 'color' },
-  { key: 'colorSurface', label: 'Surface', input: 'color' },
-  { key: 'colorSurfaceElevated', label: 'Elevated surface', input: 'color' },
-  { key: 'colorLine', label: 'Borders & dividers', input: 'text' },
-  { key: 'colorText', label: 'Body text', input: 'color' },
-  { key: 'colorTextMuted', label: 'Muted text', input: 'color' },
-  { key: 'colorHeading', label: 'Headings', input: 'color' },
-  { key: 'colorAccent', label: 'Accent', input: 'color' },
-  { key: 'colorEmber', label: 'Highlight', input: 'color' },
-  { key: 'colorEmberBright', label: 'Highlight bright', input: 'color' },
-]
-
-export function appearanceToDataTheme(appearance: ThemeAppearance): ThemeMode {
-  return appearance === 'light' ? 'bone-light' : 'oath-dark'
-}
-
-/** Keep brand tokens in sync when editors change semantic colors. */
-export function finalizeThemePalette(
-  palette: ThemePalette,
-  appearance: ThemeAppearance,
-): ThemePalette {
-  const isLight = appearance === 'light'
+export function presetToThemeConfig(preset: ThemePreset): ThemeConfig {
   return {
-    ...palette,
-    anvlBlack: palette.colorBg,
-    anvlDarkSteelGrey: palette.colorSurface,
-    anvlWashedCharcoal: palette.colorSurfaceElevated,
-    anvlGraphite: palette.colorTextMuted,
-    anvlBone: palette.colorHeading,
-    colorSurfaceSoft: palette.colorSurface,
-    colorChip: isLight ? 'rgba(29, 31, 33, 0.08)' : 'rgba(52, 55, 58, 0.9)',
-    colorHeroGlow: isLight ? 'rgba(29, 31, 33, 0.08)' : 'rgba(231, 228, 223, 0.08)',
-    colorEmberSoft: isLight ? 'rgba(154, 79, 36, 0.14)' : 'rgba(194, 112, 61, 0.16)',
+    dataTheme: appearanceToDataTheme(preset.appearance),
+    palette: preset.palette,
   }
 }
 
+/**
+ * Resolve the single global theme for the whole storefront. The live
+ * `activeThemeId` drives every surface — there is no per-landing-page override.
+ */
 export function resolveThemeConfig(library: ThemeLibraryConfig): ThemeConfig {
   const active =
     library.themes.find((t) => t.id === library.activeThemeId) ?? library.themes[0]
-  return {
-    dataTheme: appearanceToDataTheme(active.appearance),
-    palette: active.palette,
+  return presetToThemeConfig(active)
+}
+
+/**
+ * Guarantee the ten built-in presets are always present (§4, §25.1) and that
+ * every theme palette is finalized for the current token set. User-customized
+ * themes that share a built-in id are preserved (their edits win); the stored
+ * `activeThemeId` is never changed here.
+ */
+function withBuiltInPresets(library: ThemeLibraryConfig): ThemeLibraryConfig {
+  const byId = new Map<string, ThemePreset>()
+  for (const preset of ANVL_PRESETS) byId.set(preset.id, preset)
+  for (const theme of library.themes) {
+    byId.set(theme.id, {
+      ...theme,
+      palette: finalizeThemePalette(theme.palette, theme.appearance),
+    })
   }
+  // Built-ins first (stable order), then any extra user themes.
+  const builtInIds = new Set(ANVL_PRESETS.map((p) => p.id))
+  const themes = [
+    ...ANVL_PRESETS.map((p) => byId.get(p.id)!),
+    ...library.themes.filter((t) => !builtInIds.has(t.id)).map((t) => byId.get(t.id)!),
+  ]
+  return { ...library, themes }
 }
 
 export function parseThemeLibrary(raw: unknown): ThemeLibraryConfig {
   const parsed = themeLibraryConfigSchema.safeParse(raw)
-  if (parsed.success) return parsed.data
+  if (parsed.success) return withBuiltInPresets(parsed.data)
 
   if (raw && typeof raw === 'object' && 'themes' in raw && 'activeThemeId' in raw) {
     const loose = raw as ThemeLibraryConfig
     if (Array.isArray(loose.themes) && loose.themes.length > 0) {
-      return {
+      return withBuiltInPresets({
         activeThemeId: loose.activeThemeId || loose.themes[0].id,
         themes: loose.themes.map((t) => ({
           id: t.id,
           name: t.name,
           appearance: t.appearance === 'light' ? 'light' : 'dark',
           palette: finalizeThemePalette(
-            { ...DEFAULT_THEME_PALETTE, ...t.palette },
+            t.palette,
             t.appearance === 'light' ? 'light' : 'dark',
           ),
         })),
-      }
+      })
     }
   }
 
@@ -128,29 +184,29 @@ export function parseThemeLibrary(raw: unknown): ThemeLibraryConfig {
   )
   const legacyPalette =
     raw && typeof raw === 'object' && 'palette' in raw
-      ? (raw as { palette?: Partial<ThemePalette> }).palette
+      ? (raw as { palette?: unknown }).palette
       : undefined
 
   if (legacyMode.success) {
     const appearance: ThemeAppearance =
       legacyMode.data === 'bone-light' ? 'light' : 'dark'
-    const palette = finalizeThemePalette(
-      { ...DEFAULT_THEME_PALETTE, ...legacyPalette },
-      appearance,
-    )
+    // `finalizeThemePalette` maps legacy keys + fills gaps from the appearance
+    // default, so pass the stored palette straight through (no default spread,
+    // which would otherwise clobber the legacy colors).
+    const palette = finalizeThemePalette(legacyPalette ?? {}, appearance)
     const id =
       legacyMode.data === 'bone-light' ? 'bone-light-default' : DEFAULT_THEME_PRESET_ID
-    return {
+    return withBuiltInPresets({
       activeThemeId: id,
       themes: [
         {
           id,
-          name: legacyMode.data === 'bone-light' ? 'Bone light' : 'Oath dark',
+          name: legacyMode.data === 'bone-light' ? 'Bone light (legacy)' : 'Oath dark (legacy)',
           appearance,
           palette,
         },
       ],
-    }
+    })
   }
 
   return DEFAULT_THEME_LIBRARY

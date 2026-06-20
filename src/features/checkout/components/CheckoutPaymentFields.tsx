@@ -20,7 +20,7 @@ export function CheckoutPaymentFields({
       <legend className="anvl-heading pt-2 text-4xl">Payment</legend>
       {internationalBlocked ? (
         <p
-          className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-[var(--color-text)]"
+          className="rounded-md border border-[color-mix(in_oklab,var(--color-warning)_30%,transparent)] bg-[color-mix(in_oklab,var(--color-warning)_6%,transparent)] p-3 text-sm text-[var(--color-text)]"
           role="status"
         >
           International shipping and card checkout are not enabled for this build. Ship to Lebanon, set
@@ -52,7 +52,7 @@ export function CheckoutPaymentFields({
         </div>
       ) : null}
       {errors.paymentMethod?.message ? (
-        <p className="text-xs text-red-300" role="alert">
+        <p className="text-xs text-[color:var(--color-danger)]" role="alert">
           {errors.paymentMethod.message}
         </p>
       ) : null}

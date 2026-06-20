@@ -47,10 +47,10 @@ export function AuthPageChrome({
 export function AccountMockBanner() {
   return (
     <div
-      className="mb-6 rounded-md border border-amber-700/35 bg-amber-950/25 px-4 py-3 text-xs text-amber-50/95"
+      className="mb-6 rounded-md border border-[color-mix(in_oklab,var(--color-warning)_35%,transparent)] bg-[color-mix(in_oklab,var(--color-warning)_12%,transparent)] px-4 py-3 text-xs text-[var(--color-text)]"
       role="status"
     >
-      <p className="font-semibold uppercase tracking-wide text-amber-100/90">Demo account</p>
+      <p className="font-semibold uppercase tracking-wide text-[color:var(--color-warning)]">Demo account</p>
       <p className="mt-1 leading-relaxed text-[var(--color-text-muted)]">
         Storefront sign-in is mocked in the browser. Configure Supabase auth to enable real
         accounts (Google / Facebook / Apple + email) — see <code>docs/storefront-auth.md</code>.

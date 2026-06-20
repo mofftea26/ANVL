@@ -7,9 +7,17 @@ import {
   type ThemeConfig,
 } from '@/features/cms/config/cmsSiteConfig.zod'
 import { parseFontLibrary, type FontLibraryConfig } from '@/features/cms/config/fontLibrary'
-import { parseThemeLibrary, resolveThemeConfig } from '@/features/cms/config/themeLibrary'
+import {
+  parseThemeLibrary,
+  resolveThemeConfig,
+} from '@/features/cms/config/themeLibrary'
 import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { createAnvlSupabaseClient } from '@/features/cms/api/createAnvlSupabaseClient'
+import { isPostgrestMissingColumnError } from '@/features/cms/api/storefrontPublicationColumns'
+import {
+  parseLandingContentConfig,
+  type LandingContentConfig,
+} from '@/features/cms/landingContent/landingContent.zod'
 import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
 
 export const SUPABASE_PUBLICATION_ANON_AUTH_STORAGE_KEY =
@@ -52,6 +60,8 @@ export type PublishedStorefrontProjection = {
   fonts: FontLibraryConfig
   assets: AssetConfig
   mediaIndex: MediaIndexEntry[]
+  /** Per-landing-key CMS copy overrides; code defaults fill every gap. */
+  landingContent: LandingContentConfig
   revision: number
   publishedAt: string | null
 }
@@ -64,9 +74,14 @@ export type StorefrontPublicationRow = {
   font_config?: unknown
   asset_config?: unknown
   media_index?: unknown
+  landing_content?: unknown
 }
 
 const PUBLICATION_SELECT =
+  'revision, published_at, active_landing_page_key, theme_config, font_config, asset_config, media_index, landing_content'
+
+/** Pre-`landing_content` column list — retry path while the migration is pending. */
+const PUBLICATION_SELECT_LEGACY =
   'revision, published_at, active_landing_page_key, theme_config, font_config, asset_config, media_index'
 
 function parseMediaIndex(raw: unknown): MediaIndexEntry[] {
@@ -96,12 +111,17 @@ export function normalizeStorefrontPublicationRow(
       ? data.active_landing_page_key
       : DEFAULT_LANDING_PAGE_KEY
 
+  // A single global theme drives the whole storefront — the active landing page
+  // no longer influences the palette.
+  const theme = resolveThemeConfig(parseThemeLibrary(data.theme_config))
+
   return {
     activeLandingPageKey,
-    theme: resolveThemeConfig(parseThemeLibrary(data.theme_config)),
+    theme,
     fonts: parseFontLibrary(data.font_config),
     assets: parseAssetConfig(data.asset_config),
     mediaIndex: parseMediaIndex(data.media_index),
+    landingContent: parseLandingContentConfig(data.landing_content),
     revision,
     publishedAt: data.published_at,
   }
@@ -116,11 +136,19 @@ async function fetchPublishedStorefrontProjectionOnce(
   env: SupabasePublicEnv,
 ): Promise<PublishedStorefrontProjection | null> {
   const supabase = getSupabasePublicationAnonClient(env)
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('storefront_publication')
     .select(PUBLICATION_SELECT)
     .eq('id', 1)
     .maybeSingle()
+
+  if (error && isPostgrestMissingColumnError(error, 'landing_content')) {
+    ;({ data, error } = await supabase
+      .from('storefront_publication')
+      .select(PUBLICATION_SELECT_LEGACY)
+      .eq('id', 1)
+      .maybeSingle())
+  }
 
   if (error) throw error
   if (!data) return null

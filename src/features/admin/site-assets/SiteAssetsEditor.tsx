@@ -20,6 +20,11 @@ import {
   DROP_ASSET_SLOTS,
   GENERAL_ASSET_SLOTS,
 } from '@/features/landingPages/assetSlots'
+import {
+  getStorefrontPageSlots,
+  isStorefrontPageKey,
+  listStorefrontPages,
+} from '@/features/cms/assets/storefrontPageSlots'
 import { fetchLandingPagePickerOptions } from '@/features/admin/landing-picker/fetchLandingPagePickerOptions'
 import { listLandingPages } from '@/features/landingPages/registry'
 
@@ -41,6 +46,7 @@ export function SiteAssetsEditor() {
   const mediaQuery = useMediaAssetsQuery()
   const fallbackDrops = useMemo(() => listLandingPages(), [])
   const [drops, setDrops] = useState(fallbackDrops)
+  const storefrontPages = useMemo(() => listStorefrontPages(), [])
 
   useEffect(() => {
     void fetchLandingPagePickerOptions()
@@ -93,14 +99,18 @@ export function SiteAssetsEditor() {
   const allSlots =
     scope === 'general'
       ? GENERAL_ASSET_SLOTS
-      : (DROP_ASSET_SLOTS[scope] ?? [])
+      : isStorefrontPageKey(scope)
+        ? getStorefrontPageSlots(scope)
+        : (DROP_ASSET_SLOTS[scope] ?? [])
 
   const UNASSIGNED = '__unassigned__'
 
   const assignments =
     scope === 'general'
       ? config.general
-      : (config.drops[scope] ?? {})
+      : isStorefrontPageKey(scope)
+        ? (config.pages?.[scope] ?? {})
+        : (config.drops[scope] ?? {})
 
   function assignmentValue(key: string): string {
     return assignments[key] ?? ''
@@ -136,6 +146,15 @@ export function SiteAssetsEditor() {
           general: { ...prev.general, [slotKey]: mediaId },
         }
       }
+      if (isStorefrontPageKey(scope)) {
+        return {
+          ...prev,
+          pages: {
+            ...(prev.pages ?? {}),
+            [scope]: { ...(prev.pages?.[scope] ?? {}), [slotKey]: mediaId },
+          },
+        }
+      }
       return {
         ...prev,
         drops: {
@@ -162,7 +181,11 @@ export function SiteAssetsEditor() {
           onChange={setScope}
           options={[
             { value: 'general', label: 'General (site-wide)' },
-            ...drops.map((d) => ({ value: d.key, label: d.name })),
+            ...drops.map((d) => ({ value: d.key, label: `Landing — ${d.name}` })),
+            ...storefrontPages.map((p) => ({
+              value: p.key,
+              label: `Page — ${p.name}`,
+            })),
           ]}
         />
 
@@ -175,33 +198,38 @@ export function SiteAssetsEditor() {
                 </h3>
               ) : null}
               <div className="grid gap-4 sm:grid-cols-2">
-                {section.slots.map((slot) =>
-                  slot.kind === 'select' ? (
-                    <AdminFieldSelect
-                      key={slot.key}
-                      label={slot.label}
-                      value={assignmentValue(slot.key) || slot.options?.[0]?.value || ''}
-                      onChange={(value) => setSlot(slot.key, value)}
-                      options={slot.options ?? []}
-                    />
-                  ) : (
-                    <AdminFieldSelect
-                      key={slot.key}
-                      label={slot.label}
-                      value={assignments[slot.key] ? assignments[slot.key] : UNASSIGNED}
-                      onChange={(value) =>
-                        setSlot(slot.key, value === UNASSIGNED ? '' : value)
-                      }
-                      options={[
-                        { value: UNASSIGNED, label: '— Not assigned —' },
-                        ...(mediaQuery.data ?? []).map((asset) => ({
-                          value: asset.id,
-                          label: asset.filename,
-                        })),
-                      ]}
-                    />
-                  ),
-                )}
+                {section.slots.map((slot) => (
+                  <div key={slot.key} className="space-y-1.5">
+                    {slot.kind === 'select' ? (
+                      <AdminFieldSelect
+                        label={slot.label}
+                        value={assignmentValue(slot.key) || slot.options?.[0]?.value || ''}
+                        onChange={(value) => setSlot(slot.key, value)}
+                        options={slot.options ?? []}
+                      />
+                    ) : (
+                      <AdminFieldSelect
+                        label={slot.label}
+                        value={assignments[slot.key] ? assignments[slot.key] : UNASSIGNED}
+                        onChange={(value) =>
+                          setSlot(slot.key, value === UNASSIGNED ? '' : value)
+                        }
+                        options={[
+                          { value: UNASSIGNED, label: '— Not assigned —' },
+                          ...(mediaQuery.data ?? []).map((asset) => ({
+                            value: asset.id,
+                            label: asset.filename,
+                          })),
+                        ]}
+                      />
+                    )}
+                    {slot.hint ? (
+                      <p className="text-xs leading-snug text-[var(--color-text-muted)]">
+                        {slot.hint}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
               </div>
             </div>
           ))}

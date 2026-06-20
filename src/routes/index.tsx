@@ -48,6 +48,8 @@ export const Route = createFileRoute("/")({
         dropLogo: dropLogoMarkup,
         crestSvg: crestSvgMarkup,
       },
+      landingContent:
+        projection.landingContent[projection.activeLandingPageKey],
     };
   },
   head: () =>
@@ -73,6 +75,7 @@ function HomePage() {
     resolvedAssets,
     loadingEmblemMarkup,
     themedMarkups,
+    landingContent,
   } = Route.useLoaderData();
   const products = useHomeProducts(initialProducts);
   const landingKey = useActiveLandingPageKey(activeLandingKey);
@@ -89,6 +92,7 @@ function HomePage() {
         assets={resolvedAssets}
         loadingEmblemMarkup={loadingEmblemMarkup}
         themedMarkups={themedMarkups}
+        landingContent={landingContent}
       />
     </div>
   );

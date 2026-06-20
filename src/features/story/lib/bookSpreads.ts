@@ -45,10 +45,11 @@ export interface PageMetrics {
   titleLines: number
 }
 
-/** Tuned for the right page at ~14px book type (slightly under-fills). */
+/** Tuned for the right page at ~15.5px book type (slightly under-fills, so the
+    larger body never overflows the fixed page — text flows to more pages). */
 export const DEFAULT_PAGE_METRICS: PageMetrics = {
-  charsPerLine: 46,
-  linesPerPage: 19,
+  charsPerLine: 42,
+  linesPerPage: 17,
   titleLines: 5,
 }
 

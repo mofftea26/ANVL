@@ -34,10 +34,15 @@ function lazyPage(
  * See `docs/landing-pages.md`.
  */
 export const landingPageRegistry: Record<string, LandingPageDefinition> = {
+  // The single merged Drop 01 landing: scroll-scrubbed video hero + 3D monolith
+  // logo + cursor spotlight reveal, creed, horizontal tenets panorama, product
+  // assembly, and forge-in finale. Reads the single global CMS theme in full
+  // (surfaces, text, accents, ember glows, particles, and the WebGL emblem/dust
+  // which read the same CSS variables) — no per-page theme.
   'the-oath': {
     key: 'the-oath',
-    name: 'The Oath',
-    description: '',
+    name: 'Drop 01 — The Oath',
+    description: 'Cinematic WebGL + GSAP landing for Drop 01 — The Oath.',
     previewImage: '/brand/the-oath-shape.svg',
     isAvailable: true,
     component: lazyPage(

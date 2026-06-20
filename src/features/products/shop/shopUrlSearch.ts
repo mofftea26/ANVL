@@ -8,6 +8,15 @@ export const SHOP_STATUS_FILTERS: readonly StorefrontProductStatus[] = [
   'limitedEdition',
 ] as const
 
+export type ShopSort = 'featured' | 'price-asc' | 'price-desc' | 'name-asc'
+
+export const SHOP_SORT_OPTIONS: ReadonlyArray<{ value: ShopSort; label: string }> = [
+  { value: 'featured', label: 'Featured' },
+  { value: 'price-asc', label: 'Price: low to high' },
+  { value: 'price-desc', label: 'Price: high to low' },
+  { value: 'name-asc', label: 'Name: A–Z' },
+] as const
+
 export type ShopUrlSearch = {
   q: string
   /** Comma-separated status tokens (ignored until storefront `Product` carries `shop`). */
@@ -16,6 +25,7 @@ export type ShopUrlSearch = {
   source: 'all' | 'drop' | 'individual'
   color: string
   size: string
+  sort: ShopSort
   minPrice?: number
   maxPrice?: number
 }
@@ -27,6 +37,7 @@ export const defaultShopUrlSearch: ShopUrlSearch = {
   source: 'all',
   color: '',
   size: '',
+  sort: 'featured',
   minPrice: undefined,
   maxPrice: undefined,
 }
@@ -47,6 +58,10 @@ export function validateShopUrlSearch(search: Record<string, unknown>): ShopUrlS
   const sourceRaw = typeof search.source === 'string' ? search.source : 'all'
   const source: ShopUrlSearch['source'] =
     sourceRaw === 'drop' || sourceRaw === 'individual' ? sourceRaw : 'all'
+  const sortRaw = typeof search.sort === 'string' ? search.sort : 'featured'
+  const sort: ShopSort = SHOP_SORT_OPTIONS.some((o) => o.value === sortRaw)
+    ? (sortRaw as ShopSort)
+    : 'featured'
 
   return {
     q,
@@ -55,6 +70,7 @@ export function validateShopUrlSearch(search: Record<string, unknown>): ShopUrlS
     source,
     color,
     size,
+    sort,
     minPrice: parseOptionalPrice(search.minPrice),
     maxPrice: parseOptionalPrice(search.maxPrice),
   }
@@ -136,6 +152,25 @@ export function filterShopListingProducts(
     if (typeof search.maxPrice === 'number' && price > search.maxPrice) return false
     return true
   })
+}
+
+/**
+ * Sort a filtered listing. `featured` preserves the catalog's curated order
+ * (the array is returned untouched); the others return a sorted copy so the
+ * source array is never mutated.
+ */
+export function sortShopListingProducts(items: Product[], sort: ShopSort): Product[] {
+  switch (sort) {
+    case 'price-asc':
+      return [...items].sort((a, b) => a.price - b.price)
+    case 'price-desc':
+      return [...items].sort((a, b) => b.price - a.price)
+    case 'name-asc':
+      return [...items].sort((a, b) => a.name.localeCompare(b.name))
+    case 'featured':
+    default:
+      return items
+  }
 }
 
 export function catalogPriceBounds(items: Product[]): { min: number; max: number } {

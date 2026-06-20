@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useMemo } from 'react'
 import { ContactShadows, Environment, Lightformer } from '@react-three/drei'
+import { readThemeCssColor } from '@/shared/lib/themeColor'
 
 interface StudioStageProps {
   children: ReactNode
@@ -19,6 +20,10 @@ export function StudioStage({
   shadowY = -1.15,
   shadowOpacity = 0.5,
 }: StudioStageProps) {
+  // The warm rim light follows the active theme ember so the studio reflections
+  // on the cover/foil complement the CMS theme (key + fill stay neutral-warm so
+  // the parchment pages remain legible).
+  const emberLight = useMemo(() => readThemeCssColor('--color-highlight', '#ff7a2a'), [])
   return (
     <>
       <ambientLight intensity={0.32} color="#fbeede" />
@@ -45,7 +50,7 @@ export function StudioStage({
           form="rect"
           position={[3, 1.4, -1.8]}
           scale={[3, 4, 1]}
-          color="#ff7a2a"
+          color={emberLight}
         />
         <Lightformer
           intensity={0.9}

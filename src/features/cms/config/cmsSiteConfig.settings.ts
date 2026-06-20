@@ -105,6 +105,21 @@ export function readThemeLibraryFromStorage(): ThemeLibraryConfig {
   return readJson(THEME_CONFIG_STORAGE_KEY, (raw) => parseThemeLibrary(raw), DEFAULT_THEME_LIBRARY)
 }
 
+/**
+ * True when this browser has a locally-saved theme library (the admin editor
+ * writes one on every save). Used by the storefront to reflect the editor's
+ * own draft, so "save in CMS → see it on the storefront" always holds for the
+ * editing browser. SSR-safe (always false on the server).
+ */
+export function hasStoredThemeLibrary(): boolean {
+  if (!isBrowser()) return false
+  try {
+    return window.localStorage.getItem(THEME_CONFIG_STORAGE_KEY) != null
+  } catch {
+    return false
+  }
+}
+
 export function writeThemeLibraryToStorage(next: ThemeLibraryConfig): void {
   writeJson(THEME_CONFIG_STORAGE_KEY, next)
 }

@@ -12,6 +12,8 @@ export type AssetSlotDefinition = {
   visibleWhen?: { key: string; equals: string }
   /** Stored as a raw string, not resolved through the media library. */
   passthrough?: boolean
+  /** Recommended dimensions / format, shown under the slot in the CMS. */
+  hint?: string
 }
 
 export function getPassthroughSlotKeys(dropKey: string): Set<string> {
@@ -23,10 +25,30 @@ export function getPassthroughSlotKeys(dropKey: string): Set<string> {
 }
 
 export const GENERAL_ASSET_SLOTS: AssetSlotDefinition[] = [
-  { key: 'emblemFallback', label: 'Default emblem', kind: 'image' },
-  { key: 'loadingEmblem', label: 'Loading emblem', kind: 'image' },
-  { key: 'metalTexture', label: 'Metal texture (site-wide)', kind: 'image' },
-  { key: 'noiseTexture', label: 'Noise texture (site-wide)', kind: 'image' },
+  {
+    key: 'emblemFallback',
+    label: 'Default emblem',
+    kind: 'image',
+    hint: 'SVG or transparent PNG, square ~512×512. < 30 KB.',
+  },
+  {
+    key: 'loadingEmblem',
+    label: 'Loading emblem',
+    kind: 'image',
+    hint: 'SVG or transparent PNG, square ~512×512. < 30 KB.',
+  },
+  {
+    key: 'metalTexture',
+    label: 'Metal texture (site-wide)',
+    kind: 'image',
+    hint: 'Seamless / tileable, ~1024×1024. WebP, < 200 KB.',
+  },
+  {
+    key: 'noiseTexture',
+    label: 'Noise texture (site-wide)',
+    kind: 'image',
+    hint: 'Grayscale grain tile, ~512×512. PNG/WebP, < 80 KB.',
+  },
 ]
 
 export { OATH_ASSET_SLOTS } from './pages/TheOathLanding/theOathAssetSlots'

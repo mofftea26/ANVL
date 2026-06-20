@@ -9,11 +9,11 @@ export const adminStatusBadgeVariants = cva(
       tone: {
         neutral:
           'border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-text-muted)]',
-        live: 'border-emerald-500/35 bg-[var(--color-surface-soft)] text-emerald-100',
-        scheduled: 'border-amber-400/40 bg-amber-400/10 text-amber-100',
-        archived: 'border-zinc-600 bg-zinc-900/40 text-zinc-400',
-        success: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200',
-        danger: 'border-red-500/40 bg-red-500/10 text-red-200',
+        live: 'border-[color-mix(in_oklab,var(--color-success)_40%,transparent)] bg-[var(--color-surface-soft)] text-[color:var(--color-success)]',
+        scheduled: 'border-[color-mix(in_oklab,var(--color-warning)_45%,transparent)] bg-[color-mix(in_oklab,var(--color-warning)_10%,transparent)] text-[color:var(--color-warning)]',
+        archived: 'border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-disabled)]',
+        success: 'border-[color-mix(in_oklab,var(--color-success)_40%,transparent)] bg-[color-mix(in_oklab,var(--color-success)_12%,transparent)] text-[color:var(--color-success)]',
+        danger: 'border-[color-mix(in_oklab,var(--color-danger)_40%,transparent)] bg-[color-mix(in_oklab,var(--color-danger)_12%,transparent)] text-[color:var(--color-danger)]',
         accent:
           'border-[color-mix(in_srgb,var(--color-line)_100%,transparent)] bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--color-surface-elevated)_45%,transparent),transparent)] text-[var(--color-text-muted)]',
       },

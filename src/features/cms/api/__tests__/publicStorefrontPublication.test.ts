@@ -4,6 +4,7 @@ import {
   DEFAULT_FONT_CONFIG,
   DEFAULT_THEME_CONFIG,
 } from '@/features/cms/config/cmsSiteConfig.zod'
+import { DEFAULT_FONT_LIBRARY_CONFIG } from '@/features/cms/config/fontLibrary'
 import {
   getSupabasePublicationAnonClient,
   normalizeStorefrontPublicationRow,
@@ -19,10 +20,31 @@ describe('normalizeStorefrontPublicationRow', () => {
     })
     expect(out).not.toBeNull()
     expect(out!.theme).toEqual(DEFAULT_THEME_CONFIG)
-    expect(out!.fonts).toEqual(DEFAULT_FONT_CONFIG)
+    expect(out!.fonts).toEqual(DEFAULT_FONT_LIBRARY_CONFIG)
     expect(out!.assets).toEqual(DEFAULT_ASSET_CONFIG)
     expect(out!.activeLandingPageKey).toBe('the-oath')
     expect(out!.mediaIndex).toEqual([])
+    expect(out!.landingContent).toEqual({})
+  })
+
+  it('parses landing_content and degrades malformed blobs to empty', () => {
+    const withContent = normalizeStorefrontPublicationRow({
+      revision: 1,
+      published_at: STAMP,
+      landing_content: {
+        'the-oath': { hero: { headline: 'FORGED UNDER PRESSURE' } },
+      },
+    })
+    expect(withContent!.landingContent['the-oath']).toEqual({
+      hero: { headline: 'FORGED UNDER PRESSURE' },
+    })
+
+    const malformed = normalizeStorefrontPublicationRow({
+      revision: 1,
+      published_at: STAMP,
+      landing_content: 'not-an-object',
+    })
+    expect(malformed!.landingContent).toEqual({})
   })
 
   it('parses theme, fonts, assets, and active landing key', () => {
@@ -56,6 +78,61 @@ describe('normalizeStorefrontPublicationRow', () => {
     expect(out!.publishedAt).toBe(STAMP)
     expect(out!.assets.general.emblemFallback).toBe('media-1')
     expect(out!.mediaIndex).toHaveLength(1)
+  })
+
+  it('ignores any legacy landing-page theme assignment (global theme wins)', () => {
+    const out = normalizeStorefrontPublicationRow({
+      revision: 5,
+      published_at: STAMP,
+      active_landing_page_key: 'the-oath',
+      theme_config: {
+        activeThemeId: 'oath-dark-default',
+        // Legacy field — must no longer influence the resolved theme.
+        landingPageThemes: { 'the-oath': 'bone' },
+        themes: [
+          {
+            id: 'oath-dark-default',
+            name: 'Oath dark',
+            appearance: 'dark',
+            palette: DEFAULT_THEME_CONFIG.palette,
+          },
+          {
+            id: 'bone',
+            name: 'Bone',
+            appearance: 'light',
+            palette: { ...DEFAULT_THEME_CONFIG.palette, background: '#ffffff' },
+          },
+        ],
+      },
+    })
+    // The single global activeThemeId drives the storefront regardless of the
+    // active landing page, so the dark default is used — not the bone preset.
+    expect(out!.theme.dataTheme).toBe('oath-dark')
+    expect(out!.theme.palette.background).toBe(DEFAULT_THEME_CONFIG.palette.background)
+  })
+
+  it('uses the live active theme unchanged regardless of active landing page', () => {
+    const out = normalizeStorefrontPublicationRow({
+      revision: 6,
+      published_at: STAMP,
+      active_landing_page_key: 'the-oath',
+      theme_config: {
+        activeThemeId: 'oath-dark-default',
+        themes: [
+          {
+            id: 'oath-dark-default',
+            name: 'Oath dark',
+            appearance: 'dark',
+            palette: DEFAULT_THEME_CONFIG.palette,
+          },
+        ],
+      },
+    })
+    // No assignment and no code-owned palette override → the live active theme
+    // passes through verbatim, so the CMS fully controls the-oath's colors.
+    expect(out!.theme.palette.accent).toBe(
+      DEFAULT_THEME_CONFIG.palette.accent,
+    )
   })
 })
 

@@ -1,8 +1,8 @@
 # CMS Architecture
 
-The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing page content lives in the codebase (`src/features/landingPages/`); Supabase stores **which page is active**, **theme**, **fonts**, **asset slot assignments**, and the **media library**.
+The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing page structure lives in the codebase (`src/features/landingPages/`); Supabase stores **which page is active**, **theme**, **fonts**, **asset slot assignments**, the **media library**, and per-scene **copy overrides** (`landing_content`) with code defaults filling every gap.
 
-## Admin surfaces (5 + settings)
+## Admin surfaces (6 + settings)
 
 | Surface | Route | Persists to |
 |---|---|---|
@@ -10,6 +10,7 @@ The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing p
 | Theme & Colors | `/admin/theme` | `cms_settings.theme_config` |
 | Fonts | `/admin/fonts` | `cms_settings.font_config` |
 | Assets | `/admin/assets` | `cms_settings.asset_config` + `cms_media_assets` |
+| Landing Content | `/admin/content` | `cms_settings.landing_content` (per-landing-key copy blobs) |
 | Story | `/admin/story` | `story_chapters` + `story_acts` + `story_cast` (+ `story-media` bucket) |
 | Settings | `/admin/settings` | Session + local reset only |
 
@@ -23,14 +24,21 @@ Removed from CMS: Products editor, website layout, SEO, drop-builder, campaigns,
 
 ```
 Admin browser
-  └── edits theme / fonts / assets / active drop (localStorage working copy)
+  └── edits theme / fonts / assets / landing content / active drop (localStorage working copy)
         └── adminCmsRemoteSync → cms_settings + storefront_publication mirror
 
 Storefront (SSR + browser)
   └── loadStorefrontProjection()
         ├── active_landing_page_key → resolveLandingPage (code registry)
         ├── theme_config + font_config → SiteThemeProvider (CSS vars on :root)
+        │     └── theme is resolved per active landing page:
+        │         · theme_config.landingPageThemes[activeKey] → that preset wins
+        │         · else → live active theme (no page palette override; The
+        │           Oath reads the CMS theme in full — surfaces, text, accents,
+        │           ember glows, particles, scrollbar, and the WebGL emblem/dust
+        │           which read the same CSS vars)
         ├── asset_config + media_index → resolvePublishedAssets → landing page props
+        ├── landing_content[activeKey] → page's content resolver (code defaults fill gaps)
         └── commerce → Shopify when configured, else seed/mock catalog
 ```
 
@@ -50,11 +58,17 @@ Editor source of truth for site config:
 
 ```sql
 active_landing_page_key text NOT NULL DEFAULT 'the-oath'
-theme_config jsonb NOT NULL   -- { dataTheme, palette }
-font_config jsonb NOT NULL    -- { sans, heading, display }
-asset_config jsonb NOT NULL   -- { general: { slot: mediaId }, drops: { dropKey: { slot: mediaId } } }
+theme_config jsonb NOT NULL    -- { activeThemeId, themes[] }; each theme.palette is the normalized 15-token set (background/foreground/card(+fg)/muted(+fg)/border/primary(+fg)/accent(+fg)/ring/destructive/success/warning). Legacy palette keys are migrated on read (cmsSiteConfig.zod.ts) and normalized in place by migration 20260620140000.
+font_config jsonb NOT NULL     -- { sans, heading, display }
+asset_config jsonb NOT NULL    -- { general: { slot: mediaId }, drops: { dropKey: { slot: mediaId } } }
+landing_content jsonb NOT NULL -- { [landingKey]: { ...page-shaped copy overrides } }
 updated_at timestamptz
 ```
+
+`landing_content` is validated client-side by each page's own Zod schema
+(`oathContent.schema.ts`); blank/missing fields fall back to designed code
+defaults at render (`resolveOathContent`). The single Drop 01 page (The Oath)
+stores its copy under key `the-oath`.
 
 #### `public.landing_pages`
 Picker metadata only (key, name, description, preview_image, is_available). Content lives in the code registry; rows must intersect with registry keys.
@@ -70,6 +84,7 @@ active_landing_page_key text
 theme_config jsonb
 font_config jsonb
 asset_config jsonb
+landing_content jsonb      -- published mirror of cms_settings.landing_content
 media_index jsonb          -- denormalized public URLs for assigned assets
 revision bigint
 published_at timestamptz

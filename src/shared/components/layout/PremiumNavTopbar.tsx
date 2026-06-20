@@ -58,7 +58,7 @@ export function PremiumNavTopbar({
     <div
       className={cn(
         'transition-[background-color,backdrop-filter] duration-300',
-        isSolid ? 'bg-[rgba(11,11,12,0.92)] backdrop-blur-md' : 'bg-transparent',
+        isSolid ? 'bg-[var(--nav-scrim)] backdrop-blur-md' : 'bg-transparent',
       )}
       data-premium-topbar
       data-premium-topbar-variant={variant}

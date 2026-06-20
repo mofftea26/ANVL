@@ -41,6 +41,14 @@ export const adminNavItems: AdminNavItem[] = [
     badge: 'Media',
   },
   {
+    label: 'Landing Content',
+    href: '/admin/content',
+    description: 'Per-scene landing copy with designed defaults.',
+    cluster: 'Site',
+    cta: 'Edit',
+    badge: 'Copy',
+  },
+  {
     label: 'Story',
     href: '/admin/story',
     description: 'Author the saga — chapters, acts, and cast.',

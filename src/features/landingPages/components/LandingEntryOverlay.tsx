@@ -40,7 +40,7 @@ export function LandingEntryOverlay({
             height={208}
             className="h-44 w-44 sm:h-52 sm:w-52"
             tint="var(--color-heading)"
-            glow="var(--color-ember)"
+            glow="var(--color-highlight)"
           />
         </div>
         <p className="mt-8 text-xs uppercase tracking-[0.16em] text-[var(--color-accent)] sm:text-sm">

@@ -110,7 +110,7 @@ function AddressesPage() {
               <Input id={`addr-${index}-phone`} type="tel" autoComplete="tel" {...form.register(`addresses.${index}.phone`)} />
             </FormField>
             {fields.length > 1 ? (
-              <Button type="button" variant="ghost" className="text-red-400" onClick={() => remove(index)}>
+              <Button type="button" variant="ghost" className="text-[color:var(--color-danger)]" onClick={() => remove(index)}>
                 Remove address
               </Button>
             ) : null}

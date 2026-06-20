@@ -34,7 +34,7 @@ export function AdminFormField({
         <span className="block text-xs text-[var(--color-text-muted)]">{hint}</span>
       ) : null}
       {error ? (
-        <span className="block text-xs text-red-300" role="alert">
+        <span className="block text-xs text-[color:var(--color-danger)]" role="alert">
           {error}
         </span>
       ) : null}

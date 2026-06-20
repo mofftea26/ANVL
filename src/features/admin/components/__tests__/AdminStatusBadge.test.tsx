@@ -7,7 +7,7 @@ describe('AdminStatusBadge', () => {
   it('renders children with live tone classes', () => {
     render(<AdminStatusBadge tone="live">Live</AdminStatusBadge>)
     const el = screen.getByText('Live')
-    expect(el.className.includes('text-emerald-100')).toBe(true)
+    expect(el.className.includes('var(--color-success)')).toBe(true)
   })
 
   it('renders chip size aligned with topbar pill controls', () => {

@@ -32,9 +32,9 @@ const VALUES = [
 ] as const
 
 const CTA_FORGE =
-  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-ember)] bg-[var(--color-ember)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-bg)] no-underline transition-opacity hover:opacity-90'
+  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-highlight)] bg-[var(--color-highlight)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-bg)] no-underline transition-opacity hover:opacity-90'
 const CTA_STEEL =
-  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-ember)_60%,var(--color-line))]'
+  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-highlight)_60%,var(--color-line))]'
 
 export const Route = createFileRoute('/about')({
   loader: async () => {
@@ -75,7 +75,7 @@ function AboutPage() {
         <ForgeAtmosphere />
         <Container className="relative z-10 grid items-center gap-12 py-20 md:grid-cols-[1.1fr_0.9fr] md:py-28">
           <div>
-            <p className="anvl-display inline-flex items-center gap-2.5 text-xs tracking-[0.32em] text-[var(--color-ember-bright)] before:h-px before:w-8 before:bg-[var(--color-ember)] before:content-['']">
+            <p className="anvl-display inline-flex items-center gap-2.5 text-xs tracking-[0.32em] text-[var(--color-highlight-bright)] before:h-px before:w-8 before:bg-[var(--color-highlight)] before:content-['']">
               The House of ANVL
             </p>
             <h1 className="anvl-heading mt-5 max-w-3xl font-normal leading-[0.88] tracking-[-0.01em] text-[clamp(2.75rem,9vw,6.5rem)] text-[var(--color-heading)]">
@@ -98,7 +98,7 @@ function AboutPage() {
 
           <div className="mx-auto w-full max-w-[18rem] md:max-w-[20rem]">
             <WarBanner tone="#16130f" label="EST. LB" sway>
-              <p className="anvl-display text-center text-[10px] tracking-[0.3em] text-[var(--color-ember-bright)]">
+              <p className="anvl-display text-center text-[10px] tracking-[0.3em] text-[var(--color-highlight-bright)]">
                 Beirut · Lebanon
               </p>
             </WarBanner>
@@ -111,7 +111,7 @@ function AboutPage() {
           <RevealOnScroll>
             <h2 className="anvl-heading text-[clamp(2rem,5vw,3.25rem)]">Our foundation</h2>
           </RevealOnScroll>
-          <hr className="anvl-ember-rule max-w-[8rem]" />
+          <hr className="anvl-highlight-rule max-w-[8rem]" />
           <RevealOnScroll>
             <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
               ANVL started from a simple read on culture: lifters deserve gear that respects the work — heavy cotton,
@@ -132,7 +132,7 @@ function AboutPage() {
           <RevealOnScroll>
             <h2 className="anvl-heading text-[clamp(2rem,5vw,3.25rem)]">Why Lebanon</h2>
           </RevealOnScroll>
-          <hr className="anvl-ember-rule max-w-[8rem]" />
+          <hr className="anvl-highlight-rule max-w-[8rem]" />
           <RevealOnScroll>
             <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
               The brand is rooted in Lebanon — a place where pressure is never theoretical. That friction shows up in how
@@ -141,7 +141,7 @@ function AboutPage() {
             </p>
           </RevealOnScroll>
           <RevealOnScroll>
-            <blockquote className="border-l-2 border-[var(--color-ember)] pl-6">
+            <blockquote className="border-l-2 border-[var(--color-highlight)] pl-6">
               <p className="text-lg text-[var(--color-text)]">
                 Every release is a promise — to the lifter who shows up anyway.
               </p>
@@ -161,12 +161,12 @@ function AboutPage() {
           <div className="grid gap-3 md:grid-cols-2">
             {VALUES.map((item, i) => (
               <RevealOnScroll key={item.label}>
-                <article className="group relative h-full overflow-hidden border border-[var(--color-line)] bg-[var(--color-surface)] p-5 transition-colors hover:border-[color-mix(in_oklab,var(--color-ember)_45%,var(--color-line))] md:p-6">
+                <article className="group relative h-full overflow-hidden border border-[var(--color-line)] bg-[var(--color-surface)] p-5 transition-colors hover:border-[color-mix(in_oklab,var(--color-highlight)_45%,var(--color-line))] md:p-6">
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-[var(--color-ember)] via-transparent to-transparent opacity-70"
+                    className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-[var(--color-highlight)] via-transparent to-transparent opacity-70"
                   />
-                  <p className="anvl-display text-[11px] tracking-[0.26em] text-[var(--color-ember-bright)]">
+                  <p className="anvl-display text-[11px] tracking-[0.26em] text-[var(--color-highlight-bright)]">
                     {String(i + 1).padStart(2, '0')} · {item.label}
                   </p>
                   <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-muted)]">{item.body}</p>

@@ -95,7 +95,7 @@ export function SiteFooter({ navigation, className }: SiteFooterProps) {
             ) : null}
             <span
               aria-hidden="true"
-              className="mt-6 block h-px w-12 bg-[var(--color-ember)]/60"
+              className="mt-6 block h-px w-12 bg-[var(--color-highlight)]/60"
             />
           </div>
 
@@ -105,7 +105,7 @@ export function SiteFooter({ navigation, className }: SiteFooterProps) {
               {groups.map((group) => (
                 <nav key={group.id} aria-label={group.title || 'Footer'} className="space-y-3">
                   {group.title ? (
-                    <h3 className="anvl-micro mb-1 text-[10px] font-normal text-[var(--color-ember-bright)]">
+                    <h3 className="anvl-micro mb-1 text-[10px] font-normal text-[var(--color-highlight-bright)]">
                       {stripAngleBracketTags(group.title)}
                     </h3>
                   ) : null}

@@ -16,6 +16,11 @@ vi.mock('@/features/admin/components/AdminLayout', () => ({
   AdminLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
+// Uses TanStack Query + Supabase fetches — out of scope for dashboard tile tests.
+vi.mock('@/features/admin/landing-picker/LandingPagePickerCard', () => ({
+  LandingPagePickerCard: () => null,
+}))
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     to,

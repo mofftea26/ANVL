@@ -17,7 +17,7 @@ export function OathCmsMark({
   width = 96,
   height = 96,
   tint = 'var(--color-heading)',
-  glow = 'var(--color-ember)',
+  glow = 'var(--color-highlight)',
 }: OathCmsMarkProps) {
   const src = slot === 'dropLogo' ? oathDropLogo() : oathCrestEmblem()
 

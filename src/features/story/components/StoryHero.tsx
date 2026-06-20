@@ -7,9 +7,9 @@ import { RevealOnScroll } from '@/shared/components/motion/RevealOnScroll'
 import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 
 const CTA_FORGE =
-  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-ember)] bg-[var(--color-ember)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-bg)] no-underline transition-opacity hover:opacity-90'
+  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-highlight)] bg-[var(--color-highlight)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-bg)] no-underline transition-opacity hover:opacity-90'
 const CTA_STEEL =
-  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-ember)_60%,var(--color-line))]'
+  'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-highlight)_60%,var(--color-line))]'
 
 /**
  * The saga's introduction: frames ANVL as a kingdom forging an army, and the
@@ -22,7 +22,7 @@ export function StoryHero() {
         <ForgeAtmosphere />
         <Container className="relative z-10 grid items-center gap-12 py-20 md:grid-cols-[1.1fr_0.9fr] md:py-28">
           <div>
-            <p className="anvl-display inline-flex items-center gap-2.5 text-xs tracking-[0.32em] text-[var(--color-ember-bright)] before:h-px before:w-8 before:bg-[var(--color-ember)] before:content-['']">
+            <p className="anvl-display inline-flex items-center gap-2.5 text-xs tracking-[0.32em] text-[var(--color-highlight-bright)] before:h-px before:w-8 before:bg-[var(--color-highlight)] before:content-['']">
               The Saga of ANVL
             </p>
             <h1 className="anvl-heading mt-5 max-w-3xl font-normal leading-[0.86] tracking-[-0.01em] text-[clamp(3rem,11vw,8rem)] text-[var(--color-heading)]">
@@ -56,7 +56,7 @@ export function StoryHero() {
               }
               sway
             >
-              <p className="anvl-display text-center text-[10px] tracking-[0.3em] text-[var(--color-ember-bright)]">
+              <p className="anvl-display text-center text-[10px] tracking-[0.3em] text-[var(--color-highlight-bright)]">
                 Forged Under Pressure
               </p>
             </WarBanner>

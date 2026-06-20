@@ -29,6 +29,12 @@ describe('landing page registry', () => {
     expect(resolveActiveLandingPageKey('garbage')).toBe(DEFAULT_LANDING_PAGE_KEY)
   })
 
+  it('collapses the retired the-oath-2 key to the single merged page', () => {
+    expect(isLandingPageKey('the-oath-2')).toBe(false)
+    expect(resolveLandingPage('the-oath-2').key).toBe('the-oath')
+    expect(DEFAULT_LANDING_PAGE_KEY).toBe('the-oath')
+  })
+
   it('resolves the active key through the CMS seam', () => {
     expect(getActiveLandingPageKey()).toBe(DEFAULT_LANDING_PAGE_KEY)
     expect(getActiveLandingPageKey('garbage')).toBe(DEFAULT_LANDING_PAGE_KEY)

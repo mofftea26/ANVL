@@ -138,13 +138,13 @@ function ProductPage() {
         <div className="grid gap-10 lg:grid-cols-2">
           <ProductGallery product={product} images={galleryImages} />
           <article className="space-y-6">
-            <p className="anvl-display inline-flex items-center gap-2 text-[11px] tracking-[0.28em] text-[var(--color-ember-bright)] before:h-px before:w-6 before:bg-[var(--color-ember)] before:content-['']">
+            <p className="anvl-display inline-flex items-center gap-2 text-[11px] tracking-[0.28em] text-[var(--color-highlight-bright)] before:h-px before:w-6 before:bg-[var(--color-highlight)] before:content-['']">
               {product.dropName}
             </p>
             <h1 className="anvl-heading text-4xl font-normal leading-[0.92] sm:text-5xl md:text-6xl">
               {product.name}
             </h1>
-            <hr className="anvl-ember-rule max-w-[7rem]" />
+            <hr className="anvl-highlight-rule max-w-[7rem]" />
             <p className="anvl-micro text-[var(--color-text-muted)]">{product.role}</p>
             <div className="flex flex-wrap items-baseline gap-3">
               {saleActive ? (
@@ -300,7 +300,7 @@ function ProductPage() {
             <div className="relative z-10 grid gap-10 md:grid-cols-[1.15fr_1fr]">
               {product.storytelling ? (
                 <div>
-                  <p className="anvl-display text-[11px] tracking-[0.28em] text-[var(--color-ember-bright)]">
+                  <p className="anvl-display text-[11px] tracking-[0.28em] text-[var(--color-highlight-bright)]">
                     The piece
                   </p>
                   <p className="anvl-heading mt-4 max-w-2xl text-2xl font-normal leading-snug md:text-3xl">
@@ -318,7 +318,7 @@ function ProductPage() {
                   <ul className="mt-5 space-y-3">
                     {product.designDetails.map((detail, i) => (
                       <li key={detail} className="flex gap-3 text-sm text-[var(--color-text-muted)]">
-                        <span className="anvl-display shrink-0 text-[var(--color-ember-bright)]">
+                        <span className="anvl-display shrink-0 text-[var(--color-highlight-bright)]">
                           {String(i + 1).padStart(2, '0')}
                         </span>
                         <span>{detail}</span>
