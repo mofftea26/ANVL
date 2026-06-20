@@ -5,14 +5,17 @@ This is the first file every Cursor agent must read before touching the ANVL cod
 ## Project identity
 ANVL Athletics is a Lebanon-first premium bodybuilding gymwear brand. The brand direction is dark, premium, disciplined, forged, industrial, and warrior-inspired without becoming costume-like. Tagline: **Forged Under Pressure**. Drop 01 is **The Oath**.
 
-Core brand tokens to preserve unless the CMS drop theme overrides them:
+Core brand tokens to preserve unless the active CMS theme overrides them:
 - black: `#0B0B0C`
 - darkSteelGrey: `#1D1F21`
 - washedCharcoal: `#34373A`
 - graphite: `#5B5E61`
 - bone: `#E7E4DF`
-- heading font direction: bold condensed uppercase, e.g. Bebas Neue-style
-- body font direction: clean modern sans, e.g. Manrope-style
+- headings: **Anton** (heavy condensed industrial display — bold condensed uppercase direction)
+- body: **Sora** (clean modern geometric grotesk sans)
+- heraldic display accent: **Cinzel** (`--font-display`, accent moments only)
+
+**Theme palette (single source of truth):** the storefront wears **one** published CMS theme — there is no per-landing-page palette override. The CMS theme editor exposes exactly **15 normalized tokens** (`background`, `foreground`, `card(+Foreground)`, `muted(+Foreground)`, `border`, `primary(+Foreground)`, `accent(+Foreground)`, `ring`, `destructive`, `success`, `warning`) defined by `themePaletteSchema` in `src/features/cms/config/cmsSiteConfig.zod.ts`; `themeConfigToCssVars` derives every `--color-*`/`--hero-*`/`--particle-*`/`--scrollbar-*` var (and brand aliases) from those, feeding SSR first paint, `SiteThemeProvider`, the editor preview, and the WebGL landing emblem/dust (same vars) so they cannot diverge.
 
 The global brand logo in the header/footer must remain the official ANVL logo and must not be replaced per drop. Drop logos/emblems are campaign visuals only.
 
@@ -22,9 +25,11 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 - TanStack Router
 - TanStack Query for server state
 - Zustand for local/client UI state
-- GSAP for desktop/tablet animation only
+- GSAP (+ Lenis, Framer Motion) for desktop/tablet animation only
+- three.js + `@react-three/fiber`/`drei` for WebGL (The Oath landing emblem/dust + Story book) — lazy `vendor-three`, desktop + no-reduced-motion only
+- Landing pages are **code-owned** React components (`src/features/landingPages/`), not CMS-composed; the CMS only picks the active page, assigns asset slots, and overrides per-scene copy
 - Commerce backend: **Shopify** (Storefront API) when `VITE_SHOPIFY_*` is set; see `docs/features/shopify-commerce.md`
-- Current phase may use local/mock CMS adapters, but code must be written so a real backend can replace the adapter later.
+- CMS/auth backend: **Supabase** when `VITE_SUPABASE_*` is set; else local/mock adapters. Code must be written so a real backend can replace the adapter later.
 
 ## Non-negotiable engineering rules
 1. Feature-based architecture.
@@ -45,7 +50,7 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 ## Required docs to read by task type
 - **Every task:** read `/docs/audit-2026-05-17.md` (stable finding IDs + phase tracker + **closure status**: the 2026-05-17 hardening *execution batch* is complete; follow-ups are listed under “Deferred work”). Also read the matching `.cursor/rules/*.mdc` rule files. Reference finding IDs (`SEC-04`, `PERF-02`, etc.) in commit messages and PR titles.
 - Architecture or folder work: read `/docs/architecture.md`, `/docs/cursor-workflow.md`
-- Landing page/drop work: read `/docs/features/drops-cms.md`, `/docs/features/acts-builder.md`, `/docs/design-system.md`
+- Landing page work: read `/docs/landing-pages.md`, `/docs/cms-architecture.md`, `/docs/design-system.md` (the legacy drop-builder/acts system in `/docs/features/drops-cms.md` + `/docs/features/acts-builder.md` is **removed** — those docs are historical only)
 - Product/shop work: read `/docs/features/products-commerce.md`
 - SEO work: read `/docs/features/seo.md`
 - Auth/account/orders work: read `/docs/features/auth-accounts-orders.md`
@@ -54,7 +59,7 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 
 ## Admin auth
 
-- **When `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` are set:** the admin app uses **Supabase Auth** (email + password). Only users with **`public.cms_profiles.role = 'admin'`** may access `/admin` (editors/viewers are rejected at sign-in). The browser Supabase client uses storage key **`anvl.supabase.admin.v1`**. Authenticated saves are pushed to **`anvl_drops`**, **`cms_admin_products`**, and **`storefront_publication`** (debounced) while the editor continues to use localStorage as its working copy.
+- **When `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` are set:** the admin app uses **Supabase Auth** (email + password). Only users with **`public.cms_profiles.role = 'admin'`** may access `/admin` (editors/viewers are rejected at sign-in). The browser Supabase client uses storage key **`anvl.supabase.admin.v1`**. Authenticated saves are pushed (debounced) to **`cms_settings`** + the **`storefront_publication`** mirror (and relational **`story_*`** tables for the Story editor) while the editor continues to use localStorage as its working copy. (The old `anvl_drops` / `cms_admin_products` tables were dropped in the 2026-06-07 CMS cleanup.)
 
 - **When Supabase env is unset (local CMS only):** the temporary static **`VITE_ANVL_ADMIN_*`** gate remains. It is still not production-grade security (see **`docs/technical-debt.md`**, SEC-01 / SEC-02 / SEC-03 / SEC-11 and Phase J).
 

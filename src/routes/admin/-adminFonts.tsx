@@ -5,7 +5,7 @@ import { SiteFontEditor } from '@/features/admin/site-font/SiteFontEditor'
 export function AdminFontsPageRoute() {
   return (
     <ProtectedAdminRoute>
-      <AdminLayout title="Fonts" description="Heading, body, and display typefaces.">
+      <AdminLayout title="Fonts" description="Heading, body, and display typefaces." layout="workspace">
         <SiteFontEditor />
       </AdminLayout>
     </ProtectedAdminRoute>

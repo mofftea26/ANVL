@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Plus } from 'lucide-react'
+import { Info, Plus } from 'lucide-react'
 import { AdminButton } from '@/features/admin/components/AdminButton'
+import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
+import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import {
   formatChapterNumber,
   type StoryChapter,
@@ -79,7 +81,40 @@ export function StoryEditor() {
     return <p className="text-sm text-[color:var(--color-danger)]">{error}</p>
   }
 
+  const sagaRail = (
+    <>
+      <AdminRailPanel
+        title="Saga model"
+        icon={<Info size={15} />}
+        description="The story is relational, not a single JSON blob."
+      >
+        <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">
+          <li>
+            <span className="text-[var(--color-text)]">Chapters</span> are drops — one shelf book
+            each.
+          </li>
+          <li>
+            <span className="text-[var(--color-text)]">Acts</span> are ordered beats inside a
+            chapter.
+          </li>
+          <li>
+            <span className="text-[var(--color-text)]">Cast</span> are characters attached to a
+            chapter or act.
+          </li>
+        </ul>
+      </AdminRailPanel>
+      <AdminRailPanel title="Publishing">
+        <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">
+          Only <span className="text-[var(--color-text)]">published</span> chapters appear on{' '}
+          <span className="text-[var(--color-text)]">/story</span>. Drafts stay hidden from the
+          storefront until you publish them.
+        </p>
+      </AdminRailPanel>
+    </>
+  )
+
   return (
+    <AdminWorkspace asideLabel="Story saga help" aside={sagaRail}>
     <div className="grid gap-6 lg:grid-cols-[18rem_1fr]" data-testid="story-editor">
       {/* Chapter list */}
       <aside className="space-y-3">
@@ -143,5 +178,6 @@ export function StoryEditor() {
         )}
       </div>
     </div>
+    </AdminWorkspace>
   )
 }

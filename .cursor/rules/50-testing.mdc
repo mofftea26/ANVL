@@ -25,7 +25,7 @@ Each touched module must add coverage for:
 
 | Area | Minimum coverage |
 |---|---|
-| Zod schemas / persistence | Happy-path parse + at least one reject case + one migration case (model: `drops.persistence.zod.test.ts`). |
+| Zod schemas / persistence | Happy-path parse + at least one reject case + one migration case (model: `src/features/cms/config/__tests__/*` — e.g. the theme palette legacy-key migration). |
 | Pure helpers / mappers | One case per branch. |
 | Hooks | A renderHook test that exercises the public surface (no implementation details). |
 | Components | Render + the primary user interaction (click/submit/keyboard). Use `@testing-library/react` queries by role/label. |
@@ -45,7 +45,7 @@ Each touched module must add coverage for:
 - `pnpm test` — single run (CI-style).
 - `pnpm test:watch` — TDD loop.
 - `pnpm test:coverage` — coverage report (Vitest v8 provider).
-- `pnpm test src/features/admin/drops` — run a single feature.
+- `pnpm test src/features/cms` — run a single feature.
 
 ## When you can skip tests
 

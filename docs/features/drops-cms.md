@@ -1,4 +1,8 @@
-﻿# Feature â€” Drops CMS
+﻿# Feature — Drops CMS
+
+> **DEPRECATED (2026-06).** The multi-drop builder, active-drop lifecycle, drop editor, and per-drop palette/acts described below have been **removed**. The CMS no longer authors drops; landing pages are code-owned (`src/features/landingPages/`, registry-driven), the storefront renders one active landing-page key, and theming is one global 15-token palette. This file is retained only as historical context for the prompts/plans that reference it.
+>
+> **Current docs:** `docs/landing-pages.md` (code-owned landing pages), `docs/cms-architecture.md` (current CMS surfaces + admin layout), `docs/design-system.md` (15-token theme palette), `docs/project-map.md` (current folder/route map).
 
 ## Purpose
 Drops are the central content unit for ANVL campaigns. Each drop controls the landing page content, campaign theme, release date, drop page, and linked products.

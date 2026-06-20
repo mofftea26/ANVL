@@ -1,8 +1,11 @@
-import { Check, Save } from 'lucide-react'
+import { Check, Info, ListOrdered, Save } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
+import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
+import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWorkspaceStatusPanel'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import {
@@ -90,8 +93,38 @@ export function AdminLandingContentEditor() {
     return () => setPageActions(null)
   }, [toolbar, setPageActions])
 
+  const helpRail = (
+    <>
+      <AdminRailPanel
+        title="How overrides work"
+        icon={<Info size={15} />}
+        description="Every field is optional — the storefront stays designed by default."
+      >
+        <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">
+          <li>Placeholders show the designed default copy.</li>
+          <li>Type to override a scene; clear a field to restore the default.</li>
+          <li>
+            Images and video live in{' '}
+            <span className="text-[var(--color-text)]">Assets</span>, not here.
+          </li>
+        </ul>
+      </AdminRailPanel>
+      <AdminRailPanel title="Scenes" icon={<ListOrdered size={15} />}>
+        <ol className="space-y-1.5 text-xs text-[var(--color-text-muted)]">
+          <li>1 — Hero</li>
+          <li>2 — Manifesto</li>
+          <li>3 — Tenets</li>
+          <li>4 — Products</li>
+          <li>5 — Finale</li>
+        </ol>
+      </AdminRailPanel>
+      <AdminWorkspaceStatusPanel />
+    </>
+  )
+
   return (
-    <div className="space-y-8" data-testid="admin-landing-content-editor">
+    <AdminWorkspace asideLabel="Landing content help" aside={helpRail}>
+      <div className="space-y-8" data-testid="admin-landing-content-editor">
       <p className="max-w-2xl text-sm text-[var(--color-text-muted)]">
         Override the landing page copy per scene for{' '}
         <span className="text-[var(--color-heading)]">Drop 01 — The Oath</span>.
@@ -113,6 +146,7 @@ export function AdminLandingContentEditor() {
         <OathProductsFields register={register} taglines={taglineArray} />
         <OathFinaleFields register={register} />
       </form>
-    </div>
+      </div>
+    </AdminWorkspace>
   )
 }

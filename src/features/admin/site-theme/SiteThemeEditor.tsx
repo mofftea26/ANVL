@@ -1,10 +1,11 @@
-import { Check, Copy, Monitor, Plus, RotateCcw, Save, Smartphone, Sparkles, Trash2 } from 'lucide-react'
+import { Check, Copy, Plus, RotateCcw, Save, Sparkles, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'
 import { AdminInput } from '@/features/admin/components/AdminInput'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
+import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import {
@@ -23,10 +24,12 @@ import {
 } from '@/features/cms/config/themeLibrary'
 import { THEME_EDITOR_SECTIONS } from '@/features/cms/config/themeTokens'
 import { ThemeColorField } from './ThemeColorField'
-import { ThemeComponentPreview } from './ThemeComponentPreview'
-import { ThemeContrastReport } from './ThemeContrastReport'
+import {
+  SiteThemePreviewRail,
+  type ThemePreviewMode,
+} from './SiteThemePreviewRail'
 
-type PreviewMode = 'desktop' | 'mobile'
+type PreviewMode = ThemePreviewMode
 
 function useThemeLibrary(): ThemeLibraryConfig {
   return useSyncExternalStore(
@@ -176,7 +179,17 @@ export function SiteThemeEditor() {
         ) : null}
       </p>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] xl:items-start">
+      <AdminWorkspace
+        asideLabel="Theme preview and accessibility"
+        aside={
+          <SiteThemePreviewRail
+            preset={editingPreset}
+            mode={previewMode}
+            onModeChange={setPreviewMode}
+            onApplyFix={setPaletteField}
+          />
+        }
+      >
         <div className="space-y-6">
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[12rem] flex-1">
@@ -294,40 +307,7 @@ export function SiteThemeEditor() {
             </section>
           ))}
         </div>
-
-        <div className="space-y-4 xl:sticky xl:top-6">
-          <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-              Live preview
-            </span>
-            <div className="flex gap-1.5">
-              <AdminTopbarChipButton
-                type="button"
-                size="icon"
-                variant={previewMode === 'desktop' ? 'primary' : undefined}
-                icon={<Monitor size={15} />}
-                onClick={() => setPreviewMode('desktop')}
-                aria-label="Desktop preview"
-                title="Desktop preview"
-              />
-              <AdminTopbarChipButton
-                type="button"
-                size="icon"
-                variant={previewMode === 'mobile' ? 'primary' : undefined}
-                icon={<Smartphone size={15} />}
-                onClick={() => setPreviewMode('mobile')}
-                aria-label="Mobile preview"
-                title="Mobile preview"
-              />
-            </div>
-          </div>
-          <ThemeComponentPreview preset={editingPreset} mode={previewMode} />
-          <ThemeContrastReport
-            palette={editingPreset.palette}
-            onApplyFix={(key, value) => setPaletteField(key, value)}
-          />
-        </div>
-      </div>
+      </AdminWorkspace>
     </div>
   )
 }

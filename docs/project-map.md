@@ -55,13 +55,13 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 | `20260620130000_cms_scheduled_activation.sql` | Scheduled drop activation infrastructure |
 | `20260624120000_fix_publish_drop_body_column.sql` | Fix column reference in publish RPC |
 | `20260625120000_cron_process_scheduled_drops_direct.sql` | pg_cron direct function call for scheduled drops |
-| `20260626120000_cms_settings_landing_pages.sql` | **New model:** `cms_settings` + `landing_pages` tables (RLS), `storefront_publication.active_landing_page_key` column |
+| `20260626120000_cms_settings_landing_pages.sql` | **Current model:** `cms_settings` + `landing_pages` tables (RLS), `storefront_publication.active_landing_page_key` column |
+| `20260626120000_story_tables.sql` / `20260626120001_story_media_bucket.sql` | Story saga tables (`story_chapters`/`story_acts`/`story_cast`) + `story-media` bucket |
+| `20260607120000_cms_minimal_cleanup.sql` | DESTRUCTIVE: dropped `anvl_drops`, `cms_admin_products`, `shopify_product_links`, `cms_settings.seo_config`, and the drop-builder/layout/seo columns on `storefront_publication` (see `docs/cms-architecture.md` → Dropped) |
+| `20260620140000_*` | Normalize stored `theme_config` palettes to the 15-token set |
+| `20260628120000_consolidate_oath_landing_pages.sql` | Fold `the-oath-2` slots/content into `the-oath`, delete the `the-oath-2` row, force `active_landing_page_key = 'the-oath'` |
 
-### `teardown/` (manual, prerequisite-gated — NOT auto-applied)
-
-| Script | What it does |
-|---|---|
-| `2026_drop_builder_teardown.sql` | DESTRUCTIVE: drops `anvl_drops`, `cms_publish_drop`, scheduled-drops cron + RPCs, drop columns on `storefront_publication`. Apply only after drop-builder code removal — see `docs/cms-teardown-plan.md` |
+> The migration list above is the meaningful subset; the full ordered set lives in `supabase/migrations/`. The drop-builder teardown has been applied — `anvl_drops` / `cms_publish_drop` / scheduled-drop RPCs no longer exist.
 
 ### `functions/`
 
@@ -98,14 +98,14 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 
 | Route | URL | Notes |
 |---|---|---|
-| `__root.tsx` | all | Root layout; loads storefront projection from Supabase or fallback |
+| `__root.tsx` | all | Root layout; loads storefront projection from Supabase or fallback; injects SSR theme CSS + landing-entry lock |
 | `index.tsx` | `/` | Home — renders the active code-owned landing page via `landingPages` registry (default: The Oath) |
 | `shop/index.tsx` | `/shop` | Shop listing with filters |
 | `shop/$slug.tsx` | `/shop/:slug` | Product detail page |
-| `drop/$slug.tsx` | `/drop/:slug` | Active drop page |
 | `cart.tsx` | `/cart` | Cart page |
 | `checkout/index.tsx` | `/checkout` | Checkout form |
 | `checkout/success.tsx` | `/checkout/success` | Order confirmation |
+| `story.tsx` | `/story` | Story saga (chapter shelf + deep-linkable book overlay) |
 | `about.tsx` | `/about` | About page |
 | `size-guide.tsx` | `/size-guide` | Size guide |
 | `care-guide.tsx` | `/care-guide` | Care instructions |
@@ -114,15 +114,15 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 | `terms.tsx` | `/terms` | Terms of service |
 | `returns.tsx` | `/returns` | Returns policy |
 | `admin-preview.tsx` | `/admin-preview` | Gated by `VITE_ADMIN_PREVIEW_ENABLED` |
-| `admin/route.tsx` | `/admin` | Admin layout (lazy) |
-| `admin/index.tsx` | `/admin` | Dashboard |
-| `admin/drops/*` | `/admin/drops` | Drop editor and list |
-| `admin/products/*` | `/admin/products` | Product editor |
-| `admin/seo.tsx` | `/admin/seo` | SEO editor |
-| `admin/theme.tsx` | `/admin/theme` | Theme editor |
-| `admin/website-layout.tsx` | `/admin/website-layout` | Nav/footer layout editor |
-| `admin/media.tsx` | `/admin/media` | Media library |
-| `admin/settings.tsx` | `/admin/settings` | Site settings |
+| `admin/route.tsx` | `/admin` | Admin layout shell (lazy) |
+| `admin/index.tsx` | `/admin` | Dashboard — active landing-page picker |
+| `admin/login.tsx` | `/admin/login` | Admin sign-in |
+| `admin/theme.tsx` | `/admin/theme` | Theme & colors editor (15-token palette) |
+| `admin/fonts.tsx` | `/admin/fonts` | Fonts editor |
+| `admin/assets.tsx` | `/admin/assets` | Media library + asset slot assignments |
+| `admin/content.tsx` | `/admin/content` | Landing content (per-scene copy overrides) |
+| `admin/story.tsx` | `/admin/story` | Story saga editor (chapters/acts/cast) |
+| `admin/settings.tsx` | `/admin/settings` | Session + local reset |
 | `auth/sign-in.tsx` | `/auth/sign-in` | Sign in (Supabase auth) |
 | `auth/sign-up.tsx` | `/auth/sign-up` | Sign up |
 | `auth/forgot-password.tsx` | `/auth/forgot-password` | Password reset |
@@ -132,35 +132,28 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 | `account/addresses.tsx` | `/account/addresses` | Addresses |
 | `account/orders/` | `/account/orders` | Order history + detail |
 
+> Each heavy admin page is registered lazily via a colocated `-admin*.tsx` sidecar (`PERF-01`). Routes prefixed with `-` are ignored by the route scanner (used for sidecars + route tests).
+
 ### `src/features/`
 
 #### `admin/`
 
-Heavy CMS editor split into subfolders:
+Slim CMS admin, split into subfolders. Every page renders inside the wide-screen **workspace shell** (`AdminLayout layout="workspace"` → `AdminWorkspace` = primary column + sticky `AdminRailPanel` rail; `AdminWorkspaceStatusPanel` shows the Supabase-vs-local target):
 
 | Subfolder | Purpose |
 |---|---|
-| `auth/` | Supabase auth flow, admin session, `ProtectedAdminRoute`, `useAdminAuth` |
-| `cmsRemote/` | Supabase write-through: publish drop, sync drops list, insert, hydration |
-| `components/` | Admin UI primitives: `AdminButton`, `AdminCard`, `AdminLayout`, `AdminSidebar`, `AdminTopbar`, etc. |
-| `drops/` | Drop editor: `DropActsBuilderPanel`, `DropEditorRoute`, acts builder, palette card, theme presets |
-| `drops/act-editor/` | Act animation panel |
-| `drops/acts/` | Act type normalizers, seed data, Zod schemas |
-| `drops/cinematic/` | Cinematic hero CMS editor forms |
-| `global-brand/` | Global brand settings (logo, colors) editor |
+| `auth/` | Supabase auth flow, admin session, `ProtectedAdminRoute`, role gate |
+| `cmsRemote/` | Supabase write-through (`adminCmsRemoteSync`, `cmsWriteThrough`) → `cms_settings` + `storefront_publication`; media upload |
+| `components/` | Admin UI primitives + layout: `AdminLayout`, `AdminWorkspace`, `AdminRailPanel`, `AdminWorkspaceStatusPanel`, `AdminSidebar`, `AdminTopbar`, `AdminButton`, `AdminCard`, etc. |
 | `hooks/` | Admin-specific hooks (e.g. `useSaveSuccessFlash`) |
-| `landing-cms/` | Landing CMS service + storage (admin side) — **deprecated** (drop-builder) |
-| `landing-picker/` | **New model:** `LandingPagePickerCard` — Dashboard control to pick the active code-owned landing page |
-| `lib/` | Admin datetime helpers |
-| `media/` | Media library: upload zone, asset grid, picker modal, `useMediaAssetsQuery` |
-| `products/` | Product editor: `ProductEditorRoute`, service, mapper, persistence Zod |
-| `seo/` | `SeoCmsHub` — per-page SEO editor |
-| `site-home/` | Site homepage mode editor |
-| `site-layout/` | Site layout editor (nav links, footer) |
-| `landing-content/` | Landing Content editor (`/admin/content`): RHF form over each page's content schema, defaults as placeholders |
-| `site-seo/` | Global site SEO editor, marketing tools |
-| `site-theme/` | Site theme editor |
-| `website-layout/` | Website layout service + storage (nav + footer JSON) |
+| `landing-picker/` | Dashboard control to pick the active code-owned landing page (Supabase `landing_pages` ∩ registry) |
+| `landing-content/` | Landing Content editor (`/admin/content`): RHF form over The Oath's content schema, code defaults as placeholders (`sections/Oath*Fields`) |
+| `lib/` | Admin datetime helpers (`adminDateTime.ts`), local reset |
+| `media/` | Media library: upload zone, asset grid, picker, `useMediaAssetsQuery` |
+| `site-theme/` | Theme editor (15-token palette) + WCAG contrast report + preview rail |
+| `site-font/` | Fonts editor + font families service |
+| `site-assets/` | Assets editor (media library + general/per-drop slot assignment) |
+| `story/` | Story saga editor: chapters, acts, cast, book colors, story media service |
 
 #### `landingPages/` — code-owned landing pages (current architecture)
 
@@ -176,7 +169,9 @@ Static, cinematic landing experiences live in code (one folder per page). The CM
 | `pages/TheOathLanding/` | Drop 01 — The Oath (the single merged WebGL + GSAP film): `index.tsx` (composition), `theOathAssets.ts` / `theOathAssetSlots.ts` (asset binding + slots), `content/` (Zod schema + designed defaults + `resolveOathContent`), `components/` (OathHero, OathManifesto, OathTenets, ProductRevealSequence, OathFinale, OathCursor, OathProgressRail, OathCtaLink, OathMediaFallback, OathCmsMark), `motion/` (`oathMotionState` bridge, per-scene `buildOath*` builders, spotlight, SplitText wrapper, magnetics), `hooks/` (scroll timeline, pointer), `webgl/` (canvas gate, lazy `OathCanvas`, `Monolith`/`AnvlOath3D`/`DustMotes`, dust shader, brand colors) |
 | `__tests__/registry.test.ts` | Registry resolution + fallback behavior |
 
-> The legacy act/drop-builder landing system (`marketing/act-presets`, `marketing/public-landing`, `cms/landing`) is still present for the admin drop editor and is slated for removal in the CMS-cleanup phase. The public home route no longer uses it.
+| `LandingEntryContext.tsx` / `landingEntryLoad.ts` | Landing entry-lock context + load coordination (prevents flash before the cinematic page hydrates) |
+
+> The legacy act/drop-builder landing system (`marketing/act-presets`, `marketing/public-landing`, `cms/landing`, and the `drops` feature) has been **removed**. The public home route renders only the code-owned `landingPages` registry.
 
 #### `cms/`
 
@@ -184,48 +179,27 @@ Storefront-safe CMS reads:
 
 | File / Folder | Purpose |
 |---|---|
-| `api/` | CMS adapters: `cmsClient.seed.ts`, `cmsClient.localStorage.ts`, Supabase readers |
+| `api/` | CMS read adapters + projection: `cmsClient.seed.ts`, `cmsClient.localStorage.ts`, `publicStorefrontPublication.ts`, `loadStorefrontProjection.ts`, `siteSettingsClient.*`, `supabaseStorefrontReaders.ts`, `seoClient.*`, `storefrontProjectionHead.ts` |
+| `config/` | Theme/font config + **15-token palette source of truth**: `cmsSiteConfig.zod.ts` (`themePaletteSchema`, `themeConfigToCssVars`), `cmsSiteConfig.settings.ts`, `themePresets.ts`, `themeLibrary.ts`, `themeTokens.ts`, `fontLibrary.ts` |
+| `assets/` | `resolvePublishedAssets.ts`, `storefrontPageSlots.ts` — merge asset_config + media_index → landing props |
 | `data/cms.mock.ts` | Mock CMS data for development |
-| `hooks/` | `useLandingCms`, `useStorefrontActiveDrop`, `useSiteHomepageMode`, `useStorefrontPublication`, `useActiveLandingPageKey` (new model) |
-| `landingPageActiveKey.settings.ts` | **New model:** local store + parse + loader/sync for the active landing-page key |
+| `hooks/` | `useActiveLandingPageKey`, `useStorefrontPublication`, `useSiteHomepageMode`, `useWebsiteNavigation`, `invalidateStorefrontPublication` |
+| `landingPageActiveKey.settings.ts` | Local store + parse + loader/sync for the active landing-page key |
 | `landingContent/` | Landing content envelope: Zod parse (`landingContent.zod.ts`) + local store/sync (`landingContent.settings.ts`) for per-landing-key copy blobs |
-| `landing/` | `composeLandingPageFromDrop`, `landingCmsRead`, `landingActs.normalize`, `landingActs.types`, constants |
-| `layout/websiteLayout.types.ts` | Website layout type (nav, footer, announcement) |
-| `read/` | Thin read facades: `dropRuntime`, `landingCmsRuntime`, `cmsSubscriptions` |
-| `runtime/` | `storefrontCmsSync`, `storefrontReadFallback` |
-| `theme/dropPaletteStyle.ts` | CSS var serialization for drop theme palette |
-| `types/` | `cms.types.ts`, `adminDrops.types.ts` |
+| `layout/` | `websiteLayout.defaults.ts` / `websiteLayout.types.ts` — code-owned nav/footer defaults (not CMS-editable) |
+| `navigation/` | `staticWebsiteNavigation.ts`, `navigation.types.ts` — storefront nav/footer code defaults |
+| `seoMeta.ts` / `siteSeo.local.ts` / `siteHomepage.settings.ts` | SEO meta builders + storefront SEO/homepage defaults (read models; editor UIs removed) |
+| `types/` | `cms.types.ts` |
 
-#### `drops/`
-
-Drop document foundation:
-
-| File | Purpose |
-|---|---|
-| `drop.types.ts` | Drop type (canonical) |
-| `types/drop.types.ts` | Drop type (feature folder copy — prefer importing from here) |
-| `schemas/drop.schema.ts` | Zod schema for Drop |
-| `drops.actSequence.ts` | Default act slot ordering |
-| `hooks/useActiveDrop.ts` | Hook to read the active drop |
-| `public/DropActivePageView.tsx` | Storefront drop page view |
-| `public/DropReleaseSection.tsx` | Drop release date section |
-| `theme/dropThemePalette.types.ts` | Drop theme palette types |
+> The standalone `drops/` feature, `cms/landing`, `cms/read`, `cms/runtime`, and `cms/theme/dropPaletteStyle.ts` were removed — there is one global CMS theme and no per-drop palette/acts.
 
 #### `marketing/`
 
-Storefront marketing surfaces:
+Storefront marketing surfaces (the act-preset / cinematic-hero / public-landing system was removed; landing pages are code-owned under `landingPages/`):
 
 | Subfolder | Purpose |
 |---|---|
-| `act-presets/` | All act preset components, organized by nature (hero, manifesto, etc.) |
-| `act-presets/registry.ts` | Lazy-loads act presets; maps `nature:preset` to component |
-| `act-presets/shared/` | Shared act utilities: `ActPresetShell`, `ActVisualFrame`, animation helpers |
-| `cinematic-hero/` | Full cinematic scroll hero: GSAP timeline, sections, nav modes, config types |
-| `components/` | Standalone marketing components: `HeroForgeSequence`, `PiecesGrid`, `WaitlistSection`, etc. |
-| `default-landing/` | Default cinematic landing (fallback when no active drop) |
-| `home/` | Homepage sections: campaign cards, lookbook strip |
-| `hooks/useWaitlistForm.ts` | Waitlist form logic |
-| `public-landing/PublicLandingActs.tsx` | Renders ordered acts for the storefront |
+| `home/` | Homepage strips: `CampaignCardsSection`, `LookbookStripSection` |
 
 #### `products/`
 
@@ -297,7 +271,7 @@ Framework-agnostic primitives — no feature imports allowed here.
 | `lib/color.ts` | Color manipulation utilities |
 | `lib/storage/createJsonStore.ts` | Generic Zod-validated localStorage store factory |
 | `lib/storage/createLocalStorageChannel.ts` | Cross-tab event channel for storage changes |
-| `schemas/` | Shared Zod schemas: media, money, navigation, site-settings |
+| `schemas/` | Shared Zod schemas: media, money, navigation (scaffolding for future REST/BFF; not all wired yet) |
 | `types/` | Types inferred from shared schemas |
 
 ---

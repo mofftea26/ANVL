@@ -8,6 +8,7 @@ export function AdminStoryPageRoute() {
       <AdminLayout
         title="Story"
         description="Author the saga — chapters (drops), acts, and the army cast."
+        layout="workspace"
       >
         <StoryEditor />
       </AdminLayout>

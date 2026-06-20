@@ -23,7 +23,7 @@ Use for: hero sections, scroll-pinned storytelling, ScrollTrigger reveals, produ
 
 Best for: complex, multi-step, scroll-driven experiences.
 
-Reference: `src/features/marketing/components/HeroForgeSequence.tsx`, `src/features/marketing/cinematic-hero/`
+Reference: `src/features/landingPages/pages/TheOathLanding/` — its `hooks/useTheOathScrollTimeline.ts` orchestrates the per-scene `motion/buildOath*.ts` builders.
 
 ### 2. Framer Motion (lightweight browser animations)
 
@@ -160,25 +160,18 @@ Bad (causes layout): `width`, `height`, `top`, `left`, `margin`, `padding`
 
 ---
 
-## Cinematic Hero System
+## The Oath cinematic landing
 
-The cinematic scroll hero (`cinematicScrollHero` preset) is the most complex animation in the project.
+The single code-owned landing page `TheOathLanding` (`src/features/landingPages/pages/TheOathLanding/`) is the most complex animation in the project — it merges the former Oath I + Oath II pages into one scroll-pinned WebGL + GSAP experience.
 
 Architecture:
-- `CinematicHeroRoot` — top-level container
-- `CinematicScrollHero` — main scroll timeline
-- `useCinematicHeroTimeline` — GSAP timeline builder
-- `CinematicHeroBackground` — background media handler
-- `CinematicHeroSectionView` — individual section renderer
-- `cinematicHeroPhase.store.ts` — Zustand store for phase state (cinematic vs commerce nav)
+- `index.tsx` — page shell; mounts scenes (`OathHero`, `OathManifesto`, `OathTenets`, `ProductRevealSequence`, `OathFinale`) + the lazy WebGL canvas.
+- `hooks/useTheOathScrollTimeline.ts` — the single GSAP `matchMedia` timeline that sequences the per-scene `motion/buildOath*.ts` builders (hero, manifesto, tenets, products, rail, finale, plus `buildOathStatic.ts` for the reduced-motion / mobile branch).
+- `motion/oathMotionState.ts` — the mutable ref bridge: ScrollTrigger `onUpdate` writes progress; R3F `useFrame` reads + lerps WebGL uniforms (zero re-renders). Also carries the smoothed pointer.
+- `webgl/` — `OathCanvasGate` (client + `isWebglAvailable()` + `≥768px` + reduced-motion gate, three.js behind `React.lazy` → `vendor-three` chunk), `OathCanvas`, `Monolith`, `DustMotes`.
+- `content/` — `oathContent.schema.ts` + `resolveOathContent.ts`: CMS copy overrides with designed code defaults.
 
-The CMS config (`CinematicConfig`) controls:
-- `scrollLength`: `compact | standard | extended` (maps to GSAP scroll distances)
-- `navMode`: `auto | transparentTopbar | sideRail | cornerDock | commandOverlay`
-- `backgroundMode`: `image | video | gradient | forgeScene`
-- `sections[]`: ordered sections with content, media, animation presets
-
-Mobile behavior: All cinematic hero sections snap to final state via `gsap.set`. The hero renders as a static stacked layout.
+Mobile / reduced motion: `buildOathStatic.ts` `gsap.set`s every scene to its final state and the WebGL canvas never mounts — the page renders as a static stacked layout.
 
 ---
 
@@ -240,22 +233,22 @@ Standard durations:
 
 ---
 
-## Act Preset Animation Patterns
+## Landing motion utilities (`TheOathLanding/motion/`)
 
-Reusable animation utilities for act presets (in `src/features/marketing/act-presets/shared/`):
+The act-preset animation system was removed. Landing motion now lives co-located with `TheOathLanding`:
 
-| Utility | Purpose |
+| Module | Purpose |
 |---|---|
-| `actAnimationConfig.ts` | Standard easing, duration, and timing values for acts |
-| `actMotionHelpers.ts` | Framer Motion variant factory helpers |
-| `useActScrollReveal.ts` | GSAP scroll reveal hook (dual-gated) |
-| `useActIdleMotion.ts` | Subtle idle/ambient motion for atmospheric effect |
-| `actTransitionBridge.ts` | Smooth transitions between consecutive acts |
+| `oathMotionHelpers.ts` | Shared easing / progress helpers for the scene builders |
+| `splitTextReveal.ts` | SplitText mask reveal (hero blur-rise); returns `revert()` for matchMedia cleanup |
+| `oathMotionState.ts` | Mutable DOM⇄WebGL bridge ref (scroll progress + smoothed pointer) |
+| `attachMagnetics.ts` / `buildOathSpotlight.ts` | Pointer-driven magnetics + hero spotlight reveal |
+| `buildOath{Hero,Manifesto,Tenets,Products,Rail,Finale,Static}.ts` | Per-scene timeline builders, sequenced by `useTheOathScrollTimeline.ts` |
 
-Every act preset that uses GSAP must:
+Any landing motion that uses GSAP must:
 1. Import from `src/shared/lib/gsap.ts`
 2. Gate animations with `gsap.matchMedia` (viewport + reduced motion)
-3. Clean up with `mm.revert()` on unmount
+3. Clean up with `mm.revert()` (and any SplitText `revert()`) on unmount
 
 ---
 

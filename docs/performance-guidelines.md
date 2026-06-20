@@ -31,8 +31,8 @@ This builds with `ANVL_ANALYZE=1` and opens `dist/stats.html` with a treemap.
 | `vendor-gsap` | GSAP + ScrollTrigger + useGSAP |
 | `vendor-lenis` | Lenis |
 | `vendor-framer-motion` | Framer Motion |
+| `vendor-three` | `three`, `@react-three/*`, `troika-three-text` (The Oath WebGL only) |
 | `vendor-zod` | Zod |
-| `act-presets-<nature>` | Act preset per nature (auto-chunked) |
 | Admin routes | Lazy via `lazyRouteComponent` |
 
 When adding a new heavy dependency (>50KB gzipped), add it to `manualChunks` in `vite.config.ts`.
@@ -43,9 +43,9 @@ The storefront entry chunk must **not** import `src/features/admin/**` runtime c
 
 Check by running `pnpm analyze` and verifying admin modules don't appear in the storefront chunks.
 
-### Act presets
+### The Oath WebGL
 
-Act presets are lazily loaded per-component. Each nature's presets share a chunk (`act-presets-hero`, `act-presets-productShowcase`, etc.). A page loads only the act presets that are actually rendered.
+`TheOathLanding`'s three.js scene is gated and lazy: `OathCanvasGate` mounts the canvas only on client + `isWebglAvailable()` + `≥768px` + `prefers-reduced-motion: no-preference`, with the three.js import behind `React.lazy` so it stays in the `vendor-three` chunk and never ships to mobile / reduced-motion / SSR.
 
 ---
 
@@ -55,15 +55,15 @@ Act presets are lazily loaded per-component. Each nature's presets share a chunk
 
 Every admin route **must** use `lazyRouteComponent`:
 ```ts
-const AdminDropEditor = lazyRouteComponent(
-  () => import('./-dropEditorPage'),
-  'DropEditorPage'
+const AdminThemeEditor = lazyRouteComponent(
+  () => import('./-adminTheme'),
+  'AdminThemeRoute'
 )
 ```
 
 ### Heavy panels
 
-Editor panels over 600 lines (e.g. `DropActsBuilderPanel`) must be loaded behind `React.lazy` + `Suspense`, keyed by tab visibility. Don't load the full editor on page mount — only when the tab is first viewed.
+Large editor panels (≥500 lines) should be loaded behind `React.lazy` + `Suspense`, keyed by visibility. Don't load a full editor on page mount — only when its tab/section is first viewed.
 
 ### lucide-react
 
@@ -87,8 +87,8 @@ import * as Icons from 'lucide-react'                  // ✗ imports entire lib
 
 ## Fonts
 
-- Bebas Neue and Manrope are preloaded via `<link rel="preload">` in `__root.tsx`
-- Only the weights actually used are imported (400, 500, 600, 700 for Manrope; 400 for Bebas Neue)
+- Anton (headings), Sora (body), and Cinzel (display accent) are preloaded via `<link rel="preload">` in `__root.tsx`
+- Only the weights actually used are imported (400/500/600/700 for Sora; 400 for Anton; display weights for Cinzel)
 - Font files are served from the package (`@fontsource/*`) — no external requests
 - Use `font-display: swap` (default for `@fontsource`)
 

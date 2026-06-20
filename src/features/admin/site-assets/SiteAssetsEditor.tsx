@@ -2,9 +2,9 @@ import { Check, Save } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
+import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
-import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { MediaLibraryPage } from '@/features/admin/media/MediaLibraryPage'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import {
@@ -27,6 +27,7 @@ import {
 } from '@/features/cms/assets/storefrontPageSlots'
 import { fetchLandingPagePickerOptions } from '@/features/admin/landing-picker/fetchLandingPagePickerOptions'
 import { listLandingPages } from '@/features/landingPages/registry'
+import { AssetSlotAssignmentPanel } from './AssetSlotAssignmentPanel'
 
 function useAssetConfig(): AssetConfig {
   return useSyncExternalStore(
@@ -103,8 +104,6 @@ export function SiteAssetsEditor() {
         ? getStorefrontPageSlots(scope)
         : (DROP_ASSET_SLOTS[scope] ?? [])
 
-  const UNASSIGNED = '__unassigned__'
-
   const assignments =
     scope === 'general'
       ? config.general
@@ -138,6 +137,27 @@ export function SiteAssetsEditor() {
     return sections
   }, [slots])
 
+  const scopeOptions = useMemo(
+    () => [
+      { value: 'general', label: 'General (site-wide)' },
+      ...drops.map((d) => ({ value: d.key, label: `Landing — ${d.name}` })),
+      ...storefrontPages.map((p) => ({
+        value: p.key,
+        label: `Page — ${p.name}`,
+      })),
+    ],
+    [drops, storefrontPages],
+  )
+
+  const mediaAssets = useMemo(
+    () =>
+      (mediaQuery.data ?? []).map((asset) => ({
+        id: asset.id,
+        filename: asset.filename,
+      })),
+    [mediaQuery.data],
+  )
+
   function setSlot(slotKey: string, mediaId: string) {
     setConfig((prev) => {
       if (scope === 'general') {
@@ -165,76 +185,24 @@ export function SiteAssetsEditor() {
     })
   }
 
+  const slotAssignmentRail = (
+    <AssetSlotAssignmentPanel
+      scope={scope}
+      onScopeChange={setScope}
+      scopeOptions={scopeOptions}
+      slotSections={slotSections}
+      assignments={assignments}
+      assignmentValue={assignmentValue}
+      onSlotChange={setSlot}
+      mediaAssets={mediaAssets}
+    />
+  )
+
   return (
-    <div className="space-y-8" data-testid="site-assets-editor">
-      <MediaLibraryPage />
-
-      <section className="space-y-4 rounded-2xl border border-[var(--color-line)] p-4">
-        <h2 className="anvl-heading text-lg font-normal">Slot assignments</h2>
-        <p className="text-sm text-[var(--color-text-muted)]">
-          Map uploaded media to code-defined slots. Unassigned slots use built-in fallbacks.
-        </p>
-
-        <AdminFieldSelect
-          label="Scope"
-          value={scope}
-          onChange={setScope}
-          options={[
-            { value: 'general', label: 'General (site-wide)' },
-            ...drops.map((d) => ({ value: d.key, label: `Landing — ${d.name}` })),
-            ...storefrontPages.map((p) => ({
-              value: p.key,
-              label: `Page — ${p.name}`,
-            })),
-          ]}
-        />
-
-        <div className="space-y-6">
-          {slotSections.map((section, sectionIndex) => (
-            <div key={section.title ?? `section-${sectionIndex}`} className="space-y-4">
-              {section.title ? (
-                <h3 className="anvl-heading text-base font-normal text-[var(--color-heading)]">
-                  {section.title}
-                </h3>
-              ) : null}
-              <div className="grid gap-4 sm:grid-cols-2">
-                {section.slots.map((slot) => (
-                  <div key={slot.key} className="space-y-1.5">
-                    {slot.kind === 'select' ? (
-                      <AdminFieldSelect
-                        label={slot.label}
-                        value={assignmentValue(slot.key) || slot.options?.[0]?.value || ''}
-                        onChange={(value) => setSlot(slot.key, value)}
-                        options={slot.options ?? []}
-                      />
-                    ) : (
-                      <AdminFieldSelect
-                        label={slot.label}
-                        value={assignments[slot.key] ? assignments[slot.key] : UNASSIGNED}
-                        onChange={(value) =>
-                          setSlot(slot.key, value === UNASSIGNED ? '' : value)
-                        }
-                        options={[
-                          { value: UNASSIGNED, label: '— Not assigned —' },
-                          ...(mediaQuery.data ?? []).map((asset) => ({
-                            value: asset.id,
-                            label: asset.filename,
-                          })),
-                        ]}
-                      />
-                    )}
-                    {slot.hint ? (
-                      <p className="text-xs leading-snug text-[var(--color-text-muted)]">
-                        {slot.hint}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
+    <AdminWorkspace asideLabel="Asset slot assignments" aside={slotAssignmentRail}>
+      <div data-testid="site-assets-editor">
+        <MediaLibraryPage />
+      </div>
+    </AdminWorkspace>
   )
 }

@@ -1,4 +1,4 @@
-import { Check, Plus, Save } from 'lucide-react'
+import { Check, Info, Plus, Save, Type } from 'lucide-react'
 import {
   type ChangeEvent,
   type DragEvent,
@@ -13,7 +13,9 @@ import { toast } from 'sonner'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminInput } from '@/features/admin/components/AdminInput'
+import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
+import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import {
@@ -154,8 +156,59 @@ export function SiteFontEditor() {
     if (e.dataTransfer.files.length) void ingestFiles(e.dataTransfer.files)
   }
 
+  const previewRail = (
+    <>
+      <AdminRailPanel title="Type preview" icon={<Type size={15} />}>
+        <div className="space-y-3">
+          <p
+            className="text-sm"
+            style={{ fontFamily: `"${resolveFontFamilyName(config, config.sans)}", sans-serif` }}
+          >
+            Body — The quick brown fox jumps over the lazy dog.
+          </p>
+          <p
+            className="font-display text-2xl uppercase"
+            style={{ fontFamily: `"${resolveFontFamilyName(config, config.heading)}", sans-serif` }}
+          >
+            Heading — Forged Under Pressure
+          </p>
+          <p
+            className="text-xl uppercase tracking-[0.2em]"
+            style={{ fontFamily: `"${resolveFontFamilyName(config, config.display)}", serif` }}
+          >
+            Display — Drop 01
+          </p>
+        </div>
+      </AdminRailPanel>
+      <AdminRailPanel
+        title="How roles map"
+        icon={<Info size={15} />}
+        description="Each role becomes a CSS variable on the storefront."
+      >
+        <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">
+          <li>
+            <span className="text-[var(--color-text)]">Body</span> — paragraphs, controls, and UI
+            copy (<code className="font-mono text-[10px]">--font-sans</code>).
+          </li>
+          <li>
+            <span className="text-[var(--color-text)]">Headings</span> — section titles and hero
+            type (<code className="font-mono text-[10px]">--font-heading</code>).
+          </li>
+          <li>
+            <span className="text-[var(--color-text)]">Display</span> — heraldic accents like drop
+            numerals (<code className="font-mono text-[10px]">--font-display</code>).
+          </li>
+        </ul>
+      </AdminRailPanel>
+    </>
+  )
+
   return (
-    <div className="space-y-8" data-testid="site-font-editor">
+    <AdminWorkspace
+      asideLabel="Type preview and font role help"
+      aside={previewRail}
+    >
+      <div className="space-y-8" data-testid="site-font-editor">
       <p className="text-sm text-[var(--color-text-muted)]">
         Upload custom font files or add a Google Font family. Assign roles below — saved to
         Supabase and used on the storefront.
@@ -239,27 +292,7 @@ export function SiteFontEditor() {
         />
       </section>
 
-      <section className="rounded-xl border border-[var(--color-line)] p-4">
-        <h2 className="anvl-heading text-base font-normal">Preview</h2>
-        <p
-          className="mt-3 text-sm"
-          style={{ fontFamily: `"${resolveFontFamilyName(config, config.sans)}", sans-serif` }}
-        >
-          Body — The quick brown fox jumps over the lazy dog.
-        </p>
-        <p
-          className="mt-2 font-display text-2xl uppercase"
-          style={{ fontFamily: `"${resolveFontFamilyName(config, config.heading)}", sans-serif` }}
-        >
-          Heading — Forged Under Pressure
-        </p>
-        <p
-          className="mt-2 text-xl uppercase tracking-[0.2em]"
-          style={{ fontFamily: `"${resolveFontFamilyName(config, config.display)}", serif` }}
-        >
-          Display — Drop 01
-        </p>
-      </section>
-    </div>
+      </div>
+    </AdminWorkspace>
   )
 }

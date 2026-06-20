@@ -338,8 +338,8 @@ Nav content comes from `runtimeClients.siteSettings.getWebsiteLayout()` via the 
 | `vendor-gsap` | GSAP + ScrollTrigger + useGSAP |
 | `vendor-lenis` | Lenis smooth scroll |
 | `vendor-framer-motion` | Framer Motion |
+| `vendor-three` | `three`, `@react-three/*`, `troika-three-text` (The Oath WebGL only) |
 | `vendor-zod` | Zod |
-| `act-presets-<nature>` | Act presets per nature (lazy loaded) |
 | Admin routes | Lazy via `lazyRouteComponent` |
 
 Configured in `vite.config.ts` under `build.rollupOptions.output.manualChunks`.

@@ -8,6 +8,7 @@ export function AdminAssetsPageRoute() {
       <AdminLayout
         title="Assets"
         description="Media library and slot assignments for general and per-drop use."
+        layout="workspace"
       >
         <SiteAssetsEditor />
       </AdminLayout>

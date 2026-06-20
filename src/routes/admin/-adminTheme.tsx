@@ -8,6 +8,7 @@ export function AdminThemePageRoute() {
       <AdminLayout
         title="Theme & Colors"
         description="Site-wide palette and theme mode."
+        layout="workspace"
       >
         <SiteThemeEditor />
       </AdminLayout>

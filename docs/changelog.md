@@ -1,4 +1,38 @@
-﻿## 2026-06-20 — Consolidated theme to one normal design-system palette (CMS ⇄ storefront ⇄ WebGL single source of truth)
+﻿## 2026-06-20 — Project cleanup + CLAUDE/Cursor docs sync
+
+- **Scope**: post-merge/post-theme/post-admin-workspace housekeeping. Removed proven-unused code/deps and brought the CLAUDE docs (`CLAUDE.md`) and Cursor docs (`AGENTS.md` + `.cursor/rules/*.mdc`) and the `docs/*` reference set back in sync with the current project. No behavior, auth semantics, or feature boundaries changed.
+- **Dependencies removed** (verified zero source imports): `@fontsource/bebas-neue` + `@fontsource/manrope` (fonts are Anton/Sora/Cinzel now), `@tanstack/react-query-devtools` (devtools gated/unused), and dev dep `@tailwindcss/typography` (no `prose` usage / not wired into the Tailwind v4 `@theme`).
+- **Dead config/code removed**: the `act-presets-*` `manualChunks` branch in `vite.config.ts` (the `marketing/act-presets` folder no longer exists); the unused homepage-mode writer surface in `src/features/cms/siteHomepage.settings.ts` (`SITE_HOMEPAGE_STORAGE_KEY`, `SITE_HOMEPAGE_CHANGE_EVENT`, `parseSiteHomepageUnknown`, `readSiteHomepageFromStorage`, `writeSiteHomepageToStorage`, `setHomepageMode`, `saveSiteHomepageModeAsync` — the read default is still used).
+- **Deliberately kept** (with reasons): seed/mock adapters (`cmsClient.seed.ts`, etc. — active local CMS path); the static `VITE_ANVL_ADMIN_*` auth gate (documented temporary model, out of scope); `@tanstack/react-router-ssr-query` + `@tanstack/router-plugin` (build/runtime wiring — risky to remove, flagged not removed); `shared/api/contracts` + `shared/schemas` scaffolding (future REST/BFF); `landingPages` regression test that asserts `the-oath-2` collapses to `the-oath` (a guard, not a stale ref). Unused-export pruning beyond the above was deferred to Phase F to avoid high-churn cascades (tree-shaken anyway).
+- **Docs synced to reality** (single `the-oath` page; 15-token palette; `AdminWorkspace`; post-cleanup folders/routes/stack):
+  - `CLAUDE.md` + `AGENTS.md`: aligned brand/fonts (Anton/Sora/Cinzel), stack (`three.js` for The Oath WebGL), landing-page rules (code-owned, no acts/drops), theme rules (one global palette), admin auth write targets (`cms_settings`/`storefront_publication`/`story_*`), folder map, DoD (`pnpm verify`).
+  - `.cursor/rules/*.mdc`: 10-security (persistence via `createJsonStore`/`cmsSiteConfig.*`, real `dangerouslySetInnerHTML` sinks), 20-performance-bundle (`manualChunks` incl. `vendor-three`, dropped `DropActsBuilderPanel`), 30-responsiveness-a11y (`AdminWorkspace` rail), 40-solid-maintainability (current `useSyncExternalStore` hooks), 50-testing (current schema/feature examples).
+  - `docs/*`: rewrote `project-map.md` (routes + `features/admin`/`cms`/`marketing` tables, migrations note, removed `drops/`); fixed `design-system.md` (fonts + `SiteThemeProvider` theming, removed `ActiveDropThemeProvider`/`dropPaletteStyle`); `animation-guidelines.md` (The Oath motion folder, removed cinematic-hero/act-preset sections); `brand-guidelines.md` (fonts + one global palette); `performance-guidelines.md` + `frontend-architecture.md` (`vendor-three` chunk, removed act-preset chunk, current lazy-admin example); `next-steps.md` (removed dead large-file split candidates); `README.md` index. Deprecation banners added to `features/drops-cms.md` + `features/acts-builder.md` (removed features; historical-only).
+- **Verify**: `pnpm verify` (typecheck + test + build) green after the cleanup.
+
+## 2026-06-20 — Assets editor: slot assignment controls in the side rail
+
+- **Change**: on `/admin/assets`, the sticky workspace rail now hosts the full **slot assignment panel** (scope picker + per-slot media selects) instead of a read-only scope summary and tips. The primary column is the media library (upload, search, grid). Extracted `AssetSlotAssignmentPanel` for the rail UI; responsive stacking below `xl` is unchanged.
+- **Tests**: `AssetSlotAssignmentPanel` (scope + slot change callbacks). `pnpm verify` green.
+
+## 2026-06-20 — Wide-screen admin workspace shell (fills ultra-wide side space with a contextual rail)
+
+- **Problem**: on large/ultra-wide monitors every CMS page was a narrow centered column (`max-w-5xl`) with big empty left/right margins. The Theme editor was the only page that used its horizontal space (a one-off preview grid).
+- **Shared primitive — `AdminWorkspace`** (`src/features/admin/components/AdminWorkspace.tsx`): a presentational two-zone shell. On `≥1280px` it renders the primary editing column plus a **sticky contextual side rail** (`<aside>` landmark, independent scroll). Below `xl` it gracefully collapses to a single column with the rail content stacked underneath — no horizontal scroll, no lost content. Rail width is `22rem` (`24rem` at `2xl`) via a scoped `--admin-rail-width` var.
+- **Shared primitive — `AdminRailPanel`** (`AdminRailPanel.tsx`): a lightweight titled panel (icon + `<h2>` + optional description/actions) for consistent rail sections. **`AdminWorkspaceStatusPanel`** reuses it to show the live target (Supabase vs. local mock) + a "View storefront" link.
+- **`AdminLayout` gains `layout="workspace"`**: widens the content container to `max-w-[110rem]` (`120rem` at `2xl`) so the primary column + rail fill ultra-wide screens while staying readable. `default`/`wide` modes are unchanged; the nav drawer + mobile behavior are untouched.
+- **Every CMS page now opts into the same pattern**:
+  - **Theme** — live real-component preview (desktop/mobile toggle) + WCAG `ThemeContrastReport` moved out of a per-editor grid into the shared rail (`SiteThemePreviewRail`).
+  - **Fonts** — type preview + "how roles map" help docked in the rail.
+  - **Landing Content** — "how overrides work" + scene list + workspace status rail.
+  - **Assets** — slot assignment controls (scope picker + per-slot media map) in the rail; media library in the primary column.
+  - **Story** — saga model + publishing help rail beside the chapters→detail columns.
+  - **Dashboard** & **Settings** — workspace status + quick-help / about rail.
+- **A11y/responsive**: rail is a labelled `complementary` landmark; links/buttons keep `focus-ring` and ≥44px targets; the storefront link is a plain new-tab `<a>` (no router dependency, test-safe).
+- **Tests**: added `AdminWorkspace` (rail presence/label, single-column fallback) and `AdminRailPanel` (heading/description/actions) suites; existing Theme/Dashboard/Settings suites still pass. `pnpm verify` green (typecheck + 473 tests + build).
+- **Docs**: `cms-architecture.md` (new "Admin layout shell" section) + `design-system.md` updated.
+
+## 2026-06-20 — Consolidated theme to one normal design-system palette (CMS ⇄ storefront ⇄ WebGL single source of truth)
 
 - **Problem**: the CMS theme editor and the landing page were following different values, and the palette had sprawled (foreground tokens `colorOnAccent/OnHighlight*/OnSurface`, status `colorSuccess/Warning/Danger/Info/FocusRing/Disabled/Overlay`, particle/scrollbar/hero/chip tokens, plus `anvl*` brand tokens). Narrowed it to **one conventional palette** that both the editor and the storefront + WebGL landing read from, so they cannot diverge.
 - **Normalized 15-token palette** (`cmsSiteConfig.zod.ts` → `THEME_PALETTE_KEYS`): `background`, `foreground`, `card`, `cardForeground`, `muted`, `mutedForeground`, `border`, `primary`, `primaryForeground`, `accent`, `accentForeground`, `ring`, `destructive`, `success`, `warning`. This is the **only** editable/serialized source of truth.

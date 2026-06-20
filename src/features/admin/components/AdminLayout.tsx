@@ -20,7 +20,13 @@ interface AdminLayoutProps {
 
   description?: ReactNode
 
-  layout?: 'default' | 'wide'
+  /**
+   * - `default` — centered single column (`max-w-5xl`).
+   * - `wide` — full-height flex shell (legacy split editors).
+   * - `workspace` — wide two-zone shell that fills ultra-wide screens; pair the
+   *   page content with {@link AdminWorkspace} to dock a contextual side rail.
+   */
+  layout?: 'default' | 'wide' | 'workspace'
 
 }
 
@@ -43,6 +49,8 @@ export function AdminLayout({
   const { isRemoteCmsReady, remoteHydrateError } = useAdminAuth()
 
   const isWide = layout === 'wide'
+
+  const isWorkspace = layout === 'workspace'
 
 
 
@@ -118,15 +126,11 @@ export function AdminLayout({
 
                 'mx-auto min-w-0 w-full',
 
-                isWide
+                isWide && 'flex min-h-0 flex-1 flex-col overflow-hidden max-w-[1600px]',
 
-                  ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+                isWorkspace && 'max-w-[110rem] 2xl:max-w-[120rem]',
 
-                  : 'max-w-5xl space-y-6',
-
-                !isWide && 'max-w-5xl',
-
-                isWide && 'max-w-[1600px]',
+                !isWide && !isWorkspace && 'max-w-5xl space-y-6',
 
               )}
 

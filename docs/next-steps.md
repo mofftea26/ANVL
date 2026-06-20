@@ -108,12 +108,12 @@ Steps:
 
 ## Priority 9: Phase E (Large File Splits)
 
-Split oversized admin editor files (600+ lines) for maintainability. Tracked as MAINT-01.
+Keep admin editor files under the 500-line hard limit. Tracked as MAINT-01.
 
-Top candidates:
-- `DropActsBuilderPanel.tsx` — split by tab into separate lazy components
-- `DropEditorRoute.tsx` — extract subcomponents
-- `ProductEditorRoute.tsx` — extract subcomponents
+The former 600+ line offenders (`DropActsBuilderPanel`, `DropEditorRoute`, `ProductEditorRoute`) were removed with the drop/acts/products CMS surfaces. Remaining watch-list (none currently over 500):
+- `AdminAuthProvider.tsx` (~430) — auth state machine; split if it grows
+- `AdminDateTimeField.tsx` (~340) — extract the day-picker chrome if it grows
+- `AdminSidebar.tsx` (~315) — extract nav cluster rendering if it grows
 
 ---
 

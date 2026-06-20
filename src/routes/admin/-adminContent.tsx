@@ -8,6 +8,7 @@ export function AdminContentPageRoute() {
       <AdminLayout
         title="Landing Content"
         description="Per-scene copy overrides with designed defaults."
+        layout="workspace"
       >
         <AdminLandingContentEditor />
       </AdminLayout>

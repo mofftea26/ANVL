@@ -45,7 +45,7 @@ The current phase uses local/mock adapters where a real backend does not yet exi
 | Forms | React Hook Form + Zod v4 |
 | Animation | GSAP 3 + `@gsap/react` useGSAP + ScrollTrigger |
 | Motion (lightweight) | Framer Motion |
-| 3D / WebGL | three.js + `@react-three/fiber` v9 + `@react-three/drei` v10 — Story chapter book only, lazy `vendor-three` chunk |
+| 3D / WebGL | three.js + `@react-three/fiber` v9 + `@react-three/drei` v10 — The Oath landing emblem/dust + Story chapter book, lazy `vendor-three` chunk (desktop + no-reduced-motion only) |
 | Smooth scroll | Lenis |
 | Icons | lucide-react (named imports only) |
 | Toasts | sonner |
@@ -86,27 +86,26 @@ Runtime wiring via `createRuntimeClients({ isServer })` in `src/app/config/runti
 ### Feature Boundaries (STRICT)
 
 ```
-src/features/admin/**      → admin UI + mutations only — NEVER imported by storefront
-src/features/cms/**        → shared CMS read models, themes, hooks — storefront-safe
-src/features/drops/**      → Drop document types, act sequence, theme palette types
-src/features/marketing/**  → Storefront marketing components, act presets, cinematic hero
-src/features/products/**   → Product catalog, commerce adapters, shop components
-src/features/cart/**       → Cart store + hooks (Zustand)
-src/features/checkout/**   → Checkout forms, schemas, payment adapters
-src/features/analytics/**  → Analytics client abstraction + hooks
-src/features/shopify/**    → Shopify Storefront API client + mappers
-src/shared/**              → Framework-agnostic primitives — NO imports from features or routes
-src/routes/**              → ONLY place that imports from both features and shared
-src/app/**                 → Providers, config, error boundaries, SEO meta
+src/features/admin/**          → admin UI + mutations only — NEVER imported by storefront
+src/features/cms/**            → shared CMS read models, theme/font/asset config, hooks — storefront-safe
+src/features/landingPages/**   → code-owned landing pages (registry, renderer, asset slots, TheOathLanding)
+src/features/marketing/**      → storefront home sections (home/: campaign cards, lookbook strip)
+src/features/story/**          → Story saga: schemas, clients, 3D shelf + book overlay
+src/features/products/**       → product catalog, commerce adapters, shop components
+src/features/cart/**           → cart store + hooks (Zustand)
+src/features/checkout/**       → checkout forms, schemas, payment adapters
+src/features/analytics/**      → analytics client abstraction + hooks
+src/features/shopify/**        → Shopify Storefront API client + mappers
+src/shared/**                  → framework-agnostic primitives — NO imports from features or routes
+src/routes/**                  → ONLY place that imports from both features and shared
+src/app/**                     → providers, config, error boundaries, SEO meta
 ```
 
-### Act Preset System
+### Landing Page System (code-owned)
 
-Landing pages are assembled from ordered **acts** — named sections with a `nature` and `preset`. Each act maps to a lazy-loaded React component via the registry at `src/features/marketing/act-presets/registry.ts`.
+Landing pages are **static, code-owned React components** registered in `src/features/landingPages/registry.ts`. The CMS does **not** compose landing sections; it only picks which coded page is active, assigns media to code-defined asset slots, and supplies per-scene copy overrides. The old drop-builder "acts" system (`marketing/act-presets`, `cinematic-hero`, `public-landing`) has been removed.
 
-Act natures: `hero | manifesto | storytelling | dropReveal | productShowcase | materialShowcase | specialEvent | lookbook | finalCTA`
-
-The cinematic scroll hero (`cinematicScrollHero`) is special — it pins the viewport and plays a multi-section GSAP timeline over a long scroll window.
+The reference (and currently only) page is **`TheOathLanding`** (`key: 'the-oath'`) — the single merged Drop 01 cinematic film (the former The Oath I + II were merged 2026-06-20). It is one continuous pinned/scrubbed GSAP scroll timeline (`hooks/useTheOathScrollTimeline.ts` composing `motion/buildOath*.ts`) over a fixed transparent WebGL canvas (3D monolith emblem + dust). The home route resolves the active key against the registry (fallback `the-oath`) and renders `<LandingPageRenderer>`.
 
 ---
 
@@ -121,15 +120,13 @@ src/
     seo/             meta.ts (buildSeoMeta)
   content/           seed data + mocks
   features/
-    admin/           Slim CMS — active drop, theme, fonts, assets, landing content, settings (+ auth)
+    admin/           Slim CMS — dashboard (active drop), theme, fonts, assets, landing content, story, settings (+ auth). Wide-screen workspace shell (AdminLayout/AdminWorkspace/AdminRailPanel)
     analytics/       Analytics client mock + hooks
     cart/            Zustand cart store + hooks
     checkout/        Forms, schemas, payment config + mock adapters
-    cms/             Storefront CMS reads, landing page composition, landing content envelope, Supabase readers
-    drops/           Drop types, schemas, act sequence, theme palette types
-    landing/         Landing act schemas + types
-    landingPages/    Code-owned landing pages: registry, renderer, asset slots, pages/ (TheOathLanding — the single merged Drop 01 WebGL + GSAP + CMS-content cinematic)
-    marketing/       Act presets (lazy loaded), cinematic hero, marketing components
+    cms/             Storefront-safe CMS reads: theme/font/asset config (cmsSiteConfig), landing content envelope, publication readers, navigation + layout defaults
+    landingPages/    Code-owned landing pages: registry, renderer, asset slots, pages/TheOathLanding (the single merged Drop 01 WebGL + GSAP + CMS-content cinematic)
+    marketing/       Storefront home sections (home/: campaign cards, lookbook strip)
     products/        Commerce adapters (localStorage, seed, Shopify, Supabase), catalog, hooks
     seo/             SEO document schema + types
     shopify/         Shopify Storefront API client + mappers
@@ -137,17 +134,16 @@ src/
     storefront-account/ Public account UI stubs
   routes/
     __root.tsx       Root layout loader — fetches storefront projection from Supabase or runtime clients
-    index.tsx        Home page
+    index.tsx        Home page — renders the active code-owned landing page (default: the-oath)
     shop/            Shop listing + PDP
-    drop/            Active drop page
     cart.tsx
     checkout/
     account/         Customer account (stub)
     story.tsx        Story saga page (chapter shelf + deep-linkable book overlay)
     auth/            Sign in / sign up / forgot password
-    admin/           Slim CMS admin routes: dashboard, theme, fonts, assets, story, settings
+    admin/           Slim CMS admin routes: dashboard (index), theme, fonts, assets, content, story, settings, login
   shared/
-    api/contracts/   Typed DTOs for future REST/BFF
+    api/contracts/   Typed DTOs for future REST/BFF (scaffolding — not yet wired)
     assets/brand/    Inline SVG logo components (AnvlWordmark, AnvlCrest, etc.)
     components/
       brand/         AnvlLogoImage, DropEmblemDecor
@@ -155,17 +151,17 @@ src/
       motion/        RevealOnScroll
       premium/       SectionShell, PageHero, ContentPanel, SectionEyebrow, ForgeAtmosphere, WarBanner
       seo/           JsonLd, MarketingToolsHead, structuredData
-      ui/            Button, Input, Modal, Drawer, Select, Skeleton, SafeLink, etc.
+      ui/            Button, Input, Modal, Drawer, Select, Skeleton, SafeLink, ColorField, MediaPickerField, etc.
     constants/       brand.ts, brandLogos.ts
     hooks/           useDialogFocusTrap, useLenisScroll, useLockPageScroll, useReducedMotion
     lib/             cn.ts, gsap.ts, url.ts, stripAngleBracketTags.ts, color.ts, storage/
-    schemas/         media, money, navigation
+    schemas/         media, money, navigation (shared Zod scaffolding)
   styles.css         Global tokens, themes, scrollbars, reduced-motion rules
   router.tsx         TanStack Router setup
   routeTree.gen.ts   AUTO-GENERATED — never edit directly
 supabase/
   migrations/        Ordered SQL migration files
-  functions/         Edge Functions (shopify-webhook)
+  functions/         Edge Functions (shopify-webhook, publish-storefront, process-scheduled-drops, medusa-webhook-stub)
 scripts/
   repatch-admin-route-tree.mjs  Patches routeTree.gen.ts for admin segment (runs before dev/build/typecheck)
 public/brand/        Raster + downloadable logo/asset exports
@@ -244,8 +240,8 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 ### Architecture
 
 The CMS is split into two surfaces:
-1. **Admin CMS** (`src/features/admin/`) — Four editors: active drop, theme & colors, fonts, assets (+ settings)
-2. **Storefront CMS reads** (`src/features/cms/`) — Read-only projection: theme, fonts, assets, active landing key
+1. **Admin CMS** (`src/features/admin/`) — Six editors: active drop (dashboard), theme & colors, fonts, assets, landing content, story (+ settings). Every page renders inside the wide-screen **workspace shell** (`AdminLayout layout="workspace"` → `AdminWorkspace` = primary editing column + sticky contextual `AdminRailPanel` rail; collapses to one column below `xl`).
+2. **Storefront CMS reads** (`src/features/cms/`) — Read-only projection: theme, fonts, assets, active landing key, landing content
 
 **Flow:** `admin edits → adminCmsRemoteSync → cms_settings + storefront_publication mirror → SSR reads projection`
 
@@ -284,7 +280,7 @@ Admin editor (localStorage working copy)
 - Do **not** import `src/features/admin/**` in storefront/marketing code (runtime code). Type-only imports are discouraged too.
 - CMS-driven `href`/`src` values going into the DOM must go through `sanitizeHref()` in `src/shared/lib/url.ts`.
 - New `dangerouslySetInnerHTML` requires: justification comment + sanitizer + Vitest test.
-- Landing pages are **code-owned** (`src/features/landingPages/`). CMS controls the active key, asset slot overrides, and — for pages that define a content schema (The Forge) — per-scene **copy overrides** via `landing_content`, where every field falls back to designed code defaults when blank.
+- Landing pages are **code-owned** (`src/features/landingPages/`). CMS controls the active key, asset slot overrides, and — for pages that define a content schema (The Oath) — per-scene **copy overrides** via `landing_content`, where every field falls back to designed code defaults when blank.
 - Asset slots are defined in code per drop (`assetSlots.ts`); CMS assigns media IDs to slots.
 - Nav/footer/SEO use code defaults — not CMS-editable.
 
@@ -306,6 +302,7 @@ Admin editor (localStorage working copy)
 
 - **Tailwind CSS v4** — utility-first, no config file; configured via `@theme` in `src/styles.css`.
 - **CSS variable tokens** — all color, spacing, and animation tokens are defined as CSS custom properties in `src/styles.css`. Use them instead of hardcoded values.
+- **One normalized theme palette (single source of truth).** The CMS theme editor exposes exactly **15 editable tokens** — `background`, `foreground`, `card`, `cardForeground`, `muted`, `mutedForeground`, `border`, `primary`, `primaryForeground`, `accent`, `accentForeground`, `ring`, `destructive`, `success`, `warning` — defined by `themePaletteSchema` (`THEME_PALETTE_KEYS`) in `src/features/cms/config/cmsSiteConfig.zod.ts`. `themeConfigToCssVars` deterministically derives **all** `--color-*` / `--hero-*` / `--particle-*` / `--scrollbar-*` / brand-alias vars from those 15 tokens, and is the single map feeding SSR first-paint inline CSS, `SiteThemeProvider`, and the editor preview. The storefront, brand graphics, and the WebGL landing emblem/dust all read the **same** vars (`readOathBrandColors()`), so CMS + storefront + WebGL cannot diverge. There is **no per-landing-page palette override**. Legacy palette keys are migrated on read.
 - Theme switching: set `data-theme="oath-dark"` or `data-theme="bone-light"` on `:root`.
 - `cn()` from `src/shared/lib/cn.ts` (clsx + tailwind-merge) — use for conditional class merging.
 - `cva` (class-variance-authority) — use for component variants (Button sizes, etc.).
@@ -332,7 +329,7 @@ Admin editor (localStorage working copy)
   - **CSS transitions** — for simple hover states and focus rings
 - Keep animation logic in dedicated hooks/utilities, not scattered in component render bodies.
 - `useReducedMotion()` hook (`src/shared/hooks/useReducedMotion.ts`) — use before creating expensive animations.
-- Reusable animation utilities: `actAnimationConfig.ts`, `actMotionHelpers.ts`, `useActScrollReveal.ts`, `useActIdleMotion.ts`.
+- Reference cinematic implementation: `TheOathLanding` — timeline in `hooks/useTheOathScrollTimeline.ts` composing the per-scene `motion/buildOath*.ts` builders, with a DOM⇄WebGL motion bridge (`motion/oathMotionState.ts`).
 
 ---
 
@@ -346,7 +343,7 @@ Admin editor (localStorage working copy)
   - `(min-width: 768px)` — desktop/tablet only
   - `(prefers-reduced-motion: no-preference)` — not reduced motion
   - Mirror branch `(max-width: 767px), (prefers-reduced-motion: reduce)` must `gsap.set` to final state (no animation)
-- Reference implementation: `src/features/marketing/components/HeroForgeSequence.tsx`
+- Reference implementation: `src/features/landingPages/pages/TheOathLanding/hooks/useTheOathScrollTimeline.ts`
 - Never call `new Lenis()` directly — use `useLenisScroll` hook (`src/shared/hooks/useLenisScroll.ts`).
 - Lenis is desktop-only + no reduced motion.
 - Prefer animating `transform` and `opacity` only. Avoid `width`/`height`/`top`/`left`.
@@ -368,7 +365,7 @@ Admin editor (localStorage working copy)
 - `noUnusedLocals: true` / `noUnusedParameters: true` — clean up unused declarations.
 - Type all: Supabase row shapes, insert/update DTOs, service responses, route loaders, hook returns, component props.
 - Use discriminated unions for status fields, variants, CMS block types.
-- Use literal unions for known values (statuses, roles, act natures, preset names).
+- Use literal unions for known values (statuses, roles, landing page keys, theme token keys).
 - Keep types close to the domain they describe (feature folder, not a global types folder).
 
 ---
@@ -449,7 +446,7 @@ If shadcn/ui is added in the future:
 
 **Single Responsibility:** Each component, hook, service, utility has one clear job. Never create a component that fetches, transforms, manages state, animates, and renders all at once.
 
-**Open/Closed:** Use config-driven patterns for landing acts, CMS blocks, product sections, animation presets. The `registry.ts` pattern for act presets is the model — add new presets without modifying the registry logic.
+**Open/Closed:** Use config-driven patterns (registries) for extension points. The landing-page `registry.ts` (`src/features/landingPages/`) is the model — register a new coded page without modifying the renderer/resolver logic.
 
 **Liskov Substitution:** All `CommerceClient` / `CmsClient` adapters must satisfy their interface contract. Components relying on the interface must not care which adapter runs.
 
@@ -463,10 +460,10 @@ If shadcn/ui is added in the future:
 
 - Run `pnpm analyze` to inspect bundle size before and after adding heavy dependencies.
 - **Admin routes** must use `lazyRouteComponent` — never statically imported from storefront routes.
-- Large editor panels (600+ lines, e.g. `DropActsBuilderPanel`) must be behind `React.lazy` + `Suspense`.
+- Large editor panels (≥600 lines) must be behind a `React.lazy` + `Suspense` boundary.
 - Storefront entry chunk must not import `src/features/admin/**` runtime code.
-- GSAP, Lenis, Framer Motion are code-split into `vendor-gsap`, `vendor-lenis`, `vendor-framer-motion` chunks.
-- Act presets are lazy-loaded via `lazyPreset()` in the registry.
+- GSAP, Lenis, Framer Motion, and three.js/@react-three are code-split into `vendor-gsap`, `vendor-lenis`, `vendor-framer-motion`, and `vendor-three` chunks (see `vite.config.ts` `manualChunks`).
+- The landing page registry uses `lazy()` per page, so only the active page's chunk ships.
 - `lucide-react` must use named imports only (`import { Menu } from 'lucide-react'`), never `import *`.
 - Images from CMS: must have `width`, `height`, `loading="lazy"` (unless LCP), `decoding="async"`, `alt`.
 - Animate `transform`/`opacity` only — never `width`, `height`, `top`, `left`.
@@ -667,8 +664,7 @@ Every code change must check whether documentation needs updating. After any:
 | SEC-01/02/03 | Admin auth | Temporary static env-file gate. Not production-grade. Hosted-demo blocker. |
 | SEC-11 | Admin auth | Supabase auth replaces static gate when env is set, but session handling still needs HttpOnly cookies + server validation for production. |
 | PERF-01 | Admin routes | All admin routes must use `lazyRouteComponent`. |
-| PERF-02 | DropActsBuilderPanel | 600+ line editor needs `React.lazy` + `Suspense` split by tab visibility. |
-| PERF-11 | Bundle size | Resolved 2026-06-11: removed unused `@tanstack/react-table` + `@radix-ui/react-dropdown-menu`; `@tanstack/react-virtual` (admin media grid) and `framer-motion` (RevealOnScroll) remain in active use. |
+| PERF-11 | Bundle size | Dependency cleanup: removed unused `@tanstack/react-table` + `@radix-ui/react-dropdown-menu` (2026-06-11) and `@fontsource/bebas-neue`, `@fontsource/manrope`, `@tanstack/react-query-devtools`, `@tailwindcss/typography` (2026-06-20). `@tanstack/react-virtual` (admin media grid), `framer-motion` (RevealOnScroll), and the active fonts (Anton/Sora/Cinzel) remain in use. |
 | MAINT-01 | Large files | Several admin editor files exceed 500 lines (tracked refactor candidates). |
 | MAINT-02 | Feature boundary | Some storefront code may import from `admin/**` — Phase D cleanup pending. |
 | Phase I | Router repatch | `scripts/repatch-admin-route-tree.mjs` is a workaround for TanStack Start upstream limitation. |

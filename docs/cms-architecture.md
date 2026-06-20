@@ -148,6 +148,41 @@ Migration: `supabase/migrations/20260607120000_cms_minimal_cleanup.sql`
 
 ---
 
+## Admin layout shell
+
+Every admin route renders inside `AdminLayout` (topbar + drawer nav + scrollable
+content). On large/ultra-wide screens the content uses a shared **workspace
+shell** so the side space is filled intentionally instead of leaving a narrow
+column floating in empty margins.
+
+| Primitive | Location | Role |
+|---|---|---|
+| `AdminLayout` (`layout="workspace"`) | `src/features/admin/components/AdminLayout.tsx` | Widens the content container to `max-w-[110rem]` (`120rem` at `2xl`). |
+| `AdminWorkspace` | `src/features/admin/components/AdminWorkspace.tsx` | Two-zone shell: primary editing column + optional sticky contextual rail. |
+| `AdminRailPanel` | `src/features/admin/components/AdminRailPanel.tsx` | Titled rail section (icon + `<h2>` + body). |
+| `AdminWorkspaceStatusPanel` | `src/features/admin/components/AdminWorkspaceStatusPanel.tsx` | Shared rail panel: Supabase-vs-local target + storefront link. |
+
+**Responsive behavior:** the rail docks beside the primary column only on
+`≥1280px` (`xl`) and widens at `≥1536px` (`2xl`). Below `xl` the layout collapses
+to a single column with the rail content stacked underneath (nothing is lost),
+matching the existing mobile drawer-nav behavior. The rail is an `<aside>`
+(`complementary`) landmark with an accessible label.
+
+**Per-page rail content** (each page opts into the same primitive):
+
+| Page | Primary column | Side rail |
+|---|---|---|
+| Dashboard | Active-page picker + tiles | Workspace status + quick help |
+| Theme | Palette fields | Live component preview (desktop/mobile) + WCAG contrast report |
+| Fonts | Upload / Google / role selects | Type preview + role→CSS-var help |
+| Landing Content | Per-scene copy fields | Overrides help + scene list + status |
+| Assets | Media library (upload, browse, filter) | Slot assignment controls (scope picker + per-slot media map) |
+| Story | Chapters list + chapter detail | Saga model + publishing help |
+| Settings | Session + danger zone | Workspace status + about |
+
+Pages register their save action in the topbar via `AdminPageActionsContext`
+(unchanged); the workspace shell only governs the primary/rail arrangement.
+
 ## Asset slots
 
 Slots are **defined in code** per drop. The CMS assigns media library IDs to slots; it cannot invent new slots without a deploy.

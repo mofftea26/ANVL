@@ -14,6 +14,9 @@ import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'
 import { AdminInput } from '@/features/admin/components/AdminInput'
+import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
+import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
+import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWorkspaceStatusPanel'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
 
@@ -83,8 +86,26 @@ function SettingsPage() {
         ? session.username
         : `${session.displayName} (${session.email})`
 
+  const settingsRail = (
+    <>
+      <AdminWorkspaceStatusPanel />
+      <AdminRailPanel
+        title="About settings"
+        description="This surface manages your session and local working copy only."
+      >
+        <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">
+          Resetting clears this browser&rsquo;s cached CMS copy and re-seeds The Oath defaults.
+          {supabaseMode
+            ? ' Remote data in Supabase is left untouched.'
+            : ' There is no remote copy in local mode.'}
+        </p>
+      </AdminRailPanel>
+    </>
+  )
+
   return (
-    <AdminLayout title="Settings">
+    <AdminLayout title="Settings" layout="workspace">
+      <AdminWorkspace asideLabel="Workspace settings context" aside={settingsRail}>
       <div className="space-y-8">
         <AdminCard title="Session">
           <div className="space-y-1 text-sm text-[var(--color-text-muted)]">
@@ -118,6 +139,7 @@ function SettingsPage() {
           </div>
         </AdminCard>
       </div>
+      </AdminWorkspace>
 
       <Modal
         open={confirmReset}

@@ -7,9 +7,9 @@ globs: ["src/**/*.{tsx,css}", "src/styles.css"]
 
 ## Mobile-first storefront
 
-- Type scale: hero/page titles use `text-4xl sm:text-5xl md:text-6xl` (mirror `DropActivePageView`) — never raw `text-6xl` on mobile (`RESP-09`).
+- Type scale: hero/page titles use `text-4xl sm:text-5xl md:text-6xl` — never raw `text-6xl` on mobile (`RESP-09`).
 - Long-text containers (product card title rows, checkout lines, cart heading) need `min-w-0` + `truncate`/`break-words`. `flex` rows containing a label and a price need `min-w-0` on the label and `shrink-0` on the price (`RESP-06`).
-- Grids must not be ≥3 columns at <360 px viewport (`PiecesGrid` is the cautionary tale — `RESP-08`).
+- Grids must not be ≥3 columns at <360 px viewport (`RESP-08`).
 - Sticky bottom bars on mobile must include `pb-[max(env(safe-area-inset-bottom),...)]` and the page must include a bottom spacer / extra padding so content isn't covered (`RESP-02`).
 - Inputs use `text-base md:text-sm` to prevent iOS zoom-on-focus (`RESP-07`). 16 px minimum on touch.
 
@@ -51,7 +51,7 @@ globs: ["src/**/*.{tsx,css}", "src/styles.css"]
 
 ## Admin CMS responsiveness
 
-- Admin is desktop-first (≥ 1024 px). Below that, it must remain usable: `AdminSidebar` becomes a `Drawer`, dense tables become cards (`DropsAdminList` model). Don't ship admin layouts that horizontally scroll the entire viewport.
+- Admin is desktop-first (≥ 1024 px). Below that, it must remain usable: `AdminSidebar` becomes a `Drawer` and the `AdminWorkspace` rail stacks under the primary column (it docks beside it only at ≥ 1280 px). Dense tables become cards. Don't ship admin layouts that horizontally scroll the entire viewport.
 
 ## Copy hygiene
 

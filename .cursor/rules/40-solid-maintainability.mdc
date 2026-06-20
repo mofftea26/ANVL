@@ -17,7 +17,7 @@ globs: ["src/**/*.{ts,tsx}"]
   - Custom hooks (`useXxxEditor`, `useXxxList`, …) for client state + mutations.
   - `*.service.ts` modules for persistence orchestration.
   - Zustand stores only for local UI (drawer/modal/draft) state.
-- **Do not** call `*.service` methods from render or from a `useState` initializer. Wrap in a hook with `useSyncExternalStore` (model: `useLandingCms`, `useHomeProducts`, `useWebsiteLayout`).
+- **Do not** call `*.service` methods from render or from a `useState` initializer. Wrap in a hook with `useSyncExternalStore` (model: `useHomeProducts`, `useActiveLandingPageKey`, `useStorefrontPublication`).
 - Never put hooks after early returns or inside conditionals/loops. If a branch needs hooks, extract it into its own component.
 
 ## Folder boundaries
@@ -44,9 +44,8 @@ globs: ["src/**/*.{ts,tsx}"]
 
 ## Helpers and duplication
 
-- Datetime-local helpers (`pad2`, `isoToDatetimeLocal`, `toDatetimeLocal`) live in `src/features/admin/lib/adminDatetime.ts` (extract when you encounter the duplicate `REU-03`).
-- Primary product hero image lookup lives in `getAdminProductHeroImage(product)` (extract when you encounter `REU-04`).
-- Local storage scaffolding (`isBrowser`, EventTarget channel, change event) belongs in `createLocalStorageChannel` (Phase C1) — do not copy/paste the pattern into new `*.storage.ts` files.
+- Datetime-local helpers (`pad2`, `isoToDatetimeLocal`, `toDatetimeLocal`) live in `src/features/admin/lib/adminDateTime.ts` (extract when you encounter the duplicate `REU-03`).
+- Local storage scaffolding (`isBrowser`, EventTarget channel, change event) belongs in `createLocalStorageChannel` / `createJsonStore` (`src/shared/lib/storage/`) — do not copy/paste the pattern into new store files.
 
 ## Error handling
 
@@ -56,7 +55,7 @@ globs: ["src/**/*.{ts,tsx}"]
 ## Code smell triggers — extract or split
 
 - Same `const fieldClass = 'mt-1 w-full rounded-md border …'` copied across files (`REU-01`) → use the admin field primitive.
-- A switch / if-chain on `act.nature` with > 3 branches → registry pattern (`{ nature: 'hero', component: HeroFields }`).
+- A switch / if-chain on a discriminant (e.g. landing-page key, story asset kind) with > 3 branches → registry/map pattern (the landing-page `registry.ts` is the model).
 - A `useEffect` that calls `setState` based on a prop → derived state with `useMemo` (or React 19 `use`).
 - A `useState` initialized from a service call → move to a hook + `useSyncExternalStore`.
 - A file with 3 or more responsibilities (forms + validation + persistence + presentational layout + helpers) → split per `MAINT-01` pattern.

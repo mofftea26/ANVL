@@ -13,10 +13,10 @@ globs: ["src/features/admin/**/*.{ts,tsx}", "src/features/cms/**/*.{ts,tsx}", "s
 
 ## CMS persistence — always Zod, never raw cast
 
-- Every `localStorage`-backed adapter under `src/features/admin/**/*.storage.ts` (and the matching `*.service.ts` read path) **must** validate input with a Zod schema before merging into defaults. Model: `src/features/admin/drops/drops.service.ts` + `drops.persistence.zod.ts` (`SEC-07`).
-- When introducing a new persisted store, use the upcoming `createJsonStore<TSchema>({ key, schema, defaults, merge })` helper (Phase C task) rather than hand-rolling `JSON.parse` + `as` casts.
-- Use `z.strict()` on persistence schemas and never spread raw parsed JSON into trusted state (`SEC-17` — protects against `__proto__` / `constructor` payloads).
-- Parsing user-pasted JSON in admin (e.g. `DropActsBuilderPanel.bootstrapFromLanding`) must run through the same schema as storage (`SEC-16`).
+- Every `localStorage`-backed store **must** validate input with a Zod schema before merging into defaults. Model: `createJsonStore<TSchema>({ key, schema, defaults, merge })` in `src/shared/lib/storage/createJsonStore.ts`, used by the CMS config stores (`src/features/cms/config/cmsSiteConfig.*`, `landingContent`, `landingPageActiveKey`) (`SEC-07`).
+- When introducing a new persisted store, use the existing `createJsonStore` helper rather than hand-rolling `JSON.parse` + `as` casts.
+- Use `z.strict()` on persistence schemas and never spread raw parsed JSON into trusted state (`SEC-17` — protects against `__proto__` / `constructor` payloads). The theme palette schema (`cmsSiteConfig.zod.ts`) migrates legacy keys on read rather than trusting raw shapes.
+- Any user-pasted / external JSON in admin (CMS config, landing content, story rows) must run through the same Zod schema as storage before persistence (`SEC-16`).
 
 ## URLs, hrefs, images, embeds
 
@@ -27,7 +27,7 @@ globs: ["src/features/admin/**/*.{ts,tsx}", "src/features/cms/**/*.{ts,tsx}", "s
 
 ## HTML / CSS / JSON sinks
 
-- The only places allowed to use `dangerouslySetInnerHTML` today are the active-drop palette `<style>` in `src/routes/__root.tsx` (via `sanitizeCssValue` in `dropPaletteStyle.ts`) and `JsonLd` (which escapes `<` to `\u003c`). New `dangerouslySetInnerHTML` usage requires:
+- The only places allowed to use `dangerouslySetInnerHTML` today are in `src/routes/__root.tsx` — the published-theme `<style id="anvl-published-projection">` (CSS derived by `publishedProjectionInlineCss` from the **Zod-validated** theme/font projection) and the static, code-owned `LANDING_ENTRY_LOCK_SCRIPT` (no user input) — plus `JsonLd` (which escapes `<` to `\u003c`). New `dangerouslySetInnerHTML` usage requires:
   1. A justification comment.
   2. A sanitizer that rejects `<`, `{}`, `expression(`, `javascript:`, `@import` at minimum.
   3. A Vitest test covering the sanitizer.

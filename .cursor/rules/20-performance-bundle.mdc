@@ -8,7 +8,7 @@ globs: ["vite.config.ts", "vitest.config.ts", "src/router.tsx", "src/routes/**/*
 ## Code splitting
 
 - **Every admin route** in `src/routes/admin/**` must be wrapped with `lazyRouteComponent(() => import('...'))` (`PERF-01`). Don't statically import admin-only components from non-admin routes.
-- `DropActsBuilderPanel` and any other ≥600-line editor panel must be loaded behind a `React.lazy` + `Suspense` boundary keyed by tab visibility (`PERF-02`).
+- Any ≥600-line editor panel must be loaded behind a `React.lazy` + `Suspense` boundary (`PERF-02`). The three.js landing/Story canvases follow the same rule (lazy `vendor-three`, gated on desktop + no-reduced-motion).
 - When you author a new admin page, default to lazy. The storefront entry chunk should not import anything from `src/features/admin/**` runtime (types-only is fine — `verbatimModuleSyntax` keeps that erased).
 
 ## Storefront ↔ admin boundary
@@ -18,14 +18,14 @@ globs: ["vite.config.ts", "vitest.config.ts", "src/router.tsx", "src/routes/**/*
 
 ## Bundle hygiene
 
-- Extend `manualChunks` in `vite.config.ts` when adding a heavy dependency (`PERF-05`). Today the buckets are `vendor-gsap`, `vendor-lenis`, `vendor-framer-motion`; add new buckets for `@tanstack/react-router*`, `@tanstack/react-query*`, `react-hook-form` + resolvers, `zod`, `lucide-react`, `sonner` as opportunities appear.
+- Extend `manualChunks` in `vite.config.ts` when adding a heavy dependency (`PERF-05`). Today the buckets are `vendor-gsap`, `vendor-lenis`, `vendor-framer-motion`, `vendor-three`, `vendor-zod`, `vendor-tanstack`, and `vendor-react`; add new buckets for `react-hook-form` + resolvers, `lucide-react`, `sonner` as opportunities appear.
 - Confirm impact via `pnpm analyze` (sets `ANVL_ANALYZE=1` + writes `dist/stats.html`). Attach the relevant `stats.html` line count delta to PRs that touch shared chunks.
-- Never add a dependency listed as unused in the audit (`framer-motion`, `@tanstack/react-table`, `@tanstack/react-virtual`, `@tanstack/react-query-devtools` — `PERF-11`) unless you actually import it.
+- Don't add dependencies you don't import. `PERF-11` removed unused deps (`@tanstack/react-table`, `@radix-ui/react-dropdown-menu`, `@tanstack/react-query-devtools`, `@fontsource/bebas-neue`, `@fontsource/manrope`, `@tailwindcss/typography`); `@tanstack/react-virtual` (admin media grid) and `framer-motion` (RevealOnScroll) **are** in active use.
 - `lucide-react` imports must be named (`import { Menu } from 'lucide-react'`) — never `import * as Icons`.
 
 ## Animation policy
 
-- GSAP / ScrollTrigger code must use `gsap.matchMedia` with **both** a viewport gate (`(min-width: 768px)`) and a reduced-motion gate (`(prefers-reduced-motion: no-preference)`). The mirror branch `(max-width: 767px), (prefers-reduced-motion: reduce)` must snap to final state via `gsap.set` (`RESP-03`). `HeroForgeSequence.tsx` is the model.
+- GSAP / ScrollTrigger code must use `gsap.matchMedia` with **both** a viewport gate (`(min-width: 768px)`) and a reduced-motion gate (`(prefers-reduced-motion: no-preference)`). The mirror branch `(max-width: 767px), (prefers-reduced-motion: reduce)` must snap to final state via `gsap.set` (`RESP-03`). `TheOathLanding`'s `hooks/useTheOathScrollTimeline.ts` is the model.
 - Always call `mm.revert()` / `ctx.revert()` in the cleanup return of `useGSAP`.
 - Lenis must stay gated by `useLenisScroll` (desktop + no reduced motion); never call `new Lenis()` directly from a component.
 - Never import GSAP plugins at module top-level outside `src/shared/lib/gsap.ts` (that module owns `registerPlugin`).

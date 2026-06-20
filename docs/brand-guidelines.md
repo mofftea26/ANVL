@@ -40,7 +40,7 @@
 
 ### Semantic tokens (theme-switchable)
 
-These are set per active theme (`oath-dark` or `bone-light`) and can be overridden by drop campaign themes:
+These are emitted from the **15-token normalized palette** by the active CMS theme (`oath-dark` or `bone-light`). The palette is the single source of truth for CMS + storefront + WebGL — there is **no per-drop palette override**. See `docs/design-system.md` → "Theme palette — one normalized token set" for the full token list and derivation.
 
 | Token | Purpose |
 |---|---|
@@ -59,18 +59,20 @@ These are set per active theme (`oath-dark` or `bone-light`) and can be overridd
 - `oath-dark` — default. Deep black background, bone/steel text. The primary ANVL storefront experience.
 - `bone-light` — future editorial/lookbook mode. Light bone background, dark text.
 
-Drop campaigns can override these tokens via the drop palette system without touching global brand identity.
+The active theme is chosen site-wide in `/admin/theme`; it is not overridden per drop.
 
 ## Typography
 
 | Role | Font | Style |
 |---|---|---|
-| Headings | Bebas Neue | Bold condensed uppercase |
-| Body | Manrope | Clean modern sans (400, 500, 600, 700) |
+| Headings | Anton | Heavy condensed uppercase |
+| Body | Sora | Clean modern sans (400, 500, 600, 700) |
+| Display accent | Cinzel | Heraldic inscriptional caps — accent moments only |
 
-**Font tokens:**
-- `--font-heading: "Bebas Neue", "Anton", "Oswald", "Impact", sans-serif`
-- `--font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif`
+**Font tokens** (self-hosted via `@fontsource/*`, preloaded in `__root.tsx`):
+- `--font-heading: "Anton", "Oswald", "Impact", sans-serif`
+- `--font-sans: "Sora", ui-sans-serif, system-ui, sans-serif`
+- `--font-display: "Cinzel", "Trajan Pro", "Anton", serif`
 
 **Typography scale (responsive, mobile-first):**
 - Hero / page titles: `text-4xl sm:text-5xl md:text-6xl lg:text-7xl`
@@ -82,7 +84,7 @@ Drop campaigns can override these tokens via the drop palette system without tou
 **Rules:**
 - Headings should feel heavy, condensed, powerful
 - Never use light font weights for headings
-- Keep body text clean and readable — Manrope is chosen for legibility at all sizes
+- Keep body text clean and readable — Sora is chosen for legibility at all sizes
 - Avoid more than 3 font weight variations on a single page
 
 ## Logo System
@@ -159,9 +161,7 @@ Each drop has its own visual identity that **extends** the core brand without re
 | Element | Per drop? | Rule |
 |---|---|---|
 | Global nav logo | No | Always the base ANVL mark |
-| Theme palette | Yes | Customized via drop palette editor |
-| Campaign emblem | Yes | Used in section visuals only |
-| Font system | No* | Bebas Neue + Manrope remain unless explicitly overridden for a specific section |
-| Background image/video | Yes | Drop-specific media |
-
-*Campaign-specific heading font variations are possible within drop act content, but the default system fonts must remain readable and accessible.
+| Theme palette | No | One global CMS theme (15-token palette) set in `/admin/theme` |
+| Campaign emblem | Yes | Used in section visuals / asset slots only |
+| Font system | No | Anton + Sora + Cinzel are site-wide; set in `/admin/fonts`, not per drop |
+| Background image/video | Yes | Per-landing-key asset slots (`/admin/assets`) |
