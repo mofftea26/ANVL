@@ -8,8 +8,8 @@ import type { AssetSlotDefinition } from '@/features/landingPages/assetSlots'
  * plane (DOM) / generated texture (WebGL) carrying the drop mark, so the page
  * never breaks on an unassigned slot. The `dropLogo` SVG is extruded into the
  * 3D monolith; `heroRevealMedia` is the layer revealed under the cursor
- * spotlight (falls back to a themed ember gradient). Tenet media keep the
- * `chapterMedia*` keys for backward-compatible CMS data.
+ * spotlight (falls back to a themed ember gradient). Tenet images are assigned
+ * per-vow in the Landing Content editor (`tenets.items[].mediaId`), not here.
  */
 export const OATH_ASSET_SLOTS: AssetSlotDefinition[] = [
   {
@@ -84,35 +84,6 @@ export const OATH_ASSET_SLOTS: AssetSlotDefinition[] = [
     kind: 'image',
     section: 'Creed',
     hint: '16:9 landscape, ~1600×900. WebP ~70q, 120–250 KB. Edges feather — keep the subject centered.',
-  },
-
-  {
-    key: 'chapterMedia1',
-    label: 'Tenet 01 media',
-    kind: 'image',
-    section: 'Tenets',
-    hint: '4:3 landscape, ~1600×1200. WebP ~75q, 150–300 KB. Subject centered (mobile crops to portrait 4:5).',
-  },
-  {
-    key: 'chapterMedia2',
-    label: 'Tenet 02 media',
-    kind: 'image',
-    section: 'Tenets',
-    hint: '4:3 landscape, ~1600×1200. WebP ~75q, 150–300 KB. Subject centered.',
-  },
-  {
-    key: 'chapterMedia3',
-    label: 'Tenet 03 media',
-    kind: 'image',
-    section: 'Tenets',
-    hint: '4:3 landscape, ~1600×1200. WebP ~75q, 150–300 KB. Subject centered.',
-  },
-  {
-    key: 'chapterMedia4',
-    label: 'Tenet 04 media',
-    kind: 'image',
-    section: 'Tenets',
-    hint: '4:3 landscape, ~1600×1200. WebP ~75q, 150–300 KB. Subject centered.',
   },
 
   {

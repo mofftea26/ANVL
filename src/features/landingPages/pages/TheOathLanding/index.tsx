@@ -39,10 +39,14 @@ export function TheOathLanding({
   assets,
   themedMarkups,
   landingContent,
+  mediaIndex,
 }: LandingPageComponentProps) {
   bindOathCmsAssets(assets)
   bindOathCmsThemedMarkups(themedMarkups ?? {})
-  const content = useMemo(() => resolveOathContent(landingContent), [landingContent])
+  const content = useMemo(
+    () => resolveOathContent(landingContent, { mediaIndex, legacyAssets: assets }),
+    [landingContent, mediaIndex, assets],
+  )
 
   const root = useRef<HTMLDivElement | null>(null)
   const motionRef = useRef(createOathMotionState())

@@ -49,19 +49,67 @@ describe('resolveOathContent', () => {
     ).toEqual(OATH_DEFAULT_CONTENT.manifesto.lines)
   })
 
-  it('overlays tenet copy positionally without dropping designed tone/id', () => {
+  it('overlays tenet copy on the default count when CMS stores a full row set', () => {
     const out = resolveOathContent({
-      tenets: { items: [{ title: 'NEW TITLE' }] },
+      tenets: { items: [{ title: 'NEW TITLE' }, {}, {}, {}] },
     })
     expect(out.tenets.items).toHaveLength(OATH_DEFAULT_CONTENT.tenets.items.length)
     expect(out.tenets.items[0].title).toBe('NEW TITLE')
     expect(out.tenets.items[0].id).toBe(OATH_DEFAULT_CONTENT.tenets.items[0].id)
-    expect(out.tenets.items[0].tone).toBe(
-      OATH_DEFAULT_CONTENT.tenets.items[0].tone,
-    )
     expect(out.tenets.items[1].title).toBe(
       OATH_DEFAULT_CONTENT.tenets.items[1].title,
     )
+  })
+
+  it('honours a shorter CMS tenet list', () => {
+    const out = resolveOathContent({
+      tenets: { items: [{ title: 'Only vow' }, { title: 'Second' }] },
+    })
+    expect(out.tenets.items).toHaveLength(2)
+    expect(out.tenets.items[0].title).toBe('Only vow')
+    expect(out.tenets.items[0].index).toBe('01')
+    expect(out.tenets.items[1].index).toBe('02')
+  })
+
+  it('resolves tenet mediaId through mediaIndex', () => {
+    const out = resolveOathContent(
+      { tenets: { items: [{ mediaId: 'asset-1' }, {}, {}, {}] } },
+      {
+        mediaIndex: [
+          {
+            id: 'asset-1',
+            path: 'cms-media/the-oath/hero.webp',
+            alt: '',
+            mime: 'image/webp',
+            w: null,
+            h: null,
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+    )
+    expect(out.tenets.items[0].mediaUrl).toMatch(/hero\.webp/)
+  })
+
+  it('does not restore legacy slot media when CMS owns the tenet row', () => {
+    const out = resolveOathContent(
+      { tenets: { items: [{ mediaId: '' }, {}, {}, {}] } },
+      {
+        legacyAssets: { chapterMedia1: '/legacy/one.webp' },
+      },
+    )
+    expect(out.tenets.items[0].mediaUrl).toBeUndefined()
+  })
+
+  it('treats missing mediaId on a CMS row as no image (no legacy fallback)', () => {
+    const out = resolveOathContent(
+      { tenets: { items: [{ title: 'Only copy' }] } },
+      {
+        legacyAssets: { chapterMedia1: '/legacy/one.webp' },
+      },
+    )
+    expect(out.tenets.items[0].title).toBe('Only copy')
+    expect(out.tenets.items[0].mediaUrl).toBeUndefined()
   })
 
   it('merges product taglines by slug over the defaults', () => {

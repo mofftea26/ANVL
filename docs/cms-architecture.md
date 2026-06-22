@@ -10,7 +10,7 @@ The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing p
 | Theme & Colors | `/admin/theme` | `cms_settings.theme_config` |
 | Fonts | `/admin/fonts` | `cms_settings.font_config` |
 | Assets | `/admin/assets` | `cms_settings.asset_config` + `cms_media_assets` |
-| Landing Content | `/admin/content` | `cms_settings.landing_content` (per-landing-key copy blobs) |
+| Landing Content | `/admin/content` | `cms_settings.landing_content` (per-landing-key copy blobs) + reads/writes `asset_config.drops` for non-tenet scene media |
 | Story | `/admin/story` | `story_chapters` + `story_acts` + `story_cast` (+ `story-media` bucket) |
 | Settings | `/admin/settings` | Session + local reset only |
 
@@ -175,7 +175,7 @@ matching the existing mobile drawer-nav behavior. The rail is an `<aside>`
 | Dashboard | Active-page picker + tiles | Workspace status + quick help |
 | Theme | Palette fields | Live component preview (desktop/mobile) + WCAG contrast report |
 | Fonts | Upload / Google / role selects | Type preview + role→CSS-var help |
-| Landing Content | Per-scene copy fields | Overrides help + scene list + status |
+| Landing Content | Per-scene copy fields + flexible tenets (add/remove, per-vow image pick) + non-tenet asset slot pickers | Overrides help + scene list + status |
 | Assets | Media library (upload, browse, filter) | Slot assignment controls (scope picker + per-slot media map) |
 | Story | Chapters list + chapter detail | Saga model + publishing help |
 | Settings | Session + danger zone | Workspace status + about |
@@ -188,7 +188,7 @@ Pages register their save action in the topbar via `AdminPageActionsContext`
 Slots are **defined in code** per drop. The CMS assigns media library IDs to slots; it cannot invent new slots without a deploy.
 
 - **General slots** (`GENERAL_ASSET_SLOTS`): emblem fallback, loading emblem, shared textures
-- **Per-drop slots** (`DROP_ASSET_SLOTS`): e.g. `the-oath` → hero media, drop logo, product images
+- **Per-drop slots** (`DROP_ASSET_SLOTS`): e.g. `the-oath` → hero media, drop logo, product images. **Tenet images are not slots** — they live in `landing_content['the-oath'].tenets.items[].mediaId`.
 
 `resolvePublishedAssets` merges `asset_config.general` + `asset_config.drops[activeKey]`, resolves IDs via `media_index`, and falls back to code defaults in each page's `*Assets.ts` file.
 

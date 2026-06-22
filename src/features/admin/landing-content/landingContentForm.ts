@@ -17,6 +17,7 @@ export interface OathTenetFormValues {
   title: string
   line: string
   marker: string
+  mediaId: string
 }
 
 export interface OathTaglineFormValues {
@@ -62,16 +63,28 @@ export interface OathContentFormValues {
   }
 }
 
-const TENET_COUNT = OATH_DEFAULT_CONTENT.tenets.items.length
+const DEFAULT_TENET_COUNT = OATH_DEFAULT_CONTENT.tenets.items.length
 
 function s(value: string | undefined): string {
   return value ?? ''
+}
+
+function defaultTenetFormValues(): OathTenetFormValues {
+  return {
+    title: '',
+    line: '',
+    marker: '',
+    mediaId: '',
+  }
 }
 
 /** Stored CMS slice (raw) → editable form values ('' = not overridden). */
 export function toOathFormValues(raw: unknown): OathContentFormValues {
   const parsed = oathLandingContentSchema.safeParse(raw)
   const cms: OathLandingContent = parsed.success ? parsed.data : {}
+  const cmsItems = cms.tenets?.items
+  const tenetCount =
+    cmsItems && cmsItems.length > 0 ? cmsItems.length : DEFAULT_TENET_COUNT
 
   return {
     hero: {
@@ -90,10 +103,11 @@ export function toOathFormValues(raw: unknown): OathContentFormValues {
     },
     tenets: {
       eyebrow: s(cms.tenets?.eyebrow),
-      items: Array.from({ length: TENET_COUNT }, (_, i) => ({
-        title: s(cms.tenets?.items?.[i]?.title),
-        line: s(cms.tenets?.items?.[i]?.line),
-        marker: s(cms.tenets?.items?.[i]?.marker),
+      items: Array.from({ length: tenetCount }, (_, i) => ({
+        title: s(cmsItems?.[i]?.title),
+        line: s(cmsItems?.[i]?.line),
+        marker: s(cmsItems?.[i]?.marker),
+        mediaId: s(cmsItems?.[i]?.mediaId),
       })),
     },
     products: {
@@ -115,6 +129,10 @@ export function toOathFormValues(raw: unknown): OathContentFormValues {
       tagline: s(cms.finale?.tagline),
     },
   }
+}
+
+export function createBlankTenetFormValues(): OathTenetFormValues {
+  return defaultTenetFormValues()
 }
 
 function keep(value: string): string | undefined {
@@ -142,6 +160,34 @@ function prune<T extends Record<string, unknown>>(obj: T): T | undefined {
   return out as T
 }
 
+function tenetMediaIdField(
+  value: string,
+  previousMediaId: string | undefined,
+): string | undefined {
+  const current = value.trim()
+  if (current.length > 0) return current
+  const hadMedia = (previousMediaId?.trim().length ?? 0) > 0
+  // Persist explicit clears so hydration + storefront do not restore legacy slots.
+  if (hadMedia) return ''
+  return undefined
+}
+
+function tenetSliceItem(
+  t: OathTenetFormValues,
+  previousMediaId: string | undefined,
+) {
+  const mediaId = tenetMediaIdField(t.mediaId, previousMediaId)
+  const item = prune({
+    title: keep(t.title),
+    line: keep(t.line),
+    marker: keep(t.marker),
+    mediaId,
+  })
+  if (item) return item
+  if (mediaId === '') return { mediaId: '' }
+  return {}
+}
+
 /**
  * Form values → minimal CMS slice (blank fields dropped so the stored blob only
  * carries real overrides). Validated against the page schema — throws on
@@ -149,17 +195,24 @@ function prune<T extends Record<string, unknown>>(obj: T): T | undefined {
  */
 export function toOathContentSlice(
   values: OathContentFormValues,
+  previousRaw?: unknown,
 ): OathLandingContent {
+  const previous = oathLandingContentSchema.safeParse(previousRaw)
+  const previousItems = previous.success ? previous.data.tenets?.items : undefined
+
   const lines = values.manifesto.linesText
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => l.length > 0)
     .slice(0, 6)
 
-  const tenets = values.tenets.items.map((t) =>
-    prune({ title: keep(t.title), line: keep(t.line), marker: keep(t.marker) }),
+  const tenetItems = values.tenets.items.map((t, i) =>
+    tenetSliceItem(t, previousItems?.[i]?.mediaId),
   )
-  const hasTenetOverride = tenets.some((t) => t !== undefined)
+  const hasTenetOverride =
+    keep(values.tenets.eyebrow) !== undefined ||
+    tenetItems.some((item) => Object.keys(item).length > 0) ||
+    tenetItems.length !== DEFAULT_TENET_COUNT
 
   const taglines: Record<string, string> = {}
   for (const { slug, line } of values.products.taglines) {
@@ -184,16 +237,12 @@ export function toOathContentSlice(
       eyebrow: keep(values.manifesto.eyebrow),
       lines: lines.length > 0 ? lines : undefined,
     }),
-    tenets: prune({
-      eyebrow: keep(values.tenets.eyebrow),
-      items: hasTenetOverride
-        ? values.tenets.items.map((t) => ({
-            ...(keep(t.title) ? { title: keep(t.title) } : {}),
-            ...(keep(t.line) ? { line: keep(t.line) } : {}),
-            ...(keep(t.marker) ? { marker: keep(t.marker) } : {}),
-          }))
-        : undefined,
-    }),
+    tenets: hasTenetOverride
+      ? prune({
+          eyebrow: keep(values.tenets.eyebrow),
+          items: tenetItems,
+        })
+      : undefined,
     products: prune({
       eyebrow: keep(values.products.eyebrow),
       title: keep(values.products.title),

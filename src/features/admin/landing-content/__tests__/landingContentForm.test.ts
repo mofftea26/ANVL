@@ -7,7 +7,7 @@ describe('landingContentForm conversions', () => {
     expect(values.hero.headline).toBe('')
     expect(values.manifesto.linesText).toBe('')
     expect(values.tenets.items).toHaveLength(4)
-    expect(values.tenets.items[0]).toEqual({ title: '', line: '', marker: '' })
+    expect(values.tenets.items[0]).toEqual({ title: '', line: '', marker: '', mediaId: '' })
     expect(values.products.taglines).toEqual([])
   })
 
@@ -42,6 +42,48 @@ describe('landingContentForm conversions', () => {
     expect(slice.manifesto?.lines).toEqual(['One.', 'Two.'])
     expect(slice.tenets?.items?.[0]).toEqual({ title: 'First' })
     expect(slice.products?.taglines).toEqual({ 'a-piece': 'A line.' })
+  })
+
+  it('persists flexible tenet count and media ids', () => {
+    const values = toOathFormValues(undefined)
+    values.tenets.items = [
+      { title: 'One', line: '', marker: '', mediaId: 'img-1' },
+      { title: 'Two', line: '', marker: '', mediaId: '' },
+      { title: 'Three', line: '', marker: '', mediaId: '' },
+    ]
+    const slice = toOathContentSlice(values)
+    expect(slice.tenets?.items).toHaveLength(3)
+    expect(slice.tenets?.items?.[0]).toEqual({ title: 'One', mediaId: 'img-1' })
+  })
+
+  it('persists explicit mediaId clears against the previous slice', () => {
+    const previous = {
+      tenets: {
+        items: [{ mediaId: 'img-1' }, { mediaId: 'img-2' }, {}, {}],
+      },
+    }
+    const values = toOathFormValues(previous)
+    values.tenets.items[0].mediaId = ''
+    values.tenets.items[1].mediaId = 'img-2'
+
+    const slice = toOathContentSlice(values, previous)
+    expect(slice.tenets?.items?.[0]).toEqual({ mediaId: '' })
+    expect(slice.tenets?.items?.[1]).toEqual({ mediaId: 'img-2' })
+  })
+
+  it('persists removed tenets as a shorter items array', () => {
+    const previous = {
+      tenets: {
+        items: [{ title: 'One', mediaId: 'img-1' }, { title: 'Two' }, { title: 'Three' }],
+      },
+    }
+    const values = toOathFormValues(previous)
+    values.tenets.items.splice(1, 1)
+
+    const slice = toOathContentSlice(values, previous)
+    expect(slice.tenets?.items).toHaveLength(2)
+    expect(slice.tenets?.items?.[0]).toEqual({ title: 'One', mediaId: 'img-1' })
+    expect(slice.tenets?.items?.[1]).toEqual({ title: 'Three' })
   })
 
   it('clamps manifesto lines to six and skips incomplete taglines', () => {

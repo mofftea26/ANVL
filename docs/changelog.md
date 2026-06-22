@@ -1,4 +1,24 @@
-﻿## 2026-06-22 — The Oath landing: manifesto→tenets seam + left rail fix (desktop xl+)
+﻿## 2026-06-22 — CMS: reusable media library picker for landing content
+
+- **Media library picker** — enhanced `MediaLibraryPickerModal` with search (filename/alt/tags), All/Images/Video filters, thumbnail grid (image + video previews), clear selection, and accessible modal chrome. Pure filter logic lives in `filterMediaLibraryItems.ts`.
+- **Landing Content** — scene media slots (`OathLandingAssetFields`) and tenet images (`OathTenetsFields`) now use `MediaLibrarySlotField` / the shared picker modal instead of dropdowns. `MediaPickerField` library browse uses the same modal (returns public URL from pick).
+- **Tests**: `filterMediaLibraryItems.test.ts`, `MediaLibraryPickerModal.test.tsx`, `MediaLibrarySlotField.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — CMS: tenet clear/remove persistence + confirm dialogs
+
+- **Landing Content tenets** — fixed Clear image and Remove vow not persisting to Supabase: form now watches live `mediaId` values (not stale `useFieldArray` fields), save compares against the previous slice to emit explicit `{ mediaId: '' }` clears, hydration skips legacy `chapterMedia*` re-migration when CMS already owns `tenets.items`, and storefront resolve no longer falls back to legacy slot URLs when a CMS item list exists.
+- **Confirm UX** — Clear image and Remove vow open `AdminConfirmDialog` (focus-trapped modal) before mutating form state.
+- **Tests**: updated `landingContentForm`, `resolveOathContent`, `migrateOathTenetAssets`. `pnpm verify` green.
+
+## 2026-06-22 — CMS: flexible Oath tenets + landing content picker + asset sync
+
+- **Landing Content editor** — landing page dropdown (registry ∩ Supabase `landing_pages`); edit any registered page, not only the active storefront drop. The Oath editor adds **Scene media** fields that write to the same `asset_config.drops['the-oath']` map as `/admin/assets` (bidirectional sync).
+- **Flexible tenets** — `tenets.items[]` is a CMS array (up to 12 vows) with `title`, `line`, `marker`, and `mediaId`. Admin UI supports add/remove vows and per-vow image pick via `MediaLibraryIdPickerModal`. Storefront resolves `mediaId` through `media_index`; legacy `chapterMedia1–4` asset slots fall back until migrated.
+- **Asset slots** — removed fixed `chapterMedia1–4` from `theOathAssetSlots.ts` / Assets admin. Tenet images are landing-content-only.
+- **Migration** — `supabase/migrations/20260622120000_flexible_oath_tenets.sql` strips deprecated slot keys; `migrateOathTenetAssetsFromSlots` runs on Supabase admin hydration.
+- **Tests**: `migrateOathTenetAssets.test.ts`, updated `landingContentForm`, `resolveOathContent`. `pnpm verify` green (527 tests).
+
+## 2026-06-22 — The Oath landing: manifesto→tenets seam + left rail fix (desktop xl+)
 
 - **Four Vows left rail** — reverted solid `bg-[var(--color-bg)]` fill (restores sticky editorial rail: eyebrow, horizontal steel rule, vow count over the diagonal scrim). Kept `border-r` removed so the vertical white rule does not return.
 - **Manifesto → tenets boundary** — removed `xl:-mt-64` overlap (solid stage block edge read as a sharp horizontal cut). Paired default-tone `OathSceneSeam` bottom on manifesto + top on tenets stage so the hand-off feathers into `--color-bg` on the opaque stage without a see-through void band. GSAP pin targets unchanged (`[data-scene="manifesto"]`, `[data-tenet-stage]`).

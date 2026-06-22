@@ -20,6 +20,8 @@ export interface OathResolvedTenet {
   marker: string
   /** Duotone placeholder base for the tenet media plane. */
   tone: string
+  /** Resolved public URL when a CMS media id is assigned. */
+  mediaUrl?: string
 }
 
 export interface OathResolvedProductCopy {

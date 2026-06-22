@@ -1,6 +1,6 @@
 import { Container } from '@/shared/components/ui/Container'
 import type { OathResolvedContent } from '../content/oathContent.defaults'
-import { oathTenetMedia } from '../theOathAssets'
+import { oathTenetMediaFromUrl } from '../theOathAssets'
 import { OathMediaFallback } from './OathMediaFallback'
 import { OathSceneSeam } from './OathSceneSeam'
 
@@ -14,7 +14,7 @@ const TENET_PANEL_MASK =
 /**
  * Scene 03 — Four Tenets. Desktop only (hidden below xl): a pinned full-bleed
  * panorama — the four vows pan horizontally on scroll, each image cross-fading
- * at the seam into the next. CMS media per tenet (`chapterMedia1..4`); duotone
+ * at the seam into the next. CMS media per tenet (`tenets.items[].mediaId`); duotone
  * placeholder when unassigned.
  */
 export function OathTenets({
@@ -64,7 +64,7 @@ export function OathTenets({
         </div>
 
         <div data-tenet-track className="flex h-full w-full will-change-transform">
-          {items.map((tenet, i) => (
+          {items.map((tenet) => (
             <article
               key={tenet.id}
               data-tenet={tenet.id}
@@ -79,7 +79,7 @@ export function OathTenets({
                 }}
               >
                 <OathMediaFallback
-                  media={oathTenetMedia(i + 1)}
+                  media={oathTenetMediaFromUrl(tenet.mediaUrl)}
                   tone={tenet.tone}
                   grain
                   vignette={false}

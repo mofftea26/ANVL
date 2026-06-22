@@ -22,6 +22,8 @@ export const oathTenetSchema = z.strictObject({
   title: trimmedOptional,
   line: trimmedOptional,
   marker: trimmedOptional,
+  /** CMS media library id — assigned from the Landing Content editor only. */
+  mediaId: trimmedOptional,
 })
 
 export const oathLandingContentSchema = z.strictObject({
@@ -44,7 +46,7 @@ export const oathLandingContentSchema = z.strictObject({
   tenets: z
     .strictObject({
       eyebrow: trimmedOptional,
-      items: z.array(oathTenetSchema).max(4).optional(),
+      items: z.array(oathTenetSchema).max(12).optional(),
     })
     .optional(),
   products: z

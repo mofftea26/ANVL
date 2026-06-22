@@ -1,7 +1,11 @@
+import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
+import { publicCmsMediaUrl } from '@/features/admin/cmsRemote/uploadCmsMedia'
+import type { ResolvedDropAssets } from '@/features/cms/assets/resolvePublishedAssets'
 import {
   oathLandingContentSchema,
   type OathCta,
   type OathLandingContent,
+  type OathTenet,
 } from './oathContent.schema'
 import {
   OATH_DEFAULT_CONTENT,
@@ -34,18 +38,117 @@ function lines(cms: string[] | undefined, fallback: string[]): string[] {
   return kept.length > 0 ? kept : fallback
 }
 
+function resolveMediaId(
+  mediaId: string | undefined,
+  mediaIndex: MediaIndexEntry[] | undefined,
+): string | undefined {
+  if (!mediaId?.trim() || !mediaIndex?.length) return undefined
+  const entry = mediaIndex.find((m) => m.id === mediaId.trim())
+  const objectPath = entry?.path?.trim()
+  if (!objectPath) return undefined
+  const url = publicCmsMediaUrl(objectPath)
+  if (url) return url
+  return objectPath.startsWith('/') ? objectPath : `/${objectPath}`
+}
+
+function legacyTenetMediaUrl(
+  position: number,
+  legacyAssets: ResolvedDropAssets | undefined,
+): string | undefined {
+  const key = `chapterMedia${position}`
+  const value = legacyAssets?.[key]
+  const trimmed = typeof value === 'string' ? value.trim() : ''
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
+function defaultTenetAt(index: number, fallback: OathResolvedTenet[]): OathResolvedTenet {
+  const def = fallback[index]
+  if (def) return def
+  const tones = fallback.map((t) => t.tone)
+  return {
+    id: `tenet-${index + 1}`,
+    index: String(index + 1).padStart(2, '0'),
+    title: `Vow ${index + 1}`,
+    line: '',
+    marker: 'Vow',
+    tone: tones[index % tones.length] ?? '#15171a',
+  }
+}
+
+function resolveTenetMediaUrl(
+  cmsItem: OathTenet | undefined,
+  position: number,
+  mediaIndex: MediaIndexEntry[] | undefined,
+  legacyAssets: ResolvedDropAssets | undefined,
+  cmsOwnsRow: boolean,
+): string | undefined {
+  if (cmsOwnsRow) {
+    if (cmsItem && 'mediaId' in cmsItem) {
+      return resolveMediaId(cmsItem.mediaId, mediaIndex)
+    }
+    return undefined
+  }
+  return (
+    resolveMediaId(cmsItem?.mediaId, mediaIndex) ??
+    legacyTenetMediaUrl(position, legacyAssets)
+  )
+}
+
 function tenets(
   cms: OathLandingContent['tenets'],
   fallback: OathResolvedTenet[],
+  mediaIndex: MediaIndexEntry[] | undefined,
+  legacyAssets: ResolvedDropAssets | undefined,
 ): OathResolvedTenet[] {
-  const overrides = cms?.items ?? []
-  return fallback.map((def, i) => {
-    const o = overrides[i]
+  const cmsItems = cms?.items
+  if (!cmsItems || cmsItems.length === 0) {
+    return fallback.map((def, i) => {
+      const mediaUrl = legacyTenetMediaUrl(i + 1, legacyAssets)
+      return mediaUrl ? { ...def, mediaUrl } : def
+    })
+  }
+
+  const cmsOwnsRows = true
+
+  if (cmsItems.length === fallback.length) {
+    return fallback.map((def, i) => {
+      const o = cmsItems[i]
+      const mediaUrl = resolveTenetMediaUrl(
+        o,
+        i + 1,
+        mediaIndex,
+        legacyAssets,
+        cmsOwnsRows,
+      )
+      return {
+        id: def.id,
+        index: def.index,
+        title: text(o?.title, def.title),
+        line: text(o?.line, def.line),
+        marker: text(o?.marker, def.marker),
+        tone: def.tone,
+        ...(mediaUrl ? { mediaUrl } : {}),
+      }
+    })
+  }
+
+  return cmsItems.map((o, i) => {
+    const def = defaultTenetAt(i, fallback)
+    const mediaUrl = resolveTenetMediaUrl(
+      o,
+      i + 1,
+      mediaIndex,
+      legacyAssets,
+      cmsOwnsRows,
+    )
     return {
-      ...def,
+      id: def.id,
+      index: String(i + 1).padStart(2, '0'),
       title: text(o?.title, def.title),
       line: text(o?.line, def.line),
       marker: text(o?.marker, def.marker),
+      tone: def.tone,
+      ...(mediaUrl ? { mediaUrl } : {}),
     }
   })
 }
@@ -63,10 +166,20 @@ function taglines(
   return merged
 }
 
-export function resolveOathContent(raw: unknown): OathResolvedContent {
+export type ResolveOathContentOptions = {
+  mediaIndex?: MediaIndexEntry[]
+  /** Pre-migration fallback for `chapterMedia*` slot assignments. */
+  legacyAssets?: ResolvedDropAssets
+}
+
+export function resolveOathContent(
+  raw: unknown,
+  options: ResolveOathContentOptions = {},
+): OathResolvedContent {
   const parsed = oathLandingContentSchema.safeParse(raw)
   const cms: OathLandingContent = parsed.success ? parsed.data : {}
   const d = OATH_DEFAULT_CONTENT
+  const { mediaIndex, legacyAssets } = options
 
   return {
     hero: {
@@ -83,7 +196,7 @@ export function resolveOathContent(raw: unknown): OathResolvedContent {
     },
     tenets: {
       eyebrow: text(cms.tenets?.eyebrow, d.tenets.eyebrow),
-      items: tenets(cms.tenets, d.tenets.items),
+      items: tenets(cms.tenets, d.tenets.items, mediaIndex, legacyAssets),
     },
     products: {
       eyebrow: text(cms.products?.eyebrow, d.products.eyebrow),

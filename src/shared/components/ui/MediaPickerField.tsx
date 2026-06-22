@@ -552,8 +552,12 @@ export function MediaPickerField({
         <MediaLibraryPickerModal
           open={libraryOpen}
           onClose={() => setLibraryOpen(false)}
-          onSelect={(url) => applyNextValue(url)}
+          onSelect={(pick) => {
+            if (pick) applyNextValue(pick.publicUrl)
+          }}
           kind={kind}
+          allowClear
+          title={`Browse library — ${label}`}
         />
       ) : null}
     </div>

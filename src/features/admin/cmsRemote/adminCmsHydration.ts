@@ -10,6 +10,7 @@ import { parseFontLibrary } from '@/features/cms/config/fontLibrary'
 import { parseThemeLibrary } from '@/features/cms/config/themeLibrary'
 import { writeLandingContentToStorage } from '@/features/cms/landingContent/landingContent.settings'
 import { parseLandingContentConfig } from '@/features/cms/landingContent/landingContent.zod'
+import { migrateOathTenetAssetsFromSlots } from '@/features/cms/landingContent/migrateOathTenetAssets'
 import {
   beginAdminCmsRemoteHydration,
   endAdminCmsRemoteHydration,
@@ -48,10 +49,12 @@ export async function hydrateAdminCmsFromSupabase(
 
     writeThemeLibraryToStorage(parseThemeLibrary(settings.theme_config))
     writeFontLibraryToStorage(parseFontLibrary(settings.font_config))
-    writeAssetConfigToStorage(parseAssetConfig(settings.asset_config))
-    writeLandingContentToStorage(
-      parseLandingContentConfig(settings.landing_content),
-    )
+
+    const assetConfig = parseAssetConfig(settings.asset_config)
+    const landingContent = parseLandingContentConfig(settings.landing_content)
+    const migrated = migrateOathTenetAssetsFromSlots(landingContent, assetConfig)
+    writeAssetConfigToStorage(migrated.assetConfig)
+    writeLandingContentToStorage(migrated.landingContent)
   } finally {
     endAdminCmsRemoteHydration()
   }

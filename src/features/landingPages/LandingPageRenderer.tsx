@@ -1,3 +1,4 @@
+import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
 import {
   Suspense,
   useCallback,
@@ -28,6 +29,7 @@ interface LandingPageRendererProps {
   loadingEmblemMarkup?: string | null
   themedMarkups?: LandingPageThemedMarkups
   landingContent?: Record<string, unknown>
+  mediaIndex?: MediaIndexEntry[]
 }
 
 const EXIT_MS = 680
@@ -67,6 +69,7 @@ export function LandingPageRenderer({
   loadingEmblemMarkup = null,
   themedMarkups,
   landingContent,
+  mediaIndex,
 }: LandingPageRendererProps) {
   const { completeHomeEntry } = useLandingEntry()
   const definition = resolveLandingPage(activeKey)
@@ -153,6 +156,7 @@ export function LandingPageRenderer({
               assets={assets}
               themedMarkups={themedMarkups}
               landingContent={landingContent}
+              mediaIndex={mediaIndex}
             />
           </LandingPageReadyGate>
         </Suspense>

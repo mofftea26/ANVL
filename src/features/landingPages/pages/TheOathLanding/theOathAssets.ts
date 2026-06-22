@@ -110,10 +110,10 @@ export function oathManifestoMedia(): string | undefined {
   return cmsAsset('manifestoMedia')
 }
 
-/** Tenet media by 1-based position; undefined → duotone placeholder plane.
- *  Keyed `chapterMedia*` to match the Oath II asset data merged in (no rename). */
-export function oathTenetMedia(position: number): string | undefined {
-  return cmsAsset(`chapterMedia${position}`)
+/** Tenet media by resolved URL from landing content; undefined → duotone placeholder. */
+export function oathTenetMediaFromUrl(mediaUrl: string | undefined): string | undefined {
+  const trimmed = mediaUrl?.trim()
+  return trimmed && trimmed.length > 0 ? trimmed : undefined
 }
 
 /** Product render by 1-based position; falls back to the live product image. */

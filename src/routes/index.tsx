@@ -50,6 +50,7 @@ export const Route = createFileRoute("/")({
       },
       landingContent:
         projection.landingContent[projection.activeLandingPageKey],
+      mediaIndex: projection.mediaIndex,
     };
   },
   head: () =>
@@ -76,6 +77,7 @@ function HomePage() {
     loadingEmblemMarkup,
     themedMarkups,
     landingContent,
+    mediaIndex,
   } = Route.useLoaderData();
   const products = useHomeProducts(initialProducts);
   const landingKey = useActiveLandingPageKey(activeLandingKey);
@@ -93,6 +95,7 @@ function HomePage() {
         loadingEmblemMarkup={loadingEmblemMarkup}
         themedMarkups={themedMarkups}
         landingContent={landingContent}
+        mediaIndex={mediaIndex}
       />
     </div>
   );

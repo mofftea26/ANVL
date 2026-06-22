@@ -1,4 +1,5 @@
 import type { ComponentType, LazyExoticComponent } from 'react'
+import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
 import type { Product } from '@/features/products/types/product.types'
 import type { ResolvedDropAssets } from '@/features/cms/assets/resolvePublishedAssets'
 
@@ -17,6 +18,8 @@ export interface LandingPageComponentProps {
    * own slice with its own Zod schema; code defaults fill every gap.
    */
   landingContent?: Record<string, unknown>
+  /** Denormalized media library index for resolving landing-content media ids. */
+  mediaIndex?: MediaIndexEntry[]
 }
 
 export type LandingPageComponent = ComponentType<LandingPageComponentProps>
