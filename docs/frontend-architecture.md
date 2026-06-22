@@ -60,24 +60,25 @@ What it must NOT do:
 ```
 src/features/admin/**
   - Admin UI + mutations only
-  - NEVER imported by storefront routes or marketing features at runtime
-  - May be imported type-only, but prefer extracting shared types to cms/** or drops/**
+  - NEVER imported by storefront routes at runtime
+  - May leak type-only imports into cms/** (MAINT-02: prefer extracting shared types)
 
 src/features/cms/**
-  - Storefront-safe CMS reads
-  - Shared by storefront routes and marketing features
+  - Storefront-safe CMS reads + localStorage working-copy stores
+  - loadStorefrontProjection, theme/font/asset/landingContent config
   - The bridge between admin writes and storefront reads
 
-src/features/drops/**
-  - Drop document type definitions and schemas
-  - Act sequence and palette type definitions
-  - No UI, no mutations
+src/features/landingPages/**
+  - Code-owned landing pages (registry, renderer, TheOathLanding)
+  - CMS picks active key, asset slots, copy overrides only
+
+src/features/story/**
+  - Story saga schemas, clients, 3D shelf + book overlay
+  - Storefront reads published rows via StoryClient
 
 src/features/marketing/**
-  - Storefront marketing UI
-  - Act presets (lazy-loaded)
-  - Cinematic hero system
-  - Imports from cms/**, drops/**, products/**, shared/**
+  - Orphaned home sections (CampaignCards, LookbookStrip) — not on home route
+  - Imports from cms/**, products/**, shared/** only
 
 src/features/products/**
   - Commerce adapters and catalog
@@ -131,7 +132,7 @@ src/app/**
 
 | State kind | Where | Why |
 |---|---|---|
-| Server async data (products, drops, CMS, SEO) | TanStack Query | Caching, refetch, loading/error states |
+| Server async data (products, CMS projection, story) | TanStack Query | Caching, refetch, loading/error states |
 | Local UI (drawers, modals, editor drafts, preview) | Zustand | Synchronous, simple, no server round-trip |
 | Form state | React Hook Form | Local, validation-native, no re-renders |
 | Shareable URL state (shop filters) | TanStack Router search params | Bookmark-able, shareable, SSR-compatible |
@@ -319,13 +320,9 @@ Zustand stores are for **local UI only**. Do not put server state in Zustand.
 
 `PremiumNav` (`src/shared/components/layout/PremiumNav.tsx`) is the storefront navigation.
 
-It has two phases (controlled by `usePremiumNavPhase`):
-- **Cinematic phase:** transparent topbar + optional desktop side rail (when cinematic hero is active)
-- **Commerce phase:** solid blurred topbar with full nav links, cart badge, mobile drawer
+On the home route, nav/footer are hidden until the landing entry overlay completes (`LandingEntryContext`). Otherwise it renders the standard sticky header with cart badge and mobile drawer.
 
-Phase is determined by the cinematic hero scroll position (`cinematicHeroPhase.store.ts`).
-
-Nav content comes from `runtimeClients.siteSettings.getWebsiteLayout()` via the root loader.
+Nav content comes from code defaults (`staticWebsiteNavigation`) via the root loader — not CMS-editable.
 
 ---
 

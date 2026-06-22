@@ -80,7 +80,7 @@ and the bridge costs zero re-renders. The same object also carries the single
 smoothed **pointer** position (`usePointerMotion`), so the custom cursor and
 the hero spotlight reveal share one source instead of running parallel RAF
 loops. WebGL itself mounts only behind a gate: client + `isWebglAvailable()` +
-`≥768px` + `prefers-reduced-motion: no-preference`, with the three.js import
+`≥1280px` + `prefers-reduced-motion: no-preference` (The Oath — see `oathBreakpoints.ts`), with the three.js import
 behind `React.lazy` so it stays in the `vendor-three` chunk.
 
 ### useGSAP hook
@@ -97,30 +97,22 @@ useGSAP(() => {
 
 ### The dual gate (REQUIRED for all GSAP animations)
 
-Every GSAP animation must use `gsap.matchMedia` with both viewport AND reduced-motion gates:
+Every GSAP animation must use `gsap.matchMedia` with both viewport AND reduced-motion gates.
+
+**Default storefront pattern** (non-Oath components):
 
 ```tsx
-const mm = gsap.matchMedia()
+mm.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => { /* animation */ })
+mm.add('(max-width: 767px), (prefers-reduced-motion: reduce)', () => {
+  gsap.set('.element', { opacity: 1, y: 0 })
+})
+```
 
-// Desktop + full motion: run the cinematic animation
-mm.add(
-  '(min-width: 768px) and (prefers-reduced-motion: no-preference)',
-  () => {
-    // full GSAP animation here
-    return () => ctx.revert() // cleanup
-  }
-)
+**The Oath landing** — import from `oathBreakpoints.ts`:
 
-// Mobile or reduced motion: snap to final state immediately
-mm.add(
-  '(max-width: 767px), (prefers-reduced-motion: reduce)',
-  () => {
-    gsap.set('.element', { opacity: 1, y: 0 }) // final state, no animation
-  }
-)
-
-// Always clean up
-return () => mm.revert()
+```tsx
+mm.add(OATH_DESKTOP_CINEMATIC_MQ, () => { /* pinned cinematic */ })
+mm.add(OATH_STATIC_MQ, () => { /* buildOathStatic — no pins */ })
 ```
 
 ### ScrollTrigger
@@ -168,10 +160,10 @@ Architecture:
 - `index.tsx` — page shell; mounts scenes (`OathHero`, `OathManifesto`, `OathTenets`, `ProductRevealSequence`, `OathFinale`) + the lazy WebGL canvas.
 - `hooks/useTheOathScrollTimeline.ts` — the single GSAP `matchMedia` timeline that sequences the per-scene `motion/buildOath*.ts` builders (hero, manifesto, tenets, products, rail, finale, plus `buildOathStatic.ts` for the reduced-motion / mobile branch).
 - `motion/oathMotionState.ts` — the mutable ref bridge: ScrollTrigger `onUpdate` writes progress; R3F `useFrame` reads + lerps WebGL uniforms (zero re-renders). Also carries the smoothed pointer.
-- `webgl/` — `OathCanvasGate` (client + `isWebglAvailable()` + `≥768px` + reduced-motion gate, three.js behind `React.lazy` → `vendor-three` chunk), `OathCanvas`, `Monolith`, `DustMotes`.
+- `webgl/` — `OathCanvasGate` (client + `isWebglAvailable()` + **`≥1280px`** + reduced-motion gate, three.js behind `React.lazy` → `vendor-three` chunk), `OathCanvas`, `Monolith`, `DustMotes`.
 - `content/` — `oathContent.schema.ts` + `resolveOathContent.ts`: CMS copy overrides with designed code defaults.
 
-Mobile / reduced motion: `buildOathStatic.ts` `gsap.set`s every scene to its final state and the WebGL canvas never mounts — the page renders as a static stacked layout.
+Mobile / tablet / reduced motion: `buildOathStatic.ts` — no pins, no WebGL; static stacked layout with light reveals. Manifesto and tenets are hidden below `xl` in DOM.
 
 ---
 

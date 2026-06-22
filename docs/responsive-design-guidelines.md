@@ -162,19 +162,20 @@ Check with: browser DevTools → Performance → Layout Shifts, or manually scro
 
 ## Animation by Device
 
-| Device | GSAP | Lenis | Framer Motion | CSS transitions |
+| Device | The Oath GSAP/WebGL | Lenis | Other GSAP | Framer Motion |
 |---|---|---|---|---|
-| Mobile (<768px) | Disabled (`gsap.set` final state) | Disabled | Minimal | Yes |
-| Tablet (768px–1023px) | Enabled (non-cinematic) | Enabled | Yes | Yes |
-| Desktop (≥1024px) | Full cinematic | Enabled | Yes | Yes |
+| Mobile (<768px) | Static (`buildOathStatic`) | Disabled | Snap to final | Minimal |
+| Tablet (768–1279px) | Static (same branch) | Enabled (≥768px) | Snap to final | Yes |
+| Desktop cinematic (≥1280px) | Full pins + WebGL | Enabled | Full if gated at 768px+ | Yes |
 
-The `gsap.matchMedia` dual gate handles this:
+The Oath uses `oathBreakpoints.ts` (`OATH_DESKTOP_CINEMATIC_MQ` / `OATH_STATIC_MQ`). Generic GSAP uses the 768px dual gate:
+
 ```ts
 mm.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
   // full animation
 })
 mm.add('(max-width: 767px), (prefers-reduced-motion: reduce)', () => {
-  gsap.set('.element', finalState)  // snap to final, no animation
+  gsap.set('.element', finalState)
 })
 ```
 
@@ -238,6 +239,6 @@ Admin is **desktop-first** (optimized for ≥1024px), but must degrade gracefull
 - [ ] Inputs use `text-base` on mobile (no iOS zoom)
 - [ ] Responsive type scale (no raw `text-6xl` on mobile)
 - [ ] Images have `width`, `height`, `alt`
-- [ ] GSAP disabled on mobile (snaps to final state)
+- [ ] The Oath cinematic disabled below 1280px; generic GSAP disabled on mobile
 - [ ] Sticky bars include safe-area-inset bottom padding
 - [ ] Grids not 3+ columns at <360px

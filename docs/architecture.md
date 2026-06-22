@@ -1,144 +1,102 @@
 # Architecture
 
 ## Target architecture
-The website should be split into three layers:
 
-1. Storefront/UI layer
-   - React components, routes, layouts, pages, animation components, forms.
+The website is split into three layers:
 
-2. Domain/application layer
-   - Feature hooks, query hooks, mappers, schemas, services, Zustand stores.
+1. **Storefront/UI layer** — React components, routes, layouts, pages, animation components, forms.
 
-3. Data/runtime layer
-   - `runtimeClients.cms`
-   - `runtimeClients.commerce`
-   - `runtimeClients.seo`
-   - `runtimeClients.siteSettings`
-   - `runtimeClients.analytics`
-   - `runtimeClients.payment`
+2. **Domain/application layer** — Feature hooks, query hooks, mappers, schemas, services, Zustand stores.
 
-Current no-backend phase uses `createRuntimeClients({ isServer })`: **seed** adapters on the server (SSR-safe snapshots) and **localStorage-backed** adapters in the browser so admin edits match the storefront. Future backend phase swaps adapters with API/Medusa clients without rewriting UI.
+3. **Data/runtime layer** — `createRuntimeClients({ isServer })` wires:
+   - `runtimeClients.cms` — CMS projection reads
+   - `runtimeClients.commerce` — Shopify or seed/localStorage products
+   - `runtimeClients.seo` — per-route SEO (mostly code defaults)
+   - `runtimeClients.siteSettings` — nav/layout defaults
+   - `runtimeClients.story` — story saga chapters/acts/cast
+   - `runtimeClients.analytics`, `payment`, `account`
 
-## Recommended folder structure
+When **`VITE_SUPABASE_*`** is set, SSR reads `storefront_publication` via `loadStorefrontProjection()`. Admin edits localStorage → `adminCmsRemoteSync` → `cms_settings` + publication mirror. Without Supabase, seed (SSR) and localStorage (browser) adapters apply.
+
+## Current folder structure
+
 ```txt
 src/
   app/
-    providers/
-    router/
-    config/
+    config/          clients.ts, runtime.ts, publicEnv.ts
+    providers/       AppProviders, SiteThemeProvider, RouteAnalytics
+    seo/             buildSeoMeta
   routes/
-    __root.tsx
-    index.tsx
-    shop/
-    drop/
-    product.$slug.tsx
-    about.tsx
-    size-guide.tsx
-    auth/
-    account/
-    admin/
+    __root.tsx       SSR projection loader, theme inline CSS
+    index.tsx        Home → LandingPageRenderer (code-owned landing)
+    shop/, cart, checkout/, story.tsx
+    auth/, account/
+    admin/           Lazy -admin*.tsx sidecars (7 surfaces + login)
   features/
-    landing/
-      components/
-      hooks/
-      schemas/
-      services/
-      types/
-    cms/
-      components/
-      hooks/
-      schemas/
-      stores/
-      services/
-      types/
-    drops/
-    products/
-    cart/
-    checkout/
-    auth/
-    account/
-    seo/
-    layout/
-  shared/
-    ui/
-    hooks/
-    utils/
-    lib/
-    schemas/
-    types/
-    api/
-    assets/
-  server/
-    functions/
-    routes/
-    middleware/
-    security/
-  content/
-    seed/
-    mocks/
+    admin/           CMS editors + Supabase sync (never imported by storefront)
+    cms/             Storefront-safe reads, theme/font/asset/landingContent config
+    landingPages/    Registry + TheOathLanding (single active page: the-oath)
+    story/           Story saga schemas, clients, 3D book overlay
+    products/        Commerce adapters (Shopify, seed, localStorage)
+    cart/, checkout/, shopify/, analytics/
+    marketing/       Orphaned home sections (not on home route)
+  shared/            UI primitives, hooks, lib — no feature imports
+  content/seed/      Seed data for SSR fallbacks
+supabase/
+  migrations/        Ordered SQL (see docs/project-map.md)
+  functions/         shopify-webhook, medusa-webhook-stub
 ```
 
 ## CMS vs admin boundary
 
-Storefront routes, marketing acts, and shared layout should import **read models and theme helpers** from `src/features/cms/**` and `src/features/drops/**`, not from `src/features/admin/**`. Admin-only editors and persistence stay under `features/admin/**`.
+Storefront and `features/cms/**` must **never** import `features/admin/**` at runtime.
 
-**Phase D (audit):** canonical public landing CMS types (`landing/landingPageCms.types.ts`), resolved read path (`landing/landingCmsRead.ts`), `hooks/useLandingCms`, compose + act normalization (`landing/composeLandingPageFromDrop.ts`, `landing/landingActs.normalize.ts`), `LANDING_CMS_VERSION` (`landing/landingCms.constants.ts`), and palette CSS serialization (`theme/dropPaletteStyle.ts`) live in `features/cms/`. **`Drop` document types** and **landing act slot keys** live in `features/drops/` (`drop.types.ts`, `drops.actSequence.ts`). **Website layout types** live in `features/cms/layout/websiteLayout.types.ts`. Storefront code uses thin **read facades** under `features/cms/read/*` and `features/products/catalog/storefrontCatalog.ts` so routes do not import `@/features/admin/*` for catalog or CMS reads. Admin modules may re-export for compatibility.
+- **Admin** (`features/admin/**`) — editors, Supabase sync, media upload, story CRUD UI
+- **CMS reads** (`features/cms/**`) — projection, theme, fonts, assets, landing content envelope
+- **Landing pages** (`features/landingPages/**`) — code-owned React pages; CMS only picks key, slots, copy
 
-**Phase E (audit):** large admin editors gain colocated shared modules — e.g. `dropEditorRoute.shared.ts`, `DropEditorFieldError.tsx`, `productEditorRoute.shared.ts` — to keep route components readable without changing behavior.
+Nav, footer, and SEO use **code defaults** — not CMS-editable.
 
-**Phase F (audit):** `pnpm verify` runs `typecheck` then `build` for a single local gate before merge.
-
-**Phase I (audit):** `docs/tooling/router-repatch.md` documents why `scripts/repatch-admin-route-tree.mjs` exists and how to extend it.
-
-**Phase J (audit):** `src/app/config/publicEnv.ts` validates selected `VITE_*` keys with Zod; admin login and checkout flags read through it (still client-bundled — not production secrets).
+> **MAINT-02:** A few storefront-safe modules still import types/helpers from `admin/**` (media URL, profile role type). Extract to `cms/**` or `shared/**` when touched.
 
 ## State rules
-- TanStack Query: drops, products, CMS documents, SEO documents, user profile, orders.
-- Zustand: CMS editor draft state, preview state, drawers, modals, filters before commit, cart drawer visibility.
-- URL search params: shop filters that should be shareable.
+
+- **TanStack Query:** products, storefront publication, story chapters, account (when wired)
+- **Zustand:** cart, modals, drawers, admin UI state
+- **localStorage (admin):** CMS working copies (`anvl.themeConfig.v1`, etc.) synced to Supabase when configured
+- **URL search params:** shop filters
 
 ## SSR rules
-- Route loaders fetch public data where SEO matters.
-- Client-only animation code must be dynamic/imported or guarded by client checks.
-- LocalStorage CMS adapter must not run during SSR. It must provide safe fallback seed data on the server and hydrate on the client.
+
+- Route loaders fetch `loadStorefrontProjection()` + commerce data where SEO matters
+- Client-only animation (GSAP, Lenis, three.js) gated by viewport + reduced motion
+- localStorage CMS adapters must not run during SSR — seed fallbacks on server
 
 ## API interface first
-**Runtime (today):** contracts live in `src/app/config/clients.ts` (`CmsClient`, `CommerceClient`, `SeoClient`, `SiteSettingsClient`, …). Wiring lives in `src/app/config/runtime.ts` via `createRuntimeClients({ isServer })` so SSR never executes `localStorage` adapters.
 
-**Future HTTP/BFF:** typed DTOs for REST and Medusa integration live in `src/shared/api/contracts/` (see `docs/contracts/README.md` and `docs/backend-medusa-roadmap.md`). Define or extend those modules before swapping adapters.
+Contracts: `src/app/config/clients.ts`. Wiring: `src/app/config/runtime.ts`.
 
-Illustrative runtime contracts:
-```ts
-interface CmsClient {
-  getLandingCmsContent(): Promise<LandingPageCmsContent>;
-}
+Future HTTP/BFF DTOs: `src/shared/api/contracts/` (see `docs/contracts/README.md`).
 
-interface CommerceClient {
-  getProducts(): Promise<Product[]>;
-  getProductBySlug(slug: string): Promise<Product | null>;
-}
+## Canonical types (Zod)
 
-interface SeoClient {
-  getSeoByPath(path: string): Promise<SeoContent | null>;
-}
-```
-
-## Canonical CMS types (Zod)
-Runtime contracts for external/CMS JSON live under feature folders and shared primitives:
-- Drops: `src/features/drops/schemas/drop.schema.ts`, types re-exported from `src/features/drops/types/drop.types.ts`
-- Landing acts: `src/features/landing/schemas/landing-act.schema.ts`, `src/features/landing/types/landing-act.types.ts`
-- SEO documents: `src/features/seo/schemas/seo-document.schema.ts`, `src/features/seo/types/seo-document.types.ts`
-- Catalog products (commerce doc model): `src/features/products/schemas/commerce.schema.ts`, `src/features/products/types/commerce.types.ts`
-- Money, media, navigation, site settings: `src/shared/schemas/*.schema.ts`, `src/shared/types/*.types.ts`
-- Example validated seed: `src/content/seed/drop-01-the-oath.seed.ts`
+- Landing content: `src/features/landingPages/pages/TheOathLanding/content/oathContent.schema.ts`
+- CMS site config: `src/features/cms/config/cmsSiteConfig.zod.ts` (15-token theme palette)
+- Products: `src/features/products/schemas/product.schema.ts`
+- Story: `src/features/story/schemas/story.schema.ts`
+- Shared: `src/shared/schemas/*.schema.ts`
 
 ## Migration path
-1. Local seed/localStorage adapter.
-2. TanStack Start server functions/server routes adapter.
-3. External backend adapter.
-4. Medusa commerce adapter for products, variants, inventory, pricing, carts, orders.
-5. Custom ANVL CMS tables remain separate for drops, acts, SEO, media, and campaign content.
 
-## As-built snapshot (inventory)
+1. Local seed/localStorage adapters (current without Supabase)
+2. Supabase publication mirror + admin sync (current with `VITE_SUPABASE_*`)
+3. Shopify Storefront API for commerce (optional `VITE_SHOPIFY_*`)
+4. Future: Medusa or custom backend for orders/inventory
 
-A Prompt 01 codebase audit (routes, CMS vs hard-coded copy, SSR/browser boundaries, GSAP/cart flows, and cautious files) lives in `docs/technical-debt.md` under **As-built audit (2026-05-14)**. Update that section when the app structure materially changes so agents do not rely on stale route lists.
+## Removed (historical)
+
+- Drop-builder CMS (`anvl_drops`, acts, publish RPC)
+- `src/features/drops/`, act-presets, `/drop/*` routes
+- CMS products editor, website layout editor, SEO CMS
+
+See `docs/features/drops-cms.md` and `docs/cms-teardown-plan.md` for historical context.

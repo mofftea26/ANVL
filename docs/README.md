@@ -19,10 +19,12 @@ Start here, then open only the docs needed for the task.
 - `next-steps.md` — prioritized task list. `technical-debt.md` — known issues and future work.
 
 ## Feature docs
-- `features/drops-cms.md` — **DEPRECATED**: drop-builder CMS was removed (historical context only).
-- `features/acts-builder.md` — **DEPRECATED**: configurable act/preset landing system was removed (historical context only).
+- `features/supabase-cms.md` — Supabase schema, RLS, sync, edge functions (rewritten for slim CMS).
+- `features/admin-ui.md` — admin workspace shell, routes, primitives.
+- `features/drops-cms.md` — **ARCHIVED**: drop-builder CMS (historical only).
+- `features/acts-builder.md` — **ARCHIVED**: act/preset landing system (historical only).
 - `features/products-commerce.md` — products, variants, inventory, pricing, discounts, shop pages.
-- `features/seo.md` — CMS-managed SEO, structured data, metadata, redirects.
+- `features/seo.md` — per-route SEO, structured data (code defaults; SEO CMS removed).
 - `features/auth-accounts-orders.md` — sign in/up, profile, addresses, orders, Lebanon payment logic.
 - `backend-medusa-roadmap.md` — future database/API/Medusa integration plan.
 - `contracts/README.md` — index for typed HTTP contracts (`src/shared/api/contracts/`).
@@ -32,4 +34,5 @@ Start here, then open only the docs needed for the task.
 - `tooling/router-repatch.md` — TanStack admin route tree post-process (`repatch-admin-route-tree.mjs`).
 
 ## Prompt library
-Use the files in `/docs/prompts` one by one in separate Cursor chats/agents. Never give all prompts to the same agent unless the task is tiny.
+
+See [`prompts/README.md`](./prompts/README.md) for **active vs archived** prompts. Use one prompt per chat. Archived drop-builder prompts (05–11, 13–14) must not be run.

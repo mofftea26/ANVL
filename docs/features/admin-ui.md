@@ -1,4 +1,20 @@
-# Admin UI primitives
+# Admin UI
+
+Slim CMS: seven routes (dashboard, theme, fonts, assets, content, story, settings) + login. Every editor uses `AdminLayout layout="workspace"` → `AdminWorkspace` (primary column + sticky `AdminRailPanel` at `≥1280px`).
+
+| Route | Editor | Rail |
+|---|---|---|
+| `/admin` | Active landing page picker | Status + quick help |
+| `/admin/theme` | 15-token palette + preview | Live preview + WCAG contrast |
+| `/admin/fonts` | Font families | Type preview |
+| `/admin/assets` | Media library + slot assignment | Slot controls |
+| `/admin/content` | Landing copy + flexible Oath tenets + scene asset fields | Overrides help |
+| `/admin/story` | Chapters / acts / cast (relational) | Saga model help |
+| `/admin/settings` | Session + local reset | Status + about |
+
+Sync: `AdminSyncIndicator` + `AdminWorkspaceStatusPanel` show Supabase vs local target. Saves flush via `cmsWriteThrough` (immediate) or `adminCmsRemoteSync` (850 ms debounce).
+
+---
 
 ## Sign-in (`/admin/login`)
 
@@ -42,7 +58,11 @@ Consolidated UI building blocks live under `src/features/admin/components/`:
 
 **No shadcn registry** — keep CVA + Radix wrappers (`AdminSelect`, `AdminDropdownMenu`, `AdminPopover`). Style new controls to match `AdminCard` rim/shadow tokens.
 
-## Buttons
+## Drops list / drop editor — **REMOVED**
+
+The drop-builder CMS (`/admin/drops`, act editor, live preview) was removed 2026-06-07. Landing pages are code-owned; see `docs/landing-pages.md`. The sections below describing drops/products CMS editors are **historical** — kept for primitive reference only.
+
+## Buttons (historical context — primitives still valid)
 
 - **Implementation:** `src/shared/components/ui/Button.tsx` (CVA + `forwardRef`) is the canonical control. **`AdminButton`** in `src/features/admin/components/AdminButton.tsx` re-exports it so admin routes import from the feature boundary.
 - **Tokens:** Variants use CSS variables from `src/styles.css` (`--color-bg`, `--color-surface`, `--color-line`, `--color-text`, `--color-heading` / bone via accent pairings, `--color-accent`, `--color-text-muted`, `--color-chip`). These align with `data-theme="oath-dark"` on admin shells.

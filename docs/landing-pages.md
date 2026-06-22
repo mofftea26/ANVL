@@ -12,13 +12,13 @@ This replaces the legacy drop-builder "acts" system on the public home route.
 CMS (activeLandingPageKey)
    → getActiveLandingPageKey()                  src/features/landingPages/activeLandingPage.ts
    → resolveLandingPage(key)  ── invalid? ──▶ DEFAULT_LANDING_PAGE_KEY ('the-oath')
-   → <LandingPageRenderer>    (Suspense + branded fallback)
+   → <LandingPageRenderer>    (entry overlay + asset preload gate → lazy page)
    → lazy page component      e.g. pages/TheOathLanding
 ```
 
 - **Registry** (`src/features/landingPages/registry.ts`) is the single source of truth. Each entry is metadata + a `lazy()` component, so only the active page's JS chunk ships to the browser.
 - **Resolution never throws.** An unknown, missing, or disabled key degrades to the default page — the storefront is never blank.
-- **Products flow in at runtime** (`LandingPageComponentProps.products` + `props.assets`) from the storefront loader. Commerce: Shopify when configured, else seed/mock. CMS asset overrides merge via `resolvePublishedAssets`.
+- **Products flow in at runtime** (`LandingPageComponentProps.products`, `props.assets`, `landingContent`, `mediaIndex`) from the storefront loader. Commerce: Shopify when configured, else seed/mock. CMS asset overrides merge via `resolvePublishedAssets`.
 
 The home route (`src/routes/index.tsx`) resolves the key in its loader and renders `<LandingPageRenderer>`.
 
@@ -27,7 +27,7 @@ The home route (`src/routes/index.tsx`) resolves the key in its loader and rende
 The Oath is composed to read as **one continuous scene**, not stacked sections:
 
 - A fixed themed void backdrop + transparent WebGL canvas sit behind every scene. Scenes are transparent (transparent section backgrounds, `OathMediaFallback`) so the monolith + dust environment bleeds through. Adjacent scenes **dissolve into shadow** at their seams via `OathSceneSeam` — a decorative, theme-driven (`--color-bg`) top/bottom feather overlay (below copy `z-10`, above scene media) so boundaries never meet at a hard edge.
-- **Product reveal** (`components/ProductRevealSequence.tsx`) is a single pinned scene where the three pieces assemble **horizontally** as `WarBanner`s: the outer two slide in from the left/right edges and the centre drops onto a forged rail, so vertical scroll reads as a sideways march. All motion lives in `buildProducts` (`hooks/useTheOathScrollTimeline.ts`) under `gsap.matchMedia` — desktop/tablet pin + scrub; mobile + reduced-motion stack vertically and reveal (no pin, content always CSS-visible). Live product images/prices/links drop in via the existing `ResolvedProduct` map; missing art falls back to the banner's duotone + emblem placeholder.
+- **Product reveal** (`components/ProductRevealSequence.tsx`) is a single pinned scene where the three pieces assemble **horizontally** as `WarBanner`s: the outer two slide in from the left/right edges and the centre drops onto a forged rail, so vertical scroll reads as a sideways march. All motion lives in `buildProducts` (`hooks/useTheOathScrollTimeline.ts`) under `gsap.matchMedia` — desktop cinematic pin + scrub at `≥1280px`; mobile and tablet get static layout with light reveals (no pin, content always CSS-visible). Live product images/prices/links drop in via the existing `ResolvedProduct` map; missing art falls back to the banner's duotone + emblem placeholder.
 
 ---
 
@@ -69,12 +69,18 @@ The Oath is composed to read as **one continuous scene**, not stacked sections:
 
 ### Animation rules (non-negotiable)
 
-Mirror `pages/TheOathLanding/hooks/useTheOathScrollTimeline.ts`:
+Mirror `pages/TheOathLanding/hooks/useTheOathScrollTimeline.ts` and `oathBreakpoints.ts`:
 
-- All GSAP uses `gsap.matchMedia` with desktop / tablet / static branches; pinned + scrubbed cinema runs only on `(min-width: 768px) and (prefers-reduced-motion: no-preference)`. Mobile + reduced-motion get a **no-pin** branch with light reveals.
+| Tier | Viewport | Motion |
+|---|---|---|
+| Mobile | `<768px` | Static layout, light fade reveals, no WebGL, no pins |
+| Tablet | `768px–1279px` | Static layout (same as mobile motion branch); hero/products/finale visible; manifesto/tenets hidden in DOM |
+| Desktop cinematic | `≥1280px` + no reduced motion | Full GSAP pins/scrub, WebGL, cursor, spotlight |
+
+- Pinned + scrubbed cinema runs only on `OATH_DESKTOP_CINEMATIC_MQ` (`≥1280px` and `prefers-reduced-motion: no-preference`). Static branch: `OATH_STATIC_MQ` (`max-width: 1279.98px` or reduced motion).
 - Content is **CSS-visible by default** — initial hidden states are set INSIDE the motion branches only. No hidden-content failure mode on mobile / reduced motion / no-JS.
 - Animate `transform`/`opacity` only (no layout props). `mm.revert()` on cleanup (kills pinned ScrollTriggers). Use `useGSAP` with a `scope` ref; keep timeline logic in the hook, not the components.
-- Import GSAP from `@/shared/lib/gsap`, never from `gsap` directly. Lenis via `useLenisScroll` only.
+- Import GSAP from `@/shared/lib/gsap`, never from `gsap` directly. Lenis via `useLenisScroll` only (gates at `≥768px` + no reduced motion).
 
 ---
 
@@ -113,28 +119,30 @@ A **fixed transparent WebGL canvas** (the 3D monolith logo + dust particles) sit
 |---|---|---|---|
 | Intro | — | `components/LandingPreloader.tsx` — CSS veil: Drop mark + `DROP 01 — THE OATH` resolve, then lifts | — |
 | 01 Hero | `hero` | **Exactly one screen tall** (`--anvl-section-h` = svh − header, so the "Approach" cue shows without scrolling) and flush under the nav (the copy scrim extends up under the header — no seam at rest). Pinned; a **contained, right-anchored video panel** (`[data-hero-media]`, full-bleed on mobile, width-capped on tablet/desktop) whose **edges feather into shadow** (`MEDIA_FEATHER_MASK`, esp. the right edge — no hard cut-off) and whose video is **fully opaque** (legibility via a left copy scrim, not by dimming). Scroll-scrubbed (`buildOathHero` drives `currentTime`) **and drifts right→centre** across the pin; blur-rise headline + Ken Burns intro, magnetic CTAs, and the **cursor spotlight reveal** (`buildOathSpotlight`) — a full-bleed, stationary layer exposing `heroRevealMedia` over the base video | Monolith emblem sits **small, above the eyebrow**, and **only drifts to centre — staying the same small size** through the hero/middle (`heroProgress`); it enlarges **only at the finale**. dust drifts and parts around the cursor (`DustMotes`) |
-| 02 Manifesto | `manifesto` | Pinned; creed lines reveal word-by-word (SplitText), backdrop push-in | Emblem recedes/darkens at its **constant small size** — no shrink (`manifestoProgress`); dust slows |
-| 03 Tenets | `tenets` | Pinned **horizontal panorama** — four vows pan sideways on an `xPercent` track during the vertical pin | Emblem held receded behind the panel (`tenetsActive`) |
+| 02 Manifesto | `manifesto` | Pinned at `≥1280px`; creed lines reveal word-by-word (SplitText), backdrop push-in. **Hidden below xl** in DOM | Emblem recedes/darkens at its **constant small size** — no shrink (`manifestoProgress`); dust slows |
+| 03 Tenets | `tenets` | Pinned **horizontal panorama** at `≥1280px` — vows pan sideways on an `xPercent` track during the vertical pin. **Hidden below xl** in DOM. Supports **1–12 vows** via CMS | Emblem held receded behind the panel (`tenetsActive`) |
 | 04 Products | `products` | Pinned **horizontal banner assembly**: the three pieces march in as `WarBanner`s; live images/price/links → curated taglines + duotone placeholders | Hovered piece lifts the dust glint (`hoveredPiece`) |
 | 05 Finale | `finale` | Crest forge-in + SplitText title + rule ignition + brand block rise; CTAs release into the normal footer (never trapped) | Emblem returns centre + front, **enlarges**, and tints to a **primary→accent gradient** so it separates from the heading-coloured copy (`finaleProgress`) |
 
-**Responsive motion** (`useTheOathScrollTimeline`, via `gsap.matchMedia`):
-- **Desktop ≥1024px** — full pinned/scrubbed cinematic at intensity 1, WebGL + cursor + spotlight on.
-- **Tablet 768–1023px** — same pins, intensity 0.7 (shorter scrub distances), smaller spotlight radius.
-- **Mobile <768px OR `prefers-reduced-motion`** — `buildOathStatic`: **no pinning**, no WebGL, no spotlight; scenes lay out in normal flow (CSS-visible) and reveal with light fade-ins; videos held on frame 0 under reduced motion. No scroll-jacking, no hidden-content failure mode.
+**Responsive motion** (`useTheOathScrollTimeline`, via `oathBreakpoints.ts`):
+- **Desktop cinematic `≥1280px`** — full pinned/scrubbed cinematic, WebGL + cursor + spotlight on.
+- **Tablet `768–1279px`** — static layout (`buildOathStatic`): no pinning, no WebGL, no spotlight; hero/products/finale in normal flow with light reveals.
+- **Mobile `<768px` OR `prefers-reduced-motion`** — same static branch as tablet; videos held on frame 0 under reduced motion. No scroll-jacking, no hidden-content failure mode.
 
-`mm.revert()` on cleanup kills every pinned ScrollTrigger. Lenis smooth-scroll is enabled by the home route (`useLenisScroll`, self-gating to desktop + no-reduced-motion) and kept in lockstep with ScrollTrigger.
+`mm.revert()` on cleanup kills every pinned ScrollTrigger. Lenis smooth-scroll is enabled by the home route (`useLenisScroll`, self-gating to `≥768px` + no-reduced-motion) and kept in lockstep with ScrollTrigger.
 
 ## Entry moment + assets
 
+- **Entry overlay** (`LandingEntryOverlay` + `LandingEntryContext`) — branded preload gate before the lazy page chunk hydrates. Home route locks scroll until entry completes; nav/footer hidden until `homeEntryComplete`.
 - **Preloader** (`components/LandingPreloader.tsx`) — the Drop 01 mark resolves with a thin progress line, then the veil lifts. Pure CSS (`.anvl-preloader*` in `styles.css`): renders in SSR, no hydration state, `pointer-events-none` (never traps the page), auto-dismisses, and collapses instantly under `prefers-reduced-motion`.
 - **Asset fallback** (`theOathAssets.ts`) — code defaults; CMS overrides via `bindOathCmsAssets(props.assets)`. Missing media resolves to duotone + Drop-logo placeholder via `OathMediaFallback`. The Drop logo (`dropLogo`, `/brand/the-oath-shape.svg`) doubles as the 3D extrude source — keep it valid SVG XML.
 
 ### Architecture (mirror this for future WebGL pages)
 
 - **Motion state bridge** (`motion/oathMotionState.ts`, `OathMotionState`) — a plain mutable object in a ref, provided via `OathMotionContext`. ScrollTrigger callbacks and the pointer hook **write** progress/pointer numbers; the canvas's `useFrame` **reads** and lerps shader uniforms toward them. No React state, no re-renders, scrub jitter never reaches the GPU. A **single smoothed pointer source** (`hooks/usePointerMotion.ts`) feeds both the cursor dot/ring and the spotlight reveal — no second RAF loop.
-- **Canvas gate** (`webgl/OathCanvasGate.tsx`) — three.js loads only when: client-mounted + `isWebglAvailable()` + `≥768px` + no reduced motion. `OathCanvas` is a `React.lazy` default export, so three lands in the existing `vendor-three` chunk; phones never download it.
-- **Content model** (`content/`) — `oathContent.schema.ts` (Zod, all-optional, strict) + `oathContent.defaults.ts` (the complete designed copy: hero, manifesto, tenets×4, products heading + per-slug taglines, finale) + `resolveOathContent` (per-field merge; blank/whitespace = use default). The raw slice arrives via `LandingPageComponentProps.landingContent` from `storefront_publication.landing_content['the-oath']`; edited at `/admin/content`.
+- **Canvas gate** (`webgl/OathCanvasGate.tsx`) — three.js loads only when: client-mounted + `isWebglAvailable()` + `≥1280px` + no reduced motion. `OathCanvas` is a `React.lazy` default export, so three lands in the existing `vendor-three` chunk; phones and tablets never download it.
+- **Content model** (`content/`) — `oathContent.schema.ts` (Zod, all-optional, strict) + `oathContent.defaults.ts` (the complete designed copy: hero, manifesto, tenets, products heading + per-slug taglines, finale) + `resolveOathContent` (per-field merge; blank/whitespace = use default). The raw slice arrives via `LandingPageComponentProps.landingContent` from `storefront_publication.landing_content['the-oath']`; edited at `/admin/content`.
+- **Flexible tenets** — `tenets.items[]` supports up to 12 vows (`title`, `line`, `marker`, `mediaId`). Admin can add/remove vows and pick per-vow images via `MediaLibraryIdPickerModal`. Legacy `chapterMedia1–4` asset slots migrate to `mediaId` on hydration (`migrateOathTenetAssetsFromSlots`).
 - **Assets** (`theOathAssetSlots.ts` / `theOathAssets.ts`) — hero video/image slots (`heroDesktopVideo`, `heroMobileVideo`, `heroMedia`), the SVG `dropLogo` (3D extrude source) + `crestSvg`, `manifestoMedia`, `productImage1–3`, and the optional **`heroRevealMedia`** (revealed under the spotlight; falls back to a theme-tinted gradient). **Tenet images** are assigned per vow in `landing_content.tenets.items[].mediaId` (Landing Content editor only). Missing media falls back to `OathMediaFallback` (DOM duotone + drop mark via `OathCmsMark`).
 - **Cursor spotlight reveal (Lithos-adapted)** — `buildOathSpotlight` drives `--spotlight-x/--spotlight-y` CSS vars via `gsap.quickSetter` inside a single `gsap.ticker` lerp; a `radial-gradient` `mask-image` exposes the reveal layer. No per-frame `toDataURL`. Desktop fine-pointer only; hidden under reduced-motion/mobile/no-WebGL.
 - **Micro-interactions** — `motion/attachMagnetics.ts` (`[data-magnetic]` lean-in), `components/OathCursor.tsx` (page-scoped dot+ring cursor, `data-cursor` states, fine-pointer desktop only), `components/OathProgressRail.tsx` (fixed scene rail), `components/OathCtaLink.tsx` (shared `buttonVariants` + magnetic + `data-cursor`). A fixed top scrim keeps the transparent nav legible over the scene.

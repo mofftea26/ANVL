@@ -34,42 +34,32 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 
 ## `supabase/`
 
-### `migrations/` (chronological)
+### `migrations/` (chronological — key milestones)
 
 | Migration | What it does |
 |---|---|
-| `20260518120000_anvl_cms_core.sql` | Core tables: `cms_profiles`, `anvl_drops`, `storefront_publication`, `cms_admin_products`; RLS; `cms_publish_drop()` RPC |
-| `20260518120001_anvl_cms_storage.sql` | Supabase Storage bucket + policies |
-| `20260518140000_storefront_publication_catalog.sql` | Adds catalog snapshot column to `storefront_publication` |
-| `20260518220000_anvl_drops_client_id_admin_rls.sql` | Client ID tracking + admin RLS hardening |
-| `20260519120000_revoke_anon_cms_publish_drop.sql` | Revokes anon access to publish function |
-| `20260519140000_shopify_product_links.sql` | Shopify product ID columns |
-| `20260519230000_cms_publish_drop_client_drop_ids.sql` | Client drop ID tracking in publish RPC |
-| `20260524120000_drop_status_cleanup.sql` | Status enum constraint cleanup |
-| `20260524180000_cms_act_natures_layouts.sql` | Act nature/layout constraints |
-| `20260524190000_cron_scheduled_drops_note.sql` | pg_cron comment for scheduled drop activation |
-| `20260531120000_storefront_site_homepage.sql` | Adds `site_homepage` column to `storefront_publication` |
-| `20260602120000_cinematic_hero_layouts.sql` | Cinematic hero layout constants |
-| `20260620100000_storefront_site_drafts.sql` | Site-level draft fields |
-| `20260620120000_cms_media_assets.sql` | `cms_media_assets` table for media library |
-| `20260620130000_cms_scheduled_activation.sql` | Scheduled drop activation infrastructure |
-| `20260624120000_fix_publish_drop_body_column.sql` | Fix column reference in publish RPC |
-| `20260625120000_cron_process_scheduled_drops_direct.sql` | pg_cron direct function call for scheduled drops |
-| `20260626120000_cms_settings_landing_pages.sql` | **Current model:** `cms_settings` + `landing_pages` tables (RLS), `storefront_publication.active_landing_page_key` column |
-| `20260626120000_story_tables.sql` / `20260626120001_story_media_bucket.sql` | Story saga tables (`story_chapters`/`story_acts`/`story_cast`) + `story-media` bucket |
-| `20260607120000_cms_minimal_cleanup.sql` | DESTRUCTIVE: dropped `anvl_drops`, `cms_admin_products`, `shopify_product_links`, `cms_settings.seo_config`, and the drop-builder/layout/seo columns on `storefront_publication` (see `docs/cms-architecture.md` → Dropped) |
-| `20260620140000_*` | Normalize stored `theme_config` palettes to the 15-token set |
-| `20260628120000_consolidate_oath_landing_pages.sql` | Fold `the-oath-2` slots/content into `the-oath`, delete the `the-oath-2` row, force `active_landing_page_key = 'the-oath'` |
+| `20260518120000_anvl_cms_core.sql` | **Historical:** drop-builder foundation (`anvl_drops`, publish RPC) |
+| `20260606051107_drop_builder_teardown.sql` | **Pivot:** drops `anvl_drops`, publish RPC, scheduled-drop cron |
+| `20260606052134_cms_settings_landing_pages.sql` | **Current model:** `cms_settings` + `landing_pages`; `active_landing_page_key` on publication |
+| `20260607120000_cms_minimal_cleanup.sql` | Drops product tables + legacy publication columns |
+| `20260612073914_landing_content_the_forge.sql` | Adds `landing_content` jsonb |
+| `20260620100000_storefront_site_drafts.sql` | Adds `media_index` to publication |
+| `20260620120000_cms_media_assets.sql` | Media library table |
+| `20260620140000_normalize_theme_palette.sql` | Normalizes theme to 15-token palette |
+| `20260622120000_flexible_oath_tenets.sql` | Tenet images → `landing_content.tenets.items[].mediaId` |
+| `20260626120000_story_tables.sql` | Story saga relational tables |
+| `20260626120001_story_media_bucket.sql` | `story-media` bucket |
+| `20260627120000_remove_landing_page_theme_assignment.sql` | Removes per-landing theme override |
+| `20260627120100_asset_config_pages.sql` | Adds `asset_config.pages` for shop etc. |
+| `20260628120000_consolidate_oath_landing_pages.sql` | Merges `the-oath-2` → `the-oath` |
 
-> The migration list above is the meaningful subset; the full ordered set lives in `supabase/migrations/`. The drop-builder teardown has been applied — `anvl_drops` / `cms_publish_drop` / scheduled-drop RPCs no longer exist.
+> Full ordered set: `supabase/migrations/`. Drop-builder tables/RPCs are gone from the active app; see MIG-01 in `docs/technical-debt.md` for orphaned post-teardown RPC migrations.
 
-### `functions/`
+### `functions/` (in repo)
 
 | Function | Purpose |
 |---|---|
-| `publish-storefront/` | Called by admin on publish — updates `storefront_publication` |
-| `process-scheduled-drops/` | Activates drops at their `scheduled_activation_at` time |
-| `shopify-webhook/` | Handles Shopify product sync via webhook |
+| `shopify-webhook/` | Verifies Shopify HMAC; ack-only — no DB writes |
 | `medusa-webhook-stub/` | Stub for future Medusa commerce backend |
 
 ---
@@ -89,8 +79,7 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 | `components/AppErrorBoundary.tsx` | Storefront-wide error boundary |
 | `components/AdminErrorBoundary.tsx` | Admin-specific error boundary |
 | `providers/AppProviders.tsx` | Root React context providers |
-| `providers/ActiveDropThemeProvider.tsx` | Applies active drop CSS theme to `:root` |
-| `providers/ActiveDropThemeBridge.tsx` | Bridges localStorage drop changes to the theme |
+| `providers/SiteThemeProvider.tsx` | Applies CMS theme CSS vars to `:root` |
 | `providers/RouteAnalytics.tsx` | Page view tracking on route changes |
 | `seo/meta.ts` | `buildSeoMeta()` — constructs `<head>` metadata per route |
 
@@ -164,7 +153,7 @@ Static, cinematic landing experiences live in code (one folder per page). The CM
 | `types.ts` | `LandingPageComponentProps`, `LandingPageDefinition`, `LandingPageMeta` |
 | `registry.ts` | Single source of truth: lazy page components + `resolveLandingPage`, `resolveActiveLandingPageKey`, `listLandingPages`, `DEFAULT_LANDING_PAGE_KEY` |
 | `activeLandingPage.ts` | `getActiveLandingPageKey()` — seam for the CMS `activeLandingPageKey` read |
-| `LandingPageRenderer.tsx` | Suspense + branded fallback; renders the active page's lazy chunk |
+| `LandingPageRenderer.tsx` | Entry overlay + preload gate; lazy page chunk |
 | `assetSlots.ts` | Code-defined asset slots (general + per-drop) the admin Assets editor assigns media to |
 | `pages/TheOathLanding/` | Drop 01 — The Oath (the single merged WebGL + GSAP film): `index.tsx` (composition), `theOathAssets.ts` / `theOathAssetSlots.ts` (asset binding + slots), `content/` (Zod schema + designed defaults + `resolveOathContent`), `components/` (OathHero, OathManifesto, OathTenets, ProductRevealSequence, OathFinale, OathCursor, OathProgressRail, OathCtaLink, OathMediaFallback, OathCmsMark), `motion/` (`oathMotionState` bridge, per-scene `buildOath*` builders, spotlight, SplitText wrapper, magnetics), `hooks/` (scroll timeline, pointer), `webgl/` (canvas gate, lazy `OathCanvas`, `Monolith`/`AnvlOath3D`/`DustMotes`, dust shader, brand colors) |
 | `__tests__/registry.test.ts` | Registry resolution + fallback behavior |
@@ -199,7 +188,7 @@ Storefront marketing surfaces (the act-preset / cinematic-hero / public-landing 
 
 | Subfolder | Purpose |
 |---|---|
-| `home/` | Homepage strips: `CampaignCardsSection`, `LookbookStripSection` |
+| `home/` | Homepage strips: `CampaignCardsSection`, `LookbookStripSection` (**not mounted on home route** — home is landing-only) |
 
 #### `products/`
 
@@ -210,7 +199,7 @@ Commerce adapters + catalog:
 | `api/commerceClient.seed.ts` | Static seed products (no backend) |
 | `api/commerceClient.localStorage.ts` | Admin-edited products via localStorage |
 | `api/commerceClient.shopify.ts` | Shopify Storefront API adapter |
-| `api/commerceClient.supabase.ts` | Supabase CMS products adapter |
+| `api/commerceClient.supabase.ts` | Legacy name; commerce uses Shopify or seed/localStorage (no CMS products) |
 | `api/createCommerceClient.ts` | Factory — picks the right adapter |
 | `catalog/storefrontCatalog.ts` | Public catalog read facade |
 | `hooks/` | `useProducts`, `useHomeProducts`, `useTrackProductView` |

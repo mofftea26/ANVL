@@ -23,7 +23,8 @@ Brand context implemented from `/docs/ANVL_Athletics_Professional_Brand_Document
 - Lenis (smooth scroll hook)
 - lucide-react
 - sonner
-- TanStack Table + TanStack Virtual (installed for CMS/admin evolution)
+- `@tanstack/react-virtual` (admin media grid)
+- Vitest + Testing Library
 
 ## Run Locally
 
@@ -37,26 +38,25 @@ pnpm dev
 Production build and checks:
 
 ```bash
-pnpm typecheck
-pnpm build
+pnpm verify   # typecheck + test + build
 ```
 
 ## Route Map
 
-- `/`
-- `/shop`
-- `/shop/$slug`
-- `/drop/the-oath`
-- `/cart`
-- `/checkout`
-- `/checkout/success`
-- `/about`
-- `/size-guide`
-- `/care-guide`
-- `/contact`
-- `/privacy`
-- `/terms`
-- `/returns`
+**Storefront**
+- `/` — code-owned landing page (default: The Oath)
+- `/shop`, `/shop/$slug`
+- `/story` — story saga (chapter shelf + book overlay)
+- `/cart`, `/checkout`, `/checkout/success`
+- `/about`, `/size-guide`, `/care-guide`, `/contact`, `/privacy`, `/terms`, `/returns`
+- `/auth/sign-in`, `/auth/sign-up`, `/auth/forgot-password`
+- `/account`, `/account/personal`, `/account/addresses`, `/account/orders`
+
+**Admin** (lazy-loaded; Supabase auth or legacy env gate)
+- `/admin` — dashboard (active landing picker)
+- `/admin/theme`, `/admin/fonts`, `/admin/assets`, `/admin/content`, `/admin/story`, `/admin/settings`
+- `/admin/login`
+
 - `/admin-preview` (guarded by env flag)
 
 ## Architecture
@@ -80,12 +80,14 @@ src/
     hooks/
     lib/
   features/
-    analytics/
+    admin/           Slim CMS editors + Supabase sync
+    cms/             Storefront-safe CMS reads
+    landingPages/    Code-owned landings (The Oath)
+    story/           Story saga
     cart/
     checkout/
-    cms/
-    marketing/
     products/
+    shopify/
   routes/
 ```
 
@@ -97,9 +99,9 @@ Interface contracts are centralized in:
 Runtime wiring uses `createRuntimeClients({ isServer })` in:
 - `src/app/config/runtime.ts`
 
-Storefront data adapters (CMS, commerce, SEO, site settings):
-- **Server**: `cmsClient.seed.ts`, `commerceClient.seed.ts`, `seoClient.seed.ts`, `siteSettingsClient.seed.ts` — deterministic, no `localStorage`.
-- **Browser**: `cmsClient.localStorage.ts`, `commerceClient.localStorage.ts`, `seoClient.localStorage.ts`, `siteSettingsClient.localStorage.ts` — persisted admin/editor state.
+Storefront data adapters:
+- **With Supabase:** `loadStorefrontProjection()` reads `storefront_publication`; commerce via Shopify or seed.
+- **Without Supabase:** seed (SSR) + localStorage (browser) CMS adapters.
 
 Still mocked (until productized):
 - `mockAnalyticsClient` -> `src/features/analytics/api/analyticsClient.mock.ts`
@@ -189,25 +191,13 @@ Hooks:
 
 Replace mock console analytics with PostHog/Plausible/custom backend by swapping runtime client.
 
-## CMS-Driven Content
+## CMS (slim admin)
 
-CMS-like content shape and mock data:
-- `src/features/cms/types/cms.types.ts`
-- `src/features/cms/data/cms.mock.ts`
+Seven editor surfaces + settings. Landing pages are **code-owned** (`src/features/landingPages/`); CMS picks active key, theme (global 15-token palette), fonts, asset slots, and per-scene copy (`landing_content`).
 
-Supported CMS methods (via `CmsClient`):
-- `getLandingCmsContent()`
-- `getHomepageContent()`
-- `getAnnouncementBar()`
-- `getNavigation()`
-- `getCampaigns()`
-- `getLookbook()`
+With **`VITE_SUPABASE_*`:** admin syncs to `cms_settings` + `storefront_publication`. Story saga uses relational `story_*` tables.
 
-Per-path SEO (via `SeoClient`):
-- `getSeoByPath(path)`
-
-Site chrome (via `SiteSettingsClient`):
-- `getWebsiteLayout()`
+See `docs/cms-architecture.md` and `docs/landing-pages.md`.
 
 ## Medusa / Backend Integration Plan
 

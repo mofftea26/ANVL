@@ -6,11 +6,19 @@ Track known compromises here.
 
 The **execution batch** for the full-app audit is **closed** (Phases A–C, G–H + storage migration + lazy admin). See **`docs/audit-2026-05-17.md`** for the canonical finding IDs, phase table, and what remains **deferred**:
 
-- **Phase D** — Move CMS read surfaces out of `features/admin/**` into `features/cms/**` / `features/drops/**` so the storefront bundle does not depend on admin modules.
+- **Phase D** — Extract shared types/helpers out of `features/admin/**` into `features/cms/**` / `shared/**` (MAINT-02).
 - **Phase E** — Split oversized editor files (600+ lines) for maintainability.
 - **Phase F** — DX / reuse passes (helpers, tokens, query keys, dead deps).
 - **Phase I** — Route codegen ergonomics (`scripts/repatch-admin-route-tree.mjs` vs upstream TanStack Start fixes).
 - **Phase J** — **Production launch blockers:** real server auth, HttpOnly sessions, CSP/HSTS, rate limits, upload validation, CSRF — must be satisfied before a public launch even though the client-side audit batch is closed.
+
+## Documentation / schema debt (2026-06-22)
+
+| ID | Area | Description |
+|---|---|---|
+| **MIG-01** | Supabase migrations | Migrations `20260620130000`, `20260624120000`, `20260625120000` reintroduce `cms_publish_drop` / pg_cron referencing dropped `anvl_drops`. Fresh `db push` may fail or leave stale RPCs. App uses direct `adminCmsRemoteSync` instead. |
+| **MAINT-02** | Feature boundary | Storefront-safe code imports from `admin/**` (`publicCmsMediaUrl`, `MediaIndexEntry` type, `CmsProfileRole`). |
+| **MAINT-03** | localStorage reset | `resetAllLocalCmsKeys()` omits `anvl.landingContent.v1` (registered in `storageKeys.ts` incompletely). |
 
 ## Current expected temporary compromises
 - Frontend-only local/mock CMS until backend exists.

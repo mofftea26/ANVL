@@ -1,5 +1,7 @@
 # Prompt 14 â€” Header/Footer/Navigation/Socials CMS
 
+> **DEPRECATED (2026-06) — do not run.** Drop-builder CMS removed. See `docs/prompts/README.md` and `docs/landing-pages.md`.
+
 ```txt
 Before coding, read AGENTS.md, docs/project-overview.md, docs/design-system.md, docs/architecture.md.
 

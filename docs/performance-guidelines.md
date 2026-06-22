@@ -45,7 +45,7 @@ Check by running `pnpm analyze` and verifying admin modules don't appear in the 
 
 ### The Oath WebGL
 
-`TheOathLanding`'s three.js scene is gated and lazy: `OathCanvasGate` mounts the canvas only on client + `isWebglAvailable()` + `≥768px` + `prefers-reduced-motion: no-preference`, with the three.js import behind `React.lazy` so it stays in the `vendor-three` chunk and never ships to mobile / reduced-motion / SSR.
+`TheOathLanding`'s three.js scene is gated and lazy: `OathCanvasGate` mounts the canvas only on client + `isWebglAvailable()` + **`≥1280px`** + `prefers-reduced-motion: no-preference`, with the three.js import behind `React.lazy` so it stays in the `vendor-three` chunk and never ships to mobile/tablet / reduced-motion / SSR.
 
 ---
 
@@ -123,7 +123,8 @@ For long lists (>50 items in shop, admin drops list, media library), consider `@
 - Animate `transform` and `opacity` only — these are composited and don't trigger layout
 - Never animate `width`, `height`, `top`, `left`, `margin`, `padding`
 - Use `will-change: transform` on elements with active GSAP animations — remove it after the animation ends
-- GSAP on mobile: zero. All GSAP ScrollTrigger sequences are gated at 768px breakpoint
+- **The Oath GSAP/WebGL:** cinematic at **`≥1280px`** only (`oathBreakpoints.ts`). Mobile and tablet get static layout.
+- **Other GSAP:** gate at 768px + no reduced motion unless page-specific contract says otherwise.
 - Framer Motion on mobile: minimal and short-duration only
 - Avoid `FOUC` (flash of unstyled content) — preload critical fonts and apply `opacity: 0` until hydrated if needed
 

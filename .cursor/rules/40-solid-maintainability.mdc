@@ -23,7 +23,7 @@ globs: ["src/**/*.{ts,tsx}"]
 ## Folder boundaries
 
 - `src/features/admin/**` is admin UI + mutation only.
-- Shared CMS reads (used by the storefront) live in `src/features/cms/**` or `src/features/drops/**`.
+- Shared CMS reads (used by the storefront) live in `src/features/cms/**` or `src/features/landingPages/**`.
 - `src/shared/**` is framework- and feature-agnostic primitives. No imports from `src/features/**` or `src/routes/**`.
 - `src/routes/**` is the only place that imports from both `src/features/**` and `src/shared/**`.
 - A storefront route or marketing component importing from `src/features/admin/**` is a code smell — log it as `MAINT-02` / `PERF-03` debt or fix during the change.

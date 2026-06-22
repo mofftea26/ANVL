@@ -1,4 +1,11 @@
-﻿## 2026-06-22 — CMS: reusable media library picker for landing content
+﻿## 2026-06-22 — Documentation refresh (slim CMS + xl cinematic contract)
+
+- **Full docs sync** — rewrote agent + architecture docs to match current codebase: slim singleton-JSON CMS (`cms_settings` + `storefront_publication`), code-owned `the-oath` landing, single global 15-token theme, flexible Oath tenets (`landing_content.tenets.items[].mediaId`), story relational tables, Supabase sync via `adminCmsRemoteSync`.
+- **Breakpoint contract** — documented The Oath cinematic at **`≥1280px (xl)`** via `oathBreakpoints.ts`; tablet `768–1279px` uses static layout; Lenis remains **`≥768px`**.
+- **Removed references** — purged drop-builder docs (`anvl_drops`, publish RPC, `/admin/products`, `landingPageThemes`, `ActiveDropThemeProvider`, nonexistent Edge Functions). Archived prompts 05–14 with `docs/prompts/README.md`.
+- **Files:** `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/*.mdc`, `docs/cms-architecture.md`, `docs/landing-pages.md`, `docs/features/supabase-cms.md`, `docs/project-map.md`, `docs/architecture.md`, `docs/frontend-architecture.md`, `docs/backend-guidelines.md`, animation/responsive/performance guidelines, `docs/technical-debt.md`, `README.md`, and related feature docs.
+
+## 2026-06-22 — CMS: reusable media library picker for landing content
 
 - **Media library picker** — enhanced `MediaLibraryPickerModal` with search (filename/alt/tags), All/Images/Video filters, thumbnail grid (image + video previews), clear selection, and accessible modal chrome. Pure filter logic lives in `filterMediaLibraryItems.ts`.
 - **Landing Content** — scene media slots (`OathLandingAssetFields`) and tenet images (`OathTenetsFields`) now use `MediaLibrarySlotField` / the shared picker modal instead of dropdowns. `MediaPickerField` library browse uses the same modal (returns public URL from pick).

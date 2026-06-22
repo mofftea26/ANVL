@@ -1,5 +1,7 @@
 # Prompt 05 â€” Build simplified Drops CMS list
 
+> **DEPRECATED (2026-06) — do not run.** Drop-builder CMS removed. See `docs/prompts/README.md` and `docs/landing-pages.md`.
+
 ```txt
 Before coding, read AGENTS.md, docs/features/drops-cms.md, docs/design-system.md, docs/cursor-workflow.md.
 

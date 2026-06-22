@@ -70,7 +70,7 @@ type Order = {
 ## Storefront implementation (mock phase)
 - **Routes**: `/auth/sign-in`, `/auth/sign-up`, `/auth/forgot-password`; `/account` (layout + gated shell), `/account/personal`, `/account/addresses`, `/account/orders`, `/account/orders/:orderId`.
 - **Feature module**: `src/features/storefront-account` â€” Zod schemas, TanStack Query for profile/orders, Zustand `useStorefrontAccountSession`, RHF hooks, `AccountShellLayout` / `AuthPageChrome`, demo banner.
-- **Adapters**: `src/app/config/accountContracts.ts` (types), `accountMock.ts` (`AccountClient` + `mockAccountSignIn` / `SignUp` / `ForgotPassword`), `accountSession.ts` (in-memory + `sessionStorage` customer id for demo persistence only). Wired in `runtimeClients.account`. `AccountClient` in `clients.ts` is marked TODO for Medusa.
+- **Adapters:** `runtime.ts` uses `mockAccountClient` in the **browser** even when Supabase is configured; SSR may use `supabaseAccountClient`. See `accountContracts.ts`, `accountMock.ts`.
 - **SEO**: All auth and account routes pass `noIndex: true` into `buildSeoMeta` so robots is `noindex,nofollow`.
 - **Navigation**: Default landing CMS header includes **Account** â†’ `/account`.
 - **Demo credentials**: `demo@anvl.lb` / `demo1234` (banner on sign-in). Reset password flow is UI-only (no email).

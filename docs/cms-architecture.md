@@ -30,19 +30,42 @@ Admin browser
 Storefront (SSR + browser)
   └── loadStorefrontProjection()
         ├── active_landing_page_key → resolveLandingPage (code registry)
-        ├── theme_config + font_config → SiteThemeProvider (CSS vars on :root)
-        │     └── theme is resolved per active landing page:
-        │         · theme_config.landingPageThemes[activeKey] → that preset wins
-        │         · else → live active theme (no page palette override; The
-        │           Oath reads the CMS theme in full — surfaces, text, accents,
-        │           ember glows, particles, scrollbar, and the WebGL emblem/dust
-        │           which read the same CSS vars)
+        ├── theme_config + font_config → SiteThemeProvider + SSR inline CSS on :root
+        │     └── single global theme: theme_config.activeThemeId (no per-landing
+        │         palette override). themeConfigToCssVars derives all --color-* /
+        │         --hero-* / --particle-* vars for DOM, SSR first paint, and WebGL
+        │         (readOathBrandColors reads the same vars)
         ├── asset_config + media_index → resolvePublishedAssets → landing page props
         ├── landing_content[activeKey] → page's content resolver (code defaults fill gaps)
         └── commerce → Shopify when configured, else seed/mock catalog
 ```
 
 Nav, footer, and SEO use **code defaults** (`navigation.defaults.ts` → `staticWebsiteNavigation.ts`, `websiteLayout.defaults.ts`, per-route `head` meta) — not CMS-editable and not read from Supabase.
+
+### localStorage keys (admin working copy)
+
+| Key | Content |
+|---|---|
+| `anvl.activeLandingPage.v1` | Active landing page key |
+| `anvl.themeConfig.v1` | Theme library + active theme |
+| `anvl.fontConfig.v1` | Font families |
+| `anvl.assetConfig.v1` | Asset slot assignments |
+| `anvl.landingContent.v1` | Per-landing copy overrides |
+| `anvl.supabase.admin.v1` | Supabase GoTrue session (auth only) |
+
+### Remote sync timing
+
+| Trigger | Path | Timing |
+|---|---|---|
+| Explicit Save (theme, fonts, assets, content) | `cmsWriteThrough` → `flushAdminCmsRemoteSync` | Immediate |
+| Active drop change, media upload/alt/delete | `scheduleAdminCmsRemoteSync` | Debounced 850 ms |
+| Login / session restore | `hydrateAdminCmsFromSupabase` | Pull remote → localStorage |
+
+Hydration is gated by `beginAdminCmsRemoteHydration` / `endAdminCmsRemoteHydration` so push does not race pull. `AdminLayout` blocks editors until `isRemoteCmsReady`. On pull, `migrateOathTenetAssetsFromSlots` moves legacy tenet asset slots into `landing_content`.
+
+### Landing Content ↔ Assets sync
+
+`OathLandingAssetFields` on `/admin/content` writes the same `asset_config.drops['the-oath']` map as `/admin/assets`. Both editors subscribe to `subscribeCmsSiteConfigChange` for live cross-page sync. Tenet images use `landing_content['the-oath'].tenets.items[].mediaId` (up to 12 vows) via `MediaLibraryIdPickerModal` — not asset slots.
 
 ---
 
@@ -60,7 +83,7 @@ Editor source of truth for site config:
 active_landing_page_key text NOT NULL DEFAULT 'the-oath'
 theme_config jsonb NOT NULL    -- { activeThemeId, themes[] }; each theme.palette is the normalized 15-token set (background/foreground/card(+fg)/muted(+fg)/border/primary(+fg)/accent(+fg)/ring/destructive/success/warning). Legacy palette keys are migrated on read (cmsSiteConfig.zod.ts) and normalized in place by migration 20260620140000.
 font_config jsonb NOT NULL     -- { sans, heading, display }
-asset_config jsonb NOT NULL    -- { general: { slot: mediaId }, drops: { dropKey: { slot: mediaId } } }
+asset_config jsonb NOT NULL    -- { general: { slot: mediaId }, drops: { dropKey: { slot: mediaId } }, pages: { pageKey: { slot: mediaId } } }
 landing_content jsonb NOT NULL -- { [landingKey]: { ...page-shaped copy overrides } }
 updated_at timestamptz
 ```
@@ -189,6 +212,7 @@ Slots are **defined in code** per drop. The CMS assigns media library IDs to slo
 
 - **General slots** (`GENERAL_ASSET_SLOTS`): emblem fallback, loading emblem, shared textures
 - **Per-drop slots** (`DROP_ASSET_SLOTS`): e.g. `the-oath` → hero media, drop logo, product images. **Tenet images are not slots** — they live in `landing_content['the-oath'].tenets.items[].mediaId`.
+- **Page slots** (`asset_config.pages`): non-landing storefront pages (e.g. shop hero backdrop)
 
 `resolvePublishedAssets` merges `asset_config.general` + `asset_config.drops[activeKey]`, resolves IDs via `media_index`, and falls back to code defaults in each page's `*Assets.ts` file.
 
@@ -217,17 +241,24 @@ Products are **not** CMS-edited. `createCommerceClient` returns:
 ## Admin auth
 
 ### With Supabase env
-Supabase email+password; `cms_profiles.role` must be `editor` or `admin` for writes.
+- **Sign-in:** Supabase email + password via `/admin/login`
+- **Panel access (`/admin`):** `cms_profiles.role` must be **`admin`** only — editors and viewers are rejected at login
+- **CMS writes (DB RLS):** `editor` or `admin` may upsert `cms_settings`, `cms_media_assets`, and story tables
+- Session storage key: `anvl.supabase.admin.v1`
 
 ### Without Supabase (local/demo)
-Static env gate: `VITE_ANVL_ADMIN_USER` + `VITE_ANVL_ADMIN_PASSWORD` (not production-grade).
+Static env gate: `VITE_ANVL_ADMIN_USERNAME` + `VITE_ANVL_ADMIN_PASSWORD` (not production-grade). localStorage only; no remote sync.
 
 ---
 
-## Edge functions
+## Edge functions (in repo)
 
-### `shopify-webhook`
-Ack-only receiver; no longer writes product snapshots to `storefront_publication`.
+| Function | Purpose |
+|---|---|
+| `shopify-webhook` | Verifies Shopify HMAC; ack-only — no DB writes |
+| `medusa-webhook-stub` | Validates `x-anvl-medusa-secret`; placeholder for future Medusa sync |
+
+> **Removed:** `publish-storefront` and `process-scheduled-drops` Edge Functions. Admin sync writes directly to `cms_settings` + `storefront_publication` via `adminCmsRemoteSync`. See `docs/technical-debt.md` (MIG-01) for orphaned publish RPC migrations still in the migration history.
 
 ---
 

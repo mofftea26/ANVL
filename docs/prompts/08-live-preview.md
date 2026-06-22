@@ -1,5 +1,7 @@
 # Prompt 08 â€” Build live preview for Drop Editor
 
+> **DEPRECATED (2026-06) — do not run.** Drop-builder CMS removed. See `docs/prompts/README.md` and `docs/landing-pages.md`.
+
 ```txt
 Before coding, read AGENTS.md, docs/features/drops-cms.md, docs/features/acts-builder.md, docs/design-system.md, docs/performance-accessibility-security.md.
 

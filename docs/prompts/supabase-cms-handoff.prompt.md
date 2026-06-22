@@ -1,5 +1,7 @@
 # Handoff prompt: Supabase for ANVL CMS + storefront
 
+> **Note (2026-06-22):** Verify all schema/sync steps against current [`docs/features/supabase-cms.md`](../features/supabase-cms.md) and [`docs/cms-architecture.md`](../cms-architecture.md). Drop-builder tables/RPCs (`anvl_drops`, `cms_publish_drop`) are removed; sync is `adminCmsRemoteSync` → `cms_settings` + `storefront_publication`.
+
 Copy everything below the line into another agent chat that has **Supabase MCP** and access to this repository.
 
 ---

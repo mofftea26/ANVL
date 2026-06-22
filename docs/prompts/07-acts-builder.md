@@ -1,5 +1,7 @@
 # Prompt 07 â€” Implement configurable Acts Builder
 
+> **DEPRECATED (2026-06) — do not run.** Drop-builder CMS removed. See `docs/prompts/README.md` and `docs/landing-pages.md`.
+
 ```txt
 Before coding, read AGENTS.md, docs/features/acts-builder.md, docs/features/drops-cms.md, docs/design-system.md.
 

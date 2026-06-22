@@ -25,8 +25,8 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 - TanStack Router
 - TanStack Query for server state
 - Zustand for local/client UI state
-- GSAP (+ Lenis, Framer Motion) for desktop/tablet animation only
-- three.js + `@react-three/fiber`/`drei` for WebGL (The Oath landing emblem/dust + Story book) — lazy `vendor-three`, desktop + no-reduced-motion only
+- GSAP (+ Lenis, Framer Motion) for animation — The Oath cinematic at **≥1280px**; Lenis at **≥768px**; both respect reduced motion
+- three.js + `@react-three/fiber`/`drei` for WebGL (The Oath landing emblem/dust + Story book) — lazy `vendor-three`, **≥1280px** + no-reduced-motion only (The Oath)
 - Landing pages are **code-owned** React components (`src/features/landingPages/`), not CMS-composed; the CMS only picks the active page, assigns asset slots, and overrides per-scene copy
 - Commerce backend: **Shopify** (Storefront API) when `VITE_SHOPIFY_*` is set; see `docs/features/shopify-commerce.md`
 - CMS/auth backend: **Supabase** when `VITE_SUPABASE_*` is set; else local/mock adapters. Code must be written so a real backend can replace the adapter later.
@@ -54,7 +54,7 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 - Product/shop work: read `/docs/features/products-commerce.md`
 - SEO work: read `/docs/features/seo.md`
 - Auth/account/orders work: read `/docs/features/auth-accounts-orders.md`
-- Backend/API work: read `/docs/backend-medusa-roadmap.md`
+- Backend/API work: read `/docs/backend-guidelines.md`, `/docs/features/supabase-cms.md`
 - Performance/security/a11y: read `/docs/performance-accessibility-security.md` plus `/docs/audit-2026-05-17.md` §2–§5
 
 ## Admin auth

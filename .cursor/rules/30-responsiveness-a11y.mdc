@@ -45,6 +45,10 @@ globs: ["src/**/*.{tsx,css}", "src/styles.css"]
 - Animate `transform` / `opacity` only. Never animate `width`/`height`/`top`/`left`.
 - Debounce text inputs that drive expensive recomputes (≥ 250 ms — shop search is the model at 350 ms).
 
+## The Oath motion tiers
+
+Reference `oathBreakpoints.ts`: mobile `<768px`, tablet `768–1279px` (static layout, no WebGL/GSAP pins), desktop cinematic `≥1280px`. Manifesto and tenets are hidden below `xl` in DOM.
+
 ## Toast / overlay placement
 
 - `Toaster` must use a responsive position (e.g. `bottom-center` on small screens, `top-right` on large) and respect safe-area insets (`RESP-11`).

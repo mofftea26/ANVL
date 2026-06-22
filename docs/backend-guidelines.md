@@ -63,7 +63,7 @@ Created via `createAnvlSupabaseClient()` in `src/features/cms/api/createAnvlSupa
 
 ### Admin browser client
 
-Created in `src/features/admin/auth/adminSupabaseBrowserClient.ts`. Uses anon key + session from Supabase Auth. Admin operations are protected by RLS (requires `cms_profiles.role = 'admin'`).
+Created in `src/features/admin/auth/adminSupabaseBrowserClient.ts`. Storage key: `anvl.supabase.admin.v1`. Panel access requires `cms_profiles.role = admin`; DB RLS allows `editor`/`admin` writes on CMS tables.
 
 ### Service role (scripts only)
 
@@ -75,26 +75,27 @@ Only for migrations, bootstrap, and privileged write scripts. **Never** import i
 
 RLS is enabled on all tables. Rules are enforced at the database level even if application code has bugs.
 
-### Policy model
+### Policy model (current)
 
 ```
 anon:
-  - SELECT on storefront_publication (public storefront read)
+  - SELECT on storefront_publication
+  - SELECT on published story_chapters / story_acts / story_cast (parent is_published)
 
-authenticated (viewer):
-  - SELECT on anvl_drops, cms_admin_products, cms_media_assets (read-only CMS)
-  - SELECT on cms_profiles (own row only)
+authenticated (viewer/editor/admin):
+  - SELECT on cms_settings, landing_pages, cms_media_assets, story_* (all rows for CMS roles)
+  - SELECT on cms_profiles (own row)
 
 authenticated (editor/admin):
-  - Full CRUD on anvl_drops, cms_admin_products, cms_media_assets
-  - UPDATE on storefront_publication
-  - Execute cms_publish_drop() RPC
+  - INSERT/UPDATE/DELETE on cms_media_assets, story_*
+  - UPDATE on cms_settings
 
-admin:
-  - Same as editor (admin-specific operations done via service role in Edge Functions)
+authenticated (admin):
+  - UPDATE on storefront_publication
+  - INSERT/UPDATE/DELETE on landing_pages
 ```
 
-**Never disable RLS on any table.** If you need to bypass RLS for a script, use service role key in a trusted server context.
+**Never disable RLS on any table.** Orphaned drop-builder RPCs may exist in migration history (MIG-01) — the app does not call them.
 
 ---
 
@@ -138,21 +139,14 @@ supabase db reset
 
 ---
 
-## Edge Functions
+## Edge Functions (in repo)
 
-Edge Functions live in `supabase/functions/`. They run on Deno.
+| Function | Purpose |
+|---|---|
+| `shopify-webhook` | Verifies Shopify HMAC; ack-only — no DB writes |
+| `medusa-webhook-stub` | Validates secret header; placeholder for future Medusa sync |
 
-### `publish-storefront`
-
-Triggered by admin CMS publish action. Updates `storefront_publication`.
-
-### `process-scheduled-drops`
-
-Runs on pg_cron schedule (see `20260625120000_cron_process_scheduled_drops_direct.sql`). Activates drops at their `scheduled_activation_at` time.
-
-### `shopify-webhook`
-
-Handles Shopify product webhooks. Validates signature using `SHOPIFY_API_SECRET_KEY`. Syncs product data to `cms_admin_products`.
+**Removed from repo:** `publish-storefront`, `process-scheduled-drops`. Admin sync writes directly via `adminCmsRemoteSync`.
 
 ### Adding a new Edge Function
 
@@ -182,10 +176,11 @@ When `VITE_SHOPIFY_*` env vars are set, `createCommerceClient({ isServer: false 
 
 ### Commerce client adapters (priority order)
 
-1. **Shopify** — when `VITE_SHOPIFY_STORE_DOMAIN` etc. are set
-2. **Supabase** — when Supabase is configured and Shopify is not
-3. **localStorage** — browser-only, admin-edited products
-4. **Seed** — static JSON fallback (SSR + no backend)
+1. **Shopify** — when `VITE_SHOPIFY_*` are set
+2. **localStorage** — browser-only (legacy local catalog)
+3. **Seed** — static JSON fallback (SSR + no backend)
+
+Products are **not** CMS-edited. No Supabase product table in the slim CMS model.
 
 ### Shopify rules
 
@@ -193,7 +188,7 @@ When `VITE_SHOPIFY_*` env vars are set, `createCommerceClient({ isServer: false 
 - **Admin API access token** — server/Edge only, never in client code
 - All Shopify GraphQL calls go through `src/features/shopify/api/shopifyStorefrontClient.ts`
 - Products from Shopify are mapped to the internal `Product` type via `shopifyProductToStorefront.ts`
-- CMS (drops, acts, SEO, site settings) stays in Supabase even when Shopify is the commerce backend
+- CMS (theme, fonts, assets, landing content, story) stays in Supabase even when Shopify is the commerce backend
 - The `CommerceClient` interface is the contract — UI never knows which adapter runs
 
 ---
@@ -219,17 +214,9 @@ Production wiring: swap mock with real PSP adapter (Tap Payments, NetCommerce, S
 
 ## Account System
 
-Currently stubbed with `mockAccountClient`. The `AccountClient` interface defines:
-```ts
-interface AccountClient {
-  getCustomerProfile(): Promise<Customer>
-  updateCustomerProfile(input: CustomerProfileUpdate): Promise<Customer>
-  listOrders(): Promise<Order[]>
-  getOrderById(id: string): Promise<Order | null>
-}
-```
+**Current:** Browser uses `mockAccountClient` even when Supabase is configured. SSR may use `supabaseAccountClient` when env is set.
 
-Full implementation requires: real auth sessions, order management API (Shopify, Medusa, or custom), HttpOnly cookies.
+Full production implementation requires: real customer auth sessions, order API (Shopify Customer Account or Medusa), HttpOnly cookies.
 
 ---
 
@@ -254,7 +241,6 @@ See `docs/backend-medusa-roadmap.md` for the integration plan.
 
 When Medusa is added:
 1. Implement `CommerceClient` interface with Medusa adapter
-2. Replace `cms_admin_products` reads with Medusa product API
-3. Move cart + checkout to Medusa cart/order flows
-4. Keep CMS (drops, acts, SEO) in Supabase
-5. Route/component code stays unchanged (interface contract preserved)
+2. Move cart + checkout to Medusa cart/order flows
+3. Keep CMS (theme, assets, landing content, story) in Supabase
+4. Route/component code stays unchanged (interface contract preserved)

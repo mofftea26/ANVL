@@ -13,7 +13,7 @@ globs: ["vite.config.ts", "vitest.config.ts", "src/router.tsx", "src/routes/**/*
 
 ## Storefront ↔ admin boundary
 
-- Storefront and marketing code **must not** import runtime code from `src/features/admin/**` (`PERF-03` / `MAINT-02`). Shared CMS reads belong in `src/features/cms/**` or `src/features/drops/**`. Type-only imports (`import type`) are acceptable but discouraged — prefer extracting the type into the shared module.
+- Storefront and marketing code **must not** import runtime code from `src/features/admin/**` (`PERF-03` / `MAINT-02`). Shared CMS reads belong in `src/features/cms/**` or `src/features/landingPages/**`. Type-only imports (`import type`) are acceptable but discouraged — prefer extracting the type into the shared module.
 - A future ESLint `no-restricted-imports` rule will enforce this (Phase D2). Until then, treat the rule as enforced in review.
 
 ## Bundle hygiene
@@ -25,9 +25,10 @@ globs: ["vite.config.ts", "vitest.config.ts", "src/router.tsx", "src/routes/**/*
 
 ## Animation policy
 
-- GSAP / ScrollTrigger code must use `gsap.matchMedia` with **both** a viewport gate (`(min-width: 768px)`) and a reduced-motion gate (`(prefers-reduced-motion: no-preference)`). The mirror branch `(max-width: 767px), (prefers-reduced-motion: reduce)` must snap to final state via `gsap.set` (`RESP-03`). `TheOathLanding`'s `hooks/useTheOathScrollTimeline.ts` is the model.
+- GSAP / ScrollTrigger code must use `gsap.matchMedia` with **both** a viewport gate and a reduced-motion gate (`prefers-reduced-motion: no-preference`). Default storefront gate: `(min-width: 768px)`; mirror branch `(max-width: 767px), (prefers-reduced-motion: reduce)` must snap to final state via `gsap.set` (`RESP-03`).
+- **The Oath landing** uses `oathBreakpoints.ts`: cinematic at `OATH_DESKTOP_CINEMATIC_MQ` (`≥1280px` + no reduced motion); static at `OATH_STATIC_MQ` (`max-width: 1279.98px` or reduced motion). WebGL loads only behind the same 1280px gate (`OathCanvasGate`). `hooks/useTheOathScrollTimeline.ts` is the model.
 - Always call `mm.revert()` / `ctx.revert()` in the cleanup return of `useGSAP`.
-- Lenis must stay gated by `useLenisScroll` (desktop + no reduced motion); never call `new Lenis()` directly from a component.
+- Lenis must stay gated by `useLenisScroll` (`≥768px` + no reduced motion); never call `new Lenis()` directly from a component.
 - Never import GSAP plugins at module top-level outside `src/shared/lib/gsap.ts` (that module owns `registerPlugin`).
 
 ## SSR / hydration

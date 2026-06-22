@@ -5,12 +5,7 @@
 
 
 - `/shop` uses `useDeferredValue` on the filtered listing so rapid filter changes stay responsive while the loader-derived list catches up.
-- Admin `/admin/products` renders from `src/routes/admin/products/index.tsx`; list thumbnails use `loading="lazy"` and `decoding="async"`.
-- **Catalog empty / filter miss:** the catalog shows a â€œNo products yetâ€ card when storage is empty, and a â€œNothing matchesâ€ card with one-tap filter reset when the active filters hide every SKU.- Public storefront `Product` (`src/features/products/types/product.types.ts`) includes optional `shop?: ProductShopMeta` (storefront status, drop slug, pricing, availability matrix, media URLs) populated in `adminProductToLegacy` for filters, cards, PDP, and JSON-LD.
-
-- `/shop` uses `useDeferredValue` on the filtered listing so rapid filter changes stay responsive while the loader-derived list catches up.
-- Admin CMS routes under `src/routes/admin/**` (except the `/admin` layout shell in `route.tsx`) load through `lazyRouteComponent` + colocated `-*.tsx` sidecars — including `/admin/products` (`-adminProductsIndex.tsx` for the catalog). List thumbnails use `loading="lazy"` and `decoding="async"`.
-- Public storefront `Product` (`src/features/products/types/product.types.ts`) includes optional `shop?: ProductShopMeta` (storefront status, drop slug, pricing, availability matrix, media URLs) populated in `adminProductToLegacy` for filters, cards, PDP, and JSON-LD.
+- Admin routes under `src/routes/admin/**` load through `lazyRouteComponent` + colocated `-admin*.tsx` sidecars (`PERF-01`).
 ## Product model
 Products must support both drop releases and individual releases.
 
@@ -74,26 +69,17 @@ Computed behavior:
 ## Runtime contracts
 The commerce document `Product` model is implemented as **`CatalogProduct`** (plus `ProductVariant`, `ProductOption`, and related enums) in `src/features/products/schemas/commerce.schema.ts`, with re-exports in `src/features/products/types/commerce.types.ts`. This is separate from the storefront `Product` interface used by the shop UI today. Validated placeholders for Oversized Tee, Stringer, and Compression Tee ship in `src/content/seed/drop-01-the-oath.seed.ts` (`seedDrop01CatalogProducts`).
 
-## CMS Product section
-Product list must include:
-- Search bar.
-- Filters: status, drop, date, source type, category, color, size availability.
-- Sort: newest, oldest, release date, price, status.
-- Grouping: by drop and individual releases.
-- Actions: edit, duplicate, archive, delete, preview.
+## Products — not CMS-edited
 
-### Admin catalog (local CMS, `AdminProduct`)
-The in-browser catalog at `/admin/products` implements the list above against `src/features/admin/products/products.types.ts`:
+The CMS products editor was removed (2026-06-07). Commerce comes from:
 
-- **Search** uses `useDeferredValue` for low-cost debouncing while typing.
-- **Filters**: status, drop (including â€œunassigned onlyâ€), listing source (`drop` vs `individual`), category substring, color name substring, sellable vs no sellable variants, updated date range.
-- **Sort**: newest/oldest `updatedAt`, release date, price, status.
-- **Grouping**: flat list or sections per drop plus an â€œIndividual releasesâ€ bucket (`dropIds` empty).
-- **Actions**: edit, duplicate (deep clone, new slug, clears drop links), archive (`status: archived`, confirmation modal), delete (with confirmation; detaches from drops), storefront preview link (`/shop/:slug`).
-- **Catalog UX:** when the in-browser catalog is empty, `/admin/products` shows a â€œNo products yetâ€ card; when filters hide every row, a â€œNothing matchesâ€ card can clear filters in one action. Implementation lives in `src/routes/admin/products/index.tsx`.
-- **Variants**: color Ã— size matrix with SKU, `stockQuantity`, `reservedQuantity`; `isAvailable` is recomputed from `max(0, stock âˆ’ reserved) > 0`. `sourceType` is derived on save from `dropIds` (`individual` when unassigned).
+1. **Shopify Storefront API** when `VITE_SHOPIFY_*` is set
+2. **Seed catalog** (`products.mock.ts`, `drop-01-the-oath.seed.ts`) for SSR/demo
+3. **localStorage** adapter in browser-only legacy mode
 
-Persistence: `products.service` hydrates legacy JSON (`currency`, `reservedQuantity`, `sourceType`) and normalizes on `upsertAdminProduct`.
+Shop routes use `createCommerceClient()` — no admin product CRUD. Landing page product reveal reads `getHomeProducts()` from the active commerce adapter.
+
+> **Historical:** The former `/admin/products` catalog editor is documented in git history only. See `docs/features/drops-cms.md` (archived).
 
 ## Pricing and currency
 - Store a base currency and base price.
@@ -136,4 +122,4 @@ Map ANVL products to Medusa Product Module later:
 - Medusa product variants: color-size combinations.
 - Medusa pricing module: regional prices, sales, price rules.
 - Medusa inventory module: stock availability.
-- ANVL CMS keeps drop storytelling, act layout, campaign theme, and SEO editorial fields.
+- ANVL CMS keeps theme, landing content, assets, and story editorial fields (products are commerce-backend only).

@@ -161,7 +161,7 @@ src/
   routeTree.gen.ts   AUTO-GENERATED — never edit directly
 supabase/
   migrations/        Ordered SQL migration files
-  functions/         Edge Functions (shopify-webhook, publish-storefront, process-scheduled-drops, medusa-webhook-stub)
+  functions/         Edge Functions (shopify-webhook, medusa-webhook-stub)
 scripts/
   repatch-admin-route-tree.mjs  Patches routeTree.gen.ts for admin segment (runs before dev/build/typecheck)
 public/brand/        Raster + downloadable logo/asset exports
@@ -221,7 +221,7 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 ### Rules
 
 - **Row Level Security is always on.** Never disable RLS on a table.
-- Only users with `cms_profiles.role = 'admin'` may access `/admin`. Editors may edit CMS config; viewers read-only.
+- Only users with `cms_profiles.role = 'admin'` may access `/admin` UI (editors/viewers rejected at login). DB RLS allows `editor`/`admin` CMS writes.
 - `storefront_publication` is the **primary** Supabase read for storefront SSR (anon-safe). `cms_settings` is the editor source of truth.
 - Admin Supabase client uses browser storage key `anvl.supabase.admin.v1`.
 - `SUPABASE_SERVICE_ROLE_KEY` is **never** bundled in client code. It is for migrations and privileged server scripts only.
@@ -229,9 +229,12 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 - Before any schema change: document current schema → target schema → migration steps → risks → rollback plan.
 - Published storefront state flows: admin edits local working copy → `adminCmsRemoteSync` → `cms_settings` + `storefront_publication` mirror.
 
-### Edge Functions
+### Edge Functions (in repo)
 
-- `shopify-webhook` — Ack-only webhook receiver (no product snapshot writes)
+- `shopify-webhook` — Ack-only webhook receiver (no DB writes)
+- `medusa-webhook-stub` — Placeholder for future Medusa sync
+
+> Publish/scheduled-drop Edge Functions were removed. Admin sync writes directly via `adminCmsRemoteSync`. See MIG-01 in `docs/technical-debt.md` for orphaned RPC migrations.
 
 ---
 
@@ -321,7 +324,7 @@ Admin editor (localStorage working copy)
 
 - Animation must serve the brand. Motion should feel cinematic, premium, forged, and intentional.
 - Avoid random decorative animation.
-- **Mobile:** simplified or disabled animation. Heavy cinematic effects are desktop/tablet only.
+- **Mobile:** simplified or disabled animation. The Oath cinematic (GSAP pins, WebGL) runs at **≥1280px (`xl`)** only; tablet gets static layout.
 - **Reduced motion:** always respect `prefers-reduced-motion: reduce`.
 - **Three animation systems:**
   - **GSAP** — cinematic desktop sequences (hero pinning, scroll reveals, timelines)
@@ -340,12 +343,11 @@ Admin editor (localStorage working copy)
 - Always use `useGSAP` from `@gsap/react` — it handles cleanup automatically.
 - Always call `mm.revert()` / `ctx.revert()` in the `useGSAP` cleanup return for `gsap.matchMedia`.
 - GSAP ScrollTrigger code **must** use `gsap.matchMedia` with **both** gates:
-  - `(min-width: 768px)` — desktop/tablet only
-  - `(prefers-reduced-motion: no-preference)` — not reduced motion
-  - Mirror branch `(max-width: 767px), (prefers-reduced-motion: reduce)` must `gsap.set` to final state (no animation)
+  - **Generic storefront GSAP:** `(min-width: 768px)` + `(prefers-reduced-motion: no-preference)`; mirror branch `(max-width: 767px), (prefers-reduced-motion: reduce)` snaps via `gsap.set`
+  - **The Oath landing:** use `oathBreakpoints.ts` — cinematic at **`≥1280px`** (`OATH_DESKTOP_CINEMATIC_MQ`); static at `max-width: 1279.98px` or reduced motion (`OATH_STATIC_MQ`)
 - Reference implementation: `src/features/landingPages/pages/TheOathLanding/hooks/useTheOathScrollTimeline.ts`
 - Never call `new Lenis()` directly — use `useLenisScroll` hook (`src/shared/hooks/useLenisScroll.ts`).
-- Lenis is desktop-only + no reduced motion.
+- Lenis gates at **`≥768px`** + no reduced motion (independent of Oath's 1280px cinematic gate).
 - Prefer animating `transform` and `opacity` only. Avoid `width`/`height`/`top`/`left`.
 - Refresh ScrollTrigger when layout or images affect measurements (after fonts/images load).
 - Avoid scroll-jacking unless explicitly approved.
@@ -437,8 +439,8 @@ If shadcn/ui is added in the future:
 - All Shopify code is isolated in `src/features/shopify/` and `src/features/products/api/commerceClient.shopify.ts`.
 - The `CommerceClient` interface in `clients.ts` is the contract — swap adapters without touching UI.
 - Product data from Shopify is mapped to internal `Product` type via `shopifyProductToStorefront.ts`.
-- CMS (drops, acts, site settings, SEO) stays in Supabase even when Shopify is the commerce backend.
-- Edge Function `shopify-webhook` handles product sync from Shopify to Supabase.
+- CMS (theme, fonts, assets, landing content, story) stays in Supabase even when Shopify is the commerce backend.
+- Edge Function `shopify-webhook` is ack-only (no product snapshot writes).
 
 ---
 
@@ -486,7 +488,8 @@ If shadcn/ui is added in the future:
 - Sticky bottom bars: include `pb-[max(env(safe-area-inset-bottom),...)]` + page spacer.
 - No horizontal scroll on any viewport.
 - Grids: never 3+ columns at <360px viewport.
-- GSAP cinematic effects: desktop (≥768px) only. Mobile gets `gsap.set` to final state.
+- **The Oath GSAP/WebGL cinematic:** **`≥1280px (xl)`** only. Mobile and tablet get static layout + light reveals.
+- **Other GSAP:** gate at `≥768px` + no reduced motion unless page-specific contract says otherwise.
 - Admin is desktop-first (≥1024px) but must degrade gracefully: sidebar becomes drawer, tables become cards below 1024px.
 - Ultra-wide (≥1920px): content max-width constrained by `--anvl-content-max` / `--anvl-content-max-wide`.
 
@@ -666,7 +669,9 @@ Every code change must check whether documentation needs updating. After any:
 | PERF-01 | Admin routes | All admin routes must use `lazyRouteComponent`. |
 | PERF-11 | Bundle size | Dependency cleanup: removed unused `@tanstack/react-table` + `@radix-ui/react-dropdown-menu` (2026-06-11) and `@fontsource/bebas-neue`, `@fontsource/manrope`, `@tanstack/react-query-devtools`, `@tailwindcss/typography` (2026-06-20). `@tanstack/react-virtual` (admin media grid), `framer-motion` (RevealOnScroll), and the active fonts (Anton/Sora/Cinzel) remain in use. |
 | MAINT-01 | Large files | Several admin editor files exceed 500 lines (tracked refactor candidates). |
-| MAINT-02 | Feature boundary | Some storefront code may import from `admin/**` — Phase D cleanup pending. |
+| MAINT-02 | Feature boundary | Storefront-safe code imports from `admin/**` (media URL, types) — extract to `cms/**` |
+| MAINT-03 | localStorage reset | `resetAllLocalCmsKeys()` omits `anvl.landingContent.v1` |
+| MIG-01 | Supabase migrations | Orphaned publish RPC migrations post drop-builder teardown |
 | Phase I | Router repatch | `scripts/repatch-admin-route-tree.mjs` is a workaround for TanStack Start upstream limitation. |
 | Phase J | Production launch | Real server auth, HttpOnly sessions, CSP/HSTS, rate limits, upload validation, CSRF — all required before public launch. |
 
@@ -678,7 +683,7 @@ See `docs/next-steps.md` for the full prioritized task list.
 
 Top priorities:
 1. **Phase J (production blockers):** real server auth, CSP, rate limiting, CSRF — required before public launch.
-2. **Phase D (feature boundary cleanup):** move CMS reads out of `admin/**` into `cms/**`/`drops/**`.
+2. **Phase D (feature boundary cleanup):** move shared types/helpers out of `admin/**` into `cms/**`/`shared/**` (MAINT-02).
 3. **Shopify commerce wiring:** connect `VITE_SHOPIFY_*` vars if eCommerce checkout is needed now.
 4. **Supabase storage:** wire media library to a real Supabase storage bucket.
 5. **Product page polish:** real product images, size guides, add-to-cart flow end-to-end.

@@ -1,5 +1,7 @@
 # Prompt 13 â€” Build SEO CMS section
 
+> **DEPRECATED (2026-06) — do not run.** Drop-builder CMS removed. See `docs/prompts/README.md` and `docs/landing-pages.md`.
+
 ```txt
 Before coding, read AGENTS.md, docs/features/seo.md, docs/architecture.md, docs/performance-accessibility-security.md.
 

@@ -1,6 +1,6 @@
 ﻿# Feature — Landing Page Acts Builder
 
-> **DEPRECATED (2026-06).** The configurable act/nature/preset landing system described below has been **removed** (`src/features/marketing/act-presets`, `cms/landing`, and the standalone `drops` feature no longer exist). Landing pages are now **code-owned** React components registered in `src/features/landingPages/registry.ts`; the CMS only picks the active landing-page key and supplies asset-slot + per-scene copy overrides. See `docs/landing-pages.md` and `docs/cms-architecture.md`. Retained only as historical context.
+> **ARCHIVED — do not implement (2026-06).** The configurable act/preset landing system described below has been **removed**. (`src/features/marketing/act-presets`, `cms/landing`, and the standalone `drops` feature no longer exist). Landing pages are now **code-owned** React components registered in `src/features/landingPages/registry.ts`; the CMS only picks the active landing-page key and supplies asset-slot + per-scene copy overrides. See `docs/landing-pages.md` and `docs/cms-architecture.md`. Retained only as historical context.
 
 ## Purpose
 The landing page is not hard-coded as six sections anymore. It is a flexible sequence of acts controlled by the active drop.

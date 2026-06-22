@@ -16,7 +16,7 @@ You are working on the ANVL Athletics storefront + admin CMS (TanStack Start + R
 
 The other rule files in `.cursor/rules/` codify the audit phases as concrete do/don't lists. They will auto-attach by glob/description. Always:
 
-- **Security** (`10-security.mdc`) — admin auth stays as the documented temporary static env-file gate (`SEC-01`/`02`/`03`/`11` are tracked as hosted-demo blockers in `docs/technical-debt.md`); never re-bundle new secrets, never relax existing sanitizers.
+- **Security** (`10-security.mdc`) — when Supabase env is set, admin uses Supabase Auth; otherwise the temporary static `VITE_ANVL_ADMIN_*` gate (`SEC-01`/`02`/`03`/`11` are tracked as hosted-demo blockers in `docs/technical-debt.md`); never re-bundle new secrets, never relax existing sanitizers.
 - **Performance & bundle** (`20-performance-bundle.mdc`) — code-split admin, keep the storefront graph free of admin imports, watch for regression in `pnpm analyze`.
 - **Responsiveness, a11y, smoothness** (`30-responsiveness-a11y.mdc`) — mobile-first, gate GSAP on viewport **and** reduced-motion, focus-ring everywhere, ≥44 px touch targets.
 - **SOLID & maintainability** (`40-solid-maintainability.mdc`) — keep files small, split tabs into hooks + presentational components, no side effects in render.
