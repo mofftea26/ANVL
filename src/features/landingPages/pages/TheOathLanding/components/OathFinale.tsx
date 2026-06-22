@@ -1,10 +1,12 @@
 import { Container } from '@/shared/components/ui/Container'
+import { cn } from '@/shared/lib/cn'
 import {
   OATH_BRAND_NAME,
   type OathResolvedContent,
 } from '../content/oathContent.defaults'
 import { OathCmsMark } from './OathCmsMark'
 import { OathCtaLink } from './OathCtaLink'
+import { OATH_FINALE_PRODUCTS_BLEND_MASK, OathSceneSeam } from './OathSceneSeam'
 
 /**
  * Scene 05 — Take the Oath. The crest reveals, the title masks up word-by-word,
@@ -17,11 +19,17 @@ export function OathFinale({ finale }: { finale: OathResolvedContent['finale'] }
     <section
       data-scene="finale"
       id="oath"
-      className="relative flex w-full scroll-mt-[var(--anvl-header-h)] flex-col items-center overflow-hidden pt-20 pb-4 text-center md:pt-28 md:pb-6"
+      className={cn(
+        'relative flex w-full scroll-mt-[var(--anvl-header-h)] flex-col items-center overflow-hidden pt-20 pb-4 text-center md:pt-28 md:pb-6',
+        OATH_FINALE_PRODUCTS_BLEND_MASK,
+      )}
       aria-labelledby="oath-finale-heading"
     >
-      {/* No top seam here — the products→finale transition is intentionally
-          continuous (the shadow seam was removed at this boundary). */}
+      {/* Top from products — subtle bg-feather on mobile/tablet; xl+ blend (alpha
+          mask + transparent seam, no dark void band). */}
+      <OathSceneSeam edges="top" tone="subtle" className="xl:hidden" />
+      <OathSceneSeam edges="top" tone="blend" className="hidden xl:block" />
+
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 bottom-[-20%] z-[1] h-[55%]"
@@ -33,7 +41,9 @@ export function OathFinale({ finale }: { finale: OathResolvedContent['finale'] }
 
       <Container className="relative z-10 flex flex-col items-center">
         <div data-finale-crest data-reveal-m className="mb-10 will-change-transform">
-          <OathCmsMark slot="crestSvg" className="h-24 w-auto md:h-28" width={112} height={112} />
+          <div className="flex h-44 w-44 items-center justify-center md:h-52 md:w-52 xl:h-56 xl:w-56">
+            <OathCmsMark slot="crestSvg" className="h-full w-full" width={224} height={224} />
+          </div>
         </div>
 
         <p

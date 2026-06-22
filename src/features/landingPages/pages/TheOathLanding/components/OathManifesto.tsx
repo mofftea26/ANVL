@@ -18,7 +18,7 @@ export function OathManifesto({
   return (
     <section
       data-scene="manifesto"
-      className="relative flex min-h-[var(--anvl-section-h)] w-full items-center overflow-hidden"
+      className="relative hidden min-h-[var(--anvl-section-h)] w-full items-center overflow-hidden xl:flex"
       aria-labelledby="oath-manifesto-heading"
     >
       <OathMediaFallback
@@ -32,7 +32,9 @@ export function OathManifesto({
         mediaClassName="opacity-60"
       />
 
-      <OathSceneSeam />
+      {/* Hero→creed top feather; bottom feather dissolves into tenets on solid stage bg. */}
+      <OathSceneSeam edges="top" />
+      <OathSceneSeam edges="bottom" />
 
       <Container className="relative z-10 py-24 md:py-32">
         <p

@@ -17,7 +17,7 @@ export function OathProgressRail() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed right-5 top-1/2 z-[60] hidden -translate-y-1/2 flex-col items-center gap-3 lg:flex"
+      className="pointer-events-none fixed right-5 top-1/2 z-[60] hidden -translate-y-1/2 flex-col items-center gap-3 xl:flex"
     >
       <div className="relative h-40 w-[2px] overflow-hidden rounded bg-[var(--color-line)]">
         <div

@@ -29,7 +29,7 @@ import { usePointerMotion } from './hooks/usePointerMotion'
  * Composition only — scenes own markup + `data-*` hooks; motion lives in
  * `hooks/useTheOathScrollTimeline`; the shared motion state bridges
  * ScrollTrigger writes to WebGL uniform reads. WebGL + cursor mount via their
- * gates (≥768px / fine-pointer desktop, WebGL-capable, no reduced motion).
+ * gates (≥1280px / `xl` fine-pointer desktop, WebGL-capable, no reduced motion).
  * Copy + assets are CMS-editable; every field falls back to code defaults.
  *
  * See `docs/landing-pages.md`.

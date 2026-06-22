@@ -4,16 +4,18 @@ import { oathTenetMedia } from '../theOathAssets'
 import { OathMediaFallback } from './OathMediaFallback'
 import { OathSceneSeam } from './OathSceneSeam'
 
-/** Horizontal edge fade so each panorama panel melts into the next at the seam. */
-const TENET_EDGE_FEATHER =
-  'linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%)'
+/**
+ * Crossfade mask — panels never hit fully transparent at the seam so adjacent
+ * vows dissolve into each other instead of leaving a void band between blocks.
+ */
+const TENET_PANEL_MASK =
+  'linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 7%, rgba(0,0,0,0.92) 16%, #000 24%, #000 76%, rgba(0,0,0,0.92) 84%, rgba(0,0,0,0.35) 93%, rgba(0,0,0,0) 100%)'
 
 /**
- * Scene 03 — Four Tenets. Desktop/tablet: a pinned full-bleed panorama — the
- * four vows sit side by side as a horizontal strip that pans on scroll, each
- * image feathered on its left/right so it fades into the next at the seam.
- * Mobile/static: a 2-up portrait card grid. CMS media per tenet
- * (`chapterMedia1..4`); duotone placeholder when unassigned.
+ * Scene 03 — Four Tenets. Desktop only (hidden below xl): a pinned full-bleed
+ * panorama — the four vows pan horizontally on scroll, each image cross-fading
+ * at the seam into the next. CMS media per tenet (`chapterMedia1..4`); duotone
+ * placeholder when unassigned.
  */
 export function OathTenets({
   tenets,
@@ -25,19 +27,42 @@ export function OathTenets({
     <section
       data-scene="tenets"
       aria-labelledby="oath-tenets-heading"
-      className="relative w-full"
+      className="relative hidden w-full xl:block"
     >
       <h2 id="oath-tenets-heading" className="sr-only">
         {tenets.eyebrow}
       </h2>
 
-      <OathSceneSeam />
-
-      {/* Desktop/tablet: pinned full-bleed panorama. */}
       <div
         data-tenet-stage
-        className="relative hidden h-[var(--anvl-section-h)] overflow-hidden md:block"
+        className="relative h-[var(--anvl-section-h)] overflow-hidden bg-[var(--color-bg)]"
       >
+        {/* Creed→vows top feather — pairs with manifesto bottom seam on solid stage bg. */}
+        <OathSceneSeam edges="top" />
+
+        {/* Section chrome — fixed while the panorama pans beneath */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-30 w-[min(17rem,21vw)]">
+          <Container className="flex h-full max-w-none px-6 xl:px-8">
+            <div className="flex h-full flex-col justify-between py-14 pr-8">
+              <div>
+                <p
+                  data-tenet-eyebrow
+                  className="anvl-display text-[0.62rem] tracking-[0.38em] text-[var(--color-heading)]/90"
+                >
+                  {tenets.eyebrow}
+                </p>
+                <div
+                  aria-hidden="true"
+                  className="mt-5 h-px w-12 bg-[var(--color-highlight-bright)]"
+                />
+              </div>
+              <p className="anvl-display text-[0.52rem] leading-relaxed tracking-[0.28em] text-[var(--color-text-muted)]">
+                {items.length.toString().padStart(2, '0')} vows · scroll
+              </p>
+            </div>
+          </Container>
+        </div>
+
         <div data-tenet-track className="flex h-full w-full will-change-transform">
           {items.map((tenet, i) => (
             <article
@@ -49,8 +74,8 @@ export function OathTenets({
               <div
                 className="absolute inset-0"
                 style={{
-                  maskImage: TENET_EDGE_FEATHER,
-                  WebkitMaskImage: TENET_EDGE_FEATHER,
+                  maskImage: TENET_PANEL_MASK,
+                  WebkitMaskImage: TENET_PANEL_MASK,
                 }}
               >
                 <OathMediaFallback
@@ -64,32 +89,45 @@ export function OathTenets({
 
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-1/2"
+                className="pointer-events-none absolute inset-0 z-[1]"
                 style={{
                   background:
-                    'linear-gradient(to top, var(--color-bg) 0%, color-mix(in srgb, var(--color-bg) 70%, transparent) 45%, transparent 100%)',
+                    'linear-gradient(105deg, color-mix(in srgb, var(--color-bg) 88%, transparent) 0%, color-mix(in srgb, var(--color-bg) 42%, transparent) 28%, transparent 52%)',
                 }}
               />
 
-              <div className="absolute inset-x-0 bottom-0 z-10 flex items-end pb-20">
-                <Container>
-                  <div className="max-w-xl">
-                    <p className="anvl-display flex items-center gap-2.5 text-[0.62rem] tracking-[0.34em] text-[var(--color-highlight-bright)]">
-                      <span className="tabular-nums text-[var(--color-heading)]/85">
+              <div className="absolute inset-0 z-10 flex items-center">
+                <Container className="w-full">
+                  <div className="grid grid-cols-[min(17rem,21vw)_1fr] items-end gap-x-10">
+                    <div aria-hidden="true" className="select-none">
+                      <span
+                        data-tenet-index
+                        className="anvl-heading block font-normal tabular-nums leading-[0.82] tracking-[-0.04em] text-[var(--color-heading)]/12 text-[clamp(5.5rem,14vw,11rem)]"
+                      >
                         {tenet.index}
                       </span>
-                      <span
-                        className="h-px w-10 bg-[var(--color-highlight-bright)]"
-                        aria-hidden="true"
-                      />
-                      {tenet.marker}
-                    </p>
-                    <h3 className="anvl-heading mt-3 font-normal leading-[0.92] tracking-[-0.01em] text-[clamp(1.85rem,4.6vw,3.75rem)] text-[var(--color-heading)]">
-                      {tenet.title}
-                    </h3>
-                    <p className="mt-3 max-w-md text-[0.82rem] leading-relaxed text-[var(--color-text-muted)] sm:text-sm">
-                      {tenet.line}
-                    </p>
+                    </div>
+
+                    <div className="max-w-2xl pb-6">
+                      <p
+                        data-tenet-marker
+                        className="anvl-display text-[0.58rem] tracking-[0.36em] text-[var(--color-highlight-bright)]"
+                      >
+                        {tenet.marker}
+                      </p>
+                      <h3
+                        data-tenet-title
+                        className="anvl-heading mt-3 font-normal leading-[0.9] tracking-[-0.015em] text-[var(--color-heading)] text-[clamp(2.15rem,4.8vw,4.25rem)]"
+                      >
+                        {tenet.title}
+                      </h3>
+                      <p
+                        data-tenet-line
+                        className="mt-5 max-w-lg text-[0.9rem] leading-[1.65] text-[var(--color-text-muted)]"
+                      >
+                        {tenet.line}
+                      </p>
+                    </div>
                   </div>
                 </Container>
               </div>
@@ -97,46 +135,8 @@ export function OathTenets({
           ))}
         </div>
 
-        <Container className="pointer-events-none absolute inset-x-0 top-[13%] z-20">
-          <p className="anvl-display flex items-center gap-3 text-[0.7rem] tracking-[0.34em] text-[var(--color-heading)]/85">
-            <span className="h-px w-10 bg-[var(--color-highlight-bright)]" aria-hidden="true" />
-            {tenets.eyebrow}
-          </p>
-        </Container>
-      </div>
-
-      {/* Mobile/static: tenet cards. */}
-      <div className="md:hidden">
-        <Container className="py-16">
-          <p
-            className="anvl-display text-[0.65rem] tracking-[0.34em] text-[var(--color-heading)]/85"
-            data-reveal-m
-          >
-            {tenets.eyebrow}
-          </p>
-          <div className="mt-8 grid grid-cols-1 gap-3 min-[430px]:grid-cols-2">
-            {items.map((tenet, i) => (
-              <article
-                key={tenet.id}
-                data-reveal-m
-                className="relative overflow-hidden rounded-lg border border-[var(--color-line)]"
-                aria-label={`${tenet.index} — ${tenet.title}`}
-              >
-                <div className="relative aspect-[4/5.3]">
-                  <OathMediaFallback media={oathTenetMedia(i + 1)} tone={tenet.tone} vignette />
-                  <div className="absolute inset-x-0 bottom-0 z-10 p-3.5">
-                    <p className="anvl-display text-[9px] tracking-[0.3em] text-[var(--color-heading)]/85">
-                      {tenet.index} · {tenet.marker}
-                    </p>
-                    <h3 className="anvl-heading mt-1.5 text-lg font-normal leading-[0.95]">
-                      {tenet.title}
-                    </h3>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </Container>
+        {/* Vows→products bottom feather on the pinned stage. */}
+        <OathSceneSeam edges="bottom" />
       </div>
     </section>
   )

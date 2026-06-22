@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { gsap } from '@/shared/lib/gsap'
+import { OATH_FINE_POINTER_DESKTOP_MQ } from '../oathBreakpoints'
 
 /**
  * Page-scoped custom cursor: a bone dot with a lagging ring, blending with the
@@ -14,9 +15,7 @@ export function OathCursor({ root }: { root: RefObject<HTMLElement | null> }) {
   const ringRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    const fine = window.matchMedia(
-      '(pointer: fine) and (min-width: 1024px) and (prefers-reduced-motion: no-preference)',
-    )
+    const fine = window.matchMedia(OATH_FINE_POINTER_DESKTOP_MQ)
     const update = () => setEnabled(fine.matches)
     update()
     fine.addEventListener('change', update)

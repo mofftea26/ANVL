@@ -11,44 +11,37 @@ import { buildOathTenets } from '../motion/buildOathTenets'
 import { buildOathProducts } from '../motion/buildOathProducts'
 import { buildOathFinale } from '../motion/buildOathFinale'
 import { buildOathRail } from '../motion/buildOathRail'
+import { OATH_DESKTOP_CINEMATIC_MQ, OATH_STATIC_MQ } from '../oathBreakpoints'
 
 /**
  * The Oath — master scroll choreography (one continuous cinematic film).
  *
- * `gsap.matchMedia` branches: desktop/tablet run the pinned cinematic film
- * (hero video scrub + 3D monolith hero pose, creed, tenets panorama pan,
- * product assembly, finale, progress rail, magnetics, cursor spotlight) and
- * write scroll progress into the shared motion state that drives the WebGL
- * uniforms. Mobile + reduced-motion get the static composed layout with light
- * batch reveals — no pins, no WebGL. Builders return disposers (SplitText
- * reverts, listeners) collected per branch; `mm.revert()` kills every trigger
- * on cleanup. Scene components carry markup + `data-*` hooks only. Only builds
- * once the home entry overlay has released (`entryComplete`).
+ * `gsap.matchMedia` branches: desktop (≥1280px / `xl`, no reduced motion) runs
+ * the pinned cinematic film (hero video scrub + 3D monolith hero pose, creed,
+ * tenets panorama, product assembly, finale, progress rail, magnetics,
+ * cursor spotlight) and writes scroll progress into the shared motion state
+ * that drives the WebGL uniforms. Mobile + tablet + reduced-motion get the
+ * static composed layout with light batch reveals — no pins, no WebGL, no
+ * manifesto/tenets (hidden in markup below xl). Builders return disposers
+ * (SplitText reverts, listeners) collected per branch; `mm.revert()` kills
+ * every trigger on cleanup. Scene components carry markup + `data-*` hooks
+ * only. Only builds once the home entry overlay has released (`entryComplete`).
  */
-
-const DESKTOP = '(min-width: 1024px) and (prefers-reduced-motion: no-preference)'
-const TABLET =
-  '(min-width: 768px) and (max-width: 1023.98px) and (prefers-reduced-motion: no-preference)'
-const STATIC = '(max-width: 767.98px), (prefers-reduced-motion: reduce)'
 
 function buildCinematic(
   host: HTMLElement,
-  intensity: number,
   motion: OathMotionState,
-  isDesktop: boolean,
 ): () => void {
   const q = scopedSelector(host)
   const disposers: Array<() => void> = []
 
-  disposers.push(buildOathHero(host, q, intensity, motion))
-  disposers.push(buildOathManifesto(host, q, intensity, motion))
-  buildOathTenets(host, q, intensity, motion)
-  disposers.push(buildOathProducts(host, q, intensity, motion))
+  disposers.push(buildOathHero(host, q, 1, motion))
+  disposers.push(buildOathManifesto(host, q, 1, motion))
+  buildOathTenets(host, q, 1, motion)
+  disposers.push(buildOathProducts(host, q, 1, motion))
   disposers.push(buildOathFinale(host, q, motion))
-  if (isDesktop) {
-    buildOathRail(host, q)
-    disposers.push(buildOathSpotlight(host))
-  }
+  buildOathRail(host, q)
+  disposers.push(buildOathSpotlight(host))
   disposers.push(attachMagnetics(host))
 
   return () => {
@@ -67,9 +60,11 @@ export function useTheOathScrollTimeline(
       const host = root.current
       if (!host) return
       const mm = gsap.matchMedia()
-      mm.add(STATIC, () => buildOathStatic(host))
-      mm.add(TABLET, () => buildCinematic(host, 0.9, motion, false))
-      mm.add(DESKTOP, () => buildCinematic(host, 1, motion, true))
+      mm.add(OATH_STATIC_MQ, () => {
+        const dispose = buildOathStatic(host)
+        return dispose ?? undefined
+      })
+      mm.add(OATH_DESKTOP_CINEMATIC_MQ, () => buildCinematic(host, motion))
       return () => mm.revert()
     },
     { scope: root, dependencies: [entryComplete] },

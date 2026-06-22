@@ -1,4 +1,146 @@
-﻿## 2026-06-20 — Project cleanup + CLAUDE/Cursor docs sync
+﻿## 2026-06-22 — The Oath landing: manifesto→tenets seam + left rail fix (desktop xl+)
+
+- **Four Vows left rail** — reverted solid `bg-[var(--color-bg)]` fill (restores sticky editorial rail: eyebrow, horizontal steel rule, vow count over the diagonal scrim). Kept `border-r` removed so the vertical white rule does not return.
+- **Manifesto → tenets boundary** — removed `xl:-mt-64` overlap (solid stage block edge read as a sharp horizontal cut). Paired default-tone `OathSceneSeam` bottom on manifesto + top on tenets stage so the hand-off feathers into `--color-bg` on the opaque stage without a see-through void band. GSAP pin targets unchanged (`[data-scene="manifesto"]`, `[data-tenet-stage]`).
+- **Tests**: updated `OathTenets.test.tsx`, `mobileSectionVisibility.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: manifesto→tenets opaque dissolve (desktop xl+) — superseded
+
+- Superseded by the seam + left rail fix above (`xl:-mt-64` + opaque double-feather + solid rail fill caused sharp edge / black bar regressions).
+
+## 2026-06-22 — The Oath landing: Four Vows editorial relayout (desktop xl+)
+
+- **Tenets scene (`OathTenets`)** — redesigned desktop content layout: sticky left rail with section eyebrow, editorial grid with oversized vow index, hero title + supporting line per panel. Crossfade mask stops never hit fully transparent at panel seams so vows dissolve into each other instead of leaving void gaps. GSAP panorama hooks unchanged (`data-tenet-stage`, `data-tenet-track`, `data-tenet`, `data-tenet-media`).
+- **Tests**: added `OathTenets.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: products→finale transparent blend (desktop xl+)
+
+- **Products → finale (xl+)** — user rejected the dark `--color-bg` shadow dissolve. New `OathSceneSeam` `tone="blend"` (no opaque bg paint) pairs with section-level alpha `mask-image` on products + finale so content fades to transparent over the void instead of a visible dark band. Ember wash on xl fades earlier (`black_44%→transparent_78%`) at reduced opacity (`xl:opacity-70`). Mobile/tablet subtle bg-feather unchanged.
+- **Tests**: updated `OathSceneSeam.test.tsx`, `ProductRevealSequence.test.tsx`, `OathFinale.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: products→finale dissolve (desktop xl+)
+
+- **Products → finale boundary (xl+)** — desktop still showed a hard horizontal line: products had a default bottom seam but `OathFinale` had no matching xl top seam, default gradients were too short, and the ember wash was unmasked at xl so `overflow-hidden` clipped it. Added default-tone top seam on finale (`hidden xl:block`), lengthened default `OathSceneSeam` gradient stops + taller xl overlay (`xl:h-52`), and extended ember wash bottom mask to xl with a softer fade stop.
+- **Tests**: updated `OathSceneSeam.test.tsx`, `ProductRevealSequence.test.tsx`, `OathFinale.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: products→finale dissolve (mobile + tablet)
+
+- **Products → finale boundary** — sharp split on max-xl came from a one-sided bottom seam plus the ember wash clipping at `overflow-hidden`. Strengthened `OathSceneSeam` subtle gradients (longer stops, taller `h-44 md:h-56`), re-added a subtle top seam on `OathFinale` (max-xl only), and masked the products ember wash so it fades before the section edge.
+- **Tests**: updated `OathSceneSeam.test.tsx`, `ProductRevealSequence.test.tsx`, `OathFinale.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: hero headline centering (mobile + tablet)
+
+- **Hero headline + subhead** — block-level `h1`/`p` with `max-w-[min(100%,18rem)]` now get `max-xl:mx-auto max-xl:text-center` so copy centers below xl; desktop xl+ keeps `xl:mx-0 xl:text-left` for the cinematic left column.
+- **Tests**: updated `OathHero.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: product banner depth stacking (md+)
+
+- **Product reveal banners** — centre hero piece scales up (`md:scale-[1.08]`, `z-30`) by default on tablet/desktop; side banners scale down (`md:scale-[0.92]`, `z-10`). Hovering a side banner brings it to front and demotes the others; `mouseleave` on the row resets centre-front. Depth scale lives on `[data-banner-depth]` inner wrapper so GSAP scroll assembly on `[data-banner]` stays conflict-free. Mobile two-row grid unchanged.
+- **Tests**: updated `ProductRevealSequence.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: seamless section fades (all breakpoints)
+
+- **Scene seams** — `OathSceneSeam` now supports `tone="subtle"` (longer, lower-contrast gradients) alongside improved default feather stops (8–15% dissolve zone). Hero, products, manifesto, and tenets boundaries dissolve into `--color-bg` instead of hard cuts.
+- **Hero → products (mobile/tablet)** — re-enabled bottom dissolve on hero + top/bottom on products with subtle tone; extended hero bottom vignette + media mask feather (`styles.css`).
+- **Products → finale** — added bottom scene seam on products at all breakpoints.
+- **Desktop xl+** — hero bottom + products top/bottom use default-tone seams; manifesto/tenets keep dual-edge seams with upgraded gradients.
+- **Tests**: updated `OathSceneSeam.test.tsx`, `ProductRevealSequence.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: hero emblem scale-up (mobile + tablet)
+
+- **Hero emblem (mobile + tablet)** — static fallback above the eyebrow enlarged again: mobile `h-20 w-20` (5rem) → `h-28 w-28` (7rem); tablet `md–1279px` clamp `clamp(7.5rem, 14vw, 10rem)` → `clamp(9rem, 18vw, 12rem)` (~144–192px, ~180–192px on typical iPad); desktop xl WebGL fallback stays `4.5rem`. Copy stack margin tuned (`max-md:mt-5`, `md:max-xl:mt-2`) to avoid cramping; `OathCmsMark` intrinsic `192×192`.
+- **Tests**: updated `OathHero.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: mobile/tablet hero emblem scale-up
+
+- **Hero emblem (mobile + tablet)** — static fallback above the eyebrow enlarged: mobile base `h-16 w-16` → `h-20 w-20` (4rem → 5rem); tablet `md–1279px` clamp `6.5rem–8.5rem` → `clamp(7.5rem, 14vw, 10rem)` (120–160px); desktop xl WebGL fallback stays `4.5rem`. Wrapper `mb-4` + copy stack `max-md:mt-6` for breathing room; `OathCmsMark` intrinsic `160×160`.
+- **Tests**: updated `OathHero.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: finale crest emblem scale-up
+
+- **Finale crest** — emblem was locked at 112×112px via inline `width`/`height` on `ThemeTintedMediaMark`, overriding Tailwind `h-*` classes (including the regressive `xl:h-28`). Added a responsive square wrapper (`h-44` → `md:h-52` → `xl:h-56`) with `OathCmsMark` filling via `h-full w-full` and intrinsic `224×224` SVG size — visibly larger on mobile, tablet, and desktop (desktop no longer shrinks vs tablet).
+- **Tests**: updated `OathFinale.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: tablet hero emblem scale-up
+
+- **Tablet hero emblem** — static fallback bumped from fixed `6.25rem` to responsive `clamp(6.5rem, 12vw, 8.5rem)` on `md–1279px` (104–136px, hero-scale on iPad); wrapper `overflow-visible`; `OathCmsMark` intrinsic size `136×136` so SVG/image fills the wrapper. Mobile `h-16` and desktop xl WebGL fallback `4.5rem` unchanged.
+- **Tests**: updated `OathHero.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: mobile/tablet hero overlay + emblem sizing
+
+- **Mobile hero copy** — emblem stays in place (`h-16` mobile, no negative margin); eyebrow through footer rail sit in `[data-hero-copy-stack]` with `max-md:mt-5` so copy drops without moving the emblem.
+- **Tablet hero emblem** — static fallback enlarged to `6.25rem` on `md–1279px` (desktop WebGL xl stays `4.5rem`).
+- **Mobile/tablet hero film** — centered full-bleed panel below xl (removed `md:left-[26%]` offset); desktop/tablet videos use `object-center` with xl restoring `object-top` + right-anchored `64%` panel.
+- **Right-edge overlay gap (mobile/tablet)** — film/vignette/shade layers use `max-xl:w-screen` + `left-1/2 -translate-x-1/2` for true viewport coverage; stronger mobile shade gradient + `styles.css` max-xl vignette wash so the right edge never leaks video.
+- **Finale crest** — emblem enlarged on mobile/tablet (`h-32` / `md:h-36`); desktop xl unchanged (`xl:h-28`).
+- **Tests**: updated `OathHero.test.tsx`, new `OathFinale.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: desktop hero regression + responsive polish
+
+- **Desktop hero regression (xl+)** — tablet overlay fix had applied unconditional `w-full min-w-full` on `[data-hero-film]` / `[data-hero-media]`. On desktop, `min-w-full` overrode `xl:w-[64%]`, forcing the right-anchored film panel full-bleed and breaking the feather mask, copy scrim balance, and WebGL hand-off. Scoped full-width/min-width to `max-xl:` only; desktop panel restores `xl:w-[64%] xl:min-w-0 xl:inset-y-0 xl:right-0`.
+- **Mobile hero** — symmetric eyebrow decorative line on the right at all sizes (`after:` base + wider `md:max-xl:after:w-12` on tablet); subtle emblem raise via `max-md:-mt-1.5` (avoids prior `-mt-3` overflow).
+- **Tablet hero** — static emblem enlarged to `5.5rem` on `md–1279px` (desktop WebGL fallback at xl stays `4.5rem`).
+- **Product banners** — centre/hero banner default front scale bumped to `md:scale-110` (hover stack unchanged).
+- **Tests**: updated `OathHero.test.tsx`, `ProductRevealSequence.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: xl cinematic breakpoint + mobile/tablet layout fixes
+
+- **iPad Pro root cause** — desktop cinematic gates used Tailwind `lg` (1024px), matching iPad Pro logical widths in landscape; tablet devices incorrectly received WebGL, GSAP pins, manifesto/tenets, fixed hero film, and custom cursor. **Fix:** raised desktop-only behavior to `xl` (1280px) via shared `oathBreakpoints.ts` (`OATH_DESKTOP_CINEMATIC_MQ`, `OATH_STATIC_MQ`, `OATH_FINE_POINTER_DESKTOP_MQ`). Mobile `<768px`, tablet `768–1279px`, desktop cinematic `≥1280px`.
+- **Breakpoint migration (`lg` → `xl` for desktop-only)** — `useTheOathScrollTimeline`, `OathCanvasGate`, `OathCursor`, `OathHero` (fixed film, spotlight, shade, copy alignment), `OathManifesto`, `OathTenets`, `OathProgressRail`, `ProductRevealSequence` (seam, min-height, banner sizing), `styles.css` hero media feather mask `@media (min-width: 1280px)`.
+- **Mobile hero layout** — removed `max-md:-mt-3` emblem nudge (overflow); aligned emblem wrapper/mark sizes (`h-full w-full`); tighter mobile typography/spacing; centered flex column on phone; constrained copy max-widths.
+- **Tablet hero** — symmetric eyebrow decorative rules (`after:` line); static emblem matches desktop `4.5rem` + theme tint (was oversized `h-24`).
+- **Product banners** — mobile bottom-row `max-md:gap-x-3` + narrower cards; centre banner `md:scale-105` by default (with existing z-index hover stack).
+- **Tests**: updated hero/products/visibility/seam tests + new `oathBreakpoints.test.ts`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: mobile hero centering + two-row product grid
+
+- **Mobile hero centering (`<768px`)** — emblem, eyebrow, headline, underline, subhead, CTAs, and footer rail use the same centered stack as tablet (`max-lg:`); desktop `lg+` stays left-aligned. Emblem nudged up via `max-md:-mt-3`.
+- **Mobile product layout (`<768px`)** — `ProductRevealSequence` keeps a 2-col grid but reorders with CSS `order`: centre/hero banner (index 1) spans row 1 full-width; the two side pieces share row 2. Tablet (`md:`) flex row and desktop stacking unchanged.
+- **Tests**: updated `OathHero.test.tsx` + `ProductRevealSequence.test.tsx` mobile class contracts. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: product banner stacking + larger tablet cards
+
+- **Centre banner always in front** — `ProductRevealSequence` tracks `hoveredIndex` via `onMouseEnter` / container `onMouseLeave`. Index `1` (hero piece) defaults to `z-30`; hovering a side banner elevates it and demotes the centre; mouse leave restores centre-front. Touch devices without hover keep the default stack.
+- **Even larger war banners on tablet (`768px–1023px`)** — tablet max-width raised to `md:max-w-[clamp(14rem,21vw,17rem)]`, aspect to `md:aspect-[3/4.35]`, and section min-height to `min(76svh, 82% section)` so taller cards fit; mobile base and desktop `lg:` sizing unchanged.
+- **Tests**: extended `ProductRevealSequence.test.tsx` (tablet sizing + hover stacking). `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: tablet hero layout (footer revert + larger copy)
+
+- **Footer rail restored to copy column** — DR-01 metadata returns to its original position inside `[data-hero-content]` (`md:flex` in the copy stack); removed the tablet-only `[data-hero-bottom-rail]` stack above the approach cue. Scroll cue stays an independent absolute bottom element.
+- **Larger hero content on tablet (`768px–1023px`)** — emblem `6rem`, eyebrow `text-sm`, headline clamp bump, subhead `text-lg`, CTAs `h-14`/`text-base`, wider underline; all via `md:max-lg:` so desktop (`lg+`) sizing is unchanged. Tablet center alignment retained.
+- **Tests**: updated `OathHero.test.tsx` — footer-in-copy contract, tablet typography/CTA scale. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: larger product banners on tablet
+
+- **Enlarged war banners on tablet (`768px–1023px`)** — `ProductRevealSequence` raises tablet max-width to `md:max-w-[clamp(11.5rem,16vw,13.75rem)]` and aspect to `md:aspect-[3/4.55]` (from the prior compact `12rem` / `3/4.15` sizing). Section min-height bumped to `min(72svh, 78% section)` with `md:py-7` so the taller cards still fit; mobile base classes and desktop `lg:` sizing unchanged.
+- **Tests**: updated `ProductRevealSequence.test.tsx` tablet class contract. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: tablet product section layout
+
+- **Shorter products section on tablet (`768px–1023px`)** — `ProductRevealSequence` uses a compact `md:min-h` (~72% of section height / 68svh cap) with `md:py-8` instead of filling the full viewport; desktop (`≥1024px`) keeps the original full-height pinned layout.
+- **Wider banner spacing on tablet** — horizontal flex gap raised to `md:gap-14` (from `md:gap-8`); desktop stays `lg:gap-12`. Banners also get a narrower max-width, shorter `md:aspect-[3/4.15]`, and tighter vertical margins on tablet only.
+- **Tests**: `ProductRevealSequence.test.tsx` (tablet layout class contract). `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: hero overlay edge coverage on mobile/tablet
+
+- **Hero film stays section-relative below `lg`** — `[data-hero-film]` no longer uses `md:fixed` (only `lg:fixed`), so the video layer and copy scrim share the same width on tablet and avoid a scrollbar-width gap on the right edge.
+- **Mobile/tablet media mask + edge shade** — CSS mask keeps a solid right edge on full-bleed mobile/tablet (no transparent dissolve strip); new `[data-hero-mobile-shade]` adds a subtle right wash below `lg`. Overlay layers use `w-full min-w-full`.
+- **Tests**: extended `OathHero.test.tsx`. `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: hide hero→products shadow seam on mobile/tablet
+
+- **Products top `OathSceneSeam` hidden below `lg`** — On mobile/tablet (where manifesto/tenets are skipped), the feathered top seam on `ProductRevealSequence` no longer draws a visible split line between the hero and products. Desktop (`≥1024px`) keeps the seam for the tenets→products dissolve.
+- **Tests**: `OathSceneSeam` className merge (`hidden lg:block`). `pnpm verify` green.
+
+## 2026-06-22 — The Oath landing: mobile/tablet performance + streamlined path to products
+
+- **Manifesto + tenets hidden below `lg` (1024px)** — Creed and Tenets scenes are `hidden lg:flex` / `hidden lg:block` so mobile and tablet skip the pinned creed/panorama entirely; GSAP builders for those scenes run only on the desktop cinematic branch. Mobile tenet card grid removed.
+- **Tablet merged into static motion branch** — `useTheOathScrollTimeline` now uses desktop cinematic only at `≥1024px`; mobile + tablet (`≤1023px`) share `buildOathStatic` (light batch reveals, no pins, no scrub). WebGL gate raised from 768px to 1024px so tablets never download `vendor-three`.
+- **Mobile hero video** — autoplays muted once on load, `preload="metadata"`, no `loop`; pauses on `ended` via `buildOathStatic`. Spotlight reveal layer hidden below `lg`.
+- **Hero viewport fit** — exact `h-[var(--anvl-section-h)]`, overflow hidden, tighter mobile typography/spacing, safe-area scroll cue.
+- **Tests**: `buildOathStatic.test.ts`, `mobileSectionVisibility.test.tsx`, extended `OathHero.test.tsx`. `pnpm verify` green.
+
+## 2026-06-20 — Project cleanup + CLAUDE/Cursor docs sync
 
 - **Scope**: post-merge/post-theme/post-admin-workspace housekeeping. Removed proven-unused code/deps and brought the CLAUDE docs (`CLAUDE.md`) and Cursor docs (`AGENTS.md` + `.cursor/rules/*.mdc`) and the `docs/*` reference set back in sync with the current project. No behavior, auth semantics, or feature boundaries changed.
 - **Dependencies removed** (verified zero source imports): `@fontsource/bebas-neue` + `@fontsource/manrope` (fonts are Anton/Sora/Cinzel now), `@tanstack/react-query-devtools` (devtools gated/unused), and dev dep `@tailwindcss/typography` (no `prose` usage / not wired into the Tailwind v4 `@theme`).

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import type { Product } from '@/features/products/types/product.types'
 import { Container } from '@/shared/components/ui/Container'
@@ -8,7 +8,7 @@ import { WarBanner } from '@/shared/components/premium/WarBanner'
 import type { OathResolvedContent } from '../content/oathContent.defaults'
 import { OATH_PRODUCT_ROSTER } from '../content/oathContent.defaults'
 import { oathCrestEmblem, oathProductImage, oathThemedMarkup } from '../theOathAssets'
-import { OathSceneSeam } from './OathSceneSeam'
+import { OATH_PRODUCTS_FINALE_BLEND_MASK, OathSceneSeam } from './OathSceneSeam'
 
 interface ResolvedProduct {
   slug: string
@@ -21,6 +21,29 @@ interface ResolvedProduct {
   href: string
   image?: string
   price?: string
+}
+
+/** Roster index of the hero / centre piece (three-banner row). */
+const CENTER_BANNER_INDEX = 1
+
+function isBannerFront(index: number, hoveredIndex: number | null): boolean {
+  return hoveredIndex === null ? index === CENTER_BANNER_INDEX : index === hoveredIndex
+}
+
+/** Depth scale on md+ — lives on an inner wrapper so GSAP scroll reveal (on `[data-banner]`) stays conflict-free. */
+const BANNER_DEPTH_FRONT = 'md:scale-[1.08]' as const
+const BANNER_DEPTH_BACK = 'md:scale-[0.92]' as const
+
+function bannerDepthClass(index: number, hoveredIndex: number | null): string {
+  const isFront = isBannerFront(index, hoveredIndex)
+  return cn(
+    isFront ? BANNER_DEPTH_FRONT : BANNER_DEPTH_BACK,
+    'md:origin-top md:transition-transform md:duration-300 md:ease-out',
+  )
+}
+
+function bannerZClass(index: number, hoveredIndex: number | null): string {
+  return isBannerFront(index, hoveredIndex) ? 'z-30' : 'z-10'
 }
 
 function formatPrice(product: Product): string | undefined {
@@ -42,51 +65,67 @@ function BannerColumn({
   product,
   index,
   total,
+  hoveredIndex,
+  onHoverEnter,
 }: {
   product: ResolvedProduct
   index: number
   total: number
+  hoveredIndex: number | null
+  onHoverEnter: (index: number) => void
 }) {
   const numeral = String(index + 1).padStart(2, '0')
   const cmsRender = oathProductImage(product.position)
-  // On the mobile 2-col grid, an odd last item is centred across both columns.
-  const isLonelyLast = total % 2 === 1 && index === total - 1
+  const isHeroBanner = index === CENTER_BANNER_INDEX
+  const isFront = isBannerFront(index, hoveredIndex)
   return (
     <li
       data-banner
       data-banner-index={index}
       data-reveal-m
+      data-banner-front={isFront ? 'true' : undefined}
+      onMouseEnter={() => onHoverEnter(index)}
       className={cn(
-        'flex w-full max-w-[14.5rem] flex-col items-center will-change-transform max-[767px]:mx-auto md:max-w-[clamp(10.5rem,17vw,15rem)]',
-        isLonelyLast && 'max-[767px]:col-span-2',
+        'relative flex w-full max-w-[14.5rem] flex-col items-center max-md:mx-auto max-md:max-w-[10.75rem] md:max-w-[clamp(14rem,21vw,17rem)] xl:max-w-[clamp(10.5rem,17vw,15rem)]',
+        bannerZClass(index, hoveredIndex),
+        isHeroBanner && 'max-md:order-1 max-md:col-span-2',
+        index === 0 && 'max-md:order-2',
+        index === total - 1 && index !== CENTER_BANNER_INDEX && 'max-md:order-3',
       )}
     >
-      <SafeLink
-        href={product.href}
-        className="focus-ring block w-full no-underline"
-        aria-label={`${product.name} — view piece`}
-        data-cursor="view"
+      <div
+        data-banner-depth
+        className={cn(
+          'flex w-full flex-col items-center will-change-transform',
+          bannerDepthClass(index, hoveredIndex),
+        )}
       >
-        <WarBanner
-          tone={product.tone}
-          media={product.image}
-          alt={product.name}
-          label={numeral}
-          placeholderSrc={cmsRender ?? oathCrestEmblem()}
-          placeholderThemedMarkup={cmsRender ? null : oathThemedMarkup('crestSvg')}
-          aspectClassName="aspect-[3/4.75]"
-          elevated
-          sway
-          swayDelay={index * 0.45}
-        />
-      </SafeLink>
+        <SafeLink
+          href={product.href}
+          className="focus-ring block w-full no-underline"
+          aria-label={`${product.name} — view piece`}
+          data-cursor="view"
+        >
+          <WarBanner
+            tone={product.tone}
+            media={product.image}
+            alt={product.name}
+            label={numeral}
+            placeholderSrc={cmsRender ?? oathCrestEmblem()}
+            placeholderThemedMarkup={cmsRender ? null : oathThemedMarkup('crestSvg')}
+            aspectClassName="aspect-[3/4.75] md:aspect-[3/4.35] xl:aspect-[3/4.75]"
+            elevated
+            sway
+            swayDelay={index * 0.45}
+          />
+        </SafeLink>
 
-      <div className="mt-4 w-full text-center">
+        <div className="mt-4 w-full text-center md:mt-3 xl:mt-4">
         <p className="anvl-micro text-[var(--color-highlight-bright)]">{product.role}</p>
-        <h3 className="anvl-heading mt-1.5 text-lg font-normal leading-[0.95] md:text-xl">
+        <h3 className="anvl-heading mt-1.5 text-lg font-normal leading-[0.95] md:text-lg xl:text-xl">
           {product.name}
         </h3>
-        <p className="mx-auto mt-2 hidden max-w-[14rem] text-xs leading-relaxed text-[var(--color-text-muted)] lg:block">
+        <p className="mx-auto mt-2 hidden max-w-[14rem] text-xs leading-relaxed text-[var(--color-text-muted)] xl:block">
           {product.line}
         </p>
         <div className="mt-3 flex items-center justify-center gap-3">
@@ -101,6 +140,7 @@ function BannerColumn({
           {product.price ? (
             <span className="anvl-display text-sm text-[var(--color-text)]">{product.price}</span>
           ) : null}
+        </div>
         </div>
       </div>
     </li>
@@ -122,6 +162,8 @@ export function ProductRevealSequence({
   products: Product[]
   content: OathResolvedContent['products']
 }) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+
   const resolved = useMemo<ResolvedProduct[]>(() => {
     const bySlug = new Map(products.map((p) => [p.slug, p]))
     return OATH_PRODUCT_ROSTER.map((copy, i) => {
@@ -145,20 +187,30 @@ export function ProductRevealSequence({
       data-scene="products"
       data-product-reveal
       id="products"
-      className="relative flex min-h-[var(--anvl-section-h)] w-full flex-col justify-center overflow-hidden py-12 md:py-0"
+      className={cn(
+        'relative flex min-h-[var(--anvl-section-h)] w-full flex-col justify-center overflow-hidden py-12 md:min-h-[min(76svh,calc(var(--anvl-section-h)*0.82))] md:py-7 xl:min-h-[var(--anvl-section-h)] xl:py-0',
+        OATH_PRODUCTS_FINALE_BLEND_MASK,
+      )}
       aria-label="The first three pieces"
     >
-      {/* Top seam only — the products↔finale boundary is intentionally seamless
-          (no bottom seam) so the two sections flow into each other. */}
-      <OathSceneSeam edges="top" />
+      {/* Top dissolve — tenets→products (desktop) or hero→products (mobile/tablet).
+          Subtle tone on smaller viewports avoids a visible split line. */}
+      <OathSceneSeam edges="top" tone="subtle" className="xl:hidden" />
+      <OathSceneSeam edges="top" className="hidden xl:block" />
 
-      {/* Oversized blurred ember wash — no boxed gradient edges. */}
+      {/* Bottom into finale — subtle bg-feather on mobile/tablet; xl+ blend (alpha
+          mask + transparent seam, no dark void band). */}
+      <OathSceneSeam edges="bottom" tone="subtle" className="xl:hidden" />
+      <OathSceneSeam edges="bottom" tone="blend" className="hidden xl:block" />
+
+      {/* Oversized blurred ember wash — bottom mask so overflow-hidden never
+          clips it into a hard line; xl fades earlier/softer for transparent blend. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-20 -left-16 -right-16 -top-20 z-0"
+        className="pointer-events-none absolute -bottom-20 -left-16 -right-16 -top-20 z-0 max-xl:[mask-image:linear-gradient(to_bottom,black_0%,black_52%,transparent_90%)] max-xl:[-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_52%,transparent_90%)] xl:[mask-image:linear-gradient(to_bottom,black_0%,black_44%,transparent_78%)] xl:[-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_44%,transparent_78%)]"
       >
         <div
-          className="absolute left-1/2 top-[38%] h-[min(42rem,95%)] w-[min(72rem,125%)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] opacity-90 blur-[72px] md:blur-[96px]"
+          className="absolute left-1/2 top-[38%] h-[min(42rem,95%)] w-[min(72rem,125%)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] opacity-90 blur-[72px] md:h-[min(30rem,82%)] md:blur-[80px] xl:h-[min(42rem,95%)] xl:opacity-70 xl:blur-[96px]"
           style={{ background: 'var(--color-highlight-soft, transparent)' }}
         />
       </div>
@@ -181,7 +233,7 @@ export function ProductRevealSequence({
         <div
           aria-hidden="true"
           data-banner-rail
-          className="mx-auto mt-8 hidden h-1 w-[82%] max-w-4xl rounded-full md:block"
+          className="mx-auto mt-8 hidden h-1 w-[82%] max-w-4xl rounded-full md:mt-5 md:block xl:mt-8"
           style={{
             background:
               'linear-gradient(90deg, transparent, var(--color-graphite) 12%, color-mix(in srgb, var(--color-graphite) 68%, var(--anvl-bone)) 50%, var(--color-graphite) 88%, transparent)',
@@ -189,15 +241,25 @@ export function ProductRevealSequence({
           }}
         />
 
-        <div className="relative mx-auto mt-8 md:mt-6">
-          <ul className="relative z-[1] mx-auto grid w-full grid-cols-2 gap-x-5 gap-y-10 [perspective:1600px] md:flex md:flex-row md:items-start md:justify-center md:gap-8 lg:gap-12">
+        <div className="relative mx-auto mt-8 md:mt-5 xl:mt-6">
+          <ul
+            className="relative z-[1] mx-auto grid w-full grid-cols-2 max-md:justify-items-center max-md:gap-x-3 gap-x-5 gap-y-10 [perspective:1600px] md:flex md:flex-row md:items-start md:justify-center md:gap-14 xl:gap-12"
+            onMouseLeave={() => setHoveredIndex(null)}
+          >
             {resolved.map((product, i) => (
-              <BannerColumn key={product.slug} product={product} index={i} total={resolved.length} />
+              <BannerColumn
+                key={product.slug}
+                product={product}
+                index={i}
+                total={resolved.length}
+                hoveredIndex={hoveredIndex}
+                onHoverEnter={setHoveredIndex}
+              />
             ))}
           </ul>
         </div>
 
-        <div data-reveal-m className="mt-9 text-center md:mt-10">
+        <div data-reveal-m className="mt-9 text-center md:mt-7 xl:mt-10">
           <SafeLink
             href={content.viewAllHref}
             className="focus-ring inline-flex items-center gap-2 border-b border-[var(--color-highlight)]/50 pb-1 text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-text)] no-underline transition-colors hover:text-[var(--color-highlight-bright)]"
