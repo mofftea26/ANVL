@@ -25,6 +25,11 @@ import {
 import { resolvePublishedAssets } from '@/features/cms/assets/resolvePublishedAssets'
 import { SiteFooter } from '@/shared/components/layout/SiteFooter'
 import { PremiumNav } from '@/shared/components/layout/PremiumNav'
+import {
+  ExperienceProvider,
+  ExperiencePageTransition,
+  resolveExperienceKey,
+} from '@/features/experience'
 import { MarketingToolsHead } from '@/shared/components/seo/MarketingToolsHead'
 import { DEFAULT_EMBLEM_SRC } from '@/shared/constants/brandAssets'
 import {
@@ -55,6 +60,10 @@ export const Route = createRootRoute({
       // A single global CMS theme drives the whole storefront.
       theme: projection.theme,
       fonts: projection.fonts,
+      // Active landing key → site-wide experience (structure/variants). Theme
+      // stays independent; see `features/experience`.
+      activeLandingPageKey: projection.activeLandingPageKey,
+      experienceKey: resolveExperienceKey(projection.activeLandingPageKey),
     }
   },
   head: ({ loaderData }) => ({
@@ -114,7 +123,12 @@ function RootDocument({ children }: { children: ReactNode }) {
 }
 
 function StorefrontLayout() {
-  const { navigation: ssrNavigation, theme, fonts } = Route.useLoaderData()
+  const {
+    navigation: ssrNavigation,
+    theme,
+    fonts,
+    activeLandingPageKey,
+  } = Route.useLoaderData()
   const navigation = useWebsiteNavigation(ssrNavigation)
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -133,23 +147,33 @@ function StorefrontLayout() {
 
   return (
     <SiteThemeProvider theme={theme} fonts={fonts}>
-      <MarketingToolsHead />
-      <RouteAnalytics />
-      {showChrome ? <PremiumNav navigation={navigation} /> : null}
-      <main
-        className={
-          showChrome
-            ? 'pt-[var(--anvl-header-h)]'
-            : 'fixed inset-0 z-0 h-[100dvh] overflow-hidden overscroll-none'
-        }
-      >
-        <AppErrorBoundary resetKey={pathname}>
-          <Outlet />
-        </AppErrorBoundary>
-      </main>
-      {showChrome ? (
-        <SiteFooter navigation={navigation} />
-      ) : null}
+      <ExperienceProvider activeLandingPageKey={activeLandingPageKey}>
+        <ExperiencePageTransition />
+        <MarketingToolsHead />
+        <RouteAnalytics />
+        {showChrome ? (
+          <a
+            href="#anvl-main"
+            className="focus-ring sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-md focus:border focus:border-[var(--color-line)] focus:bg-[var(--color-surface)] focus:px-4 focus:py-2 focus:text-sm focus:text-[color:var(--color-text)]"
+          >
+            Skip to content
+          </a>
+        ) : null}
+        {showChrome ? <PremiumNav navigation={navigation} /> : null}
+        <main
+          id="anvl-main"
+          className={
+            showChrome
+              ? 'pt-[var(--anvl-header-h)]'
+              : 'fixed inset-0 z-0 h-[100dvh] overflow-hidden overscroll-none'
+          }
+        >
+          <AppErrorBoundary resetKey={pathname}>
+            <Outlet />
+          </AppErrorBoundary>
+        </main>
+        {showChrome ? <SiteFooter navigation={navigation} /> : null}
+      </ExperienceProvider>
     </SiteThemeProvider>
   )
 }

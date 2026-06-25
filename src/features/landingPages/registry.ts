@@ -50,6 +50,23 @@ export const landingPageRegistry: Record<string, LandingPageDefinition> = {
       'TheOathLanding',
     ),
   },
+  // Dark technical product-laboratory experience for Drop 01 — editorial hero
+  // staging the compression shirt, tech-knit lab, three-product collection,
+  // performance benefits, materials, and conversion. Pairs with the
+  // "Theoath Modern — Tech Forge" theme preset (selected separately in
+  // /admin/theme) and re-skins the storefront via the experience system.
+  'theoath-modern': {
+    key: 'theoath-modern',
+    name: 'Theoath Modern',
+    description:
+      'Dark technical product-laboratory experience for Drop 01 — editorial, dimensional, premium.',
+    previewImage: '/brand/the-oath-shape.svg',
+    isAvailable: true,
+    component: lazyPage(
+      () => import('./pages/TheoathModern'),
+      'TheoathModern',
+    ),
+  },
 }
 
 /** Fallback key when Supabase `active_landing_page_key` is missing or invalid. */

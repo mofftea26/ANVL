@@ -23,10 +23,10 @@ import {
   Container,
   Drawer,
   Input,
-  ProductCard,
   Section,
   Skeleton,
 } from '@/shared/components/ui'
+import { ExperienceProductCard } from '@/features/products/components/ExperienceProductCard'
 import { ForgeAtmosphere } from '@/shared/components/premium/ForgeAtmosphere'
 
 /**
@@ -352,7 +352,7 @@ function ShopPage() {
               ) : (
                 <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                   {deferredFiltered.map((product: Product) => (
-                    <ProductCard key={product.id} product={product} />
+                    <ExperienceProductCard key={product.id} product={product} />
                   ))}
                 </div>
               )}

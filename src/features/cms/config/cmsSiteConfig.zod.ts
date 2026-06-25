@@ -375,6 +375,13 @@ export function themeConfigToCssVars(theme: ThemeConfig): Record<string, string>
     '--scrollbar-thumb': mix(p.primary, p.foreground, 0.44),
     '--scrollbar-thumb-hover': mix(p.primary, p.foreground, 0.32),
     '--scrollbar-thumb-active': p.primary,
+    // Experience surfaces — glass chrome, strong/technical hairlines, and the
+    // page-transition overlay. Derived for every theme so experience variants
+    // (e.g. Theoath Modern) read the same source of truth as the storefront.
+    '--glass-surface': withAlpha(p.background, 0.78),
+    '--border-strong': withAlpha(p.foreground, 0.2),
+    '--tech-line': withAlpha(p.foreground, 0.12),
+    '--transition-overlay': p.background,
     ...MOTION_CSS_VARS,
   }
 }

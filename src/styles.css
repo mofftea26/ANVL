@@ -1193,3 +1193,228 @@ html[data-landing-entry='active'] body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ===========================================================================
+ * Theoath Modern experience layer
+ * ---------------------------------------------------------------------------
+ * Scoped to the storefront subtree via `[data-experience="theoath-modern"]`
+ * (rendered on the ExperienceProvider `display:contents` wrapper — the admin
+ * CMS never renders it, so it is never re-skinned). Cosmetic only: it sharpens
+ * geometry, swaps borders to technical hairlines, and shifts focus/selection to
+ * the champagne accent, so the whole storefront reads as a technical product
+ * lab regardless of the (independent) active theme. Structural markup changes
+ * live in the techForge component variants resolved at the route layer.
+ * ======================================================================== */
+
+[data-experience='theoath-modern'] ::selection {
+  background: color-mix(in srgb, var(--color-highlight) 32%, transparent);
+  color: var(--color-heading);
+}
+
+/* Theoath Modern custom cursor (mounted only on fine-pointer + no-reduced-motion;
+   the class is added by TmCursor *after* init, so the native cursor is never
+   hidden prematurely). Form fields keep the native cursor. */
+.tm-cursor-active,
+.tm-cursor-active a,
+.tm-cursor-active button,
+.tm-cursor-active [role='button'] {
+  cursor: none;
+}
+.tm-cursor-active input,
+.tm-cursor-active textarea,
+.tm-cursor-active select {
+  cursor: auto;
+}
+.tm-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 36px;
+  width: 36px;
+  border: 1px solid var(--color-highlight);
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 9999;
+  will-change: transform;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    opacity 0.25s ease;
+}
+.tm-cursor-ring.is-hover {
+  background-color: color-mix(in srgb, var(--color-highlight) 14%, transparent);
+  border-color: var(--color-highlight-bright);
+}
+.tm-cursor-ring.is-down {
+  background-color: color-mix(in srgb, var(--color-highlight) 26%, transparent);
+}
+.tm-cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 5px;
+  width: 5px;
+  border-radius: 9999px;
+  background-color: var(--color-highlight-bright);
+  pointer-events: none;
+  z-index: 9999;
+  will-change: transform;
+}
+
+/* Hero backdrop — slow Ken Burns drift + a champagne light sweep. */
+.tm-kenburns {
+  animation: tm-kenburns 26s ease-in-out infinite alternate;
+  transform-origin: 70% 40%;
+}
+@keyframes tm-kenburns {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1.13) translate3d(-1.5%, -1%, 0);
+  }
+}
+.tm-lightsweep {
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    color-mix(in srgb, var(--color-highlight) 15%, transparent) 50%,
+    transparent 58%
+  );
+  background-size: 300% 100%;
+  mix-blend-mode: screen;
+  /* Linear + off-screen endpoints: the bright band is never on screen at the
+     loop boundary, so the restart is invisible (no "blink"). */
+  animation: tm-lightsweep 17s linear infinite;
+}
+@keyframes tm-lightsweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tm-kenburns,
+  .tm-lightsweep {
+    animation: none;
+  }
+}
+
+/* Hero garment idle float (paired with the JS pointer tilt on the wrapper). */
+.tm-hero-float {
+  animation: tm-hero-float 7s ease-in-out infinite;
+}
+@keyframes tm-hero-float {
+  0%, 100% {
+    transform: translateY(-1.2%);
+  }
+  50% {
+    transform: translateY(1.2%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tm-hero-float {
+    animation: none;
+  }
+}
+
+/* Crisp technical geometry + tracking on interactive controls. */
+[data-experience='theoath-modern'] button,
+[data-experience='theoath-modern'] a.focus-ring.inline-flex,
+[data-experience='theoath-modern'] input:not([type='checkbox']):not([type='radio']),
+[data-experience='theoath-modern'] select,
+[data-experience='theoath-modern'] textarea {
+  border-radius: 4px;
+}
+
+/* Form controls: technical hairline border + champagne focus ring. */
+[data-experience='theoath-modern'] input:not([type='checkbox']):not([type='radio']),
+[data-experience='theoath-modern'] select,
+[data-experience='theoath-modern'] textarea {
+  border-color: var(--tech-line);
+}
+[data-experience='theoath-modern'] input:not([type='checkbox']):not([type='radio']):focus-visible,
+[data-experience='theoath-modern'] select:focus-visible,
+[data-experience='theoath-modern'] textarea:focus-visible {
+  border-color: var(--color-highlight);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-highlight) 60%, transparent);
+}
+
+/* Focus ring follows the lab accent. */
+[data-experience='theoath-modern'] .focus-ring:focus-visible {
+  outline-color: var(--color-highlight);
+}
+
+/* Surface cards read as engineered frames (sharper, hairline). */
+[data-experience='theoath-modern'] .rounded-2xl {
+  border-radius: 8px;
+}
+
+/* Sticky nav: dark technical glass once scrolled. */
+[data-experience='theoath-modern'] [data-premium-topbar-variant='solid'] {
+  background: var(--glass-surface);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  border-bottom: 1px solid var(--tech-line);
+}
+
+/* Thinner, technical scrollbar. */
+[data-experience='theoath-modern'] *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/* -----------------------------------------------------------------------
+ * Page-transition overlay (forgeWipe) — a champagne-edged steel panel that
+ * sweeps across on route change. Reduced-motion collapses it to a quick fade.
+ * Driven by the `<ExperiencePageTransition>` component (route layer).
+ * -------------------------------------------------------------------- */
+.tm-page-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  background: linear-gradient(
+    to bottom,
+    var(--color-bg),
+    color-mix(in srgb, var(--color-bg) 86%, var(--color-highlight))
+  );
+  border-top: 2px solid var(--color-highlight);
+}
+.tm-page-transition[data-state='cover'] {
+  animation: tm-wipe-cover 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.tm-page-transition[data-state='reveal'] {
+  transform-origin: top;
+  animation: tm-wipe-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes tm-wipe-cover {
+  from {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+  to {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+}
+@keyframes tm-wipe-reveal {
+  from {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  to {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tm-page-transition[data-state='cover'],
+  .tm-page-transition[data-state='reveal'] {
+    animation-duration: 0.01ms;
+  }
+}

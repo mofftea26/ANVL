@@ -196,4 +196,26 @@ export const ANVL_THEME_PRESETS: RawThemePreset[] = [
       accentForeground: '#F8F1EA',
     },
   },
+  {
+    key: 'theoath-modern-tech-forge',
+    label: 'Theoath Modern — Tech Forge',
+    appearance: 'dark',
+    description:
+      'Dark technical product laboratory: near-black surfaces, restrained champagne as the commerce accent, cold steel for technical lines and indexes. Art-directed for the Theoath Modern experience.',
+    recommendedFor: ['Theoath Modern landing', 'Technical product pages', 'Compression storytelling'],
+    palette: {
+      background: '#050607',
+      foreground: '#F1EFE9',
+      card: '#101315',
+      border: 'rgba(255, 255, 255, 0.11)',
+      mutedForeground: '#AAA79F',
+      primary: '#B49772',
+      primaryForeground: '#050607',
+      accent: '#8B9294',
+      accentForeground: '#0B0D0E',
+      success: '#5E8C6A',
+      warning: '#C7A24B',
+      destructive: '#C0584C',
+    },
+  },
 ]

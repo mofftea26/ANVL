@@ -19,13 +19,13 @@ import {
   Button,
   ColorSwatch,
   Container,
-  ProductCard,
   ProductGallery,
   QuantityStepper,
   SafeLink,
   Section,
   SizeSelector,
 } from '@/shared/components/ui'
+import { ExperienceProductCard } from '@/features/products/components/ExperienceProductCard'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { RevealOnScroll } from '@/shared/components/motion/RevealOnScroll'
 
@@ -343,7 +343,7 @@ function ProductPage() {
           <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((item) => (
               <RevealOnScroll key={item.id}>
-                <ProductCard product={item} />
+                <ExperienceProductCard product={item} />
               </RevealOnScroll>
             ))}
           </div>

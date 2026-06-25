@@ -88,7 +88,8 @@ Runtime wiring via `createRuntimeClients({ isServer })` in `src/app/config/runti
 ```
 src/features/admin/**          → admin UI + mutations only — NEVER imported by storefront
 src/features/cms/**            → shared CMS read models, theme/font/asset config, hooks — storefront-safe
-src/features/landingPages/**   → code-owned landing pages (registry, renderer, asset slots, TheOathLanding)
+src/features/experience/**     → centralized experience system (registry, provider, variant seam) — storefront-safe; the ONLY place experience variants are selected (no scattered key conditionals)
+src/features/landingPages/**   → code-owned landing pages (registry, renderer, asset slots, TheOathLanding, TheoathModern)
 src/features/marketing/**      → storefront home sections (home/: campaign cards, lookbook strip)
 src/features/story/**          → Story saga: schemas, clients, 3D shelf + book overlay
 src/features/products/**       → product catalog, commerce adapters, shop components
@@ -125,7 +126,8 @@ src/
     cart/            Zustand cart store + hooks
     checkout/        Forms, schemas, payment config + mock adapters
     cms/             Storefront-safe CMS reads: theme/font/asset config (cmsSiteConfig), landing content envelope, publication readers, navigation + layout defaults
-    landingPages/    Code-owned landing pages: registry, renderer, asset slots, pages/TheOathLanding (the single merged Drop 01 WebGL + GSAP + CMS-content cinematic)
+    experience/      Centralized experience system: registry (keyed 1:1 to active landing key), ExperienceProvider/useExperience, useExperienceVariant (structural variant seam), data-experience storefront wrapper, ExperiencePageTransition
+    landingPages/    Code-owned landing pages: registry, renderer, asset slots, pages/TheOathLanding + pages/TheoathModern (the dark technical product-laboratory experience: GSAP timeline + procedural Three.js TechForgeScene + CMS content)
     marketing/       Storefront home sections (home/: campaign cards, lookbook strip)
     products/        Commerce adapters (localStorage, seed, Shopify, Supabase), catalog, hooks
     seo/             SEO document schema + types
