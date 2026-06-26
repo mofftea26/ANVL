@@ -3,8 +3,10 @@ import { describe, expect, it } from 'vitest'
 import { OathTenets } from '../components/OathTenets'
 import { OATH_DEFAULT_CONTENT } from '../content/oathContent.defaults'
 
+const TENET_COUNT = OATH_DEFAULT_CONTENT.tenets.items.length
+
 describe('OathTenets', () => {
-  it('renders all four vows with titles and motion hooks', () => {
+  it('renders all characteristics with titles and motion hooks', () => {
     const { container } = render(
       <OathTenets tenets={OATH_DEFAULT_CONTENT.tenets} />,
     )
@@ -14,8 +16,8 @@ describe('OathTenets', () => {
     expect(section!.querySelector('[data-tenet-stage]')).not.toBeNull()
     expect(section!.querySelector('[data-tenet-track]')).not.toBeNull()
     expect(section!.querySelector('[data-tenet-eyebrow]')).not.toHaveTextContent('')
-    expect(section!.querySelectorAll('[data-tenet]')).toHaveLength(4)
-    expect(section!.querySelectorAll('[data-tenet-media]')).toHaveLength(4)
+    expect(section!.querySelectorAll('[data-tenet]')).toHaveLength(TENET_COUNT)
+    expect(section!.querySelectorAll('[data-tenet-media]')).toHaveLength(TENET_COUNT)
 
     for (const tenet of OATH_DEFAULT_CONTENT.tenets.items) {
       expect(screen.getByText(tenet.title)).toBeInTheDocument()
@@ -26,16 +28,16 @@ describe('OathTenets', () => {
     }
   })
 
-  it('exposes per-vow content hooks for editorial markup', () => {
+  it('exposes per-characteristic content hooks for editorial markup', () => {
     const { container } = render(
       <OathTenets tenets={OATH_DEFAULT_CONTENT.tenets} />,
     )
     const section = container.querySelector('[data-scene="tenets"]')!
 
-    expect(section.querySelectorAll('[data-tenet-index]')).toHaveLength(4)
-    expect(section.querySelectorAll('[data-tenet-title]')).toHaveLength(4)
-    expect(section.querySelectorAll('[data-tenet-line]')).toHaveLength(4)
-    expect(section.querySelectorAll('[data-tenet-marker]')).toHaveLength(4)
+    expect(section.querySelectorAll('[data-tenet-index]')).toHaveLength(TENET_COUNT)
+    expect(section.querySelectorAll('[data-tenet-title]')).toHaveLength(TENET_COUNT)
+    expect(section.querySelectorAll('[data-tenet-line]')).toHaveLength(TENET_COUNT)
+    expect(section.querySelectorAll('[data-tenet-marker]')).toHaveLength(TENET_COUNT)
   })
 
   it('is hidden below xl (desktop-only panorama)', () => {

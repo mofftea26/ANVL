@@ -51,7 +51,7 @@ describe('resolveOathContent', () => {
 
   it('overlays tenet copy on the default count when CMS stores a full row set', () => {
     const out = resolveOathContent({
-      tenets: { items: [{ title: 'NEW TITLE' }, {}, {}, {}] },
+      tenets: { items: [{ title: 'NEW TITLE' }, {}, {}, {}, {}] },
     })
     expect(out.tenets.items).toHaveLength(OATH_DEFAULT_CONTENT.tenets.items.length)
     expect(out.tenets.items[0].title).toBe('NEW TITLE')

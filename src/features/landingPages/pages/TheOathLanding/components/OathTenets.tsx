@@ -12,10 +12,11 @@ const TENET_PANEL_MASK =
   'linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 7%, rgba(0,0,0,0.92) 16%, #000 24%, #000 76%, rgba(0,0,0,0.92) 84%, rgba(0,0,0,0.35) 93%, rgba(0,0,0,0) 100%)'
 
 /**
- * Scene 03 — Four Tenets. Desktop only (hidden below xl): a pinned full-bleed
- * panorama — the four vows pan horizontally on scroll, each image cross-fading
- * at the seam into the next. CMS media per tenet (`tenets.items[].mediaId`); duotone
- * placeholder when unassigned.
+ * Scene 03 — Product Characteristics. Desktop only (hidden below xl): a pinned
+ * full-bleed panorama that showcases the Drop 01 piece one trait at a time — each
+ * characteristic pans horizontally into view and presents itself (caption rises,
+ * media settles), the feathered seams melting one into the next. CMS media per
+ * characteristic (`tenets.items[].mediaId`); duotone placeholder when unassigned.
  */
 export function OathTenets({
   tenets,
@@ -57,7 +58,7 @@ export function OathTenets({
                 />
               </div>
               <p className="anvl-display text-[0.52rem] leading-relaxed tracking-[0.28em] text-[var(--color-text-muted)]">
-                {items.length.toString().padStart(2, '0')} vows · scroll
+                {items.length.toString().padStart(2, '0')} traits · scroll
               </p>
             </div>
           </Container>

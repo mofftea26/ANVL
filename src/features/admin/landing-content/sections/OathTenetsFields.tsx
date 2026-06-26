@@ -58,8 +58,8 @@ export function OathTenetsFields({
 
   return (
     <ContentSection
-      title="Tenets"
-      hint="Flexible vows for the pinned horizontal panorama. Add, remove, or reorder; assign each image here (not in Assets)."
+      title="Product Characteristics"
+      hint="The traits showcased one-by-one in the pinned horizontal panorama. Add, remove, or reorder; assign each product image here (not in Assets)."
     >
       <AdminFormField label="Eyebrow" htmlFor="oath-tenets-eyebrow" className="sm:col-span-2">
         <AdminInput id="oath-tenets-eyebrow" placeholder={d.eyebrow} {...register('tenets.eyebrow')} />
@@ -76,7 +76,7 @@ export function OathTenetsFields({
             className="rounded-lg border border-[var(--color-line)] p-4 sm:col-span-2"
           >
             <legend className="anvl-display px-1 text-[10px] tracking-[0.28em] text-[var(--color-highlight-bright)]">
-              Vow {String(i + 1).padStart(2, '0')}
+              Trait {String(i + 1).padStart(2, '0')}
             </legend>
             <div className="grid gap-4 sm:grid-cols-3">
               <AdminFormField label="Title" htmlFor={`oath-tenet-${i}-title`}>
@@ -125,7 +125,7 @@ export function OathTenetsFields({
                   type="button"
                   className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-xs text-[var(--color-danger)] focus-ring"
                   onClick={() => setPendingAction({ type: 'remove', index: i })}
-                  aria-label={`Remove vow ${i + 1}`}
+                  aria-label={`Remove characteristic ${i + 1}`}
                 >
                   <Trash2 size={14} aria-hidden="true" />
                   Remove
@@ -144,7 +144,7 @@ export function OathTenetsFields({
             onClick={() => tenetArray.append(createBlankTenetFormValues())}
           >
             <Plus size={16} aria-hidden="true" />
-            Add vow
+            Add characteristic
           </button>
         </div>
       ) : null}
@@ -155,7 +155,7 @@ export function OathTenetsFields({
           onClose={() => setPickerIndex(null)}
           kind="image"
           allowClear
-          title="Choose vow image"
+          title="Choose characteristic image"
           selectedMediaId={watchedItems?.[pickerIndex]?.mediaId?.trim() ?? null}
           onSelect={(pick) => {
             setValue(`tenets.items.${pickerIndex}.mediaId`, pick?.id ?? '', {
@@ -169,25 +169,25 @@ export function OathTenetsFields({
       <AdminConfirmDialog
         open={confirmClear}
         onClose={() => setPendingAction(null)}
-        title="Clear vow image?"
+        title="Clear characteristic image?"
         confirmLabel="Clear image"
         confirmVariant="destructive"
         onConfirm={handleConfirmAction}
       >
-        Remove the assigned image from vow {String(pendingIndex + 1).padStart(2, '0')}? The
-        storefront will show the duotone placeholder until you assign a new image.
+        Remove the assigned image from characteristic {String(pendingIndex + 1).padStart(2, '0')}?
+        The storefront will show the duotone placeholder until you assign a new image.
       </AdminConfirmDialog>
 
       <AdminConfirmDialog
         open={confirmRemove}
         onClose={() => setPendingAction(null)}
-        title="Remove vow?"
-        confirmLabel="Remove vow"
+        title="Remove characteristic?"
+        confirmLabel="Remove characteristic"
         confirmVariant="destructive"
         onConfirm={handleConfirmAction}
       >
-        Delete vow {String(pendingIndex + 1).padStart(2, '0')} from the panorama? Save content
-        to publish the change to the storefront.
+        Delete characteristic {String(pendingIndex + 1).padStart(2, '0')} from the panorama? Save
+        content to publish the change to the storefront.
       </AdminConfirmDialog>
     </ContentSection>
   )

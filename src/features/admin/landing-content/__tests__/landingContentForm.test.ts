@@ -6,7 +6,7 @@ describe('landingContentForm conversions', () => {
     const values = toOathFormValues(undefined)
     expect(values.hero.headline).toBe('')
     expect(values.manifesto.linesText).toBe('')
-    expect(values.tenets.items).toHaveLength(4)
+    expect(values.tenets.items).toHaveLength(5)
     expect(values.tenets.items[0]).toEqual({ title: '', line: '', marker: '', mediaId: '' })
     expect(values.products.taglines).toEqual([])
   })
