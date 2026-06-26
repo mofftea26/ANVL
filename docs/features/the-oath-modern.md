@@ -81,9 +81,18 @@ composed static layout — content and the purchase path are never gated behind 
   ceremonial skin via the `[data-experience]` CSS layer + theme tokens + the
   ceremonial card. `/admin` is correctly excluded. The few hardcoded colors in
   routes/chrome are theme-neutral scrims/tints.
-- **M5 / M8–M10 (pending):** ceremonial campaign plates (Higgsfield → Supabase;
-  optional, fallbacks exist), CMS editor for the new chapter shape, optimization,
-  review + retire old + skill + report. See plan.
+- **M8 (done):** CMS editor swapped to the six-chapter shape (`OmContentFields` +
+  `omLandingContentForm`, schema-validated, blank→default; round-trip test).
+- **M9 (done):** optimization is built-in — lazy/gated WebGL (`vendor-three` off the
+  page chunk), capped DPR, coarse-device dust tier, visibility pause, the 296 KB GLB,
+  reduced-motion/no-WebGL static tier, skip link, semantic headings. Real Web Vitals
+  still need a browser run.
+- **M10 (done):** retired the old `pages/TheoathModern/` + `ProductCardTechForge` +
+  the TM admin form/fields + their tests (all were orphaned); created
+  `.claude/skills/the-oath-modern/SKILL.md`; docs updated.
+- **M5 (deferred, optional):** ceremonial campaign plates via Higgsfield → Supabase.
+  The page ships with intentional procedural/CSS fallbacks, so this is additive
+  polish, not a blocker. The hero **3D garment is already generated** (Titan Sweep GLB).
 
 > **Open visual-QA item:** GSAP/R3F are mocked in jsdom — the cinematic feel, the
 > GLB fidelity/orientation/scale, lighting, and the orbital landing on the Oath
@@ -91,11 +100,11 @@ composed static layout — content and the purchase path are never gated behind 
 > surface is the constants in `webgl/oathModernCamera.ts`, `HeroAltarScene.tsx`,
 > and `OathMonument.tsx`.
 
-## Known transitional state (until later milestones)
+## Notes
 
-- The retired `pages/TheoathModern/` + `ProductCardTechForge` stay on disk (orphaned
-  from the registry) until **M10**, when the `techForge → ceremonial` token rename
-  and deletion happen.
-- The `/admin/content` editor still edits the old TM content shape under the
-  `theoath-modern` key; that data is now inert (the new resolver ignores it). The
-  editor is migrated to the new chapter shape in **M8**.
+- The old `pages/TheoathModern/` + `ProductCardTechForge` + TM admin form/fields were
+  deleted at M10. The experience variant **token** is still named `techForge`
+  internally (it now resolves to the ceremonial components); renaming it to
+  `ceremonial` is a purely cosmetic-internal follow-up and was intentionally left to
+  avoid churn — it touches the `experience.types` unions, registry, `useExperienceVariant`,
+  and the card map.
