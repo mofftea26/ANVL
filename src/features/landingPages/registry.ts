@@ -50,21 +50,22 @@ export const landingPageRegistry: Record<string, LandingPageDefinition> = {
       'TheOathLanding',
     ),
   },
-  // Dark technical product-laboratory experience for Drop 01 — editorial hero
-  // staging the compression shirt, tech-knit lab, three-product collection,
-  // performance benefits, materials, and conversion. Pairs with the
-  // "Theoath Modern — Tech Forge" theme preset (selected separately in
-  // /admin/theme) and re-skins the storefront via the experience system.
+  // The Oath Modern — the continuous-3D ceremonial flagship for Drop 01. One
+  // evolving world told in six chapters (Threshold, Pressure, Formation, The
+  // Oath, The Armory, The Vow) over a persistent WebGL canvas with a single
+  // master scroll timeline. Pairs with the "Forged Ceremonial" theme preset
+  // (selected separately in /admin/theme) and re-skins the storefront via the
+  // experience system.
   'theoath-modern': {
     key: 'theoath-modern',
-    name: 'Theoath Modern',
+    name: 'The Oath Modern',
     description:
-      'Dark technical product-laboratory experience for Drop 01 — editorial, dimensional, premium.',
+      'Continuous-3D ceremonial flagship for Drop 01 — one evolving forged world, scroll-choreographed from threshold to vow.',
     previewImage: '/brand/the-oath-shape.svg',
     isAvailable: true,
     component: lazyPage(
-      () => import('./pages/TheoathModern'),
-      'TheoathModern',
+      () => import('./pages/OathModern'),
+      'OathModern',
     ),
   },
 }

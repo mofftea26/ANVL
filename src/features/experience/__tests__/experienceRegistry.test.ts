@@ -23,10 +23,10 @@ describe('experienceRegistry', () => {
     expect(oath.button).toBe('classic')
   })
 
-  it('marks Theoath Modern as the techForge experience', () => {
+  it('marks The Oath Modern as the techForge experience', () => {
     const modern = EXPERIENCES['theoath-modern']
     expect(modern.header).toBe('techForge')
-    expect(modern.recommendedThemeKey).toBe('theoath-modern-tech-forge')
+    expect(modern.recommendedThemeKey).toBe('forged-ceremonial')
   })
 
   it('resolves unknown / legacy / nullish keys to the default experience', () => {

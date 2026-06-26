@@ -218,4 +218,26 @@ export const ANVL_THEME_PRESETS: RawThemePreset[] = [
       destructive: '#C0584C',
     },
   },
+  {
+    key: 'forged-ceremonial',
+    label: 'Forged Ceremonial',
+    appearance: 'dark',
+    description:
+      'Carved, sworn, mythological. A forged near-black void, oxidized-iron hairlines, bone text, and a single warm wax-metal accent for the commerce vow. Art-directed for The Oath Modern.',
+    recommendedFor: ['The Oath Modern landing', 'Drop 01 ceremonial pages', 'Conversion'],
+    palette: {
+      background: '#07070A',
+      foreground: '#E7E4DF',
+      card: '#121316',
+      border: 'rgba(231, 228, 223, 0.12)',
+      mutedForeground: '#9C968C',
+      primary: '#B98A4E',
+      primaryForeground: '#07070A',
+      accent: '#6E5A48',
+      accentForeground: '#E7E4DF',
+      success: '#5E8C6A',
+      warning: '#C7A24B',
+      destructive: '#C0584C',
+    },
+  },
 ]

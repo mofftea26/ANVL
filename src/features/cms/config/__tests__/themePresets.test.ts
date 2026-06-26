@@ -61,11 +61,12 @@ const REQUIRED_VARS = [
 ]
 
 describe('ANVL theme presets', () => {
-  it('ships all eleven brand presets', () => {
-    expect(ANVL_PRESETS).toHaveLength(11)
+  it('ships all twelve brand presets', () => {
+    expect(ANVL_PRESETS).toHaveLength(12)
     expect(ANVL_PRESETS.map((p) => p.id)).toContain('oath-obsidian')
     expect(ANVL_PRESETS.map((p) => p.id)).toContain('bone-relic')
     expect(ANVL_PRESETS.map((p) => p.id)).toContain('theoath-modern-tech-forge')
+    expect(ANVL_PRESETS.map((p) => p.id)).toContain('forged-ceremonial')
   })
 
   it('marks Oath Obsidian as the recommended Drop 01 theme but not the live default', () => {
