@@ -27,7 +27,7 @@ export default function OathModernCanvas({
     const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
     return cores <= 4 || mem <= 4 ? 'reduced' : 'full'
   }, [])
-  const dustCount = tier === 'reduced' ? 60 : 130
+  const dustCount = tier === 'reduced' ? 36 : 80
   const dprMax = tier === 'reduced' ? 1.5 : 2
 
   // Pause the render loop while the tab is hidden (no wasted GPU/CPU).

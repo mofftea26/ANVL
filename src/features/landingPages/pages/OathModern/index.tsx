@@ -11,8 +11,13 @@ import { useOathModernPointerMotion } from './hooks/useOathModernPointerMotion'
 import { OathModernCanvasGate } from './webgl/OathModernCanvasGate'
 import { OmThreshold } from './components/OmThreshold'
 
-/** Bundled default 3D garment (Titan Sweep), served from `public/`. */
+/** Bundled defaults served from `public/` — all CMS-overridable via asset slots. */
 const OATH_MODERN_HERO_MODEL = '/models/oath-titan-sweep.glb'
+const OATH_MODERN_PLATES = {
+  heroBackground: '/images/oath-modern/hero-forge.webp',
+  oathBackdrop: '/images/oath-modern/oath-relief.webp',
+  atmospherePlate: '/images/oath-modern/atmosphere.webp',
+} as const
 import { OmPressure } from './components/OmPressure'
 import { OmFormation } from './components/OmFormation'
 import { OmOath } from './components/OmOath'
@@ -49,14 +54,14 @@ export function OathModern({
   )
 
   const heroProductPng = assets.heroProductPng ?? null
-  const heroBackground = assets.heroBackground ?? null
+  const heroBackground = assets.heroBackground ?? OATH_MODERN_PLATES.heroBackground
   // The Titan Sweep compression shirt as a 3D mesh (generated from the studio
   // concept render). CMS-overridable via the `heroProductModel` slot; the bundled
   // model is the designed default so the journey orbits the real garment.
   const heroProductModel = assets.heroProductModel ?? OATH_MODERN_HERO_MODEL
   const materialsMacro = assets.materialsMacro ?? null
-  const oathBackdrop = assets.oathBackdrop ?? null
-  const atmospherePlate = assets.atmospherePlate ?? null
+  const oathBackdrop = assets.oathBackdrop ?? OATH_MODERN_PLATES.oathBackdrop
+  const atmospherePlate = assets.atmospherePlate ?? OATH_MODERN_PLATES.atmospherePlate
 
   const root = useRef<HTMLDivElement | null>(null)
   const motionRef = useRef(createOathModernMotionState())

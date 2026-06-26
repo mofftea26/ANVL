@@ -23,21 +23,22 @@ export function buildOathModernReveals(q: LandingSelector): () => void {
     const lines = splits.flatMap((s) => s.units)
     const reveals = gsap.utils.toArray<HTMLElement>('[data-om-reveal]', section)
 
-    if (lines.length) gsap.set(lines, { yPercent: 110 })
-    if (reveals.length) gsap.set(reveals, { opacity: 0, y: 24 })
+    if (lines.length) gsap.set(lines, { yPercent: 115 })
+    if (reveals.length) gsap.set(reveals, { opacity: 0, y: 34 })
 
     const trigger = ScrollTrigger.create({
       trigger: section,
-      start: 'top 80%',
+      start: 'top 82%',
       once: true,
       onEnter: () => {
+        // Slow, weighted, expo-out — the forged-ceremonial cadence.
         const tl = gsap.timeline()
         if (lines.length) {
           tl.to(lines, {
             yPercent: 0,
-            duration: 0.9,
-            stagger: 0.08,
-            ease: 'power3.out',
+            duration: 1.25,
+            stagger: 0.13,
+            ease: 'expo.out',
           })
         }
         if (reveals.length) {
@@ -46,12 +47,12 @@ export function buildOathModernReveals(q: LandingSelector): () => void {
             {
               opacity: 1,
               y: 0,
-              duration: 0.7,
-              stagger: 0.07,
-              ease: 'power3.out',
+              duration: 1.05,
+              stagger: 0.1,
+              ease: 'expo.out',
               overwrite: true,
             },
-            lines.length ? '-=0.5' : 0,
+            lines.length ? '-=0.9' : 0,
           )
         }
       },
@@ -68,9 +69,9 @@ export function buildOathModernReveals(q: LandingSelector): () => void {
   for (const plate of q('[data-om-bleed]')) {
     const tween = gsap.fromTo(
       plate,
-      { yPercent: -6 },
+      { yPercent: -4 },
       {
-        yPercent: 6,
+        yPercent: 4,
         ease: 'none',
         scrollTrigger: {
           trigger: plate,

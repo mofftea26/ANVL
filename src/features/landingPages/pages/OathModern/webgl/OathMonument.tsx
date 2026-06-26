@@ -24,16 +24,16 @@ function useMonumentMotion(group: React.RefObject<THREE.Group | null>, motion: O
     const g = group.current
     if (!g) return
     const k = Math.min(1, delta * LERP)
-    // A slow ceremonial turn + a touch more rotation through the orbital phase.
-    const turnTarget = motion.progress * Math.PI * 0.6
-    g.rotation.y += (turnTarget - g.rotation.y) * k * 0.5 + delta * 0.04
-    // Pointer parallax tilt (subtle).
-    const tiltX = motion.pointerY * 0.12
-    const tiltZ = -motion.pointerX * 0.08
+    // Just a slow ceremonial idle turn — the CAMERA does the orbiting, so the
+    // object itself stays calm (double-rotation reads as busy/cheap).
+    g.rotation.y += delta * 0.05
+    // Pointer parallax tilt (very subtle).
+    const tiltX = motion.pointerY * 0.07
+    const tiltZ = -motion.pointerX * 0.05
     g.rotation.x += (tiltX - g.rotation.x) * k
     g.rotation.z += (tiltZ - g.rotation.z) * k
     // Rise a hair as the journey settles.
-    const yTarget = -0.1 + motion.progress * 0.2
+    const yTarget = -0.1 + motion.progress * 0.12
     g.position.y += (yTarget - g.position.y) * k
   })
 }
