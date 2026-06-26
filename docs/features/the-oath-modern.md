@@ -62,10 +62,34 @@ composed static layout — content and the purchase path are never gated behind 
 ## Build status
 
 - **M1 (done):** `forged-ceremonial` theme preset; experience config repointed;
-  SSR-first static page scaffold (six chapters) registered under `theoath-modern`;
-  asset slots; content pipeline + resolver test; `landing_pages` rename migration.
-- **M2–M10:** chrome, 3D canvas, scroll choreography, Higgsfield assets, ceremonial
-  product cards, route reskin, CMS editor, optimization, review + retire old. See plan.
+  SSR-first static page scaffold (six chapters); asset slots; content pipeline +
+  resolver test; `landing_pages` rename migration.
+- **M2 (done):** ceremonial `[data-experience]` CSS layer (wax-metal focus/selection,
+  carved geometry, forged nav glass/footer/scrollbar).
+- **M3 (done):** persistent gated lazy WebGL canvas — explicit low-metalness lighting
+  + cursor light + dust, motion-state bridge, pure/tested camera path.
+- **M4 (done):** one unpinned master ScrollTrigger → `progress` (no scroll-jacking)
+  driving the camera; per-chapter reveals + bleed parallax; static/reduced-motion path.
+- **Hero GLB (done):** real Titan Sweep compression shirt — Higgsfield
+  `multi_image_to_3d` from the concept render's front/back/side, compressed
+  10.6 MB → 296 KB (meshopt + WebP), bundled at `public/models/oath-titan-sweep.glb`,
+  default for `heroProductModel`.
+- **M6 (done):** ceremonial `ProductCardCeremonial` (forged frame, wax-metal edge
+  light, intentional forged fallback) via `ExperienceProductCard`; Armory staging.
+- **M7 (done — no per-route code):** `ExperienceProvider` wraps the whole storefront
+  in `__root.tsx`, so shop/PDP/cart/account/content/empty/error states inherit the
+  ceremonial skin via the `[data-experience]` CSS layer + theme tokens + the
+  ceremonial card. `/admin` is correctly excluded. The few hardcoded colors in
+  routes/chrome are theme-neutral scrims/tints.
+- **M5 / M8–M10 (pending):** ceremonial campaign plates (Higgsfield → Supabase;
+  optional, fallbacks exist), CMS editor for the new chapter shape, optimization,
+  review + retire old + skill + report. See plan.
+
+> **Open visual-QA item:** GSAP/R3F are mocked in jsdom — the cinematic feel, the
+> GLB fidelity/orientation/scale, lighting, and the orbital landing on the Oath
+> chapter are not browser-verified. Eyeball via `pnpm dev` at ≥1280; the tuning
+> surface is the constants in `webgl/oathModernCamera.ts`, `HeroAltarScene.tsx`,
+> and `OathMonument.tsx`.
 
 ## Known transitional state (until later milestones)
 
