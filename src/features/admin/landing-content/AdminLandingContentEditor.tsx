@@ -31,17 +31,17 @@ import {
   type OathContentFormValues,
 } from './landingContentForm'
 import {
-  toTmContentSlice,
-  toTmFormValues,
-  type TmContentFormValues,
-} from './tmLandingContentForm'
+  toOmContentSlice,
+  toOmFormValues,
+  type OmContentFormValues,
+} from './omLandingContentForm'
 import { OathHeroFields } from './sections/OathHeroFields'
 import { OathManifestoFields } from './sections/OathManifestoFields'
 import { OathTenetsFields } from './sections/OathTenetsFields'
 import { OathProductsFields } from './sections/OathProductsFields'
 import { OathFinaleFields } from './sections/OathFinaleFields'
 import { OathLandingAssetFields } from './sections/OathLandingAssetFields'
-import { TmContentFields } from './sections/TmContentFields'
+import { OmContentFields } from './sections/OmContentFields'
 
 const OATH_KEY = 'the-oath'
 const TM_KEY = 'theoath-modern'
@@ -88,19 +88,19 @@ export function AdminLandingContentEditor() {
   const oathForm = useForm<OathContentFormValues>({
     defaultValues: toOathFormValues(readLandingContentFromStorage()[OATH_KEY]),
   })
-  const tmForm = useForm<TmContentFormValues>({
-    defaultValues: toTmFormValues(readLandingContentFromStorage()[TM_KEY]),
+  const omForm = useForm<OmContentFormValues>({
+    defaultValues: toOmFormValues(readLandingContentFromStorage()[TM_KEY]),
   })
   const oathTaglines = useFieldArray({ control: oathForm.control, name: 'products.taglines' })
-  const tmTaglines = useFieldArray({ control: tmForm.control, name: 'collection.taglines' })
+  const omTaglines = useFieldArray({ control: omForm.control, name: 'collection.taglines' })
 
   const reloadFormForKey = useCallback(
     (pageKey: string) => {
       const stored = readLandingContentFromStorage()
       if (pageKey === OATH_KEY) oathForm.reset(toOathFormValues(stored[OATH_KEY]))
-      else if (pageKey === TM_KEY) tmForm.reset(toTmFormValues(stored[TM_KEY]))
+      else if (pageKey === TM_KEY) omForm.reset(toOmFormValues(stored[TM_KEY]))
     },
-    [oathForm, tmForm],
+    [oathForm, omForm],
   )
 
   useEffect(() => {
@@ -161,12 +161,12 @@ export function AdminLandingContentEditor() {
       )
     }
     if (selectedKey === TM_KEY) {
-      return tmForm.handleSubmit((values) =>
-        void persist({ key: TM_KEY, value: toTmContentSlice(values) }),
+      return omForm.handleSubmit((values) =>
+        void persist({ key: TM_KEY, value: toOmContentSlice(values) }),
       )
     }
     return () => void persist()
-  }, [selectedKey, oathForm, tmForm, persist])
+  }, [selectedKey, oathForm, omForm, persist])
 
   const toolbar = useMemo(
     () => (
@@ -197,7 +197,7 @@ export function AdminLandingContentEditor() {
   const scenes = isOath
     ? ['1 — Hero', '2 — Manifesto', '3 — Tenets', '4 — Products', '5 — Finale']
     : isTm
-      ? ['1 — Hero', '2 — Tech Knit', '3 — Collection', '4 — Benefits', '5 — Materials', '6 — Conversion']
+      ? ['I — Threshold', 'II — Pressure', 'III — Formation', 'IV — The Oath', 'V — The Armory', 'VI — The Vow']
       : []
 
   const helpRail = (
@@ -293,7 +293,7 @@ export function AdminLandingContentEditor() {
             }}
             className="space-y-6"
           >
-            <TmContentFields register={tmForm.register} taglines={tmTaglines} />
+            <OmContentFields register={omForm.register} taglines={omTaglines} />
           </form>
         ) : (
           <div className="space-y-6">
