@@ -6,8 +6,11 @@ describe('landingContentForm conversions', () => {
     const values = toOathFormValues(undefined)
     expect(values.hero.headline).toBe('')
     expect(values.manifesto.linesText).toBe('')
-    expect(values.tenets.items).toHaveLength(5)
-    expect(values.tenets.items[0]).toEqual({ title: '', line: '', marker: '', mediaId: '' })
+    expect(values.tenets.items).toHaveLength(3)
+    expect(values.tenets.items[0].title).toBe('')
+    expect(values.tenets.items[0].subtitle).toBe('')
+    expect(values.tenets.items[0].modelId).toBe('')
+    expect(values.tenets.items[0].hotspots.length).toBeGreaterThan(0)
     expect(values.products.taglines).toEqual([])
   })
 
@@ -46,11 +49,10 @@ describe('landingContentForm conversions', () => {
 
   it('persists flexible tenet count and media ids', () => {
     const values = toOathFormValues(undefined)
-    values.tenets.items = [
-      { title: 'One', line: '', marker: '', mediaId: 'img-1' },
-      { title: 'Two', line: '', marker: '', mediaId: '' },
-      { title: 'Three', line: '', marker: '', mediaId: '' },
-    ]
+    values.tenets.items[0].title = 'One'
+    values.tenets.items[0].mediaId = 'img-1'
+    values.tenets.items[1].title = 'Two'
+    values.tenets.items[2].title = 'Three'
     const slice = toOathContentSlice(values)
     expect(slice.tenets?.items).toHaveLength(3)
     expect(slice.tenets?.items?.[0]).toEqual({ title: 'One', mediaId: 'img-1' })

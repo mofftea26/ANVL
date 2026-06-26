@@ -45,23 +45,27 @@ export function buildOathTenets(
   // The horizontal pan (the kept mechanic).
   tl.to(track, { xPercent: -100 * steps, ease: 'none', duration: 1 }, 0)
 
-  // Per-panel cinematic presentation, positioned at each panel's centre time.
+  // Per-panel cinematic presentation, positioned at each panel's centre time:
+  // the product settles, the title block rises, and the annotation points draw in
+  // (dot → leader line → card), so each piece "presents itself" as it arrives.
   panels.forEach((panel, i) => {
     const caption = [
       panel.querySelector('[data-tenet-marker]'),
       panel.querySelector('[data-tenet-title]'),
-      panel.querySelector('[data-tenet-line]'),
+      panel.querySelector('[data-tenet-sub]'),
     ].filter((el): el is HTMLElement => el !== null)
     const index = panel.querySelector('[data-tenet-index]') as HTMLElement | null
     const media = panel.querySelector('[data-tenet-media]') as HTMLElement | null
+    const dots = gsap.utils.toArray<HTMLElement>('[data-hotspot-dot]', panel)
+    const linesEls = gsap.utils.toArray<HTMLElement>('[data-hotspot-line]', panel)
+    const cards = gsap.utils.toArray<HTMLElement>('[data-hotspot-card]', panel)
 
     const center = i / steps
-    // Begin presenting a touch before the panel is dead-centre.
     const inAt = Math.max(0, center - 0.16)
 
     if (media) {
-      gsap.set(media, { scale: 1.12, transformOrigin: '50% 50%' })
-      tl.to(media, { scale: 1, ease: 'power2.out', duration: 0.34 }, inAt)
+      gsap.set(media, { scale: 1.1, opacity: 0, transformOrigin: '50% 50%' })
+      tl.to(media, { scale: 1, opacity: 1, ease: 'power2.out', duration: 0.4 }, inAt)
     }
     if (index) {
       gsap.set(index, { xPercent: -8, opacity: 0 })
@@ -71,9 +75,23 @@ export function buildOathTenets(
       gsap.set(caption, { y: 34, opacity: 0 })
       tl.to(
         caption,
-        { y: 0, opacity: 1, ease: 'expo.out', duration: 0.26, stagger: 0.05 },
-        inAt + 0.04,
+        { y: 0, opacity: 1, ease: 'expo.out', duration: 0.3, stagger: 0.06 },
+        inAt + 0.06,
       )
+    }
+    // Annotation points draw in after the product has resolved.
+    const hsAt = inAt + 0.18
+    if (dots.length) {
+      gsap.set(dots, { scale: 0, transformOrigin: '50% 50%' })
+      tl.to(dots, { scale: 1, ease: 'back.out(2)', duration: 0.26, stagger: 0.08 }, hsAt)
+    }
+    if (linesEls.length) {
+      gsap.set(linesEls, { scaleY: 0, transformOrigin: '50% 0%' })
+      tl.to(linesEls, { scaleY: 1, ease: 'power2.out', duration: 0.22, stagger: 0.08 }, hsAt + 0.06)
+    }
+    if (cards.length) {
+      gsap.set(cards, { y: 12, opacity: 0 })
+      tl.to(cards, { y: 0, opacity: 1, ease: 'expo.out', duration: 0.3, stagger: 0.08 }, hsAt + 0.14)
     }
   })
 }

@@ -4,6 +4,7 @@ import type { ResolvedDropAssets } from '@/features/cms/assets/resolvePublishedA
 import {
   oathLandingContentSchema,
   type OathCta,
+  type OathHotspot,
   type OathLandingContent,
   type OathTenet,
 } from './oathContent.schema'
@@ -11,6 +12,7 @@ import {
   OATH_DEFAULT_CONTENT,
   type OathResolvedContent,
   type OathResolvedCta,
+  type OathResolvedHotspot,
   type OathResolvedTenet,
 } from './oathContent.defaults'
 
@@ -51,6 +53,30 @@ function resolveMediaId(
   return objectPath.startsWith('/') ? objectPath : `/${objectPath}`
 }
 
+function num(value: number | undefined, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function resolveHotspots(
+  cms: OathHotspot[] | undefined,
+  fallback: OathResolvedHotspot[],
+  mediaIndex: MediaIndexEntry[] | undefined,
+): OathResolvedHotspot[] {
+  if (!cms || cms.length === 0) return fallback.map((h) => ({ ...h }))
+  return cms.map((o, i) => {
+    const def = fallback[i] ?? fallback[fallback.length - 1]
+    const bubbleUrl = resolveMediaId(o.bubbleId, mediaIndex) ?? def?.bubbleUrl
+    return {
+      id: def?.id ?? `hotspot-${i + 1}`,
+      label: text(o.label, def?.label ?? ''),
+      description: text(o.description, def?.description ?? ''),
+      x: num(o.x, def?.x ?? 50),
+      y: num(o.y, def?.y ?? 50),
+      ...(bubbleUrl ? { bubbleUrl } : {}),
+    }
+  })
+}
+
 function legacyTenetMediaUrl(
   position: number,
   legacyAssets: ResolvedDropAssets | undefined,
@@ -66,12 +92,14 @@ function defaultTenetAt(index: number, fallback: OathResolvedTenet[]): OathResol
   if (def) return def
   const tones = fallback.map((t) => t.tone)
   return {
-    id: `tenet-${index + 1}`,
+    id: `product-${index + 1}`,
     index: String(index + 1).padStart(2, '0'),
-    title: `Vow ${index + 1}`,
+    title: `Piece ${index + 1}`,
+    subtitle: '',
     line: '',
-    marker: 'Vow',
+    marker: 'Piece',
     tone: tones[index % tones.length] ?? '#15171a',
+    hotspots: [],
   }
 }
 
@@ -110,47 +138,37 @@ function tenets(
 
   const cmsOwnsRows = true
 
-  if (cmsItems.length === fallback.length) {
-    return fallback.map((def, i) => {
-      const o = cmsItems[i]
-      const mediaUrl = resolveTenetMediaUrl(
-        o,
-        i + 1,
-        mediaIndex,
-        legacyAssets,
-        cmsOwnsRows,
-      )
-      return {
-        id: def.id,
-        index: def.index,
-        title: text(o?.title, def.title),
-        line: text(o?.line, def.line),
-        marker: text(o?.marker, def.marker),
-        tone: def.tone,
-        ...(mediaUrl ? { mediaUrl } : {}),
-      }
-    })
-  }
-
-  return cmsItems.map((o, i) => {
-    const def = defaultTenetAt(i, fallback)
-    const mediaUrl = resolveTenetMediaUrl(
-      o,
-      i + 1,
-      mediaIndex,
-      legacyAssets,
-      cmsOwnsRows,
-    )
+  const build = (
+    o: OathTenet | undefined,
+    def: OathResolvedTenet,
+    position: number,
+    indexLabel: string,
+  ): OathResolvedTenet => {
+    const mediaUrl = resolveTenetMediaUrl(o, position, mediaIndex, legacyAssets, cmsOwnsRows)
+    const modelUrl = resolveMediaId(o?.modelId, mediaIndex) ?? def.modelUrl
+    const bgUrl = resolveMediaId(o?.bgId, mediaIndex) ?? def.bgUrl
     return {
       id: def.id,
-      index: String(i + 1).padStart(2, '0'),
+      index: indexLabel,
       title: text(o?.title, def.title),
+      subtitle: text(o?.subtitle, def.subtitle),
       line: text(o?.line, def.line),
       marker: text(o?.marker, def.marker),
       tone: def.tone,
+      hotspots: resolveHotspots(o?.hotspots, def.hotspots, mediaIndex),
       ...(mediaUrl ? { mediaUrl } : {}),
+      ...(modelUrl ? { modelUrl } : {}),
+      ...(bgUrl ? { bgUrl } : {}),
     }
-  })
+  }
+
+  if (cmsItems.length === fallback.length) {
+    return fallback.map((def, i) => build(cmsItems[i], def, i + 1, def.index))
+  }
+
+  return cmsItems.map((o, i) =>
+    build(o, defaultTenetAt(i, fallback), i + 1, String(i + 1).padStart(2, '0')),
+  )
 }
 
 function taglines(

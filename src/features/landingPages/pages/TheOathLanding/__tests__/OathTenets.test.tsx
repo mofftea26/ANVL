@@ -21,10 +21,9 @@ describe('OathTenets', () => {
 
     for (const tenet of OATH_DEFAULT_CONTENT.tenets.items) {
       expect(screen.getByText(tenet.title)).toBeInTheDocument()
-      expect(section!.querySelector(`[data-tenet="${tenet.id}"]`)).not.toBeNull()
-      expect(
-        section!.querySelector(`[data-tenet-media="${tenet.id}"]`),
-      ).not.toBeNull()
+      const panel = section!.querySelector(`[data-tenet="${tenet.id}"]`)
+      expect(panel).not.toBeNull()
+      expect(panel!.querySelector('[data-tenet-media]')).not.toBeNull()
     }
   })
 
@@ -36,8 +35,10 @@ describe('OathTenets', () => {
 
     expect(section.querySelectorAll('[data-tenet-index]')).toHaveLength(TENET_COUNT)
     expect(section.querySelectorAll('[data-tenet-title]')).toHaveLength(TENET_COUNT)
-    expect(section.querySelectorAll('[data-tenet-line]')).toHaveLength(TENET_COUNT)
+    expect(section.querySelectorAll('[data-tenet-sub]')).toHaveLength(TENET_COUNT)
     expect(section.querySelectorAll('[data-tenet-marker]')).toHaveLength(TENET_COUNT)
+    // Each product carries its annotation points.
+    expect(section.querySelectorAll('[data-hotspot]').length).toBeGreaterThanOrEqual(TENET_COUNT)
   })
 
   it('is hidden below xl (desktop-only panorama)', () => {

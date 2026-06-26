@@ -18,12 +18,31 @@ export const oathCtaSchema = z.strictObject({
   href: trimmedOptional,
 })
 
+/** An annotated point on the product (0–100 % over the viewer). */
+export const oathHotspotSchema = z.strictObject({
+  label: trimmedOptional,
+  description: trimmedOptional,
+  /** CMS media id of the small material/tech "bubble" image. */
+  bubbleId: trimmedOptional,
+  x: z.number().min(0).max(100).optional(),
+  y: z.number().min(0).max(100).optional(),
+})
+
 export const oathTenetSchema = z.strictObject({
+  /** Product name. */
   title: trimmedOptional,
+  /** Warrior-voiced one-liner under the title. */
+  subtitle: trimmedOptional,
   line: trimmedOptional,
   marker: trimmedOptional,
-  /** CMS media library id — assigned from the Landing Content editor only. */
+  /** CMS media id of the product still (fallback when no GLB). */
   mediaId: trimmedOptional,
+  /** CMS media id of the product 3D model (.glb) the camera shows. */
+  modelId: trimmedOptional,
+  /** CMS media id of the smokey abstract background for this slide. */
+  bgId: trimmedOptional,
+  /** Annotated points on the product (material / tech callouts). */
+  hotspots: z.array(oathHotspotSchema).max(4).optional(),
 })
 
 export const oathLandingContentSchema = z.strictObject({
@@ -73,3 +92,4 @@ export const oathLandingContentSchema = z.strictObject({
 export type OathLandingContent = z.infer<typeof oathLandingContentSchema>
 export type OathCta = z.infer<typeof oathCtaSchema>
 export type OathTenet = z.infer<typeof oathTenetSchema>
+export type OathHotspot = z.infer<typeof oathHotspotSchema>

@@ -106,8 +106,10 @@ export function oathHeroRevealMedia(): string | undefined {
 
 /* — Scene media ———————————————————————————————————————————————— */
 
+export const DEFAULT_MANIFESTO_MEDIA = '/landing/the-oath/manifesto.webp'
+
 export function oathManifestoMedia(): string | undefined {
-  return cmsAsset('manifestoMedia')
+  return cmsAsset('manifestoMedia') ?? DEFAULT_MANIFESTO_MEDIA
 }
 
 /** Tenet media by resolved URL from landing content; undefined → duotone placeholder. */

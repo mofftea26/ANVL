@@ -12,16 +12,36 @@ export interface OathResolvedCta {
   href: string
 }
 
+export interface OathResolvedHotspot {
+  id: string
+  label: string
+  description: string
+  /** % position of the point over the product viewer. */
+  x: number
+  y: number
+  /** Resolved material/tech "bubble" image URL when assigned. */
+  bubbleUrl?: string
+}
+
 export interface OathResolvedTenet {
   id: string
   index: string
+  /** Product name. */
   title: string
+  /** Warrior-voiced one-liner. */
+  subtitle: string
   line: string
   marker: string
-  /** Duotone placeholder base for the tenet media plane. */
+  /** Duotone placeholder base for the product viewer. */
   tone: string
-  /** Resolved public URL when a CMS media id is assigned. */
+  /** Resolved product still URL (fallback when no GLB). */
   mediaUrl?: string
+  /** Resolved product 3D model (.glb) URL. */
+  modelUrl?: string
+  /** Resolved smokey background URL. */
+  bgUrl?: string
+  /** Annotated points on the product. */
+  hotspots: OathResolvedHotspot[]
 }
 
 export interface OathResolvedProductCopy {
@@ -85,52 +105,52 @@ export const OATH_DEFAULT_CONTENT: OathResolvedContent = {
     ],
   },
   tenets: {
-    eyebrow: 'Engineered To Endure',
+    eyebrow: 'The Arsenal',
     items: [
       {
-        id: 'seamless',
+        id: 'oversized',
         index: '01',
-        title: 'Seamless Construction',
-        line: 'Knit in one continuous pass — zero seams to chafe or fail under load.',
-        marker: 'Seamless',
-        tone: '#15171a',
-        mediaUrl: '/landing/the-oath/char-seamless.webp',
+        title: 'The Oversized Tee',
+        subtitle: 'Worn between the battles — presence before the first rep is struck.',
+        line: 'Heavy streetwear weight, built for the walk in and the work after.',
+        marker: 'Armour',
+        tone: '#1a1c1f',
+        bgUrl: '/landing/the-oath/product-bg-1.webp',
+        hotspots: [
+          { id: 'weight', label: 'Heavyweight Cotton', description: '240 GSM brushed cotton — it hangs like armour and outlasts the season.', x: 38, y: 30 },
+          { id: 'shoulder', label: 'Drop-Shoulder Cut', description: 'A dropped seam frames the delts and reads broad from across the floor.', x: 64, y: 44 },
+          { id: 'collar', label: 'Reinforced Collar', description: 'Double-stitched ribbed neck that holds its shape through every wash.', x: 50, y: 18 },
+        ],
       },
       {
-        id: 'chest',
+        id: 'stringer',
         index: '02',
-        title: 'Chest Lift Arc',
-        line: 'A curved under-pec support band lifts and rounds the chest.',
-        marker: 'Chest',
-        tone: '#1d1f21',
-        mediaUrl: '/landing/the-oath/char-chest.webp',
+        title: 'The Stringer',
+        subtitle: 'Bare for the iron — nothing left between you and the work.',
+        line: 'Old-school cut, built for range, heat, and the heaviest sets.',
+        marker: 'Bare',
+        tone: '#202327',
+        bgUrl: '/landing/the-oath/product-bg-2.webp',
+        hotspots: [
+          { id: 'armhole', label: 'Deep Armhole', description: 'A low-cut arm opens the lats and frees the shoulder through full range.', x: 36, y: 38 },
+          { id: 'cut', label: 'Old-School Cut', description: 'Tapered body that sits close to the chest and falls clean off the lats.', x: 58, y: 56 },
+          { id: 'knit', label: 'Breathable Knit', description: 'Open ribbed knit dumps heat fast under the hardest training.', x: 48, y: 24 },
+        ],
       },
       {
-        id: 'yoke',
+        id: 'compression',
         index: '03',
-        title: 'Broad Yoke Structure',
-        line: 'Engineered shoulder panels widen the frame and pop the upper back.',
-        marker: 'Yoke',
-        tone: '#101113',
-        mediaUrl: '/landing/the-oath/char-yoke.webp',
-      },
-      {
-        id: 'lats',
-        index: '04',
-        title: 'Lat Sweep Panels',
-        line: 'Angled knit channels guide the eye inward to a sharper V-taper.',
-        marker: 'Lats',
-        tone: '#121417',
-        mediaUrl: '/landing/the-oath/char-lats.webp',
-      },
-      {
-        id: 'core',
-        index: '05',
-        title: 'Sculpted Core Support',
-        line: 'Targeted compression tightens the waist and holds posture under fatigue.',
-        marker: 'Core',
-        tone: '#0d0e10',
-        mediaUrl: '/landing/the-oath/char-core.webp',
+        title: 'The Compression Tee',
+        subtitle: 'A second skin, sworn to the muscle it covers.',
+        line: 'Dense compression and sculpted structure, built to move under pressure.',
+        marker: 'Skin',
+        tone: '#141619',
+        bgUrl: '/landing/the-oath/product-bg-3.webp',
+        hotspots: [
+          { id: 'seamless', label: 'Seamless Compression', description: 'Knit in one pass — graduated support mapped to the muscle that needs it.', x: 44, y: 30 },
+          { id: 'panels', label: 'Sculpted Panels', description: 'Engineered yoke and lat channels carve a sharper, wider V-taper.', x: 62, y: 48 },
+          { id: 'moisture', label: 'Moisture Channels', description: 'Ventilated zones wick sweat and hold the fabric off the skin.', x: 40, y: 66 },
+        ],
       },
     ],
   },

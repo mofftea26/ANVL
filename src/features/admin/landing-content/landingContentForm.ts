@@ -13,11 +13,26 @@ import { OATH_DEFAULT_CONTENT } from '@/features/landingPages/pages/TheOathLandi
  * values ⇄ the Zod-validated CMS slice.
  */
 
+export interface OathHotspotFormValues {
+  label: string
+  description: string
+  bubbleId: string
+  /** % position over the product viewer, as text. */
+  x: string
+  y: string
+}
+
 export interface OathTenetFormValues {
   title: string
+  subtitle: string
   line: string
   marker: string
   mediaId: string
+  /** Product 3D model (.glb) media id. */
+  modelId: string
+  /** Smokey background media id. */
+  bgId: string
+  hotspots: OathHotspotFormValues[]
 }
 
 export interface OathTaglineFormValues {
@@ -69,12 +84,22 @@ function s(value: string | undefined): string {
   return value ?? ''
 }
 
+const HOTSPOTS_PER_PRODUCT = 3
+
+function blankHotspot(): OathHotspotFormValues {
+  return { label: '', description: '', bubbleId: '', x: '', y: '' }
+}
+
 function defaultTenetFormValues(): OathTenetFormValues {
   return {
     title: '',
+    subtitle: '',
     line: '',
     marker: '',
     mediaId: '',
+    modelId: '',
+    bgId: '',
+    hotspots: Array.from({ length: HOTSPOTS_PER_PRODUCT }, blankHotspot),
   }
 }
 
@@ -103,12 +128,29 @@ export function toOathFormValues(raw: unknown): OathContentFormValues {
     },
     tenets: {
       eyebrow: s(cms.tenets?.eyebrow),
-      items: Array.from({ length: tenetCount }, (_, i) => ({
-        title: s(cmsItems?.[i]?.title),
-        line: s(cmsItems?.[i]?.line),
-        marker: s(cmsItems?.[i]?.marker),
-        mediaId: s(cmsItems?.[i]?.mediaId),
-      })),
+      items: Array.from({ length: tenetCount }, (_, i) => {
+        const item = cmsItems?.[i]
+        const hsCount = Math.max(item?.hotspots?.length ?? 0, HOTSPOTS_PER_PRODUCT)
+        return {
+          title: s(item?.title),
+          subtitle: s(item?.subtitle),
+          line: s(item?.line),
+          marker: s(item?.marker),
+          mediaId: s(item?.mediaId),
+          modelId: s(item?.modelId),
+          bgId: s(item?.bgId),
+          hotspots: Array.from({ length: hsCount }, (_, h) => {
+            const hs = item?.hotspots?.[h]
+            return {
+              label: s(hs?.label),
+              description: s(hs?.description),
+              bubbleId: s(hs?.bubbleId),
+              x: typeof hs?.x === 'number' ? String(hs.x) : '',
+              y: typeof hs?.y === 'number' ? String(hs.y) : '',
+            }
+          }),
+        }
+      }),
     },
     products: {
       eyebrow: s(cms.products?.eyebrow),
@@ -172,6 +214,28 @@ function tenetMediaIdField(
   return undefined
 }
 
+function keepNum(value: string): number | undefined {
+  const t = value.trim()
+  if (t.length === 0) return undefined
+  const n = Number(t)
+  return Number.isFinite(n) ? n : undefined
+}
+
+function hotspotSliceItems(hotspots: OathHotspotFormValues[]) {
+  const items = hotspots
+    .map((h) =>
+      prune({
+        label: keep(h.label),
+        description: keep(h.description),
+        bubbleId: keep(h.bubbleId),
+        x: keepNum(h.x),
+        y: keepNum(h.y),
+      }),
+    )
+    .filter((h): h is NonNullable<typeof h> => h !== undefined)
+  return items.length > 0 ? items : undefined
+}
+
 function tenetSliceItem(
   t: OathTenetFormValues,
   previousMediaId: string | undefined,
@@ -179,9 +243,13 @@ function tenetSliceItem(
   const mediaId = tenetMediaIdField(t.mediaId, previousMediaId)
   const item = prune({
     title: keep(t.title),
+    subtitle: keep(t.subtitle),
     line: keep(t.line),
     marker: keep(t.marker),
     mediaId,
+    modelId: keep(t.modelId),
+    bgId: keep(t.bgId),
+    hotspots: hotspotSliceItems(t.hotspots),
   })
   if (item) return item
   if (mediaId === '') return { mediaId: '' }
