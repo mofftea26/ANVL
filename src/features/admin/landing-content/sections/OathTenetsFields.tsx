@@ -168,7 +168,7 @@ export function OathTenetsFields({
         <MediaLibraryPickerModal
           open
           onClose={() => setPick(null)}
-          kind="image"
+          kind={pick.field === 'modelId' ? 'model' : 'image'}
           allowClear
           title={pick.field === 'modelId' ? 'Choose product model (GLB)' : 'Choose image'}
           selectedMediaId={selectedId(pick) || null}

@@ -16,7 +16,12 @@ export const MEDIA_LIBRARY_MIME_FILTERS: ReadonlyArray<{
 function matchesKind(mime: string, kind: MediaPickerKind): boolean {
   if (kind === 'image') return mime.startsWith('image/')
   if (kind === 'video') return mime.startsWith('video/')
-  return mime.startsWith('image/') || mime.startsWith('video/')
+  if (kind === 'model') return mime.startsWith('model/') || mime.includes('gltf')
+  return (
+    mime.startsWith('image/') ||
+    mime.startsWith('video/') ||
+    mime.startsWith('model/')
+  )
 }
 
 /** Which mime filter chips are shown for a slot-level kind restriction. */
@@ -28,6 +33,9 @@ export function mediaLibraryMimeFiltersForKind(
   }
   if (kind === 'video') {
     return MEDIA_LIBRARY_MIME_FILTERS.filter((f) => f.id === 'video')
+  }
+  if (kind === 'model') {
+    return MEDIA_LIBRARY_MIME_FILTERS.filter((f) => f.id === 'all')
   }
   return MEDIA_LIBRARY_MIME_FILTERS
 }

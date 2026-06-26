@@ -34,6 +34,19 @@ function extensionFor(file: File): string {
   return 'bin'
 }
 
+/**
+ * Resolve the content-type to upload + store. Browsers frequently report an empty
+ * `file.type` for `.glb`/`.gltf`, so infer model mimes from the extension —
+ * otherwise the bucket's allowed-mime check rejects the upload.
+ */
+export function resolveUploadMimeType(file: File): string {
+  if (file.type) return file.type
+  const name = file.name.toLowerCase()
+  if (name.endsWith('.glb')) return 'model/gltf-binary'
+  if (name.endsWith('.gltf')) return 'model/gltf+json'
+  return 'application/octet-stream'
+}
+
 /** Object path: `library/{stem}-{epoch}.{ext}` */
 export function formatCmsLibraryMediaObjectPath(file: File): string {
   const ext = extensionFor(file)
@@ -289,13 +302,14 @@ export async function uploadLibraryMediaFile(
   }
 
   const objectPath = formatCmsLibraryMediaObjectPath(file)
+  const contentType = resolveUploadMimeType(file)
 
   const { error: uploadErr } = await client.storage
     .from(CMS_MEDIA_BUCKET)
     .upload(objectPath, file, {
       cacheControl: '31536000',
       upsert: false,
-      contentType: file.type || undefined,
+      contentType,
     })
 
   if (uploadErr) return { ok: false, error: uploadErr.message }
@@ -310,7 +324,7 @@ export async function uploadLibraryMediaFile(
     client,
     storagePath: objectPath,
     filename: file.name,
-    mime: file.type || 'application/octet-stream',
+    mime: contentType,
     byteSize: file.size,
     width: dims.width,
     height: dims.height,

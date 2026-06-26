@@ -11,7 +11,8 @@ import { AdminButton } from '@/features/admin/components/AdminButton'
 import { cn } from '@/shared/lib/cn'
 import { useMediaAssetsMutations } from './useMediaAssetsQuery'
 
-const ACCEPT = 'image/jpeg,image/png,image/webp,image/svg+xml,image/gif,video/mp4,video/webm'
+const ACCEPT =
+  'image/jpeg,image/png,image/webp,image/svg+xml,image/gif,video/mp4,video/webm,model/gltf-binary,model/gltf+json,.glb,.gltf'
 
 type MediaUploadZoneProps = {
   disabled?: boolean
@@ -96,7 +97,7 @@ export function MediaUploadZone({ disabled }: MediaUploadZoneProps) {
           {busy ? 'Uploading…' : 'Upload files'}
         </AdminButton>
         <span className="text-xs text-[var(--color-text-muted)]">
-          Drag images or videos here — max 50 MB per file.
+          Drag images, videos, or 3D models (GLB/GLTF) here — max 50 MB per file.
         </span>
       </div>
     </div>

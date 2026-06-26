@@ -29,7 +29,7 @@ import { MediaLibraryPickerModal } from '@/features/admin/media/MediaLibraryPick
 const DEFAULT_MAX_BYTES = 2_500_000
 const DEFAULT_VIDEO_MAX_BYTES = 8_000_000
 
-export type MediaPickerKind = 'image' | 'video' | 'any'
+export type MediaPickerKind = 'image' | 'video' | 'model' | 'any'
 
 type MediaPickerFieldProps = {
   label: string
@@ -101,6 +101,8 @@ function acceptFor(kind: MediaPickerKind): string {
       return 'image/*,.svg'
     case 'video':
       return 'video/*'
+    case 'model':
+      return '.glb,.gltf,model/gltf-binary,model/gltf+json'
     case 'any':
     default:
       return 'image/*,video/*,.svg'
@@ -115,11 +117,16 @@ function validateFile(
   const isImg =
     file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.svg')
   const isVid = file.type.startsWith('video/')
+  const isModel =
+    file.type.startsWith('model/') || /\.(?:glb|gltf)$/i.test(file.name)
   if (kind === 'image' && !isImg) {
     return 'Choose an image file (PNG, JPG, WebP, SVG, …).'
   }
   if (kind === 'video' && !isVid) {
     return 'Choose a video file (MP4, WebM, …).'
+  }
+  if (kind === 'model' && !isModel) {
+    return 'Choose a 3D model file (GLB or GLTF).'
   }
   if (kind === 'any' && !isImg && !isVid) {
     return 'Choose an image or video file.'
