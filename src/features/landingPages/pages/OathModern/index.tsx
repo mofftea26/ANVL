@@ -1,10 +1,13 @@
 import { useMemo, useRef } from 'react'
+import { useLandingEntry } from '@/features/landingPages/LandingEntryContext'
 import type { LandingPageComponentProps } from '../../types'
 import { resolveOathModernContent } from './content/resolveOathModernContent'
 import {
   OathModernMotionContext,
   createOathModernMotionState,
 } from './motion/oathModernMotionState'
+import { useOathModernTimeline } from './hooks/useOathModernTimeline'
+import { useOathModernPointerMotion } from './hooks/useOathModernPointerMotion'
 import { OathModernCanvasGate } from './webgl/OathModernCanvasGate'
 import { OmThreshold } from './components/OmThreshold'
 import { OmPressure } from './components/OmPressure'
@@ -51,6 +54,9 @@ export function OathModern({
 
   const root = useRef<HTMLDivElement | null>(null)
   const motionRef = useRef(createOathModernMotionState())
+  const { homeEntryComplete } = useLandingEntry()
+  useOathModernTimeline(root, homeEntryComplete, motionRef.current)
+  useOathModernPointerMotion(root, motionRef.current)
 
   return (
     <OathModernMotionContext.Provider value={motionRef.current}>

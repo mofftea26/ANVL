@@ -50,14 +50,18 @@ const MAGNET_STRENGTH = 0.3
 const MAGNET_RADIUS_PX = 10
 
 /**
- * Magnetic hover for every `[data-tm-magnetic]` element under `host` — leans
- * toward the pointer inside its bounds and springs back on leave. Fine-pointer
- * desktop only (the caller gates); returns a disposer for `mm.revert()`.
+ * Magnetic hover for every `[data-tm-magnetic]` / `[data-om-magnetic]` element
+ * under `host` — leans toward the pointer inside its bounds and springs back on
+ * leave. Fine-pointer desktop only (the caller gates); returns a disposer for
+ * `mm.revert()`.
  */
 export function attachLandingMagnetics(host: HTMLElement): () => void {
   const disposers: Array<() => void> = []
 
-  for (const el of gsap.utils.toArray<HTMLElement>('[data-tm-magnetic]', host)) {
+  for (const el of gsap.utils.toArray<HTMLElement>(
+    '[data-tm-magnetic], [data-om-magnetic]',
+    host,
+  )) {
     const xTo = gsap.quickTo(el, 'x', { duration: 0.4, ease: 'power3.out' })
     const yTo = gsap.quickTo(el, 'y', { duration: 0.4, ease: 'power3.out' })
 
