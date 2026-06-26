@@ -1214,6 +1214,14 @@ html[data-landing-entry='active'] body {
   color: var(--color-on-accent);
 }
 
+/* WebGL handoff: when the persistent forged canvas is live (`data-om-webgl`),
+   fade out the static hero stage so the 3D world reads through. The DOM copy +
+   CTAs stay; only the static plate/backdrop defer. */
+[data-om-webgl='on'] [data-om-static-stage] {
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
 /* Theoath Modern custom cursor (mounted only on fine-pointer + no-reduced-motion;
    the class is added by TmCursor *after* init, so the native cursor is never
    hidden prematurely). Form fields keep the native cursor. */

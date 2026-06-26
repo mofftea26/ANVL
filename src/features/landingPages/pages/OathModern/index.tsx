@@ -1,6 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import type { LandingPageComponentProps } from '../../types'
 import { resolveOathModernContent } from './content/resolveOathModernContent'
+import {
+  OathModernMotionContext,
+  createOathModernMotionState,
+} from './motion/oathModernMotionState'
+import { OathModernCanvasGate } from './webgl/OathModernCanvasGate'
 import { OmThreshold } from './components/OmThreshold'
 import { OmPressure } from './components/OmPressure'
 import { OmFormation } from './components/OmFormation'
@@ -39,27 +44,38 @@ export function OathModern({
 
   const heroProductPng = assets.heroProductPng ?? null
   const heroBackground = assets.heroBackground ?? null
+  const heroProductModel = assets.heroProductModel ?? null
   const materialsMacro = assets.materialsMacro ?? null
   const oathBackdrop = assets.oathBackdrop ?? null
   const atmospherePlate = assets.atmospherePlate ?? null
 
+  const root = useRef<HTMLDivElement | null>(null)
+  const motionRef = useRef(createOathModernMotionState())
+
   return (
-    <div
-      data-oath-modern-root
-      className="relative isolate min-h-full bg-[var(--color-bg)] text-[color:var(--color-text)]"
-    >
-      <OmThreshold
-        content={content}
-        heroProduct={heroProduct}
-        heroProductPng={heroProductPng}
-        heroBackground={heroBackground}
-      />
-      <OmPressure content={content} />
-      <OmFormation content={content} materialsMacro={materialsMacro} />
-      <OmOath content={content} oathBackdrop={oathBackdrop} />
-      <OmArmory content={content} products={products} />
-      <OmConversion content={content} atmospherePlate={atmospherePlate} />
-    </div>
+    <OathModernMotionContext.Provider value={motionRef.current}>
+      <div
+        ref={root}
+        data-oath-modern-root
+        className="relative isolate min-h-full bg-[var(--color-bg)] text-[color:var(--color-text)]"
+      >
+        {/* Persistent forged WebGL world (desktop + WebGL + no-reduced-motion).
+            Behind all content; the static hero stage hands off via CSS. */}
+        <OathModernCanvasGate root={root} motion={motionRef.current} modelUrl={heroProductModel} />
+
+        <OmThreshold
+          content={content}
+          heroProduct={heroProduct}
+          heroProductPng={heroProductPng}
+          heroBackground={heroBackground}
+        />
+        <OmPressure content={content} />
+        <OmFormation content={content} materialsMacro={materialsMacro} />
+        <OmOath content={content} oathBackdrop={oathBackdrop} />
+        <OmArmory content={content} products={products} />
+        <OmConversion content={content} atmospherePlate={atmospherePlate} />
+      </div>
+    </OathModernMotionContext.Provider>
   )
 }
 
