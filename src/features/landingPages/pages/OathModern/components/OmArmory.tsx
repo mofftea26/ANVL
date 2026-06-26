@@ -37,19 +37,16 @@ export function OmArmory({
 
       {ordered.length > 0 ? (
         <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {ordered.map((product) => {
-            const tagline = c.taglines[product.slug]
-            return (
-              <div key={product.id} data-om-reveal data-om-product={product.slug}>
-                <ExperienceProductCard product={product} />
-                {tagline ? (
-                  <p className="mt-3 text-pretty text-sm leading-relaxed text-[color:var(--color-text-muted)]">
-                    {tagline}
-                  </p>
-                ) : null}
-              </div>
-            )
-          })}
+          {ordered.map((product, i) => (
+            <div key={product.id} data-om-reveal data-om-product={product.slug}>
+              <ExperienceProductCard
+                product={product}
+                variant={i === 0 ? 'featured' : 'editorial'}
+                tagline={c.taglines[product.slug]}
+                index={i + 1}
+              />
+            </div>
+          ))}
         </div>
       ) : (
         <p className="mt-14 text-sm text-[color:var(--color-text-muted)]">
