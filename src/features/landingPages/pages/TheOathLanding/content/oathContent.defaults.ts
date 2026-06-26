@@ -94,6 +94,7 @@ export const OATH_DEFAULT_CONTENT: OathResolvedContent = {
         line: 'Knit in one continuous pass — zero seams to chafe or fail under load.',
         marker: 'Seamless',
         tone: '#15171a',
+        mediaUrl: '/landing/the-oath/char-seamless.webp',
       },
       {
         id: 'chest',
@@ -102,6 +103,7 @@ export const OATH_DEFAULT_CONTENT: OathResolvedContent = {
         line: 'A curved under-pec support band lifts and rounds the chest.',
         marker: 'Chest',
         tone: '#1d1f21',
+        mediaUrl: '/landing/the-oath/char-chest.webp',
       },
       {
         id: 'yoke',
@@ -110,6 +112,7 @@ export const OATH_DEFAULT_CONTENT: OathResolvedContent = {
         line: 'Engineered shoulder panels widen the frame and pop the upper back.',
         marker: 'Yoke',
         tone: '#101113',
+        mediaUrl: '/landing/the-oath/char-yoke.webp',
       },
       {
         id: 'lats',
@@ -118,6 +121,7 @@ export const OATH_DEFAULT_CONTENT: OathResolvedContent = {
         line: 'Angled knit channels guide the eye inward to a sharper V-taper.',
         marker: 'Lats',
         tone: '#121417',
+        mediaUrl: '/landing/the-oath/char-lats.webp',
       },
       {
         id: 'core',
@@ -126,6 +130,7 @@ export const OATH_DEFAULT_CONTENT: OathResolvedContent = {
         line: 'Targeted compression tightens the waist and holds posture under fatigue.',
         marker: 'Core',
         tone: '#0d0e10',
+        mediaUrl: '/landing/the-oath/char-core.webp',
       },
     ],
   },
