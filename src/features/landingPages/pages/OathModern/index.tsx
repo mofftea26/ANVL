@@ -10,6 +10,9 @@ import { useOathModernTimeline } from './hooks/useOathModernTimeline'
 import { useOathModernPointerMotion } from './hooks/useOathModernPointerMotion'
 import { OathModernCanvasGate } from './webgl/OathModernCanvasGate'
 import { OmThreshold } from './components/OmThreshold'
+
+/** Bundled default 3D garment (Titan Sweep), served from `public/`. */
+const OATH_MODERN_HERO_MODEL = '/models/oath-titan-sweep.glb'
 import { OmPressure } from './components/OmPressure'
 import { OmFormation } from './components/OmFormation'
 import { OmOath } from './components/OmOath'
@@ -47,7 +50,10 @@ export function OathModern({
 
   const heroProductPng = assets.heroProductPng ?? null
   const heroBackground = assets.heroBackground ?? null
-  const heroProductModel = assets.heroProductModel ?? null
+  // The Titan Sweep compression shirt as a 3D mesh (generated from the studio
+  // concept render). CMS-overridable via the `heroProductModel` slot; the bundled
+  // model is the designed default so the journey orbits the real garment.
+  const heroProductModel = assets.heroProductModel ?? OATH_MODERN_HERO_MODEL
   const materialsMacro = assets.materialsMacro ?? null
   const oathBackdrop = assets.oathBackdrop ?? null
   const atmospherePlate = assets.atmospherePlate ?? null
