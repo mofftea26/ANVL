@@ -52,7 +52,7 @@ export function OmHeading({
         const bare = word.replace(/[^\p{L}\p{N}]/gu, '').toLowerCase()
         if (bare && wanted.has(bare)) {
           return (
-            <span key={i} className="text-[color:var(--color-primary)]">
+            <span key={i} className="text-[color:var(--color-accent)]">
               {word}
             </span>
           )
@@ -87,8 +87,8 @@ export function OmCtaLink({
       className={cn(
         'focus-ring inline-flex h-12 items-center justify-center gap-2 px-7 text-[0.72rem] font-semibold uppercase tracking-[0.22em] transition-colors duration-300',
         tone === 'primary'
-          ? 'bg-[var(--color-primary)] text-[color:var(--color-on-accent)] hover:bg-[color:var(--color-highlight-bright)]'
-          : 'border border-[var(--color-border-strong,var(--color-line))] text-[color:var(--color-text)] hover:border-[color:var(--color-primary)] hover:text-[color:var(--color-primary)]',
+          ? 'bg-[var(--color-accent)] text-[color:var(--color-on-accent)] hover:opacity-90'
+          : 'border border-[var(--border-strong)] text-[color:var(--color-text)] hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent)]',
         className,
       )}
     >

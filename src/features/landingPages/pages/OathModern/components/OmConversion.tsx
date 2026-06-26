@@ -73,7 +73,7 @@ export function OmConversion({
           </ul>
         ) : null}
 
-        <p className="anvl-heading mt-14 text-sm uppercase tracking-[0.34em] text-[color:var(--color-primary)]">
+        <p className="anvl-heading mt-14 text-sm uppercase tracking-[0.34em] text-[color:var(--color-accent)]">
           {c.tagline}
         </p>
       </div>

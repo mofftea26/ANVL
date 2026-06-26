@@ -1195,20 +1195,23 @@ html[data-landing-entry='active'] body {
 }
 
 /* ===========================================================================
- * Theoath Modern experience layer
+ * The Oath Modern experience layer (ceremonial)
  * ---------------------------------------------------------------------------
  * Scoped to the storefront subtree via `[data-experience="theoath-modern"]`
  * (rendered on the ExperienceProvider `display:contents` wrapper — the admin
- * CMS never renders it, so it is never re-skinned). Cosmetic only: it sharpens
- * geometry, swaps borders to technical hairlines, and shifts focus/selection to
- * the champagne accent, so the whole storefront reads as a technical product
- * lab regardless of the (independent) active theme. Structural markup changes
- * live in the techForge component variants resolved at the route layer.
+ * CMS never renders it, so it is never re-skinned). Cosmetic only: it carves the
+ * geometry, swaps borders to oxidized-iron hairlines, sets the forged nav glass,
+ * and shifts focus/selection to the wax-metal vow accent, so the whole storefront
+ * reads as one forged ceremonial world regardless of the (independent) active
+ * theme. NOTE under this theme: `--color-accent` = wax-metal (primary), while
+ * `--color-highlight` = oxidized iron — focus/selection deliberately use the
+ * wax-metal so they stay visible. Structural markup changes live in the variant
+ * components resolved at the route layer.
  * ======================================================================== */
 
 [data-experience='theoath-modern'] ::selection {
-  background: color-mix(in srgb, var(--color-highlight) 32%, transparent);
-  color: var(--color-heading);
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  color: var(--color-on-accent);
 }
 
 /* Theoath Modern custom cursor (mounted only on fine-pointer + no-reduced-motion;
@@ -1320,16 +1323,16 @@ html[data-landing-entry='active'] body {
   }
 }
 
-/* Crisp technical geometry + tracking on interactive controls. */
+/* Carved geometry on interactive controls — forged, near-square corners. */
 [data-experience='theoath-modern'] button,
 [data-experience='theoath-modern'] a.focus-ring.inline-flex,
 [data-experience='theoath-modern'] input:not([type='checkbox']):not([type='radio']),
 [data-experience='theoath-modern'] select,
 [data-experience='theoath-modern'] textarea {
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
-/* Form controls: technical hairline border + champagne focus ring. */
+/* Form controls: oxidized hairline border + wax-metal focus. */
 [data-experience='theoath-modern'] input:not([type='checkbox']):not([type='radio']),
 [data-experience='theoath-modern'] select,
 [data-experience='theoath-modern'] textarea {
@@ -1338,32 +1341,57 @@ html[data-landing-entry='active'] body {
 [data-experience='theoath-modern'] input:not([type='checkbox']):not([type='radio']):focus-visible,
 [data-experience='theoath-modern'] select:focus-visible,
 [data-experience='theoath-modern'] textarea:focus-visible {
-  border-color: var(--color-highlight);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-highlight) 60%, transparent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 60%, transparent);
 }
 
-/* Focus ring follows the lab accent. */
+/* Focus ring follows the wax-metal vow accent (stays visible vs oxidized iron). */
 [data-experience='theoath-modern'] .focus-ring:focus-visible {
-  outline-color: var(--color-highlight);
+  outline-color: var(--color-focus-ring);
 }
 
-/* Surface cards read as engineered frames (sharper, hairline). */
+/* Surface cards read as forged frames (carved, hairline). */
 [data-experience='theoath-modern'] .rounded-2xl {
-  border-radius: 8px;
+  border-radius: 4px;
+}
+[data-experience='theoath-modern'] .rounded-xl,
+[data-experience='theoath-modern'] .rounded-lg {
+  border-radius: 3px;
 }
 
-/* Sticky nav: dark technical glass once scrolled. */
+/* Sticky nav: forged glass once scrolled, oxidized hairline underline. */
 [data-experience='theoath-modern'] [data-premium-topbar-variant='solid'] {
   background: var(--glass-surface);
-  backdrop-filter: blur(12px) saturate(1.1);
-  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
   border-bottom: 1px solid var(--tech-line);
 }
 
-/* Thinner, technical scrollbar. */
+/* Footer reads as the final forged state — oxidized top rule + wax-metal seam. */
+[data-experience='theoath-modern'] footer {
+  border-top: 1px solid var(--color-line);
+  box-shadow: inset 0 1px 0 0 color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+/* Loading skeletons take the forged surface tone. */
+[data-experience='theoath-modern'] .animate-pulse {
+  background-color: var(--color-surface-elevated);
+}
+
+/* Thin forged scrollbar — oxidized track, wax-metal thumb. */
 [data-experience='theoath-modern'] *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
+}
+[data-experience='theoath-modern'] *::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+[data-experience='theoath-modern'] *::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 2px;
+}
+[data-experience='theoath-modern'] *::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* -----------------------------------------------------------------------
