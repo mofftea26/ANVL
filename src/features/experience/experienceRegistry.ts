@@ -19,30 +19,8 @@ const THE_OATH_EXPERIENCE: ExperienceConfig = {
   typography: 'oath',
 }
 
-/**
- * The Oath Modern — the continuous-3D ceremonial flagship for Drop 01. Re-skins
- * structure site-wide via the `techForge` variant slots (the internal token is
- * renamed to `ceremonial` at M10, once the transitional components are replaced).
- * Colors come from the separately-selectable `forged-ceremonial` theme preset
- * (decision: theme stays independent of experience).
- */
-const THEOATH_MODERN_EXPERIENCE: ExperienceConfig = {
-  key: 'theoath-modern',
-  label: 'The Oath Modern',
-  recommendedThemeKey: 'forged-ceremonial',
-  header: 'techForge',
-  footer: 'techForge',
-  productCard: 'techForge',
-  button: 'techForge',
-  animationPreset: 'techForge',
-  background: 'techLab',
-  pageTransition: 'forgeWipe',
-  typography: 'techForge',
-}
-
 export const EXPERIENCES: Record<ExperienceKey, ExperienceConfig> = {
   'the-oath': THE_OATH_EXPERIENCE,
-  'theoath-modern': THEOATH_MODERN_EXPERIENCE,
 }
 
 /** Experience used for any unknown/legacy landing key — never blank, never new. */

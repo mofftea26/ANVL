@@ -50,24 +50,6 @@ export const landingPageRegistry: Record<string, LandingPageDefinition> = {
       'TheOathLanding',
     ),
   },
-  // The Oath Modern — the continuous-3D ceremonial flagship for Drop 01. One
-  // evolving world told in six chapters (Threshold, Pressure, Formation, The
-  // Oath, The Armory, The Vow) over a persistent WebGL canvas with a single
-  // master scroll timeline. Pairs with the "Forged Ceremonial" theme preset
-  // (selected separately in /admin/theme) and re-skins the storefront via the
-  // experience system.
-  'theoath-modern': {
-    key: 'theoath-modern',
-    name: 'The Oath Modern',
-    description:
-      'Continuous-3D ceremonial flagship for Drop 01 — one evolving forged world, scroll-choreographed from threshold to vow.',
-    previewImage: '/brand/the-oath-shape.svg',
-    isAvailable: true,
-    component: lazyPage(
-      () => import('./pages/OathModern'),
-      'OathModern',
-    ),
-  },
 }
 
 /** Fallback key when Supabase `active_landing_page_key` is missing or invalid. */

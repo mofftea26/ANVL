@@ -30,21 +30,14 @@ import {
   toOathFormValues,
   type OathContentFormValues,
 } from './landingContentForm'
-import {
-  toOmContentSlice,
-  toOmFormValues,
-  type OmContentFormValues,
-} from './omLandingContentForm'
 import { OathHeroFields } from './sections/OathHeroFields'
 import { OathManifestoFields } from './sections/OathManifestoFields'
 import { OathTenetsFields } from './sections/OathTenetsFields'
 import { OathProductsFields } from './sections/OathProductsFields'
 import { OathFinaleFields } from './sections/OathFinaleFields'
 import { OathLandingAssetFields } from './sections/OathLandingAssetFields'
-import { OmContentFields } from './sections/OmContentFields'
 
 const OATH_KEY = 'the-oath'
-const TM_KEY = 'theoath-modern'
 
 function useAssetConfig(): AssetConfig {
   return useSyncExternalStore(
@@ -57,11 +50,8 @@ function useAssetConfig(): AssetConfig {
 /**
  * Landing Content editor — per-scene copy + landing asset slots.
  *
- * Page-aware: The Oath gets its scene editor (hero/manifesto/tenets/products/
- * finale + tenet media); Theoath Modern gets its own editor (hero + hotspots,
- * tech-knit, collection, benefits, materials, conversion). Both forms are always
- * mounted (Rules of Hooks) and the body + save switch by the selected page. Any
- * other registered page falls back to asset-slot assignment only.
+ * The Oath gets its scene editor (hero/manifesto/tenets/products/finale + tenet
+ * media). Any other registered page falls back to asset-slot assignment only.
  */
 export function AdminLandingContentEditor() {
   const setPageActions = useAdminPageActions()
@@ -88,19 +78,14 @@ export function AdminLandingContentEditor() {
   const oathForm = useForm<OathContentFormValues>({
     defaultValues: toOathFormValues(readLandingContentFromStorage()[OATH_KEY]),
   })
-  const omForm = useForm<OmContentFormValues>({
-    defaultValues: toOmFormValues(readLandingContentFromStorage()[TM_KEY]),
-  })
   const oathTaglines = useFieldArray({ control: oathForm.control, name: 'products.taglines' })
-  const omTaglines = useFieldArray({ control: omForm.control, name: 'collection.taglines' })
 
   const reloadFormForKey = useCallback(
     (pageKey: string) => {
       const stored = readLandingContentFromStorage()
       if (pageKey === OATH_KEY) oathForm.reset(toOathFormValues(stored[OATH_KEY]))
-      else if (pageKey === TM_KEY) omForm.reset(toOmFormValues(stored[TM_KEY]))
     },
-    [oathForm, omForm],
+    [oathForm],
   )
 
   useEffect(() => {
@@ -160,13 +145,8 @@ export function AdminLandingContentEditor() {
         }),
       )
     }
-    if (selectedKey === TM_KEY) {
-      return omForm.handleSubmit((values) =>
-        void persist({ key: TM_KEY, value: toOmContentSlice(values) }),
-      )
-    }
     return () => void persist()
-  }, [selectedKey, oathForm, omForm, persist])
+  }, [selectedKey, oathForm, persist])
 
   const toolbar = useMemo(
     () => (
@@ -191,14 +171,11 @@ export function AdminLandingContentEditor() {
 
   const selectedPage = landingPages.find((p) => p.key === selectedKey)
   const isOath = selectedKey === OATH_KEY
-  const isTm = selectedKey === TM_KEY
-  const hasEditor = isOath || isTm
+  const hasEditor = isOath
 
   const scenes = isOath
     ? ['1 — Hero', '2 — Manifesto', '3 — Tenets', '4 — Products', '5 — Finale']
-    : isTm
-      ? ['I — Threshold', 'II — Pressure', 'III — Formation', 'IV — The Oath', 'V — The Armory', 'VI — The Vow']
-      : []
+    : []
 
   const helpRail = (
     <>
@@ -211,7 +188,7 @@ export function AdminLandingContentEditor() {
           <li>Pick any landing page above — not only the active storefront page.</li>
           <li>Placeholders show the designed default copy.</li>
           <li>Type to override a scene; clear a field to restore the default.</li>
-          <li>Imagery is assigned on the Assets page (the Theoath Modern drop is listed there).</li>
+          <li>Imagery is assigned on the Assets page.</li>
         </ul>
       </AdminRailPanel>
       {scenes.length > 0 ? (
@@ -284,16 +261,6 @@ export function AdminLandingContentEditor() {
             />
             <OathProductsFields register={oathForm.register} taglines={oathTaglines} />
             <OathFinaleFields register={oathForm.register} />
-          </form>
-        ) : isTm ? (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              void submit()
-            }}
-            className="space-y-6"
-          >
-            <OmContentFields register={omForm.register} taglines={omTaglines} />
           </form>
         ) : (
           <div className="space-y-6">

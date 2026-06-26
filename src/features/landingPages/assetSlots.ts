@@ -52,14 +52,11 @@ export const GENERAL_ASSET_SLOTS: AssetSlotDefinition[] = [
 ]
 
 export { OATH_ASSET_SLOTS } from './pages/TheOathLanding/theOathAssetSlots'
-export { OATH_MODERN_ASSET_SLOTS } from './pages/OathModern/oathModernAssetSlots'
 
 import { OATH_ASSET_SLOTS } from './pages/TheOathLanding/theOathAssetSlots'
-import { OATH_MODERN_ASSET_SLOTS } from './pages/OathModern/oathModernAssetSlots'
 
 export const DROP_ASSET_SLOTS: Record<string, AssetSlotDefinition[]> = {
   'the-oath': OATH_ASSET_SLOTS,
-  'theoath-modern': OATH_MODERN_ASSET_SLOTS,
 }
 
 export function getDropAssetSlots(dropKey: string): AssetSlotDefinition[] {

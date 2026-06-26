@@ -19,16 +19,7 @@ function Probe() {
 }
 
 describe('experience variant resolution', () => {
-  it('renders the techForge variant under the Theoath Modern experience', () => {
-    render(
-      <ExperienceProvider activeLandingPageKey="theoath-modern">
-        <Probe />
-      </ExperienceProvider>,
-    )
-    expect(screen.getByText('techforge-card')).toBeInTheDocument()
-  })
-
-  it('renders the classic variant under the Oath experience (no regression)', () => {
+  it('renders the classic variant under the Oath experience', () => {
     render(
       <ExperienceProvider activeLandingPageKey="the-oath">
         <Probe />
@@ -48,11 +39,11 @@ describe('experience variant resolution', () => {
 
   it('scopes data-experience to a storefront wrapper (admin is never re-skinned)', () => {
     const { container } = render(
-      <ExperienceProvider activeLandingPageKey="theoath-modern">
+      <ExperienceProvider activeLandingPageKey="the-oath">
         <span>child</span>
       </ExperienceProvider>,
     )
-    const wrapper = container.querySelector('[data-experience="theoath-modern"]')
+    const wrapper = container.querySelector('[data-experience="the-oath"]')
     expect(wrapper).not.toBeNull()
     expect(wrapper).toContainElement(screen.getByText('child'))
   })

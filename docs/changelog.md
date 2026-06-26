@@ -1,4 +1,9 @@
-﻿## 2026-06-26 — The Oath Modern: continuous-3D ceremonial rebuild (M1–M10)
+﻿## 2026-06-26 — The Oath Modern removed (reverted)
+
+- **Scrapped** the continuous-3D ceremonial rebuild per request. Deleted `pages/OathModern/`, `ProductCardCeremonial`, the Om landing-content CMS editor (form/fields/test), the bundled GLB + ceremonial plates (`public/models/`, `public/images/oath-modern/`), the feature doc, the project skill, and the unapplied rename migration. Removed the `theoath-modern` entry from the landing registry, the experience registry (collapsed to the single `the-oath` experience), and `DROP_ASSET_SLOTS`; `ExperienceProductCard` resolves the classic card. The landing-content editor is The Oath only again.
+- **Kept** the `forged-ceremonial` theme preset (selectable in `/admin/theme`). The inert `[data-experience="theoath-modern"]` CSS block is left dormant (never matches). `pnpm verify` green (578 tests).
+
+## 2026-06-26 — The Oath Modern: continuous-3D ceremonial rebuild (M1–M10) [reverted, see above]
 
 - **Rebuilt from scratch** — the `theoath-modern` flagship is now **"The Oath Modern"**, a continuous-3D *ceremonial/mythological* scroll journey (six chapters: Threshold, Pressure, Formation, The Oath, The Armory, The Vow) replacing the retired stacked tech-lab page. New `pages/OathModern/` (composition + chapter components + content schema/defaults/resolver + asset slots). Reuses the proven plumbing (experience seam, motion-state bridge, content/theme/asset pipelines) — no new Supabase tables.
 - **Theme** — new `forged-ceremonial` preset (forged void `#07070A`, bone, wax-metal `#B98A4E`, oxidized iron `#6E5A48`); recommended-only, independent of the page. Ceremonial `[data-experience]` CSS layer (wax-metal focus/selection — note `--color-highlight` is oxidized iron under this theme, so highlights use `--color-accent`; carved geometry, forged nav glass/footer/scrollbar).

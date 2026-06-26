@@ -15,7 +15,7 @@
  */
 
 /** Stable experience identifiers (mirror landing-page registry keys). */
-export type ExperienceKey = 'the-oath' | 'theoath-modern'
+export type ExperienceKey = 'the-oath'
 
 /** Which coded variant a shared surface should render for this experience. */
 export type HeaderVariant = 'classic' | 'techForge'
