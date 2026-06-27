@@ -35,16 +35,16 @@ describe('OathTenets mobile visibility', () => {
   })
 })
 
-describe('OathManifesto scene seams', () => {
-  it('feathers hero top and default bottom into tenets on desktop', () => {
+describe('OathManifesto continuity', () => {
+  it('rides a solid themed backdrop with no seam bands (one continuous flow)', () => {
     const { container } = render(
       <OathManifesto manifesto={OATH_DEFAULT_CONTENT.manifesto} />,
     )
     const section = container.querySelector('[data-scene="manifesto"]')
     expect(section).not.toBeNull()
-    expect(section!.querySelector('[data-scene-seam="top"]')).not.toBeNull()
-    const bottom = section!.querySelector('[data-scene-seam="bottom"]')
-    expect(bottom).not.toBeNull()
-    expect(bottom!.getAttribute('data-scene-seam-tone')).toBe('default')
+    // Solid backdrop so the feathered creed media never reveals the void.
+    expect(section!.className).toMatch(/bg-\[var\(--color-bg\)\]/)
+    // No stacked seam bands — those read as shadow lines dividing the scenes.
+    expect(section!.querySelectorAll('[data-scene-seam]')).toHaveLength(0)
   })
 })

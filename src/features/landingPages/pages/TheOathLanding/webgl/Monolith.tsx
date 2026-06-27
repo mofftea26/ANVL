@@ -17,9 +17,10 @@ type LogoTone = 'primary' | 'mid' | 'highlight'
 /**
  * The Oath Monument — the drop emblem itself, extruded live from the CMS
  * drop-mark SVG into layered 3D (see {@link AnvlOath3D}) and floating in the
- * void above the hero film. At rest it sits **small, just above the eyebrow**
- * (upper-left copy column, clear of the header); in the hero it turns slowly and
- * continuously and **only drifts to centre — it stays the same small size**
+ * void above the hero film. At rest it sits **centred behind the hero copy**
+ * (vertically centred, set back over the left copy column as a backdrop crest);
+ * in the hero it turns slowly and continuously and **only drifts to centre — it
+ * stays the same size**
  * through the hero **and the whole middle of the page** (`heroProgress`); the
  * emblem does **not** react to the cursor and does **not** shrink on scroll. A
  * warm-bone key + fill keep it legible. As it recedes through the creed/tenets
@@ -89,13 +90,13 @@ export function Monolith({
     const heroCenter = motion.heroProgress
     const settle = (1 - recede) * (1 - rise)
 
-    // Hero at-rest pose: a SMALL emblem centred above the "DROP 01 — THE OATH"
-    // eyebrow (upper-left copy column), kept low enough to clear the fixed header.
-    // As the hero scrolls it ONLY drifts to centre — it stays the same small size
-    // through the hero and the middle of the page. Later scenes pull it fully
-    // centre; the finale is the only place it grows.
-    const restX = -viewport.width * 0.32
-    const restY = viewport.height * 0.25
+    // Hero at-rest pose: the emblem sits centred BEHIND the hero copy column —
+    // vertically centred on the text, set back over the left copy block (not off
+    // in the scene), at a larger at-rest size so it reads as a backdrop crest
+    // behind the headline. As the hero scrolls it drifts to screen centre; later
+    // scenes pull it fully centre; the finale is the only place it grows further.
+    const restX = -viewport.width * 0.26
+    const restY = 0
     const bob = Math.sin(t * 0.6) * 0.09
     const breath = Math.sin(t * 0.4 + 1.2) * 0.18
 
@@ -107,11 +108,12 @@ export function Monolith({
       heroCenter * 0.12 * settle +
       rise * 0.15
     const targetZ = -recede * 5 + rise * 3.6 + breath
-    // Constant small scale through the hero AND the whole middle of the page — it
-    // never shrinks on scroll. ONLY the finale (`rise`) grows it to its large
-    // pose. The intro still scales it in.
-    const SMALL = 0.3
-    const FINALE = 1.3
+    // Constant scale through the hero AND the whole middle of the page — it never
+    // shrinks on scroll. ONLY the finale (`rise`) grows it to its large pose. The
+    // intro still scales it in. Larger at-rest size so the crest reads as a
+    // backdrop behind the hero copy.
+    const SMALL = 0.5
+    const FINALE = 1.55
     const baseScale = SMALL + (FINALE - SMALL) * rise
     const targetScale = baseScale * introScale
 

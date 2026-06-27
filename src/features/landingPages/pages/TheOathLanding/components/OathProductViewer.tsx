@@ -54,14 +54,16 @@ export function OathProductViewer({
     )
   }
 
-  // Forged duotone plinth — intentional placeholder until a GLB/still is assigned.
+  // Forged ember glow — intentional placeholder until a GLB/still is assigned.
+  // Fades fully to transparent (not to --color-bg) so it reads as a soft light on
+  // the smokey slide, never a rectangular box/panel filling the stage.
   return (
     <div
       data-tenet-media
       aria-hidden="true"
       className="absolute inset-0"
       style={{
-        background: `radial-gradient(58% 58% at 50% 45%, ${tone} 0%, var(--color-bg) 78%)`,
+        background: `radial-gradient(56% 56% at 50% 46%, ${tone} 0%, color-mix(in srgb, ${tone} 28%, transparent) 44%, transparent 72%)`,
       }}
     />
   )

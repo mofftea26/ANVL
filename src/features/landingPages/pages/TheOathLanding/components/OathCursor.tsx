@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { gsap } from '@/shared/lib/gsap'
 import { OATH_FINE_POINTER_DESKTOP_MQ } from '../oathBreakpoints'
 
 /**
  * Page-scoped custom cursor: a bone dot with a lagging ring, blending with the
  * scene via `mix-blend-difference`. States come from `data-cursor` attributes
- * (`cta` | `view`) by event delegation on the page root; the native cursor is
- * hidden only inside the page. Mounts only on fine-pointer desktop without
- * reduced motion — touch and static branches never see it.
+ * (`cta` | `view`) by event delegation. Tracking + the native-cursor hide are
+ * **window/page-wide** (not scoped to the landing root) so the custom cursor
+ * persists over the fixed top bar too — this component only mounts on the
+ * landing page (fine-pointer desktop, no reduced motion), so going page-wide is
+ * safe; touch and static branches never see it.
  */
-export function OathCursor({ root }: { root: RefObject<HTMLElement | null> }) {
+export function OathCursor() {
   const [enabled, setEnabled] = useState(false)
   const dotRef = useRef<HTMLDivElement | null>(null)
   const ringRef = useRef<HTMLDivElement | null>(null)
@@ -24,12 +26,9 @@ export function OathCursor({ root }: { root: RefObject<HTMLElement | null> }) {
 
   useEffect(() => {
     if (!enabled) return
-    const host = root.current
     const dot = dotRef.current
     const ring = ringRef.current
-    if (!host || !dot || !ring) return
-
-    host.style.cursor = 'none'
+    if (!dot || !ring) return
 
     const dotX = gsap.quickTo(dot, 'x', { duration: 0.08, ease: 'power2.out' })
     const dotY = gsap.quickTo(dot, 'y', { duration: 0.08, ease: 'power2.out' })
@@ -62,28 +61,29 @@ export function OathCursor({ root }: { root: RefObject<HTMLElement | null> }) {
       gsap.to([dot, ring], { autoAlpha: 0, duration: 0.25, overwrite: 'auto' })
     }
 
-    host.addEventListener('pointermove', onMove, { passive: true })
-    host.addEventListener('pointerover', onOver, { passive: true })
-    host.addEventListener('pointerleave', onLeave, { passive: true })
+    // Window-wide so the custom cursor keeps tracking over the fixed top bar
+    // (which lives outside the landing root). Fades out only when the pointer
+    // leaves the document entirely.
+    window.addEventListener('pointermove', onMove, { passive: true })
+    window.addEventListener('pointerover', onOver, { passive: true })
+    document.documentElement.addEventListener('pointerleave', onLeave)
     return () => {
-      host.style.cursor = ''
-      host.removeEventListener('pointermove', onMove)
-      host.removeEventListener('pointerover', onOver)
-      host.removeEventListener('pointerleave', onLeave)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerover', onOver)
+      document.documentElement.removeEventListener('pointerleave', onLeave)
     }
-  }, [enabled, root])
+  }, [enabled])
 
   if (!enabled) return null
 
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[80]">
-      {/* Keep the native pointer hidden across the whole landing root while the
-          custom cursor is active — including interactive elements whose own
-          `cursor: pointer` (links, buttons, `[data-cursor]`) would otherwise
-          win on hover. Scoped to `[data-oath-root]` and only rendered on the
-          fine-pointer desktop branch, so touch/reduced-motion keep the native
-          cursor. */}
-      <style>{`[data-oath-root],[data-oath-root] *,[data-oath-root] *::before,[data-oath-root] *::after{cursor:none !important}`}</style>
+      {/* Hide the native pointer page-wide while the custom cursor is active —
+          including the fixed top bar and any interactive element whose own
+          `cursor: pointer` would otherwise win. Only rendered on the landing
+          page's fine-pointer desktop branch, so touch / reduced-motion / other
+          routes keep the native cursor. */}
+      <style>{`html,body,body *,body *::before,body *::after{cursor:none !important}`}</style>
       {/* GSAP owns the transform (x/y) — centering comes from negative margins. */}
       <div
         ref={ringRef}

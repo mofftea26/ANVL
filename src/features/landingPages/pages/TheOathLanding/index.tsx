@@ -62,13 +62,16 @@ export function TheOathLanding({
         className="group/oath relative isolate min-h-full"
       >
         {/* Fixed void backdrop — the themed near-black behind everything; the
-            monolith canvas + hero film paint over it. */}
+            monolith canvas + hero film paint over it. The soft glow is centred
+            (behind the monolith) and its TOP edge resolves to solid `--color-bg`,
+            so the strip showing behind the transparent top bar matches the dark
+            sections — no lighter band reading as a gap above each section. */}
         <div
           aria-hidden="true"
           className="fixed inset-0 -z-30"
           style={{
             background:
-              'radial-gradient(ellipse 120% 100% at 50% 30%, var(--color-surface, #0e0f11) 0%, var(--color-bg, #0B0B0C) 70%)',
+              'radial-gradient(ellipse 115% 78% at 50% 50%, var(--color-surface, #0e0f11) 0%, var(--color-bg, #0B0B0C) 56%)',
           }}
         />
         {/* WebGL layer (monolith + dust) — above the hero film, below content. */}
@@ -82,7 +85,7 @@ export function TheOathLanding({
               'linear-gradient(to bottom, color-mix(in srgb, var(--color-bg) 80%, transparent), color-mix(in srgb, var(--color-bg) 40%, transparent), transparent)',
           }}
         />
-        <OathCursor root={root} />
+        <OathCursor />
         <OathProgressRail />
         <OathHero hero={content.hero} />
         <OathManifesto manifesto={content.manifesto} />

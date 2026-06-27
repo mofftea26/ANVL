@@ -2,7 +2,6 @@ import { Container } from '@/shared/components/ui/Container'
 import type { OathResolvedContent } from '../content/oathContent.defaults'
 import { oathManifestoMedia } from '../theOathAssets'
 import { OathMediaFallback } from './OathMediaFallback'
-import { OathSceneSeam } from './OathSceneSeam'
 
 /**
  * Scene 02 — The Creed. A pinned push-in: manifesto lines reveal word-by-word
@@ -18,9 +17,21 @@ export function OathManifesto({
   return (
     <section
       data-scene="manifesto"
-      className="relative hidden min-h-[var(--anvl-section-h)] w-full items-center overflow-hidden xl:flex"
+      className="relative hidden min-h-[100svh] w-full items-center overflow-hidden bg-[var(--color-bg)] xl:flex"
       aria-labelledby="oath-manifesto-heading"
     >
+      {/* Solid continuous backdrop — the same themed black as the hero dissolve
+          and the tenets stage, so the feathered creed media never reveals the
+          void behind the page and the scene flows from one neighbour to the next
+          with no division. Its TOP edge feathers in over a small band so the
+          creed *starts with a soft fade* into the void above (no hard line under
+          the hero "approach" cue); the bottom stays solid so the tenets hand-off
+          is never see-through. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 bg-[var(--color-bg)] [mask-image:linear-gradient(to_bottom,transparent_0%,#000_18%,#000_100%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,#000_18%,#000_100%)]"
+      />
+
       <OathMediaFallback
         media={oathManifestoMedia()}
         tone="#101113"
@@ -32,9 +43,10 @@ export function OathManifesto({
         mediaClassName="opacity-60"
       />
 
-      {/* Hero→creed top feather; bottom feather dissolves into tenets on solid stage bg. */}
-      <OathSceneSeam edges="top" />
-      <OathSceneSeam edges="bottom" />
+      {/* No seam bands here: the media already feathers into the solid backdrop
+          (OathMediaFallback) and the neighbouring hero-bottom / tenets-top
+          dissolves carry the hand-off — stacking another band over an identical
+          black is what read as a shadow line dividing the scenes. */}
 
       <Container className="relative z-10 py-24 md:py-32">
         <p

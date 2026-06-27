@@ -85,14 +85,17 @@ export function OathTenets({
 
       <div
         data-tenet-stage
-        className="relative h-[var(--anvl-section-h)] overflow-hidden bg-[var(--color-bg)]"
+        className="relative h-[100svh] overflow-hidden bg-[var(--color-bg)]"
       >
         <OathSceneSeam edges="top" />
 
         {/* Fixed section chrome while the panorama pans beneath. */}
         <div className="pointer-events-none absolute inset-y-0 left-0 z-30 w-[min(17rem,21vw)]">
           <Container className="flex h-full max-w-none px-6 xl:px-8">
-            <div className="flex h-full flex-col justify-between py-14 pr-8">
+            {/* Title (top) + "NN pieces · scroll" footer (bottom) nudged down by
+                half the top bar so they clear the transparent header; the
+                panorama itself (centred) is unaffected. */}
+            <div className="flex h-full flex-col justify-between py-14 pr-8 [transform:translateY(calc(var(--anvl-header-h)/2))]">
               <div>
                 <p
                   data-tenet-eyebrow
@@ -120,8 +123,13 @@ export function OathTenets({
               className="relative h-full w-full shrink-0 overflow-hidden"
               aria-label={`${item.index} — ${item.title}`}
             >
-              {/* Smokey background. */}
-              <div aria-hidden="true" className="absolute inset-0">
+              {/* Smokey background. Its left/right edges feather into the stage
+                  void (horizontal mask) so adjacent slides cross-dissolve as the
+                  strip pans — no hard vertical seam where one piece meets the next. */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 [mask-image:linear-gradient(to_right,transparent_0%,#000_14%,#000_86%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,transparent_0%,#000_14%,#000_86%,transparent_100%)]"
+              >
                 {item.bgUrl ? (
                   <img
                     src={item.bgUrl}

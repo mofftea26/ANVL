@@ -7,11 +7,20 @@ import { usePremiumNavPhase } from '@/shared/components/layout/usePremiumNavPhas
 
 export function PremiumNav({
   navigation,
+  alwaysTransparent = false,
 }: {
   navigation: LandingNavigationContent
+  /**
+   * Keep the header transparent at all scroll positions (no solid scrim bar), so
+   * it reads as part of the page rather than a separate panel. Used on the
+   * landing page, where the fixed hero header scrim keeps the nav legible over
+   * every section.
+   */
+  alwaysTransparent?: boolean
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { topbarVariant } = usePremiumNavPhase()
+  const variant = alwaysTransparent ? 'transparent' : topbarVariant
 
   const visibleLinks = useMemo(
     () =>
@@ -38,18 +47,18 @@ export function PremiumNav({
   return (
     <>
       {/* Always a fixed overlay: transparent over the hero, solid on scroll.
-          Page content is offset by `<main>` padding on non-home routes; the home
-          hero is intentionally full-bleed behind it. */}
+          Non-home routes offset `<main>` with header padding; the home landing
+          is full-bleed under the bar (sections use `--anvl-section-h`). */}
       <header
         className="fixed top-0 left-0 right-0 z-40 w-full bg-transparent"
         data-premium-nav-position="overlay"
       >
         <AnnouncementRail
           announcement={navigation.announcement}
-          variant={topbarVariant}
+          variant={variant}
         />
         <PremiumNavTopbar
-          variant={topbarVariant}
+          variant={variant}
           logoSrc={logoSrc}
           visibleLinks={visibleLinks}
           showCart={showCart}

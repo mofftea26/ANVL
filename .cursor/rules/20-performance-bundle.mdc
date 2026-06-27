@@ -20,7 +20,7 @@ globs: ["vite.config.ts", "vitest.config.ts", "src/router.tsx", "src/routes/**/*
 
 - Extend `manualChunks` in `vite.config.ts` when adding a heavy dependency (`PERF-05`). Today the buckets are `vendor-gsap`, `vendor-lenis`, `vendor-framer-motion`, `vendor-three`, `vendor-zod`, `vendor-tanstack`, and `vendor-react`; add new buckets for `react-hook-form` + resolvers, `lucide-react`, `sonner` as opportunities appear.
 - Confirm impact via `pnpm analyze` (sets `ANVL_ANALYZE=1` + writes `dist/stats.html`). Attach the relevant `stats.html` line count delta to PRs that touch shared chunks.
-- Don't add dependencies you don't import. `PERF-11` removed unused deps (`@tanstack/react-table`, `@radix-ui/react-dropdown-menu`, `@tanstack/react-query-devtools`, `@fontsource/bebas-neue`, `@fontsource/manrope`, `@tailwindcss/typography`); `@tanstack/react-virtual` (admin media grid) and `framer-motion` (RevealOnScroll) **are** in active use.
+- Don't add dependencies you don't import. `PERF-11` removed unused deps (`@tanstack/react-table`, `@radix-ui/react-dropdown-menu`, `@tanstack/react-query-devtools`, `@fontsource/bebas-neue`, `@fontsource/manrope`, `@tailwindcss/typography`, `react-colorful`, `react-day-picker`); `@tanstack/react-virtual` (admin media grid) and `framer-motion` (RevealOnScroll) **are** in active use. When you delete the last consumer of a dependency, drop it from `package.json` and run `pnpm install` to prune the lockfile.
 - `lucide-react` imports must be named (`import { Menu } from 'lucide-react'`) — never `import * as Icons`.
 
 ## Animation policy

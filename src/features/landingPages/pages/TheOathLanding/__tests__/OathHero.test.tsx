@@ -150,7 +150,7 @@ describe('OathHero', () => {
 
     const section = container.querySelector('[data-scene="hero"]')
 
-    expect(section?.className).toMatch(/h-\[var\(--anvl-section-h\)\]/)
+    expect(section?.className).toMatch(/h-\[100svh\]/)
 
     expect(section?.className).toMatch(/overflow-hidden/)
 

@@ -49,6 +49,8 @@ globs: ["src/**/*.{tsx,css}", "src/styles.css"]
 
 Reference `oathBreakpoints.ts`: mobile `<768px`, tablet `768–1279px` (static layout, no WebGL/GSAP pins), desktop cinematic `≥1280px`. Manifesto and tenets are hidden below `xl` in DOM.
 
+On the **home route** the header is a transparent overlay (`PremiumNav alwaysTransparent`) and `<main>` reserves no header padding, so the Oath scenes are full screen height (`100svh`, not `--anvl-section-h`) and their pinned ScrollTriggers start at `top top` — each section fills the viewport behind the bar. Keep new home sections full-height and don't reintroduce a solid header bar there; non-home routes keep the transparent→solid-on-scroll header + `--anvl-header-h` main padding.
+
 ## Toast / overlay placement
 
 - `Toaster` must use a responsive position (e.g. `bottom-center` on small screens, `top-right` on large) and respect safe-area insets (`RESP-11`).

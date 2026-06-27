@@ -8,14 +8,23 @@ import { pinTrigger, type Selector } from './oathMotionHelpers'
  * view on its turn, the feathered seams melting one into the next — the
  * "horizontal-in-vertical" scroll moment.
  *
- * Cinematic presentation layered on the pan (all inside the one pinned, scrubbed
- * timeline, so it reverses cleanly): as each characteristic reaches centre its
- * caption (marker → title → line) rises in and its media settles from a slight
- * zoom — each trait "presents itself" instead of merely sliding past.
+ * Pacing is dwell-based so each piece gets real screen time: the strip pans a
+ * piece to centre, then **holds** while its caption (marker → title → line) and
+ * its annotation points present themselves, and stays held for reading before
+ * the strip pans on. Because the reveal plays at the *start* of each hold, it
+ * always completes while the piece is centred — never as the piece is leaving.
+ * The whole thing lives in the one pinned, scrubbed timeline, so it reverses
+ * cleanly.
  *
  * `tenetsActive` stays set while pinned so the monolith holds receded behind it;
  * `tenetsProgress` tracks the pan.
  */
+
+/** Timeline units spent panning between two pieces (the in/out slide transition). */
+const PAN_DUR = 2.2
+/** Timeline units a piece holds at centre (reveal plays, then it rests for reading). */
+const DWELL_DUR = 1.5
+
 export function buildOathTenets(
   host: HTMLElement,
   q: Selector,
@@ -30,8 +39,12 @@ export function buildOathTenets(
   if (!stage || !track || panels.length === 0) return
 
   const steps = panels.length - 1
+  if (steps <= 0) return
 
-  const trigger = pinTrigger(stage, panels.length * 60 * intensity)
+  // Scroll distance scales with the full pan + dwell budget so the added hold
+  // time translates into more scroll per piece (the strip never rushes past).
+  const totalUnits = panels.length * DWELL_DUR + steps * PAN_DUR
+  const trigger = pinTrigger(stage, totalUnits * 44 * intensity)
   trigger.onToggle = (self) => {
     motion.tenetsActive = self.isActive ? 1 : 0
   }
@@ -40,15 +53,16 @@ export function buildOathTenets(
   }
 
   const tl = gsap.timeline({ scrollTrigger: trigger })
-  if (steps <= 0) return
 
-  // The horizontal pan (the kept mechanic).
-  tl.to(track, { xPercent: -100 * steps, ease: 'none', duration: 1 }, 0)
-
-  // Per-panel cinematic presentation, positioned at each panel's centre time:
-  // the product settles, the title block rises, and the annotation points draw in
-  // (dot → leader line → card), so each piece "presents itself" as it arrives.
+  // Walk the strip piece by piece: pan it to centre (eased so it settles), then
+  // reveal + hold during its dwell window.
+  let at = 0
   panels.forEach((panel, i) => {
+    if (i > 0) {
+      tl.to(track, { xPercent: -100 * i, ease: 'power2.inOut', duration: PAN_DUR }, at)
+      at += PAN_DUR
+    }
+
     const caption = [
       panel.querySelector('[data-tenet-marker]'),
       panel.querySelector('[data-tenet-title]'),
@@ -60,8 +74,8 @@ export function buildOathTenets(
     const linesEls = gsap.utils.toArray<HTMLElement>('[data-hotspot-line]', panel)
     const cards = gsap.utils.toArray<HTMLElement>('[data-hotspot-card]', panel)
 
-    const center = i / steps
-    const inAt = Math.max(0, center - 0.16)
+    // The reveal plays at the start of this piece's dwell, while it is centred.
+    const inAt = at
 
     if (media) {
       gsap.set(media, { scale: 1.1, opacity: 0, transformOrigin: '50% 50%' })
@@ -79,8 +93,9 @@ export function buildOathTenets(
         inAt + 0.06,
       )
     }
-    // Annotation points draw in after the product has resolved.
-    const hsAt = inAt + 0.18
+    // Annotation points draw in after the caption — still early in the dwell, so
+    // they are fully resolved well before the piece pans away.
+    const hsAt = inAt + 0.3
     if (dots.length) {
       gsap.set(dots, { scale: 0, transformOrigin: '50% 50%' })
       tl.to(dots, { scale: 1, ease: 'back.out(2)', duration: 0.26, stagger: 0.08 }, hsAt)
@@ -93,5 +108,7 @@ export function buildOathTenets(
       gsap.set(cards, { y: 12, opacity: 0 })
       tl.to(cards, { y: 0, opacity: 1, ease: 'expo.out', duration: 0.3, stagger: 0.08 }, hsAt + 0.14)
     }
+
+    at += DWELL_DUR
   })
 }

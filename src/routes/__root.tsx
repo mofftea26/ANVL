@@ -38,6 +38,7 @@ import {
   releaseLandingEntryLock,
   useLandingEntry,
 } from '@/features/landingPages/LandingEntryContext'
+import { getStorefrontMainClassName } from '@/routes/storefrontMainLayout'
 import appCss from '@/styles.css?url'
 
 const IS_DEV = import.meta.env.DEV
@@ -159,14 +160,12 @@ function StorefrontLayout() {
             Skip to content
           </a>
         ) : null}
-        {showChrome ? <PremiumNav navigation={navigation} /> : null}
+        {showChrome ? (
+          <PremiumNav navigation={navigation} alwaysTransparent={isHome} />
+        ) : null}
         <main
           id="anvl-main"
-          className={
-            showChrome
-              ? 'pt-[var(--anvl-header-h)]'
-              : 'fixed inset-0 z-0 h-[100dvh] overflow-hidden overscroll-none'
-          }
+          className={getStorefrontMainClassName({ showChrome, isHome })}
         >
           <AppErrorBoundary resetKey={pathname}>
             <Outlet />

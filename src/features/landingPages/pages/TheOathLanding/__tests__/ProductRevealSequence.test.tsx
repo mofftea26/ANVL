@@ -90,13 +90,13 @@ describe('ProductRevealSequence tablet layout', () => {
     )
     const section = container.querySelector('[data-scene="products"]')
     expect(section).not.toBeNull()
-    expect(section!.className).toContain('min-h-[var(--anvl-section-h)]')
+    expect(section!.className).toContain('min-h-[100svh]')
     expect(section!.className).toContain(
       'md:min-h-[min(76svh,calc(var(--anvl-section-h)*0.82))]',
     )
-    expect(section!.className).toContain('xl:min-h-[var(--anvl-section-h)]')
+    expect(section!.className).toContain('xl:min-h-[100svh]')
     expect(section!.className).toContain('md:py-7')
-    expect(section!.className).toContain('xl:py-0')
+    expect(section!.className).toContain('xl:pb-0')
   })
 
   it('widens banner gaps on tablet while keeping desktop gap unchanged', () => {
@@ -110,8 +110,8 @@ describe('ProductRevealSequence tablet layout', () => {
     expect(grid).not.toBeNull()
     expect(grid!.className).toMatch(/\bgap-x-5\b/)
     expect(grid!.className).toMatch(/\bgap-y-10\b/)
-    expect(grid!.className).toMatch(/\bmd:gap-14\b/)
-    expect(grid!.className).toMatch(/\bxl:gap-12\b/)
+    expect(grid!.className).toMatch(/\bmd:gap-20\b/)
+    expect(grid!.className).toMatch(/\bxl:gap-20\b/)
   })
 
   it('uses enlarged tablet banner sizing without changing mobile or desktop', () => {
@@ -126,13 +126,13 @@ describe('ProductRevealSequence tablet layout', () => {
     expect(banner!.className).toContain('max-w-[14.5rem]')
     expect(banner!.className).toContain('max-md:max-w-[10.75rem]')
     expect(banner!.className).toContain('md:max-w-[clamp(14rem,21vw,17rem)]')
-    expect(banner!.className).toContain('xl:max-w-[clamp(10.5rem,17vw,15rem)]')
+    expect(banner!.className).toContain('xl:max-w-[clamp(9rem,13vw,12.5rem)]')
 
     const fabric = container.querySelector('[data-banner] .anvl-banner-body')
     expect(fabric).not.toBeNull()
     expect(fabric!.className).toContain('aspect-[3/4.75]')
     expect(fabric!.className).toContain('md:aspect-[3/4.35]')
-    expect(fabric!.className).toContain('xl:aspect-[3/4.75]')
+    expect(fabric!.className).toContain('xl:aspect-[3/4.15]')
   })
 
   it('feathers top and bottom scene seams at every breakpoint', () => {

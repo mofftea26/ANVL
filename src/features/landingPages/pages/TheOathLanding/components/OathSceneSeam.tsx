@@ -2,17 +2,17 @@ import { cn } from '@/shared/lib/cn'
 
 /** Longer, lower-contrast feather for mobile/tablet boundaries (no visible split line). */
 const SUBTLE_TOP_GRADIENT =
-  'linear-gradient(to bottom, color-mix(in srgb, var(--color-bg) 92%, transparent) 0%, color-mix(in srgb, var(--color-bg) 62%, transparent) 18%, color-mix(in srgb, var(--color-bg) 28%, transparent) 45%, color-mix(in srgb, var(--color-bg) 8%, transparent) 72%, transparent 100%)'
+  'linear-gradient(to bottom, color-mix(in srgb, var(--color-bg) 92%, transparent) 0%, color-mix(in srgb, var(--color-bg) 76%, transparent) 14%, color-mix(in srgb, var(--color-bg) 56%, transparent) 30%, color-mix(in srgb, var(--color-bg) 36%, transparent) 48%, color-mix(in srgb, var(--color-bg) 18%, transparent) 68%, color-mix(in srgb, var(--color-bg) 6%, transparent) 86%, transparent 100%)'
 
 const SUBTLE_BOTTOM_GRADIENT =
-  'linear-gradient(to top, color-mix(in srgb, var(--color-bg) 92%, transparent) 0%, color-mix(in srgb, var(--color-bg) 62%, transparent) 18%, color-mix(in srgb, var(--color-bg) 28%, transparent) 45%, color-mix(in srgb, var(--color-bg) 8%, transparent) 72%, transparent 100%)'
+  'linear-gradient(to top, color-mix(in srgb, var(--color-bg) 92%, transparent) 0%, color-mix(in srgb, var(--color-bg) 76%, transparent) 14%, color-mix(in srgb, var(--color-bg) 56%, transparent) 30%, color-mix(in srgb, var(--color-bg) 36%, transparent) 48%, color-mix(in srgb, var(--color-bg) 18%, transparent) 68%, color-mix(in srgb, var(--color-bg) 6%, transparent) 86%, transparent 100%)'
 
-/** Standard desktop cinematic dissolve — longer multi-stop feather into the void. */
+/** Standard desktop cinematic dissolve — long, eased multi-stop feather into the void. */
 const DEFAULT_TOP_GRADIENT =
-  'linear-gradient(to bottom, var(--color-bg) 0%, color-mix(in srgb, var(--color-bg) 88%, transparent) 10%, color-mix(in srgb, var(--color-bg) 58%, transparent) 28%, color-mix(in srgb, var(--color-bg) 28%, transparent) 52%, color-mix(in srgb, var(--color-bg) 8%, transparent) 78%, transparent 100%)'
+  'linear-gradient(to bottom, var(--color-bg) 0%, color-mix(in srgb, var(--color-bg) 92%, transparent) 12%, color-mix(in srgb, var(--color-bg) 78%, transparent) 24%, color-mix(in srgb, var(--color-bg) 58%, transparent) 38%, color-mix(in srgb, var(--color-bg) 38%, transparent) 54%, color-mix(in srgb, var(--color-bg) 20%, transparent) 70%, color-mix(in srgb, var(--color-bg) 7%, transparent) 86%, transparent 100%)'
 
 const DEFAULT_BOTTOM_GRADIENT =
-  'linear-gradient(to top, var(--color-bg) 0%, color-mix(in srgb, var(--color-bg) 88%, transparent) 10%, color-mix(in srgb, var(--color-bg) 58%, transparent) 28%, color-mix(in srgb, var(--color-bg) 28%, transparent) 52%, color-mix(in srgb, var(--color-bg) 8%, transparent) 78%, transparent 100%)'
+  'linear-gradient(to top, var(--color-bg) 0%, color-mix(in srgb, var(--color-bg) 92%, transparent) 12%, color-mix(in srgb, var(--color-bg) 78%, transparent) 24%, color-mix(in srgb, var(--color-bg) 58%, transparent) 38%, color-mix(in srgb, var(--color-bg) 38%, transparent) 54%, color-mix(in srgb, var(--color-bg) 20%, transparent) 70%, color-mix(in srgb, var(--color-bg) 7%, transparent) 86%, transparent 100%)'
 
 /**
  * Opaque section hand-off — solid `--color-bg` at the outer edge with a longer,
@@ -55,12 +55,12 @@ export function OathSceneSeam({
   const isBlend = tone === 'blend'
   const isOpaque = tone === 'opaque'
   const heightClass = isSubtle
-    ? 'h-44 md:h-56 xl:h-40'
+    ? 'h-52 md:h-64 xl:h-48'
     : isBlend
       ? 'h-48 xl:h-64'
       : isOpaque
         ? 'h-40 md:h-48 xl:h-64'
-        : 'h-32 md:h-44 xl:h-52'
+        : 'h-40 md:h-52 xl:h-64'
   const topGradient = isBlend
     ? undefined
     : isOpaque
@@ -108,9 +108,11 @@ export function OathSceneSeam({
   )
 }
 
-/** Section-level alpha mask — products bottom fades to transparent on xl+ (pairs with blend seam). */
+/** Section-level alpha mask — products bottom fades to transparent on xl+ (pairs
+ * with blend seam). The fade is kept to the bottom edge only so the "view the
+ * drop" CTA above it stays fully opaque (not faded). */
 export const OATH_PRODUCTS_FINALE_BLEND_MASK =
-  'xl:[mask-image:linear-gradient(to_bottom,black_0%,black_74%,rgba(0,0,0,0.55)_86%,transparent_100%)] xl:[-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_74%,rgba(0,0,0,0.55)_86%,transparent_100%)]'
+  'xl:[mask-image:linear-gradient(to_bottom,black_0%,black_90%,rgba(0,0,0,0.55)_96%,transparent_100%)] xl:[-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_90%,rgba(0,0,0,0.55)_96%,transparent_100%)]'
 
 /** Section-level alpha mask — finale top fades in from transparent on xl+ (pairs with blend seam). */
 export const OATH_FINALE_PRODUCTS_BLEND_MASK =

@@ -16,6 +16,8 @@ interface WarBannerProps {
   tone?: string
   /** Image URL. When absent, a duotone plane + emblem placeholder renders. */
   media?: string
+  /** How the media fills the fabric body. `cover` crops to fill (default); `contain` fits the whole image with no cropping. */
+  mediaFit?: 'cover' | 'contain'
   alt?: string
   /** Small heraldic label pinned to the crossbar (e.g. a piece role / numeral). */
   label?: ReactNode
@@ -79,6 +81,7 @@ const EMBLEM_SIZE = {
 export function WarBanner({
   tone = DEFAULT_BANNER_TONE,
   media,
+  mediaFit = 'cover',
   alt = '',
   label,
   children,
@@ -226,7 +229,12 @@ export function WarBanner({
                 alt={alt}
                 loading="lazy"
                 decoding="async"
-                className="absolute inset-0 h-full w-full object-cover"
+                className={cn(
+                  'absolute inset-0 h-full w-full',
+                  mediaFit === 'contain'
+                    ? 'object-contain px-[14%] pt-[16%] pb-[22%]'
+                    : 'object-cover',
+                )}
               />
             ) : placeholderMark ? (
               <div className="anvl-banner-emblem absolute inset-0 flex items-center justify-center">

@@ -57,6 +57,15 @@ export function oathCrestEmblem(): string {
   return cmsAsset('crestSvg') ?? oathDropLogo()
 }
 
+/**
+ * The site-wide **Default emblem** (CMS General scope → `emblemFallback`). Used
+ * for the finale crest so the closing mark is the brand's general emblem, not the
+ * drop-specific logo. Falls back to the drop logo / placeholder when unassigned.
+ */
+export function oathDefaultEmblem(): string {
+  return cmsAsset('emblemFallback') ?? oathDropLogo()
+}
+
 /* — Hero media ————————————————————————————————————————————————— */
 
 export function oathHeroMediaMode(): OathHeroMediaMode {

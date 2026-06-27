@@ -1,4 +1,68 @@
-﻿## 2026-06-26 — The Oath Modern removed (reverted)
+﻿## 2026-06-27 — Dead-code / asset / dependency cleanup
+
+- **Removed dead modules** — `landingPages/motion/landingMotion.ts` (leftover from the reverted Oath Modern; no importers), and the unused `headerOffsetPx` / `OATH_PREMIUM_EASE` / `prefersReducedMotion` exports in `oathMotionHelpers.ts` (orphaned after sections moved to full-height `top top` pins).
+- **Removed unused components + deps** — `AdminDateTimeField` (scheduled-drops leftover, only its own test referenced it) → dropped `react-day-picker`; the shared `ColorField` (no consumers; admin uses `ThemeColorField`) → dropped `react-colorful`. Both removed from `package.json` and pruned from the lockfile (−6 packages). Deleted their tests and the `ColorField` barrel export.
+- **Removed orphaned assets** — `public/landing/the-oath/char-{chest,core,lats,seamless,yoke}.webp` (old product-characteristics images, replaced by the 3D/`product-bg-*` arsenal). Kept `public/brand/*` (documented downloadable brand exports).
+- **Console audit** — no stray `console.log`; remaining `console.*` are intentional (error boundary, projection-load warnings, DEV-gated analytics mock). `noUnusedLocals`/`noUnusedParameters` already guarantee no unused imports/locals.
+- `pnpm verify` green: typecheck + 575 tests + build.
+
+## 2026-06-27 — Per-section vertical nudges + finale emblem elevation
+
+- **Hero** — raised the content block (eyebrow/headline/subhead/CTAs) on desktop by ~half the header (`xl:mb-[var(--anvl-header-h)]`); the absolute scroll-cue footer stays put.
+- **Arsenal (tenets)** — the left-rail title + "NN pieces · scroll" footer are nudged down by half the top bar (`translateY(header/2)`) to clear the transparent header; the centred panorama is untouched.
+- **Products** — pushed all content down on desktop (`xl:pt-[var(--anvl-header-h)]`, was `xl:py-0`).
+- **Finale emblem** — added offset drop-shadows so the crest reads as elevated above the page.
+
+## 2026-06-27 — Landing sections are full screen height (under the transparent bar)
+
+- **Backdrop matches sections behind the bar** — re-centred the fixed void backdrop glow so its top edge resolves to solid `--color-bg`, removing the lighter strip that read as a gap above each section behind the transparent nav.
+- **Full-screen sections** — the landing home `<main>` is full-bleed (no header padding) and the header is a transparent overlay, but the Oath sections were sized to `--anvl-section-h` (`100svh − header`) and pinned at `top+=header`, leaving a header-height gap above each. Changed hero / manifesto / tenets / products to `100svh` and the pin start (`pinTrigger` + hero) to `top top`, so each section fills the whole screen behind the bar with no gap; content stays centred. Tests updated (hero `h-[100svh]`, products `min-h-[100svh]`).
+
+## 2026-06-27 — Landing header is homogeneous (always transparent)
+
+- **Landing top bar blends with the page** — new `alwaysTransparent` prop on `PremiumNav` (set via `isHome` in `__root.tsx`) keeps the header transparent at all scroll positions on the landing page, so it never becomes a solid scrim panel with an edge. The fixed hero header scrim keeps the nav legible over every section. Inner pages keep the normal transparent→solid-on-scroll behaviour. Also removed the nav background blur (`backdrop-blur`) and switched the solid scrim to the hero's top-down shadow gradient so, where it does appear, it reads as the same overlay rather than a flat panel.
+
+## 2026-06-27 — Top bar edge cleanup + creed soft-start fade
+
+- **Top bar at the top is cleanly transparent** — removed the announcement rail's bottom border (`border-b border-white/10`), which read as a hard hairline at the very top of the page over the hero. The topbar scrim is already `opacity-0` when transparent, so there's no fade at rest; the feathered scrim still fades in on scroll (solid).
+- **Creed starts with a soft fade (no edge under "approach")** — removed the extra pooled top-shadow on the manifesto (it was a darker band that re-created an edge) and kept a single clean top feather (`mask` ~18%), so the creed's backdrop ramps softly out of the void above instead of meeting the hero hand-off at a line.
+
+## 2026-06-27 — Top bar feathered bottom edge + landing cursor over the bar
+
+- **Top bar bottom edge feathers** — `PremiumNavTopbar` paints its solid scrim on a dedicated layer (extended slightly below the bar) with a bottom-fading mask, so the bar dissolves into the scene instead of ending on a hard line. Content (logo/links/icons) lives in a sibling `Container` above the layer, so the fade never touches it; the scrim still fades in/out with the solid/transparent variant.
+- **Landing custom cursor covers the top bar** — `OathCursor` now tracks on `window` and hides the native cursor page-wide (was scoped to the landing root), so the special cursor persists over the fixed top bar (which lives outside the landing root). It only mounts on the landing page's fine-pointer desktop branch, so other routes/touch keep the native cursor.
+
+## 2026-06-27 — The Oath: finale uses sitewide Default emblem; CTA + crest tweaks
+
+- **Finale = sitewide Default emblem** — the closing crest now resolves the CMS **General → Default emblem** (`emblemFallback`) via new `oathDefaultEmblem()`, rendered as a **solid theme-`--color-text` silhouette via a CSS mask** (so any source asset reads in the theme colour), enlarged (`h-64/md:h-72/xl:h-80`) and tucked closer to the brand line below (`mb-10 → mb-4`). Previously it showed the drop logo.
+- **"View the drop" CTA no longer fades** — `OATH_PRODUCTS_FINALE_BLEND_MASK` alpha ramp moved from 74% to 90%, so the bottom CTA stays fully opaque and only the empty section edge dissolves into the finale.
+- **Banner spacing** — product banners spaced further apart (`md/xl gap 14/12 → 20`).
+- **Hero crest** — nudged further left and slightly smaller (`restX -0.2→-0.26·w`, `SMALL 0.58→0.5`).
+
+## 2026-06-27 — The Oath: banners fit, finale emblem, hero crest, hero↔creed shadow
+
+- **Banner product images fit (no crop)** — `WarBanner` gained a `mediaFit` prop (`cover` default, unchanged elsewhere); the three landing product banners now use `contain` with inner padding (`px-[14%] pt-[16%] pb-[22%]`) so the garment sits whole inside the gonfalon with breathing room instead of being cropped.
+- **Product section fits one screen** — shrank the xl banner (`max-w` clamp `10.5–15rem → 9–12.5rem`, aspect `3/4.75 → 3/4.15`) and tightened the xl vertical rhythm (rail/grid/view-all margins) so the Arsenal banner section sits within `--anvl-section-h` instead of overflowing the viewport.
+- **Slide transitions slower** — `buildOathTenets` `PAN_DUR 1 → 2.2` so each armory slide eases in/out more cinematically (scroll distance auto-scales).
+- **Finale emblem** — the closing crest now renders the default drop emblem (`dropLogo` slot, the Supabase-assigned brand mark) instead of the separate `crestSvg`.
+- **Hero floating crest** — the 3D monolith's hero rest pose moved from a small upper-left corner mark to a **larger backdrop crest centred behind the hero copy** (`restX -0.32→-0.2·w`, `restY +0.25·h→0`, `SMALL 0.3→0.58`, `FINALE 1.3→1.6`); it still drifts to screen centre on scroll.
+- **Hero↔creed shadow** — the creed's solid backdrop top edge now feathers in (mask) plus a pooled top shadow, so the dark ramps up into the hero film as a long shadow instead of meeting it at a hard line.
+- Tests updated (banner sizing); `pnpm typecheck` + landing/premium suites green (91 tests).
+
+## 2026-06-27 — The Oath: softer seams + transparent arsenal stage
+
+- **Slide-to-slide blending (armory)** — each Arsenal panorama slide's smokey background now feathers at its left/right edges (horizontal mask) so adjacent pieces cross-dissolve into the stage void as the strip pans, instead of meeting at a hard vertical seam.
+- **Softer section seams** — `OathSceneSeam` default + subtle gradients gained extra eased stops and a longer feather (`default` xl `h-52 → h-64`, `subtle` taller too) so section hand-offs fall off gradually with no perceptible edge.
+- **Transparent product stage** — the Arsenal placeholder (shown until a GLB/still is assigned) was a radial that resolved to solid `--color-bg`, painting the stage rectangle's corners and reading as a box/panel. It now fades fully to transparent — a soft forged ember glow on the smokey slide, no box. (The 3D canvas was already `alpha:true`/transparent.)
+- Seam-height tests updated; `pnpm typecheck` + TheOathLanding suite green (78 tests).
+
+## 2026-06-27 — The Oath: seamless scene flow + arsenal dwell pacing
+
+- **Continuity (no shadow lines / no void show-through)** — the creed (`OathManifesto`) had no solid background: its `OathMediaFallback` is `feather`ed, so the duotone base itself faded to transparent at the top/bottom edges and revealed the fixed void backdrop ("the back of the page") at the manifesto↔tenets hand-off, while stacked seam bands on both neighbours read as shadow lines dividing hero↔creed and creed↔arsenal. Fixed by giving the manifesto a **solid `--color-bg` backdrop** and **removing its two seam bands** — the media still feathers into the now-continuous black via `OathMediaFallback`, and the neighbouring hero-bottom / tenets-top dissolves carry the hand-off, so the desktop film reads as one flow.
+- **Arsenal pacing (`buildOathTenets`)** — the panorama panned as one linear tween (`duration 1`) and each piece's caption/hotspots revealed starting at `centre − 0.16` over ~0.5+ timeline units, but each piece only owned `1/steps` of the timeline, so annotations finished revealing *after* the piece began leaving the screen. Rebuilt as a **dwell-based timeline**: each piece pans to centre (eased, settles), then **holds** while its caption + annotations present themselves and rests for reading before the strip pans on. The reveal now plays at the *start* of each hold (always completes while centred) and scroll distance scales with the pan+dwell budget so every piece gets more time under scroll.
+- Tests updated (manifesto continuity); `pnpm typecheck` + TheOathLanding suite green (78 tests).
+
+## 2026-06-26 — The Oath Modern removed (reverted)
 
 - **Scrapped** the continuous-3D ceremonial rebuild per request. Deleted `pages/OathModern/`, `ProductCardCeremonial`, the Om landing-content CMS editor (form/fields/test), the bundled GLB + ceremonial plates (`public/models/`, `public/images/oath-modern/`), the feature doc, the project skill, and the unapplied rename migration. Removed the `theoath-modern` entry from the landing registry, the experience registry (collapsed to the single `the-oath` experience), and `DROP_ASSET_SLOTS`; `ExperienceProductCard` resolves the classic card. The landing-content editor is The Oath only again.
 - **Kept** the `forged-ceremonial` theme preset (selectable in `/admin/theme`). The inert `[data-experience="theoath-modern"]` CSS block is left dormant (never matches). `pnpm verify` green (578 tests).
@@ -54,6 +118,11 @@
 - **CMS** — page-aware `AdminLandingContentEditor` (Oath path unchanged; Theoath Modern gets its own copy editor: hero + hotspots + side index, tech-knit, collection taglines, benefits, materials specs/notes, conversion). Asset slots (`theoathModernAssetSlots.ts`) registered in `DROP_ASSET_SLOTS` so the Assets page lists the new drop. No new tables — content in `landing_content['theoath-modern']`, slots in `asset_config.drops['theoath-modern']`.
 - **Supabase** — `supabase/migrations/20260625145546_theoath_modern_landing_page.sql` (idempotent `landing_pages` upsert; both rows anon-readable, RLS unchanged).
 - **Tests**: experience resolution, Tech Forge preset, Theoath Modern content + form round-trip, section render/hotspot a11y/collection. `pnpm verify` green (578 tests). **Remaining: Phase 3 (whole-site bespoke variants), Phase 4 (Higgsfield assets + perf/a11y).**
+
+## 2026-06-22 — Storefront: home sections overlap fixed header
+
+- **Home layout** — removed `pt-[var(--anvl-header-h)]` from `<main>` on `/` after the landing entry completes so Oath scenes render full-bleed under the transparent fixed nav (shop and other routes still reserve header space).
+- **Tests:** `storefrontMainLayout.test.ts`. Helper: `getStorefrontMainClassName`.
 
 ## 2026-06-22 — Documentation refresh (slim CMS + xl cinematic contract)
 

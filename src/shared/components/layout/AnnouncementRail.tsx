@@ -23,10 +23,13 @@ export function AnnouncementRail({
   return (
     <div
       className={cn(
-        'border-b py-2 transition-colors',
+        'py-2 transition-colors',
+        // No bottom border: over the hero (transparent) it read as a hard edge at
+        // the very top of the page; when solid the topbar scrim below carries the
+        // separation with a feathered bottom.
         isTransparent
-          ? 'border-white/10 bg-transparent'
-          : 'border-[var(--color-line)] bg-[var(--color-surface)]/80 backdrop-blur-sm',
+          ? 'bg-transparent'
+          : 'bg-[var(--color-surface)]/80',
       )}
       data-premium-announcement
     >

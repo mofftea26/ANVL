@@ -66,7 +66,7 @@ describe('OathSceneSeam', () => {
 
     expect(bottom!.getAttribute('data-scene-seam-tone')).toBe('subtle')
 
-    expect(bottom!.className).toMatch(/\bh-44\b/)
+    expect(bottom!.className).toMatch(/\bh-52\b/)
 
   })
 
@@ -76,7 +76,7 @@ describe('OathSceneSeam', () => {
     const { container } = render(<OathSceneSeam edges="bottom" />)
     const bottom = container.querySelector('[data-scene-seam="bottom"]')
     expect(bottom).not.toBeNull()
-    expect(bottom!.className).toMatch(/\bxl:h-52\b/)
+    expect(bottom!.className).toMatch(/\bxl:h-64\b/)
   })
 
   it('marks blend tone without painting opaque bg color', () => {

@@ -153,7 +153,7 @@ src/
       motion/        RevealOnScroll
       premium/       SectionShell, PageHero, ContentPanel, SectionEyebrow, ForgeAtmosphere, WarBanner
       seo/           JsonLd, MarketingToolsHead, structuredData
-      ui/            Button, Input, Modal, Drawer, Select, Skeleton, SafeLink, ColorField, MediaPickerField, etc.
+      ui/            Button, Input, Modal, Drawer, Select, Skeleton, SafeLink, MediaPickerField, etc.
     constants/       brand.ts, brandLogos.ts
     hooks/           useDialogFocusTrap, useLenisScroll, useLockPageScroll, useReducedMotion
     lib/             cn.ts, gsap.ts, url.ts, stripAngleBracketTags.ts, color.ts, storage/
@@ -300,6 +300,7 @@ Admin editor (localStorage working copy)
 - Do not hardcode landing content in route files — use the page folder + registry pattern.
 - Always support SEO metadata for landing pages (via `buildSeoMeta()` + route loaders).
 - Landing page components receive: `{ products, assets }` via `LandingPageComponentProps`.
+- **Home is full-bleed under a transparent header.** On the home route `<main>` reserves no header padding (`getStorefrontMainClassName` returns `undefined` for `isHome`) and `PremiumNav` is rendered with `alwaysTransparent` (never turns into a solid scrim bar). The Oath scenes are therefore full screen height (`100svh`, **not** `--anvl-section-h`) and their pinned ScrollTriggers start at `top top`, so each section fills the viewport behind the bar with no header-height gap. A fixed themed void backdrop (top edge = `--color-bg`) sits behind every scene so the strip behind the transparent bar matches the sections. Non-home routes keep the normal transparent→solid-on-scroll header + `--anvl-header-h` main padding.
 
 ---
 
@@ -669,7 +670,7 @@ Every code change must check whether documentation needs updating. After any:
 | SEC-01/02/03 | Admin auth | Temporary static env-file gate. Not production-grade. Hosted-demo blocker. |
 | SEC-11 | Admin auth | Supabase auth replaces static gate when env is set, but session handling still needs HttpOnly cookies + server validation for production. |
 | PERF-01 | Admin routes | All admin routes must use `lazyRouteComponent`. |
-| PERF-11 | Bundle size | Dependency cleanup: removed unused `@tanstack/react-table` + `@radix-ui/react-dropdown-menu` (2026-06-11) and `@fontsource/bebas-neue`, `@fontsource/manrope`, `@tanstack/react-query-devtools`, `@tailwindcss/typography` (2026-06-20). `@tanstack/react-virtual` (admin media grid), `framer-motion` (RevealOnScroll), and the active fonts (Anton/Sora/Cinzel) remain in use. |
+| PERF-11 | Bundle size | Dependency cleanup: removed unused `@tanstack/react-table` + `@radix-ui/react-dropdown-menu` (2026-06-11), `@fontsource/bebas-neue`, `@fontsource/manrope`, `@tanstack/react-query-devtools`, `@tailwindcss/typography` (2026-06-20), and `react-colorful` (with the orphaned shared `ColorField`) + `react-day-picker` (with the orphaned `AdminDateTimeField`) (2026-06-27). `@tanstack/react-virtual` (admin media grid), `framer-motion` (RevealOnScroll), and the active fonts (Anton/Sora/Cinzel) remain in use. |
 | MAINT-01 | Large files | Several admin editor files exceed 500 lines (tracked refactor candidates). |
 | MAINT-02 | Feature boundary | Storefront-safe code imports from `admin/**` (media URL, types) — extract to `cms/**` |
 | MAINT-03 | localStorage reset | `resetAllLocalCmsKeys()` omits `anvl.landingContent.v1` |

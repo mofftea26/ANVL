@@ -86,7 +86,7 @@ function BannerColumn({
       data-banner-front={isFront ? 'true' : undefined}
       onMouseEnter={() => onHoverEnter(index)}
       className={cn(
-        'relative flex w-full max-w-[14.5rem] flex-col items-center max-md:mx-auto max-md:max-w-[10.75rem] md:max-w-[clamp(14rem,21vw,17rem)] xl:max-w-[clamp(10.5rem,17vw,15rem)]',
+        'relative flex w-full max-w-[14.5rem] flex-col items-center max-md:mx-auto max-md:max-w-[10.75rem] md:max-w-[clamp(14rem,21vw,17rem)] xl:max-w-[clamp(9rem,13vw,12.5rem)]',
         bannerZClass(index, hoveredIndex),
         isHeroBanner && 'max-md:order-1 max-md:col-span-2',
         index === 0 && 'max-md:order-2',
@@ -109,11 +109,12 @@ function BannerColumn({
           <WarBanner
             tone={product.tone}
             media={product.image}
+            mediaFit="contain"
             alt={product.name}
             label={numeral}
             placeholderSrc={cmsRender ?? oathCrestEmblem()}
             placeholderThemedMarkup={cmsRender ? null : oathThemedMarkup('crestSvg')}
-            aspectClassName="aspect-[3/4.75] md:aspect-[3/4.35] xl:aspect-[3/4.75]"
+            aspectClassName="aspect-[3/4.75] md:aspect-[3/4.35] xl:aspect-[3/4.15]"
             elevated
             sway
             swayDelay={index * 0.45}
@@ -188,7 +189,7 @@ export function ProductRevealSequence({
       data-product-reveal
       id="products"
       className={cn(
-        'relative flex min-h-[var(--anvl-section-h)] w-full flex-col justify-center overflow-hidden py-12 md:min-h-[min(76svh,calc(var(--anvl-section-h)*0.82))] md:py-7 xl:min-h-[var(--anvl-section-h)] xl:py-0',
+        'relative flex min-h-[100svh] w-full flex-col justify-center overflow-hidden py-12 md:min-h-[min(76svh,calc(var(--anvl-section-h)*0.82))] md:py-7 xl:min-h-[100svh] xl:pb-0 xl:pt-[var(--anvl-header-h)]',
         OATH_PRODUCTS_FINALE_BLEND_MASK,
       )}
       aria-label="The first three pieces"
@@ -233,7 +234,7 @@ export function ProductRevealSequence({
         <div
           aria-hidden="true"
           data-banner-rail
-          className="mx-auto mt-8 hidden h-1 w-[82%] max-w-4xl rounded-full md:mt-5 md:block xl:mt-8"
+          className="mx-auto mt-8 hidden h-1 w-[82%] max-w-4xl rounded-full md:mt-5 md:block xl:mt-5"
           style={{
             background:
               'linear-gradient(90deg, transparent, var(--color-graphite) 12%, color-mix(in srgb, var(--color-graphite) 68%, var(--anvl-bone)) 50%, var(--color-graphite) 88%, transparent)',
@@ -241,9 +242,9 @@ export function ProductRevealSequence({
           }}
         />
 
-        <div className="relative mx-auto mt-8 md:mt-5 xl:mt-6">
+        <div className="relative mx-auto mt-8 md:mt-5 xl:mt-4">
           <ul
-            className="relative z-[1] mx-auto grid w-full grid-cols-2 max-md:justify-items-center max-md:gap-x-3 gap-x-5 gap-y-10 [perspective:1600px] md:flex md:flex-row md:items-start md:justify-center md:gap-14 xl:gap-12"
+            className="relative z-[1] mx-auto grid w-full grid-cols-2 max-md:justify-items-center max-md:gap-x-3 gap-x-5 gap-y-10 [perspective:1600px] md:flex md:flex-row md:items-start md:justify-center md:gap-20 xl:gap-20"
             onMouseLeave={() => setHoveredIndex(null)}
           >
             {resolved.map((product, i) => (
@@ -259,7 +260,7 @@ export function ProductRevealSequence({
           </ul>
         </div>
 
-        <div data-reveal-m className="mt-9 text-center md:mt-7 xl:mt-10">
+        <div data-reveal-m className="mt-9 text-center md:mt-7 xl:mt-6">
           <SafeLink
             href={content.viewAllHref}
             className="focus-ring inline-flex items-center gap-2 border-b border-[var(--color-highlight)]/50 pb-1 text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-text)] no-underline transition-colors hover:text-[var(--color-highlight-bright)]"

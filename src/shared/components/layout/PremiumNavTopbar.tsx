@@ -56,14 +56,28 @@ export function PremiumNavTopbar({
 
   return (
     <div
-      className={cn(
-        'transition-[background-color,backdrop-filter] duration-300',
-        isSolid ? 'bg-[var(--nav-scrim)] backdrop-blur-md' : 'bg-transparent',
-      )}
+      className="relative"
       data-premium-topbar
       data-premium-topbar-variant={variant}
     >
-      <Container className="flex h-14 items-center gap-3 md:h-16">
+      {/* Scrim on its own layer so the fade never touches the bar's content
+          (logo/links/icons live in the sibling Container above it). Uses the SAME
+          top-down shadow gradient as the hero's header scrim, so the bar reads as
+          a continuation of that overlay rather than a flat panel; it feathers to
+          transparent at the bottom on its own (no hard edge). Extends slightly
+          below the bar and fades in/out with the solid/transparent variant. */}
+      <div
+        aria-hidden="true"
+        className={cn(
+          'pointer-events-none absolute -bottom-4 left-0 right-0 top-0 transition-opacity duration-300',
+          isSolid ? 'opacity-100' : 'opacity-0',
+        )}
+        style={{
+          background:
+            'linear-gradient(to bottom, color-mix(in srgb, var(--color-bg) 80%, transparent) 0%, color-mix(in srgb, var(--color-bg) 40%, transparent) 55%, transparent 100%)',
+        }}
+      />
+      <Container className="relative flex h-14 items-center gap-3 md:h-16">
         <Link
           to="/"
           className="focus-ring inline-flex shrink-0 items-center text-[var(--color-heading)]"

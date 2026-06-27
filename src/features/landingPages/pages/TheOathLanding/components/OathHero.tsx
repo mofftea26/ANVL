@@ -64,9 +64,11 @@ const SPOTLIGHT_MASK =
 
 /**
 
- * Scene 01 — Hero. Exactly one screen tall (`--anvl-section-h` = svh − header),
+ * Scene 01 — Hero. Exactly one full screen tall (`100svh`) — the landing header
 
- * so the "Approach" cue sits at the bottom without scrolling. The forge film is
+ * is a transparent overlay (reserves no space), so the section runs full-bleed
+
+ * under the bar and the "Approach" cue sits at the bottom. The forge film is
 
  * a **contained, right-anchored panel** (width-capped so a low-res source isn't
 
@@ -122,7 +124,7 @@ export function OathHero({ hero }: { hero: OathResolvedContent['hero'] }) {
 
       data-scene="hero"
 
-      className="relative flex h-[var(--anvl-section-h)] w-full items-center justify-center overflow-hidden max-xl:pb-[max(3.5rem,env(safe-area-inset-bottom))]"
+      className="relative flex h-[100svh] w-full items-center justify-center overflow-hidden max-xl:pb-[max(3.5rem,env(safe-area-inset-bottom))]"
 
       aria-labelledby="oath-hero-heading"
 
@@ -348,7 +350,7 @@ export function OathHero({ hero }: { hero: OathResolvedContent['hero'] }) {
 
           data-hero-content
 
-          className="max-w-2xl will-change-transform max-xl:mx-auto max-xl:max-w-3xl max-xl:text-center max-md:flex max-md:w-full max-md:flex-col max-md:items-center xl:text-left"
+          className="max-w-2xl will-change-transform max-xl:mx-auto max-xl:max-w-3xl max-xl:text-center max-md:flex max-md:w-full max-md:flex-col max-md:items-center xl:mb-[var(--anvl-header-h)] xl:text-left"
 
         >
 

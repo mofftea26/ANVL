@@ -1,6 +1,6 @@
 import { gsap } from '@/shared/lib/gsap'
 import type { OathMotionState } from './oathMotionState'
-import { headerOffsetPx, type Selector } from './oathMotionHelpers'
+import { type Selector } from './oathMotionHelpers'
 import { splitUnits } from './splitTextReveal'
 
 /**
@@ -98,7 +98,7 @@ export function buildOathHero(
     scrollTrigger: {
       id: 'oath-hero-pin',
       trigger: hero,
-      start: () => `top top+=${headerOffsetPx()}`,
+      start: 'top top',
       end: `+=${Math.round(180 * intensity)}%`,
       pin: true,
       scrub: 1,

@@ -4,7 +4,8 @@ import {
   OATH_BRAND_NAME,
   type OathResolvedContent,
 } from '../content/oathContent.defaults'
-import { OathCmsMark } from './OathCmsMark'
+import { sanitizeHref } from '@/shared/lib/url'
+import { oathDefaultEmblem } from '../theOathAssets'
 import { OathCtaLink } from './OathCtaLink'
 import { OATH_FINALE_PRODUCTS_BLEND_MASK, OathSceneSeam } from './OathSceneSeam'
 
@@ -40,9 +41,28 @@ export function OathFinale({ finale }: { finale: OathResolvedContent['finale'] }
       />
 
       <Container className="relative z-10 flex flex-col items-center">
-        <div data-finale-crest data-reveal-m className="mb-10 will-change-transform">
-          <div className="flex h-44 w-44 items-center justify-center md:h-52 md:w-52 xl:h-56 xl:w-56">
-            <OathCmsMark slot="crestSvg" className="h-full w-full" width={224} height={224} />
+        <div data-finale-crest data-reveal-m className="mb-4 will-change-transform">
+          <div className="flex h-64 w-64 items-center justify-center md:h-72 md:w-72 xl:h-80 xl:w-80">
+            {/* Sitewide Default emblem (CMS General → emblemFallback), filled in
+                the theme text colour via a CSS mask so it reads as a solid crest
+                regardless of the source asset's own colours. */}
+            <span
+              aria-hidden="true"
+              className="inline-flex h-full w-full"
+              style={{
+                backgroundColor: 'var(--color-text)',
+                maskImage: `url("${sanitizeHref(oathDefaultEmblem())}")`,
+                WebkitMaskImage: `url("${sanitizeHref(oathDefaultEmblem())}")`,
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                filter:
+                  'drop-shadow(0 18px 26px rgba(0,0,0,0.6)) drop-shadow(0 6px 10px rgba(0,0,0,0.45)) drop-shadow(0 0 24px color-mix(in srgb, var(--color-text) 18%, transparent))',
+              }}
+            />
           </div>
         </div>
 
