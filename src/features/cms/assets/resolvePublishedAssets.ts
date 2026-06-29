@@ -22,6 +22,14 @@ function resolveMediaId(
   return objectPath.startsWith('/') ? objectPath : `/${objectPath}`
 }
 
+/** Public: resolve a single CMS media id to its public URL (or undefined). */
+export function resolveMediaUrl(
+  mediaId: string | undefined,
+  mediaIndex: MediaIndexEntry[],
+): string | undefined {
+  return resolveMediaId(mediaId, mediaIndex)
+}
+
 export function resolvePublishedAssets(
   assetConfig: AssetConfig,
   activeDropKey: string,

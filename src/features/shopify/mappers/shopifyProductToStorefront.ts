@@ -31,6 +31,18 @@ const productNodeSchema = z.object({
     })
     .nullable()
     .optional(),
+  images: z
+    .object({
+      edges: z.array(
+        z.object({
+          node: z.object({
+            url: z.string(),
+            altText: z.string().nullable().optional(),
+          }),
+        }),
+      ),
+    })
+    .optional(),
   priceRange: z.object({
     minVariantPrice: moneySchema,
   }),
@@ -75,6 +87,23 @@ function buildAvailabilityMatrix(
   return matrix
 }
 
+function buildVariantIdMatrix(
+  variants: z.infer<typeof variantNodeSchema>[],
+): Record<string, Record<string, string>> {
+  const matrix: Record<string, Record<string, string>> = {}
+  for (const v of variants) {
+    const color =
+      v.selectedOptions.find((o) => o.name.toLowerCase() === 'color')?.value ??
+      'Default'
+    const size =
+      v.selectedOptions.find((o) => o.name.toLowerCase() === 'size')?.value ??
+      'One Size'
+    if (!matrix[color]) matrix[color] = {}
+    matrix[color][size] = v.id
+  }
+  return matrix
+}
+
 function collectSizes(variants: z.infer<typeof variantNodeSchema>[]): string[] {
   const sizes = new Set<string>()
   for (const v of variants) {
@@ -104,6 +133,43 @@ function collectColorways(
   }))
 }
 
+type StorefrontImage = { src: string; alt: string }
+
+/** All product gallery images (Shopify media), falling back to featured → placeholder. */
+function collectImages(node: ShopifyProductNode): StorefrontImage[] {
+  const media =
+    node.images?.edges.map((e) => ({
+      src: e.node.url,
+      alt: e.node.altText ?? node.title,
+    })) ?? []
+  if (media.length > 0) return media
+  if (node.featuredImage) {
+    return [{ src: node.featuredImage.url, alt: node.featuredImage.altText ?? node.title }]
+  }
+  return [{ src: '/brand/og-default.svg', alt: node.title }]
+}
+
+/**
+ * Group gallery images by colorway. Shopify has no first-class per-variant
+ * gallery via the Storefront API, so we match each image to a colorway by its
+ * alt text (we author it as e.g. "Onyx — front"). Colors with no matching image
+ * are omitted, so the PDP falls back to the full gallery for that color.
+ */
+function buildImagesByColorName(
+  images: StorefrontImage[],
+  colorNames: string[],
+): Record<string, StorefrontImage[]> {
+  const out: Record<string, StorefrontImage[]> = {}
+  for (const name of colorNames) {
+    if (name === 'Default') continue
+    const matched = images.filter((img) =>
+      img.alt.toLowerCase().includes(name.toLowerCase()),
+    )
+    if (matched.length > 0) out[name] = matched
+  }
+  return out
+}
+
 export function mapShopifyProductNodeToStorefront(
   node: ShopifyProductNode,
   options?: { dropName?: string },
@@ -113,8 +179,8 @@ export function mapShopifyProductNodeToStorefront(
   const variants = node.variants.edges.map((e) => e.node)
   const dropIds = parseDropIdsFromMetafield(node.metafield?.value)
   const anyAvailable = variants.some((v) => v.availableForSale)
-  const imageUrl = node.featuredImage?.url ?? '/brand/og-default.svg'
-  const imageAlt = node.featuredImage?.altText ?? node.title
+  const images = collectImages(node)
+  const colorways = collectColorways(variants)
 
   const shop: ProductShopMeta = {
     storefrontStatus: anyAvailable ? 'available' : 'outOfStock',
@@ -127,7 +193,11 @@ export function mapShopifyProductNodeToStorefront(
     currency,
     category: 'Apparel',
     availabilityByColorAndSize: buildAvailabilityMatrix(variants),
-    imagesByColorName: {},
+    variantIdByColorAndSize: buildVariantIdMatrix(variants),
+    imagesByColorName: buildImagesByColorName(
+      images,
+      colorways.map((c) => c.name),
+    ),
   }
 
   return {
@@ -142,10 +212,10 @@ export function mapShopifyProductNodeToStorefront(
     storytelling: node.description,
     designDetails: [],
     careInstructions: [],
-    colorways: collectColorways(variants),
+    colorways,
     sizes: collectSizes(variants),
     price,
-    images: [{ src: imageUrl, alt: imageAlt }],
+    images,
     shop,
   }
 }

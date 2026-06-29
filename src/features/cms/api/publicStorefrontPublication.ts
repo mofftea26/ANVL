@@ -18,6 +18,11 @@ import {
   parseLandingContentConfig,
   type LandingContentConfig,
 } from '@/features/cms/landingContent/landingContent.zod'
+import { parseShopConfig, type ShopConfig } from '@/features/cms/shop/shopExperience.zod'
+import {
+  parsePdpContent,
+  type PdpContentConfig,
+} from '@/features/cms/pdpContent/pdpContent.zod'
 import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
 
 export const SUPABASE_PUBLICATION_ANON_AUTH_STORAGE_KEY =
@@ -62,6 +67,10 @@ export type PublishedStorefrontProjection = {
   mediaIndex: MediaIndexEntry[]
   /** Per-landing-key CMS copy overrides; code defaults fill every gap. */
   landingContent: LandingContentConfig
+  /** Shop Experience layout/behavior/copy config; code defaults fill every gap. */
+  shopConfig: ShopConfig
+  /** Per-product PDP editorial content keyed by slug; code/product fill every gap. */
+  pdpContent: PdpContentConfig
   revision: number
   publishedAt: string | null
 }
@@ -75,9 +84,19 @@ export type StorefrontPublicationRow = {
   asset_config?: unknown
   media_index?: unknown
   landing_content?: unknown
+  shop_config?: unknown
+  pdp_content?: unknown
 }
 
 const PUBLICATION_SELECT =
+  'revision, published_at, active_landing_page_key, theme_config, font_config, asset_config, media_index, landing_content, shop_config, pdp_content'
+
+/** Pre-`pdp_content` column list — retry path while that migration is pending. */
+const PUBLICATION_SELECT_NO_PDP =
+  'revision, published_at, active_landing_page_key, theme_config, font_config, asset_config, media_index, landing_content, shop_config'
+
+/** Pre-`shop_config` column list — retry path while that migration is pending. */
+const PUBLICATION_SELECT_NO_SHOP =
   'revision, published_at, active_landing_page_key, theme_config, font_config, asset_config, media_index, landing_content'
 
 /** Pre-`landing_content` column list — retry path while the migration is pending. */
@@ -122,6 +141,8 @@ export function normalizeStorefrontPublicationRow(
     assets: parseAssetConfig(data.asset_config),
     mediaIndex: parseMediaIndex(data.media_index),
     landingContent: parseLandingContentConfig(data.landing_content),
+    shopConfig: parseShopConfig(data.shop_config),
+    pdpContent: parsePdpContent(data.pdp_content),
     revision,
     publishedAt: data.published_at,
   }
@@ -141,6 +162,24 @@ async function fetchPublishedStorefrontProjectionOnce(
     .select(PUBLICATION_SELECT)
     .eq('id', 1)
     .maybeSingle()
+
+  // Progressive fallback while migrations are pending: drop `pdp_content`, then
+  // `shop_config`, then `landing_content`, so an older DB still serves the rest.
+  if (error && isPostgrestMissingColumnError(error, 'pdp_content')) {
+    ;({ data, error } = await supabase
+      .from('storefront_publication')
+      .select(PUBLICATION_SELECT_NO_PDP)
+      .eq('id', 1)
+      .maybeSingle())
+  }
+
+  if (error && isPostgrestMissingColumnError(error, 'shop_config')) {
+    ;({ data, error } = await supabase
+      .from('storefront_publication')
+      .select(PUBLICATION_SELECT_NO_SHOP)
+      .eq('id', 1)
+      .maybeSingle())
+  }
 
   if (error && isPostgrestMissingColumnError(error, 'landing_content')) {
     ;({ data, error } = await supabase

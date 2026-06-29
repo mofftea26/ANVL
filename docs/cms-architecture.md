@@ -51,6 +51,7 @@ Nav, footer, and SEO use **code defaults** (`navigation.defaults.ts` → `static
 | `anvl.fontConfig.v1` | Font families |
 | `anvl.assetConfig.v1` | Asset slot assignments |
 | `anvl.landingContent.v1` | Per-landing copy overrides |
+| `anvl.shopConfig.v1` | Shop Experience config (`/admin/shop` → `shop_config`) |
 | `anvl.supabase.admin.v1` | Supabase GoTrue session (auth only) |
 
 ### Remote sync timing

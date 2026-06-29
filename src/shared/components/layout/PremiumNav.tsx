@@ -3,7 +3,6 @@ import type { LandingNavigationContent } from '@/features/cms/navigation/navigat
 import { AnnouncementRail } from '@/shared/components/layout/AnnouncementRail'
 import { PremiumNavMobile } from '@/shared/components/layout/PremiumNavMobile'
 import { PremiumNavTopbar } from '@/shared/components/layout/PremiumNavTopbar'
-import { usePremiumNavPhase } from '@/shared/components/layout/usePremiumNavPhase'
 
 export function PremiumNav({
   navigation,
@@ -11,16 +10,18 @@ export function PremiumNav({
 }: {
   navigation: LandingNavigationContent
   /**
-   * Keep the header transparent at all scroll positions (no solid scrim bar), so
-   * it reads as part of the page rather than a separate panel. Used on the
-   * landing page, where the fixed hero header scrim keeps the nav legible over
-   * every section.
+   * Landing page only: keep the header fully transparent at all scroll positions
+   * (no scrim), so it reads as part of the cinematic page. Every other route
+   * instead gets a permanent dark scrim that fades to transparent at its bottom
+   * edge, so the nav is always legible without a hard solid bar.
    */
   alwaysTransparent?: boolean
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { topbarVariant } = usePremiumNavPhase()
-  const variant = alwaysTransparent ? 'transparent' : topbarVariant
+  // Content/icons always use the light "transparent" styling — on the landing
+  // they sit over the hero, elsewhere over the dark scrim below.
+  const variant = 'transparent' as const
+  const scrim: 'none' | 'always' = alwaysTransparent ? 'none' : 'always'
 
   const visibleLinks = useMemo(
     () =>
@@ -59,6 +60,7 @@ export function PremiumNav({
         />
         <PremiumNavTopbar
           variant={variant}
+          scrim={scrim}
           logoSrc={logoSrc}
           visibleLinks={visibleLinks}
           showCart={showCart}

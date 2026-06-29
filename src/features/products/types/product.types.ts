@@ -34,6 +34,11 @@ export interface ProductShopMeta {
   model3dUrl?: string
   category: string
   availabilityByColorAndSize: Record<string, Record<string, number>>
+  /**
+   * Shopify variant GID per colorway → size — used to build hosted-checkout cart
+   * lines. Only populated by the Shopify adapter; absent for seed/local catalogs.
+   */
+  variantIdByColorAndSize?: Record<string, Record<string, string>>
   imagesByColorName: Record<string, Array<{ src: string; alt: string }>>
 }
 

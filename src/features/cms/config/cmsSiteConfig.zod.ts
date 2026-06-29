@@ -382,6 +382,33 @@ export function themeConfigToCssVars(theme: ThemeConfig): Record<string, string>
     '--border-strong': withAlpha(p.foreground, 0.2),
     '--tech-line': withAlpha(p.foreground, 0.12),
     '--transition-overlay': p.background,
+    // Shop semantic layer (§ shop redesign) — the entire /shop experience reads
+    // these `--shop-*` tokens, never raw palette fields, so it auto-adapts to
+    // every CMS theme. All values are deterministic mixes of the 15-token
+    // palette; there is no separate shop palette to keep in sync.
+    '--shop-bg': p.background,
+    '--shop-surface': p.card,
+    '--shop-surface-elevated': surfaceElevated,
+    '--shop-card-bg': mix(p.card, p.foreground, 0.03),
+    '--shop-card-bg-2': mix(p.card, p.background, 0.42),
+    '--shop-card-border': p.border,
+    '--shop-card-border-soft': withAlpha(p.foreground, 0.08),
+    '--shop-text': p.foreground,
+    '--shop-text-muted': p.mutedForeground,
+    '--shop-accent': p.accent,
+    '--shop-on-accent': p.accentForeground,
+    '--shop-focus': p.ring,
+    '--shop-overlay': overlay,
+    '--shop-card-glow': withAlpha(p.accent, 0.22),
+    '--shop-card-light': withAlpha(mix(p.accent, WHITE, 0.5), 0.16),
+    '--shop-image-bg': mix(p.card, p.background, 0.5),
+    '--shop-skeleton-from': mix(p.card, p.background, 0.2),
+    '--shop-skeleton-to': mix(p.card, p.foreground, 0.06),
+    '--shop-success': p.success,
+    '--shop-warning': p.warning,
+    '--shop-out-of-stock': p.mutedForeground,
+    '--shop-chip-selected': withAlpha(p.accent, 0.16),
+    '--shop-hover-surface': mix(p.card, p.foreground, 0.07),
     ...MOTION_CSS_VARS,
   }
 }

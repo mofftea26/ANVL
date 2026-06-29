@@ -41,6 +41,22 @@ export const adminNavItems: AdminNavItem[] = [
     badge: 'Media',
   },
   {
+    label: 'Shop Experience',
+    href: '/admin/shop',
+    description: 'Shop layout, product cards, filters, and copy.',
+    cluster: 'Site',
+    cta: 'Edit',
+    badge: 'Shop',
+  },
+  {
+    label: 'Products',
+    href: '/admin/products',
+    description: 'Per-product detail-page content and editorial assets.',
+    cluster: 'Site',
+    cta: 'Edit',
+    badge: 'PDP',
+  },
+  {
     label: 'Landing Content',
     href: '/admin/content',
     description: 'Per-scene landing copy with designed defaults.',

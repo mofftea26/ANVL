@@ -4,6 +4,8 @@ import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupaba
 import { fetchCmsProfileRole } from '@/features/admin/auth/adminCmsProfileRole'
 import { readActiveLandingPageFromStorage } from '@/features/cms/landingPageActiveKey.settings'
 import { readLandingContentFromStorage } from '@/features/cms/landingContent/landingContent.settings'
+import { readShopConfigFromStorage } from '@/features/cms/shop/shopExperience.settings'
+import { readPdpContentFromStorage } from '@/features/cms/pdpContent/pdpContent.settings'
 import {
   readAssetConfigFromStorage,
   readFontLibraryFromStorage,
@@ -53,6 +55,8 @@ export async function flushAdminCmsRemoteSync(): Promise<
   const fontConfig = readFontLibraryFromStorage()
   const assetConfig = readAssetConfigFromStorage()
   const landingContent = readLandingContentFromStorage()
+  const shopConfig = readShopConfigFromStorage()
+  const pdpContent = readPdpContentFromStorage()
 
   const mediaList = await listMediaAssets(client)
   const mediaIndex = mediaList.ok ? buildMediaIndex(mediaList.assets) : []
@@ -63,6 +67,8 @@ export async function flushAdminCmsRemoteSync(): Promise<
     font_config: fontConfig,
     asset_config: assetConfig,
     landing_content: landingContent,
+    shop_config: shopConfig,
+    pdp_content: pdpContent,
     updated_at: new Date().toISOString(),
   }
 
@@ -79,6 +85,8 @@ export async function flushAdminCmsRemoteSync(): Promise<
     font_config: fontConfig,
     asset_config: assetConfig,
     landing_content: landingContent,
+    shop_config: shopConfig,
+    pdp_content: pdpContent,
     media_index: mediaIndex,
     published_at: new Date().toISOString(),
     revision: Date.now(),

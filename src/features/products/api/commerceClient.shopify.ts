@@ -9,6 +9,7 @@ import {
   mapShopifyProductNodeToStorefront,
   parseShopifyProductNode,
 } from '@/features/shopify/mappers/shopifyProductToStorefront'
+import { createShopifyCheckout } from '@/features/shopify/api/shopifyCart'
 import { seedCommerceClient } from '@/features/products/api/commerceClient.seed'
 import { localStorageCommerceClient } from '@/features/products/api/commerceClient.localStorage'
 import type { Product } from '@/features/products/types/product.types'
@@ -107,5 +108,12 @@ export const shopifyCommerceClient: CommerceClient = {
       const items = await fetchAllShopifyProducts()
       return { items, drops: [] }
     }, () => offlineCommerce().getShopListingCatalog())
+  },
+
+  async startCheckout(lines) {
+    return withCommerceFallback(
+      () => createShopifyCheckout(lines),
+      async () => null,
+    )
   },
 }

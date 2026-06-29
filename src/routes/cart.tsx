@@ -1,6 +1,8 @@
+import { useCallback, useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { buildSeoMeta } from '@/app/seo/meta'
+import { runtimeClients } from '@/app/config/runtime'
 import { useCart } from '@/features/cart/hooks/useCart'
 import {
   Button,
@@ -23,6 +25,25 @@ export const Route = createFileRoute('/cart')({
 function CartPage() {
   const navigate = useNavigate()
   const { lines, subtotal, quantity, updateQuantity, removeLine } = useCart()
+  const [checkingOut, setCheckingOut] = useState(false)
+
+  // Prefer Shopify's hosted checkout when the Shopify adapter is active; fall
+  // back to the internal /checkout flow (seed/local) or if cart creation fails.
+  const handleCheckout = useCallback(async () => {
+    if (checkingOut) return
+    setCheckingOut(true)
+    try {
+      const url = await runtimeClients.commerce.startCheckout(lines)
+      if (url) {
+        window.location.href = url
+        return
+      }
+    } catch {
+      // Swallow and fall through to the internal checkout route.
+    }
+    setCheckingOut(false)
+    void navigate({ to: '/checkout' })
+  }, [checkingOut, lines, navigate])
 
   return (
     <Section>
@@ -115,8 +136,12 @@ function CartPage() {
                 <span className="anvl-micro text-[var(--color-text-muted)]">Total</span>
                 <span className="anvl-heading text-2xl font-normal">${subtotal.toFixed(2)}</span>
               </div>
-              <Button className="mt-6 w-full" onClick={() => navigate({ to: '/checkout' })}>
-                Checkout
+              <Button
+                className="mt-6 w-full"
+                disabled={checkingOut}
+                onClick={() => void handleCheckout()}
+              >
+                {checkingOut ? 'Redirecting to checkout…' : 'Checkout'}
               </Button>
               <p className="anvl-micro mt-3 text-center text-[10px] text-[var(--color-text-muted)]">
                 Forged in Beirut · Secure checkout

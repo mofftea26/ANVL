@@ -216,6 +216,8 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 | `public.landing_pages` | Picker metadata (keys must match code registry) | Public read available rows |
 | `public.storefront_publication` | Anon-readable mirror: theme, fonts, assets, media_index, active key | Public read, editor update |
 | `public.cms_media_assets` | Media library + asset assignments | CMS roles only |
+| `cms_settings.shop_config` / `storefront_publication.shop_config` | Shop Experience config blob (jsonb) — `/shop` layout/behavior/copy; mirrors `landing_content` flow | Public read, editor update |
+| `cms_settings.pdp_content` / `storefront_publication.pdp_content` | Per-product PDP editorial content (jsonb `{ [slug]: {...} }`) — bento copy + per-product assets; commerce data stays on the product | Public read, editor update |
 | `public.story_chapters` | Story saga chapters (one per drop) | Public read published; editor write |
 | `public.story_acts` | Ordered story beats within a chapter | Public read (parent published); editor write |
 | `public.story_cast` | CMS-authored characters (army roster) | Public read (parent published); editor write |
@@ -260,6 +262,8 @@ Storefront never reads admin draft data directly. Landing page **content** is co
 | `/admin/theme` | Palette + `dataTheme` mode |
 | `/admin/fonts` | `--font-sans`, `--font-heading`, `--font-display` family names |
 | `/admin/assets` | Media library + general/per-drop slot assignments |
+| `/admin/shop` | Shop Experience editor — shop layout, product cards, filters, sort, toggles, state copy **and the Product-detail (PDP) section toggles + related count + animation** (`shop_config`, incl. `shop_config.pdp`) |
+| `/admin/products` | Per-product PDP editorial content — pick a product (commerce catalog / Shopify), author its bento story/material/care/details + editorial assets (`pdp_content`, keyed by slug) |
 | `/admin/content` | Landing content editor — per-scene copy overrides with code-default fallbacks |
 | `/admin/story` | Story saga editor — chapters, acts, cast (relational; Supabase CRUD) |
 | `/admin/settings` | Session + local reset |
@@ -309,6 +313,7 @@ Admin editor (localStorage working copy)
 - **Tailwind CSS v4** — utility-first, no config file; configured via `@theme` in `src/styles.css`.
 - **CSS variable tokens** — all color, spacing, and animation tokens are defined as CSS custom properties in `src/styles.css`. Use them instead of hardcoded values.
 - **One normalized theme palette (single source of truth).** The CMS theme editor exposes exactly **15 editable tokens** — `background`, `foreground`, `card`, `cardForeground`, `muted`, `mutedForeground`, `border`, `primary`, `primaryForeground`, `accent`, `accentForeground`, `ring`, `destructive`, `success`, `warning` — defined by `themePaletteSchema` (`THEME_PALETTE_KEYS`) in `src/features/cms/config/cmsSiteConfig.zod.ts`. `themeConfigToCssVars` deterministically derives **all** `--color-*` / `--hero-*` / `--particle-*` / `--scrollbar-*` / brand-alias vars from those 15 tokens, and is the single map feeding SSR first-paint inline CSS, `SiteThemeProvider`, and the editor preview. The storefront, brand graphics, and the WebGL landing emblem/dust all read the **same** vars (`readOathBrandColors()`), so CMS + storefront + WebGL cannot diverge. There is **no per-landing-page palette override**. Legacy palette keys are migrated on read.
+- **Shop semantic layer.** `themeConfigToCssVars` also derives a `--shop-*` token block (`--shop-bg`, `--shop-card-bg`, `--shop-card-border`, `--shop-accent`, `--shop-card-glow`, `--shop-card-light`, `--shop-skeleton-*`, `--shop-out-of-stock`, …) from the same 15 palette tokens. The entire `/shop` experience (`src/features/products/shop/**`, the forged `ShopProductCard`, quick-add/quick-view) reads **only** `--shop-*` — never raw palette fields — so it auto-adapts to every CMS theme with no shop-specific colors.
 - Theme switching: set `data-theme="oath-dark"` or `data-theme="bone-light"` on `:root`.
 - `cn()` from `src/shared/lib/cn.ts` (clsx + tailwind-merge) — use for conditional class merging.
 - `cva` (class-variance-authority) — use for component variants (Button sizes, etc.).
@@ -341,7 +346,9 @@ Admin editor (localStorage working copy)
 
 ## GSAP Rules
 
-- All GSAP plugins are registered **once** in `src/shared/lib/gsap.ts`. Import from there, never from `gsap` directly in components.
+- All GSAP plugins are registered **once** in `src/shared/lib/gsap.ts` (`ScrollTrigger`, `SplitText`, `Flip`, `useGSAP`). Import from there, never from `gsap` directly in components.
+- **Shop grid reflow** uses GSAP **Flip** (`ProductGrid`): snapshot the old layout during render (before React commits the new order), then `Flip.from` in `useGSAP` — gated to `(min-width: 768px) + no-reduced-motion`. The product card (`ShopProductCard`) uses clean CSS-only hover (lift + image zoom) — no pointer-tilt/WebGL.
+- **PDP scroll reveals** use `usePdpReveal` (`src/features/products/pdp/hooks/`): one `gsap.matchMedia` + `ScrollTrigger.batch` over `[data-reveal]` elements, gated `≥768px + no-reduced-motion` (snaps visible on mobile/reduced). Honors `shop_config.pdp.animationIntensity` + the global `animationDurationMultiplier`.
 - GSAP plugin registration is guarded: `if (typeof window !== 'undefined')` — SSR-safe.
 - Always use `useGSAP` from `@gsap/react` — it handles cleanup automatically.
 - Always call `mm.revert()` / `ctx.revert()` in the `useGSAP` cleanup return for `gsap.matchMedia`.
@@ -441,7 +448,9 @@ If shadcn/ui is added in the future:
 - Shopify Storefront API (public token) is safe in browser. Shopify Admin API token is **never** in client code.
 - All Shopify code is isolated in `src/features/shopify/` and `src/features/products/api/commerceClient.shopify.ts`.
 - The `CommerceClient` interface in `clients.ts` is the contract — swap adapters without touching UI.
-- Product data from Shopify is mapped to internal `Product` type via `shopifyProductToStorefront.ts`.
+- Product data from Shopify is mapped to internal `Product` type via `shopifyProductToStorefront.ts`. Shopify products **must** use option names `Size` and `Color` (the mapper matches them case-insensitively) and the internal `slug` is the Shopify `handle`. The mapper also emits `ProductShopMeta.variantIdByColorAndSize` (variant GID per colorway→size) for checkout.
+- **Hosted checkout:** `CommerceClient.startCheckout(lines)` builds a Shopify cart via the Storefront `cartCreate` mutation (`src/features/shopify/api/shopifyCart.ts`) and returns the hosted `checkoutUrl`; the cart line carries the Shopify variant GID (`CartLine.variantId`, resolved in `usePdpVariant`). Seed/local adapters return `null`, so `routes/cart.tsx` falls back to the internal mock `/checkout` when Shopify is unset.
+- The Storefront token for this store is minted from the **Headless** sales channel (legacy custom-app dev is migrated to the Dev Dashboard). Products must be **published to the Headless publication** or the Storefront API returns nothing.
 - CMS (theme, fonts, assets, landing content, story) stays in Supabase even when Shopify is the commerce backend.
 - Edge Function `shopify-webhook` is ack-only (no product snapshot writes).
 

@@ -33,7 +33,9 @@ import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AdminThemeRouteImport } from './routes/admin/theme'
 import { Route as AdminStoryRouteImport } from './routes/admin/story'
+import { Route as AdminShopRouteImport } from './routes/admin/shop'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
+import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminFontsRouteImport } from './routes/admin/fonts'
 import { Route as AdminContentRouteImport } from './routes/admin/content'
@@ -163,9 +165,19 @@ const AdminStoryRoute = AdminStoryRouteImport.update({
   path: '/story',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminShopRoute = AdminShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminProductsRoute = AdminProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
@@ -229,7 +241,9 @@ export interface FileRoutesByFullPath {
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -262,7 +276,9 @@ export interface FileRoutesByTo {
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -298,7 +314,9 @@ export interface FileRoutesById {
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -335,7 +353,9 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
+    | '/admin/products'
     | '/admin/settings'
+    | '/admin/shop'
     | '/admin/story'
     | '/admin/theme'
     | '/auth/forgot-password'
@@ -368,7 +388,9 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
+    | '/admin/products'
     | '/admin/settings'
+    | '/admin/shop'
     | '/admin/story'
     | '/admin/theme'
     | '/auth/forgot-password'
@@ -403,7 +425,9 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
+    | '/admin/products'
     | '/admin/settings'
+    | '/admin/shop'
     | '/admin/story'
     | '/admin/theme'
     | '/auth/forgot-password'
@@ -612,11 +636,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStoryRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/shop': {
+      id: '/admin/shop'
+      path: '/shop'
+      fullPath: '/admin/shop'
+      preLoaderRoute: typeof AdminShopRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
       fullPath: '/admin/settings'
       preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/products': {
+      id: '/admin/products'
+      path: '/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AdminProductsRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/login': {
@@ -703,7 +741,9 @@ interface AdminRouteRouteChildren {
   AdminContentRoute: typeof AdminContentRoute
   AdminFontsRoute: typeof AdminFontsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminProductsRoute: typeof AdminProductsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminShopRoute: typeof AdminShopRoute
   AdminStoryRoute: typeof AdminStoryRoute
   AdminThemeRoute: typeof AdminThemeRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -714,7 +754,9 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminContentRoute: AdminContentRoute,
   AdminFontsRoute: AdminFontsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminProductsRoute: AdminProductsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminShopRoute: AdminShopRoute,
   AdminStoryRoute: AdminStoryRoute,
   AdminThemeRoute: AdminThemeRoute,
   AdminIndexRoute: AdminIndexRoute,

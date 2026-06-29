@@ -4,6 +4,14 @@ vi.mock('@/features/cms/api/supabasePublicEnv', () => ({
   getSupabasePublicEnv: () => null,
 }))
 
+// Shopify off too: when configured, commerce is a single shared adapter for
+// both server and browser, which would defeat the seed-vs-localStorage split
+// this suite asserts. Mock it off so a developer .env with VITE_SHOPIFY_* set
+// still exercises the contract.
+vi.mock('@/features/shopify/config/shopifyPublicEnv', () => ({
+  getShopifyPublicEnv: () => null,
+}))
+
 import { createRuntimeClients } from '@/app/config/runtime'
 
 /**

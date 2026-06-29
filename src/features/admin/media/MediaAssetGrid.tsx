@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Copy, Trash2 } from 'lucide-react'
+import { Copy, Download, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
@@ -59,6 +59,31 @@ function MediaAssetCard({
     }
   }
 
+  const download = async () => {
+    if (!publicUrl) {
+      toast.error('No public URL for this asset.')
+      return
+    }
+    // Fetch → blob → object URL so the original filename is preserved even for
+    // cross-origin storage URLs (where the anchor `download` attr is ignored).
+    try {
+      const res = await fetch(publicUrl)
+      if (!res.ok) throw new Error(String(res.status))
+      const blob = await res.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = asset.filename || 'asset'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(objectUrl)
+    } catch {
+      // Fallback: open in a new tab so the user can save manually.
+      window.open(publicUrl, '_blank', 'noopener,noreferrer')
+    }
+  }
+
   return (
     <article className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)]">
       <div className="flex aspect-[4/3] items-center justify-center bg-[var(--color-bg)]/60 p-2">
@@ -113,6 +138,16 @@ function MediaAssetCard({
           >
             <Copy size={14} className="mr-1" aria-hidden="true" />
             Copy URL
+          </AdminButton>
+          <AdminButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => void download()}
+            aria-label={`Download ${asset.filename}`}
+          >
+            <Download size={14} className="mr-1" aria-hidden="true" />
+            Download
           </AdminButton>
           <AdminButton
             type="button"

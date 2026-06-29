@@ -1,4 +1,4 @@
-import { Check, Plus, X } from 'lucide-react'
+import { Check, Loader2, Plus, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Product } from '@/features/products/types/product.types'
 import {
@@ -6,6 +6,7 @@ import {
   variantIsPurchasable,
 } from '@/features/products/catalog/storefrontCatalog'
 import { useCart } from '@/features/cart/hooks/useCart'
+import { useProductAnalytics } from '@/features/analytics/hooks/useProductAnalytics'
 import { SizeSelector } from '@/shared/components/ui/SizeSelector'
 import { cn } from '@/shared/lib/cn'
 
@@ -20,21 +21,31 @@ function disabledSizesForColor(product: Product, colorName: string): ReadonlySet
   return out
 }
 
-type AddState = 'idle' | 'added' | 'error'
+function colorHasNoStock(product: Product, colorName: string): boolean {
+  const m = product.shop?.availabilityByColorAndSize[colorName]
+  if (!m) return false
+  return !Object.values(m).some((n) => n > 0)
+}
+
+type AddState = 'idle' | 'adding' | 'added' | 'error'
 
 /**
- * Compact quick-add for the Theoath Modern card. A small "+" control on the media
- * corner opens a contained size popover (absolutely positioned — no layout
- * shift). Rendered as a SIBLING of the card's navigation `<Link>` (never nested),
- * with a click-away backdrop so an open popover never triggers navigation. Reads
- * commerce truth (availability, price) from the catalog; writes through the cart
- * store; announces additions for screen readers. Reduced motion is handled by
- * the global CSS clamp.
+ * Product-card quick-add. A "+" control opens a contained popover with **color
+ * and size** selection (no layout shift). Choosing a color re-derives in-stock
+ * sizes while preserving the choice; a product with a single color + size adds
+ * directly. Rendered as a SIBLING of the card's navigation Link (never nested),
+ * with a click-away backdrop so an open popover never navigates. Reads commerce
+ * truth from the catalog, writes through the cart, fires the add-to-cart
+ * analytics event (PDP parity), blocks duplicate submits, and announces for SR.
  */
 export function ProductCardQuickAdd({ product }: { product: Product }) {
   const { addLine } = useCart()
-  const colorway = product.colorways[0]
+  const { trackAddToCart } = useProductAnalytics()
+
+  const [colorIndex, setColorIndex] = useState(0)
+  const colorway = product.colorways[colorIndex] ?? product.colorways[0]
   const colorName = colorway?.name ?? ''
+
   const disabledSizes = useMemo(
     () => disabledSizesForColor(product, colorName),
     [product, colorName],
@@ -43,11 +54,14 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
     () => product.sizes.find((s) => !disabledSizes.has(s)) ?? product.sizes[0] ?? 'M',
     [product.sizes, disabledSizes],
   )
+
   const status = product.shop?.storefrontStatus ?? 'available'
   const soldOut =
     status === 'outOfStock' ||
     status === 'comingSoon' ||
-    (product.sizes.length > 0 && product.sizes.every((s) => disabledSizes.has(s)))
+    (product.sizes.length > 0 && product.colorways.every((c) => colorHasNoStock(product, c.name)) &&
+      product.colorways.length > 0)
+  const needsChoice = product.sizes.length > 1 || product.colorways.length > 1
 
   const [open, setOpen] = useState(false)
   const [size, setSize] = useState(firstAvailable)
@@ -56,6 +70,7 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
 
+  // Keep the size valid as the selected color changes its in-stock set.
   useEffect(() => {
     setSize((prev) => (disabledSizes.has(prev) ? firstAvailable : prev))
   }, [disabledSizes, firstAvailable])
@@ -77,31 +92,44 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
     return () => document.removeEventListener('keydown', onKey)
   }, [open, close])
 
-  const canPurchase = variantIsPurchasable(product, 0, size) && !disabledSizes.has(size)
+  const commit = useCallback(
+    (chosenColor: string, chosenSize: string) => {
+      if (state === 'adding' || state === 'added') return
+      if (!variantIsPurchasable(product, colorIndex, chosenSize) || disabledSizes.has(chosenSize)) {
+        setState('error')
+        setAnnounce('That size is unavailable.')
+        return
+      }
+      setState('adding')
+      addLine({
+        productId: product.id,
+        slug: product.slug,
+        name: product.name,
+        price: effectivePrice(product),
+        colorway: chosenColor,
+        size: chosenSize,
+        quantity: 1,
+        image: product.images[0]?.src ?? '',
+      })
+      trackAddToCart(product, 1)
+      setState('added')
+      setAnnounce(`${product.name}, ${chosenColor || 'one color'}, size ${chosenSize}, added to cart.`)
+      window.setTimeout(() => {
+        setState('idle')
+        setOpen(false)
+      }, 1400)
+    },
+    [addLine, colorIndex, disabledSizes, product, state, trackAddToCart],
+  )
 
-  const add = useCallback(() => {
-    if (!canPurchase) {
-      setState('error')
-      setAnnounce('That size is unavailable.')
+  const onTrigger = () => {
+    if (soldOut) return
+    if (!needsChoice) {
+      commit(colorName, firstAvailable)
       return
     }
-    addLine({
-      productId: product.id,
-      slug: product.slug,
-      name: product.name,
-      price: effectivePrice(product),
-      colorway: colorName,
-      size,
-      quantity: 1,
-      image: product.images[0]?.src ?? '',
-    })
-    setState('added')
-    setAnnounce(`${product.name}, size ${size}, added to cart.`)
-    window.setTimeout(() => {
-      setState('idle')
-      setOpen(false)
-    }, 1500)
-  }, [addLine, canPurchase, colorName, product, size])
+    setOpen((v) => !v)
+  }
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20">
@@ -109,7 +137,6 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
         {announce}
       </p>
 
-      {/* Click-away backdrop (open only) — closes the popover, blocks navigation. */}
       {open ? (
         <button
           type="button"
@@ -120,52 +147,104 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
         />
       ) : null}
 
-      <div className="absolute right-2 top-2">
+      <div className="absolute right-2.5 top-2.5">
         <button
           ref={triggerRef}
           type="button"
           disabled={soldOut}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          aria-label={soldOut ? `${product.name} sold out` : `Quick add ${product.name}`}
-          onClick={() => (soldOut ? undefined : setOpen((v) => !v))}
+          aria-haspopup={needsChoice ? 'dialog' : undefined}
+          aria-expanded={needsChoice ? open : undefined}
+          aria-label={
+            soldOut
+              ? `${product.name} sold out`
+              : needsChoice
+                ? `Quick add ${product.name}`
+                : `Add ${product.name} to cart`
+          }
+          onClick={onTrigger}
           className={cn(
-            'focus-ring pointer-events-auto grid h-9 w-9 place-items-center rounded-md border backdrop-blur-sm transition-all duration-300',
-            // Always tappable on touch; reveal on hover/focus on desktop.
+            'focus-ring pointer-events-auto grid h-10 w-10 place-items-center rounded-full border backdrop-blur-sm transition-all duration-300',
             'opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100',
             soldOut
-              ? 'cursor-not-allowed border-[var(--color-line)] bg-[var(--color-overlay)] text-[color:var(--color-text-muted)]'
-              : 'border-[var(--border-strong)] bg-[var(--glass-surface)] text-[color:var(--color-text)] hover:border-[var(--color-highlight)] hover:text-[color:var(--color-highlight-bright)]',
+              ? 'cursor-not-allowed border-[var(--shop-card-border)] bg-[var(--shop-overlay)] text-[var(--shop-text-muted)]'
+              : state === 'added'
+                ? 'border-[var(--shop-success)] bg-[var(--shop-success)] text-[var(--shop-on-accent)]'
+                : 'border-[var(--shop-card-border)] bg-[var(--shop-overlay)] text-[var(--shop-text)] hover:border-[var(--shop-accent)] hover:text-[var(--shop-accent)]',
           )}
         >
           {soldOut ? (
-            <span className="anvl-micro text-[0.5rem] uppercase tracking-[0.1em]">Sold</span>
+            <span className="anvl-micro text-[0.5rem] uppercase tracking-[0.08em]">Sold</span>
+          ) : state === 'adding' ? (
+            <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+          ) : state === 'added' ? (
+            <Check size={16} aria-hidden="true" />
           ) : (
-            <Plus size={16} aria-hidden="true" />
+            <Plus size={17} aria-hidden="true" />
           )}
         </button>
 
-        {open ? (
+        {open && needsChoice ? (
           <div
             ref={panelRef}
             role="dialog"
             aria-label={`Quick add ${product.name}`}
-            className="pointer-events-auto absolute right-0 top-11 w-44 rounded-md border border-[var(--border-strong)] bg-[var(--glass-surface)] p-3 shadow-xl backdrop-blur-md"
+            className="pointer-events-auto absolute right-0 top-12 w-56 rounded-xl border border-[var(--shop-card-border)] bg-[var(--shop-surface)] p-3 shadow-xl"
           >
             <div className="flex items-center justify-between">
-              <p className="anvl-micro text-[0.55rem] uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
-                Size
+              <p className="anvl-micro text-[0.55rem] tracking-[0.2em] text-[var(--shop-text-muted)]">
+                Add to cart
               </p>
               <button
                 type="button"
                 onClick={close}
                 aria-label="Close quick add"
-                className="focus-ring rounded p-0.5 text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)]"
+                className="focus-ring rounded p-0.5 text-[var(--shop-text-muted)] hover:text-[var(--shop-text)]"
               >
                 <X size={13} aria-hidden="true" />
               </button>
             </div>
-            <div className="mt-2">
+
+            {product.colorways.length > 1 ? (
+              <div className="mt-2.5">
+                <p className="anvl-micro mb-1.5 text-[0.55rem] tracking-[0.16em] text-[var(--shop-text-muted)]">
+                  Color — {colorName}
+                </p>
+                <div className="flex flex-wrap gap-1.5" role="listbox" aria-label="Color">
+                  {product.colorways.map((c, i) => {
+                    const out = colorHasNoStock(product, c.name)
+                    const selected = i === colorIndex
+                    return (
+                      <button
+                        key={c.name}
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        aria-disabled={out}
+                        disabled={out}
+                        title={out ? `${c.name} (sold out)` : c.name}
+                        onClick={() => setColorIndex(i)}
+                        className={cn(
+                          'focus-ring relative grid h-7 w-7 place-items-center rounded-full ring-1 transition-transform',
+                          out && 'cursor-not-allowed opacity-40',
+                          selected ? 'ring-2 ring-[var(--shop-accent)] scale-110' : 'ring-[var(--shop-card-border)] hover:scale-110',
+                        )}
+                        style={{ backgroundColor: c.base, boxShadow: `inset 0 0 0 2px ${c.accent}33` }}
+                      >
+                        {selected ? (
+                          <Check size={12} aria-hidden="true" style={{ color: '#fff', mixBlendMode: 'difference' }} />
+                        ) : null}
+                        <span className="sr-only">{c.name}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-2.5">
+              <p className="anvl-micro mb-1.5 text-[0.55rem] tracking-[0.16em] text-[var(--shop-text-muted)]">
+                Size
+              </p>
               <SizeSelector
                 sizes={product.sizes}
                 value={size}
@@ -173,25 +252,28 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
                 onChange={setSize}
               />
             </div>
+
             <button
               type="button"
-              onClick={add}
-              disabled={!canPurchase || state === 'added'}
+              onClick={() => commit(colorName, size)}
+              disabled={disabledSizes.has(size) || state === 'adding' || state === 'added'}
               className={cn(
-                'focus-ring mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md border text-xs font-semibold uppercase tracking-[0.1em] transition',
+                'focus-ring mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold uppercase tracking-[0.1em] transition',
                 state === 'added'
-                  ? 'border-[var(--color-success)] text-[color:var(--color-success)]'
-                  : canPurchase
-                    ? 'border-[var(--color-highlight)] bg-[var(--color-highlight)] text-[color:var(--color-on-highlight)] hover:opacity-90'
-                    : 'cursor-not-allowed border-[var(--color-line)] text-[color:var(--color-text-muted)]',
+                  ? 'border-[var(--shop-success)] text-[var(--shop-success)]'
+                  : disabledSizes.has(size)
+                    ? 'cursor-not-allowed border-[var(--shop-card-border)] text-[var(--shop-text-muted)]'
+                    : 'border-[var(--shop-accent)] bg-[var(--shop-accent)] text-[var(--shop-on-accent)] hover:opacity-90',
               )}
             >
               {state === 'added' ? (
                 <>
                   <Check size={14} aria-hidden="true" /> Added
                 </>
-              ) : state === 'error' ? (
-                'Unavailable'
+              ) : state === 'adding' ? (
+                <>
+                  <Loader2 size={14} aria-hidden="true" className="animate-spin" /> Adding…
+                </>
               ) : (
                 <>Add — ${effectivePrice(product)}</>
               )}

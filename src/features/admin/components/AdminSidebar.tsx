@@ -4,6 +4,8 @@ import {
   Globe,
   Search,
   Image,
+  ShoppingBag,
+  Package,
   Settings,
   LogOut,
   X,
@@ -32,6 +34,8 @@ const NAV_ICONS: Record<string, typeof LayoutDashboard> = {
   '/admin/theme': Globe,
   '/admin/fonts': Search,
   '/admin/assets': Image,
+  '/admin/shop': ShoppingBag,
+  '/admin/products': Package,
   '/admin/settings': Settings,
 }
 

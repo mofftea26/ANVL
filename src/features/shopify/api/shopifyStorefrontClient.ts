@@ -47,6 +47,14 @@ export const SHOPIFY_PRODUCTS_LIST_QUERY = `
             url
             altText
           }
+          images(first: 12) {
+            edges {
+              node {
+                url
+                altText
+              }
+            }
+          }
           priceRange {
             minVariantPrice {
               amount
@@ -89,6 +97,14 @@ export const SHOPIFY_PRODUCT_BY_HANDLE_QUERY = `
       featuredImage {
         url
         altText
+      }
+      images(first: 20) {
+        edges {
+          node {
+            url
+            altText
+          }
+        }
       }
       priceRange {
         minVariantPrice {

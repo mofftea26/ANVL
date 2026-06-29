@@ -2,12 +2,33 @@ import { describe, expect, it } from 'vitest'
 import type { Product } from '@/features/products/types/product.types'
 import {
   catalogPriceBounds,
+  computeShopFacetCounts,
   defaultShopUrlSearch,
   filterShopListingProducts,
+  sortShopListingProducts,
+  uniqueCategories,
   uniqueColorwayNames,
+  uniqueColorwaySwatches,
   uniqueSizeLabels,
   validateShopUrlSearch,
 } from '@/features/products/shop/shopUrlSearch'
+import type { ProductShopMeta } from '@/features/products/types/product.types'
+
+function shopMeta(overrides: Partial<ProductShopMeta>): ProductShopMeta {
+  return {
+    storefrontStatus: 'available',
+    sourceType: 'drop',
+    dropId: null,
+    dropSlug: null,
+    compareAtPrice: null,
+    listPrice: 0,
+    currency: 'USD',
+    category: '',
+    availabilityByColorAndSize: {},
+    imagesByColorName: {},
+    ...overrides,
+  }
+}
 
 function makeProduct(overrides: Partial<Product>): Product {
   const base: Product = {
@@ -124,5 +145,118 @@ describe('catalog aggregations', () => {
 
   it('uniqueSizeLabels follows the canonical size order', () => {
     expect(uniqueSizeLabels(items)).toEqual(['S', 'M', 'L'])
+  })
+})
+
+describe('category filtering + facets', () => {
+  const items: Product[] = [
+    makeProduct({ id: 'a', shop: shopMeta({ category: 'Tops' }) }),
+    makeProduct({ id: 'b', shop: shopMeta({ category: 'Bottoms' }) }),
+    makeProduct({ id: 'c', shop: shopMeta({ category: 'Tops' }) }),
+  ]
+
+  it('filters by category (case-insensitive)', () => {
+    const r = filterShopListingProducts(items, {
+      ...defaultShopUrlSearch,
+      category: 'tops',
+    })
+    expect(r.map((p) => p.id)).toEqual(['a', 'c'])
+  })
+
+  it('uniqueCategories is sorted + de-duplicated', () => {
+    expect(uniqueCategories(items)).toEqual(['Bottoms', 'Tops'])
+  })
+})
+
+describe('uniqueColorwaySwatches', () => {
+  it('returns the first-seen swatch per name, sorted', () => {
+    const items: Product[] = [
+      makeProduct({ id: 'a', colorways: [{ name: 'Steel', base: '#111', accent: '#222' }] }),
+      makeProduct({ id: 'b', colorways: [{ name: 'Bone', base: '#eee', accent: '#ddd' }] }),
+      makeProduct({ id: 'c', colorways: [{ name: 'Steel', base: '#999', accent: '#888' }] }),
+    ]
+    expect(uniqueColorwaySwatches(items)).toEqual([
+      { name: 'Bone', base: '#eee', accent: '#ddd' },
+      { name: 'Steel', base: '#111', accent: '#222' },
+    ])
+  })
+})
+
+describe('computeShopFacetCounts', () => {
+  const items: Product[] = [
+    makeProduct({
+      id: 'a',
+      colorways: [{ name: 'Steel', base: '#111', accent: '#222' }],
+      shop: shopMeta({ category: 'Tops', storefrontStatus: 'available' }),
+    }),
+    makeProduct({
+      id: 'b',
+      colorways: [{ name: 'Bone', base: '#eee', accent: '#ddd' }],
+      shop: shopMeta({ category: 'Tops', storefrontStatus: 'outOfStock' }),
+    }),
+    makeProduct({
+      id: 'c',
+      colorways: [{ name: 'Steel', base: '#111', accent: '#222' }],
+      shop: shopMeta({ category: 'Bottoms', storefrontStatus: 'available' }),
+    }),
+  ]
+
+  it('counts each dimension while holding the other active filters', () => {
+    const counts = computeShopFacetCounts(items, defaultShopUrlSearch)
+    expect(counts.category).toEqual({ Tops: 2, Bottoms: 1 })
+    expect(counts.status).toEqual({ available: 2, outOfStock: 1 })
+    expect(counts.color).toEqual({ Steel: 2, Bone: 1 })
+  })
+
+  it('reflects an active filter from a different dimension (faceting)', () => {
+    // With category=Bottoms active, the colorway counts should only reflect
+    // Bottoms products — Steel: 1, Bone: 0.
+    const counts = computeShopFacetCounts(items, {
+      ...defaultShopUrlSearch,
+      category: 'Bottoms',
+    })
+    expect(counts.color.Steel).toBe(1)
+    expect(counts.color.Bone ?? 0).toBe(0)
+  })
+})
+
+describe('sortShopListingProducts', () => {
+  const items: Product[] = [
+    makeProduct({ id: 'a', name: 'Alpha', price: 80 }),
+    makeProduct({
+      id: 'b',
+      name: 'Bravo',
+      price: 50,
+      shop: shopMeta({ storefrontStatus: 'outOfStock' }),
+    }),
+    makeProduct({ id: 'c', name: 'Charlie', price: 65 }),
+  ]
+
+  it('featured preserves the curated order', () => {
+    expect(sortShopListingProducts(items, 'featured').map((p) => p.id)).toEqual([
+      'a',
+      'b',
+      'c',
+    ])
+  })
+
+  it('price-asc sorts ascending without mutating the source', () => {
+    const r = sortShopListingProducts(items, 'price-asc')
+    expect(r.map((p) => p.id)).toEqual(['b', 'c', 'a'])
+    expect(items.map((p) => p.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('newest reverses the curated order', () => {
+    expect(sortShopListingProducts(items, 'newest').map((p) => p.id)).toEqual([
+      'c',
+      'b',
+      'a',
+    ])
+  })
+
+  it('availability puts purchasable pieces first, sold-out last', () => {
+    expect(
+      sortShopListingProducts(items, 'availability').map((p) => p.id),
+    ).toEqual(['a', 'c', 'b'])
   })
 })

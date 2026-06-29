@@ -8,24 +8,34 @@ export const SHOP_STATUS_FILTERS: readonly StorefrontProductStatus[] = [
   'limitedEdition',
 ] as const
 
-export type ShopSort = 'featured' | 'price-asc' | 'price-desc' | 'name-asc'
+export type ShopSort =
+  | 'featured'
+  | 'newest'
+  | 'price-asc'
+  | 'price-desc'
+  | 'name-asc'
+  | 'availability'
 
 export const SHOP_SORT_OPTIONS: ReadonlyArray<{ value: ShopSort; label: string }> = [
   { value: 'featured', label: 'Featured' },
+  { value: 'newest', label: 'Newest' },
   { value: 'price-asc', label: 'Price: low to high' },
   { value: 'price-desc', label: 'Price: high to low' },
   { value: 'name-asc', label: 'Name: A–Z' },
+  { value: 'availability', label: 'Availability' },
 ] as const
 
 export type ShopUrlSearch = {
   q: string
   /** Comma-separated status tokens (ignored until storefront `Product` carries `shop`). */
   status: string
+  category: string
   drop: string
   source: 'all' | 'drop' | 'individual'
   color: string
   size: string
-  sort: ShopSort
+  /** Undefined when the URL carries no explicit sort — the CMS `defaultSort` then applies. */
+  sort?: ShopSort
   minPrice?: number
   maxPrice?: number
 }
@@ -33,11 +43,12 @@ export type ShopUrlSearch = {
 export const defaultShopUrlSearch: ShopUrlSearch = {
   q: '',
   status: '',
+  category: '',
   drop: '',
   source: 'all',
   color: '',
   size: '',
-  sort: 'featured',
+  sort: undefined,
   minPrice: undefined,
   maxPrice: undefined,
 }
@@ -52,20 +63,22 @@ function parseOptionalPrice(raw: unknown): number | undefined {
 export function validateShopUrlSearch(search: Record<string, unknown>): ShopUrlSearch {
   const q = typeof search.q === 'string' ? search.q : ''
   const status = typeof search.status === 'string' ? search.status : ''
+  const category = typeof search.category === 'string' ? search.category : ''
   const drop = typeof search.drop === 'string' ? search.drop : ''
   const color = typeof search.color === 'string' ? search.color : ''
   const size = typeof search.size === 'string' ? search.size : ''
   const sourceRaw = typeof search.source === 'string' ? search.source : 'all'
   const source: ShopUrlSearch['source'] =
     sourceRaw === 'drop' || sourceRaw === 'individual' ? sourceRaw : 'all'
-  const sortRaw = typeof search.sort === 'string' ? search.sort : 'featured'
-  const sort: ShopSort = SHOP_SORT_OPTIONS.some((o) => o.value === sortRaw)
+  const sortRaw = typeof search.sort === 'string' ? search.sort : undefined
+  const sort: ShopSort | undefined = SHOP_SORT_OPTIONS.some((o) => o.value === sortRaw)
     ? (sortRaw as ShopSort)
-    : 'featured'
+    : undefined
 
   return {
     q,
     status,
+    category,
     drop,
     source,
     color,
@@ -135,6 +148,10 @@ export function filterShopListingProducts(
       const st = p.shop?.storefrontStatus ?? 'available'
       if (!statuses.includes(st)) return false
     }
+    if (search.category.trim()) {
+      const cat = (p.shop?.category ?? '').trim().toLowerCase()
+      if (cat !== search.category.trim().toLowerCase()) return false
+    }
     if (!productInDropFilter(p, search.drop)) return false
     if (search.source !== 'all') {
       const st = p.shop?.sourceType ?? 'individual'
@@ -167,10 +184,86 @@ export function sortShopListingProducts(items: Product[], sort: ShopSort): Produ
       return [...items].sort((a, b) => b.price - a.price)
     case 'name-asc':
       return [...items].sort((a, b) => a.name.localeCompare(b.name))
+    case 'newest':
+      // No authored timestamp on the storefront `Product`; newest is a stable
+      // reverse of the curated catalog order (most recently appended first).
+      return [...items].reverse()
+    case 'availability':
+      // Purchasable pieces first, sold-out / coming-soon last; stable otherwise.
+      return [...items]
+        .map((p, i) => ({ p, i }))
+        .sort((a, b) => availabilityRank(a.p) - availabilityRank(b.p) || a.i - b.i)
+        .map((x) => x.p)
     case 'featured':
     default:
       return items
   }
+}
+
+function availabilityRank(p: Product): number {
+  const status = p.shop?.storefrontStatus ?? 'available'
+  switch (status) {
+    case 'available':
+    case 'sale':
+    case 'limitedEdition':
+      return 0
+    case 'comingSoon':
+      return 1
+    case 'outOfStock':
+    default:
+      return 2
+  }
+}
+
+export type ShopFacetCounts = {
+  status: Record<string, number>
+  category: Record<string, number>
+  color: Record<string, number>
+  size: Record<string, number>
+  drop: Record<string, number>
+}
+
+/**
+ * Faceted result counts: for each filter dimension, count how many products
+ * would match if that dimension were (re)set — i.e. holding every OTHER active
+ * filter. This is the standard facet behavior so a count of 0 marks an
+ * impossible combination the UI can disable. Computed from the full catalog.
+ */
+export function computeShopFacetCounts(
+  items: Product[],
+  search: ShopUrlSearch,
+): ShopFacetCounts {
+  const status: Record<string, number> = {}
+  const category: Record<string, number> = {}
+  const color: Record<string, number> = {}
+  const size: Record<string, number> = {}
+  const drop: Record<string, number> = {}
+
+  const without = (patch: Partial<ShopUrlSearch>) =>
+    filterShopListingProducts(items, { ...search, ...patch })
+
+  for (const p of without({ status: '' })) {
+    const s = p.shop?.storefrontStatus ?? 'available'
+    status[s] = (status[s] ?? 0) + 1
+  }
+  for (const p of without({ category: '' })) {
+    const c = p.shop?.category?.trim()
+    if (c) category[c] = (category[c] ?? 0) + 1
+  }
+  for (const p of without({ color: '' })) {
+    for (const c of p.colorways) color[c.name] = (color[c.name] ?? 0) + 1
+  }
+  const sizePool = without({ size: '' })
+  for (const label of uniqueSizeLabels(items)) {
+    size[label] = sizePool.filter((p) => productMatchesSizeFilter(p, label)).length
+  }
+  const dropPool = without({ drop: '' })
+  for (const p of dropPool) {
+    const slug = p.shop?.dropSlug?.trim()
+    if (slug) drop[slug] = (drop[slug] ?? 0) + 1
+  }
+
+  return { status, category, color, size, drop }
 }
 
 export function catalogPriceBounds(items: Product[]): { min: number; max: number } {
@@ -184,12 +277,36 @@ export function catalogPriceBounds(items: Product[]): { min: number; max: number
   return { min, max }
 }
 
+export function uniqueCategories(items: Product[]): string[] {
+  const set = new Set<string>()
+  for (const p of items) {
+    const c = p.shop?.category?.trim()
+    if (c) set.add(c)
+  }
+  return [...set].sort((a, b) => a.localeCompare(b))
+}
+
 export function uniqueColorwayNames(items: Product[]): string[] {
   const set = new Set<string>()
   for (const p of items) {
     for (const c of p.colorways) set.add(c.name)
   }
   return [...set].sort((a, b) => a.localeCompare(b))
+}
+
+export type ColorwaySwatch = { name: string; base: string; accent: string }
+
+/** First-seen swatch per colorway name, sorted by name — drives filter swatches. */
+export function uniqueColorwaySwatches(items: Product[]): ColorwaySwatch[] {
+  const map = new Map<string, ColorwaySwatch>()
+  for (const p of items) {
+    for (const c of p.colorways) {
+      if (!map.has(c.name)) {
+        map.set(c.name, { name: c.name, base: c.base, accent: c.accent })
+      }
+    }
+  }
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
 }
 
 const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL']

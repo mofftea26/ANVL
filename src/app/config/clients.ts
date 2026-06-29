@@ -26,6 +26,12 @@ export interface CommerceClient {
     items: Product[]
     drops: ShopDropFilterOption[]
   }>
+  /**
+   * Create a hosted checkout from the current cart lines and return its redirect
+   * URL. Returns `null` when no hosted checkout is available (seed/local
+   * adapters), signalling the caller to use the internal checkout flow.
+   */
+  startCheckout(lines: CartLine[]): Promise<string | null>
 }
 
 export interface CmsClient {

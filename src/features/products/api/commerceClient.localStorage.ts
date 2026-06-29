@@ -23,4 +23,7 @@ export const localStorageCommerceClient: CommerceClient = {
   async getShopListingCatalog() {
     return getStorefrontShopListingCatalog()
   },
+  async startCheckout() {
+    return null
+  },
 }
