@@ -48,6 +48,19 @@ export interface Order {
   createdAt: string
 }
 
+/** Body measurements (cm / kg) — power future PDP size suggestions. */
+export interface Measurements {
+  heightCm?: number
+  weightKg?: number
+  chestCm?: number
+  waistCm?: number
+  hipsCm?: number
+  shoulderCm?: number
+  inseamCm?: number
+}
+
+export type Gender = '' | 'male' | 'female' | 'other' | 'preferNotToSay'
+
 export interface Customer {
   id: string
   email: string
@@ -55,6 +68,15 @@ export interface Customer {
   lastName?: string
   phone?: string
   addresses: Address[]
+  /** Notification preferences (persisted on the profile row). */
+  marketingOptIn?: boolean
+  orderUpdatesOptIn?: boolean
+  /** Richer personal profile. */
+  birthdate?: string
+  gender?: Gender
+  preferredSize?: string
+  measurements?: Measurements
+  avatarUrl?: string
 }
 
 export interface CustomerProfileUpdate {
@@ -63,4 +85,10 @@ export interface CustomerProfileUpdate {
   lastName?: string
   phone?: string
   addresses?: Address[]
+  marketingOptIn?: boolean
+  orderUpdatesOptIn?: boolean
+  birthdate?: string | null
+  gender?: Gender
+  preferredSize?: string
+  measurements?: Measurements
 }

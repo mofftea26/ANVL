@@ -28,9 +28,12 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
 import { Route as ShopSlugRouteImport } from './routes/shop/$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout/success'
+import { Route as AuthVerifyEmailRouteImport } from './routes/auth/verify-email'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AdminThemeRouteImport } from './routes/admin/theme'
 import { Route as AdminStoryRouteImport } from './routes/admin/story'
 import { Route as AdminShopRouteImport } from './routes/admin/shop'
@@ -40,6 +43,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminFontsRouteImport } from './routes/admin/fonts'
 import { Route as AdminContentRouteImport } from './routes/admin/content'
 import { Route as AdminAssetsRouteImport } from './routes/admin/assets'
+import { Route as AccountSettingsRouteImport } from './routes/account/settings'
 import { Route as AccountPersonalRouteImport } from './routes/account/personal'
 import { Route as AccountAddressesRouteImport } from './routes/account/addresses'
 import { Route as AccountOrdersIndexRouteImport } from './routes/account/orders/index'
@@ -140,6 +144,11 @@ const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
   path: '/checkout/success',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
+  id: '/auth/verify-email',
+  path: '/auth/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthSignUpRoute = AuthSignUpRouteImport.update({
   id: '/auth/sign-up',
   path: '/auth/sign-up',
@@ -150,9 +159,19 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/auth/reset-password',
+  path: '/auth/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   id: '/auth/forgot-password',
   path: '/auth/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminThemeRoute = AdminThemeRouteImport.update({
@@ -200,6 +219,11 @@ const AdminAssetsRoute = AdminAssetsRouteImport.update({
   path: '/assets',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AccountSettingsRoute = AccountSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AccountRouteRoute,
+} as any)
 const AccountPersonalRoute = AccountPersonalRouteImport.update({
   id: '/personal',
   path: '/personal',
@@ -237,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/account/addresses': typeof AccountAddressesRoute
   '/account/personal': typeof AccountPersonalRoute
+  '/account/settings': typeof AccountSettingsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
@@ -246,9 +271,12 @@ export interface FileRoutesByFullPath {
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/auth/verify-email': typeof AuthVerifyEmailRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/account/': typeof AccountIndexRoute
@@ -272,6 +300,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/account/addresses': typeof AccountAddressesRoute
   '/account/personal': typeof AccountPersonalRoute
+  '/account/settings': typeof AccountSettingsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
@@ -281,9 +310,12 @@ export interface FileRoutesByTo {
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/auth/verify-email': typeof AuthVerifyEmailRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/account': typeof AccountIndexRoute
@@ -310,6 +342,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/account/addresses': typeof AccountAddressesRoute
   '/account/personal': typeof AccountPersonalRoute
+  '/account/settings': typeof AccountSettingsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
@@ -319,9 +352,12 @@ export interface FileRoutesById {
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/auth/verify-email': typeof AuthVerifyEmailRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/account/': typeof AccountIndexRoute
@@ -349,6 +385,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account/addresses'
     | '/account/personal'
+    | '/account/settings'
     | '/admin/assets'
     | '/admin/content'
     | '/admin/fonts'
@@ -358,9 +395,12 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/story'
     | '/admin/theme'
+    | '/auth/callback'
     | '/auth/forgot-password'
+    | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/auth/verify-email'
     | '/checkout/success'
     | '/shop/$slug'
     | '/account/'
@@ -384,6 +424,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account/addresses'
     | '/account/personal'
+    | '/account/settings'
     | '/admin/assets'
     | '/admin/content'
     | '/admin/fonts'
@@ -393,9 +434,12 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/story'
     | '/admin/theme'
+    | '/auth/callback'
     | '/auth/forgot-password'
+    | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/auth/verify-email'
     | '/checkout/success'
     | '/shop/$slug'
     | '/account'
@@ -421,6 +465,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account/addresses'
     | '/account/personal'
+    | '/account/settings'
     | '/admin/assets'
     | '/admin/content'
     | '/admin/fonts'
@@ -430,9 +475,12 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/story'
     | '/admin/theme'
+    | '/auth/callback'
     | '/auth/forgot-password'
+    | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/auth/verify-email'
     | '/checkout/success'
     | '/shop/$slug'
     | '/account/'
@@ -457,9 +505,12 @@ export interface RootRouteChildren {
   SizeGuideRoute: typeof SizeGuideRoute
   StoryRoute: typeof StoryRoute
   TermsRoute: typeof TermsRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
+  AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   ShopSlugRoute: typeof ShopSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
@@ -601,6 +652,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/verify-email': {
+      id: '/auth/verify-email'
+      path: '/auth/verify-email'
+      fullPath: '/auth/verify-email'
+      preLoaderRoute: typeof AuthVerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/sign-up': {
       id: '/auth/sign-up'
       path: '/auth/sign-up'
@@ -615,11 +673,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/auth/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/forgot-password': {
       id: '/auth/forgot-password'
       path: '/auth/forgot-password'
       fullPath: '/auth/forgot-password'
       preLoaderRoute: typeof AuthForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/theme': {
@@ -685,6 +757,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAssetsRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/account/settings': {
+      id: '/account/settings'
+      path: '/settings'
+      fullPath: '/account/settings'
+      preLoaderRoute: typeof AccountSettingsRouteImport
+      parentRoute: typeof AccountRouteRoute
+    }
     '/account/personal': {
       id: '/account/personal'
       path: '/personal'
@@ -719,6 +798,7 @@ declare module '@tanstack/react-router' {
 interface AccountRouteRouteChildren {
   AccountAddressesRoute: typeof AccountAddressesRoute
   AccountPersonalRoute: typeof AccountPersonalRoute
+  AccountSettingsRoute: typeof AccountSettingsRoute
   AccountIndexRoute: typeof AccountIndexRoute
   AccountOrdersOrderIdRoute: typeof AccountOrdersOrderIdRoute
   AccountOrdersIndexRoute: typeof AccountOrdersIndexRoute
@@ -727,6 +807,7 @@ interface AccountRouteRouteChildren {
 const AccountRouteRouteChildren: AccountRouteRouteChildren = {
   AccountAddressesRoute: AccountAddressesRoute,
   AccountPersonalRoute: AccountPersonalRoute,
+  AccountSettingsRoute: AccountSettingsRoute,
   AccountIndexRoute: AccountIndexRoute,
   AccountOrdersOrderIdRoute: AccountOrdersOrderIdRoute,
   AccountOrdersIndexRoute: AccountOrdersIndexRoute,
@@ -780,9 +861,12 @@ const rootRouteChildren: RootRouteChildren = {
   SizeGuideRoute: SizeGuideRoute,
   StoryRoute: StoryRoute,
   TermsRoute: TermsRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
+  AuthVerifyEmailRoute: AuthVerifyEmailRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   ShopSlugRoute: ShopSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,

@@ -18,6 +18,9 @@ export type StoryChapterRow = {
   cover_asset: unknown
   cover_logo?: unknown
   cover_colors?: unknown
+  product_slug?: string | null
+  drop_label?: string | null
+  drop_slug?: string | null
   sort_order: number | null
   is_published: boolean | null
 }
@@ -88,6 +91,9 @@ export function assembleChapter(
     title: chapter.title,
     subtitle: chapter.subtitle ?? '',
     description: chapter.description ?? '',
+    productSlug: chapter.product_slug ?? '',
+    dropLabel: chapter.drop_label ?? '',
+    dropSlug: chapter.drop_slug ?? '',
     cover: parseStoryAsset(chapter.cover_asset),
     coverLogo: parseStoryAsset(chapter.cover_logo),
     colors: chapter.cover_colors ?? undefined,

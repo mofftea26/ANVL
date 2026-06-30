@@ -3,6 +3,8 @@ import { Menu, ShoppingBag } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 import { useCart } from '@/features/cart/hooks/useCart'
+import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
+import { AccountMenu } from '@/features/storefront-account/account/AccountMenu'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Container } from '@/shared/components/ui/Container'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
@@ -32,6 +34,7 @@ export function PremiumNavTopbar({
   onMenuOpen: () => void
 }) {
   const { quantity } = useCart()
+  const openCart = useCartDrawerStore((s) => s.openDrawer)
   const isSolid = variant === 'solid'
 
   // Shared variant-aware chrome for the right-side icon controls so the cart and
@@ -42,6 +45,8 @@ export function PremiumNavTopbar({
       ? 'border-[var(--color-line)] bg-[var(--color-surface)]/80 text-[var(--color-text)]'
       : 'border-white/15 bg-white/5 text-[var(--color-heading)] hover:bg-white/10',
   )
+  // Cart + account avatar are round (per brand chrome); burger stays square.
+  const iconChromeRound = cn(iconChrome, 'rounded-full')
 
   const LogoMark: ReactNode = logoSrc?.trim() ? (
     <img
@@ -112,18 +117,22 @@ export function PremiumNavTopbar({
         </nav>
         <div className="ml-auto flex items-center gap-2">
           {showCart ? (
-            <Link to="/cart" className={iconChrome} aria-label={`Cart, ${quantity} items`}>
+            <button
+              type="button"
+              onClick={openCart}
+              className={iconChromeRound}
+              aria-label={`Open cart, ${quantity} items`}
+            >
               <ShoppingBag size={16} aria-hidden="true" />
               {quantity > 0 ? (
                 <span className="absolute -right-1 -top-1 min-w-[1.125rem] rounded-full bg-[var(--color-accent)] px-1.5 text-center text-[10px] font-medium text-[var(--color-bg)]">
                   {quantity}
                 </span>
               ) : null}
-            </Link>
+            </button>
           ) : null}
 
-          {/* Burger — replaces the old fixed bottom bar; opens the nav drawer on
-              mobile + tablet. Hidden once the inline links appear at lg. */}
+          {/* Burger — opens the nav drawer on mobile + tablet. Hidden at lg. */}
           <button
             type="button"
             onClick={onMenuOpen}
@@ -132,6 +141,9 @@ export function PremiumNavTopbar({
           >
             <Menu size={16} aria-hidden="true" />
           </button>
+
+          {/* Account — round avatar (signed in) or sign-in (signed out), far right. */}
+          <AccountMenu triggerClassName={iconChromeRound} />
         </div>
       </Container>
     </div>

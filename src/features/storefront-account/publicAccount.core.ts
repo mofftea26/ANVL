@@ -90,6 +90,26 @@ export const forgotPasswordSchema = z.object({
   email: z.string().email('Enter a valid email'),
 })
 
+export const newPasswordSchema = z
+  .object({
+    password: z.string().min(8, 'Use at least 8 characters'),
+    confirmPassword: z.string().min(1, 'Confirm your password'),
+  })
+  .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Passwords do not match',
+        path: ['confirmPassword'],
+      })
+    }
+  })
+
+export const settingsSchema = z.object({
+  marketingOptIn: z.boolean(),
+  orderUpdatesOptIn: z.boolean(),
+})
+
 export function sanitizeInternalRedirect(raw: string | undefined): string {
   if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/account'
   return raw
@@ -203,6 +223,28 @@ export function useForgotPasswordForm() {
   })
 }
 
+export function useNewPasswordForm() {
+  return useForm({
+    resolver: zodResolver(newPasswordSchema),
+    defaultValues: { password: '', confirmPassword: '' },
+  })
+}
+
+export function useSettingsForm(customer: Customer | undefined) {
+  const form = useForm({
+    resolver: zodResolver(settingsSchema),
+    defaultValues: { marketingOptIn: false, orderUpdatesOptIn: true },
+  })
+  useEffect(() => {
+    if (!customer) return
+    form.reset({
+      marketingOptIn: customer.marketingOptIn ?? false,
+      orderUpdatesOptIn: customer.orderUpdatesOptIn ?? true,
+    })
+  }, [customer?.id, customer?.marketingOptIn, customer?.orderUpdatesOptIn, form])
+  return form
+}
+
 const addressRowSchema = z.object({
   id: z.string(),
   label: z.string().optional(),
@@ -218,6 +260,9 @@ export const personalInfoSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   phone: z.string().optional(),
+  birthdate: z.string().optional(),
+  gender: z.enum(['', 'male', 'female', 'other', 'preferNotToSay']).optional(),
+  preferredSize: z.string().optional(),
 })
 
 export const addressesFormSchema = z.object({
@@ -281,7 +326,14 @@ export function useUpdateCustomerProfileMutation() {
 export function usePersonalInfoForm(customer: Customer | undefined) {
   const form = useForm({
     resolver: zodResolver(personalInfoSchema),
-    defaultValues: { firstName: '', lastName: '', phone: '' },
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      phone: '',
+      birthdate: '',
+      gender: '' as Customer['gender'],
+      preferredSize: '',
+    },
   })
   useEffect(() => {
     if (!customer) return
@@ -289,8 +341,11 @@ export function usePersonalInfoForm(customer: Customer | undefined) {
       firstName: customer.firstName ?? '',
       lastName: customer.lastName ?? '',
       phone: customer.phone ?? '',
+      birthdate: customer.birthdate ?? '',
+      gender: customer.gender ?? '',
+      preferredSize: customer.preferredSize ?? '',
     })
-  }, [customer?.id, customer?.firstName, customer?.lastName, customer?.phone, form])
+  }, [customer?.id, customer, form])
   return form
 }
 

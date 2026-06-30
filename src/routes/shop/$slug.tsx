@@ -10,9 +10,10 @@ export const Route = createFileRoute('/shop/$slug')({
   loader: async ({ params }) => {
     const product = await runtimeClients.commerce.getProductBySlug(params.slug)
     if (!product) throw notFound()
-    const [related, projection] = await Promise.all([
+    const [related, projection, storyBook] = await Promise.all([
       runtimeClients.commerce.getRelatedProducts(params.slug),
       loadStorefrontProjection(),
+      runtimeClients.story.getChapterByProductSlug(params.slug).catch(() => null),
     ])
     const assets = resolveStorefrontPageAssets(projection.assets, 'pdp', projection.mediaIndex)
     const content = resolvePdpContent({
@@ -21,7 +22,14 @@ export const Route = createFileRoute('/shop/$slug')({
       globalAssets: assets,
       mediaIndex: projection.mediaIndex,
     })
-    return { product, related, assets, content, shopConfig: projection.shopConfig }
+    return {
+      product,
+      related,
+      assets,
+      content,
+      shopConfig: projection.shopConfig,
+      hasStoryBook: Boolean(storyBook),
+    }
   },
   head: ({ loaderData }) => {
     // CMS `Product detail → Social share image` slot wins over the product image.

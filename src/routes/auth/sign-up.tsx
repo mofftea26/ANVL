@@ -58,8 +58,7 @@ function SignUpPage() {
       const res = await signUpStorefront(values.email, values.password, fullName)
       if (res.ok) {
         if (res.needsConfirmation) {
-          toast.success('Account created. Check your email to confirm.')
-          setSupaPending(false)
+          window.location.assign(`/auth/verify-email?email=${encodeURIComponent(values.email)}`)
         } else {
           if (res.userId) setSessionCustomerId(res.userId)
           toast.success('Welcome to ANVL.')

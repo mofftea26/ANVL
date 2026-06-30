@@ -7,13 +7,17 @@ import {
 import { runtimeClients } from '@/app/config/runtime'
 import { StorySaga } from '@/features/story/components/StorySaga'
 
-type StorySearch = { chapter?: string }
+type StorySearch = { chapter?: string; product?: string }
 
 export const Route = createFileRoute('/story')({
   validateSearch: (search: Record<string, unknown>): StorySearch => ({
     chapter:
       typeof search.chapter === 'string' && search.chapter.length > 0
         ? search.chapter
+        : undefined,
+    product:
+      typeof search.product === 'string' && search.product.length > 0
+        ? search.product
         : undefined,
   }),
   loader: async () => {
@@ -40,8 +44,13 @@ export const Route = createFileRoute('/story')({
 
 function StoryPage() {
   const { chapters } = Route.useLoaderData()
-  const { chapter } = Route.useSearch()
+  const { chapter, product } = Route.useSearch()
   const navigate = useNavigate()
+
+  // Deep-link by product (?product=<slug>) resolves to that product's book.
+  const resolvedSlug =
+    chapter ??
+    (product ? (chapters.find((c) => c.productSlug === product)?.slug ?? null) : null)
 
   const openChapter = (slug: string) => {
     void navigate({ to: '/story', search: { chapter: slug } })
@@ -53,7 +62,7 @@ function StoryPage() {
   return (
     <StorySaga
       chapters={chapters}
-      activeChapterSlug={chapter ?? null}
+      activeChapterSlug={resolvedSlug}
       onOpenChapter={openChapter}
       onCloseChapter={closeChapter}
     />

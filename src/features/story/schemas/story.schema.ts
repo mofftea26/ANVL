@@ -106,6 +106,11 @@ export const storyChapterSchema = z.object({
   title: z.string(),
   subtitle: z.string().default(''),
   description: z.string().default(''),
+  /** Product this book belongs to (= Shopify handle). Empty = standalone chapter. */
+  productSlug: z.string().default(''),
+  /** Drop grouping label/slug for the shelf (e.g. "Drop 01 — The Oath"). */
+  dropLabel: z.string().default(''),
+  dropSlug: z.string().default(''),
   cover: storyAssetSchema.default(EMPTY_STORY_ASSET),
   /** Drop logo stamped on the book cover (image upload). */
   coverLogo: storyAssetSchema.default(EMPTY_STORY_ASSET),

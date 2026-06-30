@@ -42,12 +42,38 @@ export async function signUpStorefront(
     password,
     options: {
       data: fullName ? { full_name: fullName } : undefined,
-      emailRedirectTo: originRedirect(),
+      emailRedirectTo: originRedirect('/auth/callback'),
     },
   })
   if (error) return { ok: false, error: error.message }
   // No session means email confirmation is required.
   return { ok: true, userId: data.user?.id ?? null, needsConfirmation: !data.session }
+}
+
+/** Resend the sign-up confirmation email. */
+export async function resendVerificationStorefront(
+  email: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const client = getStorefrontSupabaseClient()
+  if (!client) return { ok: false, error: 'Auth is not configured.' }
+  const { error } = await client.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: originRedirect('/auth/callback') },
+  })
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+/** Set a new password for the signed-in user (used after recovery + in settings). */
+export async function updatePasswordStorefront(
+  password: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const client = getStorefrontSupabaseClient()
+  if (!client) return { ok: false, error: 'Auth is not configured.' }
+  const { error } = await client.auth.updateUser({ password })
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
 }
 
 /**
@@ -62,7 +88,7 @@ export async function signInWithOAuthStorefront(
   if (!client) return { ok: false, error: 'Auth is not configured.' }
   const { error } = await client.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: originRedirect() },
+    options: { redirectTo: originRedirect('/auth/callback') },
   })
   if (error) return { ok: false, error: error.message }
   return { ok: true }
@@ -74,7 +100,7 @@ export async function sendPasswordResetStorefront(
   const client = getStorefrontSupabaseClient()
   if (!client) return { ok: false, error: 'Auth is not configured.' }
   const { error } = await client.auth.resetPasswordForEmail(email, {
-    redirectTo: originRedirect('/auth/sign-in'),
+    redirectTo: originRedirect('/auth/reset-password'),
   })
   if (error) return { ok: false, error: error.message }
   return { ok: true }
@@ -91,4 +117,12 @@ export async function getStorefrontUserId(): Promise<string | null> {
   if (!client) return null
   const { data } = await client.auth.getSession()
   return data.session?.user.id ?? null
+}
+
+/** Current signed-in user's email (for linking a checkout to the account). */
+export async function getStorefrontUserEmail(): Promise<string | null> {
+  const client = getStorefrontSupabaseClient()
+  if (!client) return null
+  const { data } = await client.auth.getSession()
+  return data.session?.user.email ?? null
 }

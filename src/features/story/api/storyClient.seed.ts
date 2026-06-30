@@ -9,4 +9,9 @@ export const seedStoryClient: StoryClient = {
   async getChapterBySlug(slug) {
     return seedStory.find((c) => c.slug === slug && c.isPublished) ?? null
   },
+  async getChapterByProductSlug(productSlug) {
+    return (
+      seedStory.find((c) => c.productSlug === productSlug && c.isPublished) ?? null
+    )
+  },
 }

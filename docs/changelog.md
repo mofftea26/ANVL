@@ -1,4 +1,17 @@
-﻿## 2026-06-29 — Shopify products: imagery, gallery, bento content
+﻿## 2026-06-30 — Customer accounts, e-commerce flow & per-product story books
+
+Three-epic build (auth, commerce, story).
+
+**Auth / profile / settings.** Completed the Supabase customer system: `storefront_profiles` extended with `phone` / `addresses` (jsonb) / `marketing_opt_in` / `order_updates_opt_in` (migration `20260630120000`), now persisted by `supabaseAccountClient` (phone + addresses + prefs round-trip). New routes: `/auth/callback` (OAuth + email-confirm landing), `/auth/verify-email` (check-inbox + resend), `/auth/reset-password` (recovery → `updateUser`); `/auth/forgot-password` now sends the real Supabase reset. New `/account/settings` (change password, notification prefs, sign-out-everywhere). Social logins trimmed to **Google + Facebook** (Apple deferred). New auth helpers: `resendVerificationStorefront`, `updatePasswordStorefront`, `getStorefrontUserEmail`.
+
+**Cart / checkout / orders.** New mini-cart **drawer** (`CartDrawer` via the `Drawer` primitive + `cartDrawer.store`) opens on add-to-cart (PDP, quick-add, quick-view) and from the header cart icon (now a button). Fixed quick-add/quick-view to attach the Shopify `variantId` (they previously couldn't reach hosted checkout). `startCheckout(lines, buyer?)` now passes `buyerIdentity.email` to Shopify `cartCreate` so orders link to the signed-in customer. New `orders` table (migration `20260630130000`, RLS: read own by id or email-claim, writes service-role only). The `shopify-webhook` Edge Function now **mirrors `orders/*` events** into `orders` (resolving `customer_id` by email) — deployed. `supabaseAccountClient.listOrders/getOrderById` read it, so `/account/orders` is real.
+
+**Per-product story books.** `story_chapters` gained `product_slug` (unique) + `drop_label` / `drop_slug` (migration `20260630140000`). `StoryClient.getChapterByProductSlug` added (both adapters). `/story` accepts `?product=<slug>` and the shelf is **grouped by drop**. 20 cover presets (`bookCoverPresets.ts`); the admin `ChapterForm` gained a product picker + preset picker. PDP gained a "Read the story" bento tile (`pdp.showStoryBook` toggle) deep-linking `/story?product=<slug>`. Seeded **3 LOTR-style books** (one per product) under Drop 01; unpublished the old general "The Oath" chapter.
+
+- `pnpm verify` green (typecheck + 613 tests + build). SSR smoke: `/story` (3 books + drop heading), `/shop/oversized-tee` (Read-the-story tile), `/auth/*` pages render.
+- **Owner-side manual steps** (documented in `docs/features/auth-accounts-orders.md`): enable Google/Facebook providers + `/auth/callback` redirect + email templates in the Supabase dashboard; set `SHOPIFY_API_SECRET_KEY` on the `shopify-webhook` function + register `orders/create|updated|fulfilled|cancelled` webhooks (Shopify → Notifications) to the function URL; enable COD/Whish/bank manual payment methods in Shopify.
+
+## 2026-06-29 — Shopify products: imagery, gallery, bento content
 
 - **Inventory** reset to 100 units per colorway split across sizes → **20 per variant** (Oversized 200, Compression 100, Stringer 200 total).
 - **Per-colorway product images.** Generated background-removed (floating) hero cutouts per colorway, uploaded to Shopify with the colorway in the **alt text** ("Onyx — …" / "Bone — …"). The Shopify query + mapper now fetch **all** product images and build `ProductShopMeta.imagesByColorName` by matching alt text to each colorway, so the PDP carousel populates and **switching colorway swaps the image** (no Shopify per-variant media needed). Removed two stale leftover Compression images.

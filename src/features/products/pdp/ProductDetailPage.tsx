@@ -25,6 +25,8 @@ export type ProductDetailPageProps = {
   /** Per-product editorial content (CMS → product → global slot → default). */
   content: ResolvedPdpContent
   shopConfig: ShopConfig
+  /** True when this product has a published Story book to link to. */
+  hasStoryBook?: boolean
 }
 
 /**
@@ -33,7 +35,7 @@ export type ProductDetailPageProps = {
  * in `usePdpVariant` (shared across gallery / buy panel / colorways / sticky
  * bar); scroll reveals come from `usePdpReveal`. Theme via `--shop-*`.
  */
-export function ProductDetailPage({ product, related, assets, content, shopConfig: initialConfig }: ProductDetailPageProps) {
+export function ProductDetailPage({ product, related, assets, content, shopConfig: initialConfig, hasStoryBook }: ProductDetailPageProps) {
   const config = useShopConfig(initialConfig)
   const pdp = config.pdp
   const variant = usePdpVariant(product)
@@ -80,7 +82,7 @@ export function ProductDetailPage({ product, related, assets, content, shopConfi
 
       {/* Cinematic zone — a compact bento grid (the "second screen"). */}
       <div className="mt-2">
-        <PdpBento product={product} variant={variant} content={content} pdp={pdp} />
+        <PdpBento product={product} variant={variant} content={content} pdp={pdp} hasStoryBook={hasStoryBook} />
         {pdp.showRelated ? <PdpRelated products={related} count={pdp.relatedCount} /> : null}
       </div>
 

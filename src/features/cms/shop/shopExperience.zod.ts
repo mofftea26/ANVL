@@ -113,6 +113,7 @@ export const DEFAULT_SHOP_CONFIG = {
     showColorways: true,
     showDesignDetails: true,
     showStory: true,
+    showStoryBook: true,
     showSizeGuide: true,
     showRelated: true,
     relatedCount: 4 as 3 | 4 | 6,
@@ -188,6 +189,7 @@ export const shopConfigSchema = z.object({
       showColorways: z.boolean().catch(true),
       showDesignDetails: z.boolean().catch(true),
       showStory: z.boolean().catch(true),
+      showStoryBook: z.boolean().catch(true),
       showSizeGuide: z.boolean().catch(true),
       showRelated: z.boolean().catch(true),
       relatedCount: z

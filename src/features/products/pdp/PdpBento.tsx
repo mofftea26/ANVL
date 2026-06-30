@@ -57,11 +57,13 @@ export function PdpBento({
   variant,
   content,
   pdp,
+  hasStoryBook,
 }: {
   product: Product
   variant: PdpVariant
   content: ResolvedPdpContent
   pdp: ShopConfig['pdp']
+  hasStoryBook?: boolean
 }) {
   const { colorwayIndex, setColorwayIndex } = variant
   const youtube = extractYoutubeVideoId(product.shop?.videoUrl)
@@ -73,6 +75,7 @@ export function PdpBento({
   const showColorways = pdp.showColorways && product.colorways.length > 1
   const showDetails = pdp.showDesignDetails && content.designDetails.length > 0
   const showSizeGuide = pdp.showSizeGuide
+  const showStoryBook = pdp.showStoryBook && Boolean(hasStoryBook)
 
   return (
     <section
@@ -199,6 +202,27 @@ export function PdpBento({
                   </li>
                 ))}
               </ul>
+            </Tile>
+          ) : null}
+
+          {showStoryBook ? (
+            <Tile className="justify-between md:col-span-2 md:row-span-1">
+              <div className="relative z-10">
+                <p className="anvl-display mb-1 text-[10px] tracking-[0.26em] text-[var(--shop-accent)]">
+                  The Saga
+                </p>
+                <p className="anvl-heading text-lg font-normal leading-snug text-[var(--shop-text)]">
+                  Every piece carries a story. Open {product.name}&rsquo;s book.
+                </p>
+              </div>
+              <Link
+                to="/story"
+                search={{ product: product.slug }}
+                className="anvl-micro focus-ring relative z-10 mt-2 inline-flex items-center gap-1.5 text-[var(--shop-text)] no-underline transition-colors hover:text-[var(--shop-accent)]"
+              >
+                Read the story
+                <ArrowUpRight size={12} aria-hidden="true" />
+              </Link>
             </Tile>
           ) : null}
 

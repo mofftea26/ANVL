@@ -218,9 +218,11 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 | `public.cms_media_assets` | Media library + asset assignments | CMS roles only |
 | `cms_settings.shop_config` / `storefront_publication.shop_config` | Shop Experience config blob (jsonb) — `/shop` layout/behavior/copy; mirrors `landing_content` flow | Public read, editor update |
 | `cms_settings.pdp_content` / `storefront_publication.pdp_content` | Per-product PDP editorial content (jsonb `{ [slug]: {...} }`) — bento copy + per-product assets; commerce data stays on the product | Public read, editor update |
-| `public.story_chapters` | Story saga chapters (one per drop) | Public read published; editor write |
-| `public.story_acts` | Ordered story beats within a chapter | Public read (parent published); editor write |
+| `public.story_chapters` | Story "books" — one per **product** (`product_slug` = Shopify handle), grouped by `drop_label`/`drop_slug`; acts are its pages | Public read published; editor write |
+| `public.story_acts` | Ordered story beats (book pages) within a chapter | Public read (parent published); editor write |
 | `public.story_cast` | CMS-authored characters (army roster) | Public read (parent published); editor write |
+| `public.storefront_profiles` | Customer identity/profile — name, email, `phone`, `addresses` (jsonb), notification prefs; auto-created on signup | Read/update own row |
+| `public.orders` | Shopify order mirror (written by `shopify-webhook` Edge Fn) for account order history | Read own (by id or email claim); service-role write only |
 
 ### Rules
 

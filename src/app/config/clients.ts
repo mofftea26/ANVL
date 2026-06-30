@@ -15,6 +15,9 @@ import type {
 } from '@/app/config/accountContracts'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
 
+/** Optional buyer context for hosted checkout so the order links to the account. */
+export type CheckoutBuyer = { email?: string; countryCode?: string }
+
 export interface CommerceClient {
   /** Full shop listing — publicly visible catalog items. */
   getProducts(): Promise<Product[]>
@@ -29,9 +32,11 @@ export interface CommerceClient {
   /**
    * Create a hosted checkout from the current cart lines and return its redirect
    * URL. Returns `null` when no hosted checkout is available (seed/local
-   * adapters), signalling the caller to use the internal checkout flow.
+   * adapters), signalling the caller to use the internal checkout flow. An
+   * optional buyer (signed-in customer email/country) links the order to the
+   * account.
    */
-  startCheckout(lines: CartLine[]): Promise<string | null>
+  startCheckout(lines: CartLine[], buyer?: CheckoutBuyer): Promise<string | null>
 }
 
 export interface CmsClient {
@@ -59,6 +64,8 @@ export interface StoryClient {
   /** Ordered, published chapters with their acts + cast. */
   getPublishedChapters(): Promise<StoryChapter[]>
   getChapterBySlug(slug: string): Promise<StoryChapter | null>
+  /** The book assigned to a product (by Shopify handle / slug), if any. */
+  getChapterByProductSlug(productSlug: string): Promise<StoryChapter | null>
 }
 
 export interface AnalyticsClient {

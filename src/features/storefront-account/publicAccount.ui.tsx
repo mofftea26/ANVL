@@ -64,6 +64,7 @@ const SUBNAV: { href: string; label: string }[] = [
   { href: '/account/personal', label: 'Personal' },
   { href: '/account/addresses', label: 'Addresses' },
   { href: '/account/orders', label: 'Orders' },
+  { href: '/account/settings', label: 'Settings' },
 ]
 
 export function AccountSubnav() {
@@ -96,10 +97,13 @@ export function AccountSubnav() {
   )
 }
 
+/**
+ * Auth guard for /account/*. Redirects signed-out visitors to sign-in, then
+ * renders the routed account experience (which provides its own chrome).
+ */
 export function AccountShellLayout() {
   useHydrateStorefrontAccountSession()
   const customerId = useStorefrontAccountSession((s) => s.customerId)
-  const logout = useStorefrontAccountSession((s) => s.logout)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -116,38 +120,20 @@ export function AccountShellLayout() {
 
   if (!ready || !customerId) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-20">
+      <div className="mx-auto max-w-4xl px-4 py-20 pt-[calc(var(--anvl-header-h)+4rem)]">
         <p className="anvl-micro text-[var(--color-text-muted)]">Loading your account…</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 md:py-16">
-      {!isStorefrontAuthEnabled() ? <AccountMockBanner /> : null}
-      <div className="flex flex-col gap-4 border-b border-[var(--color-line)] pb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="anvl-micro text-[var(--color-accent)]">ANVL Account</p>
-          <h1 className="anvl-heading mt-2 text-4xl font-normal sm:text-5xl">Your account</h1>
-          <p className="mt-2 max-w-xl text-sm text-[var(--color-text-muted)]">
-            Profile, addresses, and orders — Lebanon-first delivery and payment options at checkout.
-          </p>
+    <>
+      {!isStorefrontAuthEnabled() ? (
+        <div className="mx-auto max-w-5xl px-4 pt-[calc(var(--anvl-header-h)+1rem)]">
+          <AccountMockBanner />
         </div>
-        <button
-          type="button"
-          className="focus-ring shrink-0 self-start rounded-md border border-[var(--color-line)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)] sm:self-auto"
-          onClick={() => {
-            logout()
-            window.location.assign('/auth/sign-in')
-          }}
-        >
-          Sign out
-        </button>
-      </div>
-      <div className="mt-8">
-        <AccountSubnav />
-      </div>
+      ) : null}
       <Outlet />
-    </div>
+    </>
   )
 }

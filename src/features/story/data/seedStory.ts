@@ -18,6 +18,9 @@ export const seedStory: StoryChapter[] = [
     subtitle: 'Drop 01',
     description:
       'The first vow of the kingdom. A body forged through pressure, repetition, discipline, and heat — discipline repeated until it becomes identity. Every soldier who enlists is written into what comes next.',
+    productSlug: '',
+    dropLabel: 'Drop 01 — The Oath',
+    dropSlug: 'the-oath',
     cover: EMPTY_STORY_ASSET,
     coverLogo: EMPTY_STORY_ASSET,
     colors: DEFAULT_BOOK_COLORS,

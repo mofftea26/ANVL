@@ -7,6 +7,7 @@ import {
   variantIsPurchasable,
 } from '@/features/products/catalog/storefrontCatalog'
 import { useCart } from '@/features/cart/hooks/useCart'
+import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { useProductAnalytics } from '@/features/analytics/hooks/useProductAnalytics'
 import { useResponsiveShopLayout } from '@/features/products/shop/hooks/useResponsiveShopLayout'
 import {
@@ -107,8 +108,11 @@ export function ProductQuickView({
       size,
       quantity: 1,
       image: hero,
+      variantId:
+        product.shop?.variantIdByColorAndSize?.[colorway.name || 'Default']?.[size || 'One Size'],
     })
     trackAddToCart(product, 1)
+    useCartDrawerStore.getState().openDrawer()
     setState('added')
     setAnnounce(`${product.name}, size ${size}, added to cart.`)
     resetTimer.current = window.setTimeout(() => setState('idle'), 1600)

@@ -6,6 +6,7 @@ import {
   variantIsPurchasable,
 } from '@/features/products/catalog/storefrontCatalog'
 import { useCart } from '@/features/cart/hooks/useCart'
+import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { useProductAnalytics } from '@/features/analytics/hooks/useProductAnalytics'
 import { SizeSelector } from '@/shared/components/ui/SizeSelector'
 import { cn } from '@/shared/lib/cn'
@@ -101,6 +102,10 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
         return
       }
       setState('adding')
+      const variantId =
+        product.shop?.variantIdByColorAndSize?.[chosenColor || 'Default']?.[
+          chosenSize || 'One Size'
+        ]
       addLine({
         productId: product.id,
         slug: product.slug,
@@ -110,8 +115,10 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
         size: chosenSize,
         quantity: 1,
         image: product.images[0]?.src ?? '',
+        variantId,
       })
       trackAddToCart(product, 1)
+      useCartDrawerStore.getState().openDrawer()
       setState('added')
       setAnnounce(`${product.name}, ${chosenColor || 'one color'}, size ${chosenSize}, added to cart.`)
       window.setTimeout(() => {

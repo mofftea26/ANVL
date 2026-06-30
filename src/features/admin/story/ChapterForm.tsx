@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Save, Trash2 } from 'lucide-react'
+import { runtimeClients } from '@/app/config/runtime'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
@@ -13,6 +15,7 @@ import {
   type StoryAsset,
   type StoryChapter,
 } from '@/features/story/schemas/story.schema'
+import { BOOK_COVER_PRESETS, bookCoverPresetColors } from '@/features/story/bookCoverPresets'
 import { StoryAssetField } from '@/features/admin/story/StoryAssetField'
 import { BookColorsField } from '@/features/admin/story/BookColorsField'
 import { deleteChapter, upsertChapter } from '@/features/admin/story/story.service'
@@ -30,6 +33,9 @@ export function ChapterForm({ chapter, onSaved, onDeleted }: ChapterFormProps) {
   const [subtitle, setSubtitle] = useState(chapter.subtitle)
   const [chapterNumber, setChapterNumber] = useState(chapter.chapterNumber)
   const [description, setDescription] = useState(chapter.description)
+  const [productSlug, setProductSlug] = useState(chapter.productSlug ?? '')
+  const [dropLabel, setDropLabel] = useState(chapter.dropLabel ?? '')
+  const [dropSlug, setDropSlug] = useState(chapter.dropSlug ?? '')
   const [isPublished, setIsPublished] = useState(chapter.isPublished)
   const [cover, setCover] = useState<StoryAsset>(chapter.cover)
   const [coverLogo, setCoverLogo] = useState<StoryAsset>(chapter.coverLogo)
@@ -37,6 +43,14 @@ export function ChapterForm({ chapter, onSaved, onDeleted }: ChapterFormProps) {
   const [saving, setSaving] = useState(false)
   const [confirm, setConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  // Products to assign this book to (from the active commerce catalog / Shopify).
+  const productsQuery = useQuery({
+    queryKey: ['admin', 'story-products'],
+    queryFn: () => runtimeClients.commerce.getShopListingCatalog(),
+    staleTime: 30_000,
+  })
+  const products = productsQuery.data?.items ?? []
 
   async function save() {
     setSaving(true)
@@ -48,6 +62,9 @@ export function ChapterForm({ chapter, onSaved, onDeleted }: ChapterFormProps) {
         title,
         subtitle,
         description,
+        productSlug,
+        dropLabel,
+        dropSlug,
         cover,
         coverLogo,
         colors,
@@ -117,6 +134,57 @@ export function ChapterForm({ chapter, onSaved, onDeleted }: ChapterFormProps) {
         <AdminFormField label="Description">
           <AdminTextarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
         </AdminFormField>
+
+        {/* Product assignment + drop grouping (per-product book model). */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <AdminFormField label="Assigned product" hint="This book opens from that product's PDP.">
+            <select
+              className="focus-ring h-10 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)]"
+              value={productSlug}
+              onChange={(e) => {
+                setProductSlug(e.target.value)
+                const p = products.find((x) => x.slug === e.target.value)
+                if (p) {
+                  if (!dropLabel) setDropLabel(p.dropName ?? '')
+                  if (!dropSlug) setDropSlug(p.shop?.dropSlug ?? p.dropName?.toLowerCase().replace(/\s+/g, '-') ?? '')
+                }
+              }}
+            >
+              <option value="">— None (standalone chapter) —</option>
+              {products.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </AdminFormField>
+          <AdminFormField label="Drop label" hint="Shelf section heading.">
+            <AdminInput value={dropLabel} onChange={(e) => setDropLabel(e.target.value)} />
+          </AdminFormField>
+          <AdminFormField label="Drop slug" hint="Groups books on the shelf.">
+            <AdminInput value={dropSlug} onChange={(e) => setDropSlug(e.target.value)} />
+          </AdminFormField>
+        </div>
+
+        {/* Quick cover-colour preset. */}
+        <AdminFormField label="Cover preset" hint="Fills the cover colours below — tweak freely after.">
+          <select
+            className="focus-ring h-10 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)]"
+            value=""
+            onChange={(e) => {
+              const preset = bookCoverPresetColors(e.target.value)
+              if (preset) setColors(preset)
+            }}
+          >
+            <option value="">— Choose a preset —</option>
+            {BOOK_COVER_PRESETS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </AdminFormField>
+
         <div className="grid gap-4 lg:grid-cols-2">
           <StoryAssetField label="Chapter cover art" asset={cover} scope={slug} onChange={setCover} />
           <StoryAssetField

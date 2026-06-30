@@ -68,9 +68,10 @@ describe('PremiumNav', () => {
 
     render(<PremiumNav navigation={baseNavigation} />)
 
-    const cartLinks = screen.getAllByLabelText('Cart, 2 items')
-    expect(cartLinks.length).toBeGreaterThan(0)
-    expect(cartLinks[0]).toHaveTextContent('2')
+    // The cart control opens the mini-cart drawer (a button, not a link now).
+    const cartButtons = screen.getAllByLabelText('Open cart, 2 items')
+    expect(cartButtons.length).toBeGreaterThan(0)
+    expect(cartButtons[0]).toHaveTextContent('2')
   })
 
   it('renders a fixed transparent overlay header (over the hero) with no bottom border', () => {

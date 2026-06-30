@@ -17,7 +17,7 @@ import {
 export type StoryResult<T> = { ok: true; data: T } | { ok: false; error: string }
 
 const CHAPTER_SELECT =
-  'id, slug, chapter_number, title, subtitle, description, cover_asset, cover_logo, cover_colors, sort_order, is_published'
+  'id, slug, chapter_number, title, subtitle, description, product_slug, drop_label, drop_slug, cover_asset, cover_logo, cover_colors, sort_order, is_published'
 const ACT_SELECT = 'id, chapter_id, act_number, title, story, asset, sort_order'
 const CAST_SELECT =
   'id, chapter_id, act_id, name, rank, blurb, avatar_asset, sort_order'
@@ -40,6 +40,9 @@ export type ChapterDraft = {
   title: string
   subtitle: string
   description: string
+  productSlug: string
+  dropLabel: string
+  dropSlug: string
   cover: StoryAsset
   coverLogo: StoryAsset
   colors: BookColors
@@ -107,6 +110,9 @@ export async function upsertChapter(
     title: draft.title.trim(),
     subtitle: draft.subtitle.trim(),
     description: draft.description.trim(),
+    product_slug: draft.productSlug.trim() || null,
+    drop_label: draft.dropLabel.trim(),
+    drop_slug: draft.dropSlug.trim(),
     cover_asset: asset(draft.cover),
     cover_logo: asset(draft.coverLogo),
     cover_colors: bookColorsSchema.parse(draft.colors),

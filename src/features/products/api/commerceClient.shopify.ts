@@ -110,9 +110,9 @@ export const shopifyCommerceClient: CommerceClient = {
     }, () => offlineCommerce().getShopListingCatalog())
   },
 
-  async startCheckout(lines) {
+  async startCheckout(lines, buyer) {
     return withCommerceFallback(
-      () => createShopifyCheckout(lines),
+      () => createShopifyCheckout(lines, buyer),
       async () => null,
     )
   },

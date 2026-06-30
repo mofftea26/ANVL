@@ -5,6 +5,7 @@ import {
   variantIsPurchasable,
 } from '@/features/products/catalog/storefrontCatalog'
 import { useCart } from '@/features/cart/hooks/useCart'
+import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { useProductAnalytics } from '@/features/analytics/hooks/useProductAnalytics'
 
 function disabledSizesForColor(product: Product, colorName: string): ReadonlySet<string> {
@@ -95,6 +96,7 @@ export function usePdpVariant(product: Product) {
       variantId,
     })
     trackAddToCart(product, quantity)
+    useCartDrawerStore.getState().openDrawer()
     setAddState('added')
     setAnnounce(`${product.name}, ${colorName || 'one color'}, size ${size}, added to cart.`)
     resetTimer.current = window.setTimeout(() => setAddState('idle'), 1600)

@@ -3,6 +3,7 @@ import type { LandingNavigationContent } from '@/features/cms/navigation/navigat
 import { AnnouncementRail } from '@/shared/components/layout/AnnouncementRail'
 import { PremiumNavMobile } from '@/shared/components/layout/PremiumNavMobile'
 import { PremiumNavTopbar } from '@/shared/components/layout/PremiumNavTopbar'
+import { CartDrawer } from '@/features/cart/components/CartDrawer'
 
 export function PremiumNav({
   navigation,
@@ -74,6 +75,8 @@ export function PremiumNav({
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
       />
+
+      {showCart ? <CartDrawer /> : null}
     </>
   )
 }

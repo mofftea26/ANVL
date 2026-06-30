@@ -10,7 +10,7 @@ import {
 } from '@/features/story/api/storyRow.mapper'
 
 const CHAPTER_SELECT =
-  'id, slug, chapter_number, title, subtitle, description, cover_asset, cover_logo, cover_colors, sort_order, is_published'
+  'id, slug, chapter_number, title, subtitle, description, product_slug, drop_label, drop_slug, cover_asset, cover_logo, cover_colors, sort_order, is_published'
 const ACT_SELECT =
   'id, chapter_id, act_number, title, story, asset, sort_order'
 const CAST_SELECT =
@@ -59,6 +59,21 @@ export function createSupabaseStoryReadSlice(env: SupabasePublicEnv): StoryClien
         .from('story_chapters')
         .select(CHAPTER_SELECT)
         .eq('slug', slug)
+        .eq('is_published', true)
+        .maybeSingle()
+      if (error) throw error
+      if (!data) return null
+      const chapter = data as StoryChapterRow
+      const { acts, cast } = await fetchChildren([chapter.id])
+      return assembleChapter(chapter, acts, cast)
+    },
+
+    async getChapterByProductSlug(productSlug: string): Promise<StoryChapter | null> {
+      const supabase = getSupabasePublicationAnonClient(env)
+      const { data, error } = await supabase
+        .from('story_chapters')
+        .select(CHAPTER_SELECT)
+        .eq('product_slug', productSlug)
         .eq('is_published', true)
         .maybeSingle()
       if (error) throw error

@@ -6,16 +6,16 @@ import {
   type StorefrontOAuthProvider,
 } from './storefrontAuth'
 
+// Google only for now. Facebook removed; Apple deferred (needs a paid Apple
+// Developer account). Add entries here once enabled in the Supabase dashboard.
 const PROVIDERS: { id: StorefrontOAuthProvider; name: string }[] = [
   { id: 'google', name: 'Google' },
-  { id: 'apple', name: 'Apple' },
-  { id: 'facebook', name: 'Facebook' },
 ]
 
 /**
- * Premium social sign-in buttons (Google / Apple / Facebook). Renders ONLY when
- * Supabase is configured — so the current mock app is unchanged. The providers
- * themselves must be enabled in the Supabase dashboard (see docs).
+ * Premium social sign-in button (Google). Renders ONLY when Supabase is
+ * configured — so the current mock app is unchanged. The provider itself must
+ * be enabled in the Supabase dashboard (see docs).
  */
 export function SocialAuthButtons({ verb = 'Continue with' }: { verb?: string }) {
   const [pending, setPending] = useState<StorefrontOAuthProvider | null>(null)

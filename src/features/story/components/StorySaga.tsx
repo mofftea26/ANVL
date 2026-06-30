@@ -20,7 +20,22 @@ const CTA_FORGE =
 const CTA_STEEL =
   'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-highlight)_60%,var(--color-line))]'
 
-/** Composes the Story page: intro → chapter shelf → deep-linkable book overlay. */
+/** Group chapters into per-drop shelves (preserving order). */
+function groupByDrop(
+  chapters: StoryChapter[],
+): { key: string; label: string; chapters: StoryChapter[] }[] {
+  const groups = new Map<string, { key: string; label: string; chapters: StoryChapter[] }>()
+  for (const c of chapters) {
+    const key = c.dropSlug || c.dropLabel || c.subtitle || 'saga'
+    const label = c.dropLabel || c.subtitle || 'The Saga'
+    const group = groups.get(key) ?? { key, label, chapters: [] }
+    group.chapters.push(c)
+    groups.set(key, group)
+  }
+  return [...groups.values()]
+}
+
+/** Composes the Story page: intro → per-drop shelves → deep-linkable book overlay. */
 export function StorySaga({
   chapters,
   activeChapterSlug,
@@ -32,12 +47,26 @@ export function StorySaga({
       ? (chapters.find((c) => c.slug === activeChapterSlug) ?? null)
       : null
 
+  const dropGroups = groupByDrop(chapters)
+
   return (
     <>
       <StoryHero />
 
       {chapters.length > 0 ? (
-        <StoryShelf chapters={chapters} onOpen={onOpenChapter} />
+        <div className="space-y-4">
+          {dropGroups.map((group) => (
+            <section key={group.key} aria-label={group.label}>
+              <Container>
+                <h2 className="anvl-heading text-[clamp(1.4rem,3vw,2.25rem)] font-normal leading-none text-[var(--color-heading)]">
+                  {group.label}
+                </h2>
+                <hr className="anvl-highlight-rule mt-3 max-w-[8rem]" />
+              </Container>
+              <StoryShelf chapters={group.chapters} onOpen={onOpenChapter} />
+            </section>
+          ))}
+        </div>
       ) : (
         <Section>
           <Container className="max-w-2xl text-center">

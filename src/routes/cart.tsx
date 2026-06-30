@@ -4,6 +4,7 @@ import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { runtimeClients } from '@/app/config/runtime'
 import { useCart } from '@/features/cart/hooks/useCart'
+import { useCustomerProfileQuery } from '@/features/storefront-account'
 import {
   Button,
   Container,
@@ -25,15 +26,20 @@ export const Route = createFileRoute('/cart')({
 function CartPage() {
   const navigate = useNavigate()
   const { lines, subtotal, quantity, updateQuantity, removeLine } = useCart()
+  const { data: customer } = useCustomerProfileQuery()
   const [checkingOut, setCheckingOut] = useState(false)
 
   // Prefer Shopify's hosted checkout when the Shopify adapter is active; fall
   // back to the internal /checkout flow (seed/local) or if cart creation fails.
+  // Pass the signed-in buyer's email so the resulting order links to the account.
   const handleCheckout = useCallback(async () => {
     if (checkingOut) return
     setCheckingOut(true)
     try {
-      const url = await runtimeClients.commerce.startCheckout(lines)
+      const url = await runtimeClients.commerce.startCheckout(
+        lines,
+        customer?.email ? { email: customer.email, countryCode: 'LB' } : undefined,
+      )
       if (url) {
         window.location.href = url
         return
@@ -43,7 +49,7 @@ function CartPage() {
     }
     setCheckingOut(false)
     void navigate({ to: '/checkout' })
-  }, [checkingOut, lines, navigate])
+  }, [checkingOut, lines, customer?.email, navigate])
 
   return (
     <Section>
