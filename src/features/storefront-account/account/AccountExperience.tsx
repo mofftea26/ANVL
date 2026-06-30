@@ -1,13 +1,15 @@
 import { useRef } from 'react'
+import { Check, Save } from 'lucide-react'
 import { Container } from '@/shared/components/ui'
+import { cn } from '@/shared/lib/cn'
 import { useCustomerProfileQuery } from '@/features/storefront-account/publicAccount.core'
 import { AccountAvatar } from '@/features/storefront-account/account/AccountAvatar'
 import { useAccountCarousel } from '@/features/storefront-account/account/useAccountCarousel'
+import { useAccountSaveStore } from '@/features/storefront-account/account/accountSave.store'
 import { PersonalPanel } from '@/features/storefront-account/account/panels/PersonalPanel'
 import { AddressesPanel } from '@/features/storefront-account/account/panels/AddressesPanel'
 import { OrdersPanel } from '@/features/storefront-account/account/panels/OrdersPanel'
 import { SettingsPanel } from '@/features/storefront-account/account/panels/SettingsPanel'
-import { cn } from '@/shared/lib/cn'
 
 export const ACCOUNT_TABS = ['personal', 'addresses', 'orders', 'settings'] as const
 export type AccountTab = (typeof ACCOUNT_TABS)[number]
@@ -21,8 +23,10 @@ const TAB_LABELS: Record<AccountTab, string> = {
 
 /**
  * Modern bento account hub. Four tabs slide horizontally as a GSAP carousel
- * (with a parallax + reveal on the entering panel); each panel is a responsive
- * bento of Higgsfield-backed cards. Tab state is URL-driven (`?tab=`).
+ * (parallax + reveal on the entering panel); each panel is a responsive bento of
+ * Higgsfield-backed cards. The header is sticky directly under the top bar
+ * (shares its translucent scrim), and the active panel's save is a single icon
+ * button there. Tab state is URL-driven (`?tab=`).
  */
 export function AccountExperience({
   tab,
@@ -36,6 +40,7 @@ export function AccountExperience({
   const scopeRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
   const pointerStart = useRef<number | null>(null)
+  const saveEntry = useAccountSaveStore((s) => s.entries[tab])
 
   useAccountCarousel(scopeRef, trackRef, index)
 
@@ -47,49 +52,74 @@ export function AccountExperience({
   const firstName = customer?.firstName || 'athlete'
 
   return (
-    <div ref={scopeRef} className="pb-16 pt-[calc(var(--anvl-header-h)+1.25rem)]">
-      <Container>
-        {/* Header */}
-        <div className="flex items-center gap-4 border-b border-[var(--color-line)] pb-6">
-          <AccountAvatar name={`${customer?.firstName ?? ''} ${customer?.lastName ?? ''}`} email={customer?.email} src={customer?.avatarUrl} className="h-12 w-12 text-base" />
-          <div className="min-w-0">
-            <p className="anvl-micro text-[var(--color-accent)]">ANVL Account</p>
-            <h1 className="anvl-heading truncate text-2xl font-normal sm:text-3xl">Welcome back, {firstName}</h1>
-          </div>
-        </div>
+    <div ref={scopeRef} className="pb-16">
+      {/* Sticky header — sits flush under the top bar, shares its scrim, with a
+          separator line between them. */}
+      <div className="sticky top-[var(--anvl-header-h)] z-30 border-t border-b border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-bg)_86%,transparent)] backdrop-blur-md">
+        <Container className="flex flex-col gap-3 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <AccountAvatar
+                name={`${customer?.firstName ?? ''} ${customer?.lastName ?? ''}`}
+                email={customer?.email}
+                src={customer?.avatarUrl}
+                className="h-10 w-10 text-sm sm:h-11 sm:w-11"
+              />
+              <div className="min-w-0">
+                <p className="anvl-micro text-[var(--color-accent)]">ANVL Account</p>
+                <h1 className="anvl-heading truncate text-lg font-normal sm:text-xl">
+                  Welcome back, {firstName}
+                </h1>
+              </div>
+            </div>
 
-        {/* Tab bar */}
-        <div
-          role="tablist"
-          aria-label="Account sections"
-          className="mt-6 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {ACCOUNT_TABS.map((t) => {
-            const active = t === tab
-            return (
+            {saveEntry ? (
               <button
-                key={t}
-                role="tab"
-                aria-selected={active}
                 type="button"
-                onClick={() => onTabChange(t)}
-                className={cn(
-                  'focus-ring shrink-0 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors',
-                  active
-                    ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-bg)]'
-                    : 'border-[var(--color-line)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text)]',
-                )}
+                onClick={saveEntry.submit}
+                disabled={saveEntry.pending}
+                aria-label="Save changes"
+                className="focus-ring inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)] px-3.5 text-sm font-semibold text-[var(--color-bg)] transition-opacity hover:opacity-90 disabled:opacity-60 sm:px-4"
               >
-                {TAB_LABELS[t]}
+                {saveEntry.pending ? <Check size={16} aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
+                <span className="hidden sm:inline">{saveEntry.pending ? 'Saving…' : 'Save'}</span>
               </button>
-            )
-          })}
-        </div>
-      </Container>
+            ) : null}
+          </div>
+
+          {/* Tabs */}
+          <div
+            role="tablist"
+            aria-label="Account sections"
+            className="flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {ACCOUNT_TABS.map((t) => {
+              const active = t === tab
+              return (
+                <button
+                  key={t}
+                  role="tab"
+                  aria-selected={active}
+                  type="button"
+                  onClick={() => onTabChange(t)}
+                  className={cn(
+                    'focus-ring shrink-0 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors',
+                    active
+                      ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-bg)]'
+                      : 'border-[var(--color-line)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text)]',
+                  )}
+                >
+                  {TAB_LABELS[t]}
+                </button>
+              )
+            })}
+          </div>
+        </Container>
+      </div>
 
       {/* Carousel viewport */}
       <div
-        className="mt-6 overflow-hidden"
+        className="mt-5 overflow-hidden"
         onPointerDown={(e) => {
           pointerStart.current = e.clientX
         }}
@@ -102,12 +132,7 @@ export function AccountExperience({
       >
         <div ref={trackRef} className="flex w-full">
           {ACCOUNT_TABS.map((t) => (
-            <section
-              key={t}
-              data-account-panel
-              aria-hidden={t !== tab}
-              className="w-full shrink-0"
-            >
+            <section key={t} data-account-panel aria-hidden={t !== tab} className="w-full shrink-0">
               <Container className="py-1">
                 {t === 'personal' ? <PersonalPanel customer={customer} /> : null}
                 {t === 'addresses' ? <AddressesPanel customer={customer} /> : null}

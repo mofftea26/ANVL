@@ -66,7 +66,7 @@ export function AccountMenu({ triggerClassName }: { triggerClassName?: string })
   // Signed out (and during SSR/first paint): a round sign-in button.
   if (!mounted || !customerId) {
     return (
-      <Link to="/auth/sign-in" aria-label="Sign in" className={triggerClassName}>
+      <Link to="/auth/sign-in" aria-label="Sign in" data-native-cursor className={triggerClassName}>
         <UserRound size={16} aria-hidden="true" />
       </Link>
     )
@@ -78,7 +78,7 @@ export function AccountMenu({ triggerClassName }: { triggerClassName?: string })
     'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-[var(--color-text)] no-underline transition-colors hover:bg-[var(--color-surface-elevated)] focus-ring'
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} data-native-cursor className="relative">
       <button
         type="button"
         aria-haspopup="menu"

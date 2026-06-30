@@ -91,4 +91,5 @@ export interface CustomerProfileUpdate {
   gender?: Gender
   preferredSize?: string
   measurements?: Measurements
+  avatarUrl?: string
 }

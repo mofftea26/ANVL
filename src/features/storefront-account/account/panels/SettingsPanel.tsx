@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 import { Bell, KeyRound, ShieldCheck } from 'lucide-react'
 import type { Customer } from '@/app/config/accountContracts'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
+import { Switch } from '@/shared/components/ui/Switch'
 import {
   useNewPasswordForm,
   useSettingsForm,
@@ -18,6 +19,7 @@ import {
 } from '@/features/storefront-account/auth'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
+import { useRegisterAccountSave } from '@/features/storefront-account/account/accountSave.store'
 
 export function SettingsPanel({ customer }: { customer: Customer | undefined }) {
   const prefsMutation = useUpdateCustomerProfileMutation()
@@ -27,15 +29,18 @@ export function SettingsPanel({ customer }: { customer: Customer | undefined }) 
   const realAuth = isStorefrontAuthEnabled()
   const [pwPending, setPwPending] = useState(false)
 
-  const onSavePrefs = prefsForm.handleSubmit((values) => {
-    prefsMutation.mutate(
-      { marketingOptIn: values.marketingOptIn, orderUpdatesOptIn: values.orderUpdatesOptIn },
-      {
-        onSuccess: () => toast.success('Preferences saved.'),
-        onError: () => toast.error('Could not save preferences.'),
-      },
-    )
-  })
+  const submitPrefs = useCallback(() => {
+    void prefsForm.handleSubmit((values) => {
+      prefsMutation.mutate(
+        { marketingOptIn: values.marketingOptIn, orderUpdatesOptIn: values.orderUpdatesOptIn },
+        {
+          onSuccess: () => toast.success('Preferences saved.'),
+          onError: () => toast.error('Could not save preferences.'),
+        },
+      )
+    })()
+  }, [prefsForm, prefsMutation])
+  useRegisterAccountSave('settings', submitPrefs, prefsMutation.isPending)
 
   const onChangePassword = pwForm.handleSubmit(async (values) => {
     setPwPending(true)
@@ -56,25 +61,33 @@ export function SettingsPanel({ customer }: { customer: Customer | undefined }) 
     window.location.assign('/auth/sign-in')
   }
 
-  const check = 'focus-ring mt-0.5 h-4 w-4 accent-[var(--color-accent)]'
+  const orderUpdates = prefsForm.watch('orderUpdatesOptIn')
+  const marketing = prefsForm.watch('marketingOptIn')
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {/* Notifications */}
-      <form onSubmit={onSavePrefs}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          submitPrefs()
+        }}
+      >
         <AccountBentoCard bg={accountCardBg('carbon')} eyebrow="Notifications" icon={<Bell size={15} />} className="h-full">
-          <div className="space-y-3">
-            <label className="flex items-start gap-3 text-sm text-[var(--color-text)]">
-              <input type="checkbox" className={check} {...prefsForm.register('orderUpdatesOptIn')} />
-              <span>Order updates — confirmations, shipping, and delivery emails.</span>
-            </label>
-            <label className="flex items-start gap-3 text-sm text-[var(--color-text)]">
-              <input type="checkbox" className={check} {...prefsForm.register('marketingOptIn')} />
-              <span>Drops &amp; marketing — new releases and offers.</span>
-            </label>
-            <Button type="submit" disabled={prefsMutation.isPending}>
-              {prefsMutation.isPending ? 'Saving…' : 'Save preferences'}
-            </Button>
+          <div className="space-y-4">
+            <Switch
+              label="Order updates"
+              description="Confirmations, shipping, and delivery emails."
+              checked={Boolean(orderUpdates)}
+              onChange={(v) => prefsForm.setValue('orderUpdatesOptIn', v, { shouldDirty: true })}
+            />
+            <Switch
+              label="Drops & marketing"
+              description="New releases and offers."
+              checked={Boolean(marketing)}
+              onChange={(v) => prefsForm.setValue('marketingOptIn', v, { shouldDirty: true })}
+            />
+            <p className="anvl-micro text-[var(--color-text-muted)]">Save with the button in the header.</p>
           </div>
         </AccountBentoCard>
       </form>

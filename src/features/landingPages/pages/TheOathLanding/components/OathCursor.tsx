@@ -35,15 +35,21 @@ export function OathCursor() {
     const ringX = gsap.quickTo(ring, 'x', { duration: 0.38, ease: 'power3.out' })
     const ringY = gsap.quickTo(ring, 'y', { duration: 0.38, ease: 'power3.out' })
 
+    // Zones (e.g. the account dropdown) where the native cursor should win.
+    let overNative = false
+
     const onMove = (e: PointerEvent) => {
       dotX(e.clientX)
       dotY(e.clientY)
       ringX(e.clientX)
       ringY(e.clientY)
-      gsap.to([dot, ring], { autoAlpha: 1, duration: 0.2, overwrite: 'auto' })
+      gsap.to([dot, ring], { autoAlpha: overNative ? 0 : 1, duration: 0.2, overwrite: 'auto' })
     }
     const onOver = (e: PointerEvent) => {
-      const target = (e.target as HTMLElement | null)?.closest('[data-cursor]')
+      const el = e.target as HTMLElement | null
+      overNative = Boolean(el?.closest('[data-native-cursor]'))
+      if (overNative) gsap.to([dot, ring], { autoAlpha: 0, duration: 0.15, overwrite: 'auto' })
+      const target = el?.closest('[data-cursor]')
       const state = target?.getAttribute('data-cursor')
       gsap.to(ring, {
         scale: state ? 1.35 : 1,
@@ -83,7 +89,7 @@ export function OathCursor() {
           `cursor: pointer` would otherwise win. Only rendered on the landing
           page's fine-pointer desktop branch, so touch / reduced-motion / other
           routes keep the native cursor. */}
-      <style>{`html,body,body *,body *::before,body *::after{cursor:none !important}`}</style>
+      <style>{`html,body,body *,body *::before,body *::after{cursor:none !important}[data-native-cursor],[data-native-cursor] *{cursor:auto !important}[data-native-cursor] a,[data-native-cursor] button,[data-native-cursor] [role="menuitem"]{cursor:pointer !important}`}</style>
       {/* GSAP owns the transform (x/y) — centering comes from negative margins. */}
       <div
         ref={ringRef}

@@ -10,6 +10,7 @@ import {
   QuantityStepper,
   SizeSelector,
 } from '@/shared/components/ui'
+import { PdpSizeSuggestion } from '@/features/products/pdp/PdpSizeSuggestion'
 
 function MetaChip({ label }: { label: string }) {
   return (
@@ -137,6 +138,7 @@ export function PdpBuyPanel({
           <p className="mt-2 text-xs text-[var(--shop-text-muted)]">
             {canPurchase ? 'In stock for this combination.' : 'Not available in this size.'}
           </p>
+          <PdpSizeSuggestion sizes={product.sizes} currentSize={size} onSelect={setSize} />
         </div>
       ) : null}
 

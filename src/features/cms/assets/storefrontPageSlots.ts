@@ -27,7 +27,19 @@ const ogImageSlot: AssetSlotDefinition = {
   hint: '1200×630 (1.91:1). WebP/JPG ~80q, < 300 KB. Used for link previews.',
 }
 
-export const STOREFRONT_PAGE_REGISTRY: StorefrontPageDefinition[] = [
+/**
+ * Reusable full-page parallax background slot — added to every page so editors
+ * can set a per-page backdrop image (resolved + rendered by `PageBackdrop`).
+ */
+const pageBackgroundSlot: AssetSlotDefinition = {
+  key: 'pageBackground',
+  label: 'Page background',
+  kind: 'image',
+  section: 'Background',
+  hint: '16:9+ landscape, ~1920×1080. Dark/atmospheric, WebP ~70q, < 400 KB. Rendered full-page with a parallax + legibility wash behind the content.',
+}
+
+const RAW_STOREFRONT_PAGES: StorefrontPageDefinition[] = [
   {
     key: 'shop',
     name: 'Shop — Armory',
@@ -270,6 +282,10 @@ export const STOREFRONT_PAGE_REGISTRY: StorefrontPageDefinition[] = [
     slots: [ogImageSlot],
   },
 ]
+
+/** Every page gets the page-background slot first, then its own slots. */
+export const STOREFRONT_PAGE_REGISTRY: StorefrontPageDefinition[] =
+  RAW_STOREFRONT_PAGES.map((p) => ({ ...p, slots: [pageBackgroundSlot, ...p.slots] }))
 
 const STOREFRONT_PAGE_SLOTS: Record<string, AssetSlotDefinition[]> =
   Object.fromEntries(STOREFRONT_PAGE_REGISTRY.map((p) => [p.key, p.slots]))

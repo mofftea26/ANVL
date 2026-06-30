@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useFieldArray } from 'react-hook-form'
 import { toast } from 'sonner'
 import { MapPin, Plus, Trash2 } from 'lucide-react'
@@ -11,6 +12,7 @@ import {
 } from '@/features/storefront-account/publicAccount.core'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { accountCardBg, type AccountCardBgKey } from '@/features/storefront-account/account/accountCardBg'
+import { useRegisterAccountSave } from '@/features/storefront-account/account/accountSave.store'
 
 const BG_CYCLE: AccountCardBgKey[] = ['steel', 'stone', 'carbon', 'smoke', 'gold', 'ember']
 
@@ -19,18 +21,28 @@ export function AddressesPanel({ customer }: { customer: Customer | undefined })
   const form = useAddressesForm(customer)
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'addresses' })
 
-  const onSubmit = form.handleSubmit((values) => {
-    mutation.mutate(
-      { addresses: values.addresses },
-      {
-        onSuccess: () => toast.success('Addresses saved.'),
-        onError: () => toast.error('Could not save addresses.'),
-      },
-    )
-  })
+  const submit = useCallback(() => {
+    void form.handleSubmit((values) => {
+      mutation.mutate(
+        { addresses: values.addresses },
+        {
+          onSuccess: () => toast.success('Addresses saved.'),
+          onError: () => toast.error('Could not save addresses.'),
+        },
+      )
+    })()
+  }, [form, mutation])
+  useRegisterAccountSave('addresses', submit, mutation.isPending)
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4" noValidate>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        submit()
+      }}
+      className="space-y-4"
+      noValidate
+    >
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {fields.map((field, index) => (
           <AccountBentoCard
@@ -76,7 +88,7 @@ export function AddressesPanel({ customer }: { customer: Customer | undefined })
         ))}
       </div>
 
-      <div className="sticky bottom-3 z-20 flex flex-wrap justify-between gap-3">
+      <div className="flex flex-wrap gap-3">
         <Button
           type="button"
           variant="secondary"
@@ -90,9 +102,6 @@ export function AddressesPanel({ customer }: { customer: Customer | undefined })
           }
         >
           <Plus size={15} /> Add address
-        </Button>
-        <Button type="submit" disabled={mutation.isPending} className="shadow-[0_12px_30px_-12px_rgba(0,0,0,0.9)]">
-          {mutation.isPending ? 'Saving…' : 'Save addresses'}
         </Button>
       </div>
     </form>

@@ -39,6 +39,9 @@ import {
   useLandingEntry,
 } from '@/features/landingPages/LandingEntryContext'
 import { getStorefrontMainClassName } from '@/routes/storefrontMainLayout'
+import { PageBackdrop } from '@/shared/components/layout/PageBackdrop'
+import { resolvePageBackdropSrc } from '@/features/cms/assets/pageBackdrop'
+import { cn } from '@/shared/lib/cn'
 import appCss from '@/styles.css?url'
 
 const IS_DEV = import.meta.env.DEV
@@ -65,6 +68,8 @@ export const Route = createRootRoute({
       // stays independent; see `features/experience`.
       activeLandingPageKey: projection.activeLandingPageKey,
       experienceKey: resolveExperienceKey(projection.activeLandingPageKey),
+      assets: projection.assets,
+      mediaIndex: projection.mediaIndex,
     }
   },
   head: ({ loaderData }) => ({
@@ -129,12 +134,16 @@ function StorefrontLayout() {
     theme,
     fonts,
     activeLandingPageKey,
+    assets,
+    mediaIndex,
   } = Route.useLoaderData()
   const navigation = useWebsiteNavigation(ssrNavigation)
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
   const isHome = pathname === '/'
+  const backdropSrc =
+    !isHome ? resolvePageBackdropSrc(pathname, assets, mediaIndex) : null
   const { homeEntryComplete, resetHomeEntry } = useLandingEntry()
   const showChrome = !isHome || homeEntryComplete
 
@@ -163,15 +172,20 @@ function StorefrontLayout() {
         {showChrome ? (
           <PremiumNav navigation={navigation} alwaysTransparent={isHome} />
         ) : null}
+        {showChrome && backdropSrc ? <PageBackdrop src={backdropSrc} /> : null}
         <main
           id="anvl-main"
-          className={getStorefrontMainClassName({ showChrome, isHome })}
+          className={cn('relative z-10', getStorefrontMainClassName({ showChrome, isHome }))}
         >
           <AppErrorBoundary resetKey={pathname}>
             <Outlet />
           </AppErrorBoundary>
         </main>
-        {showChrome ? <SiteFooter navigation={navigation} /> : null}
+        {showChrome ? (
+          <div className="relative z-10">
+            <SiteFooter navigation={navigation} />
+          </div>
+        ) : null}
       </ExperienceProvider>
     </SiteThemeProvider>
   )

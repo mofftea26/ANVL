@@ -34,12 +34,13 @@ export function AccountBentoCard({
           <div
             data-card-bg
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-35 transition-transform duration-700 ease-out will-change-transform group-hover:scale-[1.06]"
+            className="pointer-events-none absolute inset-0 scale-[1.12] bg-cover bg-center opacity-80 transition-transform duration-700 ease-out will-change-transform group-hover:scale-[1.18]"
             style={{ backgroundImage: `url('${bg}')` }}
           />
+          {/* Light legibility wash — keeps the texture visible, darkens only where text sits. */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[var(--color-surface)] via-[var(--color-surface)]/85 to-[var(--color-surface)]/45"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[var(--color-surface)]/92 via-[var(--color-surface)]/45 to-[var(--color-surface)]/15"
           />
         </>
       ) : null}

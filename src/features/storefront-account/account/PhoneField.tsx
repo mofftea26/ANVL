@@ -1,4 +1,6 @@
 import { useMemo } from 'react'
+import { Input } from '@/shared/components/ui/Input'
+import { Select } from '@/shared/components/ui/Select'
 
 /** Curated dial codes (Lebanon first, then common ANVL ship-to markets). */
 const DIAL_CODES: { code: string; label: string; flag: string }[] = [
@@ -53,30 +55,28 @@ export function PhoneField({
     onChange(cleanedLocal ? `${nextDial} ${cleanedLocal}` : '')
   }
 
-  const fieldBase =
-    'h-11 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-text)] focus-ring'
-
   return (
     <div className="flex gap-2">
-      <select
-        aria-label="Country dial code"
-        className={`${fieldBase} w-[7.5rem] shrink-0 px-2 text-sm`}
-        value={dial}
-        onChange={(e) => emit(e.target.value, local)}
-      >
-        {DIAL_CODES.map((d, i) => (
-          <option key={`${d.code}-${i}`} value={d.code}>
-            {d.flag} {d.code}
-          </option>
-        ))}
-      </select>
-      <input
+      <div className="w-[8rem] shrink-0">
+        <Select
+          aria-label="Country dial code"
+          value={dial}
+          onChange={(e) => emit(e.target.value, local)}
+        >
+          {DIAL_CODES.map((d, i) => (
+            <option key={`${d.code}-${i}`} value={d.code}>
+              {d.flag} {d.code}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <Input
         id={id}
         type="tel"
         inputMode="tel"
         autoComplete="tel-national"
         placeholder="71 123 456"
-        className={`${fieldBase} min-w-0 flex-1 px-3 text-base md:text-sm`}
+        className="min-w-0 flex-1"
         value={local}
         onChange={(e) => emit(dial, e.target.value)}
       />

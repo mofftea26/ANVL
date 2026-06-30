@@ -7,6 +7,7 @@ interface FormFieldProps {
   hint?: ReactNode
 }
 
+/** Field wrapper: a refined uppercase micro-label, the control, hint + error. */
 export function FormField({
   label,
   htmlFor,
@@ -15,8 +16,10 @@ export function FormField({
   children,
 }: PropsWithChildren<FormFieldProps>) {
   return (
-    <label className="block space-y-2" htmlFor={htmlFor}>
-      <span className="text-sm font-semibold text-[var(--color-text)]">{label}</span>
+    <label className="block space-y-1.5" htmlFor={htmlFor}>
+      <span className="anvl-display block text-[11px] font-medium tracking-[0.12em] text-[var(--color-text-muted)]">
+        {label}
+      </span>
       {children}
       {hint ? <span className="block text-xs text-[var(--color-text-muted)]">{hint}</span> : null}
       {error ? (

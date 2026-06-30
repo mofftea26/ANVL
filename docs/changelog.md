@@ -1,4 +1,26 @@
-﻿## 2026-06-30 — Customer accounts, e-commerce flow & per-product story books
+﻿## 2026-06-30 — Account polish, modern inputs, per-page backdrops, size suggestion
+
+- **Modern reusable inputs** (restyled in place → propagate app-wide): `Input`, `Textarea`, `Select`, `Checkbox`, `FormField` (translucent fill, accent focus ring, refined labels) + a new `Switch` toggle. Account panels + `PhoneField` now use the shared primitives; raw `<select>`s removed.
+- **Bento backgrounds stronger** (opacity 0.35→0.80, lighter wash) with a per-card parallax scale. **Personal tab re-tiled** so rows have no gaps at any breakpoint (added a live "Suggested size" card → 6 cards tile cleanly).
+- **Avatar redesigned**: two initials (first + last) in the Cinzel display face on a forged steel→black gradient with a gilded ring; selectable **forged-emblem avatars** (4 Higgsfield illustrations in `public/account/avatars/`).
+- **Sticky account header** flush under the top bar (shares its translucent scrim + a separator); all panel **saves are one icon button in that header** (`accountSave.store` bridges each panel's submit).
+- **Top bar**: round cart + round avatar; **Facebook removed** (Google only). Landing custom cursor now yields to the **native cursor over the account dropdown** (`[data-native-cursor]`).
+- **Google profile import**: `loadProfile` backfills `full_name`/`avatar_url` from OAuth metadata (`name`/`given_name`+`family_name`/`picture`) into `storefront_profiles` on first load; user can edit after.
+- **Richer profile** (migration `20260630150000`): `birthdate`, `gender`, `preferred_size`, `measurements` (jsonb) — all saved per user.
+- **Size suggestion on PDP** (#11): `suggestSizeFromMeasurements` (shared util) drives a "we suggest size X" nudge in the buy panel from the signed-in customer's saved measurements, clamped to the product's offered sizes with one-tap select.
+- **Per-page parallax backgrounds** (#10): added a CMS-editable `pageBackground` asset slot to **every** storefront page (auto-appears in `/admin/assets`); `PageBackdrop` renders it fixed + scroll-parallaxed behind content (resolved centrally in `__root`). Generated 5 dark page backdrops (`public/page-backgrounds/<page>-background.webp`) as defaults; CMS assignment overrides per page.
+- `pnpm verify` green (typecheck + tests + build). SSR smoke: `/shop` `/story` `/auth/sign-in` render their backdrops; sign-in shows Google only.
+- **Caveat:** the default backdrop/avatar images ship in `/public` (I lack the Supabase service-role key + a storage-upload tool to push them into a Supabase bucket); assigning images via the CMS Assets editor stores them in Supabase and overrides the defaults.
+
+## 2026-06-30 — Account redesign: bento + GSAP carousel, avatar nav, richer profile
+
+- **Single bento account experience** (`src/features/storefront-account/account/**`): `/account` is now one page with **Personal / Addresses / Orders / Settings** tabs that **slide as a GSAP carousel** with a parallax + staggered reveal on the entering panel (`useAccountCarousel`, reduced-motion/SSR safe). Old sub-routes (`/account/personal|addresses|orders|settings`, `orders/$orderId`) redirect to `/account?tab=…`. Every section is a responsive bento of `AccountBentoCard`s backed by **6 Higgsfield-generated dark textures** (`public/account/*.webp`, parallax bg layer per card).
+- **Richer profile, all saved to Supabase per user**: migration `20260630150000` adds `birthdate`, `gender`, `preferred_size`, and `measurements` (jsonb) to `storefront_profiles`; the personal panel captures name, a **country-code phone picker** (`PhoneField`), DOB, gender, preferred size, and **body measurements** (height/weight/chest/waist/hips/shoulder/inseam) for future PDP size suggestions. `supabaseAccountClient` round-trips all of it.
+- **Top-bar account control** (`AccountMenu`): signed-out → round sign-in button; signed-in → **round avatar** (far right) opening a modern dropdown (identity + Account/Orders/Settings links + sign-out). Cart icon is now **round** too. Avatar/profile fetched lazily (no React Query in the topbar). SSR-safe (renders signed-out affordance first, reconciles on mount).
+- **Social logins trimmed to Google only** (Facebook removed).
+- `pnpm verify` green (typecheck + tests + build). SSR smoke: `/auth/sign-in` (Google only), `/account` guard renders.
+
+## 2026-06-30 — Customer accounts, e-commerce flow & per-product story books
 
 Three-epic build (auth, commerce, story).
 

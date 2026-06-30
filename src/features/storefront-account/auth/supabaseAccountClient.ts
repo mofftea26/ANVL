@@ -58,6 +58,16 @@ async function requireUser() {
   return { client, user }
 }
 
+/** Read a string field from OAuth/user metadata. */
+function metaStr(meta: Record<string, unknown> | undefined, ...keys: string[]): string {
+  if (!meta) return ''
+  for (const k of keys) {
+    const v = meta[k]
+    if (typeof v === 'string' && v.trim()) return v.trim()
+  }
+  return ''
+}
+
 async function loadProfile(): Promise<Customer> {
   const { client, user } = await requireUser()
   const { data } = await client
@@ -67,15 +77,28 @@ async function loadProfile(): Promise<Customer> {
     )
     .eq('id', user.id)
     .maybeSingle()
+
+  const meta = user.user_metadata as Record<string, unknown> | undefined
+  // Google/OAuth metadata: full_name | name | given_name + family_name; picture | avatar_url.
   const metaName =
-    typeof user.user_metadata?.full_name === 'string'
-      ? user.user_metadata.full_name
-      : ''
-  const fullName = ((data?.full_name as string | undefined) || metaName).trim()
+    metaStr(meta, 'full_name', 'name') ||
+    [metaStr(meta, 'given_name'), metaStr(meta, 'family_name')].filter(Boolean).join(' ')
+  const metaAvatar = metaStr(meta, 'avatar_url', 'picture')
+
+  const dbFullName = (data?.full_name as string | undefined) ?? ''
+  const dbAvatar = (data?.avatar_url as string | undefined) ?? ''
+
+  // First-time backfill from the OAuth provider so the profile isn't blank.
+  const patch: Record<string, string> = {}
+  if (!dbFullName.trim() && metaName) patch.full_name = metaName
+  if (!dbAvatar.trim() && metaAvatar) patch.avatar_url = metaAvatar
+  if (Object.keys(patch).length > 0) {
+    await client.from('storefront_profiles').update(patch).eq('id', user.id)
+  }
+
+  const fullName = (dbFullName || metaName).trim()
   const { firstName, lastName } = splitName(fullName)
   const genderRaw = (data?.gender as string | undefined) ?? ''
-  const metaAvatar =
-    typeof user.user_metadata?.avatar_url === 'string' ? user.user_metadata.avatar_url : ''
   return {
     id: user.id,
     email: (data?.email as string | undefined) || user.email || '',
@@ -89,7 +112,7 @@ async function loadProfile(): Promise<Customer> {
     gender: (GENDERS.includes(genderRaw as Gender) ? genderRaw : '') as Gender,
     preferredSize: (data?.preferred_size as string | undefined) || undefined,
     measurements: parseMeasurements(data?.measurements),
-    avatarUrl: (data?.avatar_url as string | undefined) || metaAvatar || undefined,
+    avatarUrl: dbAvatar || metaAvatar || undefined,
   }
 }
 
@@ -119,6 +142,7 @@ export const supabaseAccountClient: AccountClient = {
     if (input.gender !== undefined) patch.gender = input.gender
     if (input.preferredSize !== undefined) patch.preferred_size = input.preferredSize
     if (input.measurements !== undefined) patch.measurements = input.measurements
+    if (input.avatarUrl !== undefined) patch.avatar_url = input.avatarUrl
     if (Object.keys(patch).length > 0) {
       await client.from('storefront_profiles').update(patch).eq('id', user.id)
     }
