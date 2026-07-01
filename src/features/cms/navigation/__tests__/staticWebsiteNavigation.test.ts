@@ -34,7 +34,12 @@ describe('staticWebsiteNavigation', () => {
   it('includes core storefront routes', () => {
     const headerHrefs = staticHeaderNavLinks().map((l) => l.href)
     expect(headerHrefs).toEqual(
-      expect.arrayContaining(['/shop', '/account', '/about', '/size-guide']),
+      expect.arrayContaining(['/shop', '/about', '/size-guide']),
     )
+  })
+
+  it('does not link Account in the header — the avatar menu owns account access', () => {
+    const headerHrefs = staticHeaderNavLinks().map((l) => l.href)
+    expect(headerHrefs).not.toContain('/account')
   })
 })

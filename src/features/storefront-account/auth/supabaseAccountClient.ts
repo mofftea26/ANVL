@@ -88,12 +88,24 @@ async function loadProfile(): Promise<Customer> {
   const dbFullName = (data?.full_name as string | undefined) ?? ''
   const dbAvatar = (data?.avatar_url as string | undefined) ?? ''
 
-  // First-time backfill from the OAuth provider so the profile isn't blank.
-  const patch: Record<string, string> = {}
-  if (!dbFullName.trim() && metaName) patch.full_name = metaName
-  if (!dbAvatar.trim() && metaAvatar) patch.avatar_url = metaAvatar
-  if (Object.keys(patch).length > 0) {
-    await client.from('storefront_profiles').update(patch).eq('id', user.id)
+  if (!data) {
+    // No row yet (the signup trigger may not have fired for this user) — create
+    // it, seeded from the auth + OAuth (Google) metadata. Self-healing so the
+    // profile is never blank and later saves have a row to update.
+    await client.from('storefront_profiles').upsert({
+      id: user.id,
+      email: user.email ?? '',
+      full_name: metaName,
+      avatar_url: metaAvatar,
+    })
+  } else {
+    // Backfill blanks from the OAuth provider.
+    const patch: Record<string, string> = {}
+    if (!dbFullName.trim() && metaName) patch.full_name = metaName
+    if (!dbAvatar.trim() && metaAvatar) patch.avatar_url = metaAvatar
+    if (Object.keys(patch).length > 0) {
+      await client.from('storefront_profiles').update(patch).eq('id', user.id)
+    }
   }
 
   const fullName = (dbFullName || metaName).trim()
@@ -113,6 +125,7 @@ async function loadProfile(): Promise<Customer> {
     preferredSize: (data?.preferred_size as string | undefined) || undefined,
     measurements: parseMeasurements(data?.measurements),
     avatarUrl: dbAvatar || metaAvatar || undefined,
+    googleAvatarUrl: metaAvatar || undefined,
   }
 }
 
@@ -144,7 +157,8 @@ export const supabaseAccountClient: AccountClient = {
     if (input.measurements !== undefined) patch.measurements = input.measurements
     if (input.avatarUrl !== undefined) patch.avatar_url = input.avatarUrl
     if (Object.keys(patch).length > 0) {
-      await client.from('storefront_profiles').update(patch).eq('id', user.id)
+      // Upsert (not update) so a missing profile row is created on first save.
+      await client.from('storefront_profiles').upsert({ id: user.id, ...patch })
     }
     return loadProfile()
   },

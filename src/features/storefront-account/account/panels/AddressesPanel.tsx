@@ -31,7 +31,7 @@ export function AddressesPanel({ customer }: { customer: Customer | undefined })
         },
       )
     })()
-  }, [form, mutation])
+  }, [form, mutation.mutate])
   useRegisterAccountSave('addresses', submit, mutation.isPending)
 
   return (

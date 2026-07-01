@@ -88,7 +88,7 @@ export function createRuntimeClients(options: { isServer: boolean }): RuntimeCli
     story,
     analytics: mockAnalyticsClient,
     payment: mockPaymentClient,
-    account: mockAccountClient,
+    account: accountClient,
   }
 }
 

@@ -78,7 +78,9 @@ export function AccountMenu({ triggerClassName }: { triggerClassName?: string })
     'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-[var(--color-text)] no-underline transition-colors hover:bg-[var(--color-surface-elevated)] focus-ring'
 
   return (
-    <div ref={ref} data-native-cursor className="relative">
+    <div ref={ref} className="relative">
+      {/* Trigger keeps the landing page's special cursor — only the open dropdown
+          panel below switches to the native cursor. */}
       <button
         type="button"
         aria-haspopup="menu"
@@ -87,16 +89,29 @@ export function AccountMenu({ triggerClassName }: { triggerClassName?: string })
         onClick={() => setOpen((v) => !v)}
         className={cn(triggerClassName, 'overflow-hidden p-0')}
       >
-        <AccountAvatar name={name} email={customer?.email} src={customer?.avatarUrl} className="h-full w-full text-[0.7rem]" />
+        <AccountAvatar
+          firstName={customer?.firstName}
+          lastName={customer?.lastName}
+          email={customer?.email}
+          src={customer?.avatarUrl}
+          className="h-full w-full text-[0.7rem]"
+        />
       </button>
 
       {open ? (
         <div
           role="menu"
+          data-native-cursor
           className="absolute right-0 z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-2 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.9)]"
         >
           <div className="flex items-center gap-3 border-b border-[var(--color-line)] px-3 pb-3 pt-2">
-            <AccountAvatar name={name} email={customer?.email} src={customer?.avatarUrl} className="h-10 w-10 text-sm" />
+            <AccountAvatar
+              firstName={customer?.firstName}
+              lastName={customer?.lastName}
+              email={customer?.email}
+              src={customer?.avatarUrl}
+              className="h-10 w-10 text-sm"
+            />
             <div className="min-w-0">
               <p className="anvl-heading truncate text-sm text-[var(--color-heading)]">{name}</p>
               <p className="anvl-micro truncate text-[var(--color-text-muted)]">{customer?.email}</p>

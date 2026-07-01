@@ -77,6 +77,10 @@ export interface Customer {
   preferredSize?: string
   measurements?: Measurements
   avatarUrl?: string
+  /** The picture from the OAuth provider (e.g. Google), independent of the
+   * currently-active `avatarUrl` — lets the avatar picker offer "Google" as a
+   * selectable option even after the user has switched to something else. */
+  googleAvatarUrl?: string
 }
 
 export interface CustomerProfileUpdate {

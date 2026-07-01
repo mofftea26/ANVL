@@ -1,33 +1,35 @@
 import { cn } from '@/shared/lib/cn'
 
-/** Two initials from a name ("George Maalouf" → "GM"), or first 2 letters. */
-function initialsFrom(name?: string, email?: string): string {
-  const seed = (name || '').trim()
-  if (seed) {
-    const parts = seed.split(/\s+/).filter(Boolean)
-    if (parts.length >= 2) return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase()
-    return parts[0]!.slice(0, 2).toUpperCase()
-  }
+/** First initial of the first name + first initial of the last name ("George Maalouf" → "GM"). */
+function initialsFrom(firstName?: string, lastName?: string, email?: string): string {
+  const f = (firstName ?? '').trim()
+  const l = (lastName ?? '').trim()
+  if (f && l) return (f[0]! + l[0]!).toUpperCase()
+  if (f) return f.slice(0, 2).toUpperCase()
+  if (l) return l.slice(0, 2).toUpperCase()
   const e = (email || 'A').trim()
   return e.slice(0, 2).toUpperCase()
 }
 
 /**
- * Round, forged avatar: photo when available, else two initials set in the
- * Cinzel display face on a steel-to-black gradient with a gilded inner ring.
+ * Round, forged avatar: photo when available, else initials — first name's
+ * initial + last name's initial — set in the bold Anton heading face on a
+ * steel-to-black gradient with a gilded inner ring.
  */
 export function AccountAvatar({
-  name,
+  firstName,
+  lastName,
   email,
   src,
   className,
 }: {
-  name?: string
+  firstName?: string
+  lastName?: string
   email?: string
   src?: string
   className?: string
 }) {
-  const initials = initialsFrom(name, email)
+  const initials = initialsFrom(firstName, lastName, email)
 
   return (
     <span
@@ -51,7 +53,7 @@ export function AccountAvatar({
         <img src={src} alt="" className="h-full w-full object-cover" />
       ) : (
         <span
-          className="font-normal leading-none tracking-[0.04em] text-[0.92em] [font-family:var(--font-display,'Cinzel',serif)]"
+          className="font-normal leading-none tracking-[0.02em] text-[0.85em] [font-family:var(--font-heading,'Anton',sans-serif)]"
           style={{ textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}
         >
           {initials}

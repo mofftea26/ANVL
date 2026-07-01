@@ -65,6 +65,14 @@ export const adminNavItems: AdminNavItem[] = [
     badge: 'Copy',
   },
   {
+    label: 'About Page',
+    href: '/admin/about',
+    description: 'Hero, philosophy, forge process, and fun facts copy.',
+    cluster: 'Site',
+    cta: 'Edit',
+    badge: 'About',
+  },
+  {
     label: 'Story',
     href: '/admin/story',
     description: 'Author the saga — chapters, acts, and cast.',

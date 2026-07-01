@@ -22,7 +22,6 @@ export interface NavigationDefaults {
 export const navigationDefaults: NavigationDefaults = {
   headerLinks: [
     { id: 'nav-shop', label: 'Shop', href: '/shop', isVisible: true },
-    { id: 'nav-account', label: 'Account', href: '/account', isVisible: true },
     { id: 'nav-story', label: 'Story', href: '/story', isVisible: true },
     { id: 'nav-about', label: 'About', href: '/about', isVisible: true },
     {

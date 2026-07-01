@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMemo } from 'react'
-import { useWatch } from 'react-hook-form'
+import { Controller, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { runtimeClients } from '@/app/config/runtime'
@@ -22,6 +22,7 @@ import {
   Input,
   Section,
   Select,
+  SelectItem,
   Textarea,
 } from '@/shared/components/ui'
 
@@ -128,13 +129,19 @@ function CheckoutPage() {
               </FormField>
             </div>
             <FormField label="Country" error={form.formState.errors.country?.message} htmlFor="checkout-country">
-              <Select id="checkout-country" autoComplete="country-name" {...form.register('country')}>
-                {CHECKOUT_SHIPPING_COUNTRIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </Select>
+              <Controller
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <Select id="checkout-country" value={field.value} onValueChange={field.onChange}>
+                    {CHECKOUT_SHIPPING_COUNTRIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                )}
+              />
             </FormField>
             <FormField label="Phone" error={form.formState.errors.phone?.message} htmlFor="checkout-phone">
               <Input
@@ -159,10 +166,16 @@ function CheckoutPage() {
               error={form.formState.errors.deliveryMethod?.message}
               htmlFor="checkout-delivery"
             >
-              <Select id="checkout-delivery" {...form.register('deliveryMethod')}>
-                <option value="standard">Standard (3-5 days)</option>
-                <option value="express">Express (1-2 days)</option>
-              </Select>
+              <Controller
+                control={form.control}
+                name="deliveryMethod"
+                render={({ field }) => (
+                  <Select id="checkout-delivery" value={field.value} onValueChange={field.onChange}>
+                    <SelectItem value="standard">Standard (3-5 days)</SelectItem>
+                    <SelectItem value="express">Express (1-2 days)</SelectItem>
+                  </Select>
+                )}
+              />
             </FormField>
             <CheckoutPaymentFields
               definitions={paymentDefinitions}

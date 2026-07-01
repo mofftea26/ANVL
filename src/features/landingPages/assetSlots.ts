@@ -1,4 +1,4 @@
-export type AssetSlotKind = 'image' | 'video' | 'svg' | 'select'
+export type AssetSlotKind = 'image' | 'video' | 'svg' | 'model' | 'select'
 
 export type AssetSlotDefinition = {
   key: string

@@ -3,8 +3,14 @@ import { Loader2 } from 'lucide-react'
 import { forwardRef, type ButtonHTMLAttributes } from 'react'
 import { cn } from '@/shared/lib/cn'
 
+/**
+ * Canonical button — the only button primitive storefront/admin surfaces
+ * should reach for. Modern depth (soft inset highlight + ambient shadow),
+ * smooth hover/press motion, and an `icon` size for icon-only circular
+ * actions (e.g. the account header's Save control).
+ */
 export const buttonVariants = cva(
-  'focus-ring inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] transition',
+  'focus-ring relative inline-flex select-none items-center justify-center gap-2 rounded-xl text-sm font-semibold uppercase tracking-[0.08em] transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]',
   {
     variants: {
       variant: {
@@ -14,13 +20,13 @@ export const buttonVariants = cva(
         // and drop the color — leaving a light inherited label on bone/light
         // backgrounds. The `color:` hint keeps it a color.
         primary:
-          'border-[var(--color-highlight)] bg-[var(--color-highlight)] text-[color:var(--color-on-highlight)] hover:opacity-90',
+          'border border-[color-mix(in_oklab,var(--color-highlight-bright)_45%,var(--color-highlight))] bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] text-[color:var(--color-on-highlight)] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_10px_26px_-10px_color-mix(in_oklab,var(--color-highlight)_75%,transparent)] hover:brightness-[1.05] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_16px_36px_-10px_color-mix(in_oklab,var(--color-highlight)_80%,transparent)]',
         secondary:
-          'border-[var(--color-line)] bg-[var(--color-surface)] text-[color:var(--color-text)] hover:border-[color-mix(in_oklab,var(--color-highlight)_55%,var(--color-line))] hover:bg-[var(--color-surface-elevated)]',
+          'border border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-surface)_70%,transparent)] text-[color:var(--color-text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm hover:border-[color-mix(in_oklab,var(--color-highlight)_55%,var(--color-line))] hover:bg-[var(--color-surface-elevated)]',
         ghost:
-          'border-transparent text-[color:var(--color-text)] hover:bg-[var(--color-chip)]',
+          'border border-transparent text-[color:var(--color-text)] hover:bg-[var(--color-chip)]',
         destructive:
-          'border-[color-mix(in_oklab,var(--color-danger)_40%,transparent)] bg-transparent text-[color:var(--color-danger)] hover:border-[var(--color-danger)] hover:bg-[color-mix(in_oklab,var(--color-danger)_12%,transparent)]',
+          'border border-[color-mix(in_oklab,var(--color-danger)_45%,transparent)] bg-[color-mix(in_oklab,var(--color-danger)_10%,transparent)] text-[color:var(--color-danger)] hover:border-[var(--color-danger)] hover:bg-[color-mix(in_oklab,var(--color-danger)_16%,transparent)]',
         /** Use with `data-active="true" | "false"` for selected vs idle segmented tabs. */
         adminTabList:
           'shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] border-[var(--color-line)] bg-[var(--color-surface)] text-[color:var(--color-text-muted)] data-[active=true]:border-[var(--color-accent)] data-[active=true]:bg-[var(--color-accent)] data-[active=true]:text-[color:var(--color-bg)] data-[active=false]:hover:bg-[var(--color-surface-elevated)] data-[active=false]:hover:text-[color:var(--color-text)]',
@@ -31,9 +37,11 @@ export const buttonVariants = cva(
       },
       size: {
         none: '',
-        sm: 'h-9 px-3',
-        md: 'h-10 px-4',
-        lg: 'h-12 px-6',
+        sm: 'h-9 px-3.5',
+        md: 'h-11 px-5',
+        lg: 'h-12 px-7 text-[0.95rem]',
+        /** Circular, icon-only (no label) — e.g. the account header's Save control. */
+        icon: 'h-11 w-11 shrink-0 rounded-full p-0',
         compact:
           'h-auto min-h-8 rounded border px-2 py-0.5 text-[10px] font-semibold uppercase leading-normal',
       },
@@ -80,6 +88,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) {
     const isTab = isAdminTabVariant(variant)
+    const isIcon = size === 'icon'
     const resolvedSize = isTab ? 'none' : (size ?? 'md')
     return (
       <button
@@ -98,7 +107,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           <Loader2
             size={16}
             aria-hidden="true"
-            className={cn('shrink-0 animate-spin', children ? 'mr-2' : '')}
+            className={cn('shrink-0 animate-spin', !isIcon && children ? 'mr-2' : '')}
           />
         ) : null}
         {children}

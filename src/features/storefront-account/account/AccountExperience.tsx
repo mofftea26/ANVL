@@ -1,9 +1,10 @@
 import { useRef } from 'react'
-import { Check, Save } from 'lucide-react'
-import { Container } from '@/shared/components/ui'
-import { cn } from '@/shared/lib/cn'
+import { Loader2, Save } from 'lucide-react'
+import { Button, Container } from '@/shared/components/ui'
 import { useCustomerProfileQuery } from '@/features/storefront-account/publicAccount.core'
 import { AccountAvatar } from '@/features/storefront-account/account/AccountAvatar'
+import { AccountTabBar } from '@/features/storefront-account/account/AccountTabBar'
+import { ACCOUNT_TABS, type AccountTab } from '@/features/storefront-account/account/accountTabs'
 import { useAccountCarousel } from '@/features/storefront-account/account/useAccountCarousel'
 import { useAccountSaveStore } from '@/features/storefront-account/account/accountSave.store'
 import { PersonalPanel } from '@/features/storefront-account/account/panels/PersonalPanel'
@@ -11,15 +12,7 @@ import { AddressesPanel } from '@/features/storefront-account/account/panels/Add
 import { OrdersPanel } from '@/features/storefront-account/account/panels/OrdersPanel'
 import { SettingsPanel } from '@/features/storefront-account/account/panels/SettingsPanel'
 
-export const ACCOUNT_TABS = ['personal', 'addresses', 'orders', 'settings'] as const
-export type AccountTab = (typeof ACCOUNT_TABS)[number]
-
-const TAB_LABELS: Record<AccountTab, string> = {
-  personal: 'Personal',
-  addresses: 'Addresses',
-  orders: 'Orders',
-  settings: 'Settings',
-}
+export { ACCOUNT_TABS, type AccountTab } from '@/features/storefront-account/account/accountTabs'
 
 /**
  * Modern bento account hub. Four tabs slide horizontally as a GSAP carousel
@@ -60,7 +53,8 @@ export function AccountExperience({
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <AccountAvatar
-                name={`${customer?.firstName ?? ''} ${customer?.lastName ?? ''}`}
+                firstName={customer?.firstName}
+                lastName={customer?.lastName}
                 email={customer?.email}
                 src={customer?.avatarUrl}
                 className="h-10 w-10 text-sm sm:h-11 sm:w-11"
@@ -74,46 +68,23 @@ export function AccountExperience({
             </div>
 
             {saveEntry ? (
-              <button
+              <Button
                 type="button"
+                size="icon"
                 onClick={saveEntry.submit}
                 disabled={saveEntry.pending}
-                aria-label="Save changes"
-                className="focus-ring inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)] px-3.5 text-sm font-semibold text-[var(--color-bg)] transition-opacity hover:opacity-90 disabled:opacity-60 sm:px-4"
+                aria-label={saveEntry.pending ? 'Saving changes' : 'Save changes'}
               >
-                {saveEntry.pending ? <Check size={16} aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
-                <span className="hidden sm:inline">{saveEntry.pending ? 'Saving…' : 'Save'}</span>
-              </button>
+                {saveEntry.pending ? (
+                  <Loader2 size={17} aria-hidden="true" className="animate-spin" />
+                ) : (
+                  <Save size={17} aria-hidden="true" />
+                )}
+              </Button>
             ) : null}
           </div>
 
-          {/* Tabs */}
-          <div
-            role="tablist"
-            aria-label="Account sections"
-            className="flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {ACCOUNT_TABS.map((t) => {
-              const active = t === tab
-              return (
-                <button
-                  key={t}
-                  role="tab"
-                  aria-selected={active}
-                  type="button"
-                  onClick={() => onTabChange(t)}
-                  className={cn(
-                    'focus-ring shrink-0 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors',
-                    active
-                      ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-bg)]'
-                      : 'border-[var(--color-line)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text)]',
-                  )}
-                >
-                  {TAB_LABELS[t]}
-                </button>
-              )
-            })}
-          </div>
+          <AccountTabBar tab={tab} onTabChange={onTabChange} />
         </Container>
       </div>
 

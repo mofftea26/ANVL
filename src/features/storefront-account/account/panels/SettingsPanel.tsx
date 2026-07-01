@@ -39,7 +39,7 @@ export function SettingsPanel({ customer }: { customer: Customer | undefined }) 
         },
       )
     })()
-  }, [prefsForm, prefsMutation])
+  }, [prefsForm, prefsMutation.mutate])
   useRegisterAccountSave('settings', submitPrefs, prefsMutation.isPending)
 
   const onChangePassword = pwForm.handleSubmit(async (values) => {

@@ -1,12 +1,14 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { Ruler, User, Phone as PhoneIcon, CalendarDays, Shirt, Sparkles } from 'lucide-react'
+import { ArrowUpRight, Ruler, User, Phone as PhoneIcon, CalendarDays, Shirt, Sparkles } from 'lucide-react'
 import type { Customer, Measurements } from '@/app/config/accountContracts'
 import { suggestSizeFromMeasurements } from '@/features/products/sizing/suggestSize'
 import { cn } from '@/shared/lib/cn'
+import { DatePicker } from '@/shared/components/ui/DatePicker'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
-import { Select } from '@/shared/components/ui/Select'
+import { Select, SelectItem } from '@/shared/components/ui/Select'
 import {
   usePersonalInfoForm,
   useUpdateCustomerProfileMutation,
@@ -44,7 +46,20 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
   const [avatarUrl, setAvatarUrl] = useState<string>(customer?.avatarUrl ?? '')
   const suggestion = suggestSizeFromMeasurements(measurements)
 
+  // `customer` loads asynchronously and is often still undefined on first
+  // render, so the lazy useState initializers above miss it. Sync once the
+  // profile (including a Google-backfilled avatar) actually arrives — keyed on
+  // id so it fires exactly once per session, never clobbering in-progress edits.
+  useEffect(() => {
+    if (!customer) return
+    setMeasurements(customer.measurements ?? {})
+    setAvatarUrl(customer.avatarUrl ?? '')
+  }, [customer?.id])
+
   const phone = form.watch('phone') ?? ''
+  const gender = form.watch('gender') ?? ''
+  const preferredSize = form.watch('preferredSize') ?? ''
+  const birthdate = form.watch('birthdate') ?? ''
 
   const setM = (key: keyof Measurements, raw: string) => {
     const n = raw === '' ? undefined : Number(raw)
@@ -91,7 +106,13 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
         {/* Identity */}
         <AccountBentoCard bg={accountCardBg('steel')} eyebrow="Identity" icon={<User size={15} />} className="sm:col-span-2 lg:col-span-2">
           <div className="mb-3 mt-1 flex items-center gap-3">
-            <AccountAvatar name={`${customer?.firstName ?? ''} ${customer?.lastName ?? ''}`} email={customer?.email} src={avatarUrl || undefined} className="h-14 w-14 text-base" />
+            <AccountAvatar
+              firstName={customer?.firstName}
+              lastName={customer?.lastName}
+              email={customer?.email}
+              src={avatarUrl || undefined}
+              className="h-14 w-14 text-base"
+            />
             <div className="min-w-0">
               <p className="anvl-heading truncate text-lg text-[var(--color-heading)]">
                 {[customer?.firstName, customer?.lastName].filter(Boolean).join(' ') || 'Your name'}
@@ -99,7 +120,7 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
               <p className="anvl-micro truncate text-[var(--color-text-muted)]">{customer?.email}</p>
             </div>
           </div>
-          {/* Avatar picker — initials or a forged emblem. */}
+          {/* Avatar picker — initials, your Google picture (if signed in with Google), or a forged emblem. */}
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -111,8 +132,29 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
                 !avatarUrl ? 'ring-[var(--color-accent)]' : 'opacity-70 ring-transparent hover:opacity-100',
               )}
             >
-              <AccountAvatar name={`${customer?.firstName ?? ''} ${customer?.lastName ?? ''}`} email={customer?.email} className="h-9 w-9 text-[10px]" />
+              <AccountAvatar
+                firstName={customer?.firstName}
+                lastName={customer?.lastName}
+                email={customer?.email}
+                className="h-9 w-9 text-[10px]"
+              />
             </button>
+            {customer?.googleAvatarUrl ? (
+              <button
+                type="button"
+                aria-label="Use Google profile picture"
+                aria-pressed={avatarUrl === customer.googleAvatarUrl}
+                onClick={() => setAvatarUrl(customer.googleAvatarUrl!)}
+                className={cn(
+                  'focus-ring h-9 w-9 overflow-hidden rounded-full ring-2 transition',
+                  avatarUrl === customer.googleAvatarUrl
+                    ? 'ring-[var(--color-accent)]'
+                    : 'opacity-70 ring-transparent hover:opacity-100',
+                )}
+              >
+                <img src={customer.googleAvatarUrl} alt="" className="h-full w-full object-cover" />
+              </button>
+            ) : null}
             {EMBLEM_AVATARS.map((src) => (
               <button
                 key={src}
@@ -150,14 +192,25 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
         {/* Details */}
         <AccountBentoCard bg={accountCardBg('stone')} eyebrow="Details" icon={<CalendarDays size={15} />}>
           <FormField label="Date of birth" htmlFor="pi-dob">
-            <Input id="pi-dob" type="date" {...form.register('birthdate')} />
+            <DatePicker
+              id="pi-dob"
+              value={birthdate}
+              onChange={(v) => form.setValue('birthdate', v, { shouldDirty: true })}
+              maxDate={new Date()}
+            />
           </FormField>
           <FormField label="Gender" htmlFor="pi-gender">
-            <Select id="pi-gender" {...form.register('gender')}>
-              <option value="">Prefer not to say</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
+            <Select
+              id="pi-gender"
+              value={gender || 'preferNotToSay'}
+              onValueChange={(v) =>
+                form.setValue('gender', v as typeof gender, { shouldDirty: true })
+              }
+            >
+              <SelectItem value="preferNotToSay">Prefer not to say</SelectItem>
+              <SelectItem value="male">Male</SelectItem>
+              <SelectItem value="female">Female</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
             </Select>
           </FormField>
         </AccountBentoCard>
@@ -165,10 +218,16 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
         {/* Fit / preferred size */}
         <AccountBentoCard bg={accountCardBg('gold')} eyebrow="Fit" icon={<Shirt size={15} />}>
           <FormField label="Preferred size" htmlFor="pi-size">
-            <Select id="pi-size" {...form.register('preferredSize')}>
-              <option value="">No preference</option>
+            <Select
+              id="pi-size"
+              value={preferredSize || 'none'}
+              onValueChange={(v) =>
+                form.setValue('preferredSize', v === 'none' ? '' : v, { shouldDirty: true })
+              }
+            >
+              <SelectItem value="none">No preference</SelectItem>
               {SIZES.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
             </Select>
           </FormField>
@@ -179,16 +238,36 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
 
         {/* Suggested size (live from measurements) */}
         <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Suggested size" icon={<Sparkles size={15} />}>
-          {suggestion ? (
-            <>
-              <p className="anvl-heading mt-1 text-4xl text-[var(--color-heading)]">{suggestion.size}</p>
-              <p className="anvl-micro text-[var(--color-text-muted)]">based on your {suggestion.basis}</p>
-            </>
-          ) : (
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Add your chest or height below and we&rsquo;ll recommend a size.
-            </p>
-          )}
+          <div className="flex h-full flex-1 flex-col justify-between">
+            <div>
+              {suggestion ? (
+                <>
+                  <p className="anvl-heading mt-1 text-4xl text-[var(--color-heading)]">{suggestion.size}</p>
+                  <p className="anvl-micro text-[var(--color-text-muted)]">based on your {suggestion.basis}</p>
+                </>
+              ) : (
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                  Add your chest or height below and we&rsquo;ll recommend a size.
+                </p>
+              )}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-[var(--color-line)] pt-3">
+              <Link
+                to="/size-guide"
+                className="anvl-micro focus-ring inline-flex items-center gap-1.5 text-[var(--color-text)] no-underline transition-colors hover:text-[var(--color-accent)]"
+              >
+                Size guide
+                <ArrowUpRight size={12} aria-hidden="true" />
+              </Link>
+              <Link
+                to="/care-guide"
+                className="anvl-micro focus-ring inline-flex items-center gap-1.5 text-[var(--color-text)] no-underline transition-colors hover:text-[var(--color-accent)]"
+              >
+                Care guide
+                <ArrowUpRight size={12} aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
         </AccountBentoCard>
 
         {/* Measurements */}

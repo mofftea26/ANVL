@@ -2,7 +2,7 @@
 
 The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing page structure lives in the codebase (`src/features/landingPages/`); Supabase stores **which page is active**, **theme**, **fonts**, **asset slot assignments**, the **media library**, and per-scene **copy overrides** (`landing_content`) with code defaults filling every gap.
 
-## Admin surfaces (6 + settings)
+## Admin surfaces (7 + settings)
 
 | Surface | Route | Persists to |
 |---|---|---|
@@ -11,6 +11,7 @@ The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing p
 | Fonts | `/admin/fonts` | `cms_settings.font_config` |
 | Assets | `/admin/assets` | `cms_settings.asset_config` + `cms_media_assets` |
 | Landing Content | `/admin/content` | `cms_settings.landing_content` (per-landing-key copy blobs) + reads/writes `asset_config.drops` for non-tenet scene media |
+| About Page | `/admin/about` | `cms_settings.landing_content.about` (hero/philosophy/process/stats/finale copy) — imagery + the monolith GLB assign on `/admin/assets` (`asset_config.pages.about`) |
 | Story | `/admin/story` | `story_chapters` + `story_acts` + `story_cast` (+ `story-media` bucket) |
 | Settings | `/admin/settings` | Session + local reset only |
 
@@ -213,7 +214,7 @@ Slots are **defined in code** per drop. The CMS assigns media library IDs to slo
 
 - **General slots** (`GENERAL_ASSET_SLOTS`): emblem fallback, loading emblem, shared textures
 - **Per-drop slots** (`DROP_ASSET_SLOTS`): e.g. `the-oath` → hero media, drop logo, product images. **Tenet images are not slots** — they live in `landing_content['the-oath'].tenets.items[].mediaId`.
-- **Page slots** (`asset_config.pages`): non-landing storefront pages (e.g. shop hero backdrop)
+- **Page slots** (`asset_config.pages`): non-landing storefront pages (e.g. shop hero backdrop). `about` is the richest example — hero backdrop, the persistent **monolith 3D model (GLB)**, philosophy backdrop, two materials/two construction close-ups (the construction pair carries CMS-authored hotspot annotations from `landing_content.about.process.steps[1].hotspots`), a testing backdrop, and a finale backdrop (`src/features/cms/assets/storefrontPageSlots.ts`). The monolith only mounts its WebGL layer once a GLB is assigned — no CMS assignment, no 3D download, page reads fine either way.
 
 `resolvePublishedAssets` merges `asset_config.general` + `asset_config.drops[activeKey]`, resolves IDs via `media_index`, and falls back to code defaults in each page's `*Assets.ts` file.
 

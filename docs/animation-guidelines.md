@@ -167,6 +167,19 @@ Mobile / tablet / reduced motion: `buildOathStatic.ts` — no pins, no WebGL; st
 
 ---
 
+## The About page (second worked example — a loaded GLB, not an extruded SVG)
+
+`src/features/about/` is a standalone feature (not a landing page — it's not registered in `landingPages/registry.ts`, since About is a fixed page, never swapped like a drop). It mirrors The Oath's architecture almost exactly:
+
+- `aboutBreakpoints.ts` — same two-branch contract as `oathBreakpoints.ts` (`ABOUT_DESKTOP_CINEMATIC_MQ` ≥1280px, `ABOUT_STATIC_MQ` otherwise/reduced-motion), renamed constants.
+- `hooks/useAboutScrollTimeline.ts` — the `matchMedia` timeline sequencing `motion/buildAbout*.ts` (hero, philosophy, materials, construction, testing, finale) + `buildAboutStatic.ts`.
+- `motion/aboutMotionState.ts` — the same mutable-ref bridge pattern, simplified (no pointer/cursor tracking — About's monolith is scroll-driven only, not cursor-reactive).
+- `webgl/AboutCanvasGate.tsx` → `AboutCanvas.tsx` → `AboutMonolith.tsx` — the **first GLB consumer** in the app (drei's `useGLTF`, vs. The Oath's monolith which is a hand-authored SVG extruded live via `AnvlOath3D`). Because a GLB's material palette is unknown ahead of time, `AboutMonolith` tags each mesh material with a tone (`primary`/`mid`/`highlight`) on load so the finale colour-lerp still works generically. The gate only mounts (and only then pulls the `vendor-three` chunk) once a monolith GLB is CMS-assigned on `/admin/assets` — an unassigned slot means zero WebGL cost, not a broken page.
+- `content/aboutContent.schema.ts` + `resolveAboutContent.ts` — same CMS-override-with-code-defaults contract, simpler than Oath's (no media IDs live inside the content schema — all About imagery is asset-slot based via `resolveStorefrontPageAssets`, not embedded `mediaId` fields).
+- Only `philosophy` pins (`pin: true`); `hero`, the three forge-process scenes, and the finale scrub without pinning (scroll-through parallax) — a deliberately lighter scroll-jack footprint than The Oath's several pinned scenes.
+
+---
+
 ## Framer Motion Patterns
 
 ### Page transitions

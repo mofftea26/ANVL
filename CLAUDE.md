@@ -91,6 +91,7 @@ src/features/cms/**            → shared CMS read models, theme/font/asset conf
 src/features/experience/**     → centralized experience system (registry, provider, variant seam) — storefront-safe; the ONLY place experience variants are selected (no scattered key conditionals)
 src/features/landingPages/**   → code-owned landing pages (registry, renderer, asset slots, TheOathLanding)
 src/features/marketing/**      → storefront home sections (home/: campaign cards, lookbook strip)
+src/features/about/**          → About page: standalone cinematic GSAP + WebGL (GLB monolith) scroll film — not registered in landingPages/registry.ts (About is a fixed page, not a swappable drop)
 src/features/story/**          → Story saga: schemas, clients, 3D shelf + book overlay
 src/features/products/**       → product catalog, commerce adapters, shop components
 src/features/cart/**           → cart store + hooks (Zustand)
@@ -121,8 +122,9 @@ src/
     seo/             meta.ts (buildSeoMeta)
   content/           seed data + mocks
   features/
-    admin/           Slim CMS — dashboard (active drop), theme, fonts, assets, landing content, story, settings (+ auth). Wide-screen workspace shell (AdminLayout/AdminWorkspace/AdminRailPanel)
+    admin/           Slim CMS — dashboard (active drop), theme, fonts, assets, landing content, about, story, settings (+ auth). Wide-screen workspace shell (AdminLayout/AdminWorkspace/AdminRailPanel)
     analytics/       Analytics client mock + hooks
+    about/           About page: standalone cinematic scroll film — content schema/defaults/resolver, GSAP motion builders, WebGL monolith (GLB) scene, scene components (storefront-safe; not in the landingPages registry)
     cart/            Zustand cart store + hooks
     checkout/        Forms, schemas, payment config + mock adapters
     cms/             Storefront-safe CMS reads: theme/font/asset config (cmsSiteConfig), landing content envelope, publication readers, navigation + layout defaults
@@ -142,8 +144,9 @@ src/
     checkout/
     account/         Customer account (stub)
     story.tsx        Story saga page (chapter shelf + deep-linkable book overlay)
+    about.tsx        About page — renders <AboutExperience> (cinematic scroll film; CMS-editable copy + assets)
     auth/            Sign in / sign up / forgot password
-    admin/           Slim CMS admin routes: dashboard (index), theme, fonts, assets, content, story, settings, login
+    admin/           Slim CMS admin routes: dashboard (index), theme, fonts, assets, content, about, story, settings, login
   shared/
     api/contracts/   Typed DTOs for future REST/BFF (scaffolding — not yet wired)
     assets/brand/    Inline SVG logo components (AnvlWordmark, AnvlCrest, etc.)
@@ -249,7 +252,7 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 ### Architecture
 
 The CMS is split into two surfaces:
-1. **Admin CMS** (`src/features/admin/`) — Six editors: active drop (dashboard), theme & colors, fonts, assets, landing content, story (+ settings). Every page renders inside the wide-screen **workspace shell** (`AdminLayout layout="workspace"` → `AdminWorkspace` = primary editing column + sticky contextual `AdminRailPanel` rail; collapses to one column below `xl`).
+1. **Admin CMS** (`src/features/admin/`) — Seven editors: active drop (dashboard), theme & colors, fonts, assets, landing content, about, story (+ settings). Every page renders inside the wide-screen **workspace shell** (`AdminLayout layout="workspace"` → `AdminWorkspace` = primary editing column + sticky contextual `AdminRailPanel` rail; collapses to one column below `xl`).
 2. **Storefront CMS reads** (`src/features/cms/`) — Read-only projection: theme, fonts, assets, active landing key, landing content
 
 **Flow:** `admin edits → adminCmsRemoteSync → cms_settings + storefront_publication mirror → SSR reads projection`
@@ -267,6 +270,7 @@ Storefront never reads admin draft data directly. Landing page **content** is co
 | `/admin/shop` | Shop Experience editor — shop layout, product cards, filters, sort, toggles, state copy **and the Product-detail (PDP) section toggles + related count + animation** (`shop_config`, incl. `shop_config.pdp`) |
 | `/admin/products` | Per-product PDP editorial content — pick a product (commerce catalog / Shopify), author its bento story/material/care/details + editorial assets (`pdp_content`, keyed by slug) |
 | `/admin/content` | Landing content editor — per-scene copy overrides with code-default fallbacks |
+| `/admin/about` | About page editor — hero, philosophy, forge process (materials/construction/testing + hotspots), fun facts, finale copy (`landing_content.about`); imagery + monolith GLB assign on `/admin/assets` |
 | `/admin/story` | Story saga editor — chapters, acts, cast (relational; Supabase CRUD) |
 | `/admin/settings` | Session + local reset |
 

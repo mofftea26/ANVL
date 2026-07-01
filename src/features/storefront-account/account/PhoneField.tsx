@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Input } from '@/shared/components/ui/Input'
-import { Select } from '@/shared/components/ui/Select'
+import { Select, SelectItem } from '@/shared/components/ui/Select'
 
 /** Curated dial codes (Lebanon first, then common ANVL ship-to markets). */
 const DIAL_CODES: { code: string; label: string; flag: string }[] = [
@@ -61,12 +61,12 @@ export function PhoneField({
         <Select
           aria-label="Country dial code"
           value={dial}
-          onChange={(e) => emit(e.target.value, local)}
+          onValueChange={(v) => emit(v, local)}
         >
-          {DIAL_CODES.map((d, i) => (
-            <option key={`${d.code}-${i}`} value={d.code}>
+          {DIAL_CODES.map((d) => (
+            <SelectItem key={d.code} value={d.code}>
               {d.flag} {d.code}
-            </option>
+            </SelectItem>
           ))}
         </Select>
       </div>
