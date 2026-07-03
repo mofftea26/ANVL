@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { gsap } from '@/shared/lib/gsap'
 import { OATH_FINE_POINTER_DESKTOP_MQ } from '../oathBreakpoints'
 
@@ -10,6 +11,13 @@ import { OATH_FINE_POINTER_DESKTOP_MQ } from '../oathBreakpoints'
  * persists over the fixed top bar too — this component only mounts on the
  * landing page (fine-pointer desktop, no reduced motion), so going page-wide is
  * safe; touch and static branches never see it.
+ *
+ * Portaled to `document.body`: the landing root (`data-oath-root`) declares
+ * `isolate`, which creates its own stacking context — a descendant's z-index
+ * (however high) can never be promoted above a *sibling* of that root, like
+ * the fixed topbar's cart/avatar controls, no matter the number. Rendering
+ * outside the isolated tree lets the cursor's `z-[80]` compare directly
+ * against the topbar's stacking level and actually win.
  */
 export function OathCursor() {
   const [enabled, setEnabled] = useState(false)
@@ -82,7 +90,7 @@ export function OathCursor() {
 
   if (!enabled) return null
 
-  return (
+  return createPortal(
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[80]">
       {/* Hide the native pointer page-wide while the custom cursor is active —
           including the fixed top bar and any interactive element whose own
@@ -101,6 +109,7 @@ export function OathCursor() {
         className="absolute left-0 top-0 h-1.5 w-1.5 rounded-full bg-[var(--anvl-bone,#E7E4DF)] opacity-0 mix-blend-difference will-change-transform"
         style={{ marginLeft: '-3px', marginTop: '-3px' }}
       />
-    </div>
+    </div>,
+    document.body,
   )
 }

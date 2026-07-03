@@ -38,8 +38,12 @@ import {
   releaseLandingEntryLock,
   useLandingEntry,
 } from '@/features/landingPages/LandingEntryContext'
-import { getStorefrontMainClassName } from '@/routes/storefrontMainLayout'
+import {
+  FULL_BLEED_STOREFRONT_PATHS,
+  getStorefrontMainClassName,
+} from '@/routes/storefrontMainLayout'
 import { PageBackdrop } from '@/shared/components/layout/PageBackdrop'
+import { SiteDustGate } from '@/shared/webgl/SiteDustGate'
 import { resolvePageBackdropSrc } from '@/features/cms/assets/pageBackdrop'
 import { cn } from '@/shared/lib/cn'
 import appCss from '@/styles.css?url'
@@ -142,8 +146,9 @@ function StorefrontLayout() {
     select: (state) => state.location.pathname,
   })
   const isHome = pathname === '/'
+  const isFullBleed = FULL_BLEED_STOREFRONT_PATHS.has(pathname)
   const backdropSrc =
-    !isHome ? resolvePageBackdropSrc(pathname, assets, mediaIndex) : null
+    !isFullBleed ? resolvePageBackdropSrc(pathname, assets, mediaIndex) : null
   const { homeEntryComplete, resetHomeEntry } = useLandingEntry()
   const showChrome = !isHome || homeEntryComplete
 
@@ -170,19 +175,23 @@ function StorefrontLayout() {
           </a>
         ) : null}
         {showChrome ? (
-          <PremiumNav navigation={navigation} alwaysTransparent={isHome} />
+          <PremiumNav navigation={navigation} alwaysTransparent={isFullBleed} />
         ) : null}
         {showChrome && backdropSrc ? <PageBackdrop src={backdropSrc} /> : null}
+        {/* Site-wide cursor dust — full-bleed routes integrate the same
+            DustField inside their own scene canvas, so they are excluded
+            here (one field, never two). */}
+        {showChrome && !isFullBleed ? <SiteDustGate /> : null}
         <main
           id="anvl-main"
-          className={cn('relative z-10', getStorefrontMainClassName({ showChrome, isHome }))}
+          className={cn('relative z-10', getStorefrontMainClassName({ showChrome, isFullBleed }))}
         >
           <AppErrorBoundary resetKey={pathname}>
             <Outlet />
           </AppErrorBoundary>
         </main>
         {showChrome ? (
-          <div className="relative z-10">
+          <div className={cn('relative z-10', pathname === '/about' ? 'xl:hidden' : undefined)}>
             <SiteFooter navigation={navigation} />
           </div>
         ) : null}

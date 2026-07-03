@@ -1455,3 +1455,39 @@ html[data-landing-entry='active'] body {
     animation-duration: 0.01ms;
   }
 }
+
+/* ============================================================
+   About page — "The Forge" cinematic (scoped to [data-about-root])
+   ============================================================ */
+
+/* Outlined display type — the oversized forge numerals + marquee row. */
+[data-about-root] .about-outline-text {
+  -webkit-text-stroke: 2px var(--color-heading, #e7e4df);
+  paint-order: stroke fill;
+}
+
+/* Marquee — two counter-scrolling rows, pure CSS. Track content is duplicated
+   in markup, so -50% loops seamlessly. */
+@keyframes about-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+[data-about-root] .about-marquee-forward {
+  animation: about-marquee 36s linear infinite;
+}
+[data-about-root] .about-marquee-reverse {
+  animation: about-marquee 42s linear infinite reverse;
+}
+
+/* Reduced motion: no marquee scroll — the mobile page is fully static and
+   CSS-visible; the desktop altar stage never mounts. */
+@media (prefers-reduced-motion: reduce) {
+  [data-about-root] .about-marquee-forward,
+  [data-about-root] .about-marquee-reverse {
+    animation: none;
+  }
+}

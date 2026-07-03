@@ -45,7 +45,7 @@ The current phase uses local/mock adapters where a real backend does not yet exi
 | Forms | React Hook Form + Zod v4 |
 | Animation | GSAP 3 + `@gsap/react` useGSAP + ScrollTrigger |
 | Motion (lightweight) | Framer Motion |
-| 3D / WebGL | three.js + `@react-three/fiber` v9 + `@react-three/drei` v10 — The Oath landing emblem/dust + Story chapter book, lazy `vendor-three` chunk (desktop + no-reduced-motion only) |
+| 3D / WebGL | three.js + `@react-three/fiber` v9 + `@react-three/drei` v10 — The Oath landing emblem, Story chapter book, the About Forge Altar (anvil/hammer GLBs + aurora), and the site-wide cursor dust (`src/shared/webgl/DustField`, one shared field mounted globally via `SiteDustGate` and inside scene canvases) — all lazy `vendor-three`, gated to capable devices |
 | Smooth scroll | Lenis |
 | Icons | lucide-react (named imports only) |
 | Toasts | sonner |
@@ -91,7 +91,7 @@ src/features/cms/**            → shared CMS read models, theme/font/asset conf
 src/features/experience/**     → centralized experience system (registry, provider, variant seam) — storefront-safe; the ONLY place experience variants are selected (no scattered key conditionals)
 src/features/landingPages/**   → code-owned landing pages (registry, renderer, asset slots, TheOathLanding)
 src/features/marketing/**      → storefront home sections (home/: campaign cards, lookbook strip)
-src/features/about/**          → About page: standalone cinematic GSAP + WebGL (GLB monolith) scroll film — not registered in landingPages/registry.ts (About is a fixed page, not a swappable drop)
+src/features/about/**          → About page: desktop "Forge Altar" (non-scrollable 3D anvil + orbiting content orbs + hammer-strike modals) + normal mobile page — not registered in landingPages/registry.ts (About is a fixed page, not a swappable drop)
 src/features/story/**          → Story saga: schemas, clients, 3D shelf + book overlay
 src/features/products/**       → product catalog, commerce adapters, shop components
 src/features/cart/**           → cart store + hooks (Zustand)
@@ -124,7 +124,7 @@ src/
   features/
     admin/           Slim CMS — dashboard (active drop), theme, fonts, assets, landing content, about, story, settings (+ auth). Wide-screen workspace shell (AdminLayout/AdminWorkspace/AdminRailPanel)
     analytics/       Analytics client mock + hooks
-    about/           About page: standalone cinematic scroll film — content schema/defaults/resolver, GSAP motion builders, WebGL monolith (GLB) scene, scene components (storefront-safe; not in the landingPages registry)
+    about/           About page: content schema/defaults/resolver (CMS-driven orbs = sections) + altar/ (desktop Forge Altar — grabbable 3D anvil, aurora, per-color orbiting orbs, hammer-strike explosion → modal) + mobile/ (normal scrolling page; orbs render as stacked sections)
     cart/            Zustand cart store + hooks
     checkout/        Forms, schemas, payment config + mock adapters
     cms/             Storefront-safe CMS reads: theme/font/asset config (cmsSiteConfig), landing content envelope, publication readers, navigation + layout defaults
@@ -144,7 +144,7 @@ src/
     checkout/
     account/         Customer account (stub)
     story.tsx        Story saga page (chapter shelf + deep-linkable book overlay)
-    about.tsx        About page — renders <AboutExperience> (cinematic scroll film; CMS-editable copy + assets)
+    about.tsx        About page — renders <AboutExperience> (desktop Forge Altar / mobile normal page; CMS-editable copy + assets)
     auth/            Sign in / sign up / forgot password
     admin/           Slim CMS admin routes: dashboard (index), theme, fonts, assets, content, about, story, settings, login
   shared/
@@ -270,7 +270,7 @@ Storefront never reads admin draft data directly. Landing page **content** is co
 | `/admin/shop` | Shop Experience editor — shop layout, product cards, filters, sort, toggles, state copy **and the Product-detail (PDP) section toggles + related count + animation** (`shop_config`, incl. `shop_config.pdp`) |
 | `/admin/products` | Per-product PDP editorial content — pick a product (commerce catalog / Shopify), author its bento story/material/care/details + editorial assets (`pdp_content`, keyed by slug) |
 | `/admin/content` | Landing content editor — per-scene copy overrides with code-default fallbacks |
-| `/admin/about` | About page editor — hero, philosophy, forge process (materials/construction/testing + hotspots), fun facts, finale copy (`landing_content.about`); imagery + monolith GLB assign on `/admin/assets` |
+| `/admin/about` | About page editor — hero, the **orbs** (add/edit/remove free-form sections: label, color, copy, lines, points, stats, CTAs, image), marquee (`landing_content.about`); anvil/hammer GLBs + page imagery assign on `/admin/assets` |
 | `/admin/story` | Story saga editor — chapters, acts, cast (relational; Supabase CRUD) |
 | `/admin/settings` | Session + local reset |
 

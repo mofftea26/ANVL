@@ -1,6 +1,6 @@
 import { Check, Info, ListOrdered, Save } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useFieldArray, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
@@ -15,20 +15,19 @@ import {
 } from '@/features/cms/landingContent/landingContent.settings'
 import { toAboutContentSlice, toAboutFormValues, type AboutContentFormValues } from './aboutContentForm'
 import { AboutHeroFields } from './sections/AboutHeroFields'
-import { AboutPhilosophyFields } from './sections/AboutPhilosophyFields'
-import { AboutProcessFields } from './sections/AboutProcessFields'
-import { AboutStatsFields } from './sections/AboutStatsFields'
-import { AboutFinaleFields } from './sections/AboutFinaleFields'
+import { AboutOrbsFields } from './sections/AboutOrbsFields'
+import { AboutMarqueeFields } from './sections/AboutMarqueeFields'
 
 const ABOUT_KEY = 'about'
 
 /**
- * About content editor — hero, philosophy, the forge process (materials /
- * construction / testing), fun facts, and finale. Every field is optional;
- * blank falls back to the designed default (shown as an input placeholder).
- * Imagery (hero backdrop, monolith GLB, process close-ups, etc.) is assigned
- * on the Assets page (`/admin/assets` → Page — About), same as every other
- * storefront page — this editor is copy-only.
+ * About content editor — the hero (mobile page), the **orbs** (each orb is a
+ * section: it orbits the desktop Forge Altar and is struck open into a modal;
+ * on mobile it renders as a stacked section — add/edit/remove freely), and the
+ * marquee band. Every field is optional; blank falls back to the designed
+ * default (shown as an input placeholder). Orb section images can be picked
+ * per orb here; the anvil/hammer GLBs and page imagery are assigned on the
+ * Assets page (`/admin/assets` → Page — About).
  */
 export function AboutEditor() {
   const setPageActions = useAdminPageActions()
@@ -38,7 +37,6 @@ export function AboutEditor() {
   const form = useForm<AboutContentFormValues>({
     defaultValues: toAboutFormValues(readLandingContentFromStorage()[ABOUT_KEY]),
   })
-  const statItems = useFieldArray({ control: form.control, name: 'stats.items' })
 
   const reloadForm = useCallback(() => {
     form.reset(toAboutFormValues(readLandingContentFromStorage()[ABOUT_KEY]))
@@ -97,21 +95,19 @@ export function AboutEditor() {
       >
         <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">
           <li>Placeholders show the designed default copy.</li>
-          <li>Type to override a scene; clear a field to restore the default.</li>
+          <li>Type to override; clear a field to restore the default.</li>
+          <li>Add, edit, or remove orbs — the page ships with seven designed ones.</li>
           <li>
-            Imagery (hero, monolith GLB, process close-ups, finale) is assigned on the{' '}
+            The anvil/hammer GLBs and page imagery are assigned on the{' '}
             <span className="text-[var(--color-heading)]">Assets</span> page — scope "Page — About".
           </li>
         </ul>
       </AdminRailPanel>
-      <AdminRailPanel title="Scenes" icon={<ListOrdered size={15} />}>
+      <AdminRailPanel title="How orbs render" icon={<ListOrdered size={15} />}>
         <ol className="space-y-1.5 text-xs text-[var(--color-text-muted)]">
-          <li>1 — Hero (Origin)</li>
-          <li>2 — Philosophy</li>
-          <li>3 — The Forge: Materials</li>
-          <li>4 — The Forge: Construction</li>
-          <li>5 — The Forge: Testing + Fun Facts</li>
-          <li>6 — Finale</li>
+          <li>Desktop — each orb orbits the 3D anvil; the hammer strike opens its modal.</li>
+          <li>Mobile — each orb is a stacked page section, in this order.</li>
+          <li>An orb shows only the fields you fill (lines, body, points, stats, CTAs…).</li>
         </ol>
       </AdminRailPanel>
       <AdminWorkspaceStatusPanel />
@@ -129,10 +125,8 @@ export function AboutEditor() {
         data-testid="admin-about-editor"
       >
         <AboutHeroFields register={form.register} />
-        <AboutPhilosophyFields register={form.register} />
-        <AboutProcessFields register={form.register} />
-        <AboutStatsFields register={form.register} items={statItems} />
-        <AboutFinaleFields register={form.register} />
+        <AboutOrbsFields register={form.register} control={form.control} setValue={form.setValue} />
+        <AboutMarqueeFields register={form.register} />
       </form>
     </AdminWorkspace>
   )

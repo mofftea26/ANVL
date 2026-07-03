@@ -13,16 +13,7 @@ export function ChapterShelf({ chapters, onOpen }: ChapterShelfProps) {
   return (
     <Section>
       <Container>
-        <RevealOnScroll>
-          <p className="anvl-display flex items-center gap-2.5 text-xs tracking-[0.3em] text-[var(--color-highlight-bright)] before:h-px before:w-8 before:bg-[var(--color-highlight)] before:content-['']">
-            The Chronicle
-          </p>
-          <h2 className="anvl-heading mt-4 max-w-2xl text-[clamp(2rem,5vw,3.25rem)] font-normal leading-[0.95]">
-            Every drop is a chapter. Open one to read the saga.
-          </h2>
-        </RevealOnScroll>
-
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-5 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
           {chapters.map((chapter) => (
             <RevealOnScroll key={chapter.id}>
               <ChapterCover chapter={chapter} onOpen={onOpen} />

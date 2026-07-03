@@ -30,7 +30,7 @@ describe('AssetSlotAssignmentPanel', () => {
         assignments={{}}
         assignmentValue={() => ''}
         onSlotChange={vi.fn()}
-        mediaAssets={[{ id: 'media-1', filename: 'hero.webp' }]}
+        mediaAssets={[{ id: 'media-1', filename: 'hero.webp', mime: 'image/webp' }]}
       />,
     )
 
@@ -53,7 +53,7 @@ describe('AssetSlotAssignmentPanel', () => {
         assignments={{}}
         assignmentValue={() => ''}
         onSlotChange={onSlotChange}
-        mediaAssets={[{ id: 'media-1', filename: 'hero.webp' }]}
+        mediaAssets={[{ id: 'media-1', filename: 'hero.webp', mime: 'image/webp' }]}
       />,
     )
 

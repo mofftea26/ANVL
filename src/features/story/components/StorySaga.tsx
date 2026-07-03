@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { Container, Section } from '@/shared/components/ui'
-import { ForgeAtmosphere } from '@/shared/components/premium/ForgeAtmosphere'
+import { RevealOnScroll } from '@/shared/components/motion/RevealOnScroll'
 import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import { StoryHero } from '@/features/story/components/StoryHero'
@@ -20,6 +20,26 @@ const CTA_FORGE =
 const CTA_STEEL =
   'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-highlight)_60%,var(--color-line))]'
 
+/** Roman numeral for a volume plaque (1-indexed, pragmatic range). */
+function romanNumeral(n: number): string {
+  const table: [number, string][] = [
+    [10, 'X'],
+    [9, 'IX'],
+    [5, 'V'],
+    [4, 'IV'],
+    [1, 'I'],
+  ]
+  let v = Math.max(1, Math.trunc(n))
+  let out = ''
+  for (const [value, glyph] of table) {
+    while (v >= value) {
+      out += glyph
+      v -= value
+    }
+  }
+  return out
+}
+
 /** Group chapters into per-drop shelves (preserving order). */
 function groupByDrop(
   chapters: StoryChapter[],
@@ -35,7 +55,42 @@ function groupByDrop(
   return [...groups.values()]
 }
 
-/** Composes the Story page: intro → per-drop shelves → deep-linkable book overlay. */
+/** Volume plaque above each drop's shelf — numeral, drop label, book count. */
+function VolumePlaque({
+  index,
+  label,
+  count,
+}: {
+  index: number
+  label: string
+  count: number
+}) {
+  return (
+    <Container>
+      <RevealOnScroll>
+        <div className="flex items-end justify-between gap-6 border-b border-[color-mix(in_srgb,#c8a45a_22%,var(--color-line))] pb-4">
+          <div className="flex items-baseline gap-4">
+            <span className="anvl-display text-xs tracking-[0.34em] text-[#c8a45a]/90">
+              Vol. {romanNumeral(index + 1)}
+            </span>
+            <h2 className="anvl-heading font-normal leading-none text-[clamp(1.5rem,3.5vw,2.5rem)] text-[var(--color-heading)]">
+              {label}
+            </h2>
+          </div>
+          <span className="anvl-display hidden shrink-0 text-[11px] tracking-[0.26em] text-[var(--color-text-muted)] sm:block">
+            {count} {count === 1 ? 'book' : 'books'}
+          </span>
+        </div>
+      </RevealOnScroll>
+    </Container>
+  )
+}
+
+/**
+ * Composes the Story page — the Athenaeum: frontispiece hero → per-drop
+ * volume shelves (the 3D bookshelf, untouched) → the colophon → the
+ * deep-linkable book overlay.
+ */
 export function StorySaga({
   chapters,
   activeChapterSlug,
@@ -54,26 +109,29 @@ export function StorySaga({
       <StoryHero />
 
       {chapters.length > 0 ? (
-        <div className="space-y-4">
-          {dropGroups.map((group) => (
+        <div className="space-y-10 pt-10">
+          {dropGroups.map((group, i) => (
             <section key={group.key} aria-label={group.label}>
-              <Container>
-                <h2 className="anvl-heading text-[clamp(1.4rem,3vw,2.25rem)] font-normal leading-none text-[var(--color-heading)]">
-                  {group.label}
-                </h2>
-                <hr className="anvl-highlight-rule mt-3 max-w-[8rem]" />
-              </Container>
+              <VolumePlaque index={i} label={group.label} count={group.chapters.length} />
               <StoryShelf chapters={group.chapters} onOpen={onOpenChapter} />
             </section>
           ))}
         </div>
       ) : (
         <Section>
-          <Container className="max-w-2xl text-center">
-            <h2 className="anvl-heading text-[clamp(1.75rem,4.5vw,3rem)] font-normal leading-[0.95]">
-              The first chapter is still on the anvil.
+          <Container className="max-w-2xl py-6 text-center">
+            <p aria-hidden="true" className="anvl-display text-xs tracking-[0.4em] text-[#c8a45a]/80">
+              Vol. I
+            </p>
+            <h2 className="anvl-heading mt-4 text-[clamp(1.75rem,4.5vw,3rem)] font-normal leading-[0.95]">
+              The first volume is still on the anvil.
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-[var(--color-text-muted)]">
+            <div className="mx-auto mt-6 flex items-center justify-center gap-3" aria-hidden="true">
+              <span className="h-px w-20 bg-gradient-to-r from-transparent to-[#c8a45a]/70" />
+              <span className="block h-1.5 w-1.5 rotate-45 border border-[#c8a45a]/80" />
+              <span className="h-px w-20 bg-gradient-to-l from-transparent to-[#c8a45a]/70" />
+            </div>
+            <p className="mt-6 text-base leading-relaxed text-[var(--color-text-muted)]">
               The saga is being forged. Enlist now and your name may be written into what comes next.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -85,25 +143,42 @@ export function StorySaga({
         </Section>
       )}
 
-      {/* Closing CTA — desktop/tablet only; mobile keeps the page tight. */}
-      <section className="relative hidden overflow-hidden border-t border-[var(--color-line)] md:block">
-        <ForgeAtmosphere />
-        <Container className="relative z-10 max-w-3xl space-y-6 py-20 text-center md:py-28">
-          <h2 className="anvl-heading text-[clamp(2.25rem,7vw,5rem)] font-normal leading-[0.9]">
-            The saga never ends.
-          </h2>
-          <hr className="anvl-highlight-rule mx-auto max-w-[12rem]" />
-          <p className="mx-auto max-w-xl text-base leading-relaxed text-[var(--color-text-muted)]">
-            Each drop forges the next chapter. Take the oath, and march with the army that builds it.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link to="/shop" search={defaultShopUrlSearch} className={CTA_FORGE}>
-              Enter the armory
-            </Link>
-            <Link to="/auth/sign-up" className={CTA_STEEL}>
-              Enlist in the saga
-            </Link>
-          </div>
+      {/* The colophon — the archive's closing inscription. */}
+      <section className="relative mt-10 overflow-hidden border-t border-[color-mix(in_srgb,#c8a45a_18%,var(--color-line))]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 70% at 50% 100%, color-mix(in srgb, var(--color-highlight) 10%, transparent) 0%, transparent 72%)',
+          }}
+        />
+        <Container className="relative z-10 flex flex-col items-center gap-6 py-20 text-center md:py-24">
+          <RevealOnScroll>
+            <span aria-hidden="true" className="anvl-display block text-lg leading-none text-[#c8a45a]">
+              ⚒
+            </span>
+          </RevealOnScroll>
+          <RevealOnScroll>
+            <h2 className="anvl-heading max-w-3xl font-normal leading-[0.9] text-[clamp(2rem,6vw,4.25rem)]">
+              The saga never ends.
+            </h2>
+          </RevealOnScroll>
+          <RevealOnScroll>
+            <p className="anvl-display max-w-xl text-[11px] leading-loose tracking-[0.26em] text-[var(--color-text-muted)]">
+              Each drop binds the next volume. Take the oath, and march with the army that writes it.
+            </p>
+          </RevealOnScroll>
+          <RevealOnScroll>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link to="/shop" search={defaultShopUrlSearch} className={CTA_FORGE}>
+                Enter the armory
+              </Link>
+              <Link to="/auth/sign-up" className={CTA_STEEL}>
+                Enlist in the saga
+              </Link>
+            </div>
+          </RevealOnScroll>
         </Container>
       </section>
 

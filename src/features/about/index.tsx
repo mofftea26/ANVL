@@ -1,79 +1,92 @@
-import { useMemo, useRef } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
+import { isWebglAvailable } from '@/shared/webgl/isWebglAvailable'
 import { resolveAboutContent } from './content/resolveAboutContent'
-import { AboutMotionContext, createAboutMotionState } from './motion/aboutMotionState'
-import { useAboutScrollTimeline } from './hooks/useAboutScrollTimeline'
-import { AboutCanvasGate } from './webgl/AboutCanvasGate'
-import { AboutHero } from './components/AboutHero'
-import { AboutPhilosophy } from './components/AboutPhilosophy'
-import { AboutMaterials } from './components/AboutMaterials'
-import { AboutConstruction } from './components/AboutConstruction'
-import { AboutTesting } from './components/AboutTesting'
-import { AboutFinale } from './components/AboutFinale'
+import { ABOUT_ALTAR_MQ } from './aboutBreakpoints'
+import { useAboutViewMode } from './hooks/useAboutViewMode'
+import { AboutHeader } from './components/AboutHeader'
+import { AboutMobilePage } from './mobile/AboutMobilePage'
+
+const AboutAltar = lazy(() => import('./altar/AboutAltar'))
 
 export type AboutPageAssets = Record<string, string | undefined>
 
 /**
- * The About page — one continuous cinematic scroll film: hero/origin →
- * philosophy → the forge process (materials → construction → testing/fun
- * facts) → finale. A single persistent 3D monolith (CMS-uploaded GLB) drifts
- * through the whole page, receding through the process scenes and returning
- * enlarged at the finale (`hooks/useAboutScrollTimeline` + `webgl/AboutMonolith`).
+ * The About page — two experiences behind one CMS contract:
  *
- * Composition only — scenes own markup + `data-*` hooks; motion lives in
- * `hooks/useAboutScrollTimeline`. Copy is CMS-editable (`/admin/about`),
- * imagery is CMS-assigned (`/admin/assets` → Page — About); every field falls
- * back to a designed code default so the page is never blank.
+ * - **The Forge Altar** (desktop ≥1280px, no reduced motion, WebGL): a
+ *   non-scrollable 100svh stage — 3D anvil under an aurora, six content orbs
+ *   in orbit; picking one summons the hammer, and the strike forges open a
+ *   modal with that section's content. GSAP + three.js drive everything.
+ * - **The normal page** (mobile/tablet, reduced motion, no WebGL, and SSR):
+ *   a clean scrolling About page with the same CMS content and imagery.
+ *
+ * SSR + the first client paint always render the normal page (full content in
+ * the DOM for SEO/AT); the altar swaps in after hydration when its gate
+ * passes and fades in from the void. On altar-capable devices a small header
+ * (`AboutHeader`) carries a view switch so a reader can move between the two
+ * at will — their choice is remembered for next time
+ * (`useAboutViewMode`). Copy is CMS-editable (`/admin/about`), imagery + the
+ * anvil/hammer GLBs CMS-assigned (`/admin/assets` → Page — About); every
+ * field falls back to a designed code default.
  */
 export function AboutExperience({
   landingContent,
   assets,
+  mediaIndex,
 }: {
   landingContent: unknown
   assets: AboutPageAssets
+  mediaIndex?: MediaIndexEntry[]
 }) {
-  const content = useMemo(() => resolveAboutContent(landingContent), [landingContent])
+  const content = useMemo(
+    () => resolveAboutContent(landingContent, { mediaIndex }),
+    [landingContent, mediaIndex],
+  )
+  const [capable, setCapable] = useState(false)
+  const [viewMode, setViewMode] = useAboutViewMode(capable)
 
-  const root = useRef<HTMLDivElement | null>(null)
-  const motionRef = useRef(createAboutMotionState())
-  useAboutScrollTimeline(root, motionRef.current)
+  useEffect(() => {
+    const media = window.matchMedia(ABOUT_ALTAR_MQ)
+    const update = () => setCapable(media.matches && isWebglAvailable())
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
 
-  const [materialsStep, constructionStep, testingStep] = content.process.steps
+  const showAltar = capable && viewMode === 'altar'
 
   return (
-    <AboutMotionContext.Provider value={motionRef.current}>
-      <div ref={root} data-about-root className="group/about relative isolate min-h-full">
-        <div
-          aria-hidden="true"
-          className="fixed inset-0 -z-30"
-          style={{
-            background:
-              'radial-gradient(ellipse 115% 78% at 50% 50%, var(--color-surface, #0e0f11) 0%, var(--color-bg, #0B0B0C) 56%)',
-          }}
-        />
-        <AboutCanvasGate root={root} modelUrl={assets.monolithModel} motion={motionRef.current} />
+    <div data-about-root className="relative isolate min-h-full">
+      {/* Fixed themed void behind everything. */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 -z-30"
+        style={{
+          background:
+            'radial-gradient(ellipse 115% 78% at 50% 50%, var(--color-surface, #0e0f11) 0%, var(--color-bg, #0B0B0C) 56%)',
+        }}
+      />
+      {/* Header scrim — the transparent fixed nav always reads over the scene. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-x-0 top-0 z-[5] h-32"
+        style={{
+          background:
+            'linear-gradient(to bottom, color-mix(in srgb, var(--color-bg) 80%, transparent), color-mix(in srgb, var(--color-bg) 40%, transparent), transparent)',
+        }}
+      />
 
-        <AboutHero hero={content.hero} heroImage={assets.heroImage} />
-        <AboutPhilosophy philosophy={content.philosophy} />
-        {materialsStep ? (
-          <AboutMaterials
-            step={materialsStep}
-            image1={assets.materialsImage1}
-            image2={assets.materialsImage2}
-          />
-        ) : null}
-        {constructionStep ? (
-          <AboutConstruction
-            step={constructionStep}
-            image1={assets.constructionImage1}
-            image2={assets.constructionImage2}
-          />
-        ) : null}
-        {testingStep ? (
-          <AboutTesting step={testingStep} stats={content.stats} testingImage={assets.testingImage} />
-        ) : null}
-        <AboutFinale finale={content.finale} finaleImage={assets.finaleBackdrop} />
-      </div>
-    </AboutMotionContext.Provider>
+      {capable ? <AboutHeader mode={viewMode} onChange={setViewMode} /> : null}
+
+      {showAltar ? (
+        <Suspense fallback={<div className="h-[100svh] w-full" aria-hidden="true" />}>
+          <AboutAltar content={content} assets={assets} />
+        </Suspense>
+      ) : (
+        <AboutMobilePage content={content} assets={assets} />
+      )}
+    </div>
   )
 }
 

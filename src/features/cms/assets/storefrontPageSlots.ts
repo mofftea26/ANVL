@@ -15,6 +15,9 @@ export type StorefrontPageDefinition = {
   name: string
   /** The storefront route this page maps to (documentation/admin only). */
   route: string
+  /** Full-bleed pages that paint their own fixed backdrops skip the shared
+   *  `pageBackground` slot (it would be a dead control in the editor). */
+  noPageBackground?: boolean
   slots: AssetSlotDefinition[]
 }
 
@@ -159,69 +162,70 @@ const RAW_STOREFRONT_PAGES: StorefrontPageDefinition[] = [
     key: 'about',
     name: 'About',
     route: '/about',
+    noPageBackground: true,
     slots: [
       {
         key: 'heroImage',
         label: 'Hero backdrop',
         kind: 'image',
         section: 'Hero',
-        hint: '16:9 landscape, 1920×1080. WebP ~80q, 250–500 KB. Sits behind the "Forged Under Pressure" headline.',
+        hint: '16:9 landscape, 2560×1440+ (from a 4K source). WebP ~80q, < 350 KB — this is the LCP image behind the "Forged Under Pressure" headline.',
       },
       {
-        key: 'monolithModel',
-        label: 'Monolith 3D model (GLB)',
+        key: 'anvilModel',
+        label: 'Anvil 3D model (GLB)',
         kind: 'model',
-        section: 'Monolith',
-        hint: '.glb, low-poly, < 5 MB. The persistent 3D emblem that drifts through the whole page. Falls back to a static duotone crest when unassigned.',
+        section: 'Altar (desktop 3D stage)',
+        hint: '.glb, ~30k tris, < 5 MB. The altar centrepiece — desktop (≥1280px) only; never downloaded on mobile. Falls back to the bundled default anvil when unassigned.',
+      },
+      {
+        key: 'hammerModel',
+        label: 'Hammer 3D model (GLB)',
+        kind: 'model',
+        section: 'Altar (desktop 3D stage)',
+        hint: '.glb, ~20k tris, < 4 MB. Swings onto the chosen orb. Falls back to the bundled default hammer when unassigned.',
+      },
+      {
+        key: 'forgeBackdrop',
+        label: 'Forge backdrop',
+        kind: 'image',
+        section: 'Altar (desktop 3D stage)',
+        hint: '16:9 landscape, 2400×1340+. A forge interior with an empty centre (the anvil sits there) — WebP ~80q, < 250 KB. Falls back to the bundled default when unassigned.',
       },
       {
         key: 'manifestoBackdrop',
-        label: 'Philosophy backdrop',
+        label: 'Creed backdrop',
         kind: 'image',
-        section: 'Philosophy',
-        hint: '16:9 landscape, 1920×1080. Smokey/abstract, WebP ~70q, < 350 KB. Behind the pinned manifesto lines.',
+        section: 'Creed',
+        hint: '16:9 landscape, 2560×1440. Near-abstract smoke — The Creed orb section (mobile) and its strike modal (desktop). WebP ~70q, < 400 KB.',
       },
       {
-        key: 'materialsImage1',
-        label: 'Materials — image 1',
+        key: 'materialsBackdrop',
+        label: 'Materials image',
         kind: 'image',
-        section: 'Process — Materials',
-        hint: '4:5 portrait, 1200×1600. Fabric weave macro, WebP ~80q, < 400 KB.',
+        section: 'Forge — Materials',
+        hint: '16:9 landscape, 2560×1440. Fabric weave macro — the materials card (mobile) and its strike modal (desktop). WebP ~80q, < 450 KB.',
       },
       {
-        key: 'materialsImage2',
-        label: 'Materials — image 2',
+        key: 'constructionBackdrop',
+        label: 'Construction image',
         kind: 'image',
-        section: 'Process — Materials',
-        hint: '4:5 portrait, 1200×1600. Fabric weave macro, WebP ~80q, < 400 KB.',
+        section: 'Forge — Construction',
+        hint: '16:9 landscape, 2560×1440. Seam/stitch macro — the construction card (mobile) and its strike modal (desktop). WebP ~80q, < 450 KB.',
       },
       {
-        key: 'constructionImage1',
-        label: 'Construction — image 1',
-        kind: 'image',
-        section: 'Process — Construction',
-        hint: '4:5 portrait, 1200×1600. Stitching/seam macro, WebP ~80q, < 400 KB. Hotspot annotations overlay this image.',
-      },
-      {
-        key: 'constructionImage2',
-        label: 'Construction — image 2',
-        kind: 'image',
-        section: 'Process — Construction',
-        hint: '4:5 portrait, 1200×1600. Stitching/seam macro, WebP ~80q, < 400 KB.',
-      },
-      {
-        key: 'testingImage',
+        key: 'testingBackdrop',
         label: 'Testing image',
         kind: 'image',
-        section: 'Process — Testing',
-        hint: '16:9 landscape, 1920×1080. Pressure/stress-test framing, WebP ~80q, < 400 KB. Sits behind the fun-facts/stat counters.',
+        section: 'Forge — Testing',
+        hint: '16:9 landscape, 2560×1440. Stress-test rig framing — the testing card (mobile) and its strike modal (desktop). WebP ~80q, < 450 KB.',
       },
       {
         key: 'finaleBackdrop',
         label: 'Finale backdrop',
         kind: 'image',
         section: 'Finale',
-        hint: '16:9 landscape, 1920×1080. Ember/triumphant, WebP ~70q, < 350 KB.',
+        hint: '16:9 landscape, 2560×1440. Ember field / triumphant glow, WebP ~70q, < 400 KB.',
       },
       ogImageSlot,
     ],
@@ -325,9 +329,13 @@ const RAW_STOREFRONT_PAGES: StorefrontPageDefinition[] = [
   },
 ]
 
-/** Every page gets the page-background slot first, then its own slots. */
+/** Every page gets the page-background slot first, then its own slots —
+ *  except full-bleed pages that opt out via `noPageBackground`. */
 export const STOREFRONT_PAGE_REGISTRY: StorefrontPageDefinition[] =
-  RAW_STOREFRONT_PAGES.map((p) => ({ ...p, slots: [pageBackgroundSlot, ...p.slots] }))
+  RAW_STOREFRONT_PAGES.map((p) => ({
+    ...p,
+    slots: p.noPageBackground ? p.slots : [pageBackgroundSlot, ...p.slots],
+  }))
 
 const STOREFRONT_PAGE_SLOTS: Record<string, AssetSlotDefinition[]> =
   Object.fromEntries(STOREFRONT_PAGE_REGISTRY.map((p) => [p.key, p.slots]))

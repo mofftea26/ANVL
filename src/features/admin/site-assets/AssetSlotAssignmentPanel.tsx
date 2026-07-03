@@ -1,6 +1,8 @@
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
-import type { AssetSlotDefinition } from '@/features/landingPages/assetSlots'
+import { matchesMediaKind } from '@/features/admin/media/filterMediaLibraryItems'
+import type { MediaPickerKind } from '@/shared/components/ui/MediaPickerField'
+import type { AssetSlotDefinition, AssetSlotKind } from '@/features/landingPages/assetSlots'
 
 export const ASSET_SLOT_UNASSIGNED = '__unassigned__'
 
@@ -17,6 +19,14 @@ export type AssetScopeOption = {
 export type AssetSlotMediaOption = {
   id: string
   filename: string
+  mime: string
+}
+
+/** SVG slots want image files; 'select' slots never reach the media list. */
+function slotMediaKind(kind: AssetSlotKind): MediaPickerKind {
+  if (kind === 'svg') return 'image'
+  if (kind === 'image' || kind === 'video' || kind === 'model') return kind
+  return 'any'
 }
 
 export interface AssetSlotAssignmentPanelProps {
@@ -68,7 +78,21 @@ export function AssetSlotAssignmentPanel({
                 </h3>
               ) : null}
               <div className="space-y-4">
-                {section.slots.map((slot) => (
+                {section.slots.map((slot) => {
+                  const currentId = assignments[slot.key]
+                  const kindMatches = mediaAssets.filter((asset) =>
+                    matchesMediaKind(asset.mime, slotMediaKind(slot.kind)),
+                  )
+                  // Always keep an already-assigned asset selectable even if it
+                  // no longer matches the slot's kind (avoids silently orphaning
+                  // a valid, older assignment when filtering was tightened).
+                  const current = currentId ? mediaAssets.find((a) => a.id === currentId) : undefined
+                  const mediaOptions =
+                    current && !kindMatches.some((a) => a.id === current.id)
+                      ? [current, ...kindMatches]
+                      : kindMatches
+
+                  return (
                   <div key={slot.key} className="space-y-1.5">
                     {slot.kind === 'select' ? (
                       <AdminFieldSelect
@@ -93,7 +117,7 @@ export function AssetSlotAssignmentPanel({
                         }
                         options={[
                           { value: ASSET_SLOT_UNASSIGNED, label: '— Not assigned —' },
-                          ...mediaAssets.map((asset) => ({
+                          ...mediaOptions.map((asset) => ({
                             value: asset.id,
                             label: asset.filename,
                           })),
@@ -106,7 +130,8 @@ export function AssetSlotAssignmentPanel({
                       </p>
                     ) : null}
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           ))}

@@ -8,11 +8,11 @@ import { resolveBookCover } from '@/features/story/components/book3d/bookConfig'
 import { Book } from '@/features/story/components/book3d/Book'
 import { OpenFlash } from '@/features/story/components/book3d/OpenFlash'
 import { EmberField } from '@/features/story/components/book3d/EmberField'
+import {
+  easeInOutCubic,
+  easeOutQuart,
+} from '@/features/story/components/book3d/bookGeometry'
 import { readThemeCssColor } from '@/shared/lib/themeColor'
-
-function easeInOutCubic(p: number): number {
-  return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
-}
 
 interface ChapterBook3DProps {
   chapter: StoryChapter
@@ -70,6 +70,7 @@ function BookScene({ chapter, spreads, current, originRect, onTurn }: ChapterBoo
   }, [originRect, viewport.width, viewport.height])
 
   const introT = useRef(0)
+  const leanT = useRef(0)
   const opened = current >= 1
   const [flashSeq, setFlashSeq] = useState(0)
   const prevOpened = useRef(opened)
@@ -81,16 +82,26 @@ function BookScene({ chapter, spreads, current, originRect, onTurn }: ChapterBoo
   useFrame((_state, delta) => {
     const g = introRef.current
     if (!g) return
-    introT.current = Math.min(1, introT.current + delta / 1.1)
-    const p = easeInOutCubic(introT.current)
+    // — The flight: one decisive pull from the shelf card to centre stage.
+    //   easeOutQuart arrives fast and glides into the settle, so the cover
+    //   (which cracks open during the final glide) reads as the same gesture —
+    //   pull the book to you and open it, not two separate steps.
+    introT.current = Math.min(1, introT.current + delta / 0.95)
+    const p = easeOutQuart(introT.current)
+    // — The lean-in: once the cover starts opening, the book eases a breath
+    //   closer and larger — the reader bending over the page.
+    leanT.current = Math.max(0, Math.min(1, leanT.current + (opened ? delta / 1.2 : -delta / 0.6)))
+    const lean = easeInOutCubic(leanT.current)
+
     const s0 = start?.scale ?? 0.82
-    g.scale.setScalar(s0 + (1 - s0) * p)
+    g.scale.setScalar((s0 + (1 - s0) * p) * (1 + 0.05 * lean))
     g.position.x = (start?.x ?? 0) * (1 - p)
-    // Arc gently upward mid-flight instead of travelling a straight line.
-    g.position.y = (start?.y ?? -0.2) * (1 - p) + Math.sin(p * Math.PI) * 0.12
-    g.position.z = -0.9 * (1 - p)
-    // Yaw in from the card with a slight roll that levels out on landing.
-    g.rotation.set(0, (1 - p) * 0.5, (1 - p) * -0.07)
+    // A higher arc mid-flight — the book is lifted off the shelf, not slid.
+    g.position.y = (start?.y ?? -0.2) * (1 - p) + Math.sin(p * Math.PI) * 0.17
+    g.position.z = -1.1 * (1 - p) + 0.22 * lean
+    // Sweeps in from the card three-quarter view, tipping up to face the
+    // reader, and levels its roll as it lands.
+    g.rotation.set((1 - p) * 0.16, (1 - p) * 0.85, (1 - p) * -0.11)
   })
 
   return (

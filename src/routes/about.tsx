@@ -24,6 +24,7 @@ export const Route = createFileRoute('/about')({
       seoDoc,
       assets,
       landingContent: projection.landingContent.about,
+      mediaIndex: projection.mediaIndex,
     }
   },
   head: ({ loaderData }) => {
@@ -50,8 +51,8 @@ export const Route = createFileRoute('/about')({
 })
 
 function AboutPage() {
-  const { assets, landingContent } = Route.useLoaderData()
+  const { assets, landingContent, mediaIndex } = Route.useLoaderData()
   useLenisScroll(true)
 
-  return <AboutExperience landingContent={landingContent} assets={assets} />
+  return <AboutExperience landingContent={landingContent} assets={assets} mediaIndex={mediaIndex} />
 }

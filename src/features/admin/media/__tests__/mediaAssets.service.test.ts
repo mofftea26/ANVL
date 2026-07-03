@@ -4,8 +4,36 @@ import {
   filterMediaAssets,
   formatCmsLibraryMediaObjectPath,
   mapMediaAssetRow,
+  resolveUploadMimeType,
 } from '../mediaAssets.service'
 import type { CmsMediaAsset } from '../mediaAssets.types'
+
+describe('resolveUploadMimeType', () => {
+  it('trusts a real, specific browser-reported mime', () => {
+    const file = new File(['x'], 'hero.png', { type: 'image/png' })
+    expect(resolveUploadMimeType(file)).toBe('image/png')
+  })
+
+  it('infers model/gltf-binary for .glb when file.type is empty', () => {
+    const file = new File(['x'], 'anvil.glb', { type: '' })
+    expect(resolveUploadMimeType(file)).toBe('model/gltf-binary')
+  })
+
+  it('infers model/gltf-binary for .glb when the browser reports the generic octet-stream mime (observed on Windows Chrome)', () => {
+    const file = new File(['x'], 'anvil.glb', { type: 'application/octet-stream' })
+    expect(resolveUploadMimeType(file)).toBe('model/gltf-binary')
+  })
+
+  it('infers model/gltf+json for .gltf', () => {
+    const file = new File(['x'], 'hammer.gltf', { type: 'application/octet-stream' })
+    expect(resolveUploadMimeType(file)).toBe('model/gltf+json')
+  })
+
+  it('falls back to octet-stream for an unrecognized generic upload', () => {
+    const file = new File(['x'], 'mystery.bin', { type: 'application/octet-stream' })
+    expect(resolveUploadMimeType(file)).toBe('application/octet-stream')
+  })
+})
 
 describe('formatCmsLibraryMediaObjectPath', () => {
   it('builds a library path with sanitized filename', () => {

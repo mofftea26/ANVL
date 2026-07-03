@@ -1,18 +1,7 @@
 /**
- * Cheap, SSR-safe WebGL capability probe. Returns `false` on the server and on
- * browsers/devices where a WebGL context cannot be created — callers fall back
- * to the flat (CSS) book reader so the saga is never blank.
+ * Re-export of the canonical WebGL capability probe — the implementation
+ * moved to `src/shared/webgl/isWebglAvailable.ts` when the site-wide dust
+ * layer landed (shared code must not import features). Kept so existing
+ * story/landing imports stay stable.
  */
-export function isWebglAvailable(): boolean {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return false
-  try {
-    const canvas = document.createElement('canvas')
-    const gl =
-      canvas.getContext('webgl2') ??
-      canvas.getContext('webgl') ??
-      canvas.getContext('experimental-webgl')
-    return Boolean(gl)
-  } catch {
-    return false
-  }
-}
+export { isWebglAvailable } from '@/shared/webgl/isWebglAvailable'

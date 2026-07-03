@@ -35,16 +35,20 @@ function extensionFor(file: File): string {
 }
 
 /**
- * Resolve the content-type to upload + store. Browsers frequently report an empty
- * `file.type` for `.glb`/`.gltf`, so infer model mimes from the extension —
- * otherwise the bucket's allowed-mime check rejects the upload.
+ * Resolve the content-type to upload + store. Browsers report no useful mime
+ * for `.glb`/`.gltf` — an empty `file.type` on some, the generic
+ * `application/octet-stream` on others (observed on Windows Chrome) — so both
+ * count as "unknown" here and fall back to inferring the model mime from the
+ * extension; otherwise the bucket's allowed-mime check rejects the upload.
  */
 export function resolveUploadMimeType(file: File): string {
-  if (file.type) return file.type
+  const reported = file.type
+  const isGeneric = !reported || reported === 'application/octet-stream'
+  if (!isGeneric) return reported
   const name = file.name.toLowerCase()
   if (name.endsWith('.glb')) return 'model/gltf-binary'
   if (name.endsWith('.gltf')) return 'model/gltf+json'
-  return 'application/octet-stream'
+  return reported || 'application/octet-stream'
 }
 
 /** Object path: `library/{stem}-{epoch}.{ext}` */

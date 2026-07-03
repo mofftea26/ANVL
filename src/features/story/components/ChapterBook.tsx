@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
@@ -41,7 +42,9 @@ export function ChapterBook({ chapter, onClose }: ChapterBookProps) {
   const spreads = useMemo(() => buildBookSpreads(chapter), [chapter])
   const lastIndex = spreads.length - 1
 
-  useDialogFocusTrap({ open: true, panelRef, onClose })
+  // Trap keys on `mounted` — the dialog only exists in the portal after mount,
+  // so the trap must (re)engage once the panel node is really there.
+  useDialogFocusTrap({ open: mounted, panelRef, onClose })
 
   // Client-only capability probe — drives 3D vs. flat selection.
   useEffect(() => {
@@ -54,11 +57,11 @@ export function ChapterBook({ chapter, onClose }: ChapterBookProps) {
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
-  // Auto-open the cover once the fly-in has landed (fly-in ≈ 1.1s) — opening
-  // mid-flight read as a glitch, so the beats are now: arrive, settle, open.
+  // Auto-open the cover as the flight glides into its settle (~80% arrived) —
+  // the pull-in and the opening read as ONE gesture: take the book, open it.
   useEffect(() => {
     if (spreads.length <= 1) return
-    const t = window.setTimeout(() => setCurrent((c) => (c === 0 ? 1 : c)), 1250)
+    const t = window.setTimeout(() => setCurrent((c) => (c === 0 ? 1 : c)), 750)
     return () => window.clearTimeout(t)
   }, [spreads.length])
 
@@ -88,13 +91,22 @@ export function ChapterBook({ chapter, onClose }: ChapterBookProps) {
 
   const use3D = mounted && webgl && wide && !reducedMotion
 
-  return (
+  // Portal to <body>: the overlay must escape `main`'s stacking context so it
+  // paints ABOVE the fixed top bar (no z-index inside `main` can beat a
+  // sibling fixed layer). SSR renders nothing; the dialog mounts client-side.
+  if (!mounted) return null
+
+  return createPortal(
     <div
       ref={panelRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
       className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-3 overflow-hidden bg-[color-mix(in_oklab,var(--color-bg)_88%,#000)]/95 p-3 backdrop-blur-sm sm:gap-4 sm:p-4"
+      style={{
+        backgroundImage:
+          'radial-gradient(ellipse 55% 45% at 50% 78%, color-mix(in srgb, var(--color-highlight) 9%, transparent) 0%, transparent 70%), radial-gradient(ellipse 120% 90% at 50% 0%, rgba(0,0,0,0.5) 0%, transparent 55%)',
+      }}
     >
       <h1 id={titleId} className="sr-only">
         {chapter.title}
@@ -132,6 +144,7 @@ export function ChapterBook({ chapter, onClose }: ChapterBookProps) {
         onPrev={() => setCurrent((c) => Math.max(0, c - 1))}
         onNext={() => setCurrent((c) => Math.min(lastIndex, c + 1))}
       />
-    </div>
+    </div>,
+    document.body,
   )
 }

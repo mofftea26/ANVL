@@ -18,7 +18,7 @@ export const PAGE_PLANE_Z = (TOP_Z + 0.002 + BOOK_T / 2 + 0.012) / 2
 export const HTML_DISTANCE = 1.24
 export const PAGE_PX_W = 430
 export const PAGE_PX_H = 610
-export const OPEN_DURATION = 1.05
+export const OPEN_DURATION = 1.25
 export const TURN_SPEED = 1.2
 /** Released paper falls/settles with this exponential rate (per second). */
 export const SETTLE_RATE = 9
@@ -45,6 +45,16 @@ export const CORNER_PEEL = 0.05
 
 export function easeInOutCubic(p: number): number {
   return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
+}
+
+/** Slow start, grand mid-sweep, long soft landing — the ceremonial cover swing. */
+export function easeInOutQuint(p: number): number {
+  return p < 0.5 ? 16 * p * p * p * p * p : 1 - Math.pow(-2 * p + 2, 5) / 2
+}
+
+/** Decisive arrival that glides into a settle — the book's flight to centre. */
+export function easeOutQuart(p: number): number {
+  return 1 - Math.pow(1 - p, 4)
 }
 
 export const clamp = (v: number, lo: number, hi: number) =>

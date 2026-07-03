@@ -2,9 +2,11 @@ import type { AssetConfig } from '@/features/cms/config/cmsSiteConfig.zod'
 import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
 import { resolveStorefrontPageAssets } from '@/features/cms/assets/resolvePublishedAssets'
 
-/** Map a storefront pathname to its asset page key (null = no backdrop, e.g. home). */
+/** Map a storefront pathname to its asset page key (null = no backdrop —
+ *  home and the About cinematic paint their own full-bleed backdrops). */
 export function pageKeyFromPathname(pathname: string): string | null {
   if (pathname === '/') return null
+  if (pathname === '/about') return null
   if (pathname.startsWith('/shop/')) return 'pdp'
   if (pathname === '/shop') return 'shop'
   if (pathname.startsWith('/account')) return 'account'
@@ -12,7 +14,6 @@ export function pageKeyFromPathname(pathname: string): string | null {
   if (pathname === '/story') return 'story'
   if (pathname === '/cart') return 'cart'
   if (pathname.startsWith('/checkout')) return 'checkout'
-  if (pathname === '/about') return 'about'
   if (pathname === '/contact') return 'contact'
   if (pathname === '/size-guide') return 'size-guide'
   if (pathname === '/care-guide') return 'care-guide'
@@ -20,7 +21,7 @@ export function pageKeyFromPathname(pathname: string): string | null {
 }
 
 /** Pages that ship a bundled default backdrop in /public/page-backgrounds. */
-const BUNDLED_DEFAULTS = new Set(['shop', 'story', 'account', 'auth', 'about'])
+const BUNDLED_DEFAULTS = new Set(['shop', 'story', 'account', 'auth'])
 
 /**
  * Resolve the page backdrop src for a pathname: a CMS-assigned `pageBackground`

@@ -20,6 +20,7 @@ import {
   FLICK_VELOCITY,
   FLUTTER_COUNT,
   LEAF_DROOP,
+  easeInOutQuint,
   makeGutterPageGeometry,
   makeLeafGeometry,
   makeRadialShadowTexture,
@@ -110,6 +111,8 @@ export function Book({
   const leafShadow = useRef<THREE.Mesh>(null)
   const rightPage = useRef<THREE.Mesh>(null)
   const leftPage = useRef<THREE.Mesh>(null)
+  /** Decaying roll kick when a leaf turns — the book carries the paper's weight. */
+  const turnRoll = useRef(0)
 
   // Open-book page surfaces curve into the binding (soft gutter, no hard ridge).
   const geos = useMemo(() => {
@@ -177,6 +180,8 @@ export function Book({
     setTurnInfo(info)
     peel.current.nextT = 0
     peel.current.prevT = 0
+    // The book takes the paper's weight: a small roll kick that decays.
+    turnRoll.current = info.dir * 0.016
   }
 
   useEffect(() => {
@@ -298,11 +303,12 @@ export function Book({
   }
 
   useFrame((state, delta) => {
-    // --- Cover swing: timed, eased, with a soft landing bounce. ---
+    // --- Cover swing: ceremonial — slow crack, grand mid-sweep, long soft
+    //     landing (quint), finished by the settle bounce below. ---
     const dirOpen = open ? 1 : -1
     openT.current = clamp(openT.current + (dirOpen * delta) / OPEN_DURATION, 0, 1)
     const t = openT.current
-    const oa = easeInOutCubic(t)
+    const oa = easeInOutQuint(t)
     if (coverHinge.current) {
       // Tiny settle: the cover lifts ~2.5° and lands again as it reaches flat.
       const bounce = t > 0.84 ? Math.sin(((t - 0.84) / 0.16) * Math.PI) * 0.045 : 0
@@ -439,12 +445,16 @@ export function Book({
     r.position.z = -PAGE_PLANE_Z * oa // pages land on z=0 (see PAGE_PLANE_Z)
     const k = Math.min(1, delta * 5)
     if (open) {
-      // Lifts gently as it opens, then sits perfectly still while reading — the
-      // page DOM tracks the meshes per frame, so any idle drift would make the
-      // text float (the user found that unfriendly). Dead-on, no tilt.
+      // Lifts gently as it opens, then sits still while reading — the page DOM
+      // tracks the meshes per frame, so idle drift would make the text float.
+      // The one exception: each leaf turn kicks a small decaying roll, so the
+      // book visibly takes the paper's weight while the spread is already in
+      // motion (never while the reader is on still text).
+      turnRoll.current *= Math.exp(-delta * 2.6)
       const lift = Math.sin(oa * Math.PI) * 0.07
       r.rotation.y += (0 - r.rotation.y) * k
       r.rotation.x += (0 - r.rotation.x) * k // dead-on — tilt also skews the CSS layer
+      r.rotation.z += (turnRoll.current - r.rotation.z) * k
       r.position.y += (lift - r.position.y) * k
     } else {
       const ty = hovered ? 0.1 : 0.5 + (spin ? Math.sin(state.clock.elapsedTime * 0.5) * 0.12 : 0)

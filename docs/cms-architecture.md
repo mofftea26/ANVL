@@ -11,7 +11,7 @@ The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing p
 | Fonts | `/admin/fonts` | `cms_settings.font_config` |
 | Assets | `/admin/assets` | `cms_settings.asset_config` + `cms_media_assets` |
 | Landing Content | `/admin/content` | `cms_settings.landing_content` (per-landing-key copy blobs) + reads/writes `asset_config.drops` for non-tenet scene media |
-| About Page | `/admin/about` | `cms_settings.landing_content.about` (hero/philosophy/process/stats/finale copy) — imagery + the monolith GLB assign on `/admin/assets` (`asset_config.pages.about`) |
+| About Page | `/admin/about` | `cms_settings.landing_content.about` — hero + marquee copy and the **orbs array** (free-form sections with label/color/copy/lines/points/stats/CTAs/`mediaId`; add/edit/remove, The Oath tenets ownership contract). Anvil/hammer GLBs + page imagery assign on `/admin/assets` (`asset_config.pages.about`) |
 | Story | `/admin/story` | `story_chapters` + `story_acts` + `story_cast` (+ `story-media` bucket) |
 | Settings | `/admin/settings` | Session + local reset only |
 
@@ -214,7 +214,7 @@ Slots are **defined in code** per drop. The CMS assigns media library IDs to slo
 
 - **General slots** (`GENERAL_ASSET_SLOTS`): emblem fallback, loading emblem, shared textures
 - **Per-drop slots** (`DROP_ASSET_SLOTS`): e.g. `the-oath` → hero media, drop logo, product images. **Tenet images are not slots** — they live in `landing_content['the-oath'].tenets.items[].mediaId`.
-- **Page slots** (`asset_config.pages`): non-landing storefront pages (e.g. shop hero backdrop). `about` is the richest example — hero backdrop, the persistent **monolith 3D model (GLB)**, philosophy backdrop, two materials/two construction close-ups (the construction pair carries CMS-authored hotspot annotations from `landing_content.about.process.steps[1].hotspots`), a testing backdrop, and a finale backdrop (`src/features/cms/assets/storefrontPageSlots.ts`). The monolith only mounts its WebGL layer once a GLB is assigned — no CMS assignment, no 3D download, page reads fine either way.
+- **Page slots** (`asset_config.pages`): non-landing storefront pages (e.g. shop hero backdrop). `about` is the richest example — hero backdrop, the **anvil + hammer 3D models (GLB)** for the desktop Forge Altar stage, philosophy backdrop, materials/construction/testing images (mobile section cards + desktop strike modals), and a finale backdrop (`src/features/cms/assets/storefrontPageSlots.ts`). The GLB slots fall back to bundled defaults in `public/about/`, so the altar works before any upload; About also opts out of the shared `pageBackground` slot (`noPageBackground` — it paints its own fixed void).
 
 `resolvePublishedAssets` merges `asset_config.general` + `asset_config.drops[activeKey]`, resolves IDs via `media_index`, and falls back to code defaults in each page's `*Assets.ts` file.
 

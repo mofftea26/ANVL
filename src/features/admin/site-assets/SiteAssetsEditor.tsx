@@ -154,6 +154,7 @@ export function SiteAssetsEditor() {
       (mediaQuery.data ?? []).map((asset) => ({
         id: asset.id,
         filename: asset.filename,
+        mime: asset.mime,
       })),
     [mediaQuery.data],
   )

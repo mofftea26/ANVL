@@ -13,7 +13,8 @@ export const MEDIA_LIBRARY_MIME_FILTERS: ReadonlyArray<{
   { id: 'video', label: 'Video' },
 ]
 
-function matchesKind(mime: string, kind: MediaPickerKind): boolean {
+/** Whether an asset's mime type satisfies a slot/picker kind restriction. */
+export function matchesMediaKind(mime: string, kind: MediaPickerKind): boolean {
   if (kind === 'image') return mime.startsWith('image/')
   if (kind === 'video') return mime.startsWith('video/')
   if (kind === 'model') return mime.startsWith('model/') || mime.includes('gltf')
@@ -53,7 +54,7 @@ export function filterMediaLibraryItems(
   const effectiveMime =
     kind === 'image' ? 'image' : kind === 'video' ? 'video' : mimeFilter
   return filterMediaAssets(assets, search, effectiveMime).filter((asset) =>
-    matchesKind(asset.mime, kind),
+    matchesMediaKind(asset.mime, kind),
   )
 }
 

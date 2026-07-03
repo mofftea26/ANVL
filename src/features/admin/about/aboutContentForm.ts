@@ -1,6 +1,7 @@
 import {
   aboutLandingContentSchema,
   type AboutLandingContent,
+  type AboutOrb,
 } from '@/features/about/content/aboutContent.schema'
 import { ABOUT_DEFAULT_CONTENT } from '@/features/about/content/aboutContent.defaults'
 
@@ -9,29 +10,42 @@ import { ABOUT_DEFAULT_CONTENT } from '@/features/about/content/aboutContent.def
  *
  * The form is all flat strings (React Hook Form friendly); blank means "use
  * the code default" — defaults render as input placeholders, never as values,
- * so editors always see what they actually overrode. Conversion helpers map
- * form values ⇄ the Zod-validated CMS slice. Mirrors `landingContentForm.ts`.
+ * so editors always see what they actually overrode. Orbs are a dynamic list
+ * (add / edit / remove — the same contract as The Oath's tenets): saving a
+ * different orb count means the CMS owns the list. Conversion helpers map
+ * form values ⇄ the Zod-validated CMS slice.
  */
 
-export interface AboutHotspotFormValues {
+export interface AboutOrbPointFormValues {
   label: string
   description: string
-  /** % position over the construction image, as text. */
-  x: string
-  y: string
 }
 
-export interface AboutProcessStepFormValues {
-  eyebrow: string
-  title: string
-  body: string
-  hotspots: AboutHotspotFormValues[]
-}
-
-export interface AboutStatFormValues {
+export interface AboutOrbStatFormValues {
   label: string
   value: string
   suffix: string
+}
+
+export interface AboutOrbFormValues {
+  label: string
+  /** #RRGGBB (blank = designed default tint). */
+  color: string
+  eyebrow: string
+  title: string
+  body: string
+  detail: string
+  /** One oversized line per row (max 8). */
+  linesText: string
+  points: AboutOrbPointFormValues[]
+  stats: AboutOrbStatFormValues[]
+  primaryCtaLabel: string
+  primaryCtaHref: string
+  secondaryCtaLabel: string
+  secondaryCtaHref: string
+  tagline: string
+  /** Media library id of the orb's section image. */
+  mediaId: string
 }
 
 export interface AboutContentFormValues {
@@ -45,55 +59,79 @@ export interface AboutContentFormValues {
     secondaryCtaHref: string
     scrollCue: string
   }
-  philosophy: {
-    eyebrow: string
-    /** One philosophy line per row (max 6). */
-    linesText: string
-  }
-  process: {
-    eyebrow: string
-    title: string
-    /** Fixed three: materials, construction, testing. */
-    steps: AboutProcessStepFormValues[]
-  }
-  stats: {
-    eyebrow: string
-    title: string
-    items: AboutStatFormValues[]
-  }
-  finale: {
-    eyebrow: string
-    title: string
-    body: string
-    primaryCtaLabel: string
-    primaryCtaHref: string
-    secondaryCtaLabel: string
-    secondaryCtaHref: string
-    tagline: string
+  orbs: AboutOrbFormValues[]
+  marquee: {
+    text: string
   }
 }
 
-const STEP_COUNT = ABOUT_DEFAULT_CONTENT.process.steps.length
-const HOTSPOTS_PER_STEP = 3
+const DEFAULT_ORB_COUNT = ABOUT_DEFAULT_CONTENT.orbs.length
 
 function s(value: string | undefined): string {
   return value ?? ''
 }
 
-function blankHotspot(): AboutHotspotFormValues {
-  return { label: '', description: '', x: '', y: '' }
+export function createBlankOrbFormValues(): AboutOrbFormValues {
+  return {
+    label: '',
+    color: '',
+    eyebrow: '',
+    title: '',
+    body: '',
+    detail: '',
+    linesText: '',
+    points: [],
+    stats: [],
+    primaryCtaLabel: '',
+    primaryCtaHref: '',
+    secondaryCtaLabel: '',
+    secondaryCtaHref: '',
+    tagline: '',
+    mediaId: '',
+  }
 }
 
-function blankStat(): AboutStatFormValues {
+export function createBlankPointFormValues(): AboutOrbPointFormValues {
+  return { label: '', description: '' }
+}
+
+export function createBlankStatFormValues(): AboutOrbStatFormValues {
   return { label: '', value: '', suffix: '' }
+}
+
+function orbToFormValues(orb: AboutOrb | undefined): AboutOrbFormValues {
+  return {
+    label: s(orb?.label),
+    color: s(orb?.color),
+    eyebrow: s(orb?.eyebrow),
+    title: s(orb?.title),
+    body: s(orb?.body),
+    detail: s(orb?.detail),
+    linesText: (orb?.lines ?? []).join('\n'),
+    points: (orb?.points ?? []).map((p) => ({
+      label: s(p.label),
+      description: s(p.description),
+    })),
+    stats: (orb?.stats ?? []).map((st) => ({
+      label: s(st.label),
+      value: s(st.value),
+      suffix: s(st.suffix),
+    })),
+    primaryCtaLabel: s(orb?.primaryCta?.label),
+    primaryCtaHref: s(orb?.primaryCta?.href),
+    secondaryCtaLabel: s(orb?.secondaryCta?.label),
+    secondaryCtaHref: s(orb?.secondaryCta?.href),
+    tagline: s(orb?.tagline),
+    mediaId: s(orb?.mediaId),
+  }
 }
 
 /** Stored CMS slice (raw) → editable form values ('' = not overridden). */
 export function toAboutFormValues(raw: unknown): AboutContentFormValues {
   const parsed = aboutLandingContentSchema.safeParse(raw)
   const cms: AboutLandingContent = parsed.success ? parsed.data : {}
-  const cmsSteps = cms.process?.steps
-  const cmsStats = cms.stats?.items
+  const cmsOrbs = cms.orbs
+  const orbCount = cmsOrbs && cmsOrbs.length > 0 ? cmsOrbs.length : DEFAULT_ORB_COUNT
 
   return {
     hero: {
@@ -106,63 +144,11 @@ export function toAboutFormValues(raw: unknown): AboutContentFormValues {
       secondaryCtaHref: s(cms.hero?.secondaryCta?.href),
       scrollCue: s(cms.hero?.scrollCue),
     },
-    philosophy: {
-      eyebrow: s(cms.philosophy?.eyebrow),
-      linesText: (cms.philosophy?.lines ?? []).join('\n'),
-    },
-    process: {
-      eyebrow: s(cms.process?.eyebrow),
-      title: s(cms.process?.title),
-      steps: Array.from({ length: STEP_COUNT }, (_, i) => {
-        const step = cmsSteps?.[i]
-        const hsCount = Math.max(step?.hotspots?.length ?? 0, HOTSPOTS_PER_STEP)
-        return {
-          eyebrow: s(step?.eyebrow),
-          title: s(step?.title),
-          body: s(step?.body),
-          hotspots: Array.from({ length: hsCount }, (_, h) => {
-            const hs = step?.hotspots?.[h]
-            return {
-              label: s(hs?.label),
-              description: s(hs?.description),
-              x: typeof hs?.x === 'number' ? String(hs.x) : '',
-              y: typeof hs?.y === 'number' ? String(hs.y) : '',
-            }
-          }),
-        }
-      }),
-    },
-    stats: {
-      eyebrow: s(cms.stats?.eyebrow),
-      title: s(cms.stats?.title),
-      items:
-        cmsStats && cmsStats.length > 0
-          ? cmsStats.map((item) => ({
-              label: s(item.label),
-              value: s(item.value),
-              suffix: s(item.suffix),
-            }))
-          : ABOUT_DEFAULT_CONTENT.stats.items.map(() => blankStat()),
-    },
-    finale: {
-      eyebrow: s(cms.finale?.eyebrow),
-      title: s(cms.finale?.title),
-      body: s(cms.finale?.body),
-      primaryCtaLabel: s(cms.finale?.primaryCta?.label),
-      primaryCtaHref: s(cms.finale?.primaryCta?.href),
-      secondaryCtaLabel: s(cms.finale?.secondaryCta?.label),
-      secondaryCtaHref: s(cms.finale?.secondaryCta?.href),
-      tagline: s(cms.finale?.tagline),
+    orbs: Array.from({ length: orbCount }, (_, i) => orbToFormValues(cmsOrbs?.[i])),
+    marquee: {
+      text: s(cms.marquee?.text),
     },
   }
-}
-
-export function createBlankHotspotFormValues(): AboutHotspotFormValues {
-  return blankHotspot()
-}
-
-export function createBlankStatFormValues(): AboutStatFormValues {
-  return blankStat()
 }
 
 function keep(value: string): string | undefined {
@@ -177,13 +163,6 @@ function keepCta(label: string, href: string): { label?: string; href?: string }
   return { ...(l ? { label: l } : {}), ...(h ? { href: h } : {}) }
 }
 
-function keepNum(value: string): number | undefined {
-  const t = value.trim()
-  if (t.length === 0) return undefined
-  const n = Number(t)
-  return Number.isFinite(n) ? n : undefined
-}
-
 function prune<T extends Record<string, unknown>>(obj: T): T | undefined {
   const hasValue = Object.values(obj).some((v) => v !== undefined)
   if (!hasValue) return undefined
@@ -194,54 +173,57 @@ function prune<T extends Record<string, unknown>>(obj: T): T | undefined {
   return out as T
 }
 
-function hotspotSliceItems(hotspots: AboutHotspotFormValues[]) {
-  const items = hotspots
-    .map((h) =>
-      prune({
-        label: keep(h.label),
-        description: keep(h.description),
-        x: keepNum(h.x),
-        y: keepNum(h.y),
-      }),
-    )
-    .filter((h): h is NonNullable<typeof h> => h !== undefined)
+function pointSliceItems(points: AboutOrbPointFormValues[]) {
+  const items = points
+    .map((p) => prune({ label: keep(p.label), description: keep(p.description) }))
+    .filter((p): p is NonNullable<typeof p> => p !== undefined)
   return items.length > 0 ? items : undefined
 }
 
-function stepSliceItem(step: AboutProcessStepFormValues) {
-  return prune({
-    eyebrow: keep(step.eyebrow),
-    title: keep(step.title),
-    body: keep(step.body),
-    hotspots: hotspotSliceItems(step.hotspots),
-  })
+function statSliceItems(stats: AboutOrbStatFormValues[]) {
+  const items = stats
+    .map((st) => prune({ label: keep(st.label), value: keep(st.value), suffix: keep(st.suffix) }))
+    .filter((st): st is NonNullable<typeof st> => st !== undefined)
+  return items.length > 0 ? items : undefined
 }
 
-function statSliceItem(stat: AboutStatFormValues) {
-  return prune({
-    label: keep(stat.label),
-    value: keep(stat.value),
-    suffix: keep(stat.suffix),
-  })
+function orbSliceItem(orb: AboutOrbFormValues): AboutOrb {
+  const linesArr = orb.linesText
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .slice(0, 8)
+
+  return (
+    prune({
+      label: keep(orb.label),
+      color: keep(orb.color),
+      eyebrow: keep(orb.eyebrow),
+      title: keep(orb.title),
+      body: keep(orb.body),
+      detail: keep(orb.detail),
+      lines: linesArr.length > 0 ? linesArr : undefined,
+      points: pointSliceItems(orb.points),
+      stats: statSliceItems(orb.stats),
+      primaryCta: keepCta(orb.primaryCtaLabel, orb.primaryCtaHref),
+      secondaryCta: keepCta(orb.secondaryCtaLabel, orb.secondaryCtaHref),
+      tagline: keep(orb.tagline),
+      mediaId: keep(orb.mediaId),
+    }) ?? {}
+  )
 }
 
 /**
  * Form values → minimal CMS slice (blank fields dropped so the stored blob
- * only carries real overrides). Validated against the page schema.
+ * only carries real overrides). Orbs are stored whenever any orb carries an
+ * override or the count differs from the designed default — the CMS then owns
+ * the list (add/remove/reorder). Validated against the page schema.
  */
 export function toAboutContentSlice(values: AboutContentFormValues): AboutLandingContent {
-  const lines = values.philosophy.linesText
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0)
-    .slice(0, 6)
-
-  const stepItems = values.process.steps.map((step) => stepSliceItem(step))
-  const hasStepOverride = stepItems.some((item) => item && Object.keys(item).length > 0)
-
-  const statItems = values.stats.items
-    .map((stat) => statSliceItem(stat))
-    .filter((item): item is NonNullable<typeof item> => item !== undefined)
+  const orbItems = values.orbs.map((orb) => orbSliceItem(orb))
+  const hasOrbOverride =
+    orbItems.some((item) => Object.keys(item).length > 0) ||
+    orbItems.length !== DEFAULT_ORB_COUNT
 
   const slice: AboutLandingContent = {
     hero: prune({
@@ -252,32 +234,9 @@ export function toAboutContentSlice(values: AboutContentFormValues): AboutLandin
       secondaryCta: keepCta(values.hero.secondaryCtaLabel, values.hero.secondaryCtaHref),
       scrollCue: keep(values.hero.scrollCue),
     }),
-    philosophy: prune({
-      eyebrow: keep(values.philosophy.eyebrow),
-      lines: lines.length > 0 ? lines : undefined,
-    }),
-    process: hasStepOverride || keep(values.process.eyebrow) || keep(values.process.title)
-      ? prune({
-          eyebrow: keep(values.process.eyebrow),
-          title: keep(values.process.title),
-          steps: stepItems.map((item) => item ?? {}),
-        })
-      : undefined,
-    stats:
-      statItems.length > 0 || keep(values.stats.eyebrow) || keep(values.stats.title)
-        ? prune({
-            eyebrow: keep(values.stats.eyebrow),
-            title: keep(values.stats.title),
-            items: statItems.length > 0 ? statItems : undefined,
-          })
-        : undefined,
-    finale: prune({
-      eyebrow: keep(values.finale.eyebrow),
-      title: keep(values.finale.title),
-      body: keep(values.finale.body),
-      primaryCta: keepCta(values.finale.primaryCtaLabel, values.finale.primaryCtaHref),
-      secondaryCta: keepCta(values.finale.secondaryCtaLabel, values.finale.secondaryCtaHref),
-      tagline: keep(values.finale.tagline),
+    orbs: hasOrbOverride ? orbItems : undefined,
+    marquee: prune({
+      text: keep(values.marquee.text),
     }),
   }
 

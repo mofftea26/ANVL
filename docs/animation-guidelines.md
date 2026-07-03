@@ -167,16 +167,21 @@ Mobile / tablet / reduced motion: `buildOathStatic.ts` — no pins, no WebGL; st
 
 ---
 
-## The About page (second worked example — a loaded GLB, not an extruded SVG)
+## The About page — "The Forge Altar" (interaction-driven, not scroll-driven)
 
-`src/features/about/` is a standalone feature (not a landing page — it's not registered in `landingPages/registry.ts`, since About is a fixed page, never swapped like a drop). It mirrors The Oath's architecture almost exactly:
+`src/features/about/` is a standalone feature (not in `landingPages/registry.ts` — About is a fixed page, never swapped like a drop) and deliberately **does not** reuse The Oath's scroll-film language. Two experiences behind one CMS contract:
 
-- `aboutBreakpoints.ts` — same two-branch contract as `oathBreakpoints.ts` (`ABOUT_DESKTOP_CINEMATIC_MQ` ≥1280px, `ABOUT_STATIC_MQ` otherwise/reduced-motion), renamed constants.
-- `hooks/useAboutScrollTimeline.ts` — the `matchMedia` timeline sequencing `motion/buildAbout*.ts` (hero, philosophy, materials, construction, testing, finale) + `buildAboutStatic.ts`.
-- `motion/aboutMotionState.ts` — the same mutable-ref bridge pattern, simplified (no pointer/cursor tracking — About's monolith is scroll-driven only, not cursor-reactive).
-- `webgl/AboutCanvasGate.tsx` → `AboutCanvas.tsx` → `AboutMonolith.tsx` — the **first GLB consumer** in the app (drei's `useGLTF`, vs. The Oath's monolith which is a hand-authored SVG extruded live via `AnvlOath3D`). Because a GLB's material palette is unknown ahead of time, `AboutMonolith` tags each mesh material with a tone (`primary`/`mid`/`highlight`) on load so the finale colour-lerp still works generically. The gate only mounts (and only then pulls the `vendor-three` chunk) once a monolith GLB is CMS-assigned on `/admin/assets` — an unassigned slot means zero WebGL cost, not a broken page.
-- `content/aboutContent.schema.ts` + `resolveAboutContent.ts` — same CMS-override-with-code-defaults contract, simpler than Oath's (no media IDs live inside the content schema — all About imagery is asset-slot based via `resolveStorefrontPageAssets`, not embedded `mediaId` fields).
-- Only `philosophy` pins (`pin: true`); `hero`, the three forge-process scenes, and the finale scrub without pinning (scroll-through parallax) — a deliberately lighter scroll-jack footprint than The Oath's several pinned scenes.
+- **Desktop altar** (`altar/AboutAltar.tsx`, ≥1280px + no reduced motion + WebGL, lazy chunk): a **non-scrollable** 100svh stage — a normalized, **grabbable** anvil GLB (`altar/useFittedGltf.ts`, drag to spin with inertia; bundled default `public/about/anvil.glb`, CMS-overridable) under a shader **aurora** (`altar/shaders/aurora.ts`), with the CMS-defined orbs in slow orbit (`altar/AltarOrb.tsx` — per-orb CMS color, fresnel halo + ember heart, drei `Html` labels; orbit params derived from index/count in `altar/altarOrbs.ts`). Selecting an orb (click, or its top picker chip for keyboard/AT) runs a GSAP strike timeline against the mutable `altar/altarState.ts` bridge: the orb glides to the anvil face, the hammer GLB **winds up, drops, and recoils** on a handle-end pivot constructed one arm-length from the orb seat (so the head lands on the orb), and the impact **explodes** the orb — shard burst + shockwave ring in the orb's color (`altar/AltarBurst.tsx`) plus flash light spike, camera shake, and a dust glint — then a focus-trapped modal (`altar/AboutOrbModal.tsx`) forges open out of the burst, tinted by the orb. Closing re-materializes the orb in orbit. No ScrollTrigger anywhere — event-driven GSAP timelines + `useFrame` reads only. The footer is CSS-hidden at `xl+` on `/about` so nothing scrolls.
+- **Normal page** (`mobile/AboutMobilePage.tsx`): mobile/tablet, reduced-motion, no-WebGL, and SSR/first-paint all render a clean scrolling About page (framer-motion `RevealOnScroll` only — no GSAP, no pins). **The orbs render as stacked sections** in order, each accented by its orb color.
+- `content/aboutContent.schema.ts` + `resolveAboutContent.ts` — the CMS-override-with-code-defaults contract. The **orbs array is the content model** (add/edit/remove in `/admin/about`, tenets-style list ownership); per-orb images resolve from `mediaId` via the media index, falling back to the orb's page asset slot (`orbImage()`); the anvil/hammer GLBs stay asset-slot based via `resolveStorefrontPageAssets` (`asset_config.pages.about`).
+
+## Site-wide cursor dust (`src/shared/webgl/`)
+
+The pointer-parting dust is one shared implementation used everywhere:
+
+- `DustField.tsx` + `dustShaders.ts` — the canonical `<points>` field; mounts inside **any** R3F canvas and lerps toward a mutable `DustDrive` (lift/glint/pointer targets). Colors read from the theme's `--particle-*` CSS vars.
+- `SiteDustGate.tsx` → lazy `SiteDustLayer.tsx` — the global layer mounted once in `__root.tsx` for every storefront route: own passive pointer listener, gated to fine-pointer + no-reduced-motion + WebGL, idle-deferred so it never competes with LCP. Pages can modulate it through `siteDustState` (`pulseSiteDust()`).
+- Routes with their own scene canvas (home's Oath landing, the About altar) are excluded from the global layer and mount `DustField` inside their canvas instead (Oath maps its motion state onto a drive via `OathDustDriver`) — one field, never two.
 
 ---
 
