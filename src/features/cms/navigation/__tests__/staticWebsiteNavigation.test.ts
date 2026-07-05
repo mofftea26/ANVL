@@ -17,24 +17,36 @@ describe('staticWebsiteNavigation', () => {
     expect(hrefs.some((h) => h.startsWith('/drop/'))).toBe(false)
   })
 
-  it('includes Story and Care Guide in header and footer', () => {
+  it('includes Story in the header, keeps Care/Size Guide out of the topbar', () => {
     const header = staticHeaderNavLinks()
     const footer = staticFooterNavLinks()
 
     expect(header.some((l) => l.href === '/story' && l.label === 'Story')).toBe(
       true,
     )
-    expect(
-      header.some((l) => l.href === '/care-guide' && l.label === 'Care Guide'),
-    ).toBe(true)
+    expect(header.some((l) => l.href === '/care-guide')).toBe(false)
+    expect(header.some((l) => l.href === '/size-guide')).toBe(false)
     expect(footer.some((l) => l.href === '/story')).toBe(true)
     expect(footer.some((l) => l.href === '/care-guide')).toBe(true)
+    expect(footer.some((l) => l.href === '/size-guide')).toBe(true)
   })
 
   it('includes core storefront routes', () => {
     const headerHrefs = staticHeaderNavLinks().map((l) => l.href)
-    expect(headerHrefs).toEqual(
-      expect.arrayContaining(['/shop', '/about', '/size-guide']),
+    expect(headerHrefs).toEqual(expect.arrayContaining(['/shop', '/about', '/story']))
+
+    const footerHrefs = staticFooterNavLinks().map((l) => l.href)
+    expect(footerHrefs).toEqual(
+      expect.arrayContaining([
+        '/size-guide',
+        '/care-guide',
+        '/faq',
+        '/contact',
+        '/returns',
+        '/privacy',
+        '/terms',
+        '/cookie-policy',
+      ]),
     )
   })
 

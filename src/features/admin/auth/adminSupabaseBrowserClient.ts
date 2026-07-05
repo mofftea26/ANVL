@@ -69,7 +69,12 @@ export function getAdminSupabaseBrowserClient(): SupabaseClient | null {
   store.__anvlAdminSupabaseClient = createAnvlSupabaseClient(env, {
     auth: {
       persistSession: true,
-      autoRefreshToken: true,
+      // The HttpOnly session cookie (adminAuthSession.server.ts) is the sole
+      // authority for refresh-token rotation — AdminAuthProvider re-applies
+      // fresh tokens from the server on login/mount/heartbeat via setSession().
+      // Letting GoTrue also auto-refresh here would race the server for the
+      // same one-time-use refresh token and eventually desync the two.
+      autoRefreshToken: false,
       detectSessionInUrl: false,
       storageKey: ADMIN_SUPABASE_AUTH_STORAGE_KEY,
     },

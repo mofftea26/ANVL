@@ -1,5 +1,4 @@
 import type { LinkProps } from '@tanstack/react-router'
-import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminForgedLink } from '@/features/admin/components/AdminForgedLink'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
@@ -13,11 +12,7 @@ import { LandingPagePickerCard } from '@/features/admin/landing-picker/LandingPa
 const dashboardCards = adminNavItems.filter((i) => i.href !== '/admin')
 
 export function AdminDashboardPageRoute() {
-  return (
-    <ProtectedAdminRoute>
-      <DashboardContent />
-    </ProtectedAdminRoute>
-  )
+  return <DashboardContent />
 }
 
 function DashboardContent() {

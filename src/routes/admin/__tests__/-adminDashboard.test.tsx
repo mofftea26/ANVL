@@ -6,12 +6,6 @@ import { AdminDashboardPageRoute } from '../-adminDashboard'
 
 const dashboardCards = adminNavItems.filter((i) => i.href !== '/admin')
 
-vi.mock('@/features/admin/auth/ProtectedAdminRoute', () => ({
-  ProtectedAdminRoute: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-}))
-
 vi.mock('@/features/admin/components/AdminLayout', () => ({
   AdminLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))

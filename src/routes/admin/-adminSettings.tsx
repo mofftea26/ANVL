@@ -3,14 +3,8 @@ import { useId, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
-import { ProtectedAdminRoute } from '@/features/admin/auth/ProtectedAdminRoute'
-import {
-  isAdminLoginConfigured,
-  verifyAdminPassword,
-} from '@/features/admin/auth/adminAuth.storage'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import { resetAllLocalCmsKeys } from '@/features/admin/lib/resetLocalCms'
-import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'
 import { AdminInput } from '@/features/admin/components/AdminInput'
@@ -31,11 +25,7 @@ function formatSessionAt(iso: string | undefined) {
 }
 
 export function AdminSettingsPageRoute() {
-  return (
-    <ProtectedAdminRoute>
-      <SettingsPage />
-    </ProtectedAdminRoute>
-  )
+  return <SettingsPage />
 }
 
 function SettingsPage() {
@@ -43,8 +33,6 @@ function SettingsPage() {
   const [confirmReset, setConfirmReset] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-
-  const supabaseMode = Boolean(getSupabasePublicEnv())
 
   const descId = useId()
   const passwordFieldId = useId()
@@ -61,30 +49,15 @@ function SettingsPage() {
     confirmPassword.length > 0 &&
     password === confirmPassword
 
-  const authMatches = supabaseMode
-    ? passwordsMatch
-    : passwordsMatch && verifyAdminPassword(password)
-
   const matchError =
     confirmPassword.length > 0 && password !== confirmPassword
       ? 'Passwords must match.'
       : undefined
 
-  const authError =
-    !supabaseMode && passwordsMatch && !verifyAdminPassword(password)
-      ? 'Does not match the admin password for this workspace.'
-      : undefined
-
-  const canSubmit = supabaseMode
-    ? passwordsMatch && !matchError
-    : isAdminLoginConfigured && Boolean(authMatches) && !matchError
+  const canSubmit = passwordsMatch && !matchError
 
   const sessionUserLabel =
-    session == null
-      ? '—'
-      : session.kind === 'legacy'
-        ? session.username
-        : `${session.displayName} (${session.email})`
+    session == null ? '—' : `${session.displayName} (${session.email})`
 
   const settingsRail = (
     <>
@@ -95,9 +68,7 @@ function SettingsPage() {
       >
         <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">
           Resetting clears this browser&rsquo;s cached CMS copy and re-seeds The Oath defaults.
-          {supabaseMode
-            ? ' Remote data in Supabase is left untouched.'
-            : ' There is no remote copy in local mode.'}
+          Remote data in Supabase is left untouched.
         </p>
       </AdminRailPanel>
     </>
@@ -114,8 +85,8 @@ function SettingsPage() {
               {sessionUserLabel}
             </p>
             <p>
-              <span className="text-[var(--color-text)]">Signed in:</span>{' '}
-              {formatSessionAt(session?.loggedInAt)}
+              <span className="text-[var(--color-text)]">Last verified:</span>{' '}
+              {formatSessionAt(session?.verifiedAt)}
             </p>
           </div>
         </AdminCard>
@@ -160,25 +131,11 @@ function SettingsPage() {
             </span>
           </p>
 
-          {supabaseMode ? (
-            <p className="text-xs text-[var(--color-text-muted)]">
-              Type the same value in both fields (for example your Supabase sign-in password) to
-              confirm. This only clears this browser’s cached CMS copy; remote data in Supabase is
-              unchanged.
-            </p>
-          ) : !isAdminLoginConfigured ? (
-            <p className="rounded-lg border border-dashed border-[var(--color-line)] px-3 py-2 text-xs text-[var(--color-text-muted)]" role="alert">
-              Admin password is not configured — cannot verify reset. Set{' '}
-              <span className="font-mono text-[10px]">VITE_ANVL_ADMIN_PASSWORD</span> in{' '}
-              <span className="font-mono text-[10px]">.env</span> (see{' '}
-              <span className="font-mono text-[10px]">.env.example</span>).
-            </p>
-          ) : (
-            <p className="text-xs text-[var(--color-text-muted)]">
-              Type your admin password twice to confirm. Use the same credential as the sign-in
-              screen.
-            </p>
-          )}
+          <p className="text-xs text-[var(--color-text-muted)]">
+            Type the same value in both fields (for example your Supabase sign-in password) to
+            confirm. This only clears this browser’s cached CMS copy; remote data in Supabase is
+            unchanged.
+          </p>
 
           <form
             className="space-y-4"
@@ -190,11 +147,7 @@ function SettingsPage() {
               closeResetModal()
             }}
           >
-            <AdminFormField
-              label={supabaseMode ? 'Confirmation' : 'Admin password'}
-              htmlFor={passwordFieldId}
-              error={authError}
-            >
+            <AdminFormField label="Confirmation" htmlFor={passwordFieldId}>
               <AdminInput
                 id={passwordFieldId}
                 type="password"
@@ -202,15 +155,9 @@ function SettingsPage() {
                 name="admin-reset-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={!supabaseMode && !isAdminLoginConfigured}
-                aria-invalid={Boolean(authError)}
               />
             </AdminFormField>
-            <AdminFormField
-              label={supabaseMode ? 'Confirm' : 'Confirm admin password'}
-              htmlFor={confirmFieldId}
-              error={matchError}
-            >
+            <AdminFormField label="Confirm" htmlFor={confirmFieldId} error={matchError}>
               <AdminInput
                 id={confirmFieldId}
                 type="password"
@@ -218,7 +165,6 @@ function SettingsPage() {
                 name="admin-reset-password-confirm"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={!supabaseMode && !isAdminLoginConfigured}
                 aria-invalid={Boolean(matchError)}
               />
             </AdminFormField>

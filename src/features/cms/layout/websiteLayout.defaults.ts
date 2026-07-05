@@ -21,13 +21,11 @@ export function createDefaultWebsiteLayout(
       decorativeEmblemFallbackSrc: DEFAULT_EMBLEM_SRC,
       tagline: nav.footerTagline,
       microCaption: nav.footerMicroCaption,
-      linkGroups: [
-        {
-          id: 'footer-main',
-          title: undefined,
-          links: nav.footerLinks.map((l) => ({ ...l })),
-        },
-      ],
+      linkGroups: nav.footerLinkGroups.map((g) => ({
+        id: g.id,
+        title: g.title,
+        links: g.links.map((l) => ({ ...l })),
+      })),
       newsletterTitle: nav.newsletterTitle,
       newsletterPlaceholder: nav.newsletterPlaceholder,
       newsletterButtonText: nav.newsletterButtonText,

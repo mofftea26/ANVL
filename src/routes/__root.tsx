@@ -177,7 +177,9 @@ function StorefrontLayout() {
         {showChrome ? (
           <PremiumNav navigation={navigation} alwaysTransparent={isFullBleed} />
         ) : null}
-        {showChrome && backdropSrc ? <PageBackdrop src={backdropSrc} /> : null}
+        {showChrome && backdropSrc ? (
+          <PageBackdrop src={backdropSrc} intensity={pathname === '/story' ? 'vivid' : 'default'} />
+        ) : null}
         {/* Site-wide cursor dust — full-bleed routes integrate the same
             DustField inside their own scene canvas, so they are excluded
             here (one field, never two). */}

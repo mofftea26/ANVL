@@ -1,53 +1,41 @@
-import { useNavigate } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { getSupabaseEnvIssue, isSupabaseAuthTarget } from '@/features/cms/api/supabasePublicEnv'
+import { getSupabaseEnvIssue } from '@/features/cms/api/supabasePublicEnv'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { Container } from '@/shared/components/ui/Container'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'
 import { IconButton } from '@/shared/components/ui/IconButton'
 import { AdminInput } from '@/features/admin/components/AdminInput'
+import { Checkbox } from '@/shared/components/ui/Checkbox'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 
 const schema = z.object({
-  username: z.string().min(1, 'This field is required'),
+  email: z.string().trim().min(1, 'Email is required').email('Enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
+  rememberMe: z.boolean(),
 })
 
 type LoginFormValues = z.infer<typeof schema>
 
-const supabaseConfigured = isSupabaseAuthTarget()
 const supabaseEnvIssue = getSupabaseEnvIssue()
 
 const ADMIN_LOGIN_PASSWORD_ID = 'admin-login-password'
+const ADMIN_LOGIN_REMEMBER_ID = 'admin-login-remember'
 
 export function AdminLoginPageRoute() {
   const [showPassword, setShowPassword] = useState(false)
   const [signingIn, setSigningIn] = useState(false)
-  const {
-    login,
-    isAuthenticated,
-    isHydrated,
-    remoteHydrateError,
-    authMode,
-  } = useAdminAuth()
-  const navigate = useNavigate()
+  const { login, remoteHydrateError } = useAdminAuth()
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { username: '', password: '' },
+    defaultValues: { email: '', password: '', rememberMe: true },
   })
-
-  useEffect(() => {
-    if (isHydrated && isAuthenticated) {
-      void navigate({ to: '/admin', replace: true })
-    }
-  }, [isHydrated, isAuthenticated, navigate])
 
   const onSubmit = form.handleSubmit(async (values) => {
     setSigningIn(true)
@@ -59,15 +47,11 @@ export function AdminLoginPageRoute() {
         return
       }
       toast.success('Signed in to ANVL Admin.')
-      void navigate({ to: '/admin', replace: true })
+      window.location.assign('/admin')
     } finally {
       setSigningIn(false)
     }
   })
-
-  const idLabel = supabaseConfigured ? 'Email' : 'Username'
-  const idAutoComplete = supabaseConfigured ? 'email' : 'username'
-  const idPlaceholder = supabaseConfigured ? 'you@company.com' : 'admin'
 
   return (
     <div className="grid min-h-screen place-items-center bg-[var(--color-bg)] px-4 py-10">
@@ -98,15 +82,12 @@ export function AdminLoginPageRoute() {
           ) : null}
 
           <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
-            <AdminFormField
-              label={idLabel}
-              error={form.formState.errors.username?.message}
-            >
+            <AdminFormField label="Email" error={form.formState.errors.email?.message}>
               <AdminInput
-                type={supabaseConfigured ? 'email' : 'text'}
-                autoComplete={idAutoComplete}
-                placeholder={idPlaceholder}
-                {...form.register('username')}
+                type="email"
+                autoComplete="email"
+                placeholder="you@company.com"
+                {...form.register('email')}
               />
             </AdminFormField>
             <AdminFormField
@@ -139,6 +120,15 @@ export function AdminLoginPageRoute() {
                 </IconButton>
               </div>
             </AdminFormField>
+
+            <label
+              htmlFor={ADMIN_LOGIN_REMEMBER_ID}
+              className="focus-ring flex cursor-pointer items-center gap-2.5 rounded-md py-1 text-sm text-[var(--color-text-muted)]"
+            >
+              <Checkbox id={ADMIN_LOGIN_REMEMBER_ID} {...form.register('rememberMe')} />
+              Remember me for 30 days
+            </label>
+
             <AdminButton
               type="submit"
               className="w-full"
@@ -150,24 +140,10 @@ export function AdminLoginPageRoute() {
           </form>
 
           <p className="mt-5 rounded-lg border border-dashed border-[var(--color-line)] px-3 py-2 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
-            {authMode === 'supabase' ? (
-              <>
-                Supabase Auth — only users with{' '}
-                <span className="font-mono text-[10px]">cms_profiles.role = admin</span>{' '}
-                can use this panel. Create the user in Supabase Authentication and add
-                their row in{' '}
-                <span className="font-mono text-[10px]">public.cms_profiles</span>.
-              </>
-            ) : (
-              <>
-                Local static admin login — not production-ready. Set{' '}
-                <span className="font-mono text-[10px]">VITE_ANVL_ADMIN_PASSWORD</span>{' '}
-                in a local <span className="font-mono text-[10px]">.env</span> (see{' '}
-                <span className="font-mono text-[10px]">.env.example</span>). When{' '}
-                <span className="font-mono text-[10px]">VITE_SUPABASE_*</span> is set, this
-                app uses Supabase instead.
-              </>
-            )}
+            Supabase Auth — only users with{' '}
+            <span className="font-mono text-[10px]">cms_profiles.role = admin</span>{' '}
+            can use this panel. Create the user in Supabase Authentication and add
+            their row in <span className="font-mono text-[10px]">public.cms_profiles</span>.
           </p>
         </div>
       </Container>

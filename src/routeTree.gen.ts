@@ -14,6 +14,8 @@ import { Route as StoryRouteImport } from './routes/story'
 import { Route as SizeGuideRouteImport } from './routes/size-guide'
 import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CareGuideRouteImport } from './routes/care-guide'
@@ -73,6 +75,16 @@ const ReturnsRoute = ReturnsRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiePolicyRoute = CookiePolicyRouteImport.update({
+  id: '/cookie-policy',
+  path: '/cookie-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -260,6 +272,8 @@ export interface FileRoutesByFullPath {
   '/care-guide': typeof CareGuideRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
+  '/cookie-policy': typeof CookiePolicyRoute
+  '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
   '/size-guide': typeof SizeGuideRoute
@@ -300,6 +314,8 @@ export interface FileRoutesByTo {
   '/care-guide': typeof CareGuideRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
+  '/cookie-policy': typeof CookiePolicyRoute
+  '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
   '/size-guide': typeof SizeGuideRoute
@@ -343,6 +359,8 @@ export interface FileRoutesById {
   '/care-guide': typeof CareGuideRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
+  '/cookie-policy': typeof CookiePolicyRoute
+  '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
   '/size-guide': typeof SizeGuideRoute
@@ -387,6 +405,8 @@ export interface FileRouteTypes {
     | '/care-guide'
     | '/cart'
     | '/contact'
+    | '/cookie-policy'
+    | '/faq'
     | '/privacy'
     | '/returns'
     | '/size-guide'
@@ -427,6 +447,8 @@ export interface FileRouteTypes {
     | '/care-guide'
     | '/cart'
     | '/contact'
+    | '/cookie-policy'
+    | '/faq'
     | '/privacy'
     | '/returns'
     | '/size-guide'
@@ -469,6 +491,8 @@ export interface FileRouteTypes {
     | '/care-guide'
     | '/cart'
     | '/contact'
+    | '/cookie-policy'
+    | '/faq'
     | '/privacy'
     | '/returns'
     | '/size-guide'
@@ -512,6 +536,8 @@ export interface RootRouteChildren {
   CareGuideRoute: typeof CareGuideRoute
   CartRoute: typeof CartRoute
   ContactRoute: typeof ContactRoute
+  CookiePolicyRoute: typeof CookiePolicyRoute
+  FaqRoute: typeof FaqRoute
   PrivacyRoute: typeof PrivacyRoute
   ReturnsRoute: typeof ReturnsRoute
   SizeGuideRoute: typeof SizeGuideRoute
@@ -564,6 +590,20 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookie-policy': {
+      id: '/cookie-policy'
+      path: '/cookie-policy'
+      fullPath: '/cookie-policy'
+      preLoaderRoute: typeof CookiePolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -877,6 +917,8 @@ const rootRouteChildren: RootRouteChildren = {
   CareGuideRoute: CareGuideRoute,
   CartRoute: CartRoute,
   ContactRoute: ContactRoute,
+  CookiePolicyRoute: CookiePolicyRoute,
+  FaqRoute: FaqRoute,
   PrivacyRoute: PrivacyRoute,
   ReturnsRoute: ReturnsRoute,
   SizeGuideRoute: SizeGuideRoute,

@@ -5,26 +5,17 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { AdminLoginPageRoute } from '../-adminLogin'
 
-const navigate = vi.fn()
-
-vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => navigate,
-}))
-
 vi.mock('@/features/cms/api/supabasePublicEnv', () => ({
-  getSupabasePublicEnv: () => null,
-  isSupabaseAuthTarget: () => false,
   getSupabaseEnvIssue: () => null,
 }))
 
 vi.mock('@/features/admin/auth/useAdminAuth', () => ({
   useAdminAuth: () => ({
-    login: vi.fn().mockResolvedValue({ ok: false, error: 'Incorrect username or password.' }),
+    login: vi.fn().mockResolvedValue({ ok: false, error: 'Incorrect email or password.' }),
     isAuthenticated: false,
-    isHydrated: true,
+    isBootstrapping: false,
     isRemoteCmsReady: true,
     remoteHydrateError: null,
-    authMode: 'static' as const,
   }),
 }))
 
@@ -44,5 +35,10 @@ describe('AdminLoginPageRoute', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /^hide password$/i }))
     expect(password).toHaveAttribute('type', 'password')
+  })
+
+  it('defaults Remember me to checked', () => {
+    render(<AdminLoginPageRoute />)
+    expect(screen.getByLabelText(/remember me for 30 days/i)).toBeChecked()
   })
 })

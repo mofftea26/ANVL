@@ -202,7 +202,7 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` — Supabase project URL + anon/publishable key
   - `VITE_SHOPIFY_STORE_DOMAIN`, `VITE_SHOPIFY_STOREFRONT_API_VERSION`, `VITE_SHOPIFY_STOREFRONT_PUBLIC_TOKEN`
   - `VITE_CANONICAL_BASE_URL`, `VITE_ADMIN_PREVIEW_ENABLED`, `VITE_ANVL_INTERNATIONAL_CHECKOUT`
-- Server-only / Edge (never `VITE_*`): `SUPABASE_SERVICE_ROLE_KEY`, `SHOPIFY_ADMIN_API_ACCESS_TOKEN`, `SHOPIFY_API_SECRET_KEY`
+- Server-only / Edge (never `VITE_*`): `SUPABASE_SERVICE_ROLE_KEY`, `SHOPIFY_ADMIN_API_ACCESS_TOKEN`, `SHOPIFY_API_SECRET_KEY`, `ANVL_ADMIN_SESSION_SECRET` (seals the HttpOnly `/admin` session cookie — see `src/features/admin/auth/adminAuthSession.server.ts`; 32+ chars, rotating it signs out all admin sessions)
 - `.env.example` must have placeholder values only — never real credentials.
 - Env vars are validated by Zod in `src/app/config/publicEnv.ts` before use.
 
@@ -682,8 +682,8 @@ Every code change must check whether documentation needs updating. After any:
 
 | ID | Area | Description |
 |---|---|---|
-| SEC-01/02/03 | Admin auth | Temporary static env-file gate. Not production-grade. Hosted-demo blocker. |
-| SEC-11 | Admin auth | Supabase auth replaces static gate when env is set, but session handling still needs HttpOnly cookies + server validation for production. |
+| SEC-01/02/03 | Admin auth | **Resolved 2026-07-04.** Static env-file password gate removed — Supabase is the only admin auth path. |
+| SEC-11 | Admin auth | **Resolved 2026-07-04.** `/admin/*` access is now server-validated via TanStack Start `createServerFn` (`src/features/admin/auth/adminAuth.ts`) + a sealed HttpOnly session cookie (`adminAuthSession.server.ts`, `useSession`/`getSession` from `@tanstack/react-start/server`), checked in `beforeLoad` (`src/routes/admin/route.tsx`) on SSR and every client navigation. Cookie holds the Supabase refresh token; every validation call refreshes + re-verifies `cms_profiles.role = admin` + rotates the cookie. Remember Me controls cookie `Max-Age` (30 days persistent vs. session-only). The browser Supabase client (`adminSupabaseBrowserClient.ts`, CMS reads only) has `autoRefreshToken: false` — the server is the sole refresh-token rotator to avoid a dual-rotation race. Not covered: CSRF tokens, CSP/HSTS, rate limiting (still Phase J). |
 | PERF-01 | Admin routes | All admin routes must use `lazyRouteComponent`. |
 | PERF-11 | Bundle size | Dependency cleanup: removed unused `@tanstack/react-table` + `@radix-ui/react-dropdown-menu` (2026-06-11), `@fontsource/bebas-neue`, `@fontsource/manrope`, `@tanstack/react-query-devtools`, `@tailwindcss/typography` (2026-06-20), and `react-colorful` (with the orphaned shared `ColorField`) + `react-day-picker` (with the orphaned `AdminDateTimeField`) (2026-06-27). `@tanstack/react-virtual` (admin media grid), `framer-motion` (RevealOnScroll), and the active fonts (Anton/Sora/Cinzel) remain in use. |
 | MAINT-01 | Large files | Several admin editor files exceed 500 lines (tracked refactor candidates). |
@@ -691,7 +691,7 @@ Every code change must check whether documentation needs updating. After any:
 | MAINT-03 | localStorage reset | `resetAllLocalCmsKeys()` omits `anvl.landingContent.v1` |
 | MIG-01 | Supabase migrations | Orphaned publish RPC migrations post drop-builder teardown |
 | Phase I | Router repatch | `scripts/repatch-admin-route-tree.mjs` is a workaround for TanStack Start upstream limitation. |
-| Phase J | Production launch | Real server auth, HttpOnly sessions, CSP/HSTS, rate limits, upload validation, CSRF — all required before public launch. |
+| Phase J | Production launch | Admin real server auth + HttpOnly sessions done (see SEC-11). Remaining: CSP/HSTS, rate limits, upload validation, CSRF — all required before public launch. |
 
 ---
 
@@ -700,7 +700,7 @@ Every code change must check whether documentation needs updating. After any:
 See `docs/next-steps.md` for the full prioritized task list.
 
 Top priorities:
-1. **Phase J (production blockers):** real server auth, CSP, rate limiting, CSRF — required before public launch.
+1. **Phase J (production blockers):** admin real server auth is done (SEC-11) — CSP, rate limiting, CSRF, upload validation still required before public launch.
 2. **Phase D (feature boundary cleanup):** move shared types/helpers out of `admin/**` into `cms/**`/`shared/**` (MAINT-02).
 3. **Shopify commerce wiring:** connect `VITE_SHOPIFY_*` vars if eCommerce checkout is needed now.
 4. **Supabase storage:** wire media library to a real Supabase storage bucket.

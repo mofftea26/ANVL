@@ -59,11 +59,11 @@ The global brand logo in the header/footer must remain the official ANVL logo an
 
 ## Admin auth
 
-- **When `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` are set:** the admin app uses **Supabase Auth** (email + password). Only users with **`public.cms_profiles.role = 'admin'`** may access `/admin` (editors/viewers are rejected at sign-in). The browser Supabase client uses storage key **`anvl.supabase.admin.v1`**. Authenticated saves are pushed (debounced) to **`cms_settings`** + the **`storefront_publication`** mirror (and relational **`story_*`** tables for the Story editor) while the editor continues to use localStorage as its working copy. (The old `anvl_drops` / `cms_admin_products` tables were dropped in the 2026-06-07 CMS cleanup.)
-
-- **When Supabase env is unset (local CMS only):** the temporary static **`VITE_ANVL_ADMIN_*`** gate remains. It is still not production-grade security (see **`docs/technical-debt.md`**, SEC-01 / SEC-02 / SEC-03 / SEC-11 and Phase J).
-
-- Never bundle **`SUPABASE_SERVICE_ROLE_KEY`** or other server-only secrets into client code.
+- **Resolved 2026-07-04** (was: "Intentionally unchanged — static env gate until a real IdP," see git history). The legacy `VITE_ANVL_ADMIN_USERNAME`/`VITE_ANVL_ADMIN_PASSWORD` client-bundled gate is **removed**. Supabase Auth is the only admin auth path — `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` must be set for `/admin` to be reachable at all.
+- Only users with **`public.cms_profiles.role = 'admin'`** may access `/admin` (editors/viewers are rejected at sign-in). `/admin/*` access is **server-validated**: `src/routes/admin/route.tsx`'s `beforeLoad` calls the `getAdminSessionServerFn` TanStack Start server function (`src/features/admin/auth/adminAuth.ts`) on SSR and every client navigation, which reads a sealed **HttpOnly** session cookie (`adminAuthSession.server.ts`, keyed by server-only env var **`ANVL_ADMIN_SESSION_SECRET`**), refreshes the Supabase session, re-verifies the `cms_profiles` role, and rotates the cookie's refresh token.
+- **Remember me**: checked = cookie `Max-Age` 30 days (survives browser restarts); unchecked = no `Max-Age` (browser-session cookie, cleared on close).
+- The browser Supabase client (`adminSupabaseBrowserClient.ts`, storage key **`anvl.supabase.admin.v1`**) is used **only** for CMS reads/writes (`cms_settings` + `storefront_publication` mirror + relational **`story_*`** tables), not for the auth gate — it has `autoRefreshToken: false` since the server is the sole refresh-token rotator (dual auto-refresh would race Supabase's one-time-use refresh tokens). Authenticated saves are pushed (debounced) to Supabase while the editor continues to use localStorage as its working copy. (The old `anvl_drops` / `cms_admin_products` tables were dropped in the 2026-06-07 CMS cleanup.)
+- Never bundle **`SUPABASE_SERVICE_ROLE_KEY`**, **`ANVL_ADMIN_SESSION_SECRET`**, or other server-only secrets into client code. See **`docs/technical-debt.md`** and `CLAUDE.md` SEC-01/02/03/SEC-11 (both resolved) for the full design writeup; CSRF/CSP/rate-limiting remain open under Phase J.
 
 ## Definition of done
 A task is done only when:
