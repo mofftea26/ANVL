@@ -36,6 +36,7 @@ import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as ApiCspReportRouteImport } from './routes/api/csp-report'
 import { Route as AdminThemeRouteImport } from './routes/admin/theme'
 import { Route as AdminStoryRouteImport } from './routes/admin/story'
 import { Route as AdminShopRouteImport } from './routes/admin/shop'
@@ -187,6 +188,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCspReportRoute = ApiCspReportRouteImport.update({
+  id: '/api/csp-report',
+  path: '/api/csp-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminThemeRoute = AdminThemeRouteImport.update({
   id: '/theme',
   path: '/theme',
@@ -292,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/api/csp-report': typeof ApiCspReportRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -334,6 +341,7 @@ export interface FileRoutesByTo {
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/api/csp-report': typeof ApiCspReportRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -379,6 +387,7 @@ export interface FileRoutesById {
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/api/csp-report': typeof ApiCspReportRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -425,6 +434,7 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/story'
     | '/admin/theme'
+    | '/api/csp-report'
     | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -467,6 +477,7 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/story'
     | '/admin/theme'
+    | '/api/csp-report'
     | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -511,6 +522,7 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/story'
     | '/admin/theme'
+    | '/api/csp-report'
     | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -543,6 +555,7 @@ export interface RootRouteChildren {
   SizeGuideRoute: typeof SizeGuideRoute
   StoryRoute: typeof StoryRoute
   TermsRoute: typeof TermsRoute
+  ApiCspReportRoute: typeof ApiCspReportRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
@@ -746,6 +759,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/csp-report': {
+      id: '/api/csp-report'
+      path: '/api/csp-report'
+      fullPath: '/api/csp-report'
+      preLoaderRoute: typeof ApiCspReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/theme': {
       id: '/admin/theme'
       path: '/theme'
@@ -924,6 +944,7 @@ const rootRouteChildren: RootRouteChildren = {
   SizeGuideRoute: SizeGuideRoute,
   StoryRoute: StoryRoute,
   TermsRoute: TermsRoute,
+  ApiCspReportRoute: ApiCspReportRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
@@ -940,10 +961,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

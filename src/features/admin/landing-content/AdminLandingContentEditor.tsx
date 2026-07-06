@@ -9,6 +9,7 @@ import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWorkspaceStatusPanel'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { fetchLandingPagePickerOptions } from '@/features/admin/landing-picker/fetchLandingPagePickerOptions'
+import { useRegisterAdminDirty } from '@/features/admin/hooks/useRegisterAdminDirty'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import {
   readAssetConfigFromStorage,
@@ -79,6 +80,11 @@ export function AdminLandingContentEditor() {
     defaultValues: toOathFormValues(readLandingContentFromStorage()[OATH_KEY]),
   })
   const oathTaglines = useFieldArray({ control: oathForm.control, name: 'products.taglines' })
+  const isAssetConfigDirty = useMemo(
+    () => JSON.stringify(assetConfig) !== JSON.stringify(storedAssets),
+    [assetConfig, storedAssets],
+  )
+  useRegisterAdminDirty('landing-content', oathForm.formState.isDirty || isAssetConfigDirty)
 
   const reloadFormForKey = useCallback(
     (pageKey: string) => {

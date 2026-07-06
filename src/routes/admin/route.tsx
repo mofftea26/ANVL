@@ -2,6 +2,7 @@ import { Outlet, createFileRoute, redirect, useRouterState } from '@tanstack/rea
 import { AdminPageActionsProvider } from '@/features/admin/components/AdminPageActionsContext'
 import { AdminErrorBoundary } from '@/app/components/AdminErrorBoundary'
 import { AdminLoadingState } from '@/features/admin/components/AdminLoadingState'
+import { AdminUnsavedChangesGuard } from '@/features/admin/components/AdminUnsavedChangesGuard'
 import { getAdminSessionServerFn } from '@/features/admin/auth/adminAuth'
 
 const ADMIN_LOGIN_PATH = '/admin/login'
@@ -46,6 +47,7 @@ function AdminRouteShell() {
   return (
     <AdminErrorBoundary resetKey={pathname}>
       <AdminPageActionsProvider>
+        <AdminUnsavedChangesGuard />
         <Outlet />
       </AdminPageActionsProvider>
     </AdminErrorBoundary>

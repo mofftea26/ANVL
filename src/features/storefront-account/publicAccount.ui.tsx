@@ -107,8 +107,14 @@ export function AccountShellLayout() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    const t = requestAnimationFrame(() => setReady(true))
-    return () => cancelAnimationFrame(t)
+    // Plain effect, not requestAnimationFrame: rAF callbacks are throttled/
+    // suspended in backgrounded or inactive tabs (by spec, in every real
+    // browser), which left signed-out visitors who open /account in a
+    // background tab stuck on "Loading your account…" indefinitely instead
+    // of being redirected to sign-in. useHydrateStorefrontAccountSession's
+    // useLayoutEffect already runs synchronously before this commits, so a
+    // plain effect is sufficient to let hydration win the race.
+    setReady(true)
   }, [])
 
   useEffect(() => {

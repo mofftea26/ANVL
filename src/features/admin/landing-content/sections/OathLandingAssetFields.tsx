@@ -5,7 +5,7 @@ import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import {
   type AssetSlotSection,
 } from '@/features/admin/site-assets/AssetSlotAssignmentPanel'
-import type { MediaPickerKind } from '@/shared/components/ui/MediaPickerField'
+import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
 import { OATH_ASSET_SLOTS } from '@/features/landingPages/pages/TheOathLanding/theOathAssetSlots'
 import type { AssetSlotDefinition } from '@/features/landingPages/assetSlots'
 import { ContentSection } from './ContentSection'

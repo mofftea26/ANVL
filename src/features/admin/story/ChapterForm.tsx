@@ -1,14 +1,13 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Save, Trash2 } from 'lucide-react'
-import { runtimeClients } from '@/app/config/runtime'
 import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'
 import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
+import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
 import {
   DEFAULT_BOOK_COLORS,
   type BookColors,
@@ -45,11 +44,7 @@ export function ChapterForm({ chapter, onSaved, onDeleted }: ChapterFormProps) {
   const [deleting, setDeleting] = useState(false)
 
   // Products to assign this book to (from the active commerce catalog / Shopify).
-  const productsQuery = useQuery({
-    queryKey: ['admin', 'story-products'],
-    queryFn: () => runtimeClients.commerce.getShopListingCatalog(),
-    staleTime: 30_000,
-  })
+  const productsQuery = useAdminProductCatalogQuery()
   const products = productsQuery.data?.items ?? []
 
   async function save() {

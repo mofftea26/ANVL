@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import { Check, Info, Package, Save } from 'lucide-react'
 import {
   useCallback,
@@ -7,8 +6,6 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react'
-import { toast } from 'sonner'
-import { runtimeClients } from '@/app/config/runtime'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'
 import { AdminInput } from '@/features/admin/components/AdminInput'
@@ -17,7 +14,8 @@ import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
-import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
+import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
+import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
 import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotField'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import {
@@ -58,24 +56,20 @@ function sanitizeLines(value: string): string[] {
  */
 export function AdminPdpContentEditor() {
   const setPageActions = useAdminPageActions()
-  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const stored = useStoredPdpContent()
-  const [config, setConfig] = useState<PdpContentConfig>(stored)
-  const [slug, setSlug] = useState<string>('')
-  const [saving, setSaving] = useState(false)
-
-  const productsQuery = useQuery({
-    queryKey: ['admin', 'pdp-products'],
-    queryFn: () => runtimeClients.commerce.getShopListingCatalog(),
-    staleTime: 30_000,
+  const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
+    id: 'pdp-content',
+    stored,
+    saveAsync: savePdpContentAsync,
+    successMessage: 'Product content saved.',
+    errorFallbackMessage: 'Could not save product content.',
   })
+  const [slug, setSlug] = useState<string>('')
+
+  const productsQuery = useAdminProductCatalogQuery()
   const mediaQuery = useMediaAssetsQuery()
   const products = productsQuery.data?.items ?? []
   const mediaAssets = mediaQuery.data ?? []
-
-  useEffect(() => {
-    setConfig(stored)
-  }, [stored])
 
   // Default the selection to the first product once loaded.
   useEffect(() => {
@@ -95,23 +89,8 @@ export function AdminPdpContentEditor() {
         [slug]: { ...DEFAULT_PDP_PRODUCT_CONTENT, ...prev[slug], ...next },
       }))
     },
-    [slug],
+    [slug, setConfig],
   )
-
-  const save = useCallback(() => {
-    void (async () => {
-      setSaving(true)
-      try {
-        await savePdpContentAsync(config)
-        toast.success('Product content saved.')
-        flashSuccess()
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'Could not save product content.')
-      } finally {
-        setSaving(false)
-      }
-    })()
-  }, [config, flashSuccess])
 
   const toolbar = useMemo(
     () => (

@@ -14,6 +14,28 @@ import { useMediaAssetsMutations } from './useMediaAssetsQuery'
 const ACCEPT =
   'image/jpeg,image/png,image/webp,image/svg+xml,image/gif,video/mp4,video/webm,model/gltf-binary,model/gltf+json,.glb,.gltf'
 
+/** Mirrors the `cms-media` Supabase Storage bucket's `file_size_limit` (50 MB). */
+const MAX_UPLOAD_BYTES = 50_000_000
+
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'svg', 'gif', 'mp4', 'webm', 'glb', 'gltf']
+
+/**
+ * Fail fast client-side before spending a round trip on a file Supabase
+ * Storage will reject anyway (wrong extension or over the bucket's size
+ * limit) — the bucket's `allowed_mime_types` remains the authoritative check.
+ */
+export function validateUploadFile(file: File): string | null {
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return `"${file.name}" isn't a supported file type (image, video, or GLB/GLTF).`
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    const mb = (file.size / 1_000_000).toFixed(1)
+    return `"${file.name}" is ${mb} MB — the limit is 50 MB.`
+  }
+  return null
+}
+
 type MediaUploadZoneProps = {
   disabled?: boolean
 }
@@ -28,6 +50,11 @@ export function MediaUploadZone({ disabled }: MediaUploadZoneProps) {
     const list = Array.from(files)
     if (!list.length) return
     for (const file of list) {
+      const validationError = validateUploadFile(file)
+      if (validationError) {
+        toast.error(validationError)
+        continue
+      }
       const result = await uploadMutation.mutateAsync(file)
       if (result.ok) {
         toast.success(`Uploaded ${file.name}`)

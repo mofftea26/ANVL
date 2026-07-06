@@ -1,5 +1,5 @@
-import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
-import { publicCmsMediaUrl } from '@/features/admin/cmsRemote/uploadCmsMedia'
+import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
+import { publicCmsMediaUrl } from '@/features/cms/media/mediaUrl'
 import type { ResolvedDropAssets } from '@/features/cms/assets/resolvePublishedAssets'
 import {
   oathLandingContentSchema,

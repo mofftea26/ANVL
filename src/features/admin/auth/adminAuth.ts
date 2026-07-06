@@ -7,6 +7,7 @@ import {
   type AdminSessionData,
 } from '@/features/admin/auth/adminAuthSession.server'
 import { createAdminServerSupabaseClient } from '@/features/admin/auth/adminAuthServerSupabaseClient'
+import { csrfProtectionMiddleware } from '@/features/admin/auth/adminCsrf'
 import {
   fetchCmsProfileRoleWithAccessToken,
   formatCmsAdminAccessDeniedReason,
@@ -58,6 +59,7 @@ const loginInputSchema = z.object({
 })
 
 export const loginAdminServerFn = createServerFn({ method: 'POST' })
+  .middleware([csrfProtectionMiddleware])
   .inputValidator((data: unknown) => loginInputSchema.parse(data))
   .handler(async ({ data }): Promise<LoginAdminResult> => {
     const client = createAdminServerSupabaseClient()
@@ -120,26 +122,28 @@ export const loginAdminServerFn = createServerFn({ method: 'POST' })
     }
   })
 
-export const logoutAdminServerFn = createServerFn({ method: 'POST' }).handler(async () => {
-  const existing = await readAdminSessionData()
-  if (existing?.refreshToken) {
-    const client = createAdminServerSupabaseClient()
-    if (client) {
-      try {
-        await withTimeout(
-          client.auth.refreshSession({ refresh_token: existing.refreshToken }),
-          REFRESH_TIMEOUT_MS,
-          'refreshSession',
-        )
-        await client.auth.signOut()
-      } catch {
-        // Best-effort revoke — the cookie is cleared regardless below.
+export const logoutAdminServerFn = createServerFn({ method: 'POST' })
+  .middleware([csrfProtectionMiddleware])
+  .handler(async () => {
+    const existing = await readAdminSessionData()
+    if (existing?.refreshToken) {
+      const client = createAdminServerSupabaseClient()
+      if (client) {
+        try {
+          await withTimeout(
+            client.auth.refreshSession({ refresh_token: existing.refreshToken }),
+            REFRESH_TIMEOUT_MS,
+            'refreshSession',
+          )
+          await client.auth.signOut()
+        } catch {
+          // Best-effort revoke — the cookie is cleared regardless below.
+        }
       }
     }
-  }
-  await clearAdminSessionData()
-  return { ok: true as const }
-})
+    await clearAdminSessionData()
+    return { ok: true as const }
+  })
 
 export type AdminSessionResult =
   | ({ authenticated: true; user: AdminAuthUser } & AdminSessionTokens)

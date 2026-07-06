@@ -109,6 +109,31 @@ export function upgradeHttpToHttps(href: string): string {
  *
  * Audit refs: Phase B4 / SEC-20.
  */
+const SHOPIFY_CDN_HOST_RE = /(^|\.)cdn\.shopify\.com$/i
+
+/**
+ * Requests a smaller Shopify CDN rendition via their documented `width` query
+ * param — resizing is always available on Shopify's CDN (no plan/feature
+ * gating, unlike Supabase Storage's image-transform add-on). No-ops for any
+ * URL not served from Shopify's CDN, so it's safe to call on every product
+ * image regardless of commerce backend (seed/local adapters return local or
+ * Supabase paths, which pass through unchanged).
+ *
+ * Audit refs: PERF-24 (product card/gallery images requested at full
+ * upstream resolution and downscaled with CSS instead of via the CDN).
+ */
+export function withShopifyImageWidth(src: string, width: number): string {
+  let url: URL
+  try {
+    url = new URL(src)
+  } catch {
+    return src
+  }
+  if (!SHOPIFY_CDN_HOST_RE.test(url.hostname)) return src
+  url.searchParams.set('width', String(Math.round(width)))
+  return url.toString()
+}
+
 export function isLikelySafeMediaSrc(raw: unknown): boolean {
   if (typeof raw !== 'string') return false
   const t = raw.trim()

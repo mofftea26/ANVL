@@ -1,16 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
-import {
-  CMS_MEDIA_BUCKET,
-  publicCmsMediaUrl,
-  uploadCmsMediaFile,
-} from '@/features/admin/cmsRemote/uploadCmsMedia'
+import { CMS_MEDIA_BUCKET, publicCmsMediaUrl } from '@/features/cms/media/mediaUrl'
+import { extensionFor, resolveUploadMimeType } from './mediaMime'
 import type {
   CmsMediaAsset,
   MediaAssetMutationResult,
   MediaAssetsListResult,
   MediaIndexEntry,
 } from './mediaAssets.types'
+
+export { resolveUploadMimeType } from './mediaMime'
 
 function sanitizeFilename(name: string): string {
   const base = name
@@ -19,36 +18,6 @@ function sanitizeFilename(name: string): string {
     .replace(/[^a-z0-9._-]+/g, '-')
     .replace(/-+/g, '-')
   return base.replace(/^-|-$/g, '') || 'asset'
-}
-
-function extensionFor(file: File): string {
-  const fromName = file.name.split('.').pop()?.toLowerCase()
-  if (fromName && /^[a-z0-9]{1,8}$/.test(fromName)) return fromName
-  if (file.type === 'image/svg+xml') return 'svg'
-  if (file.type === 'image/png') return 'png'
-  if (file.type === 'image/jpeg') return 'jpg'
-  if (file.type === 'image/webp') return 'webp'
-  if (file.type === 'image/gif') return 'gif'
-  if (file.type === 'video/mp4') return 'mp4'
-  if (file.type === 'video/webm') return 'webm'
-  return 'bin'
-}
-
-/**
- * Resolve the content-type to upload + store. Browsers report no useful mime
- * for `.glb`/`.gltf` — an empty `file.type` on some, the generic
- * `application/octet-stream` on others (observed on Windows Chrome) — so both
- * count as "unknown" here and fall back to inferring the model mime from the
- * extension; otherwise the bucket's allowed-mime check rejects the upload.
- */
-export function resolveUploadMimeType(file: File): string {
-  const reported = file.type
-  const isGeneric = !reported || reported === 'application/octet-stream'
-  if (!isGeneric) return reported
-  const name = file.name.toLowerCase()
-  if (name.endsWith('.glb')) return 'model/gltf-binary'
-  if (name.endsWith('.gltf')) return 'model/gltf+json'
-  return reported || 'application/octet-stream'
 }
 
 /** Object path: `library/{stem}-{epoch}.{ext}` */
@@ -340,50 +309,4 @@ export async function uploadLibraryMediaFile(
   }
 
   return { ok: true, asset: inserted.asset, publicUrl }
-}
-
-/** After drop-scoped upload, optionally register the object in the catalog. */
-export async function registerUploadedCmsMedia(input: {
-  objectPath: string
-  file: File
-  width?: number | null
-  height?: number | null
-}): Promise<MediaAssetMutationResult> {
-  return insertMediaAssetRecord({
-    storagePath: input.objectPath,
-    filename: input.file.name,
-    mime: input.file.type || 'application/octet-stream',
-    byteSize: input.file.size,
-    width: input.width ?? null,
-    height: input.height ?? null,
-  })
-}
-
-export type UploadCmsMediaWithCatalogResult = Awaited<
-  ReturnType<typeof uploadCmsMediaFile>
->
-
-/** Drop upload + catalog row (used when callers opt in via uploadCmsMedia). */
-export async function uploadCmsMediaFileWithCatalog(input: {
-  file: File
-  dropSlug: string
-  role: Parameters<typeof uploadCmsMediaFile>[0]['role']
-  recordInLibrary?: boolean
-}): Promise<UploadCmsMediaWithCatalogResult> {
-  const uploaded = await uploadCmsMediaFile(input)
-  if (!uploaded.ok || !input.recordInLibrary) return uploaded
-
-  const dims = await readImageDimensions(input.file)
-  const registered = await registerUploadedCmsMedia({
-    objectPath: uploaded.objectPath,
-    file: input.file,
-    width: dims.width,
-    height: dims.height,
-  })
-
-  if (!registered.ok) {
-    return { ok: false, error: registered.error }
-  }
-
-  return uploaded
 }

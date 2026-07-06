@@ -1,5 +1,5 @@
-import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
-import { publicCmsMediaUrl } from '@/features/admin/cmsRemote/uploadCmsMedia'
+import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
+import { publicCmsMediaUrl } from '@/features/cms/media/mediaUrl'
 import type { AssetConfig } from '@/features/cms/config/cmsSiteConfig.zod'
 import { getPassthroughSlotKeys } from '@/features/landingPages/assetSlots'
 import { getStorefrontPagePassthroughKeys } from '@/features/cms/assets/storefrontPageSlots'

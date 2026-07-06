@@ -1,5 +1,5 @@
 import type { AssetConfig } from '@/features/cms/config/cmsSiteConfig.zod'
-import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
+import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
 import { resolveStorefrontPageAssets } from '@/features/cms/assets/resolvePublishedAssets'
 
 /** Map a storefront pathname to its asset page key (null = no backdrop —

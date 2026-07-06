@@ -1,10 +1,9 @@
 import { Check, Save } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { toast } from 'sonner'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
-import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
+import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
 import { MediaLibraryPage } from '@/features/admin/media/MediaLibraryPage'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import {
@@ -39,11 +38,15 @@ function useAssetConfig(): AssetConfig {
 
 export function SiteAssetsEditor() {
   const setPageActions = useAdminPageActions()
-  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const stored = useAssetConfig()
-  const [config, setConfig] = useState<AssetConfig>(stored)
+  const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
+    id: 'assets',
+    stored,
+    saveAsync: saveAssetConfigAsync,
+    successMessage: 'Asset assignments saved.',
+    errorFallbackMessage: 'Could not save assets.',
+  })
   const [scope, setScope] = useState<'general' | string>('general')
-  const [saving, setSaving] = useState(false)
   const mediaQuery = useMediaAssetsQuery()
   const fallbackDrops = useMemo(() => listLandingPages(), [])
   const [drops, setDrops] = useState(fallbackDrops)
@@ -56,25 +59,6 @@ export function SiteAssetsEditor() {
         setDrops(fallbackDrops)
       })
   }, [fallbackDrops])
-
-  useEffect(() => {
-    setConfig(stored)
-  }, [stored])
-
-  const save = useCallback(() => {
-    void (async () => {
-      setSaving(true)
-      try {
-        await saveAssetConfigAsync(config)
-        toast.success('Asset assignments saved.')
-        flashSuccess()
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'Could not save assets.')
-      } finally {
-        setSaving(false)
-      }
-    })()
-  }, [config, flashSuccess])
 
   const toolbar = useMemo(
     () => (

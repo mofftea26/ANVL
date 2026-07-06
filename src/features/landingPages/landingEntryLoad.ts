@@ -56,9 +56,17 @@ function withTimeout(promise: Promise<void>, ms: number): Promise<void> {
   ])
 }
 
+// Keyed by URL so repeated calls (e.g. the ready-gate effect re-running)
+// never spin up a second shadow <video>/<img> and re-download the same
+// asset — each URL is only ever fetched once per page session.
+const preloadedUrls = new Map<string, Promise<void>>()
+
 function preloadUrl(url: string): Promise<void> {
-  return withTimeout(
-    new Promise((resolve) => {
+  const inFlight = preloadedUrls.get(url)
+  if (inFlight) return inFlight
+
+  const promise = withTimeout(
+    new Promise<void>((resolve) => {
       let settled = false
       const finish = () => {
         if (settled) return
@@ -67,12 +75,15 @@ function preloadUrl(url: string): Promise<void> {
       }
 
       if (isVideoUrl(url)) {
+        // Only warm metadata (duration/dimensions) here — the real <video>
+        // element rendered by the hero (preload="auto") is what streams the
+        // full file for playback. Preloading with preload="auto" here would
+        // download the entire video a second time.
         const video = document.createElement('video')
-        video.preload = 'auto'
+        video.preload = 'metadata'
         video.muted = true
         video.playsInline = true
-        video.addEventListener('loadeddata', finish, { once: true })
-        video.addEventListener('canplay', finish, { once: true })
+        video.addEventListener('loadedmetadata', finish, { once: true })
         video.addEventListener('error', finish, { once: true })
         video.src = url
         video.load()
@@ -87,6 +98,9 @@ function preloadUrl(url: string): Promise<void> {
     }),
     PRELOAD_TIMEOUT_MS,
   )
+
+  preloadedUrls.set(url, promise)
+  return promise
 }
 
 const CHUNK_READY_PROGRESS = 0.22

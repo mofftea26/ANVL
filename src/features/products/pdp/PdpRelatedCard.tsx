@@ -4,6 +4,10 @@ import type { Product } from '@/features/products/types/product.types'
 import { effectivePrice } from '@/features/products/catalog/storefrontCatalog'
 import { DEFAULT_EMBLEM_SRC, isBundledPlaceholderImage } from '@/shared/constants/brandAssets'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
+import { withShopifyImageWidth } from '@/shared/lib/url'
+
+/** Related-card image renders small in a tight "complete the kit" strip. */
+const RELATED_IMAGE_WIDTH = 400
 
 /**
  * Compact related-product card — small image + name/price on one line and a
@@ -25,7 +29,7 @@ export const PdpRelatedCard = memo(function PdpRelatedCard({ product }: { produc
       <div className="relative aspect-square overflow-hidden rounded-lg border border-[var(--shop-card-border)] bg-[var(--shop-image-bg)] transition-colors group-hover/rel:border-[var(--shop-accent)]">
         {hasImage ? (
           <img
-            src={primary!.src}
+            src={withShopifyImageWidth(primary!.src, RELATED_IMAGE_WIDTH)}
             alt={primary!.alt || product.name}
             loading="lazy"
             decoding="async"

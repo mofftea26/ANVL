@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
-import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
+import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
 import { isWebglAvailable } from '@/shared/webgl/isWebglAvailable'
 import { resolveAboutContent } from './content/resolveAboutContent'
 import { ABOUT_ALTAR_MQ } from './aboutBreakpoints'

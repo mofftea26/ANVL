@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { MediaPickerKind } from '@/shared/components/ui/MediaPickerField'
+import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
 import { Button } from '@/shared/components/ui/Button'
 import { Modal } from '@/shared/components/ui/Modal'
 import { adminFieldControlClass } from '@/shared/lib/cmsFieldStyles'

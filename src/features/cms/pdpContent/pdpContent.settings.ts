@@ -80,6 +80,6 @@ export async function savePdpContentAsync(next: PdpContentConfig): Promise<void>
   const { afterLocalCmsMutation } = await import(
     '@/features/admin/cmsRemote/cmsWriteThrough'
   )
-  const sync = await afterLocalCmsMutation()
+  const sync = await afterLocalCmsMutation(['pdp_content'])
   if (!sync.ok) throw new Error(sync.error)
 }

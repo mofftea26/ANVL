@@ -121,7 +121,7 @@ export function PremiumNavTopbar({
               type="button"
               onClick={openCart}
               className={iconChromeRound}
-              aria-label={`Open cart, ${quantity} items`}
+              aria-label={`Open cart, ${quantity} ${quantity === 1 ? 'item' : 'items'}`}
             >
               <ShoppingBag size={16} aria-hidden="true" />
               {quantity > 0 ? (
@@ -142,8 +142,12 @@ export function PremiumNavTopbar({
             <Menu size={16} aria-hidden="true" />
           </button>
 
-          {/* Account — round avatar (signed in) or sign-in (signed out), far right. */}
-          <AccountMenu triggerClassName={iconChromeRound} />
+          {/* Account — desktop only. Below `lg` the burger + cart are the only
+              topbar controls; signed-in identity moves into the nav drawer's
+              profile card (see AccountDrawerSection / PremiumNavMobile). */}
+          <div className="hidden lg:block">
+            <AccountMenu triggerClassName={iconChromeRound} />
+          </div>
         </div>
       </Container>
     </div>

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
-import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
+import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
 import {
   parseAssetConfig,
   type AssetConfig,

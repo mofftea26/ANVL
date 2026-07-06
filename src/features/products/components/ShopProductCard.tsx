@@ -9,7 +9,11 @@ import { ProductCardQuickAdd } from '@/features/products/components/ProductCardQ
 import { ProductCardBadge } from '@/features/products/components/ProductCardBadge'
 import { shareProduct } from '@/features/products/lib/shareProduct'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
+import { withShopifyImageWidth } from '@/shared/lib/url'
 import { cn } from '@/shared/lib/cn'
+
+/** Grid cards render at most ~400 CSS px wide; covers retina at that size. */
+const CARD_IMAGE_WIDTH = 800
 
 const ASPECT_CLASS: Record<ShopConfig['cardAspectRatio'], string> = {
   portrait: 'aspect-[3/4]',
@@ -115,7 +119,7 @@ export const ShopProductCard = memo(function ShopProductCard({
 
           {hasImage ? (
             <img
-              src={primary!.src}
+              src={withShopifyImageWidth(primary!.src, CARD_IMAGE_WIDTH)}
               alt={alt}
               loading="lazy"
               decoding="async"

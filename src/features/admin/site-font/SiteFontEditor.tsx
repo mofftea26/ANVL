@@ -2,7 +2,6 @@ import { Check, Info, Plus, Save, Type } from 'lucide-react'
 import {
   type ChangeEvent,
   type DragEvent,
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -17,7 +16,7 @@ import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
-import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
+import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
 import {
   readFontLibraryFromStorage,
   saveFontConfigAsync,
@@ -56,33 +55,18 @@ function fontOptions(config: FontLibraryConfig) {
 
 export function SiteFontEditor() {
   const setPageActions = useAdminPageActions()
-  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const stored = useFontLibrary()
-  const [config, setConfig] = useState<FontLibraryConfig>(stored)
-  const [saving, setSaving] = useState(false)
+  const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
+    id: 'fonts',
+    stored,
+    saveAsync: saveFontConfigAsync,
+    successMessage: 'Fonts saved to Supabase.',
+    errorFallbackMessage: 'Could not save fonts.',
+  })
   const [googleName, setGoogleName] = useState('')
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    setConfig(stored)
-  }, [stored])
-
-  const save = useCallback(() => {
-    void (async () => {
-      setSaving(true)
-      try {
-        await saveFontConfigAsync(config)
-        toast.success('Fonts saved to Supabase.')
-        flashSuccess()
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'Could not save fonts.')
-      } finally {
-        setSaving(false)
-      }
-    })()
-  }, [config, flashSuccess])
 
   const toolbar = useMemo(
     () => (

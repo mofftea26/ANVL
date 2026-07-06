@@ -1,4 +1,4 @@
-import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
+import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
 import { resolveMediaUrl } from '@/features/cms/assets/resolvePublishedAssets'
 import {
   aboutLandingContentSchema,

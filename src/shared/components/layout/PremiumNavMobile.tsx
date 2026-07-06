@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
+import { AccountDrawerSection, AccountDrawerSignOut } from '@/features/storefront-account/account/AccountDrawerSection'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Drawer } from '@/shared/components/ui/Drawer'
 import { IconButton } from '@/shared/components/ui/IconButton'
@@ -9,8 +10,10 @@ import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 
 /**
  * Mobile + tablet navigation drawer. The trigger (burger) and the cart now live
- * in {@link PremiumNavTopbar}; this component is purely the slide-out menu — there
- * is no longer a fixed bottom bar.
+ * in {@link PremiumNavTopbar}; this component is purely the slide-out menu.
+ * The topbar drops its avatar trigger below `lg`, so the profile card here
+ * (via {@link AccountDrawerSection}) is the only account entry point on small
+ * screens — signed-in identity + quick links, or a sign-in CTA.
  */
 export function PremiumNavMobile({
   logoSrc,
@@ -41,6 +44,9 @@ export function PremiumNavMobile({
           <X size={16} aria-hidden="true" />
         </IconButton>
       </div>
+      <div className="mt-6">
+        <AccountDrawerSection onNavigate={onClose} />
+      </div>
       <nav className="mt-8 flex flex-col gap-4" aria-label="Mobile">
         {drawerLinks.map((item) => (
           <SafeLink
@@ -53,6 +59,9 @@ export function PremiumNavMobile({
           </SafeLink>
         ))}
       </nav>
+      <div className="mt-auto">
+        <AccountDrawerSignOut onNavigate={onClose} />
+      </div>
     </Drawer>
   )
 }

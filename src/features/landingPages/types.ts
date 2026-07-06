@@ -1,5 +1,5 @@
 import type { ComponentType, LazyExoticComponent } from 'react'
-import type { MediaIndexEntry } from '@/features/admin/media/mediaAssets.types'
+import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
 import type { Product } from '@/features/products/types/product.types'
 import type { ResolvedDropAssets } from '@/features/cms/assets/resolvePublishedAssets'
 

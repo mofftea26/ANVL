@@ -66,6 +66,9 @@ export function buildSeoMeta(input: SeoInput) {
   return {
     title,
     meta: [
+      // TanStack Router only renders <title> from a `{ title }` entry inside
+      // `meta` (the top-level `title` field above is not read by HeadContent).
+      { title },
       { name: 'description', content: description },
       { name: 'robots', content: robots },
       { property: 'og:type', content: 'website' },

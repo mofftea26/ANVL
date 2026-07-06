@@ -9,7 +9,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 const analyze = process.env.ANVL_ANALYZE === '1'
 
-const config = defineConfig({
+const config = defineConfig(({ isSsrBuild }) => ({
   resolve: { tsconfigPaths: true },
   plugins: [
     devtools(),
@@ -19,7 +19,19 @@ const config = defineConfig({
     ...(analyze
       ? [
           visualizer({
-            filename: 'dist/stats.html',
+            // Split by isSsrBuild so a client-targeted pass can never
+            // silently overwrite a server-targeted one's report under a
+            // shared filename. Note: as of this TanStack Start version,
+            // `pnpm analyze` only produces one of these two files (observed:
+            // stats-client.html, but its contents describe the *server*
+            // chunk graph) — TanStack Start's build orchestration doesn't
+            // appear to route both its internal Vite passes through this
+            // plugin the way a plain Vite app would. Getting a real client-
+            // bundle treemap needs a different approach (e.g. invoking Vite's
+            // client build directly, bypassing the Start wrapper) — not
+            // solved here; flagging so the next person doesn't lose time
+            // re-discovering the same dead end.
+            filename: isSsrBuild ? 'dist/stats-server.html' : 'dist/stats-client.html',
             gzipSize: true,
             brotliSize: true,
             open: false,
@@ -55,6 +67,6 @@ const config = defineConfig({
       },
     },
   },
-})
+}))
 
 export default config

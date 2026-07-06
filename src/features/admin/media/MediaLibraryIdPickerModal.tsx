@@ -1,4 +1,4 @@
-import type { MediaPickerKind } from '@/shared/components/ui/MediaPickerField'
+import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
 import {
   MediaLibraryPickerModal,
   type MediaLibraryPick,

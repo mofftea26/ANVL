@@ -3,10 +3,8 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useState,
   useSyncExternalStore,
 } from 'react'
-import { toast } from 'sonner'
 import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'
@@ -15,7 +13,7 @@ import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
-import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
+import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
 import {
   readShopConfigFromStorage,
   saveShopConfigAsync,
@@ -107,35 +105,20 @@ function Section({ title, children }: { title: string; children: React.ReactNode
  */
 export function ShopExperienceEditor() {
   const setPageActions = useAdminPageActions()
-  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const stored = useStoredShopConfig()
-  const [config, setConfig] = useState<ShopConfig>(stored)
-  const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    setConfig(stored)
-  }, [stored])
+  const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
+    id: 'shop',
+    stored,
+    saveAsync: saveShopConfigAsync,
+    successMessage: 'Shop settings saved.',
+    errorFallbackMessage: 'Could not save shop settings.',
+  })
 
   const set = useCallback(
     <K extends keyof ShopConfig>(key: K, value: ShopConfig[K]) =>
       setConfig((prev) => ({ ...prev, [key]: value })),
-    [],
+    [setConfig],
   )
-
-  const save = useCallback(() => {
-    void (async () => {
-      setSaving(true)
-      try {
-        await saveShopConfigAsync(config)
-        toast.success('Shop settings saved.')
-        flashSuccess()
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'Could not save shop settings.')
-      } finally {
-        setSaving(false)
-      }
-    })()
-  }, [config, flashSuccess])
 
   const toolbar = useMemo(
     () => (

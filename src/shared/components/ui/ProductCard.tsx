@@ -4,6 +4,10 @@ import { memo } from 'react'
 import type { Product } from '@/features/products/types/product.types'
 import { WarBanner } from '@/shared/components/premium/WarBanner'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
+import { withShopifyImageWidth } from '@/shared/lib/url'
+
+/** Grid cards render at most ~400 CSS px wide; covers retina at that size. */
+const CARD_IMAGE_WIDTH = 800
 
 function statusChip(product: Product): string | null {
   const s = product.shop?.storefrontStatus
@@ -35,7 +39,8 @@ export const ProductCard = memo(function ProductCard({ product }: { product: Pro
   const shop = product.shop
   const showCompare =
     typeof shop?.compareAtPrice === 'number' && shop.compareAtPrice > product.price
-  const media = product.images[0]?.src
+  const rawMedia = product.images[0]?.src
+  const media = rawMedia ? withShopifyImageWidth(rawMedia, CARD_IMAGE_WIDTH) : rawMedia
   const alt = product.images[0]?.alt ?? `${product.name} editorial placeholder`
 
   return (

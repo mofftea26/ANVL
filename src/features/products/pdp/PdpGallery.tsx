@@ -2,6 +2,12 @@ import { ChevronLeft, ChevronRight, Expand } from 'lucide-react'
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { cn } from '@/shared/lib/cn'
 import { DEFAULT_EMBLEM_SRC, isBundledPlaceholderImage } from '@/shared/constants/brandAssets'
+import { withShopifyImageWidth } from '@/shared/lib/url'
+
+/** Main image fills its column (up to ~700 CSS px); covers retina at that size. */
+const MAIN_IMAGE_WIDTH = 1400
+/** Thumbnail rail / mobile carousel frames render small. */
+const THUMBNAIL_IMAGE_WIDTH = 400
 
 const PdpLightbox = lazy(() =>
   import('@/features/products/pdp/PdpLightbox').then((m) => ({ default: m.PdpLightbox })),
@@ -68,7 +74,7 @@ export function PdpGallery({
               className="relative aspect-[4/5] w-full shrink-0 snap-center"
             >
               <img
-                src={img.src}
+                src={withShopifyImageWidth(img.src, MAIN_IMAGE_WIDTH)}
                 alt={img.alt || productName}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 fetchPriority={i === 0 ? 'high' : 'low'}
@@ -99,7 +105,7 @@ export function PdpGallery({
         <div className="group/main relative min-h-0 w-full flex-1 [perspective:1600px]">
           <div className="relative h-full w-full transition-transform duration-500 ease-out [transform-style:preserve-3d] motion-safe:group-hover/main:[transform:rotateX(3.5deg)_rotateY(-5deg)_scale(1.015)]">
             <img
-              src={main?.src}
+              src={main?.src ? withShopifyImageWidth(main.src, MAIN_IMAGE_WIDTH) : main?.src}
               alt={main?.alt || productName}
               loading="eager"
               fetchPriority="high"
@@ -164,7 +170,14 @@ export function PdpGallery({
                     : 'opacity-60 ring-transparent hover:opacity-100',
                 )}
               >
-                <img src={img.src} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-full w-full object-contain" />
+                <img
+                  src={withShopifyImageWidth(img.src, THUMBNAIL_IMAGE_WIDTH)}
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-contain"
+                />
               </button>
             ))}
           </div>

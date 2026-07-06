@@ -83,7 +83,7 @@ export async function saveShopConfigAsync(next: ShopConfig): Promise<void> {
   const { afterLocalCmsMutation } = await import(
     '@/features/admin/cmsRemote/cmsWriteThrough'
   )
-  const sync = await afterLocalCmsMutation()
+  const sync = await afterLocalCmsMutation(['shop_config'])
   if (!sync.ok) throw new Error(sync.error)
 }
 

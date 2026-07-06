@@ -1,3 +1,5 @@
+export type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
+
 /** Row shape for `public.cms_media_assets`. */
 export type CmsMediaAsset = {
   id: string
@@ -11,17 +13,6 @@ export type CmsMediaAsset = {
   tags: string[]
   createdAt: string
   createdBy: string | null
-}
-
-/** Lightweight catalog entry synced to `storefront_publication.media_index`. */
-export type MediaIndexEntry = {
-  id: string
-  path: string
-  alt: string
-  mime: string
-  w: number | null
-  h: number | null
-  updatedAt: string
 }
 
 export type MediaAssetsListResult =

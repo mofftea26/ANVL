@@ -81,7 +81,7 @@ export async function saveLandingContentSliceAsync(
   const { afterLocalCmsMutation } = await import(
     '@/features/admin/cmsRemote/cmsWriteThrough'
   )
-  const sync = await afterLocalCmsMutation()
+  const sync = await afterLocalCmsMutation(['landing_content'])
   if (!sync.ok) {
     throw new Error(sync.error)
   }

@@ -1,0 +1,51 @@
+import { describe, expect, it } from 'vitest'
+import {
+  type CmsSettingsFieldKey,
+  pickCmsSettingsFields,
+} from '../adminCmsRemoteSync'
+
+const allValues: Record<CmsSettingsFieldKey, unknown> = {
+  active_landing_page_key: 'the-oath',
+  theme_config: { name: 'theme' },
+  font_config: { name: 'font' },
+  asset_config: { name: 'asset' },
+  landing_content: { name: 'landing' },
+  shop_config: { name: 'shop' },
+  pdp_content: { name: 'pdp' },
+}
+
+describe('pickCmsSettingsFields', () => {
+  it('returns every field when no scope is given (debounced auto-sync paths)', () => {
+    expect(pickCmsSettingsFields(allValues)).toEqual(allValues)
+  })
+
+  it('scopes to a single field — the fix for the last-write-wins race', () => {
+    // This is the exact scenario the fix addresses: tab A saves shop_config
+    // while tab B's local snapshot still holds a stale theme_config. Scoping
+    // the patch to only the field tab A actually changed means tab B's
+    // still-in-flight theme_config never gets touched by tab A's write.
+    expect(pickCmsSettingsFields(allValues, ['shop_config'])).toEqual({
+      shop_config: { name: 'shop' },
+    })
+  })
+
+  it('scopes to multiple fields when an editor saves more than one section at once', () => {
+    expect(
+      pickCmsSettingsFields(allValues, ['landing_content', 'asset_config']),
+    ).toEqual({
+      landing_content: { name: 'landing' },
+      asset_config: { name: 'asset' },
+    })
+  })
+
+  it('never includes a field outside the requested scope', () => {
+    const result = pickCmsSettingsFields(allValues, ['theme_config'])
+    expect(Object.keys(result)).toEqual(['theme_config'])
+    expect(result).not.toHaveProperty('shop_config')
+    expect(result).not.toHaveProperty('pdp_content')
+  })
+
+  it('returns an empty object for an empty field list', () => {
+    expect(pickCmsSettingsFields(allValues, [])).toEqual({})
+  })
+})

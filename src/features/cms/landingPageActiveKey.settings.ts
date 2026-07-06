@@ -122,7 +122,7 @@ export async function saveActiveLandingPageKeyAsync(
   const { afterLocalCmsMutation } = await import(
     '@/features/admin/cmsRemote/cmsWriteThrough'
   )
-  const sync = await afterLocalCmsMutation()
+  const sync = await afterLocalCmsMutation(['active_landing_page_key'])
   if (!sync.ok) {
     throw new Error(sync.error)
   }

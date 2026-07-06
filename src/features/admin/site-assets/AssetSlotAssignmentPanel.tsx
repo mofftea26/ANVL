@@ -1,7 +1,7 @@
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { matchesMediaKind } from '@/features/admin/media/filterMediaLibraryItems'
-import type { MediaPickerKind } from '@/shared/components/ui/MediaPickerField'
+import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
 import type { AssetSlotDefinition, AssetSlotKind } from '@/features/landingPages/assetSlots'
 
 export const ASSET_SLOT_UNASSIGNED = '__unassigned__'

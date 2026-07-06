@@ -1,5 +1,5 @@
 /**
- * Control chrome shared by admin form primitives and CMS pickers (`MediaPickerField` URL row).
+ * Control chrome shared by admin form primitives and CMS pickers (`MediaLibrarySlotField` URL row).
  * Aligned with `adminChipButtonVariants` default — surface-soft pills + subtle borders.
  */
 

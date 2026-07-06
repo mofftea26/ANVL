@@ -7,6 +7,7 @@ import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarCh
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWorkspaceStatusPanel'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
+import { useRegisterAdminDirty } from '@/features/admin/hooks/useRegisterAdminDirty'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
 import {
   readLandingContentFromStorage,
@@ -37,6 +38,7 @@ export function AboutEditor() {
   const form = useForm<AboutContentFormValues>({
     defaultValues: toAboutFormValues(readLandingContentFromStorage()[ABOUT_KEY]),
   })
+  useRegisterAdminDirty('about', form.formState.isDirty)
 
   const reloadForm = useCallback(() => {
     form.reset(toAboutFormValues(readLandingContentFromStorage()[ABOUT_KEY]))

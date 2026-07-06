@@ -8,12 +8,15 @@ import {
 } from './mediaAssets.service'
 import type { CmsMediaAsset } from './mediaAssets.types'
 
-export const MEDIA_ASSETS_QUERY_KEY = ['admin', 'cms_media_assets'] as const
+/** Query-key factory, matching the `accountQueryKeys` pattern (REU-14). */
+export const mediaAssetsQueryKeys = {
+  all: ['admin', 'cms_media_assets'] as const,
+}
 
 export function useMediaAssetsQuery() {
   const env = getSupabasePublicEnv()
   return useQuery({
-    queryKey: MEDIA_ASSETS_QUERY_KEY,
+    queryKey: mediaAssetsQueryKeys.all,
     queryFn: async () => {
       const result = await listMediaAssets()
       if (!result.ok) throw new Error(result.error)
@@ -28,7 +31,7 @@ export function useMediaAssetsMutations() {
   const queryClient = useQueryClient()
 
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: MEDIA_ASSETS_QUERY_KEY })
+    queryClient.invalidateQueries({ queryKey: mediaAssetsQueryKeys.all })
 
   const uploadMutation = useMutation({
     mutationFn: uploadLibraryMediaFile,

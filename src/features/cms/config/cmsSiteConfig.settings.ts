@@ -183,7 +183,7 @@ export async function saveThemeConfigAsync(next: ThemeLibraryConfig): Promise<vo
   const { afterLocalCmsMutation } = await import(
     '@/features/admin/cmsRemote/cmsWriteThrough'
   )
-  const sync = await afterLocalCmsMutation()
+  const sync = await afterLocalCmsMutation(['theme_config'])
   if (!sync.ok) throw new Error(sync.error)
 }
 
@@ -192,7 +192,7 @@ export async function saveFontConfigAsync(next: FontLibraryConfig): Promise<void
   const { afterLocalCmsMutation } = await import(
     '@/features/admin/cmsRemote/cmsWriteThrough'
   )
-  const sync = await afterLocalCmsMutation()
+  const sync = await afterLocalCmsMutation(['font_config'])
   if (!sync.ok) throw new Error(sync.error)
 }
 
@@ -201,6 +201,6 @@ export async function saveAssetConfigAsync(next: AssetConfig): Promise<void> {
   const { afterLocalCmsMutation } = await import(
     '@/features/admin/cmsRemote/cmsWriteThrough'
   )
-  const sync = await afterLocalCmsMutation()
+  const sync = await afterLocalCmsMutation(['asset_config'])
   if (!sync.ok) throw new Error(sync.error)
 }

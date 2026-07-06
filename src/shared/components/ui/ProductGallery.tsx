@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react'
 import type { Product } from '@/features/products/types/product.types'
 import { cn } from '@/shared/lib/cn'
+import { withShopifyImageWidth } from '@/shared/lib/url'
+
+/** Main gallery image renders up to ~700 CSS px wide; covers retina at that size. */
+const MAIN_IMAGE_WIDTH = 1400
+/** Thumbnails render at ~100-150 CSS px. */
+const THUMBNAIL_IMAGE_WIDTH = 300
 
 export type ProductGalleryProps = {
   product: Product
@@ -20,7 +26,10 @@ export function ProductGallery({ product, images }: ProductGalleryProps) {
     <div className="space-y-3">
       <div className="overflow-hidden rounded-xl border border-[var(--color-line)]">
         <img
-          src={activeImage?.src ?? '/brand/placeholder-product.svg'}
+          src={withShopifyImageWidth(
+            activeImage?.src ?? '/brand/placeholder-product.svg',
+            MAIN_IMAGE_WIDTH,
+          )}
           alt={activeImage?.alt ?? `${product.name} product image`}
           className="aspect-[4/5] w-full object-cover"
           loading="eager"
@@ -44,7 +53,7 @@ export function ProductGallery({ product, images }: ProductGalleryProps) {
             aria-pressed={index === activeIndex}
           >
             <img
-              src={image.src}
+              src={withShopifyImageWidth(image.src, THUMBNAIL_IMAGE_WIDTH)}
               alt={image.alt}
               className="aspect-square w-full object-cover"
               loading="lazy"

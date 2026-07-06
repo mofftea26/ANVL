@@ -1,6 +1,6 @@
 import { ImagePlus } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import type { MediaPickerKind } from '@/shared/components/ui/MediaPickerField'
+import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'
 import { cn } from '@/shared/lib/cn'
 import { isLikelySafeMediaSrc } from '@/shared/lib/url'

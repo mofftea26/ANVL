@@ -1,9 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
-import {
-  CMS_MEDIA_BUCKET,
-  publicCmsMediaUrl,
-} from '@/features/admin/cmsRemote/uploadCmsMedia'
+import { CMS_MEDIA_BUCKET, publicCmsMediaUrl } from '@/features/cms/media/mediaUrl'
 import {
   createUploadFontRecord,
   guessFontFormat,

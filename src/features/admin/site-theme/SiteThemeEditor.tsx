@@ -1,5 +1,5 @@
 import { Check, Copy, Plus, RotateCcw, Save, Sparkles, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminFormField } from '@/features/admin/components/AdminFormField'
@@ -7,7 +7,7 @@ import { AdminInput } from '@/features/admin/components/AdminInput'
 import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
-import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
+import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
 import {
   readThemeLibraryFromStorage,
   saveThemeConfigAsync,
@@ -41,39 +41,30 @@ function useThemeLibrary(): ThemeLibraryConfig {
 
 export function SiteThemeEditor() {
   const setPageActions = useAdminPageActions()
-  const { showSuccess, flashSuccess } = useSaveSuccessFlash()
   const stored = useThemeLibrary()
-  const [library, setLibrary] = useState<ThemeLibraryConfig>(stored)
+  const {
+    config: library,
+    setConfig: setLibrary,
+    isDirty,
+    saving,
+    showSuccess,
+    save,
+  } = useSingletonCmsEditor({
+    id: 'theme',
+    stored,
+    saveAsync: saveThemeConfigAsync,
+    successMessage: 'Theme saved to Supabase.',
+    errorFallbackMessage: 'Could not save theme.',
+  })
   const [editingId, setEditingId] = useState(stored.activeThemeId)
-  const [saving, setSaving] = useState(false)
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop')
 
   useEffect(() => {
-    setLibrary(stored)
     setEditingId(stored.activeThemeId)
   }, [stored])
 
   const editingPreset =
     library.themes.find((t) => t.id === editingId) ?? library.themes[0]
-  const isDirty = useMemo(
-    () => JSON.stringify(library) !== JSON.stringify(stored),
-    [library, stored],
-  )
-
-  const save = useCallback(() => {
-    void (async () => {
-      setSaving(true)
-      try {
-        await saveThemeConfigAsync(library)
-        toast.success('Theme saved to Supabase.')
-        flashSuccess()
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'Could not save theme.')
-      } finally {
-        setSaving(false)
-      }
-    })()
-  }, [library, flashSuccess])
 
   const toolbar = useMemo(
     () => (
