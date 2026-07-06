@@ -32,6 +32,14 @@ Phase 0 quick fixes (GLB-01/02, SEC-21, SEC-22, MAINT-30, CLEAN-01) and a same-d
 | — | CMS admin | ~~Theoretical last-write-wins race if two admin tabs edit the same singleton row concurrently~~ — **Resolved 2026-07-06**: `adminCmsRemoteSync.ts` now scopes every save to only the specific column that editor changed (`CmsSettingsFieldKey`), instead of blindly rewriting all 7 columns from a possibly-stale local snapshot. |
 | — | Phase J | **Security headers, CSP (report-only), and CSRF implemented 2026-07-06** — see `docs/changelog.md` and `docs/audits/anvl-phase-j-security-plan.md`. Still open: rate limiting (blocked on an Upstash account or a confirmed deployment target — recommended Vercel + Upstash Redis), switching CSP from report-only to enforcing (needs a trial period / report-collection endpoint first), and a full browser-driven login smoke test of the new CSRF check. |
 
+## Global search follow-ups (2026-07-06)
+
+| ID | Area | Description |
+|---|---|---|
+| — | About search deep-link | A search hit on an About orb navigates to `/about#about-orb-<id>` and forces the normal scrolling page (`viewMode='normal'`) even on altar-capable devices, since the desktop 3D Forge Altar has no per-orb modal deep-link yet. Wiring the altar's own hammer-strike modal to open directly from a search result is a follow-up. |
+| — | Story cast search results | `story-cast` results land on the chapter's cover open (`/story?chapter=<slug>`), not a specific book page — the roster is always the book's final spread, so this is "close enough" rather than a precise deep link. |
+| — | Admin CMS search | Out of scope for the storefront global search shipped 2026-07-06. `src/features/search/lib/matchEngine.ts` is written index-agnostic (`SearchDocument[]` in, `SearchResult[]` out, no `runtimeClients`/CMS knowledge) so an admin variant can reuse it later with its own document set (settings/fields inside `/admin`). |
+
 ## Current expected temporary compromises
 - Frontend-only local/mock CMS until backend exists.
 - ~~Temporary static admin login~~ **Resolved 2026-07-04** — admin auth is now Supabase-only, server-validated via a sealed HttpOnly session cookie (`src/features/admin/auth/adminAuth.ts` + `adminAuthSession.server.ts`), with a real Remember Me option. See `CLAUDE.md` SEC-01/02/03/SEC-11 and `docs/changelog.md` (2026-07-04).

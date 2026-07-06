@@ -6,6 +6,13 @@ import { render, screen } from '@testing-library/react'
 import type { LandingNavigationContent } from '@/features/cms/navigation/navigation.types'
 import { useCartStore } from '@/features/cart/store/cart.store'
 
+// The global search bar pulls in TanStack Query + router navigation, both
+// irrelevant to this nav-layout test — stub it out like any other
+// feature-owned nav element this suite doesn't exercise.
+vi.mock('@/features/search/components/GlobalSearchBar', () => ({
+  GlobalSearchBar: () => null,
+}))
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     to,

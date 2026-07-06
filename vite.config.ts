@@ -56,6 +56,7 @@ const config = defineConfig(({ isSsrBuild }) => ({
             return 'vendor-three'
           }
           if (id.includes('node_modules/zod')) return 'vendor-zod'
+          if (id.includes('node_modules/fuse.js')) return 'vendor-fuse'
           if (id.includes('node_modules/@tanstack')) return 'vendor-tanstack'
           if (
             id.includes('node_modules/react-dom') ||

@@ -10,26 +10,33 @@ import { extractYoutubeVideoId } from '@/features/products/pdp/videoEmbed'
 import { Container } from '@/shared/components/ui'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 import { cn } from '@/shared/lib/cn'
+import { useHighlightOnArrival } from '@/shared/hooks/useHighlightOnArrival'
 
 function Tile({
+  id,
   className,
   eyebrow,
   bg,
   children,
 }: {
+  /** Stable anchor id for search deep-links (e.g. `pdp-story`) — optional, only the searchable tiles carry one. */
+  id?: string
   className?: string
   eyebrow?: string
   bg?: string
   children?: ReactNode
 }) {
+  useHighlightOnArrival(id ?? '')
   const style: CSSProperties | undefined = bg
     ? { backgroundImage: `url('${bg}')`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : undefined
   return (
     <article
+      id={id}
       data-reveal
       className={cn(
         'relative flex min-h-[12rem] flex-col overflow-hidden rounded-xl border border-[var(--shop-card-border)] bg-[var(--shop-card-bg)] p-4',
+        id && 'scroll-mt-[var(--anvl-header-h)]',
         className,
       )}
       style={style}
@@ -93,6 +100,7 @@ export function PdpBento({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:auto-rows-[12rem] md:grid-cols-4 md:[grid-auto-flow:dense]">
           {showStory ? (
             <Tile
+              id="pdp-story"
               className="justify-end md:col-span-2 md:row-span-2"
               bg={hasLifestyle ? content.lifestyleImage : undefined}
             >
@@ -111,7 +119,7 @@ export function PdpBento({
           ) : null}
 
           {showMaterials ? (
-            <Tile className="justify-end md:col-span-1 md:row-span-2" bg={content.materialMacro}>
+            <Tile id="pdp-materials" className="justify-end md:col-span-1 md:row-span-2" bg={content.materialMacro}>
               {!content.materialMacro ? (
                 <div
                   aria-hidden="true"
@@ -130,7 +138,7 @@ export function PdpBento({
           ) : null}
 
           {showCare ? (
-            <Tile eyebrow="Care" className="md:col-span-1 md:row-span-1">
+            <Tile id="pdp-care" eyebrow="Care" className="md:col-span-1 md:row-span-1">
               <ul className="space-y-1 overflow-hidden text-xs text-[var(--shop-text-muted)]">
                 {content.care.slice(0, 4).map((c) => (
                   <li key={c} className="flex gap-2">
@@ -191,7 +199,7 @@ export function PdpBento({
           ) : null}
 
           {showDetails ? (
-            <Tile eyebrow="Forged details" className="md:col-span-2 md:row-span-1">
+            <Tile id="pdp-details" eyebrow="Forged details" className="md:col-span-2 md:row-span-1">
               <ul className="grid grid-cols-1 gap-x-4 gap-y-1 overflow-hidden sm:grid-cols-2">
                 {content.designDetails.slice(0, 6).map((detail, i) => (
                   <li key={detail} className="flex gap-2 text-xs text-[var(--shop-text-muted)]">

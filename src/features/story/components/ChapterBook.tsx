@@ -19,6 +19,8 @@ const WIDE_QUERY = '(min-width: 768px)'
 
 interface ChapterBookProps {
   chapter: StoryChapter
+  /** Act id to open straight to (from a search deep link), instead of the cover. */
+  initialAct?: string
   onClose: () => void
 }
 
@@ -29,18 +31,27 @@ interface ChapterBookProps {
  * back to a lightweight flat reader (three.js never even loads there). Either
  * way: focus-trapped dialog, Escape-to-close, page controls, scroll locked.
  */
-export function ChapterBook({ chapter, onClose }: ChapterBookProps) {
+export function ChapterBook({ chapter, initialAct, onClose }: ChapterBookProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
   const reducedMotion = useReducedMotion()
-  const [current, setCurrent] = useState(0)
+
+  // Hoisted above `current` so its lazy initializer can jump straight to a
+  // deep-linked act's spread instead of always starting at the cover.
+  const spreads = useMemo(() => buildBookSpreads(chapter), [chapter])
+  const lastIndex = spreads.length - 1
+
+  const [current, setCurrent] = useState(() => {
+    if (!initialAct) return 0
+    const idx = spreads.findIndex(
+      (s) => s.kind === 'spread' && s.key.startsWith(`${initialAct}-`),
+    )
+    return idx >= 0 ? idx : 0
+  })
   const [mounted, setMounted] = useState(false)
   const [webgl, setWebgl] = useState(false)
   const [wide, setWide] = useState(false)
   const [originRect] = useState<DOMRect | null>(() => takeOpenOrigin())
-
-  const spreads = useMemo(() => buildBookSpreads(chapter), [chapter])
-  const lastIndex = spreads.length - 1
 
   // Trap keys on `mounted` — the dialog only exists in the portal after mount,
   // so the trap must (re)engage once the panel node is really there.
@@ -59,11 +70,12 @@ export function ChapterBook({ chapter, onClose }: ChapterBookProps) {
 
   // Auto-open the cover as the flight glides into its settle (~80% arrived) —
   // the pull-in and the opening read as ONE gesture: take the book, open it.
+  // Skipped when a search deep link already jumped to a specific act.
   useEffect(() => {
-    if (spreads.length <= 1) return
+    if (spreads.length <= 1 || initialAct) return
     const t = window.setTimeout(() => setCurrent((c) => (c === 0 ? 1 : c)), 750)
     return () => window.clearTimeout(t)
-  }, [spreads.length])
+  }, [spreads.length, initialAct])
 
   // Arrow keys turn pages (Tab/Escape handled by the focus trap).
   useEffect(() => {

@@ -207,6 +207,22 @@ Commerce adapters + catalog:
 | `shop/` | `ShopFiltersForm`, `shopUrlSearch` (URL state for filters) |
 | `types/` | `product.types.ts`, `commerce.types.ts`, `catalogProduct.types.ts` |
 
+#### `search/`
+
+Storefront global search — nav-owned, covers products, story, About, PDP editorial copy, and static pages:
+
+| File / Folder | Purpose |
+|---|---|
+| `types/search.types.ts` | `SearchDocument`/`SearchResult`/`GroupedResults` — index-agnostic contract |
+| `lib/matchEngine.ts` | Fuse.js wrapper (`createSearchIndex`/`runSearch`) — no `runtimeClients`/CMS knowledge, reusable by a future admin search variant |
+| `lib/searchCorpus.ts` | `buildSearchCorpus()` — reshapes existing `runtimeClients`/`loadStorefrontProjection` reads into `SearchDocument[]`, no new fetching |
+| `hooks/useSearchCorpusQuery.ts` | Lazy `useQuery` wrapper (5 min `staleTime`, `enabled` on first interaction) |
+| `hooks/useGlobalSearch.ts` | Core hook — debounced query, memoized index, grouped results, `navigateToResult` per doc type |
+| `components/GlobalSearchBar.tsx` | Nav-mounted entry point (icon trigger <1024px, inline+dropdown ≥1024px, `drawer` variant for `PremiumNavMobile`) |
+| `components/GlobalSearchDropdown.tsx` | Compact categorized results panel |
+| `components/GlobalSearchOverlay.tsx` | Full-screen cinematic overlay (lazy-loaded) |
+| `components/SearchResultRow.tsx` | One result row with highlighted match spans |
+
 #### `cart/`
 
 | File | Purpose |

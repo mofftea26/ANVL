@@ -1,5 +1,6 @@
 import { Container } from '@/shared/components/ui/Container'
 import { RevealOnScroll } from '@/shared/components/motion/RevealOnScroll'
+import { useHighlightOnArrival } from '@/shared/hooks/useHighlightOnArrival'
 import { BRAND } from '@/shared/constants/brand'
 import type { AboutResolvedContent, AboutResolvedOrb } from '../content/aboutContent.defaults'
 import { orbImage } from '../content/resolveAboutContent'
@@ -14,8 +15,15 @@ import { AboutMarquee } from '../components/AboutMarquee'
  * free-form CMS sections) with the orb's own color as the section accent.
  */
 function OrbSection({ orb, image }: { orb: AboutResolvedOrb; image?: string }) {
+  const anchorId = `about-orb-${orb.id}`
+  useHighlightOnArrival(anchorId)
+
   return (
-    <section className="py-12 md:py-16" aria-labelledby={`about-orb-${orb.id}-title`}>
+    <section
+      id={anchorId}
+      className="scroll-mt-[var(--anvl-header-h)] py-12 md:py-16"
+      aria-labelledby={`${anchorId}-title`}
+    >
       <Container className="max-w-3xl">
         <RevealOnScroll>
           <div className="overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]">

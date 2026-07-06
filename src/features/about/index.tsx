@@ -54,6 +54,14 @@ export function AboutExperience({
     return () => media.removeEventListener('change', update)
   }, [])
 
+  // A search deep link to a specific orb (`#about-orb-<id>`) only has an
+  // anchor in the normal scrolling page — the altar has no per-orb modal
+  // deep-link yet (technical-debt). Force the normal page once so the anchor
+  // is reachable instead of inert behind the altar.
+  useEffect(() => {
+    if (window.location.hash.startsWith('#about-orb-')) setViewMode('normal')
+  }, [setViewMode])
+
   const showAltar = capable && viewMode === 'altar'
 
   return (

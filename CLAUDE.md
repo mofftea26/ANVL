@@ -132,6 +132,7 @@ src/
     landingPages/    Code-owned landing pages: registry, renderer, asset slots, pages/TheOathLanding (the single Drop 01 cinematic landing)
     marketing/       Storefront home sections (home/: campaign cards, lookbook strip)
     products/        Commerce adapters (localStorage, seed, Shopify, Supabase), catalog, hooks
+    search/          Storefront global search: Fuse.js-backed matching engine (types/, lib/matchEngine.ts, index-agnostic), corpus assembly (lib/searchCorpus.ts, reshapes existing runtimeClients/CMS reads), useGlobalSearch hook + GlobalSearchBar/Dropdown/Overlay UI — mounted in PremiumNavTopbar + PremiumNavMobile
     seo/             SEO document schema + types
     shopify/         Shopify Storefront API client + mappers
     story/           Story saga: schemas, seed, asset resolver, page components + book overlay, Supabase/seed clients

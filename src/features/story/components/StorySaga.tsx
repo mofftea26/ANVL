@@ -11,6 +11,8 @@ interface StorySagaProps {
   chapters: StoryChapter[]
   /** Slug of the chapter to open as a book overlay (from `?chapter=`). */
   activeChapterSlug: string | null
+  /** Act id to jump straight to within the opened chapter (from `?act=`). */
+  activeAct?: string
   onOpenChapter: (slug: string) => void
   onCloseChapter: () => void
 }
@@ -94,6 +96,7 @@ function VolumePlaque({
 export function StorySaga({
   chapters,
   activeChapterSlug,
+  activeAct,
   onOpenChapter,
   onCloseChapter,
 }: StorySagaProps) {
@@ -183,7 +186,7 @@ export function StorySaga({
       </section>
 
       {activeChapter ? (
-        <ChapterBook chapter={activeChapter} onClose={onCloseChapter} />
+        <ChapterBook chapter={activeChapter} initialAct={activeAct} onClose={onCloseChapter} />
       ) : null}
     </>
   )

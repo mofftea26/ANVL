@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 import { AccountDrawerSection, AccountDrawerSignOut } from '@/features/storefront-account/account/AccountDrawerSection'
+import { GlobalSearchBar } from '@/features/search/components/GlobalSearchBar'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Drawer } from '@/shared/components/ui/Drawer'
 import { IconButton } from '@/shared/components/ui/IconButton'
@@ -43,6 +44,9 @@ export function PremiumNavMobile({
         <IconButton onClick={onClose} aria-label="Close navigation menu">
           <X size={16} aria-hidden="true" />
         </IconButton>
+      </div>
+      <div className="mt-6">
+        <GlobalSearchBar variant="drawer" onNavigate={onClose} />
       </div>
       <div className="mt-6">
         <AccountDrawerSection onNavigate={onClose} />

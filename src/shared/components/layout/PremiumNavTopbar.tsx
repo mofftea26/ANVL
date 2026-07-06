@@ -5,6 +5,7 @@ import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { AccountMenu } from '@/features/storefront-account/account/AccountMenu'
+import { GlobalSearchBar } from '@/features/search/components/GlobalSearchBar'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Container } from '@/shared/components/ui/Container'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
@@ -116,6 +117,8 @@ export function PremiumNavTopbar({
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <GlobalSearchBar triggerClassName={iconChromeRound} />
+
           {showCart ? (
             <button
               type="button"

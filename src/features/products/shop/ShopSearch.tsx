@@ -1,10 +1,11 @@
 import { Search, X } from 'lucide-react'
-import { useEffect, useRef } from 'react'
 import { cn } from '@/shared/lib/cn'
 
 /**
- * Debounced shop search box (the debounce lives in `useShopFilters`). Includes a
- * clear button, an accessible label, and a `/` keyboard shortcut to focus.
+ * Debounced shop search box (the debounce lives in `useShopFilters`). Includes
+ * a clear button and an accessible label. The `/` focus shortcut lives on the
+ * global nav search (`useGlobalSearch`) now, which is the single canonical
+ * `/` target site-wide — this box doesn't bind its own to avoid a conflict.
  */
 export function ShopSearch({
   value,
@@ -15,24 +16,6 @@ export function ShopSearch({
   onChange: (next: string) => void
   className?: string
 }) {
-  const inputRef = useRef<HTMLInputElement | null>(null)
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== '/' || e.defaultPrevented) return
-      const el = document.activeElement
-      const typing =
-        el instanceof HTMLInputElement ||
-        el instanceof HTMLTextAreaElement ||
-        (el instanceof HTMLElement && el.isContentEditable)
-      if (typing) return
-      e.preventDefault()
-      inputRef.current?.focus()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [])
-
   return (
     <div className={cn('relative min-w-0', className)}>
       <Search
@@ -41,7 +24,6 @@ export function ShopSearch({
         className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--shop-text-muted)]"
       />
       <input
-        ref={inputRef}
         id="shop-search"
         type="search"
         value={value}

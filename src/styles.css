@@ -286,6 +286,28 @@ body {
   color: var(--color-heading);
 }
 
+/* Brief arrival pulse for search-deep-linked sections (About orbs, PDP tiles).
+   Reduced motion gets an instant static flash instead of the keyframe glow. */
+.anvl-highlight-pulse {
+  outline: 2px solid color-mix(in srgb, var(--color-highlight) 70%, transparent);
+  outline-offset: 4px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .anvl-highlight-pulse {
+    animation: anvl-highlight-pulse-keyframes 2s ease-out;
+  }
+}
+@keyframes anvl-highlight-pulse-keyframes {
+  0% {
+    outline-color: color-mix(in srgb, var(--color-highlight) 90%, transparent);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-highlight) 22%, transparent);
+  }
+  100% {
+    outline-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
 /* Ember rule — a forged hairline that glows from a hot center (warrior dividers). */
 .anvl-highlight-rule {
   height: 1px;
