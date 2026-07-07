@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { isWebglAvailable } from '@/features/story/lib/webgl'
+import { useCanvasMountGate } from '@/shared/webgl/canvasTeardownGuard'
 import { OATH_DESKTOP_CINEMATIC_MQ } from '../oathBreakpoints'
 
 const OathProductCanvas = lazy(() => import('../webgl/OathProductCanvas'))
@@ -22,6 +23,7 @@ export function OathProductViewer({
   alt: string
 }) {
   const [canRender3d, setCanRender3d] = useState(false)
+  const mountable = useCanvasMountGate(canRender3d)
 
   useEffect(() => {
     const media = window.matchMedia(OATH_DESKTOP_CINEMATIC_MQ)
@@ -31,7 +33,7 @@ export function OathProductViewer({
     return () => media.removeEventListener('change', update)
   }, [])
 
-  if (modelUrl && canRender3d) {
+  if (modelUrl && canRender3d && mountable) {
     return (
       <div className="absolute inset-0" data-tenet-media>
         <Suspense fallback={null}>

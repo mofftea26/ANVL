@@ -28,7 +28,15 @@ function OathDustDriver({ motion, drive }: { motion: OathMotionState; drive: Dus
  * read the shared motion state in `useFrame` and lerp toward it; nothing here
  * subscribes to React state.
  */
-export default function OathCanvas({ motion }: { motion: OathMotionState }) {
+export default function OathCanvas({
+  motion,
+  onContextLost,
+}: {
+  motion: OathMotionState
+  /** Fires if the GPU/browser evicts this canvas's WebGL context so the
+   *  gate can force a fresh remount instead of leaving a blank scene. */
+  onContextLost?: () => void
+}) {
   const colors = useMemo(() => readOathBrandColors(), [])
   const drive = useMemo(() => createDustDrive(), [])
   const coarse =
@@ -51,6 +59,13 @@ export default function OathCanvas({ motion }: { motion: OathMotionState }) {
         }}
         dpr={[1, coarse ? 1.5 : 2]}
         style={{ pointerEvents: 'none' }}
+        onCreated={({ gl }) => {
+          const onLost = (event: Event) => {
+            event.preventDefault()
+            onContextLost?.()
+          }
+          gl.domElement.addEventListener('webglcontextlost', onLost)
+        }}
       >
         <Monolith motion={motion} colors={colors} />
         <OathDustDriver motion={motion} drive={drive} />

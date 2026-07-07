@@ -8,6 +8,7 @@ import {
   useGLTF,
 } from '@react-three/drei'
 import { readOathBrandColors } from './oathBrandColors'
+import { useCanvasTeardownMark } from '@/shared/webgl/canvasTeardownGuard'
 
 /**
  * Lazy WebGL viewer for a product GLB assigned through the CMS (`modelId`). Held
@@ -41,6 +42,7 @@ export default function OathProductCanvas({ modelUrl }: { modelUrl: string }) {
   const colors = useMemo(() => readOathBrandColors(), [])
   const warm = `#${colors.ember.getHexString()}`
   const bone = `#${colors.bone.getHexString()}`
+  useCanvasTeardownMark()
 
   return (
     <Canvas

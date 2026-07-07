@@ -54,6 +54,7 @@ export function PremiumNav({
       <header
         className="fixed top-0 left-0 right-0 z-40 w-full bg-transparent"
         data-premium-nav-position="overlay"
+        data-native-cursor
       >
         <AnnouncementRail
           announcement={navigation.announcement}

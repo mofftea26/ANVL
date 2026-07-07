@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+import { useCanvasTeardownMark } from '@/shared/webgl/canvasTeardownGuard'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import type { BookSpread } from '@/features/story/lib/bookSpreads'
 import { StudioStage } from '@/features/story/components/book3d/StudioStage'
@@ -32,6 +33,7 @@ interface ChapterBook3DProps {
 export default function ChapterBook3D(props: ChapterBook3DProps) {
   const maxDpr =
     typeof window !== 'undefined' && window.innerWidth < 1024 ? 1.5 : 2
+  useCanvasTeardownMark()
 
   return (
     <div className="relative h-[min(90svh,64rem)] w-[min(98vw,80rem)]">

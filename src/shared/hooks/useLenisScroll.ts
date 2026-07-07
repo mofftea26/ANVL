@@ -85,6 +85,13 @@ export function useLenisScroll(enabled: boolean) {
         gsap.ticker.remove(ticker)
         gsap.ticker.lagSmoothing(500, 33)
         lenis.destroy()
+        // Restore native scroll handling — without this, ScrollTrigger keeps
+        // reading scroll position through this (now-destroyed) Lenis instance
+        // on every other route and on the next landing-page mount, breaking
+        // pinning/scroll-linked animations everywhere until a fresh Lenis
+        // instance happens to re-register the proxy.
+        ScrollTrigger.scrollerProxy(document.documentElement)
+        ScrollTrigger.refresh()
       }
     }
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { createDustDrive, DustField } from './DustField'
 import { siteDustState } from './siteDustState'
+import { useCanvasTeardownMark } from './canvasTeardownGuard'
 
 /**
  * The global dust canvas — one fixed, pointer-transparent layer behind the
@@ -12,6 +13,7 @@ import { siteDustState } from './siteDustState'
  */
 export default function SiteDustLayer() {
   const drive = useMemo(() => createDustDrive({ decayGlint: true }), [])
+  useCanvasTeardownMark()
 
   useEffect(() => {
     let lastX = 0

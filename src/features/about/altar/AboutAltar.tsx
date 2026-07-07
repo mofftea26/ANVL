@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 import { createDustDrive } from '@/shared/webgl/DustField'
+import { useCanvasTeardownMark } from '@/shared/webgl/canvasTeardownGuard'
 import type { AboutResolvedContent } from '../content/aboutContent.defaults'
 import { orbImage } from '../content/resolveAboutContent'
 import type { AboutPageAssets } from '../index'
@@ -43,6 +44,7 @@ export default function AboutAltar({
   const timelineRef = useRef<gsap.core.Timeline | null>(null)
   const colors = useMemo(() => readAboutBrandColors(), [])
   const [openIndex, setOpenIndex] = useState<number | null>(null)
+  useCanvasTeardownMark()
 
   const openOrb = openIndex !== null ? (orbs[openIndex] ?? null) : null
 
