@@ -12,6 +12,7 @@ The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing p
 | Assets | `/admin/assets` | `cms_settings.asset_config` + `cms_media_assets` |
 | Landing Content | `/admin/content` | `cms_settings.landing_content` (per-landing-key copy blobs) + reads/writes `asset_config.drops` for non-tenet scene media |
 | About Page | `/admin/about` | `cms_settings.landing_content.about` — hero + marquee copy and the **orbs array** (free-form sections with label/color/copy/lines/points/stats/CTAs/`mediaId`; add/edit/remove, The Oath tenets ownership contract). Anvil/hammer GLBs + page imagery assign on `/admin/assets` (`asset_config.pages.about`) |
+| Coming Soon | `/admin/coming-soon` | `cms_settings.coming_soon` — site-mode `enabled` toggle + reveal-page copy, countdown (wall-clock + IANA timezone), CTAs, email-capture config, media-id asset refs, SEO/OG overrides |
 | Story | `/admin/story` | `story_chapters` + `story_acts` + `story_cast` (+ `story-media` bucket) |
 | Settings | `/admin/settings` | Session + local reset only |
 
@@ -43,6 +44,10 @@ Storefront (SSR + browser)
 
 Nav, footer, and SEO use **code defaults** (`navigation.defaults.ts` → `staticWebsiteNavigation.ts`, `websiteLayout.defaults.ts`, per-route `head` meta) — not CMS-editable and not read from Supabase.
 
+### Coming Soon site mode
+
+`coming_soon` (jsonb on both singletons, mirroring `shop_config`) carries a master `enabled` boolean plus the reveal page's content. The gate lives in `src/routes/__root.tsx`'s `RootLayout`: when enabled, **every public route** renders the lazy `ComingSoonExperience` (`src/features/comingSoon/`) instead of `StorefrontLayout` — no redirects, HTTP 200 everywhere, `/admin/*` untouched. The SSR projection seeds the first paint; `useComingSoonConfig` then tracks the published row (30 s stale + refocus) so the CMS toggle propagates to open tabs. Admin preview bypass: `?anvl-preview=live` / `?anvl-preview=off` (sessionStorage, per tab). While gated, non-home public routes emit `robots: noindex, nofollow` and the home head swaps to the blob's SEO/OG fields. Early-access emails insert into `coming_soon_subscribers` (anon INSERT-only RLS; duplicate = friendly success). Blank content fields fall back to designed defaults (`resolveComingSoonContent`); bundled default imagery lives in `public/brand/coming-soon/`.
+
 ### localStorage keys (admin working copy)
 
 | Key | Content |
@@ -53,6 +58,7 @@ Nav, footer, and SEO use **code defaults** (`navigation.defaults.ts` → `static
 | `anvl.assetConfig.v1` | Asset slot assignments |
 | `anvl.landingContent.v1` | Per-landing copy overrides |
 | `anvl.shopConfig.v1` | Shop Experience config (`/admin/shop` → `shop_config`) |
+| `anvl.comingSoon.v1` | Coming Soon site-mode config (`/admin/coming-soon` → `coming_soon`) |
 | `anvl.supabase.admin.v1` | Supabase GoTrue session (auth only) |
 
 ### Remote sync timing

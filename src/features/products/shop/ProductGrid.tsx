@@ -55,8 +55,14 @@ export function ProductGrid({
       if (!state) return
       const mm = gsap.matchMedia()
       mm.add(
-        '(min-width: 768px) and (prefers-reduced-motion: no-preference)',
-        () => {
+        {
+          desktop: '(min-width: 768px) and (prefers-reduced-motion: no-preference)',
+          reduced: '(max-width: 767px), (prefers-reduced-motion: reduce)',
+        },
+        (ctx) => {
+          // Reduced/mobile: React already committed the final DOM order — the
+          // grid just shows it with no animation (Flip has nothing to animate).
+          if (!ctx.conditions?.desktop) return
           Flip.from(state, {
             duration: 0.42 * config.animationDurationMultiplier,
             ease: 'power2.out',

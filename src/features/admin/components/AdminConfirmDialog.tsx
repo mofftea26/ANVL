@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { AdminButton } from '@/features/admin/components/AdminButton'
+import { Button } from '@/shared/components/ui/Button'
 import { Modal } from '@/shared/components/ui/Modal'
 
 export type AdminConfirmDialogProps = {
@@ -39,25 +39,27 @@ export function AdminConfirmDialog({
         <div className="text-sm text-[var(--color-text-muted)]">{children}</div>
         {footerBefore}
         <div className="flex justify-end gap-2">
-          <AdminButton
+          <Button
             type="button"
             variant="ghost"
             size="sm"
+            density="compact"
             disabled={confirmLoading}
             onClick={onClose}
           >
             {cancelLabel}
-          </AdminButton>
-          <AdminButton
+          </Button>
+          <Button
             type="button"
             variant={confirmVariant}
             size="sm"
+            density="compact"
             loading={confirmLoading}
             disabled={confirmDisabled || confirmLoading}
             onClick={onConfirm}
           >
             {confirmLabel}
-          </AdminButton>
+          </Button>
         </div>
       </div>
     </Modal>

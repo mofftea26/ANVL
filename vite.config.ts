@@ -12,7 +12,24 @@ const analyze = process.env.ANVL_ANALYZE === '1'
 const config = defineConfig(({ isSsrBuild }) => ({
   resolve: { tsconfigPaths: true },
   plugins: [
-    devtools(),
+    devtools({
+      // R3F cannot apply DOM `data-tsd-source` attributes to three.js
+      // elements (<points>, <shaderMaterial>, …) — the injected attribute
+      // crashes CanvasImpl in dev. Skip source injection for every file
+      // that renders inside an R3F <Canvas>.
+      injectSource: {
+        enabled: true,
+        ignore: {
+          files: [
+            /[\\/]src[\\/]shared[\\/]webgl[\\/]/,
+            /[\\/]src[\\/]features[\\/]comingSoon[\\/]scene[\\/]/,
+            /[\\/]src[\\/]features[\\/]about[\\/]altar[\\/]/,
+            /[\\/]src[\\/]features[\\/]story[\\/]components[\\/]/,
+            /[\\/]TheOathLanding[\\/]webgl[\\/]/,
+          ],
+        },
+      },
+    }),
     tailwindcss(),
     tanstackStart(),
     viteReact(),

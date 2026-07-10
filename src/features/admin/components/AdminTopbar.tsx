@@ -4,6 +4,7 @@ import { Link, useRouterState } from '@tanstack/react-router'
 import { useAdminPageActionsSlot } from '@/features/admin/components/AdminPageActionsContext'
 import { AdminTopbarSessionChip } from '@/features/admin/components/AdminTopbarSessionChip'
 import { cn } from '@/shared/lib/cn'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 interface AdminTopbarProps {
   title: string
@@ -77,7 +78,7 @@ export function AdminTopbar({
             'focus-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-text)]',
           )}
         >
-          <Menu size={16} aria-hidden="true" className="text-[var(--color-text-muted)]" />
+          <Menu size={ICON_SIZE.md} aria-hidden="true" className="text-[var(--color-text-muted)]" />
         </button>
 
         <div className="min-w-0 flex-1">

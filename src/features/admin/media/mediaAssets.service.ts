@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { CMS_MEDIA_BUCKET, publicCmsMediaUrl } from '@/features/cms/media/mediaUrl'
-import { extensionFor, resolveUploadMimeType } from './mediaMime'
+import { coerceUploadFile, extensionFor } from './mediaMime'
 import type {
   CmsMediaAsset,
   MediaAssetMutationResult,
@@ -275,11 +275,13 @@ export async function uploadLibraryMediaFile(
   }
 
   const objectPath = formatCmsLibraryMediaObjectPath(file)
-  const contentType = resolveUploadMimeType(file)
+  // Re-wrapped so the Blob itself carries the resolved mime — supabase-js
+  // ignores `contentType` for File bodies (multipart path); see mediaMime.ts.
+  const { body, contentType } = coerceUploadFile(file)
 
   const { error: uploadErr } = await client.storage
     .from(CMS_MEDIA_BUCKET)
-    .upload(objectPath, file, {
+    .upload(objectPath, body, {
       cacheControl: '31536000',
       upsert: false,
       contentType,

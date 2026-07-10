@@ -5,12 +5,12 @@ import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import { resetAllLocalCmsKeys } from '@/features/admin/lib/resetLocalCms'
-import { AdminButton } from '@/features/admin/components/AdminButton'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput } from '@/features/admin/components/AdminInput'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWorkspaceStatusPanel'
+import { Button } from '@/shared/components/ui/Button'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
 
@@ -93,10 +93,11 @@ function SettingsPage() {
 
         <AdminCard title="Danger zone">
           <div className="space-y-4">
-            <AdminButton
+            <Button
               type="button"
               variant="destructive"
               size="lg"
+              density="compact"
               onClick={() => setConfirmReset(true)}
               className={cn(
                 'focus-ring min-h-11 w-full max-w-xl whitespace-normal px-4 py-3 text-center leading-snug sm:min-h-12',
@@ -106,7 +107,7 @@ function SettingsPage() {
             >
               <RotateCcw size={18} className="mr-2 shrink-0" aria-hidden="true" />
               Reset all local CMS data…
-            </AdminButton>
+            </Button>
           </div>
         </AdminCard>
       </div>
@@ -147,8 +148,9 @@ function SettingsPage() {
               closeResetModal()
             }}
           >
-            <AdminFormField label="Confirmation" htmlFor={passwordFieldId}>
-              <AdminInput
+            <FormField label="Confirmation" htmlFor={passwordFieldId} labelStyle="stacked">
+              <Input
+                density="compact"
                 id={passwordFieldId}
                 type="password"
                 autoComplete="current-password"
@@ -156,9 +158,10 @@ function SettingsPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-            </AdminFormField>
-            <AdminFormField label="Confirm" htmlFor={confirmFieldId} error={matchError}>
-              <AdminInput
+            </FormField>
+            <FormField label="Confirm" htmlFor={confirmFieldId} error={matchError} labelStyle="stacked">
+              <Input
+                density="compact"
                 id={confirmFieldId}
                 type="password"
                 autoComplete="new-password"
@@ -167,16 +170,17 @@ function SettingsPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 aria-invalid={Boolean(matchError)}
               />
-            </AdminFormField>
+            </FormField>
 
             <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-              <AdminButton type="button" variant="ghost" size="md" onClick={closeResetModal}>
+              <Button type="button" variant="ghost" size="md" density="compact" onClick={closeResetModal}>
                 Cancel
-              </AdminButton>
-              <AdminButton
+              </Button>
+              <Button
                 type="submit"
                 variant="destructive"
                 size="lg"
+                density="compact"
                 disabled={!canSubmit}
                 className={cn(
                   'min-h-11 sm:min-w-[12rem]',
@@ -185,7 +189,7 @@ function SettingsPage() {
                 )}
               >
                 Reset everything
-              </AdminButton>
+              </Button>
             </div>
           </form>
         </div>

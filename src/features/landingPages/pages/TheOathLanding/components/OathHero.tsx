@@ -19,6 +19,7 @@ import {
   oathHeroRevealMedia,
 
 } from '../theOathAssets'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 import { OathCmsMark } from './OathCmsMark'
 
@@ -554,7 +555,7 @@ export function OathHero({ hero }: { hero: OathResolvedContent['hero'] }) {
 
         <ChevronDown
 
-          size={14}
+          size={ICON_SIZE.sm}
 
           aria-hidden="true"
 

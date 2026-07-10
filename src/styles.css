@@ -169,6 +169,8 @@
   --motion-duration-fast: 140ms;
   --motion-duration-normal: 220ms;
   --motion-duration-slow: 320ms;
+  --motion-duration-section: 600ms;
+  --motion-duration-cinematic: 900ms;
   --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
   --motion-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
   --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
@@ -176,6 +178,44 @@
 
 :root[data-theme="bone-light"] {
   color-scheme: light;
+}
+
+/* Shop surface bridge (§ design-system overhaul, phase 1).
+   `--shop-*` is the /shop + PDP semantic layer — derived independently from
+   the same 15-token palette so it can theme per CMS preset (see
+   themeConfigToCssVars). Storefront primitives (Button/Input/IconButton/
+   Skeleton) only ever read `--color-*`, so they can't render correctly
+   inside /shop without this scope: within `[data-surface="shop"]`, the
+   `--color-*` NAMES are re-pointed at the already-themed `--shop-*` VALUES.
+   This is the one deliberate second writer of these variable names — it
+   must stay scoped, never applied at `:root`. Wrap a subtree with
+   `<ShopSurfaceScope>` (src/shared/components/layout/ShopSurfaceScope.tsx)
+   to opt it in. */
+[data-surface="shop"] {
+  --color-bg: var(--shop-bg);
+  --color-surface: var(--shop-card-bg);
+  --color-surface-soft: var(--shop-card-bg);
+  --color-surface-elevated: var(--shop-card-bg-2);
+  --color-line: var(--shop-card-border);
+  --color-text: var(--shop-text);
+  --color-fg: var(--shop-text);
+  --color-text-muted: var(--shop-text-muted);
+  --color-heading: var(--shop-text);
+  --color-accent: var(--shop-accent);
+  --color-chip: var(--shop-chip-selected);
+  --color-highlight: var(--shop-accent);
+  --color-highlight-bright: color-mix(in oklab, var(--shop-accent) 76%, white);
+  --color-highlight-soft: var(--shop-card-light);
+  --color-on-accent: var(--shop-on-accent);
+  --color-on-highlight: var(--shop-on-accent);
+  --color-on-highlight-bright: var(--shop-on-accent);
+  --color-on-surface: var(--shop-text);
+  --color-success: var(--shop-success);
+  --color-warning: var(--shop-warning);
+  --color-danger: var(--shop-out-of-stock);
+  --color-focus-ring: var(--shop-focus);
+  --color-disabled: var(--shop-text-muted);
+  --color-overlay: var(--shop-overlay);
 }
 
 *,

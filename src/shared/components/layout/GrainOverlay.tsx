@@ -1,11 +1,18 @@
-export function GrainOverlay() {
+const INTENSITY = {
+  subtle: { wrapperOpacity: 0.18, dotAlpha: 0.05 },
+  default: { wrapperOpacity: 0.25, dotAlpha: 0.06 },
+} as const
+
+/** Shared film-grain texture — used behind full experiences (ForgeAtmosphere) and on individual banners (WarBanner). */
+export function GrainOverlay({ intensity = 'default' }: { intensity?: keyof typeof INTENSITY }) {
+  const { wrapperOpacity, dotAlpha } = INTENSITY[intensity]
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 opacity-25"
+      className="pointer-events-none absolute inset-0"
       style={{
-        backgroundImage:
-          'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0)',
+        opacity: wrapperOpacity,
+        backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,${dotAlpha}) 1px, transparent 0)`,
         backgroundSize: '3px 3px',
       }}
     />

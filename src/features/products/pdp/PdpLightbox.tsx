@@ -1,7 +1,9 @@
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Modal } from '@/shared/components/ui'
+import { IconButton, Modal } from '@/shared/components/ui'
+import { ShopSurfaceScope } from '@/shared/components/layout/ShopSurfaceScope'
 import { cn } from '@/shared/lib/cn'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 const MIN_SCALE = 1
 const MAX_SCALE = 4
@@ -61,7 +63,7 @@ export function PdpLightbox({
 
   return (
     <Modal open onClose={onClose} aria-label={`${productName} images`} className="max-w-4xl bg-[var(--shop-surface)]">
-      <div className="relative">
+      <ShopSurfaceScope className="relative">
         <div
           className="relative overflow-hidden rounded-lg border border-[var(--shop-card-border)] bg-[var(--shop-image-bg)]"
           onWheel={(e) => {
@@ -87,45 +89,47 @@ export function PdpLightbox({
 
           {/* Zoom controls. */}
           <div className="absolute right-2 top-2 flex gap-1.5">
-            <button
-              type="button"
+            <IconButton
+              variant="overlay"
+              size="sm"
               onClick={() => zoom(STEP)}
               disabled={scale >= MAX_SCALE}
               aria-label="Zoom in"
-              className="focus-ring grid h-9 w-9 place-items-center rounded-full border border-[var(--shop-card-border)] bg-[var(--shop-overlay)] text-[var(--shop-text)] backdrop-blur-sm hover:border-[var(--shop-accent)] disabled:opacity-40"
             >
-              <ZoomIn size={16} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
+              <ZoomIn size={ICON_SIZE.md} aria-hidden="true" />
+            </IconButton>
+            <IconButton
+              variant="overlay"
+              size="sm"
               onClick={() => zoom(-STEP)}
               disabled={scale <= MIN_SCALE}
               aria-label="Zoom out"
-              className="focus-ring grid h-9 w-9 place-items-center rounded-full border border-[var(--shop-card-border)] bg-[var(--shop-overlay)] text-[var(--shop-text)] backdrop-blur-sm hover:border-[var(--shop-accent)] disabled:opacity-40"
             >
-              <ZoomOut size={16} aria-hidden="true" />
-            </button>
+              <ZoomOut size={ICON_SIZE.md} aria-hidden="true" />
+            </IconButton>
           </div>
         </div>
 
         {images.length > 1 ? (
           <>
-            <button
-              type="button"
+            <IconButton
+              variant="overlay"
+              size="sm"
               onClick={() => go(-1)}
               aria-label="Previous image"
-              className="focus-ring absolute left-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-[var(--shop-card-border)] bg-[var(--shop-overlay)] text-[var(--shop-text)] backdrop-blur-sm hover:border-[var(--shop-accent)]"
+              className="absolute left-2 top-1/2 -translate-y-1/2"
             >
               <ChevronLeft size={18} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
+            </IconButton>
+            <IconButton
+              variant="overlay"
+              size="sm"
               onClick={() => go(1)}
               aria-label="Next image"
-              className="focus-ring absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-[var(--shop-card-border)] bg-[var(--shop-overlay)] text-[var(--shop-text)] backdrop-blur-sm hover:border-[var(--shop-accent)]"
+              className="absolute right-2 top-1/2 -translate-y-1/2"
             >
               <ChevronRight size={18} aria-hidden="true" />
-            </button>
+            </IconButton>
             <div className="mt-3 flex justify-center gap-2">
               {images.map((img, i) => (
                 <button
@@ -143,7 +147,7 @@ export function PdpLightbox({
             </div>
           </>
         ) : null}
-      </div>
+      </ShopSurfaceScope>
     </Modal>
   )
 }

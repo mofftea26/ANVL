@@ -4,6 +4,7 @@ import {
   THEME_CONTRAST_PAIRS,
   type ContrastPair,
 } from '@/features/cms/config/themeTokens'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import type { ThemePalette } from '@/features/cms/config/cmsSiteConfig.zod'
 import { contrastRatio, suggestAccessibleColor } from '@/shared/lib/color'
 
@@ -57,11 +58,11 @@ export function ThemeContrastReport({ palette, onApplyFix }: ThemeContrastReport
         >
           {failing === 0 ? (
             <>
-              <Check size={12} /> All pass
+              <Check size={ICON_SIZE.xs} /> All pass
             </>
           ) : (
             <>
-              <AlertTriangle size={12} /> {failing} failing
+              <AlertTriangle size={ICON_SIZE.xs} /> {failing} failing
             </>
           )}
         </span>
@@ -93,7 +94,7 @@ export function ThemeContrastReport({ palette, onApplyFix }: ThemeContrastReport
                 <Wand2 size={11} /> Fix
               </button>
             ) : (
-              <Check size={14} className="shrink-0 text-[var(--color-success)]" />
+              <Check size={ICON_SIZE.sm} className="shrink-0 text-[var(--color-success)]" />
             )}
           </li>
         ))}

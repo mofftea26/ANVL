@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Copy, Download, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { AdminButton } from '@/features/admin/components/AdminButton'
+import { Button } from '@/shared/components/ui/Button'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import { adminFieldControlFineClass } from '@/shared/lib/cmsFieldStyles'
 import { cn } from '@/shared/lib/cn'
@@ -11,6 +11,7 @@ import {
   filterMediaAssets,
   mediaAssetPublicUrl,
 } from './mediaAssets.service'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import type { CmsMediaAsset } from './mediaAssets.types'
 import { useMediaAssetsMutations } from './useMediaAssetsQuery'
 
@@ -129,36 +130,39 @@ function MediaAssetCard({
           />
         </label>
         <div className="flex flex-wrap gap-1">
-          <AdminButton
+          <Button
             type="button"
             variant="ghost"
             size="sm"
+            density="compact"
             onClick={() => void copyUrl()}
             aria-label={`Copy URL for ${asset.filename}`}
           >
-            <Copy size={14} className="mr-1" aria-hidden="true" />
+            <Copy size={ICON_SIZE.sm} className="mr-1" aria-hidden="true" />
             Copy URL
-          </AdminButton>
-          <AdminButton
+          </Button>
+          <Button
             type="button"
             variant="ghost"
             size="sm"
+            density="compact"
             onClick={() => void download()}
             aria-label={`Download ${asset.filename}`}
           >
-            <Download size={14} className="mr-1" aria-hidden="true" />
+            <Download size={ICON_SIZE.sm} className="mr-1" aria-hidden="true" />
             Download
-          </AdminButton>
-          <AdminButton
+          </Button>
+          <Button
             type="button"
             variant="ghost"
             size="sm"
+            density="compact"
             onClick={() => onDelete(asset)}
             aria-label={`Delete ${asset.filename}`}
           >
-            <Trash2 size={14} className="mr-1" aria-hidden="true" />
+            <Trash2 size={ICON_SIZE.sm} className="mr-1" aria-hidden="true" />
             Delete
-          </AdminButton>
+          </Button>
         </div>
       </div>
     </article>

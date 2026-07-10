@@ -5,12 +5,10 @@ import {
   useMemo,
   useSyncExternalStore,
 } from 'react'
-import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput } from '@/features/admin/components/AdminInput'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
-import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
+import { AdminRangeField } from '@/features/admin/components/AdminRangeField'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
@@ -27,6 +25,10 @@ import {
   type ShopSortValue,
 } from '@/features/cms/shop/shopExperience.zod'
 import { Textarea } from '@/shared/components/ui'
+import { Button } from '@/shared/components/ui/Button'
+import { Checkbox } from '@/shared/components/ui/Checkbox'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
 
 const SORT_LABELS: Record<ShopSortValue, string> = {
   featured: 'Featured',
@@ -52,39 +54,6 @@ function useStoredShopConfig(): ShopConfig {
     subscribeShopConfigChange,
     () => readShopConfigFromStorage(),
     () => readShopConfigFromStorage(),
-  )
-}
-
-function RangeField({
-  label,
-  value,
-  min,
-  max,
-  step,
-  suffix,
-  onChange,
-}: {
-  label: string
-  value: number
-  min: number
-  max: number
-  step: number
-  suffix?: string
-  onChange: (n: number) => void
-}) {
-  return (
-    <AdminFormField label={`${label} — ${value}${suffix ?? ''}`}>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="focus-ring h-2 w-full cursor-pointer accent-[var(--color-accent)]"
-        aria-label={label}
-      />
-    </AdminFormField>
   )
 }
 
@@ -122,16 +91,18 @@ export function ShopExperienceEditor() {
 
   const toolbar = useMemo(
     () => (
-      <AdminTopbarChipButton
+      <Button
         type="button"
         disabled={saving}
-        icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
         variant="primary"
+        size="md"
+        density="compact"
         loading={saving}
         onClick={save}
       >
+        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
         {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save shop'}
-      </AdminTopbarChipButton>
+      </Button>
     ),
     [save, saving, showSuccess],
   )
@@ -167,24 +138,24 @@ export function ShopExperienceEditor() {
       <div className="space-y-6" data-testid="shop-experience-editor">
         <Section title="Introduction">
           <div className="space-y-4">
-            <AdminCheckbox
+            <Checkbox
               label="Show the shop hero"
               description="The cinematic intro band. Off = a compact heading only."
               checked={config.heroVisible}
               onChange={(e) => set('heroVisible', e.target.checked)}
             />
-            <AdminFormField label="Eyebrow">
-              <AdminInput value={config.eyebrow} onChange={(e) => set('eyebrow', e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Heading">
-              <AdminInput value={config.heading} onChange={(e) => set('heading', e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Intro paragraph">
+            <FormField label="Eyebrow" labelStyle="stacked">
+              <Input density="compact" value={config.eyebrow} onChange={(e) => set('eyebrow', e.target.value)} />
+            </FormField>
+            <FormField label="Heading" labelStyle="stacked">
+              <Input density="compact" value={config.heading} onChange={(e) => set('heading', e.target.value)} />
+            </FormField>
+            <FormField label="Intro paragraph" labelStyle="stacked">
               <Textarea rows={2} value={config.intro} onChange={(e) => set('intro', e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Editorial line" hint="Small secondary line under the heading.">
-              <AdminInput value={config.editorialCopy} onChange={(e) => set('editorialCopy', e.target.value)} />
-            </AdminFormField>
+            </FormField>
+            <FormField label="Editorial line" hint="Small secondary line under the heading." labelStyle="stacked">
+              <Input density="compact" value={config.editorialCopy} onChange={(e) => set('editorialCopy', e.target.value)} />
+            </FormField>
           </div>
         </Section>
 
@@ -209,8 +180,8 @@ export function ShopExperienceEditor() {
                 { value: '4', label: '4 columns' },
               ]}
             />
-            <RangeField label="Grid gap" value={config.gridGap} min={8} max={40} step={2} suffix="px" onChange={(n) => set('gridGap', n)} />
-            <RangeField label="Section spacing" value={config.sectionSpacing} min={24} max={120} step={4} suffix="px" onChange={(n) => set('sectionSpacing', n)} />
+            <AdminRangeField label="Grid gap" value={config.gridGap} min={8} max={40} step={2} suffix="px" onChange={(n) => set('gridGap', n)} />
+            <AdminRangeField label="Section spacing" value={config.sectionSpacing} min={24} max={120} step={4} suffix="px" onChange={(n) => set('sectionSpacing', n)} />
           </div>
         </Section>
 
@@ -254,8 +225,8 @@ export function ShopExperienceEditor() {
                 { value: 'off', label: 'Off' },
               ]}
             />
-            <RangeField label="Card radius" value={config.cardRadius} min={0} max={32} step={1} suffix="px" onChange={(n) => set('cardRadius', n)} />
-            <RangeField
+            <AdminRangeField label="Card radius" value={config.cardRadius} min={0} max={32} step={1} suffix="px" onChange={(n) => set('cardRadius', n)} />
+            <AdminRangeField
               label="Animation speed ×"
               value={config.animationDurationMultiplier}
               min={0.5}
@@ -265,12 +236,12 @@ export function ShopExperienceEditor() {
             />
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <AdminCheckbox
+            <Checkbox
               label="Advanced desktop effects"
               checked={config.advancedDesktopEffects}
               onChange={(e) => set('advancedDesktopEffects', e.target.checked)}
             />
-            <AdminCheckbox
+            <Checkbox
               label="Reduced effects on mobile"
               checked={config.reducedEffectsMobile}
               onChange={(e) => set('reducedEffectsMobile', e.target.checked)}
@@ -280,14 +251,14 @@ export function ShopExperienceEditor() {
 
         <Section title="What cards show">
           <div className="grid gap-2 sm:grid-cols-2">
-            <AdminCheckbox label="Quick add" checked={config.quickAddEnabled} onChange={(e) => set('quickAddEnabled', e.target.checked)} />
-            <AdminCheckbox label="Quick view" checked={config.quickViewEnabled} onChange={(e) => set('quickViewEnabled', e.target.checked)} />
-            <AdminCheckbox label="Prices" checked={config.showPrices} onChange={(e) => set('showPrices', e.target.checked)} />
-            <AdminCheckbox label="Compare-at prices" checked={config.showComparePrices} onChange={(e) => set('showComparePrices', e.target.checked)} />
-            <AdminCheckbox label="Badges" checked={config.showBadges} onChange={(e) => set('showBadges', e.target.checked)} />
-            <AdminCheckbox label="Color swatches" checked={config.showSwatches} onChange={(e) => set('showSwatches', e.target.checked)} />
-            <AdminCheckbox label="Available sizes" checked={config.showSizes} onChange={(e) => set('showSizes', e.target.checked)} />
-            <AdminCheckbox label="Inventory urgency" description="Only shows with real low-stock data." checked={config.showInventoryUrgency} onChange={(e) => set('showInventoryUrgency', e.target.checked)} />
+            <Checkbox label="Quick add" checked={config.quickAddEnabled} onChange={(e) => set('quickAddEnabled', e.target.checked)} />
+            <Checkbox label="Quick view" checked={config.quickViewEnabled} onChange={(e) => set('quickViewEnabled', e.target.checked)} />
+            <Checkbox label="Prices" checked={config.showPrices} onChange={(e) => set('showPrices', e.target.checked)} />
+            <Checkbox label="Compare-at prices" checked={config.showComparePrices} onChange={(e) => set('showComparePrices', e.target.checked)} />
+            <Checkbox label="Badges" checked={config.showBadges} onChange={(e) => set('showBadges', e.target.checked)} />
+            <Checkbox label="Color swatches" checked={config.showSwatches} onChange={(e) => set('showSwatches', e.target.checked)} />
+            <Checkbox label="Available sizes" checked={config.showSizes} onChange={(e) => set('showSizes', e.target.checked)} />
+            <Checkbox label="Inventory urgency" description="Only shows with real low-stock data." checked={config.showInventoryUrgency} onChange={(e) => set('showInventoryUrgency', e.target.checked)} />
           </div>
         </Section>
 
@@ -301,7 +272,7 @@ export function ShopExperienceEditor() {
           <p className="anvl-micro mb-2 mt-4 text-[var(--color-text-muted)]">Available sort options</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {SHOP_SORT_VALUES.map((v) => (
-              <AdminCheckbox
+              <Checkbox
                 key={v}
                 label={SORT_LABELS[v]}
                 checked={config.enabledSortOptions.includes(v)}
@@ -312,7 +283,7 @@ export function ShopExperienceEditor() {
         </Section>
 
         <Section title="Filters">
-          <AdminCheckbox
+          <Checkbox
             label="Sticky filter rail"
             description="Keeps the desktop filter rail pinned while scrolling."
             checked={config.stickyFilters}
@@ -321,7 +292,7 @@ export function ShopExperienceEditor() {
           <p className="anvl-micro mb-2 mt-4 text-[var(--color-text-muted)]">Visible filters</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {SHOP_FILTER_KEYS.map((key) => (
-              <AdminCheckbox
+              <Checkbox
                 key={key}
                 label={FILTER_LABELS[key]}
                 checked={config.filterVisibility[key] !== false}
@@ -335,38 +306,38 @@ export function ShopExperienceEditor() {
 
         <Section title="State copy">
           <div className="space-y-4">
-            <AdminCheckbox
+            <Checkbox
               label="Show editorial banner above the grid"
               checked={config.editorialBanner.visible}
               onChange={(e) => set('editorialBanner', { ...config.editorialBanner, visible: e.target.checked })}
             />
             <div className="grid gap-3 sm:grid-cols-2">
-              <AdminFormField label="Banner title">
-                <AdminInput
+              <FormField label="Banner title" labelStyle="stacked">
+                <Input density="compact"
                   value={config.editorialBanner.title}
                   onChange={(e) => set('editorialBanner', { ...config.editorialBanner, title: e.target.value })}
                 />
-              </AdminFormField>
-              <AdminFormField label="Banner body">
-                <AdminInput
+              </FormField>
+              <FormField label="Banner body" labelStyle="stacked">
+                <Input density="compact"
                   value={config.editorialBanner.body}
                   onChange={(e) => set('editorialBanner', { ...config.editorialBanner, body: e.target.value })}
                 />
-              </AdminFormField>
+              </FormField>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <AdminFormField label="Empty catalog — title">
-                <AdminInput value={config.emptyState.title} onChange={(e) => set('emptyState', { ...config.emptyState, title: e.target.value })} />
-              </AdminFormField>
-              <AdminFormField label="Empty catalog — body">
-                <AdminInput value={config.emptyState.body} onChange={(e) => set('emptyState', { ...config.emptyState, body: e.target.value })} />
-              </AdminFormField>
-              <AdminFormField label="No results — title">
-                <AdminInput value={config.noResults.title} onChange={(e) => set('noResults', { ...config.noResults, title: e.target.value })} />
-              </AdminFormField>
-              <AdminFormField label="No results — body">
-                <AdminInput value={config.noResults.body} onChange={(e) => set('noResults', { ...config.noResults, body: e.target.value })} />
-              </AdminFormField>
+              <FormField label="Empty catalog — title" labelStyle="stacked">
+                <Input density="compact" value={config.emptyState.title} onChange={(e) => set('emptyState', { ...config.emptyState, title: e.target.value })} />
+              </FormField>
+              <FormField label="Empty catalog — body" labelStyle="stacked">
+                <Input density="compact" value={config.emptyState.body} onChange={(e) => set('emptyState', { ...config.emptyState, body: e.target.value })} />
+              </FormField>
+              <FormField label="No results — title" labelStyle="stacked">
+                <Input density="compact" value={config.noResults.title} onChange={(e) => set('noResults', { ...config.noResults, title: e.target.value })} />
+              </FormField>
+              <FormField label="No results — body" labelStyle="stacked">
+                <Input density="compact" value={config.noResults.body} onChange={(e) => set('noResults', { ...config.noResults, body: e.target.value })} />
+              </FormField>
             </div>
           </div>
         </Section>
@@ -374,14 +345,14 @@ export function ShopExperienceEditor() {
         <Section title="Product detail page">
           <p className="anvl-micro mb-3 text-[var(--color-text-muted)]">Sections</p>
           <div className="grid gap-2 sm:grid-cols-2">
-            <AdminCheckbox label="Materials showcase" checked={config.pdp.showMaterials} onChange={(e) => set('pdp', { ...config.pdp, showMaterials: e.target.checked })} />
-            <AdminCheckbox label="Colorways showcase" checked={config.pdp.showColorways} onChange={(e) => set('pdp', { ...config.pdp, showColorways: e.target.checked })} />
-            <AdminCheckbox label="Design details" checked={config.pdp.showDesignDetails} onChange={(e) => set('pdp', { ...config.pdp, showDesignDetails: e.target.checked })} />
-            <AdminCheckbox label="Story" checked={config.pdp.showStory} onChange={(e) => set('pdp', { ...config.pdp, showStory: e.target.checked })} />
-            <AdminCheckbox label="Size guide" checked={config.pdp.showSizeGuide} onChange={(e) => set('pdp', { ...config.pdp, showSizeGuide: e.target.checked })} />
-            <AdminCheckbox label="Related products" checked={config.pdp.showRelated} onChange={(e) => set('pdp', { ...config.pdp, showRelated: e.target.checked })} />
-            <AdminCheckbox label="Share button" checked={config.pdp.showShare} onChange={(e) => set('pdp', { ...config.pdp, showShare: e.target.checked })} />
-            <AdminCheckbox label="Sticky buy panel (desktop)" checked={config.pdp.stickyBuyPanel} onChange={(e) => set('pdp', { ...config.pdp, stickyBuyPanel: e.target.checked })} />
+            <Checkbox label="Materials showcase" checked={config.pdp.showMaterials} onChange={(e) => set('pdp', { ...config.pdp, showMaterials: e.target.checked })} />
+            <Checkbox label="Colorways showcase" checked={config.pdp.showColorways} onChange={(e) => set('pdp', { ...config.pdp, showColorways: e.target.checked })} />
+            <Checkbox label="Design details" checked={config.pdp.showDesignDetails} onChange={(e) => set('pdp', { ...config.pdp, showDesignDetails: e.target.checked })} />
+            <Checkbox label="Story" checked={config.pdp.showStory} onChange={(e) => set('pdp', { ...config.pdp, showStory: e.target.checked })} />
+            <Checkbox label="Size guide" checked={config.pdp.showSizeGuide} onChange={(e) => set('pdp', { ...config.pdp, showSizeGuide: e.target.checked })} />
+            <Checkbox label="Related products" checked={config.pdp.showRelated} onChange={(e) => set('pdp', { ...config.pdp, showRelated: e.target.checked })} />
+            <Checkbox label="Share button" checked={config.pdp.showShare} onChange={(e) => set('pdp', { ...config.pdp, showShare: e.target.checked })} />
+            <Checkbox label="Sticky buy panel (desktop)" checked={config.pdp.stickyBuyPanel} onChange={(e) => set('pdp', { ...config.pdp, stickyBuyPanel: e.target.checked })} />
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <AdminFieldSelect

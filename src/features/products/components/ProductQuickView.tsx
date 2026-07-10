@@ -6,6 +6,7 @@ import {
   effectivePrice,
   variantIsPurchasable,
 } from '@/features/products/catalog/storefrontCatalog'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { useProductAnalytics } from '@/features/analytics/hooks/useProductAnalytics'
@@ -180,11 +181,11 @@ export function ProductQuickView({
           <Button type="button" className="w-full" disabled={!canPurchase || state !== 'idle'} onClick={add}>
             {state === 'added' ? (
               <>
-                <Check size={16} aria-hidden="true" className="mr-2" /> Added
+                <Check size={ICON_SIZE.md} aria-hidden="true" className="mr-2" /> Added
               </>
             ) : state === 'adding' ? (
               <>
-                <Loader2 size={16} aria-hidden="true" className="mr-2 animate-spin" /> Adding…
+                <Loader2 size={ICON_SIZE.md} aria-hidden="true" className="mr-2 animate-spin" /> Adding…
               </>
             ) : canPurchase ? (
               `Add to cart — $${price}`

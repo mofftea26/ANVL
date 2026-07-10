@@ -10,6 +10,7 @@ import {
   QuantityStepper,
   SizeSelector,
 } from '@/shared/components/ui'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { PdpSizeSuggestion } from '@/features/products/pdp/PdpSizeSuggestion'
 
 function MetaChip({ label }: { label: string }) {
@@ -156,11 +157,11 @@ export function PdpBuyPanel({
         >
           {addState === 'added' ? (
             <>
-              <Check size={16} aria-hidden="true" className="mr-2" /> Added to cart
+              <Check size={ICON_SIZE.md} aria-hidden="true" className="mr-2" /> Added to cart
             </>
           ) : addState === 'adding' ? (
             <>
-              <Loader2 size={16} aria-hidden="true" className="mr-2 animate-spin" /> Adding…
+              <Loader2 size={ICON_SIZE.md} aria-hidden="true" className="mr-2 animate-spin" /> Adding…
             </>
           ) : canPurchase ? (
             `Add to cart — $${displayPrice}`
@@ -175,7 +176,7 @@ export function PdpBuyPanel({
             aria-label={`Share ${product.name}`}
             className="focus-ring grid h-10 w-10 shrink-0 place-items-center rounded-md border border-[var(--shop-card-border)] bg-[var(--shop-surface)] text-[var(--shop-text)] transition-colors hover:border-[var(--shop-accent)] hover:text-[var(--shop-accent)]"
           >
-            <Share2 size={16} aria-hidden="true" />
+            <Share2 size={ICON_SIZE.md} aria-hidden="true" />
           </button>
         ) : null}
       </div>

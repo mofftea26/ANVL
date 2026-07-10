@@ -1,6 +1,7 @@
 import type { UseFormRegister } from 'react-hook-form'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
+import { Textarea } from '@/shared/components/ui/Textarea'
 import { OATH_DEFAULT_CONTENT } from '@/features/landingPages/pages/TheOathLanding/content/oathContent.defaults'
 import type { OathContentFormValues } from '../landingContentForm'
 import { ContentSection } from './ContentSection'
@@ -17,30 +18,30 @@ export function OathFinaleFields({
       title="Finale — Take the Oath"
       hint="The closing vow. The brand line beneath it is fixed (global brand rule)."
     >
-      <AdminFormField label="Eyebrow" htmlFor="oath-finale-eyebrow">
-        <AdminInput id="oath-finale-eyebrow" placeholder={d.eyebrow} {...register('finale.eyebrow')} />
-      </AdminFormField>
-      <AdminFormField label="Title" htmlFor="oath-finale-title">
-        <AdminInput id="oath-finale-title" placeholder={d.title} {...register('finale.title')} />
-      </AdminFormField>
-      <AdminFormField label="Body" htmlFor="oath-finale-body" className="sm:col-span-2">
-        <AdminTextarea id="oath-finale-body" rows={2} placeholder={d.body} {...register('finale.body')} />
-      </AdminFormField>
-      <AdminFormField label="Primary CTA label" htmlFor="oath-finale-cta1-label">
-        <AdminInput id="oath-finale-cta1-label" placeholder={d.primaryCta.label} {...register('finale.primaryCtaLabel')} />
-      </AdminFormField>
-      <AdminFormField label="Primary CTA link" htmlFor="oath-finale-cta1-href">
-        <AdminInput id="oath-finale-cta1-href" placeholder={d.primaryCta.href} {...register('finale.primaryCtaHref')} />
-      </AdminFormField>
-      <AdminFormField label="Secondary CTA label" htmlFor="oath-finale-cta2-label">
-        <AdminInput id="oath-finale-cta2-label" placeholder={d.secondaryCta.label} {...register('finale.secondaryCtaLabel')} />
-      </AdminFormField>
-      <AdminFormField label="Secondary CTA link" htmlFor="oath-finale-cta2-href">
-        <AdminInput id="oath-finale-cta2-href" placeholder={d.secondaryCta.href} {...register('finale.secondaryCtaHref')} />
-      </AdminFormField>
-      <AdminFormField label="Tagline" htmlFor="oath-finale-tagline">
-        <AdminInput id="oath-finale-tagline" placeholder={d.tagline} {...register('finale.tagline')} />
-      </AdminFormField>
+      <FormField label="Eyebrow" htmlFor="oath-finale-eyebrow" labelStyle="stacked">
+        <Input id="oath-finale-eyebrow" placeholder={d.eyebrow} {...register('finale.eyebrow')} density="compact" />
+      </FormField>
+      <FormField label="Title" htmlFor="oath-finale-title" labelStyle="stacked">
+        <Input id="oath-finale-title" placeholder={d.title} {...register('finale.title')} density="compact" />
+      </FormField>
+      <FormField label="Body" htmlFor="oath-finale-body" className="sm:col-span-2" labelStyle="stacked">
+        <Textarea id="oath-finale-body" rows={2} placeholder={d.body} {...register('finale.body')} density="compact" />
+      </FormField>
+      <FormField label="Primary CTA label" htmlFor="oath-finale-cta1-label" labelStyle="stacked">
+        <Input id="oath-finale-cta1-label" placeholder={d.primaryCta.label} {...register('finale.primaryCtaLabel')} density="compact" />
+      </FormField>
+      <FormField label="Primary CTA link" htmlFor="oath-finale-cta1-href" labelStyle="stacked">
+        <Input id="oath-finale-cta1-href" placeholder={d.primaryCta.href} {...register('finale.primaryCtaHref')} density="compact" />
+      </FormField>
+      <FormField label="Secondary CTA label" htmlFor="oath-finale-cta2-label" labelStyle="stacked">
+        <Input id="oath-finale-cta2-label" placeholder={d.secondaryCta.label} {...register('finale.secondaryCtaLabel')} density="compact" />
+      </FormField>
+      <FormField label="Secondary CTA link" htmlFor="oath-finale-cta2-href" labelStyle="stacked">
+        <Input id="oath-finale-cta2-href" placeholder={d.secondaryCta.href} {...register('finale.secondaryCtaHref')} density="compact" />
+      </FormField>
+      <FormField label="Tagline" htmlFor="oath-finale-tagline" labelStyle="stacked">
+        <Input id="oath-finale-tagline" placeholder={d.tagline} {...register('finale.tagline')} density="compact" />
+      </FormField>
     </ContentSection>
   )
 }

@@ -6,12 +6,10 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput } from '@/features/admin/components/AdminInput'
 import { AdminLoadingState } from '@/features/admin/components/AdminLoadingState'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
-import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
@@ -29,6 +27,9 @@ import {
   type PdpProductContent,
 } from '@/features/cms/pdpContent/pdpContent.zod'
 import { Textarea } from '@/shared/components/ui'
+import { Button } from '@/shared/components/ui/Button'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
 
 function useStoredPdpContent(): PdpContentConfig {
   return useSyncExternalStore(
@@ -94,16 +95,18 @@ export function AdminPdpContentEditor() {
 
   const toolbar = useMemo(
     () => (
-      <AdminTopbarChipButton
+      <Button
         type="button"
         disabled={saving}
-        icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
         variant="primary"
+        size="md"
+        density="compact"
         loading={saving}
         onClick={save}
       >
+        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
         {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save content'}
-      </AdminTopbarChipButton>
+      </Button>
     ),
     [save, saving, showSuccess],
   )
@@ -150,42 +153,42 @@ export function AdminPdpContentEditor() {
           <>
             <section className="space-y-4 rounded-xl border border-[var(--color-line)] p-5">
               <h2 className="anvl-heading text-base font-normal">Story</h2>
-              <AdminFormField label="Story heading" hint="Small eyebrow above the story (blank → “The piece”).">
-                <AdminInput value={current.storyHeading} onChange={(e) => patch({ storyHeading: e.target.value })} />
-              </AdminFormField>
-              <AdminFormField label="Story body" hint="Blank → the product's own storytelling.">
+              <FormField label="Story heading" hint="Small eyebrow above the story (blank → “The piece”)." labelStyle="stacked">
+                <Input density="compact" value={current.storyHeading} onChange={(e) => patch({ storyHeading: e.target.value })} />
+              </FormField>
+              <FormField label="Story body" hint="Blank → the product's own storytelling." labelStyle="stacked">
                 <Textarea rows={3} value={current.storyBody} onChange={(e) => patch({ storyBody: e.target.value })} />
-              </AdminFormField>
+              </FormField>
             </section>
 
             <section className="space-y-4 rounded-xl border border-[var(--color-line)] p-5">
               <h2 className="anvl-heading text-base font-normal">Material & care</h2>
               <div className="grid gap-4 sm:grid-cols-2">
-                <AdminFormField label="Material title" hint="Blank → product fabric.">
-                  <AdminInput value={current.materialTitle} onChange={(e) => patch({ materialTitle: e.target.value })} />
-                </AdminFormField>
-                <AdminFormField label="Material note" hint="Blank → product GSM.">
-                  <AdminInput value={current.materialNote} onChange={(e) => patch({ materialNote: e.target.value })} />
-                </AdminFormField>
+                <FormField label="Material title" hint="Blank → product fabric." labelStyle="stacked">
+                  <Input density="compact" value={current.materialTitle} onChange={(e) => patch({ materialTitle: e.target.value })} />
+                </FormField>
+                <FormField label="Material note" hint="Blank → product GSM." labelStyle="stacked">
+                  <Input density="compact" value={current.materialNote} onChange={(e) => patch({ materialNote: e.target.value })} />
+                </FormField>
               </div>
-              <AdminFormField label="Care (one per line)" hint="Blank → product care instructions.">
+              <FormField label="Care (one per line)" hint="Blank → product care instructions." labelStyle="stacked">
                 <Textarea
                   rows={3}
                   value={current.care.join('\n')}
                   onChange={(e) => patch({ care: sanitizeLines(e.target.value) })}
                 />
-              </AdminFormField>
+              </FormField>
             </section>
 
             <section className="space-y-4 rounded-xl border border-[var(--color-line)] p-5">
               <h2 className="anvl-heading text-base font-normal">Forged details</h2>
-              <AdminFormField label="Design details (one per line)" hint="Blank → product design details.">
+              <FormField label="Design details (one per line)" hint="Blank → product design details." labelStyle="stacked">
                 <Textarea
                   rows={4}
                   value={current.designDetails.join('\n')}
                   onChange={(e) => patch({ designDetails: sanitizeLines(e.target.value) })}
                 />
-              </AdminFormField>
+              </FormField>
             </section>
 
             <section className="space-y-4 rounded-xl border border-[var(--color-line)] p-5">

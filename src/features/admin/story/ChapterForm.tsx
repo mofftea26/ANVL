@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Save, Trash2 } from 'lucide-react'
-import { AdminButton } from '@/features/admin/components/AdminButton'
-import { AdminCard } from '@/features/admin/components/AdminCard'
-import { AdminCheckbox } from '@/features/admin/components/AdminCheckbox'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
-import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
+import { AdminEntityCard } from '@/features/admin/components/AdminEntityCard'
+import { Checkbox } from '@/shared/components/ui/Checkbox'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
+import { Textarea } from '@/shared/components/ui/Textarea'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
 import {
   DEFAULT_BOOK_COLORS,
@@ -40,8 +38,6 @@ export function ChapterForm({ chapter, onSaved, onDeleted }: ChapterFormProps) {
   const [coverLogo, setCoverLogo] = useState<StoryAsset>(chapter.coverLogo)
   const [colors, setColors] = useState<BookColors>(chapter.colors ?? DEFAULT_BOOK_COLORS)
   const [saving, setSaving] = useState(false)
-  const [confirm, setConfirm] = useState(false)
-  const [deleting, setDeleting] = useState(false)
 
   // Products to assign this book to (from the active commerce catalog / Shopify).
   const productsQuery = useAdminProductCatalogQuery()
@@ -78,61 +74,54 @@ export function ChapterForm({ chapter, onSaved, onDeleted }: ChapterFormProps) {
   }
 
   async function remove() {
-    setDeleting(true)
-    try {
-      const res = await deleteChapter(chapter.id)
-      if (!res.ok) {
-        toast.error(res.error)
-        return
-      }
-      toast.success('Chapter deleted.')
-      setConfirm(false)
-      await onDeleted()
-    } finally {
-      setDeleting(false)
+    const res = await deleteChapter(chapter.id)
+    if (!res.ok) {
+      toast.error(res.error)
+      return false
     }
+    toast.success('Chapter deleted.')
+    await onDeleted()
+    return true
   }
 
   return (
-    <AdminCard
+    <AdminEntityCard
       title="Chapter details"
-      actions={
-        <div className="flex gap-2">
-          <AdminButton type="button" variant="primary" size="sm" loading={saving} icon={<Save size={14} />} onClick={() => void save()}>
-            Save chapter
-          </AdminButton>
-          <AdminButton type="button" variant="destructive" size="sm" icon={<Trash2 size={14} />} onClick={() => setConfirm(true)}>
-            Delete
-          </AdminButton>
-        </div>
-      }
+      onSave={save}
+      saving={saving}
+      saveLabel="Save chapter"
+      deleteLabel="Delete chapter"
+      onConfirmDelete={remove}
+      deleteConfirmTitle="Delete this chapter?"
+      deleteConfirmBody="This permanently removes the chapter and all of its acts and cast."
     >
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <AdminFormField label="Title">
-            <AdminInput value={title} onChange={(e) => setTitle(e.target.value)} />
-          </AdminFormField>
-          <AdminFormField label="Subtitle" hint='e.g. "Drop 01"'>
-            <AdminInput value={subtitle} onChange={(e) => setSubtitle(e.target.value)} />
-          </AdminFormField>
-          <AdminFormField label="Slug" hint="Used in /story?chapter=… deep links.">
-            <AdminInput value={slug} onChange={(e) => setSlug(e.target.value)} />
-          </AdminFormField>
-          <AdminFormField label="Chapter #">
-            <AdminInput
+          <FormField label="Title" labelStyle="stacked">
+            <Input density="compact" value={title} onChange={(e) => setTitle(e.target.value)} />
+          </FormField>
+          <FormField label="Subtitle" hint='e.g. "Drop 01"' labelStyle="stacked">
+            <Input density="compact" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} />
+          </FormField>
+          <FormField label="Slug" hint="Used in /story?chapter=… deep links." labelStyle="stacked">
+            <Input density="compact" value={slug} onChange={(e) => setSlug(e.target.value)} />
+          </FormField>
+          <FormField label="Chapter #" labelStyle="stacked">
+            <Input
+              density="compact"
               type="number"
               value={chapterNumber}
               onChange={(e) => setChapterNumber(Number(e.target.value) || 0)}
             />
-          </AdminFormField>
+          </FormField>
         </div>
-        <AdminFormField label="Description">
-          <AdminTextarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
-        </AdminFormField>
+        <FormField label="Description" labelStyle="stacked">
+          <Textarea density="compact" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+        </FormField>
 
         {/* Product assignment + drop grouping (per-product book model). */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <AdminFormField label="Assigned product" hint="This book opens from that product's PDP.">
+          <FormField label="Assigned product" hint="This book opens from that product's PDP." labelStyle="stacked">
             <select
               className="focus-ring h-10 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)]"
               value={productSlug}
@@ -152,17 +141,17 @@ export function ChapterForm({ chapter, onSaved, onDeleted }: ChapterFormProps) {
                 </option>
               ))}
             </select>
-          </AdminFormField>
-          <AdminFormField label="Drop label" hint="Shelf section heading.">
-            <AdminInput value={dropLabel} onChange={(e) => setDropLabel(e.target.value)} />
-          </AdminFormField>
-          <AdminFormField label="Drop slug" hint="Groups books on the shelf.">
-            <AdminInput value={dropSlug} onChange={(e) => setDropSlug(e.target.value)} />
-          </AdminFormField>
+          </FormField>
+          <FormField label="Drop label" hint="Shelf section heading." labelStyle="stacked">
+            <Input density="compact" value={dropLabel} onChange={(e) => setDropLabel(e.target.value)} />
+          </FormField>
+          <FormField label="Drop slug" hint="Groups books on the shelf." labelStyle="stacked">
+            <Input density="compact" value={dropSlug} onChange={(e) => setDropSlug(e.target.value)} />
+          </FormField>
         </div>
 
         {/* Quick cover-colour preset. */}
-        <AdminFormField label="Cover preset" hint="Fills the cover colours below — tweak freely after.">
+        <FormField label="Cover preset" hint="Fills the cover colours below — tweak freely after." labelStyle="stacked">
           <select
             className="focus-ring h-10 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)]"
             value=""
@@ -178,7 +167,7 @@ export function ChapterForm({ chapter, onSaved, onDeleted }: ChapterFormProps) {
               </option>
             ))}
           </select>
-        </AdminFormField>
+        </FormField>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <StoryAssetField label="Chapter cover art" asset={cover} scope={slug} onChange={setCover} />
@@ -190,25 +179,13 @@ export function ChapterForm({ chapter, onSaved, onDeleted }: ChapterFormProps) {
           />
         </div>
         <BookColorsField colors={colors} onChange={setColors} />
-        <AdminCheckbox
+        <Checkbox
           label="Published"
           description="Only published chapters are visible on the storefront."
           checked={isPublished}
           onChange={(e) => setIsPublished(e.target.checked)}
         />
       </div>
-
-      <AdminConfirmDialog
-        open={confirm}
-        onClose={() => setConfirm(false)}
-        title="Delete this chapter?"
-        confirmLabel="Delete chapter"
-        confirmVariant="destructive"
-        confirmLoading={deleting}
-        onConfirm={() => void remove()}
-      >
-        This permanently removes the chapter and all of its acts and cast.
-      </AdminConfirmDialog>
-    </AdminCard>
+    </AdminEntityCard>
   )
 }

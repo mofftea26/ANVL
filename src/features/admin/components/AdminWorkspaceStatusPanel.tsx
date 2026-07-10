@@ -1,6 +1,7 @@
 import { ExternalLink, Database, HardDrive } from 'lucide-react'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /**
  * Shared rail panel describing the live workspace target (Supabase vs. local
@@ -51,7 +52,7 @@ export function AdminWorkspaceStatusPanel() {
           rel="noreferrer"
           className="focus-ring inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-soft)]/60 px-3 text-xs font-medium text-[var(--color-text)] no-underline transition hover:border-[var(--color-graphite)] hover:bg-[var(--color-surface-elevated)]"
         >
-          <ExternalLink size={14} aria-hidden="true" className="shrink-0" />
+          <ExternalLink size={ICON_SIZE.sm} aria-hidden="true" className="shrink-0" />
           View storefront
         </a>
       </div>

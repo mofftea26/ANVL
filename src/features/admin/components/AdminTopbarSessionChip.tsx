@@ -7,6 +7,7 @@ import {
   sessionSecondaryLabel,
   sessionShortLabel,
 } from '@/features/admin/components/adminSessionDisplay'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import {
   AdminPopover,
   AdminPopoverContent,
@@ -70,7 +71,7 @@ export function AdminTopbarSessionChip({ className }: { className?: string }) {
             {sessionInitial(session)}
           </span>
           <span className="min-w-0 flex-1 truncate text-xs font-medium">{shortLabel}</span>
-          <ChevronDown size={14} aria-hidden className="shrink-0 text-[var(--color-text-muted)]" />
+          <ChevronDown size={ICON_SIZE.sm} aria-hidden className="shrink-0 text-[var(--color-text-muted)]" />
         </button>
       </AdminPopoverTrigger>
       <AdminPopoverContent
@@ -114,7 +115,7 @@ export function AdminTopbarSessionChip({ className }: { className?: string }) {
             className="focus-ring inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl text-xs font-medium text-[var(--color-text-muted)] transition hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-heading)]"
             onClick={() => void logout()}
           >
-            <LogOut size={14} aria-hidden />
+            <LogOut size={ICON_SIZE.sm} aria-hidden />
             Sign out
           </button>
         </div>

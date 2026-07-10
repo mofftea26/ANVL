@@ -7,6 +7,7 @@ import {
   useHydrateStorefrontAccountSession,
   useStorefrontAccountSession,
 } from '@/features/storefront-account/publicAccount.core'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AccountAvatar } from '@/features/storefront-account/account/AccountAvatar'
 
 /**
@@ -67,7 +68,7 @@ export function AccountMenu({ triggerClassName }: { triggerClassName?: string })
   if (!mounted || !customerId) {
     return (
       <Link to="/auth/sign-in" aria-label="Sign in" data-native-cursor className={triggerClassName}>
-        <UserRound size={16} aria-hidden="true" />
+        <UserRound size={ICON_SIZE.md} aria-hidden="true" />
       </Link>
     )
   }

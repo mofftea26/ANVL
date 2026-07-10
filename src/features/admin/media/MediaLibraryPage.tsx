@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import { adminFieldControlClass } from '@/shared/lib/cmsFieldStyles'
+import { Input } from '@/shared/components/ui/Input'
 import { cn } from '@/shared/lib/cn'
 import { MediaAssetGrid } from './MediaAssetGrid'
 import { MediaUploadZone } from './MediaUploadZone'
@@ -36,12 +36,13 @@ export function MediaLibraryPage() {
       <MediaUploadZone disabled={query.isLoading} />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <input
+        <Input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search filename, alt, tags…"
-          className={cn('max-w-md flex-1', adminFieldControlClass)}
+          density="compact"
+          className="max-w-md flex-1"
           aria-label="Search media"
         />
         <div className="flex flex-wrap gap-1" role="group" aria-label="Filter by type">

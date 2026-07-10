@@ -3,13 +3,14 @@ import { useMemo, useState } from 'react'
 import type { Control, UseFormRegister, UseFormSetValue } from 'react-hook-form'
 import { useFieldArray, useWatch } from 'react-hook-form'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput } from '@/features/admin/components/AdminInput'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
 import { MediaLibraryPickerModal } from '@/features/admin/media/MediaLibraryPickerModal'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import { OATH_DEFAULT_CONTENT } from '@/features/landingPages/pages/TheOathLanding/content/oathContent.defaults'
 import { createBlankTenetFormValues, type OathContentFormValues } from '../landingContentForm'
 import { ContentSection } from './ContentSection'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 const d = OATH_DEFAULT_CONTENT.tenets
 
@@ -57,9 +58,9 @@ export function OathTenetsFields({
       title="The Arsenal — Products"
       hint="One product per slide in the pinned horizontal showcase. Assign a 3D model (GLB), a smokey background, and annotated points; blank fields fall back to the designed defaults."
     >
-      <AdminFormField label="Eyebrow" htmlFor="oath-tenets-eyebrow" className="sm:col-span-2">
-        <AdminInput id="oath-tenets-eyebrow" placeholder={d.eyebrow} {...register('tenets.eyebrow')} />
-      </AdminFormField>
+      <FormField label="Eyebrow" htmlFor="oath-tenets-eyebrow" className="sm:col-span-2" labelStyle="stacked">
+        <Input id="oath-tenets-eyebrow" placeholder={d.eyebrow} {...register('tenets.eyebrow')} density="compact" />
+      </FormField>
 
       {products.fields.map((field, i) => {
         const def = d.items[i] ?? d.items[d.items.length - 1]
@@ -72,15 +73,15 @@ export function OathTenetsFields({
             </legend>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <AdminFormField label="Title" htmlFor={`oath-p-${i}-title`}>
-                <AdminInput id={`oath-p-${i}-title`} placeholder={def?.title} {...register(`tenets.items.${i}.title` as const)} />
-              </AdminFormField>
-              <AdminFormField label="Marker" htmlFor={`oath-p-${i}-marker`}>
-                <AdminInput id={`oath-p-${i}-marker`} placeholder={def?.marker} {...register(`tenets.items.${i}.marker` as const)} />
-              </AdminFormField>
-              <AdminFormField label="Subtitle (warrior line)" htmlFor={`oath-p-${i}-sub`} className="sm:col-span-2">
-                <AdminInput id={`oath-p-${i}-sub`} placeholder={def?.subtitle} {...register(`tenets.items.${i}.subtitle` as const)} />
-              </AdminFormField>
+              <FormField label="Title" htmlFor={`oath-p-${i}-title`} labelStyle="stacked">
+                <Input id={`oath-p-${i}-title`} placeholder={def?.title} {...register(`tenets.items.${i}.title` as const)} density="compact" />
+              </FormField>
+              <FormField label="Marker" htmlFor={`oath-p-${i}-marker`} labelStyle="stacked">
+                <Input id={`oath-p-${i}-marker`} placeholder={def?.marker} {...register(`tenets.items.${i}.marker` as const)} density="compact" />
+              </FormField>
+              <FormField label="Subtitle (warrior line)" htmlFor={`oath-p-${i}-sub`} className="sm:col-span-2" labelStyle="stacked">
+                <Input id={`oath-p-${i}-sub`} placeholder={def?.subtitle} {...register(`tenets.items.${i}.subtitle` as const)} density="compact" />
+              </FormField>
             </div>
 
             {/* Media assignments. */}
@@ -96,7 +97,7 @@ export function OathTenetsFields({
                   className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-line)] px-3 text-xs text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)] focus-ring"
                   onClick={() => setPick({ item: i, field })}
                 >
-                  <ImagePlus size={14} aria-hidden="true" />
+                  <ImagePlus size={ICON_SIZE.sm} aria-hidden="true" />
                   {label(item?.[field], empty)}
                 </button>
               ))}
@@ -111,24 +112,24 @@ export function OathTenetsFields({
                 const hsDef = def?.hotspots?.[h]
                 return (
                   <div key={h} className="grid gap-3 rounded-lg border border-[var(--color-line)] p-3 sm:grid-cols-2">
-                    <AdminFormField label={`Point ${h + 1} label`} htmlFor={`oath-p-${i}-h-${h}-label`}>
-                      <AdminInput id={`oath-p-${i}-h-${h}-label`} placeholder={hsDef?.label} {...register(`tenets.items.${i}.hotspots.${h}.label` as const)} />
-                    </AdminFormField>
-                    <AdminFormField label="Description" htmlFor={`oath-p-${i}-h-${h}-desc`}>
-                      <AdminInput id={`oath-p-${i}-h-${h}-desc`} placeholder={hsDef?.description} {...register(`tenets.items.${i}.hotspots.${h}.description` as const)} />
-                    </AdminFormField>
-                    <AdminFormField label="X (%)" htmlFor={`oath-p-${i}-h-${h}-x`}>
-                      <AdminInput id={`oath-p-${i}-h-${h}-x`} inputMode="numeric" placeholder={hsDef ? String(hsDef.x) : '50'} {...register(`tenets.items.${i}.hotspots.${h}.x` as const)} />
-                    </AdminFormField>
-                    <AdminFormField label="Y (%)" htmlFor={`oath-p-${i}-h-${h}-y`}>
-                      <AdminInput id={`oath-p-${i}-h-${h}-y`} inputMode="numeric" placeholder={hsDef ? String(hsDef.y) : '50'} {...register(`tenets.items.${i}.hotspots.${h}.y` as const)} />
-                    </AdminFormField>
+                    <FormField label={`Point ${h + 1} label`} htmlFor={`oath-p-${i}-h-${h}-label`} labelStyle="stacked">
+                      <Input id={`oath-p-${i}-h-${h}-label`} placeholder={hsDef?.label} {...register(`tenets.items.${i}.hotspots.${h}.label` as const)} density="compact" />
+                    </FormField>
+                    <FormField label="Description" htmlFor={`oath-p-${i}-h-${h}-desc`} labelStyle="stacked">
+                      <Input id={`oath-p-${i}-h-${h}-desc`} placeholder={hsDef?.description} {...register(`tenets.items.${i}.hotspots.${h}.description` as const)} density="compact" />
+                    </FormField>
+                    <FormField label="X (%)" htmlFor={`oath-p-${i}-h-${h}-x`} labelStyle="stacked">
+                      <Input id={`oath-p-${i}-h-${h}-x`} inputMode="numeric" placeholder={hsDef ? String(hsDef.x) : '50'} {...register(`tenets.items.${i}.hotspots.${h}.x` as const)} density="compact" />
+                    </FormField>
+                    <FormField label="Y (%)" htmlFor={`oath-p-${i}-h-${h}-y`} labelStyle="stacked">
+                      <Input id={`oath-p-${i}-h-${h}-y`} inputMode="numeric" placeholder={hsDef ? String(hsDef.y) : '50'} {...register(`tenets.items.${i}.hotspots.${h}.y` as const)} density="compact" />
+                    </FormField>
                     <button
                       type="button"
                       className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-line)] px-3 text-xs text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)] focus-ring sm:col-span-2"
                       onClick={() => setPick({ item: i, field: 'bubble', hotspot: h })}
                     >
-                      <ImagePlus size={14} aria-hidden="true" />
+                      <ImagePlus size={ICON_SIZE.sm} aria-hidden="true" />
                       {label(hotspots[h]?.bubbleId, 'No bubble image')}
                     </button>
                   </div>
@@ -143,7 +144,7 @@ export function OathTenetsFields({
                 onClick={() => setRemoveIndex(i)}
                 aria-label={`Remove product ${i + 1}`}
               >
-                <Trash2 size={14} aria-hidden="true" />
+                <Trash2 size={ICON_SIZE.sm} aria-hidden="true" />
                 Remove product
               </button>
             ) : null}
@@ -158,7 +159,7 @@ export function OathTenetsFields({
             className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-dashed border-[var(--color-line)] px-4 text-sm text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-text)] focus-ring"
             onClick={() => products.append(createBlankTenetFormValues())}
           >
-            <Plus size={16} aria-hidden="true" />
+            <Plus size={ICON_SIZE.md} aria-hidden="true" />
             Add product
           </button>
         </div>

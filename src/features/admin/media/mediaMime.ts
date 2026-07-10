@@ -36,3 +36,23 @@ export function resolveUploadMimeType(file: File): string {
   if (name.endsWith('.gltf')) return 'model/gltf+json'
   return reported || 'application/octet-stream'
 }
+
+/**
+ * Re-wrap the file so its OWN `type` is the resolved mime. Required because
+ * supabase-js storage uploads a `File`/`Blob` body as multipart `FormData`
+ * and silently ignores the `contentType` option in that branch — the part's
+ * content-type comes from the Blob itself. A `.glb` picked on Windows arrives
+ * as `''`/`application/octet-stream`, so without this wrap the bucket's
+ * allowed-mime check rejects the upload ("invalid MIME type").
+ */
+export function coerceUploadFile(file: File): { body: File; contentType: string } {
+  const contentType = resolveUploadMimeType(file)
+  if (file.type === contentType) return { body: file, contentType }
+  return {
+    body: new File([file], file.name, {
+      type: contentType,
+      lastModified: file.lastModified,
+    }),
+    contentType,
+  }
+}

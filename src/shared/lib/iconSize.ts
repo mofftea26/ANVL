@@ -1,0 +1,10 @@
+/** Canonical lucide-react icon pixel sizes. Pick the bucket, not a raw number. */
+export const ICON_SIZE = {
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 20,
+  xl: 24,
+} as const
+
+export type IconSizeToken = keyof typeof ICON_SIZE

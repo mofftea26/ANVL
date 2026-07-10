@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/shared/components/ui/**/*.ts", "src/shared/components/ui/**/*.tsx"],
+  "exclude": ["src/shared/components/ui/**/__tests__/**", "src/shared/components/ui/**/*.stories.tsx"],
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "allowImportingTsExtensions": false,
+    "declarationMap": false,
+    "rootDir": "src",
+    "outDir": "dist-ui/types"
+  }
+}

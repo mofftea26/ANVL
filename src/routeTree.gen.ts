@@ -45,6 +45,7 @@ import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminFontsRouteImport } from './routes/admin/fonts'
 import { Route as AdminContentRouteImport } from './routes/admin/content'
+import { Route as AdminComingSoonRouteImport } from './routes/admin/coming-soon'
 import { Route as AdminAssetsRouteImport } from './routes/admin/assets'
 import { Route as AdminAboutRouteImport } from './routes/admin/about'
 import { Route as AccountSettingsRouteImport } from './routes/account/settings'
@@ -233,6 +234,11 @@ const AdminContentRoute = AdminContentRouteImport.update({
   path: '/content',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminComingSoonRoute = AdminComingSoonRouteImport.update({
+  id: '/coming-soon',
+  path: '/coming-soon',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminAssetsRoute = AdminAssetsRouteImport.update({
   id: '/assets',
   path: '/assets',
@@ -290,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/account/settings': typeof AccountSettingsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/assets': typeof AdminAssetsRoute
+  '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
@@ -333,6 +340,7 @@ export interface FileRoutesByTo {
   '/account/settings': typeof AccountSettingsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/assets': typeof AdminAssetsRoute
+  '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
@@ -379,6 +387,7 @@ export interface FileRoutesById {
   '/account/settings': typeof AccountSettingsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/assets': typeof AdminAssetsRoute
+  '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
@@ -426,6 +435,7 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/admin/about'
     | '/admin/assets'
+    | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
@@ -469,6 +479,7 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/admin/about'
     | '/admin/assets'
+    | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
@@ -514,6 +525,7 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/admin/about'
     | '/admin/assets'
+    | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
@@ -822,6 +834,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContentRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/coming-soon': {
+      id: '/admin/coming-soon'
+      path: '/coming-soon'
+      fullPath: '/admin/coming-soon'
+      preLoaderRoute: typeof AdminComingSoonRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/assets': {
       id: '/admin/assets'
       path: '/assets'
@@ -899,6 +918,7 @@ const AccountRouteRouteWithChildren = AccountRouteRoute._addFileChildren(
 interface AdminRouteRouteChildren {
   AdminAboutRoute: typeof AdminAboutRoute
   AdminAssetsRoute: typeof AdminAssetsRoute
+  AdminComingSoonRoute: typeof AdminComingSoonRoute
   AdminContentRoute: typeof AdminContentRoute
   AdminFontsRoute: typeof AdminFontsRoute
   AdminLoginRoute: typeof AdminLoginRoute
@@ -913,6 +933,7 @@ interface AdminRouteRouteChildren {
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminAboutRoute: AdminAboutRoute,
   AdminAssetsRoute: AdminAssetsRoute,
+  AdminComingSoonRoute: AdminComingSoonRoute,
   AdminContentRoute: AdminContentRoute,
   AdminFontsRoute: AdminFontsRoute,
   AdminLoginRoute: AdminLoginRoute,

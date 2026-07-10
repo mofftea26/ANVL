@@ -1,5 +1,6 @@
 import { ArrowDownUp } from 'lucide-react'
 import { SHOP_SORT_OPTIONS, type ShopSort } from '@/features/products/shop/shopUrlSearch'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /**
  * Sort control — a labelled native `<select>` (familiar, fully accessible, no
@@ -20,7 +21,7 @@ export function ShopSort({
   return (
     <div className="relative">
       <ArrowDownUp
-        size={14}
+        size={ICON_SIZE.sm}
         aria-hidden="true"
         className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--shop-text-muted)]"
       />

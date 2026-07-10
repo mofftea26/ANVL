@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock'
 import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
@@ -88,18 +89,7 @@ export function ChapterBook({ chapter, initialAct, onClose }: ChapterBookProps) 
   }, [lastIndex])
 
   // Lock background scroll (html + body) while the book is open.
-  useEffect(() => {
-    const html = document.documentElement
-    const body = document.body
-    const prevHtml = html.style.overflow
-    const prevBody = body.style.overflow
-    html.style.overflow = 'hidden'
-    body.style.overflow = 'hidden'
-    return () => {
-      html.style.overflow = prevHtml
-      body.style.overflow = prevBody
-    }
-  }, [])
+  useBodyScrollLock()
 
   const use3D = mounted && webgl && wide && !reducedMotion
 

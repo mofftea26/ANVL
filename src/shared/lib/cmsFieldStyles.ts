@@ -1,56 +1,18 @@
 /**
- * Control chrome shared by admin form primitives and CMS pickers (`MediaLibrarySlotField` URL row).
- * Aligned with `adminChipButtonVariants` default — surface-soft pills + subtle borders.
+ * Fine-grained admin-only control chrome that doesn't fit the shared
+ * `Input`/`Select`/`Checkbox` density variants — narrow, one-off pickers
+ * (color channels, date-picker adjuncts, compact color-field rows).
  */
 
-/** Base tokens shared with {@link adminChipButtonVariants} default variant. */
+/** Base tokens shared by the fine-grained controls below. */
 export const adminFieldChromeBase =
   'border border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-text)] transition-colors focus-ring hover:bg-[var(--color-surface-elevated)] disabled:cursor-not-allowed disabled:opacity-50'
-
-/** Single-line text controls (input, select trigger, URL field). Matches chip height (`h-9`). */
-export const adminFieldControlClass = [
-  'w-full h-9 rounded-full px-3 text-xs',
-  adminFieldChromeBase,
-  'placeholder:text-[var(--color-text-muted)]',
-].join(' ')
-
-/** Multiline controls — softer radius for readability. */
-export const adminFieldTextareaClass = [
-  'w-full min-h-[5rem] rounded-xl px-3 py-2 text-xs',
-  adminFieldChromeBase,
-  'placeholder:text-[var(--color-text-muted)]',
-].join(' ')
 
 /** Compact numeric / HEX inputs (color picker channels). */
 export const adminFieldControlFineClass = [
   'h-8 rounded-xl px-2 text-xs',
   adminFieldChromeBase,
 ].join(' ')
-
-/** Invalid-field border treatment shared by admin form controls. */
-export const fieldErrorClass = 'border-red-500/60 bg-red-500/5'
-
-/** Native checkbox inside `AdminCheckbox` and MediaPicker “leave empty” toggle. */
-export const adminCheckboxControlClass =
-  'focus-ring mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-accent)] accent-[var(--color-accent)]'
-
-/** Stacked label + control spacing for admin forms. */
-export const adminStackedFieldClass = `mt-1 ${adminFieldControlClass}`
-
-/** Radix select trigger — same chrome as single-line fields. */
-export const adminSelectTriggerClass = [
-  adminFieldControlClass,
-  'flex items-center justify-between gap-2 text-left outline-none',
-  'data-[placeholder]:text-[var(--color-text-muted)]',
-].join(' ')
-
-/** Select dropdown panel — elevated surface, readable list. */
-export const adminSelectContentClass =
-  'z-[85] max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-1.5 shadow-[inset_0_1px_0_rgba(231,228,223,0.08),0_16px_40px_rgba(0,0,0,0.55)] outline-none backdrop-blur-sm'
-
-/** Select item row inside dropdown. */
-export const adminSelectItemClass =
-  'relative flex cursor-pointer select-none flex-col gap-0.5 rounded-lg py-2.5 pl-8 pr-3 text-xs leading-snug outline-none transition-colors focus:bg-[var(--color-chip)] focus:text-[var(--color-text)] data-[highlighted]:bg-[var(--color-chip)] data-[highlighted]:text-[var(--color-text)] data-[state=checked]:bg-[var(--color-accent)]/10 data-[state=checked]:text-[var(--color-heading)] data-[disabled]:pointer-events-none data-[disabled]:opacity-40'
 
 /** Small adjunct button (clear date/time). */
 export const adminFieldClearButtonClass = [

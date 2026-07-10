@@ -1,6 +1,5 @@
 import { Check, Save } from 'lucide-react'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
@@ -11,6 +10,7 @@ import {
   saveAssetConfigAsync,
   subscribeCmsSiteConfigChange,
 } from '@/features/cms/config/cmsSiteConfig.settings'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import {
   DEFAULT_ASSET_CONFIG,
   type AssetConfig,
@@ -26,6 +26,7 @@ import {
 } from '@/features/cms/assets/storefrontPageSlots'
 import { fetchLandingPagePickerOptions } from '@/features/admin/landing-picker/fetchLandingPagePickerOptions'
 import { listLandingPages } from '@/features/landingPages/registry'
+import { Button } from '@/shared/components/ui/Button'
 import { AssetSlotAssignmentPanel } from './AssetSlotAssignmentPanel'
 
 function useAssetConfig(): AssetConfig {
@@ -62,16 +63,18 @@ export function SiteAssetsEditor() {
 
   const toolbar = useMemo(
     () => (
-      <AdminTopbarChipButton
+      <Button
         type="button"
         disabled={saving}
-        icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
         variant="primary"
+        size="md"
+        density="compact"
         loading={saving}
         onClick={save}
       >
+        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
         {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save assignments'}
-      </AdminTopbarChipButton>
+      </Button>
     ),
     [save, saving, showSuccess],
   )

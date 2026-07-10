@@ -8,9 +8,12 @@ import { DEFAULT_EMBLEM_SRC, isBundledPlaceholderImage } from '@/shared/constant
 import { ProductCardQuickAdd } from '@/features/products/components/ProductCardQuickAdd'
 import { ProductCardBadge } from '@/features/products/components/ProductCardBadge'
 import { shareProduct } from '@/features/products/lib/shareProduct'
+import { IconButton } from '@/shared/components/ui/IconButton'
+import { ShopSurfaceScope } from '@/shared/components/layout/ShopSurfaceScope'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 import { withShopifyImageWidth } from '@/shared/lib/url'
 import { cn } from '@/shared/lib/cn'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /** Grid cards render at most ~400 CSS px wide; covers retina at that size. */
 const CARD_IMAGE_WIDTH = 800
@@ -67,27 +70,30 @@ export const ShopProductCard = memo(function ShopProductCard({
     >
       {/* Overlay controls — siblings of the Link. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between p-2.5">
-        <div className="flex gap-1.5">
-          {quickViewEnabled ? (
-            <button
-              type="button"
-              onClick={() => onQuickView?.(product)}
-              aria-label={`Quick view ${stripAngleBracketTags(product.name)}`}
-              className="focus-ring pointer-events-auto inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--shop-card-border)] bg-[var(--shop-overlay)] px-3 text-xs text-[var(--shop-text)] backdrop-blur-sm transition-all duration-300 hover:border-[var(--shop-accent)] hover:text-[var(--shop-accent)] lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
+        <ShopSurfaceScope className="contents">
+          <div className="flex gap-1.5">
+            {quickViewEnabled ? (
+              <button
+                type="button"
+                onClick={() => onQuickView?.(product)}
+                aria-label={`Quick view ${stripAngleBracketTags(product.name)}`}
+                className="focus-ring pointer-events-auto inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--shop-card-border)] bg-[var(--shop-overlay)] px-3 text-xs text-[var(--shop-text)] backdrop-blur-sm transition-all duration-300 hover:border-[var(--shop-accent)] hover:text-[var(--shop-accent)] lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
+              >
+                <Eye size={ICON_SIZE.sm} aria-hidden="true" />
+                <span className="hidden sm:inline">Quick view</span>
+              </button>
+            ) : null}
+            <IconButton
+              variant="overlay"
+              size="sm"
+              onClick={() => void shareProduct(product)}
+              aria-label={`Share ${stripAngleBracketTags(product.name)}`}
+              className="pointer-events-auto lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
             >
-              <Eye size={14} aria-hidden="true" />
-              <span className="hidden sm:inline">Quick view</span>
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => void shareProduct(product)}
-            aria-label={`Share ${stripAngleBracketTags(product.name)}`}
-            className="focus-ring pointer-events-auto grid h-9 w-9 place-items-center rounded-full border border-[var(--shop-card-border)] bg-[var(--shop-overlay)] text-[var(--shop-text)] backdrop-blur-sm transition-all duration-300 hover:border-[var(--shop-accent)] hover:text-[var(--shop-accent)] lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
-          >
-            <Share2 size={15} aria-hidden="true" />
-          </button>
-        </div>
+              <Share2 size={15} aria-hidden="true" />
+            </IconButton>
+          </div>
+        </ShopSurfaceScope>
       </div>
 
       {config.quickAddEnabled ? <ProductCardQuickAdd product={product} /> : null}
@@ -200,7 +206,7 @@ export const ShopProductCard = memo(function ShopProductCard({
             <span className="anvl-micro inline-flex shrink-0 items-center gap-1 text-[var(--shop-text)] transition-colors duration-300 group-hover:text-[var(--shop-accent)]">
               View
               <ArrowUpRight
-                size={12}
+                size={ICON_SIZE.xs}
                 aria-hidden="true"
                 className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
               />

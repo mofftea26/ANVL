@@ -3,6 +3,7 @@ import type {
   ShopDropFilterOption,
   StorefrontProductStatus,
 } from '@/features/products/types/product.types'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { Button } from '@/shared/components/ui'
 import { cn } from '@/shared/lib/cn'
 import type {
@@ -243,7 +244,7 @@ export function ShopFilterPanel({
                   style={{ backgroundColor: c.base, boxShadow: `inset 0 0 0 2px ${c.accent}33` }}
                 >
                   {selected ? (
-                    <Check size={14} aria-hidden="true" className="drop-shadow" style={{ color: '#fff', mixBlendMode: 'difference' }} />
+                    <Check size={ICON_SIZE.sm} aria-hidden="true" className="drop-shadow" style={{ color: '#fff', mixBlendMode: 'difference' }} />
                   ) : null}
                   <span className="sr-only">
                     {c.name} ({count})

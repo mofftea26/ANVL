@@ -2,6 +2,7 @@ import { Check } from 'lucide-react'
 import type { Product } from '@/features/products/types/product.types'
 import type { PdpVariant } from '@/features/products/pdp/hooks/usePdpVariant'
 import { Button, Container } from '@/shared/components/ui'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /**
  * Mobile-only sticky add-to-cart bar. Always reachable with one thumb; safe-area
@@ -21,7 +22,7 @@ export function PdpStickyBar({ product, variant }: { product: Product; variant: 
         <Button className="shrink-0" disabled={!canPurchase || addState !== 'idle'} onClick={add}>
           {addState === 'added' ? (
             <>
-              <Check size={16} aria-hidden="true" className="mr-1.5" /> Added
+              <Check size={ICON_SIZE.md} aria-hidden="true" className="mr-1.5" /> Added
             </>
           ) : canPurchase ? (
             'Add to cart'

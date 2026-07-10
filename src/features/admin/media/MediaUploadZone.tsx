@@ -5,9 +5,10 @@ import {
   useRef,
   useState,
 } from 'react'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { Loader2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
-import { AdminButton } from '@/features/admin/components/AdminButton'
+import { Button } from '@/shared/components/ui/Button'
 import { cn } from '@/shared/lib/cn'
 import { useMediaAssetsMutations } from './useMediaAssetsQuery'
 
@@ -107,22 +108,21 @@ export function MediaUploadZone({ disabled }: MediaUploadZoneProps) {
         onChange={onFileInput}
       />
       <div className="flex flex-wrap items-center gap-3">
-        <AdminButton
+        <Button
           type="button"
           variant="secondary"
           size="sm"
+          density="compact"
           disabled={disabled || busy}
           onClick={() => fileRef.current?.click()}
-          icon={
-            busy ? (
-              <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <Upload size={14} aria-hidden="true" />
-            )
-          }
         >
+          {busy ? (
+            <Loader2 size={ICON_SIZE.sm} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <Upload size={ICON_SIZE.sm} aria-hidden="true" />
+          )}
           {busy ? 'Uploading…' : 'Upload files'}
-        </AdminButton>
+        </Button>
         <span className="text-xs text-[var(--color-text-muted)]">
           Drag images, videos, or 3D models (GLB/GLTF) here — max 50 MB per file.
         </span>

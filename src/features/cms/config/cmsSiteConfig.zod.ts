@@ -288,6 +288,8 @@ export const MOTION_CSS_VARS: Record<string, string> = {
   '--motion-duration-fast': '140ms',
   '--motion-duration-normal': '220ms',
   '--motion-duration-slow': '320ms',
+  '--motion-duration-section': '600ms',
+  '--motion-duration-cinematic': '900ms',
   '--motion-ease-standard': 'cubic-bezier(0.22, 1, 0.36, 1)',
   '--motion-ease-emphasized': 'cubic-bezier(0.16, 1, 0.3, 1)',
   '--motion-ease-exit': 'cubic-bezier(0.4, 0, 1, 1)',

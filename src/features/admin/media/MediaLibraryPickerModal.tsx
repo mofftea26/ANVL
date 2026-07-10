@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
 import { Button } from '@/shared/components/ui/Button'
+import { Input } from '@/shared/components/ui/Input'
 import { Modal } from '@/shared/components/ui/Modal'
-import { adminFieldControlClass } from '@/shared/lib/cmsFieldStyles'
 import { cn } from '@/shared/lib/cn'
 import { isLikelySafeMediaSrc } from '@/shared/lib/url'
 import {
@@ -74,12 +74,13 @@ export function MediaLibraryPickerModal({
     <Modal open={open} onClose={onClose} title={title}>
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <input
+          <Input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search filename, alt, tags…"
-            className={cn('w-full sm:max-w-md', adminFieldControlClass)}
+            density="compact"
+            className="w-full sm:max-w-md"
             aria-label="Search library"
           />
           {mimeFilters.length > 1 ? (

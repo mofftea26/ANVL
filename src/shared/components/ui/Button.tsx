@@ -2,12 +2,14 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { Loader2 } from 'lucide-react'
 import { forwardRef, type ButtonHTMLAttributes } from 'react'
 import { cn } from '@/shared/lib/cn'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /**
  * Canonical button — the only button primitive storefront/admin surfaces
- * should reach for. Modern depth (soft inset highlight + ambient shadow),
- * smooth hover/press motion, and an `icon` size for icon-only circular
- * actions (e.g. the account header's Save control).
+ * should reach for. `density="compact"` renders admin's dense pill-chip
+ * proportions; `density="comfortable"` (default) renders the storefront's
+ * gradient pill. Same variant colors/tokens either way — only shape/sizing
+ * changes, so admin and storefront share one visual language.
  */
 export const buttonVariants = cva(
   'focus-ring relative inline-flex select-none items-center justify-center gap-2 rounded-xl text-sm font-semibold uppercase tracking-[0.08em] transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]',
@@ -27,45 +29,48 @@ export const buttonVariants = cva(
           'border border-transparent text-[color:var(--color-text)] hover:bg-[var(--color-chip)]',
         destructive:
           'border border-[color-mix(in_oklab,var(--color-danger)_45%,transparent)] bg-[color-mix(in_oklab,var(--color-danger)_10%,transparent)] text-[color:var(--color-danger)] hover:border-[var(--color-danger)] hover:bg-[color-mix(in_oklab,var(--color-danger)_16%,transparent)]',
-        /** Use with `data-active="true" | "false"` for selected vs idle segmented tabs. */
-        adminTabList:
-          'shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] border-[var(--color-line)] bg-[var(--color-surface)] text-[color:var(--color-text-muted)] data-[active=true]:border-[var(--color-accent)] data-[active=true]:bg-[var(--color-accent)] data-[active=true]:text-[color:var(--color-bg)] data-[active=false]:hover:bg-[var(--color-surface-elevated)] data-[active=false]:hover:text-[color:var(--color-text)]',
-        adminTabEditor:
-          'gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] border-[var(--color-line)] bg-[var(--color-surface)] text-[color:var(--color-text-muted)] data-[active=true]:border-[var(--color-accent)] data-[active=true]:bg-[var(--color-accent)] data-[active=true]:text-[color:var(--color-bg)] data-[active=false]:hover:bg-[var(--color-surface-elevated)] data-[active=false]:hover:text-[color:var(--color-text)]',
-        adminTabProduct:
-          'rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] border-[var(--color-line)] text-[color:var(--color-text-muted)] data-[active=true]:border-[var(--color-accent)] data-[active=true]:bg-[var(--color-accent)] data-[active=true]:text-[color:var(--color-bg)] data-[active=false]:hover:border-[color-mix(in_oklab,var(--color-accent)_40%,transparent)]',
+        success:
+          'border border-[color-mix(in_oklab,var(--color-success)_45%,transparent)] bg-[color-mix(in_oklab,var(--color-success)_10%,transparent)] text-[color:var(--color-success)] hover:border-[var(--color-success)] hover:bg-[color-mix(in_oklab,var(--color-success)_16%,transparent)]',
       },
       size: {
-        none: '',
         sm: 'h-9 px-3.5',
         md: 'h-11 px-5',
         lg: 'h-12 px-7 text-[0.95rem]',
         /** Circular, icon-only (no label) — e.g. the account header's Save control. */
         icon: 'h-11 w-11 shrink-0 rounded-full p-0',
-        compact:
-          'h-auto min-h-8 rounded border px-2 py-0.5 text-[10px] font-semibold uppercase leading-normal',
+      },
+      density: {
+        comfortable: '',
+        compact: '',
       },
     },
+    compoundVariants: [
+      // Admin's dense chip proportions: smaller, plain-case, no letter-spacing —
+      // shape/typography change only, variant color logic is untouched.
+      {
+        density: 'compact',
+        size: 'sm',
+        class: 'h-8 rounded-full px-2.5 text-xs font-medium normal-case tracking-normal',
+      },
+      {
+        density: 'compact',
+        size: 'md',
+        class: 'h-9 rounded-full px-3 text-xs font-medium normal-case tracking-normal',
+      },
+      {
+        density: 'compact',
+        size: 'lg',
+        class: 'h-10 rounded-full px-3.5 text-xs font-medium normal-case tracking-normal',
+      },
+      { density: 'compact', size: 'icon', class: 'h-9 w-9' },
+    ],
     defaultVariants: {
       variant: 'primary',
       size: 'md',
+      density: 'comfortable',
     },
   },
 )
-
-type ButtonVariant = NonNullable<VariantProps<typeof buttonVariants>['variant']>
-
-const TAB_VARIANTS = [
-  'adminTabList',
-  'adminTabEditor',
-  'adminTabProduct',
-] as const satisfies readonly ButtonVariant[]
-
-type TabVariant = (typeof TAB_VARIANTS)[number]
-
-function isAdminTabVariant(v: ButtonVariant | null | undefined): v is TabVariant {
-  return Boolean(v && (TAB_VARIANTS as readonly string[]).includes(v))
-}
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof buttonVariants> & {
@@ -79,6 +84,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       className,
       variant,
       size,
+      density,
       type = 'button',
       loading = false,
       disabled,
@@ -87,9 +93,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) {
-    const isTab = isAdminTabVariant(variant)
     const isIcon = size === 'icon'
-    const resolvedSize = isTab ? 'none' : (size ?? 'md')
     return (
       <button
         ref={ref}
@@ -97,7 +101,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         aria-busy={loading || undefined}
         className={cn(
-          buttonVariants({ variant, size: resolvedSize }),
+          buttonVariants({ variant, size: size ?? 'md', density }),
           loading && 'pointer-events-none opacity-90',
           className,
         )}
@@ -105,7 +109,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {loading ? (
           <Loader2
-            size={16}
+            size={ICON_SIZE.md}
             aria-hidden="true"
             className={cn('shrink-0 animate-spin', !isIcon && children ? 'mr-2' : '')}
           />

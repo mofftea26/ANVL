@@ -2,9 +2,6 @@ import { Check, Copy, Plus, RotateCcw, Save, Sparkles, Trash2 } from 'lucide-rea
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput } from '@/features/admin/components/AdminInput'
-import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
@@ -13,6 +10,7 @@ import {
   saveThemeConfigAsync,
   subscribeCmsSiteConfigChange,
 } from '@/features/cms/config/cmsSiteConfig.settings'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import type { ThemePalette } from '@/features/cms/config/cmsSiteConfig.zod'
 import {
   ANVL_PRESETS,
@@ -23,6 +21,9 @@ import {
   type ThemePreset,
 } from '@/features/cms/config/themeLibrary'
 import { THEME_EDITOR_SECTIONS } from '@/features/cms/config/themeTokens'
+import { Button } from '@/shared/components/ui/Button'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
 import { ThemeColorField } from './ThemeColorField'
 import {
   SiteThemePreviewRail,
@@ -68,16 +69,18 @@ export function SiteThemeEditor() {
 
   const toolbar = useMemo(
     () => (
-      <AdminTopbarChipButton
+      <Button
         type="button"
         disabled={saving}
-        icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
         variant="primary"
+        size="md"
+        density="compact"
         loading={saving}
         onClick={save}
       >
+        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
         {saving ? 'Saving…' : showSuccess ? 'Saved' : isDirty ? 'Save theme •' : 'Save theme'}
-      </AdminTopbarChipButton>
+      </Button>
     ),
     [save, saving, showSuccess, isDirty],
   )
@@ -203,56 +206,68 @@ export function SiteThemeEditor() {
               options={library.themes.map((t) => ({ value: t.id, label: t.name }))}
             />
             <div className="flex gap-2">
-              <AdminTopbarChipButton
+              <Button
                 type="button"
                 size="icon"
-                icon={<Plus size={16} />}
+                variant="secondary"
+                density="compact"
                 onClick={addTheme}
                 aria-label="New theme"
                 title="New theme"
-              />
-              <AdminTopbarChipButton
+              >
+                <Plus size={ICON_SIZE.md} />
+              </Button>
+              <Button
                 type="button"
                 size="icon"
-                icon={<Copy size={16} />}
+                variant="secondary"
+                density="compact"
                 onClick={duplicateTheme}
                 aria-label="Duplicate theme"
                 title="Duplicate theme"
-              />
-              <AdminTopbarChipButton
+              >
+                <Copy size={ICON_SIZE.md} />
+              </Button>
+              <Button
                 type="button"
                 size="icon"
-                icon={<RotateCcw size={16} />}
+                variant="secondary"
+                density="compact"
                 onClick={resetTheme}
                 aria-label="Reset to preset"
                 title="Reset to brand preset"
-              />
-              <AdminTopbarChipButton
+              >
+                <RotateCcw size={ICON_SIZE.md} />
+              </Button>
+              <Button
                 type="button"
                 size="icon"
                 variant="destructive"
-                icon={<Trash2 size={16} />}
+                density="compact"
                 onClick={removeTheme}
                 aria-label="Delete theme"
                 title="Delete theme"
-              />
+              >
+                <Trash2 size={ICON_SIZE.md} />
+              </Button>
             </div>
           </div>
 
           {editingPreset.recommended ? (
             <p className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-3 py-1 text-xs text-[var(--color-accent)]">
-              <Sparkles size={12} /> Recommended for Drop 01
+              <Sparkles size={ICON_SIZE.xs} /> Recommended for Drop 01
             </p>
           ) : null}
 
-          <AdminFormField label="Theme name">
-            <AdminInput
+          <FormField label="Theme name" labelStyle="stacked">
+            <Input
+              density="compact"
               value={editingPreset.name}
               onChange={(e) =>
                 updatePreset((preset) => ({ ...preset, name: e.target.value }))
               }
             />
-          </AdminFormField>
+          </FormField>
 
           <AdminFieldSelect
             label="Appearance"

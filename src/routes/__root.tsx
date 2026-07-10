@@ -7,7 +7,14 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { useEffect, type CSSProperties, type ReactNode } from 'react'
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { AdminAuthProvider } from '@/features/admin/auth/AdminAuthProvider'
 import { SiteThemeProvider } from '@/app/providers/SiteThemeProvider'
@@ -45,8 +52,20 @@ import {
 import { PageBackdrop } from '@/shared/components/layout/PageBackdrop'
 import { SiteDustGate } from '@/shared/webgl/SiteDustGate'
 import { resolvePageBackdropSrc } from '@/features/cms/assets/pageBackdrop'
+import { useComingSoonConfig } from '@/features/cms/hooks/useComingSoonConfig'
+import {
+  isComingSoonExemptPath,
+  readComingSoonPreviewBypass,
+} from '@/features/comingSoon/lib/comingSoonGate'
 import { cn } from '@/shared/lib/cn'
 import appCss from '@/styles.css?url'
+
+/** Lazy so the reveal page (incl. its GSAP usage) costs nothing while disabled. */
+const ComingSoonExperience = lazy(() =>
+  import('@/features/comingSoon').then((m) => ({
+    default: m.ComingSoonExperience,
+  })),
+)
 
 const IS_DEV = import.meta.env.DEV
 
@@ -74,12 +93,21 @@ export const Route = createRootRoute({
       experienceKey: resolveExperienceKey(projection.activeLandingPageKey),
       assets: projection.assets,
       mediaIndex: projection.mediaIndex,
+      comingSoon: projection.comingSoon,
     }
   },
-  head: ({ loaderData }) => ({
+  head: ({ loaderData, matches }) => ({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      // While Coming Soon mode is live, keep the un-revealed catalog out of
+      // indexes: every public route except home is noindexed (home carries the
+      // CMS-controlled reveal SEO — see `src/routes/index.tsx`).
+      ...(loaderData?.comingSoon.enabled &&
+      matches[matches.length - 1]?.pathname !== '/' &&
+      !matches[matches.length - 1]?.pathname.startsWith('/admin')
+        ? [{ name: 'robots', content: 'noindex, nofollow' }]
+        : []),
       {
         name: 'theme-color',
         content: loaderData?.theme
@@ -207,6 +235,27 @@ function RootLayout() {
     select: (state) => state.location.pathname,
   })
   const isAdminRoute = pathname.startsWith('/admin')
+  const { theme, fonts, comingSoon: ssrComingSoon, mediaIndex } =
+    Route.useLoaderData()
+
+  // Coming Soon site-mode gate. Seeds from the SSR projection (correct first
+  // paint), then tracks the published row so a CMS toggle updates open tabs.
+  const comingSoon = useComingSoonConfig(ssrComingSoon)
+  // Admin preview bypass (`?anvl-preview=live`) is sessionStorage-backed, so
+  // it resolves after mount — SSR always renders the gated state.
+  const [previewBypass, setPreviewBypass] = useState(false)
+  useEffect(() => {
+    setPreviewBypass(readComingSoonPreviewBypass())
+  }, [pathname])
+
+  const comingSoonActive =
+    comingSoon.enabled && !isComingSoonExemptPath(pathname) && !previewBypass
+
+  // The home head-script arms the landing-entry scroll lock before hydration;
+  // the reveal page replaces that whole flow, so release it while gated.
+  useEffect(() => {
+    if (comingSoonActive) releaseLandingEntryLock()
+  }, [comingSoonActive])
 
   const devtools = IS_DEV ? (
     <TanStackDevtools
@@ -222,20 +271,45 @@ function RootLayout() {
 
   if (isAdminRoute) {
     return (
-      <AdminAuthProvider>
+      <SiteThemeProvider theme={theme} fonts={fonts} respectLocalDraft={false}>
+        <AdminAuthProvider>
+          <RouteAnalytics />
+          <main>
+            <AppErrorBoundary resetKey={pathname}>
+              <Outlet />
+            </AppErrorBoundary>
+          </main>
+          {devtools}
+        </AdminAuthProvider>
+      </SiteThemeProvider>
+    )
+  }
+
+  if (comingSoonActive) {
+    return (
+      <SiteThemeProvider theme={theme} fonts={fonts}>
         <RouteAnalytics />
-        <main>
-          <AppErrorBoundary resetKey={pathname}>
-            <Outlet />
-          </AppErrorBoundary>
-        </main>
+        <Suspense
+          // Theme-colored void while the lazy chunk streams — never a white flash.
+          fallback={<div className="fixed inset-0 z-[80] bg-[var(--color-bg)]" />}
+        >
+          <ComingSoonExperience config={comingSoon} mediaIndex={mediaIndex} />
+        </Suspense>
         {devtools}
-      </AdminAuthProvider>
+      </SiteThemeProvider>
     )
   }
 
   return (
     <LandingEntryProvider>
+      {comingSoon.enabled && previewBypass ? (
+        <div className="fixed inset-x-0 top-0 z-[90] flex items-center justify-center gap-2 bg-[color-mix(in_oklab,var(--color-warning)_85%,black)] px-4 py-1.5 text-center text-xs font-medium text-white">
+          Previewing the live site — Coming Soon mode is still ON for visitors.
+          <a href="?anvl-preview=off" className="underline underline-offset-2">
+            Exit preview
+          </a>
+        </div>
+      ) : null}
       <StorefrontLayout />
       {devtools}
     </LandingEntryProvider>

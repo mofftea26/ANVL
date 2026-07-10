@@ -1,12 +1,13 @@
 import { ImagePlus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
+import { FormField } from '@/shared/components/ui/FormField'
 import { cn } from '@/shared/lib/cn'
 import { isLikelySafeMediaSrc } from '@/shared/lib/url'
 import { MediaLibraryPickerModal } from './MediaLibraryPickerModal'
 import { mediaAssetPublicUrl } from './mediaAssets.service'
 import type { CmsMediaAsset } from './mediaAssets.types'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 type MediaLibrarySlotFieldProps = {
   label: string
@@ -42,7 +43,7 @@ export function MediaLibrarySlotField({
   const isVideo = assigned?.mime.startsWith('video/') ?? false
 
   return (
-    <AdminFormField label={label} className="space-y-2">
+    <FormField label={label} className="space-y-2" labelStyle="stacked">
       <div className="flex flex-wrap items-start gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)]/30 p-3">
         <div
           className={cn(
@@ -75,7 +76,7 @@ export function MediaLibrarySlotField({
               className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-line)] px-3 text-xs text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)] focus-ring"
               onClick={() => setPickerOpen(true)}
             >
-              <ImagePlus size={14} aria-hidden="true" />
+              <ImagePlus size={ICON_SIZE.sm} aria-hidden="true" />
               {assigned ? 'Change' : 'Choose media'}
             </button>
             {assigned ? (
@@ -109,6 +110,6 @@ export function MediaLibrarySlotField({
           }}
         />
       ) : null}
-    </AdminFormField>
+    </FormField>
   )
 }

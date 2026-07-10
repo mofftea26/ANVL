@@ -73,6 +73,14 @@ export const adminNavItems: AdminNavItem[] = [
     badge: 'About',
   },
   {
+    label: 'Coming Soon',
+    href: '/admin/coming-soon',
+    description: 'Pre-launch site mode and reveal-page content.',
+    cluster: 'Site',
+    cta: 'Edit',
+    badge: 'Launch',
+  },
+  {
     label: 'Story',
     href: '/admin/story',
     description: 'Author the saga — chapters, acts, and cast.',

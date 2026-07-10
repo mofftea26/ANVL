@@ -119,7 +119,7 @@ export function DatePicker({
           id={id}
           disabled={disabled}
           className={cn(
-            inputBaseClass,
+            inputBaseClass(),
             'flex items-center justify-between gap-2 text-left',
             !display && 'text-[var(--color-text-muted)]',
           )}

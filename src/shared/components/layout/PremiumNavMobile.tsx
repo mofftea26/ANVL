@@ -8,6 +8,7 @@ import { Drawer } from '@/shared/components/ui/Drawer'
 import { IconButton } from '@/shared/components/ui/IconButton'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /**
  * Mobile + tablet navigation drawer. The trigger (burger) and the cart now live
@@ -42,7 +43,7 @@ export function PremiumNavMobile({
       <div className="flex items-center justify-between">
         {LogoMark}
         <IconButton onClick={onClose} aria-label="Close navigation menu">
-          <X size={16} aria-hidden="true" />
+          <X size={ICON_SIZE.md} aria-hidden="true" />
         </IconButton>
       </div>
       <div className="mt-6">

@@ -4,6 +4,7 @@ import { gsap, useGSAP } from '@/shared/lib/gsap'
 import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 import type { AboutResolvedOrb } from '../content/aboutContent.defaults'
 import { AboutCtaLink } from '../components/AboutCtaLink'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /**
  * The strike modal — forged open out of the orb's explosion. A dark glass
@@ -116,7 +117,7 @@ export function AboutOrbModal({
               className="focus-ring absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-line)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-highlight)] hover:text-[var(--color-heading)]"
               aria-label="Close dialog"
             >
-              <X size={16} aria-hidden="true" />
+              <X size={ICON_SIZE.md} aria-hidden="true" />
             </button>
 
             <p

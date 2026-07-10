@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, Save, Trash2 } from 'lucide-react'
-import { AdminButton } from '@/features/admin/components/AdminButton'
-import { AdminCard } from '@/features/admin/components/AdminCard'
+import { Plus } from 'lucide-react'
+import { Button } from '@/shared/components/ui/Button'
+import { AdminEntityCard } from '@/features/admin/components/AdminEntityCard'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
-import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
+import { Textarea } from '@/shared/components/ui/Textarea'
 import {
   EMPTY_STORY_ASSET,
   STORY_RANKS,
@@ -17,6 +17,7 @@ import {
 } from '@/features/story/schemas/story.schema'
 import { StoryAssetField } from '@/features/admin/story/StoryAssetField'
 import { deleteCast, upsertCast } from '@/features/admin/story/story.service'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 const CHAPTER_SCOPE = '__chapter__'
 
@@ -47,8 +48,6 @@ function CastCard({
   const [actId, setActId] = useState<string | null>(member.actId)
   const [avatar, setAvatar] = useState<StoryAsset>(member.avatar)
   const [saving, setSaving] = useState(false)
-  const [confirm, setConfirm] = useState(false)
-  const [deleting, setDeleting] = useState(false)
 
   async function save() {
     setSaving(true)
@@ -75,40 +74,31 @@ function CastCard({
   }
 
   async function remove() {
-    setDeleting(true)
-    try {
-      const res = await deleteCast(member.id)
-      if (!res.ok) {
-        toast.error(res.error)
-        return
-      }
-      toast.success('Character removed.')
-      setConfirm(false)
-      await onChanged()
-    } finally {
-      setDeleting(false)
+    const res = await deleteCast(member.id)
+    if (!res.ok) {
+      toast.error(res.error)
+      return false
     }
+    toast.success('Character removed.')
+    await onChanged()
+    return true
   }
 
   return (
-    <AdminCard
+    <AdminEntityCard
       title={name || 'New character'}
-      actions={
-        <div className="flex gap-2">
-          <AdminButton type="button" variant="primary" size="sm" loading={saving} icon={<Save size={14} />} onClick={() => void save()}>
-            Save
-          </AdminButton>
-          <AdminButton type="button" variant="destructive" size="sm" icon={<Trash2 size={14} />} onClick={() => setConfirm(true)}>
-            Delete
-          </AdminButton>
-        </div>
-      }
+      onSave={save}
+      saving={saving}
+      deleteLabel="Remove"
+      onConfirmDelete={remove}
+      deleteConfirmTitle="Remove this character?"
+      deleteConfirmBody="This removes the character from the roster."
     >
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <AdminFormField label="Name">
-            <AdminInput value={name} onChange={(e) => setName(e.target.value)} />
-          </AdminFormField>
+          <FormField label="Name" labelStyle="stacked">
+            <Input density="compact" value={name} onChange={(e) => setName(e.target.value)} />
+          </FormField>
           <AdminFieldSelect
             label="Rank"
             value={rank}
@@ -128,24 +118,12 @@ function CastCard({
             })),
           ]}
         />
-        <AdminFormField label="Blurb">
-          <AdminTextarea rows={3} value={blurb} onChange={(e) => setBlurb(e.target.value)} />
-        </AdminFormField>
+        <FormField label="Blurb" labelStyle="stacked">
+          <Textarea density="compact" rows={3} value={blurb} onChange={(e) => setBlurb(e.target.value)} />
+        </FormField>
         <StoryAssetField label="Avatar" asset={avatar} scope={`${chapterSlug}-cast`} onChange={setAvatar} />
       </div>
-
-      <AdminConfirmDialog
-        open={confirm}
-        onClose={() => setConfirm(false)}
-        title="Remove this character?"
-        confirmLabel="Remove"
-        confirmVariant="destructive"
-        confirmLoading={deleting}
-        onConfirm={() => void remove()}
-      >
-        This removes the character from the roster.
-      </AdminConfirmDialog>
-    </AdminCard>
+    </AdminEntityCard>
   )
 }
 
@@ -179,9 +157,10 @@ export function CastListEditor({ chapterId, chapterSlug, acts, cast, onChanged }
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="anvl-heading text-lg font-normal">The Army (Cast)</h3>
-        <AdminButton type="button" variant="secondary" size="sm" loading={adding} icon={<Plus size={14} />} onClick={() => void addMember()}>
+        <Button type="button" variant="secondary" size="sm" density="compact" loading={adding} onClick={() => void addMember()}>
+          <Plus size={ICON_SIZE.sm} />
           Add character
-        </AdminButton>
+        </Button>
       </div>
       {cast.length === 0 ? (
         <p className="text-sm text-[var(--color-text-muted)]">No characters yet. Enlist the first soldier of this chapter.</p>

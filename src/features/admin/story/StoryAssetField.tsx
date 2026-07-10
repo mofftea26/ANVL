@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput } from '@/features/admin/components/AdminInput'
-import { AdminButton } from '@/features/admin/components/AdminButton'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
+import { Button } from '@/shared/components/ui/Button'
 import {
   EMPTY_STORY_ASSET,
   type StoryAsset,
@@ -91,15 +91,16 @@ export function StoryAssetField({ label, asset, scope, onChange }: StoryAssetFie
               if (file) void handleFile(file)
             }}
           />
-          <AdminButton
+          <Button
             type="button"
             variant="secondary"
             size="sm"
+            density="compact"
             loading={uploading}
             onClick={() => fileRef.current?.click()}
           >
             {uploading ? 'Uploading…' : currentLabel ? 'Replace file' : 'Upload file'}
-          </AdminButton>
+          </Button>
           {currentLabel ? (
             <p className="truncate text-xs text-[var(--color-text-muted)]">{currentLabel}</p>
           ) : null}
@@ -107,23 +108,25 @@ export function StoryAssetField({ label, asset, scope, onChange }: StoryAssetFie
       )}
 
       {asset.kind === 'embed' && (
-        <AdminFormField label="Embed URL" hint="Mux / YouTube / Vimeo player URL (https).">
-          <AdminInput
+        <FormField label="Embed URL" hint="Mux / YouTube / Vimeo player URL (https)." labelStyle="stacked">
+          <Input
+            density="compact"
             type="url"
             value={asset.url ?? ''}
             placeholder="https://player.vimeo.com/video/…"
             onChange={(e) => onChange({ ...asset, url: e.target.value })}
           />
-        </AdminFormField>
+        </FormField>
       )}
 
       {asset.kind !== 'none' && (
-        <AdminFormField label="Alt text" hint="Describe the media for screen readers.">
-          <AdminInput
+        <FormField label="Alt text" hint="Describe the media for screen readers." labelStyle="stacked">
+          <Input
+            density="compact"
             value={asset.alt}
             onChange={(e) => onChange({ ...asset, alt: e.target.value })}
           />
-        </AdminFormField>
+        </FormField>
       )}
 
       {resolved.type !== 'none' ? (

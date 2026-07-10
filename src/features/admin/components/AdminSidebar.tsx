@@ -11,6 +11,7 @@ import {
   X,
   ChevronRight,
 } from 'lucide-react'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
@@ -105,7 +106,7 @@ function SidebarNavLink({
             <span className="truncate text-[13px] font-medium leading-tight">{item.label}</span>
             {isActive ? (
               <ChevronRight
-                size={12}
+                size={ICON_SIZE.xs}
                 aria-hidden
                 className="shrink-0 text-[var(--color-accent)] opacity-80"
               />
@@ -285,7 +286,7 @@ export function AdminSidebar({
             )}
             onClick={onNavigate}
           >
-            <ExternalLink size={14} aria-hidden className="shrink-0" />
+            <ExternalLink size={ICON_SIZE.sm} aria-hidden className="shrink-0" />
             {!compact ? <span>Storefront</span> : <span className="sr-only">View storefront</span>}
           </Link>
 
@@ -297,7 +298,7 @@ export function AdminSidebar({
             )}
             onClick={onNavigate}
           >
-            <Settings size={14} aria-hidden className="shrink-0" />
+            <Settings size={ICON_SIZE.sm} aria-hidden className="shrink-0" />
             {!compact ? <span>Settings</span> : <span className="sr-only">Settings</span>}
           </Link>
         </div>
@@ -310,7 +311,7 @@ export function AdminSidebar({
           )}
           onClick={() => void logout()}
         >
-          <LogOut size={14} aria-hidden className="shrink-0" />
+          <LogOut size={ICON_SIZE.sm} aria-hidden className="shrink-0" />
           {!compact ? <span>Sign out</span> : <span className="sr-only">Sign out</span>}
         </button>
       </footer>

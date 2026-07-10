@@ -13,6 +13,7 @@ import {
   usePersonalInfoForm,
   useUpdateCustomerProfileMutation,
 } from '@/features/storefront-account/publicAccount.core'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { AccountAvatar } from '@/features/storefront-account/account/AccountAvatar'
 import { PhoneField } from '@/features/storefront-account/account/PhoneField'
@@ -257,14 +258,14 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
                 className="anvl-micro focus-ring inline-flex items-center gap-1.5 text-[var(--color-text)] no-underline transition-colors hover:text-[var(--color-accent)]"
               >
                 Size guide
-                <ArrowUpRight size={12} aria-hidden="true" />
+                <ArrowUpRight size={ICON_SIZE.xs} aria-hidden="true" />
               </Link>
               <Link
                 to="/care-guide"
                 className="anvl-micro focus-ring inline-flex items-center gap-1.5 text-[var(--color-text)] no-underline transition-colors hover:text-[var(--color-accent)]"
               >
                 Care guide
-                <ArrowUpRight size={12} aria-hidden="true" />
+                <ArrowUpRight size={ICON_SIZE.xs} aria-hidden="true" />
               </Link>
             </div>
           </div>

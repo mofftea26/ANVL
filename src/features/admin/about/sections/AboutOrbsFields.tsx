@@ -2,16 +2,18 @@ import { ImagePlus, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { Control, UseFormRegister, UseFormSetValue } from 'react-hook-form'
 import { useFieldArray, useWatch } from 'react-hook-form'
-import { AdminButton } from '@/features/admin/components/AdminButton'
+import { Button } from '@/shared/components/ui/Button'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
+import { Textarea } from '@/shared/components/ui/Textarea'
 import { MediaLibraryPickerModal } from '@/features/admin/media/MediaLibraryPickerModal'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import {
   ABOUT_DEFAULT_CONTENT,
   ABOUT_ORB_FALLBACK_COLORS,
 } from '@/features/about/content/aboutContent.defaults'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { ContentSection } from '@/features/admin/landing-content/sections/ContentSection'
 import {
   createBlankOrbFormValues,
@@ -109,20 +111,22 @@ export function AboutOrbsFields({
             </legend>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <AdminFormField label="Orb label" htmlFor={`about-orb-${i}-label`}>
-                <AdminInput id={`about-orb-${i}-label`} placeholder={def?.label ?? `Orb ${i + 1}`} {...register(`orbs.${i}.label` as const)} />
-              </AdminFormField>
-              <AdminFormField
+              <FormField label="Orb label" htmlFor={`about-orb-${i}-label`} labelStyle="stacked">
+                <Input id={`about-orb-${i}-label`} placeholder={def?.label ?? `Orb ${i + 1}`} {...register(`orbs.${i}.label` as const)} density="compact" />
+              </FormField>
+              <FormField
                 label="Orb color"
                 htmlFor={`about-orb-${i}-color`}
                 hint="#RRGGBB — tints the orb, its halo, the burst, and the section accent."
+                labelStyle="stacked"
               >
                 <div className="flex items-center gap-2">
-                  <AdminInput
+                  <Input
                     id={`about-orb-${i}-color`}
                     placeholder={def?.color ?? '#E7E4DF'}
                     className="flex-1"
                     {...register(`orbs.${i}.color` as const)}
+                    density="compact"
                   />
                   <span
                     aria-hidden="true"
@@ -130,51 +134,54 @@ export function AboutOrbsFields({
                     style={{ backgroundColor: swatchColor(i) }}
                   />
                 </div>
-              </AdminFormField>
-              <AdminFormField label="Eyebrow" htmlFor={`about-orb-${i}-eyebrow`}>
-                <AdminInput id={`about-orb-${i}-eyebrow`} placeholder={def?.eyebrow} {...register(`orbs.${i}.eyebrow` as const)} />
-              </AdminFormField>
-              <AdminFormField label="Title" htmlFor={`about-orb-${i}-title`}>
-                <AdminInput id={`about-orb-${i}-title`} placeholder={def?.title} {...register(`orbs.${i}.title` as const)} />
-              </AdminFormField>
-              <AdminFormField label="Body" htmlFor={`about-orb-${i}-body`} className="sm:col-span-2">
-                <AdminTextarea id={`about-orb-${i}-body`} rows={3} placeholder={def?.body} {...register(`orbs.${i}.body` as const)} />
-              </AdminFormField>
-              <AdminFormField
+              </FormField>
+              <FormField label="Eyebrow" htmlFor={`about-orb-${i}-eyebrow`} labelStyle="stacked">
+                <Input id={`about-orb-${i}-eyebrow`} placeholder={def?.eyebrow} {...register(`orbs.${i}.eyebrow` as const)} density="compact" />
+              </FormField>
+              <FormField label="Title" htmlFor={`about-orb-${i}-title`} labelStyle="stacked">
+                <Input id={`about-orb-${i}-title`} placeholder={def?.title} {...register(`orbs.${i}.title` as const)} density="compact" />
+              </FormField>
+              <FormField label="Body" htmlFor={`about-orb-${i}-body`} className="sm:col-span-2" labelStyle="stacked">
+                <Textarea id={`about-orb-${i}-body`} rows={3} placeholder={def?.body} {...register(`orbs.${i}.body` as const)} density="compact" />
+              </FormField>
+              <FormField
                 label="Detail line"
                 htmlFor={`about-orb-${i}-detail`}
                 hint="Short spec line (e.g. fabric weight, origin)."
+                labelStyle="stacked"
               >
-                <AdminInput id={`about-orb-${i}-detail`} placeholder={def?.detail} {...register(`orbs.${i}.detail` as const)} />
-              </AdminFormField>
-              <AdminFormField label="Tagline" htmlFor={`about-orb-${i}-tagline`}>
-                <AdminInput id={`about-orb-${i}-tagline`} placeholder={def?.tagline} {...register(`orbs.${i}.tagline` as const)} />
-              </AdminFormField>
-              <AdminFormField
+                <Input id={`about-orb-${i}-detail`} placeholder={def?.detail} {...register(`orbs.${i}.detail` as const)} density="compact" />
+              </FormField>
+              <FormField label="Tagline" htmlFor={`about-orb-${i}-tagline`} labelStyle="stacked">
+                <Input id={`about-orb-${i}-tagline`} placeholder={def?.tagline} {...register(`orbs.${i}.tagline` as const)} density="compact" />
+              </FormField>
+              <FormField
                 label="Big lines (one per row)"
                 htmlFor={`about-orb-${i}-lines`}
                 hint="Oversized stacked statements (e.g. the creed). Max 8."
                 className="sm:col-span-2"
+                labelStyle="stacked"
               >
-                <AdminTextarea
+                <Textarea
                   id={`about-orb-${i}-lines`}
                   rows={3}
                   placeholder={def?.lines.join('\n')}
                   {...register(`orbs.${i}.linesText` as const)}
+                  density="compact"
                 />
-              </AdminFormField>
-              <AdminFormField label="Primary CTA label" htmlFor={`about-orb-${i}-cta1-label`}>
-                <AdminInput id={`about-orb-${i}-cta1-label`} placeholder={def?.primaryCta?.label} {...register(`orbs.${i}.primaryCtaLabel` as const)} />
-              </AdminFormField>
-              <AdminFormField label="Primary CTA link" htmlFor={`about-orb-${i}-cta1-href`}>
-                <AdminInput id={`about-orb-${i}-cta1-href`} placeholder={def?.primaryCta?.href ?? '/shop'} {...register(`orbs.${i}.primaryCtaHref` as const)} />
-              </AdminFormField>
-              <AdminFormField label="Secondary CTA label" htmlFor={`about-orb-${i}-cta2-label`}>
-                <AdminInput id={`about-orb-${i}-cta2-label`} placeholder={def?.secondaryCta?.label} {...register(`orbs.${i}.secondaryCtaLabel` as const)} />
-              </AdminFormField>
-              <AdminFormField label="Secondary CTA link" htmlFor={`about-orb-${i}-cta2-href`}>
-                <AdminInput id={`about-orb-${i}-cta2-href`} placeholder={def?.secondaryCta?.href ?? '/contact'} {...register(`orbs.${i}.secondaryCtaHref` as const)} />
-              </AdminFormField>
+              </FormField>
+              <FormField label="Primary CTA label" htmlFor={`about-orb-${i}-cta1-label`} labelStyle="stacked">
+                <Input id={`about-orb-${i}-cta1-label`} placeholder={def?.primaryCta?.label} {...register(`orbs.${i}.primaryCtaLabel` as const)} density="compact" />
+              </FormField>
+              <FormField label="Primary CTA link" htmlFor={`about-orb-${i}-cta1-href`} labelStyle="stacked">
+                <Input id={`about-orb-${i}-cta1-href`} placeholder={def?.primaryCta?.href ?? '/shop'} {...register(`orbs.${i}.primaryCtaHref` as const)} density="compact" />
+              </FormField>
+              <FormField label="Secondary CTA label" htmlFor={`about-orb-${i}-cta2-label`} labelStyle="stacked">
+                <Input id={`about-orb-${i}-cta2-label`} placeholder={def?.secondaryCta?.label} {...register(`orbs.${i}.secondaryCtaLabel` as const)} density="compact" />
+              </FormField>
+              <FormField label="Secondary CTA link" htmlFor={`about-orb-${i}-cta2-href`} labelStyle="stacked">
+                <Input id={`about-orb-${i}-cta2-href`} placeholder={def?.secondaryCta?.href ?? '/contact'} {...register(`orbs.${i}.secondaryCtaHref` as const)} density="compact" />
+              </FormField>
             </div>
 
             {/* Section image. */}
@@ -184,7 +191,7 @@ export function AboutOrbsFields({
                 className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-line)] px-3 text-xs text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)]"
                 onClick={() => setPickIndex(i)}
               >
-                <ImagePlus size={14} aria-hidden="true" />
+                <ImagePlus size={ICON_SIZE.sm} aria-hidden="true" />
                 {mediaLabel(orb?.mediaId)}
               </button>
             </div>
@@ -198,29 +205,31 @@ export function AboutOrbsFields({
                 const pDef = def?.points[p]
                 return (
                   <div key={p} className="flex flex-wrap items-end gap-3">
-                    <AdminFormField label={`Point ${p + 1} label`} htmlFor={`about-orb-${i}-pt-${p}-label`} className="w-full sm:w-56">
-                      <AdminInput id={`about-orb-${i}-pt-${p}-label`} placeholder={pDef?.label} {...register(`orbs.${i}.points.${p}.label` as const)} />
-                    </AdminFormField>
-                    <AdminFormField label="Description" htmlFor={`about-orb-${i}-pt-${p}-desc`} className="min-w-0 flex-1">
-                      <AdminInput id={`about-orb-${i}-pt-${p}-desc`} placeholder={pDef?.description} {...register(`orbs.${i}.points.${p}.description` as const)} />
-                    </AdminFormField>
-                    <AdminButton
+                    <FormField label={`Point ${p + 1} label`} htmlFor={`about-orb-${i}-pt-${p}-label`} className="w-full sm:w-56" labelStyle="stacked">
+                      <Input id={`about-orb-${i}-pt-${p}-label`} placeholder={pDef?.label} {...register(`orbs.${i}.points.${p}.label` as const)} density="compact" />
+                    </FormField>
+                    <FormField label="Description" htmlFor={`about-orb-${i}-pt-${p}-desc`} className="min-w-0 flex-1" labelStyle="stacked">
+                      <Input id={`about-orb-${i}-pt-${p}-desc`} placeholder={pDef?.description} {...register(`orbs.${i}.points.${p}.description` as const)} density="compact" />
+                    </FormField>
+                    <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      icon={<Trash2 size={14} />}
+                      density="compact"
                       onClick={() => removePoint(i, p)}
                       aria-label={`Remove point ${p + 1}`}
                     >
+                      <Trash2 size={ICON_SIZE.sm} />
                       Remove
-                    </AdminButton>
+                    </Button>
                   </div>
                 )
               })}
               {points.length < 6 ? (
-                <AdminButton type="button" variant="secondary" size="sm" icon={<Plus size={14} />} onClick={() => addPoint(i)}>
+                <Button type="button" variant="secondary" size="sm" density="compact" onClick={() => addPoint(i)}>
+                  <Plus size={ICON_SIZE.sm} />
                   Add point
-                </AdminButton>
+                </Button>
               ) : null}
             </div>
 
@@ -233,32 +242,34 @@ export function AboutOrbsFields({
                 const stDef = def?.stats[st]
                 return (
                   <div key={st} className="flex flex-wrap items-end gap-3">
-                    <AdminFormField label="Label" htmlFor={`about-orb-${i}-st-${st}-label`} className="min-w-0 flex-1">
-                      <AdminInput id={`about-orb-${i}-st-${st}-label`} placeholder={stDef?.label ?? 'Stat label'} {...register(`orbs.${i}.stats.${st}.label` as const)} />
-                    </AdminFormField>
-                    <AdminFormField label="Value" htmlFor={`about-orb-${i}-st-${st}-value`} className="w-28">
-                      <AdminInput id={`about-orb-${i}-st-${st}-value`} placeholder={stDef?.value ?? '100'} {...register(`orbs.${i}.stats.${st}.value` as const)} />
-                    </AdminFormField>
-                    <AdminFormField label="Suffix" htmlFor={`about-orb-${i}-st-${st}-suffix`} className="w-20">
-                      <AdminInput id={`about-orb-${i}-st-${st}-suffix`} placeholder={stDef?.suffix || '%'} {...register(`orbs.${i}.stats.${st}.suffix` as const)} />
-                    </AdminFormField>
-                    <AdminButton
+                    <FormField label="Label" htmlFor={`about-orb-${i}-st-${st}-label`} className="min-w-0 flex-1" labelStyle="stacked">
+                      <Input id={`about-orb-${i}-st-${st}-label`} placeholder={stDef?.label ?? 'Stat label'} {...register(`orbs.${i}.stats.${st}.label` as const)} density="compact" />
+                    </FormField>
+                    <FormField label="Value" htmlFor={`about-orb-${i}-st-${st}-value`} className="w-28" labelStyle="stacked">
+                      <Input id={`about-orb-${i}-st-${st}-value`} placeholder={stDef?.value ?? '100'} {...register(`orbs.${i}.stats.${st}.value` as const)} density="compact" />
+                    </FormField>
+                    <FormField label="Suffix" htmlFor={`about-orb-${i}-st-${st}-suffix`} className="w-20" labelStyle="stacked">
+                      <Input id={`about-orb-${i}-st-${st}-suffix`} placeholder={stDef?.suffix || '%'} {...register(`orbs.${i}.stats.${st}.suffix` as const)} density="compact" />
+                    </FormField>
+                    <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      icon={<Trash2 size={14} />}
+                      density="compact"
                       onClick={() => removeStat(i, st)}
                       aria-label={`Remove stat ${st + 1}`}
                     >
+                      <Trash2 size={ICON_SIZE.sm} />
                       Remove
-                    </AdminButton>
+                    </Button>
                   </div>
                 )
               })}
               {stats.length < 8 ? (
-                <AdminButton type="button" variant="secondary" size="sm" icon={<Plus size={14} />} onClick={() => addStat(i)}>
+                <Button type="button" variant="secondary" size="sm" density="compact" onClick={() => addStat(i)}>
+                  <Plus size={ICON_SIZE.sm} />
                   Add stat
-                </AdminButton>
+                </Button>
               ) : null}
             </div>
 
@@ -269,7 +280,7 @@ export function AboutOrbsFields({
                 onClick={() => setRemoveIndex(i)}
                 aria-label={`Remove orb ${i + 1}`}
               >
-                <Trash2 size={14} aria-hidden="true" />
+                <Trash2 size={ICON_SIZE.sm} aria-hidden="true" />
                 Remove orb
               </button>
             ) : null}
@@ -284,7 +295,7 @@ export function AboutOrbsFields({
             className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-lg border border-dashed border-[var(--color-line)] px-4 text-sm text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-text)]"
             onClick={() => orbs.append(createBlankOrbFormValues())}
           >
-            <Plus size={16} aria-hidden="true" />
+            <Plus size={ICON_SIZE.md} aria-hidden="true" />
             Add orb
           </button>
         </div>

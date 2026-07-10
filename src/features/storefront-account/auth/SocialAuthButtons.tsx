@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { Button } from '@/shared/components/ui/Button'
 import {
   isStorefrontAuthEnabled,
   signInWithOAuthStorefront,
@@ -34,15 +35,15 @@ export function SocialAuthButtons({ verb = 'Continue with' }: { verb?: string })
   return (
     <div className="space-y-2.5">
       {PROVIDERS.map((p) => (
-        <button
+        <Button
           key={p.id}
-          type="button"
+          variant="secondary"
+          className="w-full"
           disabled={pending !== null}
           onClick={() => start(p.id)}
-          className="focus-ring flex h-11 w-full items-center justify-center gap-2 rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] text-sm font-semibold text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-elevated)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending === p.id ? 'Redirecting…' : `${verb} ${p.name}`}
-        </button>
+        </Button>
       ))}
       <div className="flex items-center gap-3 py-1">
         <span className="h-px flex-1 bg-[var(--color-line)]" />

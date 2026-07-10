@@ -8,12 +8,10 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { toast } from 'sonner'
-import { AdminButton } from '@/features/admin/components/AdminButton'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
-import { AdminInput } from '@/features/admin/components/AdminInput'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
-import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
@@ -27,6 +25,8 @@ import {
   resolveFontFamilyName,
   type FontLibraryConfig,
 } from '@/features/cms/config/fontLibrary'
+import { Button } from '@/shared/components/ui/Button'
+import { Input } from '@/shared/components/ui/Input'
 import { cn } from '@/shared/lib/cn'
 import { uploadFontFiles } from './fontFamilies.service'
 
@@ -70,16 +70,18 @@ export function SiteFontEditor() {
 
   const toolbar = useMemo(
     () => (
-      <AdminTopbarChipButton
+      <Button
         type="button"
         disabled={saving}
-        icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
         variant="primary"
+        size="md"
+        density="compact"
         loading={saving}
         onClick={save}
       >
+        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
         {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save fonts'}
-      </AdminTopbarChipButton>
+      </Button>
     ),
     [save, saving, showSuccess],
   )
@@ -224,15 +226,16 @@ export function SiteFontEditor() {
             onChange={onFileInput}
           />
           <div className="mt-4">
-            <AdminButton
+            <Button
               type="button"
+              density="compact"
               variant="secondary"
               size="sm"
               loading={uploading}
               onClick={() => fileRef.current?.click()}
             >
               Choose files
-            </AdminButton>
+            </Button>
           </div>
         </div>
 
@@ -242,15 +245,17 @@ export function SiteFontEditor() {
             Enter the family name exactly as listed on Google Fonts.
           </p>
           <div className="mt-4 flex gap-2">
-            <AdminInput
+            <Input
+              density="compact"
               value={googleName}
               onChange={(e) => setGoogleName(e.target.value)}
               placeholder="e.g. Inter"
               className="min-w-0 flex-1"
             />
-            <AdminButton type="button" variant="secondary" size="sm" icon={<Plus size={14} />} onClick={addGoogleFont}>
+            <Button type="button" variant="secondary" size="sm" density="compact" onClick={addGoogleFont}>
+              <Plus size={ICON_SIZE.sm} />
               Add
-            </AdminButton>
+            </Button>
           </div>
         </div>
       </section>

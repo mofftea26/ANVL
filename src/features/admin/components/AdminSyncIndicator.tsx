@@ -1,6 +1,7 @@
 import { Loader2 } from 'lucide-react'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import { cn } from '@/shared/lib/cn'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /** Non-blocking sync pill — fixed corner, never shifts page layout. */
 export function AdminSyncIndicator() {
@@ -21,7 +22,7 @@ export function AdminSyncIndicator() {
       aria-live="polite"
     >
       {isRemoteSyncing ? (
-        <Loader2 size={12} className="shrink-0 animate-spin" aria-hidden />
+        <Loader2 size={ICON_SIZE.xs} className="shrink-0 animate-spin" aria-hidden />
       ) : null}
       <span className="truncate">
         {remoteHydrateError ?? 'Syncing with Supabase…'}

@@ -1,4 +1,4 @@
-import { AdminSpinner } from '@/shared/components/ui/AdminSpinner'
+import { AdminSpinner } from '@/features/admin/components/AdminSpinner'
 import { cn } from '@/shared/lib/cn'
 
 export type AdminLoadingStateProps = {

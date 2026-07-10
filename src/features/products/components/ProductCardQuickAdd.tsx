@@ -5,6 +5,7 @@ import {
   effectivePrice,
   variantIsPurchasable,
 } from '@/features/products/catalog/storefrontCatalog'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { useProductAnalytics } from '@/features/analytics/hooks/useProductAnalytics'
@@ -182,9 +183,9 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
           {soldOut ? (
             <span className="anvl-micro text-[0.5rem] uppercase tracking-[0.08em]">Sold</span>
           ) : state === 'adding' ? (
-            <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+            <Loader2 size={ICON_SIZE.md} aria-hidden="true" className="animate-spin" />
           ) : state === 'added' ? (
-            <Check size={16} aria-hidden="true" />
+            <Check size={ICON_SIZE.md} aria-hidden="true" />
           ) : (
             <Plus size={17} aria-hidden="true" />
           )}
@@ -238,7 +239,7 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
                         style={{ backgroundColor: c.base, boxShadow: `inset 0 0 0 2px ${c.accent}33` }}
                       >
                         {selected ? (
-                          <Check size={12} aria-hidden="true" style={{ color: '#fff', mixBlendMode: 'difference' }} />
+                          <Check size={ICON_SIZE.xs} aria-hidden="true" style={{ color: '#fff', mixBlendMode: 'difference' }} />
                         ) : null}
                         <span className="sr-only">{c.name}</span>
                       </button>
@@ -275,11 +276,11 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
             >
               {state === 'added' ? (
                 <>
-                  <Check size={14} aria-hidden="true" /> Added
+                  <Check size={ICON_SIZE.sm} aria-hidden="true" /> Added
                 </>
               ) : state === 'adding' ? (
                 <>
-                  <Loader2 size={14} aria-hidden="true" className="animate-spin" /> Adding…
+                  <Loader2 size={ICON_SIZE.sm} aria-hidden="true" className="animate-spin" /> Adding…
                 </>
               ) : (
                 <>Add — ${effectivePrice(product)}</>

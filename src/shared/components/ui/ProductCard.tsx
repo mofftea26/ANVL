@@ -5,6 +5,7 @@ import type { Product } from '@/features/products/types/product.types'
 import { WarBanner } from '@/shared/components/premium/WarBanner'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 import { withShopifyImageWidth } from '@/shared/lib/url'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /** Grid cards render at most ~400 CSS px wide; covers retina at that size. */
 const CARD_IMAGE_WIDTH = 800
@@ -104,7 +105,7 @@ export const ProductCard = memo(function ProductCard({ product }: { product: Pro
             <span className="anvl-micro inline-flex shrink-0 items-center gap-1 text-[var(--color-text)] transition-colors duration-300 group-hover:text-[var(--color-highlight-bright)]">
               View piece
               <ArrowUpRight
-                size={12}
+                size={ICON_SIZE.xs}
                 aria-hidden="true"
                 className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
               />

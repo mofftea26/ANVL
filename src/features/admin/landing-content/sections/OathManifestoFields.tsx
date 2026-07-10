@@ -1,6 +1,7 @@
 import type { UseFormRegister } from 'react-hook-form'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
+import { Textarea } from '@/shared/components/ui/Textarea'
 import { OATH_DEFAULT_CONTENT } from '@/features/landingPages/pages/TheOathLanding/content/oathContent.defaults'
 import type { OathContentFormValues } from '../landingContentForm'
 import { ContentSection } from './ContentSection'
@@ -17,25 +18,28 @@ export function OathManifestoFields({
       title="Manifesto — The Creed"
       hint="Each non-empty row is one masked manifesto line (max 6)."
     >
-      <AdminFormField label="Eyebrow" htmlFor="oath-manifesto-eyebrow">
-        <AdminInput
+      <FormField label="Eyebrow" htmlFor="oath-manifesto-eyebrow" labelStyle="stacked">
+        <Input
           id="oath-manifesto-eyebrow"
           placeholder={d.eyebrow}
           {...register('manifesto.eyebrow')}
+          density="compact"
         />
-      </AdminFormField>
-      <AdminFormField
+      </FormField>
+      <FormField
         label="Lines (one per row)"
         htmlFor="oath-manifesto-lines"
         className="sm:col-span-2"
+        labelStyle="stacked"
       >
-        <AdminTextarea
+        <Textarea
           id="oath-manifesto-lines"
           rows={4}
           placeholder={d.lines.join('\n')}
           {...register('manifesto.linesText')}
+          density="compact"
         />
-      </AdminFormField>
+      </FormField>
     </ContentSection>
   )
 }

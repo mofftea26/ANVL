@@ -9,6 +9,7 @@ export const ADMIN_STORAGE_KEYS = {
   landingContent: 'anvl.landingContent.v1',
   shopConfig: 'anvl.shopConfig.v1',
   pdpContent: 'anvl.pdpContent.v1',
+  comingSoon: 'anvl.comingSoon.v1',
 } as const
 
 export type AdminStorageKey =

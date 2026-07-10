@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
-import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWorkspaceStatusPanel'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
@@ -14,6 +13,8 @@ import {
   saveLandingContentSliceAsync,
   subscribeLandingContentChange,
 } from '@/features/cms/landingContent/landingContent.settings'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
+import { Button } from '@/shared/components/ui/Button'
 import { toAboutContentSlice, toAboutFormValues, type AboutContentFormValues } from './aboutContentForm'
 import { AboutHeroFields } from './sections/AboutHeroFields'
 import { AboutOrbsFields } from './sections/AboutOrbsFields'
@@ -69,16 +70,18 @@ export function AboutEditor() {
 
   const toolbar = useMemo(
     () => (
-      <AdminTopbarChipButton
+      <Button
         type="button"
         disabled={saving}
-        icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
         variant="primary"
+        size="md"
+        density="compact"
         loading={saving}
         onClick={() => void submit()}
       >
+        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
         {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save content'}
-      </AdminTopbarChipButton>
+      </Button>
     ),
     [submit, saving, showSuccess],
   )

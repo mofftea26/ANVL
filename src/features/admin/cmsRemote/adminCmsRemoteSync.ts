@@ -6,6 +6,7 @@ import { readActiveLandingPageFromStorage } from '@/features/cms/landingPageActi
 import { readLandingContentFromStorage } from '@/features/cms/landingContent/landingContent.settings'
 import { readShopConfigFromStorage } from '@/features/cms/shop/shopExperience.settings'
 import { readPdpContentFromStorage } from '@/features/cms/pdpContent/pdpContent.settings'
+import { readComingSoonConfigFromStorage } from '@/features/cms/comingSoon/comingSoon.settings'
 import {
   readAssetConfigFromStorage,
   readFontLibraryFromStorage,
@@ -40,6 +41,7 @@ export type CmsSettingsFieldKey =
   | 'landing_content'
   | 'shop_config'
   | 'pdp_content'
+  | 'coming_soon'
 
 /**
  * Pure helper, extracted so the field-scoping behavior is directly unit
@@ -93,6 +95,7 @@ export async function flushAdminCmsRemoteSync(
     landing_content: readLandingContentFromStorage(),
     shop_config: readShopConfigFromStorage(),
     pdp_content: readPdpContentFromStorage(),
+    coming_soon: readComingSoonConfigFromStorage(),
   }
   // No `fields` given (the debounced auto-sync paths) keeps the previous
   // "sync everything from the local snapshot" behavior; an explicit list

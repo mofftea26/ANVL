@@ -4,7 +4,6 @@ import { useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
-import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWorkspaceStatusPanel'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
@@ -16,6 +15,7 @@ import {
   saveAssetConfigAsync,
   subscribeCmsSiteConfigChange,
 } from '@/features/cms/config/cmsSiteConfig.settings'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import {
   DEFAULT_ASSET_CONFIG,
   type AssetConfig,
@@ -26,6 +26,7 @@ import {
   subscribeLandingContentChange,
 } from '@/features/cms/landingContent/landingContent.settings'
 import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
+import { Button } from '@/shared/components/ui/Button'
 import {
   toOathContentSlice,
   toOathFormValues,
@@ -156,16 +157,18 @@ export function AdminLandingContentEditor() {
 
   const toolbar = useMemo(
     () => (
-      <AdminTopbarChipButton
+      <Button
         type="button"
         disabled={saving}
-        icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
         variant="primary"
+        size="md"
+        density="compact"
         loading={saving}
         onClick={() => void submit()}
       >
+        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
         {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save content'}
-      </AdminTopbarChipButton>
+      </Button>
     ),
     [submit, saving, showSuccess],
   )
@@ -278,16 +281,18 @@ export function AdminLandingContentEditor() {
               Register a content schema and editor for this page in code to unlock
               per-scene copy fields.
             </p>
-            <AdminTopbarChipButton
+            <Button
               type="button"
               disabled={saving}
-              icon={showSuccess ? <Check size={14} /> : <Save size={14} />}
               variant="primary"
+              size="md"
+              density="compact"
               loading={saving}
               onClick={() => void saveAssetConfigAsync(assetConfig).then(flashSuccess)}
             >
+              {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
               Save asset assignments
-            </AdminTopbarChipButton>
+            </Button>
           </div>
         )}
       </div>

@@ -235,11 +235,11 @@ cubic-bezier(0.22, 1, 0.36, 1)  — fast start, smooth landing
 
 For button/control transitions: `--anvl-control-transition-ease: cubic-bezier(0.22, 1, 0.36, 1)` at `--anvl-control-transition-duration: 220ms`.
 
-Standard durations:
-- Micro (hover, focus): 150–220ms
-- Component (mount, modal): 300–400ms
-- Section reveal: 500–700ms
-- Cinematic sequence: 600ms–1200ms per beat
+Standard durations — tokenized as CSS custom properties (`MOTION_CSS_VARS` in `cmsSiteConfig.zod.ts`, theme-independent, emitted alongside the palette):
+- Micro (hover, focus): `--motion-duration-fast` (140ms) / `--motion-duration-normal` (220ms)
+- Component (mount, modal): `--motion-duration-slow` (320ms)
+- Section reveal: `--motion-duration-section` (600ms)
+- Cinematic sequence: `--motion-duration-cinematic` (900ms) per beat — a representative single value; individual Oath timeline beats still vary by hand-tuned GSAP durations, this token is a default/fallback, not a hard cap
 
 ---
 

@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
+import { FormField } from '@/shared/components/ui/FormField'
 import {
   parseColor,
   rgbaToCss,
@@ -46,7 +46,7 @@ export function ThemeColorField({
   }
 
   return (
-    <AdminFormField label={label}>
+    <FormField label={label} labelStyle="stacked">
       <div className="flex items-center gap-3 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)]/50 p-2 pr-3.5">
         <label
           htmlFor={inputId}
@@ -95,6 +95,6 @@ export function ThemeColorField({
           ) : null}
         </div>
       </div>
-    </AdminFormField>
+    </FormField>
   )
 }

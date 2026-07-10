@@ -175,12 +175,27 @@ Storefront-safe CMS reads:
 | `hooks/` | `useActiveLandingPageKey`, `useStorefrontPublication`, `useSiteHomepageMode`, `useWebsiteNavigation`, `invalidateStorefrontPublication` |
 | `landingPageActiveKey.settings.ts` | Local store + parse + loader/sync for the active landing-page key |
 | `landingContent/` | Landing content envelope: Zod parse (`landingContent.zod.ts`) + local store/sync (`landingContent.settings.ts`) for per-landing-key copy blobs |
+| `comingSoon/` | Coming Soon site-mode config: `comingSoon.zod.ts` (flat schema, `.catch` defaults, master `enabled` toggle) + `comingSoon.settings.ts` (local store `anvl.comingSoon.v1` + write-through) |
 | `layout/` | `websiteLayout.defaults.ts` / `websiteLayout.types.ts` — code-owned nav/footer defaults (not CMS-editable) |
 | `navigation/` | `staticWebsiteNavigation.ts`, `navigation.types.ts` — storefront nav/footer code defaults |
 | `seoMeta.ts` / `siteSeo.local.ts` / `siteHomepage.settings.ts` | SEO meta builders + storefront SEO/homepage defaults (read models; editor UIs removed) |
 | `types/` | `cms.types.ts` |
 
 > The standalone `drops/` feature, `cms/landing`, `cms/read`, `cms/runtime`, and `cms/theme/dropPaletteStyle.ts` were removed — there is one global CMS theme and no per-drop palette/acts.
+
+#### `comingSoon/`
+
+Pre-launch reveal page — replaces every public route while `coming_soon.enabled` is on (gate in `src/routes/__root.tsx`; admin exempt; `?anvl-preview=live` bypass):
+
+| File / Folder | Purpose |
+|---|---|
+| `ComingSoonExperience.tsx` | One-screen centered composition (no scroll, safe-area aware, vh-clamped type) |
+| `content/resolveComingSoonContent.ts` | CMS blob → render model: blank→designed defaults, media-id→URL, social href sanitizing, countdown target resolution |
+| `scene/` | The WebGL forge: `ComingSoonScene.tsx` (Canvas, drift embers, ground glow, pointer/strike rig), `EmberAnvil.tsx` (anvil GLB surface-sampled into GPU ember particles), `emberForgeShaders.ts` |
+| `components/` | `ComingSoonStage` (WebGL mount gate), `ComingSoonCountdown` (rolling digits, strike-reactive), `ComingSoonEmailCapture` (underline input + honeypot), `ComingSoonSocials` (magnetic icon buttons), `ComingSoonEnvironment` (image layers + vignette + grain) |
+| `hooks/` | `useComingSoonEntrance` (GSAP entrance, matchMedia-gated), `useCountdown` (1s tick, hydration-safe) |
+| `lib/` | `countdownTarget.ts` (wall-clock+IANA→UTC, DST-safe), `comingSoonGate.ts` (exempt paths + preview bypass) |
+| `api/subscribeComingSoon.ts` | Anon insert into `coming_soon_subscribers`; duplicate → friendly success |
 
 #### `marketing/`
 

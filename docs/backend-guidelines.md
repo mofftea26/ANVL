@@ -60,6 +60,15 @@ Created via `createAnvlSupabaseClient()` in `src/features/cms/api/createAnvlSupa
 > into the `the-oath` drop (existing values win; dead `interludeVideo`
 > dropped), the `the-oath-2` `landing_pages` row was deleted, and the active
 > key was forced to `the-oath`. RLS unchanged.
+>
+> **2026-07-09:** both singletons gained a `coming_soon jsonb NOT NULL DEFAULT
+> '{}'` column (migration `20260709120000_coming_soon_config`) — the Coming
+> Soon site-mode blob (`enabled` toggle + reveal-page content/SEO), validated
+> client-side by `comingSoon.zod.ts`; existing row RLS covers the column. A
+> new `public.coming_soon_subscribers` table (migration
+> `20260709120001_coming_soon_subscribers`) captures early-access emails:
+> anon/authenticated INSERT-only (shape-checked), admin-role SELECT, no
+> UPDATE/DELETE policies, case-insensitive unique index on `lower(email)`.
 
 ### Admin browser client
 

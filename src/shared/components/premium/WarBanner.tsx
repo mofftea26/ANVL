@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { ThemeTintedMediaMark } from '@/shared/components/ui/ThemeTintedMediaMark'
+import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import { isSvgEmblemUrl } from '@/shared/lib/themeSvgMarkup'
 import { cn } from '@/shared/lib/cn'
@@ -267,15 +268,7 @@ export function WarBanner({
             )}
 
             {/* Grain. */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 opacity-25"
-              style={{
-                backgroundImage:
-                  'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0)',
-                backgroundSize: '3px 3px',
-              }}
-            />
+            <GrainOverlay />
             {/* Vertical fabric sheen + slow light sweep. */}
             <div
               aria-hidden="true"

@@ -1,5 +1,6 @@
 import { Search, X } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /**
  * Debounced shop search box (the debounce lives in `useShopFilters`). Includes
@@ -40,7 +41,7 @@ export function ShopSearch({
           aria-label="Clear search"
           className="focus-ring absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-[var(--shop-text-muted)] transition-colors hover:text-[var(--shop-text)]"
         >
-          <X size={14} aria-hidden="true" />
+          <X size={ICON_SIZE.sm} aria-hidden="true" />
         </button>
       ) : null}
     </div>

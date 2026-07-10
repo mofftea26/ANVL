@@ -7,6 +7,12 @@ import { gsap, useGSAP } from '@/shared/lib/gsap'
  * layers (`[data-card-bg]`) drift opposite the slide for depth; the cards
  * (`[data-account-card]`) rise + fade in with a stagger. Reduced-motion + SSR
  * safe (snaps instantly via `gsap.set`).
+ *
+ * Intentionally reduced-motion-gated only, with no `768px` viewport gate: the
+ * slide is how the newly selected tab's content becomes visible at every
+ * breakpoint (not a decorative scroll effect a mobile user can skip), so
+ * disabling it below 768px would leave the mobile carousel without its own
+ * transition mechanism.
  */
 export function useAccountCarousel(
   scopeRef: RefObject<HTMLElement | null>,

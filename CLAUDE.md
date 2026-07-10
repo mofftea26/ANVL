@@ -127,7 +127,8 @@ src/
     about/           About page: content schema/defaults/resolver (CMS-driven orbs = sections) + altar/ (desktop Forge Altar — grabbable 3D anvil, aurora, per-color orbiting orbs, hammer-strike explosion → modal) + mobile/ (normal scrolling page; orbs render as stacked sections)
     cart/            Zustand cart store + hooks
     checkout/        Forms, schemas, payment config + mock adapters
-    cms/             Storefront-safe CMS reads: theme/font/asset config (cmsSiteConfig), landing content envelope, publication readers, navigation + layout defaults
+    cms/             Storefront-safe CMS reads: theme/font/asset config (cmsSiteConfig), landing content envelope, coming-soon config, publication readers, navigation + layout defaults
+    comingSoon/      Coming Soon reveal page: one-screen CMS-driven experience (backdrop/logo/countdown/email capture), GSAP entrance + pointer parallax, root-layout site-mode gate helpers
     experience/      Centralized experience system: registry (keyed 1:1 to active landing key), ExperienceProvider/useExperience, useExperienceVariant (structural variant seam), data-experience storefront wrapper, ExperiencePageTransition
     landingPages/    Code-owned landing pages: registry, renderer, asset slots, pages/TheOathLanding (the single Drop 01 cinematic landing)
     marketing/       Storefront home sections (home/: campaign cards, lookbook strip)
@@ -221,6 +222,8 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 | `public.storefront_publication` | Anon-readable mirror: theme, fonts, assets, media_index, active key | Public read, editor update |
 | `public.cms_media_assets` | Media library + asset assignments | CMS roles only |
 | `cms_settings.shop_config` / `storefront_publication.shop_config` | Shop Experience config blob (jsonb) — `/shop` layout/behavior/copy; mirrors `landing_content` flow | Public read, editor update |
+| `cms_settings.coming_soon` / `storefront_publication.coming_soon` | Coming Soon site-mode blob (jsonb) — `enabled` toggle + reveal-page copy/countdown/assets/SEO; mirrors `shop_config` flow | Public read, editor update |
+| `public.coming_soon_subscribers` | Early-access emails from the Coming Soon page (write-only mailbox, unique lower(email)) | Anon INSERT only; admin SELECT |
 | `cms_settings.pdp_content` / `storefront_publication.pdp_content` | Per-product PDP editorial content (jsonb `{ [slug]: {...} }`) — bento copy + per-product assets; commerce data stays on the product | Public read, editor update |
 | `public.story_chapters` | Story "books" — one per **product** (`product_slug` = Shopify handle), grouped by `drop_label`/`drop_slug`; acts are its pages | Public read published; editor write |
 | `public.story_acts` | Ordered story beats (book pages) within a chapter | Public read (parent published); editor write |
@@ -272,6 +275,7 @@ Storefront never reads admin draft data directly. Landing page **content** is co
 | `/admin/products` | Per-product PDP editorial content — pick a product (commerce catalog / Shopify), author its bento story/material/care/details + editorial assets (`pdp_content`, keyed by slug) |
 | `/admin/content` | Landing content editor — per-scene copy overrides with code-default fallbacks |
 | `/admin/about` | About page editor — hero, the **orbs** (add/edit/remove free-form sections: label, color, copy, lines, points, stats, CTAs, image), marquee (`landing_content.about`); anvil/hammer GLBs + page imagery assign on `/admin/assets` |
+| `/admin/coming-soon` | Coming Soon site mode — master toggle + reveal-page copy, countdown, early-access capture, assets, SEO (`coming_soon`) |
 | `/admin/story` | Story saga editor — chapters, acts, cast (relational; Supabase CRUD) |
 | `/admin/settings` | Session + local reset |
 

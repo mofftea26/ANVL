@@ -12,6 +12,7 @@ import { SafeLink } from '@/shared/components/ui/SafeLink'
 import { cn } from '@/shared/lib/cn'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 import type { PremiumNavTopbarVariant } from '@/shared/components/layout/usePremiumNavPhase'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 export function PremiumNavTopbar({
   variant,
@@ -126,7 +127,7 @@ export function PremiumNavTopbar({
               className={iconChromeRound}
               aria-label={`Open cart, ${quantity} ${quantity === 1 ? 'item' : 'items'}`}
             >
-              <ShoppingBag size={16} aria-hidden="true" />
+              <ShoppingBag size={ICON_SIZE.md} aria-hidden="true" />
               {quantity > 0 ? (
                 <span className="absolute -right-1 -top-1 min-w-[1.125rem] rounded-full bg-[var(--color-accent)] px-1.5 text-center text-[10px] font-medium text-[var(--color-bg)]">
                   {quantity}
@@ -142,7 +143,7 @@ export function PremiumNavTopbar({
             className={cn(iconChrome, 'lg:hidden')}
             aria-label="Open navigation menu"
           >
-            <Menu size={16} aria-hidden="true" />
+            <Menu size={ICON_SIZE.md} aria-hidden="true" />
           </button>
 
           {/* Account — desktop only. Below `lg` the burger + cart are the only

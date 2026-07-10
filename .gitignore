@@ -17,3 +17,12 @@ todos.json
 
 # Supabase CLI local state
 supabase/.temp/
+
+# design-sync (claude.ai/design) — build artifacts, transient scratch, verification
+# working state, staged converter scripts. See .design-sync/ for the committed durable set.
+.design-sync/sb-reference/
+.design-sync/learnings/
+.design-sync/.cache/
+.design-sync/node_modules
+.ds-sync/
+ds-bundle/

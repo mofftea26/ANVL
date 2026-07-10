@@ -1,0 +1,27 @@
+{
+  "projectId": "0bbe7f99-6472-4d2e-9e68-2a1ecd3d006c",
+  "pkg": "anvl-store",
+  "globalName": "ANVLDesignSystem",
+  "shape": "storybook",
+  "storybookStatic": ".design-sync/sb-reference",
+  "storybookConfigDir": ".storybook",
+  "extraEntries": ["./src/shared/devPreview/DesignSystemPreviewProvider.tsx"],
+  "provider": {
+    "component": "DesignSystemPreviewProvider"
+  },
+  "overrides": {
+    "AccordionDisclosure": {
+      "cardMode": "column"
+    },
+    "Drawer": {
+      "cardMode": "single",
+      "primaryStory": "Right",
+      "viewport": "480x520"
+    },
+    "Modal": {
+      "cardMode": "single",
+      "primaryStory": "Default",
+      "skip": ["components-modal--default"]
+    }
+  }
+}

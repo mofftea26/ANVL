@@ -1,7 +1,7 @@
 import { Monitor, Smartphone } from 'lucide-react'
-import { AdminTopbarChipButton } from '@/features/admin/components/AdminTopbarChipButton'
 import type { ThemePalette } from '@/features/cms/config/cmsSiteConfig.zod'
 import type { ThemePreset } from '@/features/cms/config/themeLibrary'
+import { Button } from '@/shared/components/ui/Button'
 import { ThemeComponentPreview } from './ThemeComponentPreview'
 import { ThemeContrastReport } from './ThemeContrastReport'
 
@@ -33,24 +33,28 @@ export function SiteThemePreviewRail({
             Live preview
           </span>
           <div className="flex gap-1.5">
-            <AdminTopbarChipButton
+            <Button
               type="button"
               size="icon"
-              variant={mode === 'desktop' ? 'primary' : undefined}
-              icon={<Monitor size={15} />}
+              variant={mode === 'desktop' ? 'primary' : 'secondary'}
+              density="compact"
               onClick={() => onModeChange('desktop')}
               aria-label="Desktop preview"
               title="Desktop preview"
-            />
-            <AdminTopbarChipButton
+            >
+              <Monitor size={15} />
+            </Button>
+            <Button
               type="button"
               size="icon"
-              variant={mode === 'mobile' ? 'primary' : undefined}
-              icon={<Smartphone size={15} />}
+              variant={mode === 'mobile' ? 'primary' : 'secondary'}
+              density="compact"
               onClick={() => onModeChange('mobile')}
               aria-label="Mobile preview"
               title="Mobile preview"
-            />
+            >
+              <Smartphone size={15} />
+            </Button>
           </div>
         </div>
         <ThemeComponentPreview preset={preset} mode={mode} />

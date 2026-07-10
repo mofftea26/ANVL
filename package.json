@@ -5,6 +5,9 @@
   "imports": {
     "#/*": "./src/*"
   },
+  "publishConfig": {
+    "types": "dist-ui/types/shared/components/ui/index.d.ts"
+  },
   "scripts": {
     "dev": "node scripts/repatch-admin-route-tree.mjs && vite dev --port 3000",
     "build": "vite build && node scripts/repatch-admin-route-tree.mjs",
@@ -56,6 +59,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@storybook/react-vite": "^10.4.6",
     "@tanstack/devtools-vite": "^0.6.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -69,6 +73,7 @@
     "jsdom": "^28.1.0",
     "rollup-plugin-visualizer": "^7.0.1",
     "sharp": "^0.34.5",
+    "storybook": "^10.4.6",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
     "vitest": "^4.1.5"

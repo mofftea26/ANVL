@@ -11,6 +11,7 @@ import { Container } from '@/shared/components/ui'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 import { cn } from '@/shared/lib/cn'
 import { useHighlightOnArrival } from '@/shared/hooks/useHighlightOnArrival'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 function Tile({
   id,
@@ -163,7 +164,7 @@ export function PdpBento({
                 className="anvl-micro focus-ring relative z-10 mt-2 inline-flex items-center gap-1.5 text-[var(--shop-text)] no-underline transition-colors hover:text-[var(--shop-accent)]"
               >
                 Size guide
-                <ArrowUpRight size={12} aria-hidden="true" />
+                <ArrowUpRight size={ICON_SIZE.xs} aria-hidden="true" />
               </Link>
             </Tile>
           ) : null}
@@ -229,7 +230,7 @@ export function PdpBento({
                 className="anvl-micro focus-ring relative z-10 mt-2 inline-flex items-center gap-1.5 text-[var(--shop-text)] no-underline transition-colors hover:text-[var(--shop-accent)]"
               >
                 Read the story
-                <ArrowUpRight size={12} aria-hidden="true" />
+                <ArrowUpRight size={ICON_SIZE.xs} aria-hidden="true" />
               </Link>
             </Tile>
           ) : null}

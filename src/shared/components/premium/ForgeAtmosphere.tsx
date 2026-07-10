@@ -1,3 +1,4 @@
+import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { cn } from '@/shared/lib/cn'
 
 /**
@@ -64,14 +65,7 @@ export function ForgeAtmosphere({ className }: { className?: string }) {
       </div>
 
       {/* Grain. */}
-      <div
-        className="absolute inset-0 opacity-[0.18]"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)',
-          backgroundSize: '3px 3px',
-        }}
-      />
+      <GrainOverlay intensity="subtle" />
     </div>
   )
 }

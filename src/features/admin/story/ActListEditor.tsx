@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, Save, Trash2 } from 'lucide-react'
-import { AdminButton } from '@/features/admin/components/AdminButton'
-import { AdminCard } from '@/features/admin/components/AdminCard'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
-import { AdminInput, AdminTextarea } from '@/features/admin/components/AdminInput'
-import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
+import { Plus } from 'lucide-react'
+import { Button } from '@/shared/components/ui/Button'
+import { AdminEntityCard } from '@/features/admin/components/AdminEntityCard'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
+import { Textarea } from '@/shared/components/ui/Textarea'
 import type { StoryAct, StoryAsset } from '@/features/story/schemas/story.schema'
 import { EMPTY_STORY_ASSET } from '@/features/story/schemas/story.schema'
 import { StoryAssetField } from '@/features/admin/story/StoryAssetField'
 import { deleteAct, upsertAct } from '@/features/admin/story/story.service'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 interface ActListEditorProps {
   chapterId: string
@@ -35,8 +36,6 @@ function ActCard({
   const [sortOrder, setSortOrder] = useState(act.actNumber)
   const [asset, setAsset] = useState<StoryAsset>(act.asset)
   const [saving, setSaving] = useState(false)
-  const [confirm, setConfirm] = useState(false)
-  const [deleting, setDeleting] = useState(false)
 
   async function save() {
     setSaving(true)
@@ -62,42 +61,33 @@ function ActCard({
   }
 
   async function remove() {
-    setDeleting(true)
-    try {
-      const res = await deleteAct(act.id)
-      if (!res.ok) {
-        toast.error(res.error)
-        return
-      }
-      toast.success('Act removed.')
-      setConfirm(false)
-      await onChanged()
-    } finally {
-      setDeleting(false)
+    const res = await deleteAct(act.id)
+    if (!res.ok) {
+      toast.error(res.error)
+      return false
     }
+    toast.success('Act removed.')
+    await onChanged()
+    return true
   }
 
   return (
-    <AdminCard
+    <AdminEntityCard
       title={`Act ${actNumber}`}
-      actions={
-        <div className="flex gap-2">
-          <AdminButton type="button" variant="primary" size="sm" loading={saving} icon={<Save size={14} />} onClick={() => void save()}>
-            Save
-          </AdminButton>
-          <AdminButton type="button" variant="destructive" size="sm" icon={<Trash2 size={14} />} onClick={() => setConfirm(true)}>
-            Delete
-          </AdminButton>
-        </div>
-      }
+      onSave={save}
+      saving={saving}
+      onConfirmDelete={remove}
+      deleteConfirmTitle="Delete this act?"
+      deleteConfirmBody="This removes the act and its cast. This cannot be undone."
     >
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-          <AdminFormField label="Title">
-            <AdminInput value={title} onChange={(e) => setTitle(e.target.value)} />
-          </AdminFormField>
-          <AdminFormField label="Act #">
-            <AdminInput
+          <FormField label="Title" labelStyle="stacked">
+            <Input density="compact" value={title} onChange={(e) => setTitle(e.target.value)} />
+          </FormField>
+          <FormField label="Act #" labelStyle="stacked">
+            <Input
+              density="compact"
               type="number"
               className="w-24"
               value={actNumber}
@@ -107,26 +97,14 @@ function ActCard({
                 setSortOrder(n)
               }}
             />
-          </AdminFormField>
+          </FormField>
         </div>
-        <AdminFormField label="Story" hint="Separate paragraphs with a blank line.">
-          <AdminTextarea rows={6} value={story} onChange={(e) => setStory(e.target.value)} />
-        </AdminFormField>
+        <FormField label="Story" hint="Separate paragraphs with a blank line." labelStyle="stacked">
+          <Textarea density="compact" rows={6} value={story} onChange={(e) => setStory(e.target.value)} />
+        </FormField>
         <StoryAssetField label="Act media" asset={asset} scope={chapterSlug} onChange={setAsset} />
       </div>
-
-      <AdminConfirmDialog
-        open={confirm}
-        onClose={() => setConfirm(false)}
-        title="Delete this act?"
-        confirmLabel="Delete act"
-        confirmVariant="destructive"
-        confirmLoading={deleting}
-        onConfirm={() => void remove()}
-      >
-        This removes the act and its cast. This cannot be undone.
-      </AdminConfirmDialog>
-    </AdminCard>
+    </AdminEntityCard>
   )
 }
 
@@ -160,9 +138,10 @@ export function ActListEditor({ chapterId, chapterSlug, acts, onChanged }: ActLi
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="anvl-heading text-lg font-normal">Acts</h3>
-        <AdminButton type="button" variant="secondary" size="sm" loading={adding} icon={<Plus size={14} />} onClick={() => void addAct()}>
+        <Button type="button" variant="secondary" size="sm" density="compact" loading={adding} onClick={() => void addAct()}>
+          <Plus size={ICON_SIZE.sm} />
           Add act
-        </AdminButton>
+        </Button>
       </div>
       {acts.length === 0 ? (
         <p className="text-sm text-[var(--color-text-muted)]">No acts yet. Add the first beat of this chapter.</p>

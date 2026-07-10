@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["exec", "vite", "dev", "--port", "3101"],
       "port": 3101
+    },
+    {
+      "name": "anvl-storybook",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "storybook", "dev", "-p", "6106", "--ci"],
+      "port": 6106
     }
   ]
 }

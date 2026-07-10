@@ -1,8 +1,11 @@
 import { ChevronLeft, ChevronRight, Expand } from 'lucide-react'
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { IconButton } from '@/shared/components/ui/IconButton'
+import { ShopSurfaceScope } from '@/shared/components/layout/ShopSurfaceScope'
 import { cn } from '@/shared/lib/cn'
 import { DEFAULT_EMBLEM_SRC, isBundledPlaceholderImage } from '@/shared/constants/brandAssets'
 import { withShopifyImageWidth } from '@/shared/lib/url'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /** Main image fills its column (up to ~700 CSS px); covers retina at that size. */
 const MAIN_IMAGE_WIDTH = 1400
@@ -126,29 +129,31 @@ export function PdpGallery({
             ) : null}
 
             {hasReal && list.length > 1 ? (
-              <>
-                <button
-                  type="button"
+              <ShopSurfaceScope className="contents">
+                <IconButton
+                  variant="overlay"
+                  size="sm"
                   onClick={() => setActive((i) => (i - 1 + list.length) % list.length)}
                   aria-label="Previous image"
-                  className="focus-ring absolute left-0 top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-[var(--shop-overlay)] text-[var(--shop-text)] opacity-0 backdrop-blur-sm transition-opacity duration-300 hover:text-[var(--shop-accent)] group-hover/main:opacity-100"
+                  className="absolute left-0 top-1/2 z-10 -translate-y-1/2 opacity-0 transition-opacity duration-300 group-hover/main:opacity-100"
                 >
                   <ChevronLeft size={18} aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
+                </IconButton>
+                <IconButton
+                  variant="overlay"
+                  size="sm"
                   onClick={() => setActive((i) => (i + 1) % list.length)}
                   aria-label="Next image"
-                  className="focus-ring absolute right-0 top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-[var(--shop-overlay)] text-[var(--shop-text)] opacity-0 backdrop-blur-sm transition-opacity duration-300 hover:text-[var(--shop-accent)] group-hover/main:opacity-100"
+                  className="absolute right-0 top-1/2 z-10 -translate-y-1/2 opacity-0 transition-opacity duration-300 group-hover/main:opacity-100"
                 >
                   <ChevronRight size={18} aria-hidden="true" />
-                </button>
-              </>
+                </IconButton>
+              </ShopSurfaceScope>
             ) : null}
 
             {hasReal ? (
               <span className="anvl-micro pointer-events-none absolute bottom-1 right-1 z-10 inline-flex items-center gap-1.5 rounded-full bg-[var(--shop-overlay)] px-2.5 py-1 text-[0.6rem] text-[var(--shop-text)] opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover/main:opacity-100">
-                <Expand size={12} aria-hidden="true" /> Zoom
+                <Expand size={ICON_SIZE.xs} aria-hidden="true" /> Zoom
               </span>
             ) : null}
           </div>

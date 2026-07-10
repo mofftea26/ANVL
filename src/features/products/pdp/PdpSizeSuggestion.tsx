@@ -6,6 +6,7 @@ import {
   clampSuggestionToSizes,
   suggestSizeFromMeasurements,
 } from '@/features/products/sizing/suggestSize'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /**
  * "Your size" nudge on the PDP, computed from the signed-in customer's saved
@@ -53,7 +54,7 @@ export function PdpSizeSuggestion({
 
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shop-accent)_35%,var(--shop-card-border))] bg-[color-mix(in_oklab,var(--shop-accent)_8%,transparent)] px-3 py-2">
-      <Sparkles size={14} aria-hidden="true" className="text-[var(--shop-accent)]" />
+      <Sparkles size={ICON_SIZE.sm} aria-hidden="true" className="text-[var(--shop-accent)]" />
       <p className="text-xs text-[var(--shop-text)]">
         Based on your measurements, we suggest{' '}
         <span className="font-semibold text-[var(--shop-text)]">{size}</span>

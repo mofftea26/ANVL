@@ -6,13 +6,14 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 import { getSupabaseEnvIssue } from '@/features/cms/api/supabasePublicEnv'
 import { AnvlCompactMark } from '@/shared/assets/brand'
-import { AdminButton } from '@/features/admin/components/AdminButton'
+import { Button } from '@/shared/components/ui/Button'
 import { Container } from '@/shared/components/ui/Container'
-import { AdminFormField } from '@/features/admin/components/AdminFormField'
+import { FormField } from '@/shared/components/ui/FormField'
 import { IconButton } from '@/shared/components/ui/IconButton'
-import { AdminInput } from '@/features/admin/components/AdminInput'
+import { Input } from '@/shared/components/ui/Input'
 import { Checkbox } from '@/shared/components/ui/Checkbox'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 const schema = z.object({
   email: z.string().trim().min(1, 'Email is required').email('Enter a valid email address'),
@@ -82,21 +83,24 @@ export function AdminLoginPageRoute() {
           ) : null}
 
           <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
-            <AdminFormField label="Email" error={form.formState.errors.email?.message}>
-              <AdminInput
+            <FormField label="Email" error={form.formState.errors.email?.message} labelStyle="stacked">
+              <Input
+                density="compact"
                 type="email"
                 autoComplete="email"
                 placeholder="you@company.com"
                 {...form.register('email')}
               />
-            </AdminFormField>
-            <AdminFormField
+            </FormField>
+            <FormField
               label="Password"
               htmlFor={ADMIN_LOGIN_PASSWORD_ID}
               error={form.formState.errors.password?.message}
+              labelStyle="stacked"
             >
               <div className="relative">
-                <AdminInput
+                <Input
+                  density="compact"
                   id={ADMIN_LOGIN_PASSWORD_ID}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
@@ -113,13 +117,13 @@ export function AdminLoginPageRoute() {
                   onClick={() => setShowPassword((v) => !v)}
                 >
                   {showPassword ? (
-                    <EyeOff size={20} aria-hidden="true" />
+                    <EyeOff size={ICON_SIZE.lg} aria-hidden="true" />
                   ) : (
-                    <Eye size={20} aria-hidden="true" />
+                    <Eye size={ICON_SIZE.lg} aria-hidden="true" />
                   )}
                 </IconButton>
               </div>
-            </AdminFormField>
+            </FormField>
 
             <label
               htmlFor={ADMIN_LOGIN_REMEMBER_ID}
@@ -129,14 +133,15 @@ export function AdminLoginPageRoute() {
               Remember me for 30 days
             </label>
 
-            <AdminButton
+            <Button
               type="submit"
+              density="compact"
               className="w-full"
               loading={signingIn}
               disabled={signingIn}
             >
               Sign in
-            </AdminButton>
+            </Button>
           </form>
 
           <p className="mt-5 rounded-lg border border-dashed border-[var(--color-line)] px-3 py-2 text-[11px] leading-relaxed text-[var(--color-text-muted)]">

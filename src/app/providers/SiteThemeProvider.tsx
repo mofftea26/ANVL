@@ -23,6 +23,15 @@ import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 type Props = PropsWithChildren<{
   theme?: ThemeConfig
   fonts?: FontLibraryConfig | unknown
+  /**
+   * When `false`, ignore this browser's local CMS draft and always render the
+   * `theme`/`fonts` props (the published config) — used by the admin shell so
+   * editor chrome tracks the live published theme, not whatever the editor
+   * happens to be mid-editing (that stays sandboxed in ThemeComponentPreview).
+   * Defaults to `true` for the storefront's existing "save → see it live"
+   * preview behavior.
+   */
+  respectLocalDraft?: boolean
 }>
 
 /**
@@ -30,15 +39,17 @@ type Props = PropsWithChildren<{
  *
  * Source of truth (resolved per browser):
  * - **This browser has a local CMS draft** (the `/admin` editors write one on
- *   every save) → apply it, so "save in CMS → see it on the storefront" always
- *   holds for the editing browser, even if the published projection read fails.
+ *   every save) **and `respectLocalDraft` is true** → apply it, so "save in
+ *   CMS → see it on the storefront" always holds for the editing browser, even
+ *   if the published projection read fails.
  * - **No usable Supabase env (local dev)** → also use the local config.
  * - **Otherwise** → the published projection (`theme`/`fonts` props) wins; this
- *   is what every real visitor sees (they never have this localStorage).
+ *   is what every real visitor (and the admin shell) sees.
  */
 export function SiteThemeProvider({
   theme = DEFAULT_THEME_CONFIG,
   fonts: fontsRaw = DEFAULT_FONT_LIBRARY_CONFIG,
+  respectLocalDraft = true,
   children,
 }: Props) {
   const noSupabase = getSupabasePublicEnv() === null
@@ -47,7 +58,7 @@ export function SiteThemeProvider({
     hasStoredThemeLibrary,
     () => false,
   )
-  const useLocalConfig = noSupabase || hasLocalDraft
+  const useLocalConfig = noSupabase || (respectLocalDraft && hasLocalDraft)
 
   const localThemeLibrary = useSyncExternalStore(
     subscribeCmsSiteConfigChange,

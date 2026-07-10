@@ -10,6 +10,8 @@ import { parseFontLibrary } from '@/features/cms/config/fontLibrary'
 import { parseThemeLibrary } from '@/features/cms/config/themeLibrary'
 import { writeLandingContentToStorage } from '@/features/cms/landingContent/landingContent.settings'
 import { parseLandingContentConfig } from '@/features/cms/landingContent/landingContent.zod'
+import { writeComingSoonConfigToStorage } from '@/features/cms/comingSoon/comingSoon.settings'
+import { parseComingSoonConfig } from '@/features/cms/comingSoon/comingSoon.zod'
 import { migrateOathTenetAssetsFromSlots } from '@/features/cms/landingContent/migrateOathTenetAssets'
 import {
   beginAdminCmsRemoteHydration,
@@ -55,6 +57,20 @@ export async function hydrateAdminCmsFromSupabase(
     const migrated = migrateOathTenetAssetsFromSlots(landingContent, assetConfig)
     writeAssetConfigToStorage(migrated.assetConfig)
     writeLandingContentToStorage(migrated.landingContent)
+
+    // Separate tolerant query: a DB without the `coming_soon` migration must
+    // not fail the main hydration above, so this column is fetched on its own
+    // and any error is ignored (the editor then starts from local/defaults).
+    const comingSoonRes = await client
+      .from('cms_settings')
+      .select('coming_soon')
+      .eq('id', 1)
+      .maybeSingle()
+    if (!comingSoonRes.error && comingSoonRes.data) {
+      writeComingSoonConfigToStorage(
+        parseComingSoonConfig(comingSoonRes.data.coming_soon),
+      )
+    }
   } finally {
     endAdminCmsRemoteHydration()
   }

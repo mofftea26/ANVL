@@ -4,6 +4,7 @@ import { cn } from '@/shared/lib/cn'
 import { useGlobalSearch } from '@/features/search/hooks/useGlobalSearch'
 import { GlobalSearchDropdown } from '@/features/search/components/GlobalSearchDropdown'
 import type { SearchResult } from '@/features/search/types/search.types'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 const GlobalSearchOverlay = lazy(() =>
   import('@/features/search/components/GlobalSearchOverlay').then((m) => ({
@@ -109,7 +110,7 @@ export function GlobalSearchBar({
   const input = (
     <div ref={wrapperRef} data-native-cursor className="relative min-w-0">
       <Search
-        size={14}
+        size={ICON_SIZE.sm}
         aria-hidden={true}
         className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
       />
@@ -166,7 +167,7 @@ export function GlobalSearchBar({
         className={cn(triggerClassName, 'lg:hidden')}
         aria-label="Search ANVL"
       >
-        <Search size={16} aria-hidden={true} />
+        <Search size={ICON_SIZE.md} aria-hidden={true} />
       </button>
       <div className="hidden lg:block lg:w-56 xl:w-72">{input}</div>
       {overlay}
