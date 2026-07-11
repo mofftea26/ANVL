@@ -1,5 +1,5 @@
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import { getSupabasePublicationAnonClient } from '@/features/cms/api/publicStorefrontPublication'
+import { restInsert } from '@/features/cms/api/supabaseRest'
 
 /** Postgres unique-violation — the email is already on the list. */
 const UNIQUE_VIOLATION = '23505'
@@ -33,8 +33,7 @@ export async function subscribeComingSoon(
   }
 
   try {
-    const client = getSupabasePublicationAnonClient(env)
-    const { error } = await client.from('coming_soon_subscribers').insert({
+    const { error } = await restInsert(env, 'coming_soon_subscribers', {
       email: normalized,
       source,
       metadata: { drop: 'drop-01-the-oath' },

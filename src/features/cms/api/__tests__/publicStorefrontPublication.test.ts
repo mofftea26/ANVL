@@ -5,10 +5,8 @@ import {
   DEFAULT_THEME_CONFIG,
 } from '@/features/cms/config/cmsSiteConfig.zod'
 import { DEFAULT_FONT_LIBRARY_CONFIG } from '@/features/cms/config/fontLibrary'
-import {
-  getSupabasePublicationAnonClient,
-  normalizeStorefrontPublicationRow,
-} from '@/features/cms/api/publicStorefrontPublication'
+import { getSupabasePublicationAnonClient } from '@/features/cms/api/supabasePublicationClient'
+import { normalizeStorefrontPublicationRow } from '@/features/cms/api/publicStorefrontPublication'
 
 const STAMP = '2026-01-01T00:00:00.000Z'
 

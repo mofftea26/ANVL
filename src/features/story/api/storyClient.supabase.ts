@@ -1,7 +1,7 @@
 import type { StoryClient } from '@/app/config/clients'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import { getSupabasePublicationAnonClient } from '@/features/cms/api/publicStorefrontPublication'
+import { getSupabasePublicationAnonClient } from '@/features/cms/api/supabasePublicationClient'
 import {
   assembleChapter,
   type StoryActRow,

@@ -1,4 +1,3 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
 import {
@@ -12,7 +11,7 @@ import {
   resolveThemeConfig,
 } from '@/features/cms/config/themeLibrary'
 import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import { createAnvlSupabaseClient } from '@/features/cms/api/createAnvlSupabaseClient'
+import { restSelectMaybeSingle } from '@/features/cms/api/supabaseRest'
 import { isPostgrestMissingColumnError } from '@/features/cms/api/storefrontPublicationColumns'
 import {
   parseLandingContentConfig,
@@ -28,29 +27,6 @@ import {
   type ComingSoonConfig,
 } from '@/features/cms/comingSoon/comingSoon.zod'
 import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
-
-export const SUPABASE_PUBLICATION_ANON_AUTH_STORAGE_KEY =
-  'anvl.supabase.storefront-public.v1'
-
-const publicationAnonClients = new Map<string, SupabaseClient>()
-
-export function getSupabasePublicationAnonClient(
-  env: SupabasePublicEnv,
-): SupabaseClient {
-  const key = `${env.url}#${env.anonKey}`
-  let client = publicationAnonClients.get(key)
-  if (!client) {
-    client = createAnvlSupabaseClient(env, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        storageKey: SUPABASE_PUBLICATION_ANON_AUTH_STORAGE_KEY,
-      },
-    })
-    publicationAnonClients.set(key, client)
-  }
-  return client
-}
 
 const mediaIndexEntrySchema = z.object({
   id: z.string(),
@@ -165,52 +141,44 @@ const publicationFetchCoalesce = new Map<
   Promise<PublishedStorefrontProjection | null>
 >()
 
+/** Single-row PostgREST select of the publication row for a column list. */
+function selectPublicationRow(env: SupabasePublicEnv, columns: string) {
+  // PostgREST `select` is comma-separated with no spaces.
+  return restSelectMaybeSingle(
+    env,
+    'storefront_publication',
+    `id=eq.1&select=${columns.replace(/\s+/g, '')}`,
+  )
+}
+
 async function fetchPublishedStorefrontProjectionOnce(
   env: SupabasePublicEnv,
 ): Promise<PublishedStorefrontProjection | null> {
-  const supabase = getSupabasePublicationAnonClient(env)
-  let { data, error } = await supabase
-    .from('storefront_publication')
-    .select(PUBLICATION_SELECT)
-    .eq('id', 1)
-    .maybeSingle()
+  let { data, error } = await selectPublicationRow(env, PUBLICATION_SELECT)
 
   // Progressive fallback while migrations are pending: drop `coming_soon`, then
   // `pdp_content`, then `shop_config`, then `landing_content`, so an older DB
   // still serves the rest.
   if (error && isPostgrestMissingColumnError(error, 'coming_soon')) {
-    ;({ data, error } = await supabase
-      .from('storefront_publication')
-      .select(PUBLICATION_SELECT_NO_COMING_SOON)
-      .eq('id', 1)
-      .maybeSingle())
+    ;({ data, error } = await selectPublicationRow(
+      env,
+      PUBLICATION_SELECT_NO_COMING_SOON,
+    ))
   }
 
   if (error && isPostgrestMissingColumnError(error, 'pdp_content')) {
-    ;({ data, error } = await supabase
-      .from('storefront_publication')
-      .select(PUBLICATION_SELECT_NO_PDP)
-      .eq('id', 1)
-      .maybeSingle())
+    ;({ data, error } = await selectPublicationRow(env, PUBLICATION_SELECT_NO_PDP))
   }
 
   if (error && isPostgrestMissingColumnError(error, 'shop_config')) {
-    ;({ data, error } = await supabase
-      .from('storefront_publication')
-      .select(PUBLICATION_SELECT_NO_SHOP)
-      .eq('id', 1)
-      .maybeSingle())
+    ;({ data, error } = await selectPublicationRow(env, PUBLICATION_SELECT_NO_SHOP))
   }
 
   if (error && isPostgrestMissingColumnError(error, 'landing_content')) {
-    ;({ data, error } = await supabase
-      .from('storefront_publication')
-      .select(PUBLICATION_SELECT_LEGACY)
-      .eq('id', 1)
-      .maybeSingle())
+    ;({ data, error } = await selectPublicationRow(env, PUBLICATION_SELECT_LEGACY))
   }
 
-  if (error) throw error
+  if (error) throw new Error(error.message ?? 'storefront_publication read failed')
   if (!data) return null
   return normalizeStorefrontPublicationRow(data as StorefrontPublicationRow)
 }
