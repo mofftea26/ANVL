@@ -64,6 +64,38 @@ function randomToken(): string {
   return crypto.randomUUID().replace(/-/g, '')
 }
 
+/**
+ * Cache-Control for Worker responses (SSR HTML + all dynamic output). Static
+ * hashed build assets are served by the Cloudflare Workers Assets binding —
+ * not this Worker — and get long-lived immutable caching from `public/_headers`,
+ * so they never pass through here.
+ *
+ * - Private / dynamic routes (admin, CMS, API, auth, account, checkout) and any
+ *   non-HTML Worker response (TanStack server-function RPC, JSON): `no-store`.
+ * - Public SSR HTML: `public, max-age=0, must-revalidate` — always revalidated,
+ *   so a CMS change (e.g. flipping the Coming Soon toggle) shows on the next
+ *   load with no stale edge/browser copy, while still allowing conditional
+ *   revalidation rather than a blind refetch.
+ */
+const PRIVATE_PATH_PREFIXES = [
+  '/admin',
+  '/cms',
+  '/api',
+  '/auth',
+  '/account',
+  '/checkout',
+] as const
+
+function cacheControlForResponse(pathname: string, contentType: string): string {
+  const isPrivate = PRIVATE_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )
+  if (isPrivate) return 'no-store'
+  if (contentType.includes('text/html')) return 'public, max-age=0, must-revalidate'
+  // Server-function RPC, JSON, and any other dynamic Worker output.
+  return 'no-store'
+}
+
 const securityHeadersMiddleware = createMiddleware().server(
   async ({ next, request }) => {
     const result = await next()
@@ -74,6 +106,15 @@ const securityHeadersMiddleware = createMiddleware().server(
     headers.set('X-Content-Type-Options', 'nosniff')
     headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
     headers.set('X-Frame-Options', 'DENY')
+    // Centralized cache policy for everything this Worker serves. Hashed static
+    // assets are handled separately by Workers Assets + `public/_headers`.
+    headers.set(
+      'Cache-Control',
+      cacheControlForResponse(
+        new URL(request.url).pathname,
+        headers.get('content-type') ?? '',
+      ),
+    )
     headers.set(
       'Content-Security-Policy-Report-Only',
       buildCspReportOnly(!isProduction),
