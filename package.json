@@ -12,8 +12,6 @@
     "dev": "node scripts/repatch-admin-route-tree.mjs && vite dev --port 3000",
     "build": "vite build && node scripts/repatch-admin-route-tree.mjs",
     "preview": "vite preview",
-    "deploy": "pnpm run build && wrangler deploy",
-    "cf-typegen": "wrangler types",
     "analyze": "ANVL_ANALYZE=1 vite build && node scripts/repatch-admin-route-tree.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -21,7 +19,9 @@
     "test:related": "vitest run --changed",
     "typecheck": "node scripts/repatch-admin-route-tree.mjs && tsc --noEmit",
     "verify": "pnpm run typecheck && pnpm run test && pnpm run build",
-    "strip-brand-bg": "node scripts/strip-brand-logo-bg.mjs"
+    "strip-brand-bg": "node scripts/strip-brand-logo-bg.mjs",
+    "deploy": "pnpm run build && wrangler deploy",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
     "@fontsource/anton": "^5.2.7",

@@ -29,3 +29,7 @@ supabase/.temp/
 .design-sync/node_modules
 .ds-sync/
 ds-bundle/
+
+.dev.vars*
+!.dev.vars.example
+!.env.example
