@@ -142,11 +142,16 @@ export function EmberAnvil({
   count,
   accent,
   handleRef,
+  scale = 1,
 }: {
   count: number
   accent: string
   /** Imperative bridge the scene uses to feed pointer + strike events. */
   handleRef: React.MutableRefObject<EmberAnvilHandle | null>
+  /** Uniform scale of the forged anvil — shrunk on small screens so it fits
+   *  the viewport. Pointer/strike coords stay correct: they convert through
+   *  `worldToLocal`, which accounts for this scale. */
+  scale?: number
 }) {
   const pointsRef = useRef<THREE.Points>(null)
   // All runtime mutation goes through the mounted material's uniform slots —
@@ -277,7 +282,7 @@ export function EmberAnvil({
   })
 
   return (
-    <points ref={pointsRef} position={[0, -0.35, 0]} frustumCulled={false}>
+    <points ref={pointsRef} position={[0, -0.35, 0]} scale={scale} frustumCulled={false}>
       <primitive object={geometry} attach="geometry" />
       <shaderMaterial
         ref={materialRef}

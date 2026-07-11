@@ -277,6 +277,32 @@ html {
   overflow-x: clip;
 }
 
+/* Lenis smooth-scroll requires native `scroll-behavior: auto`. The
+   `html { scroll-behavior: smooth }` above (kept for anchor jumps on pages
+   without Lenis) otherwise fights Lenis's per-frame scroll writes and freezes
+   scrolling completely — the wheel does nothing. These are Lenis's recommended
+   base styles, scoped to the `.lenis*` classes it adds only while mounted
+   (home + about), so anchor smoothness is preserved everywhere else. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+/* Scoped to `html.lenis` (added whenever a Lenis instance is mounted) rather
+   than `.lenis-smooth`, so it always wins over `html { scroll-behavior: smooth }`
+   the moment Lenis takes over — otherwise native smooth-scroll freezes it. */
+html.lenis {
+  scroll-behavior: auto !important;
+}
+.lenis [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
 body {
   margin: 0;
   overflow-x: clip;

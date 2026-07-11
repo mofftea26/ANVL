@@ -181,10 +181,22 @@ function SceneContents({ accent, quality }: { accent: string; quality: 'high' | 
   const anvilCount = quality === 'high' ? 24_000 : 9_000
   const driftCount = quality === 'high' ? 900 : 350
 
+  // Shrink the anvil on small screens so its oversized shoulders fit the
+  // viewport. Tablet/desktop (≥768px) stay at full scale (1). Reactive to the
+  // live canvas width, so rotating a phone re-fits without a reload.
+  const width = useThree((s) => s.size.width)
+  const anvilScale =
+    width >= 768 ? 1 : THREE.MathUtils.clamp(width / 820, 0.62, 0.9)
+
   return (
     <>
       <Suspense fallback={null}>
-        <EmberAnvil count={anvilCount} accent={accent} handleRef={anvilRef} />
+        <EmberAnvil
+          count={anvilCount}
+          accent={accent}
+          handleRef={anvilRef}
+          scale={anvilScale}
+        />
       </Suspense>
       <EmberDrift count={driftCount} accent={accent} />
       <ForgeGlow accent={accent} />
