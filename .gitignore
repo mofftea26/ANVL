@@ -9,6 +9,9 @@ dist-ssr
 .wrangler
 .output
 .vinxi
+
+# Cloudflare Workers generated types — regenerate with `pnpm cf-typegen`
+worker-configuration.d.ts
 __unconfig*
 todos.json
 

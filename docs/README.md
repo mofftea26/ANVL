@@ -15,6 +15,7 @@ Start here, then open only the docs needed for the task.
 - `animation-guidelines.md` — GSAP / Framer / Lenis rules + The Oath cinematic motion.
 - `backend-guidelines.md` / `performance-guidelines.md` — Supabase + performance/bundle rules.
 - `cursor-workflow.md` — how Cursor agents should work without burning context.
+- `deployment.md` — **Cloudflare Workers** SSR deployment: toolchain, `wrangler.jsonc`, Node ≥22.15 requirement, env split, commands, custom domain (GoDaddy → Cloudflare).
 - `changelog.md` — every task must append changes here.
 - `next-steps.md` — prioritized task list. `technical-debt.md` — known issues and future work.
 

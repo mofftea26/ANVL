@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { cloudflare } from '@cloudflare/vite-plugin'
 import { devtools } from '@tanstack/devtools-vite'
 import { visualizer } from 'rollup-plugin-visualizer'
 
@@ -11,7 +12,26 @@ const analyze = process.env.ANVL_ANALYZE === '1'
 
 const config = defineConfig(({ isSsrBuild }) => ({
   resolve: { tsconfigPaths: true },
+  server: {
+    watch: {
+      // Design-sync (claude.ai/design) writes hundreds of build artifacts into
+      // these gitignored dirs. Vite otherwise watches them and fires a full
+      // page reload per file, flooding HMR (and causing aborted/ECONNRESET
+      // requests mid-reload). They're not app source — never watch them.
+      ignored: [
+        '**/ds-bundle/**',
+        '**/.ds-sync/**',
+        '**/.design-sync/**',
+        '**/dist-ui/**',
+      ],
+    },
+  },
   plugins: [
+    // Runs the SSR environment on the Cloudflare Workers runtime (workerd) for
+    // dev, preview, and build — bound to the `ssr` environment so the server
+    // build targets the Worker while the client build stays a browser bundle.
+    // Keeping it on in dev too gives dev↔prod parity with the deployed Worker.
+    cloudflare({ viteEnvironment: { name: 'ssr' } }),
     devtools({
       // R3F cannot apply DOM `data-tsd-source` attributes to three.js
       // elements (<points>, <shaderMaterial>, …) — the injected attribute
@@ -31,7 +51,15 @@ const config = defineConfig(({ isSsrBuild }) => ({
       },
     }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      router: {
+        // `src/routes/` holds a couple of non-route files co-located with real
+        // routes: the `storefrontMainLayout.ts` helper (imported directly by
+        // `__root.tsx`) and `__tests__/` specs. Without this they trigger a
+        // "does not export a Route" warning on every generator run.
+        routeFileIgnorePattern: 'storefrontMainLayout|__tests__',
+      },
+    }),
     viteReact(),
     ...(analyze
       ? [
@@ -60,7 +88,7 @@ const config = defineConfig(({ isSsrBuild }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks(id) {
+        manualChunks(id: string) {
           if (id.includes('node_modules/gsap')) return 'vendor-gsap'
           if (id.includes('node_modules/lenis')) return 'vendor-lenis'
           if (id.includes('node_modules/framer-motion')) return 'vendor-framer-motion'

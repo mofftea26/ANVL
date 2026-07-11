@@ -57,8 +57,12 @@ The current phase uses local/mock adapters where a real backend does not yet exi
 | UI primitives | Custom (`src/shared/components/ui/`) — **not shadcn/ui** |
 | CSS utility helpers | clsx + tailwind-merge (`src/shared/lib/cn.ts`) |
 | Schema validation | Zod (all external/CMS data) |
+| Hosting / SSR runtime | **Cloudflare Workers** (`workerd`) via `@cloudflare/vite-plugin` + `wrangler` — see `docs/deployment.md` |
+| Node version | **≥ 22.15** for all commands (Node 24 LTS recommended) |
 
 > **Note:** shadcn/ui is **not installed**. The project has its own branded UI component system under `src/shared/components/ui/`. Do not install shadcn/ui without explicit approval.
+
+> **Deploy note:** `@cloudflare/vite-plugin` is a standard static plugin in `vite.config.ts` (always on for dev/preview/build, bound to the `ssr` vite environment), so `pnpm dev` runs SSR on `workerd` too — full dev↔prod parity. It requires **Node ≥ 22.15** (uses `node:module.registerHooks`), so every command does. `NODE_ENV` still resolves to `development` in dev (Vite replaces it per-mode). Full setup, env split, and custom-domain steps live in `docs/deployment.md`.
 
 ---
 
@@ -187,12 +191,16 @@ pnpm test:watch                 # TDD loop
 pnpm test:coverage              # Coverage report (v8 provider → dist/coverage)
 pnpm test src/features/cart     # Run one feature's tests
 pnpm typecheck                  # tsc --noEmit (repatch runs first)
-pnpm build                      # Production build
+pnpm build                      # Production build (client + workerd SSR bundle → dist/)
+pnpm preview                    # Serve the built Worker locally in workerd
+pnpm deploy                     # pnpm build && wrangler deploy → Cloudflare Workers
+pnpm cf-typegen                 # wrangler types → worker-configuration.d.ts (gitignored, regenerable)
 pnpm verify                     # typecheck + test + build (definition of done gate)
 pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALYZE=1)
 ```
 
 > No ESLint is configured. `pnpm typecheck` is the static analysis gate.
+> Cloudflare Workers deployment: see `docs/deployment.md`. All commands require **Node ≥22.15** (Node 24 LTS recommended) — the Cloudflare vite plugin is always on, so `dev` also runs on `workerd`.
 
 ---
 
@@ -207,6 +215,7 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 - Server-only / Edge (never `VITE_*`): `SUPABASE_SERVICE_ROLE_KEY`, `SHOPIFY_ADMIN_API_ACCESS_TOKEN`, `SHOPIFY_API_SECRET_KEY`, `ANVL_ADMIN_SESSION_SECRET` (seals the HttpOnly `/admin` session cookie — see `src/features/admin/auth/adminAuthSession.server.ts`; 32+ chars, rotating it signs out all admin sessions)
 - `.env.example` must have placeholder values only — never real credentials.
 - Env vars are validated by Zod in `src/app/config/publicEnv.ts` before use.
+- **Cloudflare Workers split (see `docs/deployment.md`):** `VITE_*` vars are **build-time** — they must be present when `vite build`/`pnpm deploy` runs (local `.env` or CI), **not** Worker secrets. Server runtime vars live on the Worker: `NODE_ENV=production` in `wrangler.jsonc` `vars` (Cloudflare doesn't set it automatically; the admin/CSRF cookies' `Secure` flag depends on it), and `ANVL_ADMIN_SESSION_SECRET` via `wrangler secret put` (never committed). `nodejs_compat` is required for request-time `process.env` reads.
 
 ---
 
@@ -679,6 +688,7 @@ Every code change must check whether documentation needs updating. After any:
 - Landing page / act system change → update `docs/cms-architecture.md`
 - Animation system change → update `docs/animation-guidelines.md`
 - Significant architectural decision → update `docs/frontend-architecture.md`
+- Deployment / hosting / Cloudflare / `wrangler` / build-target change → update `docs/deployment.md` + Stack table & Commands in `CLAUDE.md`
 - Task completion → update `docs/audit-2026-05-17.md` + append to `docs/changelog.md`
 
 ---
@@ -696,7 +706,7 @@ Every code change must check whether documentation needs updating. After any:
 | MAINT-03 | localStorage reset | `resetAllLocalCmsKeys()` omits `anvl.landingContent.v1` |
 | MIG-01 | Supabase migrations | Orphaned publish RPC migrations post drop-builder teardown |
 | Phase I | Router repatch | `scripts/repatch-admin-route-tree.mjs` is a workaround for TanStack Start upstream limitation. |
-| Phase J | Production launch | Admin real server auth + HttpOnly sessions done (see SEC-11). Remaining: CSP/HSTS, rate limits, upload validation, CSRF — all required before public launch. |
+| Phase J | Production launch | Admin real server auth + HttpOnly sessions done (see SEC-11). **Hosting set up 2026-07-11: Cloudflare Workers SSR (`wrangler.jsonc` + `@cloudflare/vite-plugin`), verified via build + dry-run — see `docs/deployment.md`.** Remaining: first `wrangler deploy` + DNS cutover, flip CSP to enforcing (currently report-only, WASM/blob allowances added), rate limits, upload validation. CSRF double-submit cookie is in place (`src/start.ts`). |
 
 ---
 
