@@ -1,12 +1,30 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
+  // Worker name — matches the Worker provisioned by Cloudflare's Git
+  // integration (derived from the repo). Keep in sync with the dashboard
+  // Worker where the environment variables/secrets are set.
   "name": "anvl",
+  // Pin the Workers runtime behavior. Bump deliberately; a newer date can
+  // change built-in API semantics.
   "compatibility_date": "2026-07-11",
+  // Required by this project: the SSR entry reads server secrets at request
+  // time via `process.env` (admin session secret, NODE_ENV) and TanStack
+  // Start's server runtime expects Node built-ins. Without this flag those
+  // reads fail on workerd.
+  "compatibility_flags": ["nodejs_compat"],
+  // TanStack Start's Workers SSR entry. The @cloudflare/vite-plugin wires the
+  // built client assets automatically, so no explicit `assets` block is
+  // needed here.
+  "main": "@tanstack/react-start/server-entry",
+  // Turn on runtime logs/metrics in the Cloudflare dashboard.
   "observability": {
     "enabled": true
   },
-  "main": "@tanstack/react-start/server-entry",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+  // Runtime (non-secret) vars. NODE_ENV must be "production" on the deployed
+  // Worker — Cloudflare does not set it automatically, and the admin session +
+  // CSRF cookies gate their `Secure` attribute (and HSTS) on it. Secrets
+  // (ANVL_ADMIN_SESSION_SECRET) are set with `wrangler secret put`, never here.
+  "vars": {
+    "NODE_ENV": "production"
+  }
 }

@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "node scripts/repatch-admin-route-tree.mjs && vite dev --port 3000",
     "build": "vite build && node scripts/repatch-admin-route-tree.mjs",
-    "preview": "pnpm run build && wrangler dev",
+    "preview": "vite preview",
     "analyze": "ANVL_ANALYZE=1 vite build && node scripts/repatch-admin-route-tree.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

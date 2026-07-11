@@ -10,7 +10,8 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 |---|---|
 | `package.json` | Dependencies, scripts, pnpm config |
 | `tsconfig.json` | TypeScript strict config; path aliases `@/` and `#/` → `src/` |
-| `vite.config.ts` | Vite + TanStack Start + Tailwind + manual bundle chunks |
+| `vite.config.ts` | Vite + TanStack Start + Tailwind + manual bundle chunks; Cloudflare Workers plugin (always on — dev/preview/build) |
+| `wrangler.jsonc` | Cloudflare Workers deploy config (SSR entry, `nodejs_compat`, `NODE_ENV`) — see `docs/deployment.md` |
 | `vitest.config.ts` | Vitest config (jsdom, test setup, aliases, coverage) |
 | `CLAUDE.md` | Primary guide for Claude Code agents |
 | `AGENTS.md` | Project rules: brand, engineering non-negotiables, definition of done |

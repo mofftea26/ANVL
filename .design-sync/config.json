@@ -9,6 +9,7 @@
   "provider": {
     "component": "DesignSystemPreviewProvider"
   },
+  "readmeHeader": ".design-sync/conventions.md",
   "overrides": {
     "AccordionDisclosure": {
       "cardMode": "column"
