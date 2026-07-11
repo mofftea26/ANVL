@@ -226,7 +226,10 @@ export default function ComingSoonScene({
   return (
     <Canvas
       camera={{ fov: 42, position: [0, 0.35, 8.4], near: 0.1, far: 60 }}
-      dpr={quality === 'high' ? [1, 1.75] : [1, 1.25]}
+      // Cap device-pixel-ratio: additive embers are forgiving, so 1.5× (vs a
+      // full 2–3× on retina) roughly halves fragment/fill cost per frame with
+      // no visible quality loss — the biggest cheap GPU win for this scene.
+      dpr={quality === 'high' ? [1, 1.5] : [1, 1.25]}
       gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
       style={{ position: 'absolute', inset: 0 }}
     >

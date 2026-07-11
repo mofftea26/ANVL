@@ -20,6 +20,12 @@
   "observability": {
     "enabled": true
   },
+  // Smart Placement runs the SSR Worker near the Supabase origin instead of
+  // near each visitor, cutting the latency of the several Supabase round-trips
+  // the storefront projection load makes per request.
+  "placement": {
+    "mode": "smart"
+  },
   // Runtime (non-secret) vars. NODE_ENV must be "production" on the deployed
   // Worker — Cloudflare does not set it automatically, and the admin session +
   // CSRF cookies gate their `Secure` attribute (and HSTS) on it. Secrets

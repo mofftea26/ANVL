@@ -157,7 +157,7 @@ function OrbSection({ orb, image }: { orb: AboutResolvedOrb; image?: string }) {
  * desktop all land here. A clean scrolling page: full-bleed hero under the
  * transparent header, then **one section per orb** (the same CMS orbs that
  * orbit the desktop altar), the marquee band, and the closing brand block.
- * Light once-only reveals (framer-motion), native scroll, no pins, no WebGL.
+ * Light once-only reveals (IntersectionObserver + CSS), native scroll, no pins, no WebGL.
  */
 export function AboutMobilePage({
   content,
