@@ -75,12 +75,13 @@ export function ComingSoonExperience({
       {/* The living forge. Keeps pointer events: clicks on open space strike it. */}
       <ComingSoonStage accent={accentHex} />
 
-      {/* Legibility shield — a soft dark pool between the forge and the type
-          so embers and glow never wash the copy out. Pointer-transparent:
-          strikes still pass through to the canvas. */}
+      {/* Legibility shield — a soft dark band hugging ONLY the text column
+          (not the whole center), so the oversized anvil's shoulders spill
+          past it at full ember brightness while the copy stays on darkness.
+          Pointer-transparent: strikes still pass through to the canvas. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-[5] [background:radial-gradient(62%_56%_at_50%_46%,color-mix(in_oklab,var(--color-bg)_72%,transparent)_0%,color-mix(in_oklab,var(--color-bg)_45%,transparent)_48%,transparent_74%)]"
+        className="pointer-events-none absolute inset-0 z-[5] [background:radial-gradient(42%_58%_at_50%_46%,color-mix(in_oklab,var(--color-bg)_74%,transparent)_0%,color-mix(in_oklab,var(--color-bg)_48%,transparent)_52%,transparent_78%)]"
       />
 
       {/* Content column — pointer-transparent so the forge stays strikable;

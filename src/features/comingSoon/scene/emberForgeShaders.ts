@@ -55,7 +55,10 @@ export const EMBER_ANVIL_VERTEX = /* glsl */ `
     float shock = ring * uShockAmp;
     pos += normalize(pos - uShockCenter + 1e-4) * shock * 1.6;
 
-    vGlow = clamp(influence * 1.3 + shock * 2.2 + uHeat, 0.0, 1.0);
+    // Slow forge-breathing: the whole anvil swells with heat and settles —
+    // motion carries visibility without brightening the text zone.
+    float breath = 0.06 + 0.07 * (0.5 + 0.5 * sin(uTime * 0.55 + seed * 2.0));
+    vGlow = clamp(influence * 1.3 + shock * 2.2 + uHeat + breath * t, 0.0, 1.0);
     vSeed = seed;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
@@ -86,8 +89,8 @@ export const EMBER_ANVIL_FRAGMENT = /* glsl */ `
     float twinkle = 0.75 + 0.25 * sin(uTime * (1.5 + vSeed * 3.0) + vSeed * 40.0);
     vec3 base = mix(uColdColor, uEmberColor, 0.2 + 0.8 * vSeed);
     vec3 color = mix(base, uHotColor, vGlow);
-    float alpha = core * (0.5 + 0.5 * twinkle) * (0.62 + 0.38 * vGlow);
-    gl_FragColor = vec4(color * (0.85 + twinkle * 0.45 + vGlow * 1.7), alpha);
+    float alpha = core * (0.55 + 0.45 * twinkle) * (0.72 + 0.28 * vGlow);
+    gl_FragColor = vec4(color * (1.05 + twinkle * 0.45 + vGlow * 1.7), alpha);
   }
 `
 
