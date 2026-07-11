@@ -8,10 +8,11 @@ import { cn } from '@/shared/lib/cn'
 type FormPhase = 'idle' | 'submitting' | 'success' | 'error'
 
 /**
- * The single conversion moment on the page: a centered hairline input — no
- * card, no pill, just a luminous underline that charges gold on focus — and a
- * circular strike button. Explicit idle/submitting/success/duplicate/error
- * states; a honeypot absorbs naive bots; duplicates resolve as success.
+ * The single conversion moment on the page: a forged capsule — dark glass
+ * pill with a hairline gold rim that charges on focus, and a solid champagne
+ * strike button docked inside its right edge. Explicit
+ * idle/submitting/success/duplicate/error states; a honeypot absorbs naive
+ * bots; duplicates resolve as success.
  */
 export function ComingSoonEmailCapture({
   emailCapture,
@@ -56,13 +57,15 @@ export function ComingSoonEmailCapture({
   return (
     <div
       data-cs-reveal="email"
-      className="pointer-events-auto flex w-full max-w-sm flex-col items-center gap-2"
+      className="pointer-events-auto flex w-full max-w-md flex-col items-center gap-2.5"
     >
       <p className="text-[10px] font-medium uppercase tracking-[0.42em] text-[color:color-mix(in_oklab,var(--color-text)_75%,transparent)] [text-shadow:0_1px_8px_rgba(0,0,0,0.9)] sm:text-[11px]">
         {emailCapture.title}
       </p>
       <form onSubmit={(e) => void onSubmit(e)} className="w-full">
-        <div className="group flex items-center gap-3 rounded-t-md border-b border-[color-mix(in_oklab,var(--color-text)_35%,transparent)] bg-[color-mix(in_oklab,var(--color-bg)_45%,transparent)] px-2 pb-1 backdrop-blur-[2px] transition-colors duration-300 focus-within:border-[color-mix(in_oklab,var(--cs-accent)_85%,transparent)]">
+        {/* Forged capsule: dark glass pill, hairline gold rim charging on
+            focus, solid champagne strike button docked inside the right edge. */}
+        <div className="group relative flex h-[3.25rem] items-center rounded-full border border-[color-mix(in_oklab,var(--cs-accent)_30%,color-mix(in_oklab,var(--color-text)_16%,transparent))] bg-[color-mix(in_oklab,var(--color-bg)_74%,transparent)] pl-6 pr-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-md transition-[border-color,box-shadow] duration-300 focus-within:border-[color-mix(in_oklab,var(--cs-accent)_75%,transparent)] focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_0_1px_color-mix(in_oklab,var(--cs-accent)_35%,transparent),0_0_34px_color-mix(in_oklab,var(--cs-accent)_22%,transparent)]">
           <label htmlFor="cs-email" className="sr-only">
             Email address
           </label>
@@ -75,7 +78,7 @@ export function ComingSoonEmailCapture({
             inputMode="email"
             placeholder={emailCapture.placeholder}
             disabled={submitting}
-            className="h-11 min-w-0 flex-1 bg-transparent text-center text-base text-[color:var(--color-text)] outline-none placeholder:text-[color:color-mix(in_oklab,var(--color-text)_55%,transparent)] md:text-sm"
+            className="h-full min-w-0 flex-1 bg-transparent pr-3 text-base text-[color:var(--color-text)] outline-none placeholder:text-[color:color-mix(in_oklab,var(--color-text)_48%,transparent)] md:text-sm"
           />
           {/* Honeypot — removed from real users visually and programmatically. */}
           <input
@@ -91,7 +94,7 @@ export function ComingSoonEmailCapture({
             disabled={submitting}
             aria-label={emailCapture.buttonText}
             title={emailCapture.buttonText}
-            className="focus-ring inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_oklab,var(--cs-accent)_55%,transparent)] text-[color:var(--cs-accent)] transition-all duration-300 hover:bg-[color-mix(in_oklab,var(--cs-accent)_18%,transparent)] hover:shadow-[0_0_24px_color-mix(in_oklab,var(--cs-accent)_35%,transparent)] active:scale-90 disabled:pointer-events-none disabled:opacity-60"
+            className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--cs-accent)] text-[color:var(--color-bg)] shadow-[0_0_16px_color-mix(in_oklab,var(--cs-accent)_40%,transparent)] transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_28px_color-mix(in_oklab,var(--cs-accent)_60%,transparent)] active:scale-90 disabled:pointer-events-none disabled:opacity-60 group-focus-within:scale-105"
           >
             {submitting ? (
               <Loader2 size={ICON_SIZE.sm} className="animate-spin" aria-hidden="true" />

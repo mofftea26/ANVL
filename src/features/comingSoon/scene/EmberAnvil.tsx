@@ -9,8 +9,10 @@ import {
 } from './emberForgeShaders'
 
 const ANVIL_GLB = '/about/anvil.glb'
-/** World height the sampled anvil is normalized to. */
-const ANVIL_FIT = 3.1
+/** World size the sampled anvil is normalized to — oversized on purpose so
+ *  its shoulders spill beyond the text column, outside the legibility shield,
+ *  where they read at full ember brightness. */
+const ANVIL_FIT = 3.9
 
 export type EmberAnvilHandle = {
   /** Fire the hammer-strike shockwave from a world-space point. */
@@ -275,7 +277,7 @@ export function EmberAnvil({
   })
 
   return (
-    <points ref={pointsRef} frustumCulled={false}>
+    <points ref={pointsRef} position={[0, -0.35, 0]} frustumCulled={false}>
       <primitive object={geometry} attach="geometry" />
       <shaderMaterial
         ref={materialRef}
