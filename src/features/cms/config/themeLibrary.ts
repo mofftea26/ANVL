@@ -34,7 +34,32 @@ export type ThemeAppearance = z.infer<typeof themeAppearanceSchema>
 export type ThemePreset = z.infer<typeof themePresetSchema>
 export type ThemeLibraryConfig = z.infer<typeof themeLibraryConfigSchema>
 
-export const DEFAULT_THEME_PRESET_ID = 'oath-dark-default'
+export const DEFAULT_THEME_PRESET_ID = 'graphite-champagne'
+
+/**
+ * Preset ids retired on 2026-07-12 when the library consolidated to the single
+ * Graphite & Champagne house theme. Stored copies of these (published library
+ * rows, localStorage working copies) are dropped on parse so the retired looks
+ * cannot linger; an `activeThemeId` pointing at one is remapped to the house
+ * preset. Genuinely user-created themes (ids like `theme-<timestamp>`) are
+ * untouched.
+ */
+const RETIRED_THEME_IDS = new Set([
+  'oath-dark-default',
+  'bone-light-default',
+  'oath-obsidian',
+  'blackened-champagne',
+  'oxblood-covenant',
+  'burnished-bronze',
+  'cold-forged-steel',
+  'ashen-olive',
+  'midnight-cobalt',
+  'blackened-teal',
+  'iron-violet',
+  'bone-relic',
+  'theoath-modern-tech-forge',
+  'forged-ceremonial',
+])
 
 export function appearanceToDataTheme(appearance: ThemeAppearance): ThemeMode {
   return appearance === 'light' ? 'bone-light' : 'oath-dark'
@@ -91,27 +116,13 @@ export const ANVL_PRESETS: ThemePreset[] = ANVL_THEME_PRESETS.map(buildPreset)
  * Offline / empty-Supabase fallback — live values come from
  * `storefront_publication.theme_config`.
  *
- * Ships the two legacy presets (active default unchanged) plus all ten
- * brand-authored presets. Oath Obsidian is marked `recommended` but is NOT the
- * live default — editors switch to it from `/admin/theme` when ready (decision 1).
+ * Ships only the Graphite & Champagne house preset (the active default). The
+ * legacy oath-dark/bone-light entries and the exploration preset set are
+ * retired (`RETIRED_THEME_IDS`).
  */
 export const DEFAULT_THEME_LIBRARY: ThemeLibraryConfig = {
   activeThemeId: DEFAULT_THEME_PRESET_ID,
-  themes: [
-    {
-      id: DEFAULT_THEME_PRESET_ID,
-      name: 'Oath dark (legacy)',
-      appearance: 'dark',
-      palette: DEFAULT_THEME_PALETTE,
-    },
-    {
-      id: 'bone-light-default',
-      name: 'Bone light (legacy)',
-      appearance: 'light',
-      palette: DEFAULT_BONE_LIGHT_PALETTE,
-    },
-    ...ANVL_PRESETS,
-  ],
+  themes: [...ANVL_PRESETS],
 }
 
 export function presetToThemeConfig(preset: ThemePreset): ThemeConfig {
@@ -132,15 +143,16 @@ export function resolveThemeConfig(library: ThemeLibraryConfig): ThemeConfig {
 }
 
 /**
- * Guarantee the ten built-in presets are always present (§4, §25.1) and that
- * every theme palette is finalized for the current token set. User-customized
- * themes that share a built-in id are preserved (their edits win); the stored
- * `activeThemeId` is never changed here.
+ * Guarantee the built-in house preset is always present, drop retired presets,
+ * and finalize every palette for the current token set. User-customized themes
+ * that share a built-in id are preserved (their edits win); an `activeThemeId`
+ * pointing at a retired/missing theme is remapped to the house preset.
  */
 function withBuiltInPresets(library: ThemeLibraryConfig): ThemeLibraryConfig {
+  const kept = library.themes.filter((t) => !RETIRED_THEME_IDS.has(t.id))
   const byId = new Map<string, ThemePreset>()
   for (const preset of ANVL_PRESETS) byId.set(preset.id, preset)
-  for (const theme of library.themes) {
+  for (const theme of kept) {
     byId.set(theme.id, {
       ...theme,
       palette: finalizeThemePalette(theme.palette, theme.appearance),
@@ -150,9 +162,12 @@ function withBuiltInPresets(library: ThemeLibraryConfig): ThemeLibraryConfig {
   const builtInIds = new Set(ANVL_PRESETS.map((p) => p.id))
   const themes = [
     ...ANVL_PRESETS.map((p) => byId.get(p.id)!),
-    ...library.themes.filter((t) => !builtInIds.has(t.id)).map((t) => byId.get(t.id)!),
+    ...kept.filter((t) => !builtInIds.has(t.id)).map((t) => byId.get(t.id)!),
   ]
-  return { ...library, themes }
+  const activeThemeId = themes.some((t) => t.id === library.activeThemeId)
+    ? library.activeThemeId
+    : DEFAULT_THEME_PRESET_ID
+  return { activeThemeId, themes }
 }
 
 export function parseThemeLibrary(raw: unknown): ThemeLibraryConfig {
@@ -191,11 +206,13 @@ export function parseThemeLibrary(raw: unknown): ThemeLibraryConfig {
     const appearance: ThemeAppearance =
       legacyMode.data === 'bone-light' ? 'light' : 'dark'
     // `finalizeThemePalette` maps legacy keys + fills gaps from the appearance
-    // default, so pass the stored palette straight through (no default spread,
-    // which would otherwise clobber the legacy colors).
+    // default. The legacy ids are retired, so `withBuiltInPresets` drops the
+    // reconstructed entry and the library collapses to the house preset —
+    // pre-consolidation configs migrate forward instead of resurrecting the
+    // old look under the new id.
     const palette = finalizeThemePalette(legacyPalette ?? {}, appearance)
     const id =
-      legacyMode.data === 'bone-light' ? 'bone-light-default' : DEFAULT_THEME_PRESET_ID
+      legacyMode.data === 'bone-light' ? 'bone-light-default' : 'oath-dark-default'
     return withBuiltInPresets({
       activeThemeId: id,
       themes: [

@@ -166,8 +166,8 @@ export function SiteThemeEditor() {
   return (
     <div className="space-y-6" data-testid="site-theme-editor">
       <p className="text-sm text-[var(--color-text-muted)]">
-        Ten brand presets ship ready to use. Edit colors, validate contrast, pick
-        the live storefront theme, and save to Supabase.
+        The Graphite &amp; Champagne house preset ships ready to use. Edit colors,
+        validate contrast, add your own themes, and save to Supabase.
         {isDirty ? (
           <span className="ml-1 text-[var(--color-highlight)]">Unsaved changes.</span>
         ) : null}

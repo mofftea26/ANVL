@@ -20,6 +20,17 @@ export interface OathMotionState {
   tenetsActive: number
   /** Hovered product index, -1 when none — lifts the dust glint. */
   hoveredPiece: number
+  /** Requested hero product model index (DOM writes on click; the hero
+   *  particle forge morphs toward it). */
+  heroProductIndex: number
+  /** 1 while the pointer rests on the hero product stage — zoom + glow. */
+  heroProductHover: number
+  /** Monotonic strike counter — every stage click pulses a re-forge burst,
+   *  even when a single product means the index cannot change. */
+  heroProductStrike: number
+  /** 0..1 — how "resolved" the actual product render is (DOM tweens it around
+   *  each reveal; the particles read it and recede to a faint aura at 1). */
+  heroProductReveal: number
   /** 0..1 across the finale reveal — returns the emblem centre/front. */
   finaleProgress: number
   /** Pointer position normalized to the viewport center (-1..1). */
@@ -37,6 +48,10 @@ export function createOathMotionState(): OathMotionState {
     tenetsProgress: 0,
     tenetsActive: 0,
     hoveredPiece: -1,
+    heroProductIndex: 0,
+    heroProductHover: 0,
+    heroProductStrike: 0,
+    heroProductReveal: 0,
     finaleProgress: 0,
     pointerX: 0,
     pointerY: 0,

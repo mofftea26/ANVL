@@ -8,7 +8,7 @@ import type { ExperienceConfig, ExperienceKey } from './experience.types'
 const THE_OATH_EXPERIENCE: ExperienceConfig = {
   key: 'the-oath',
   label: 'Drop 01 — The Oath',
-  recommendedThemeKey: 'oath-obsidian',
+  recommendedThemeKey: 'graphite-champagne',
   header: 'classic',
   footer: 'classic',
   productCard: 'classic',

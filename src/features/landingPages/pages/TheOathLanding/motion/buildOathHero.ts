@@ -146,9 +146,24 @@ export function buildOathHero(
     { opacity: 0.4, ease: 'none', duration: 0.5 },
     0.5,
   )
-  // Film + spotlight reveal fade out as the hero ends — the void + monolith
-  // take over for the creed.
-  tl.to(q('[data-hero-film]'), { opacity: 0, ease: 'none', duration: 0.3 }, 0.7)
+  // Product-forge render (hero mode `products`): the actual product image
+  // dissolves early in the scrub — the shader cancels `heroProductReveal`
+  // over the same window, so the render hands back to re-ignited embers and
+  // the embers carry the rest of the hero exit.
+  tl.to(
+    q('[data-hero-product-render]'),
+    { opacity: 0, ease: 'none', duration: 0.38 },
+    0.12,
+  )
+  // Film + spotlight reveal (and the product-forge stage plate, when hero mode
+  // is `products`) fade out as the hero ends — the void + monolith take over
+  // for the creed. The particle piece does its own shader-side dissolve from
+  // `motion.heroProgress`, timed to match.
+  tl.to(
+    q('[data-hero-film], [data-hero-product-stage]'),
+    { opacity: 0, ease: 'none', duration: 0.3 },
+    0.7,
+  )
 
   return () => {
     for (const dispose of disposers) dispose()

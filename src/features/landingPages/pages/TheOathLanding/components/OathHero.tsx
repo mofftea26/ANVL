@@ -6,6 +6,10 @@ import type { OathResolvedContent } from '../content/oathContent.defaults'
 
 import {
 
+  oathCrestEmblem,
+
+  oathDuotone,
+
   oathHeroDesktopVideo,
 
   oathHeroImage,
@@ -18,12 +22,16 @@ import {
 
   oathHeroRevealMedia,
 
+  oathProductImage,
+
 } from '../theOathAssets'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 import { OathCmsMark } from './OathCmsMark'
 
 import { OathCtaLink } from './OathCtaLink'
+
+import { OathHeroProductStage } from './OathHeroProductStage'
 
 import { OathSceneSeam } from './OathSceneSeam'
 
@@ -117,6 +125,10 @@ export function OathHero({ hero }: { hero: OathResolvedContent['hero'] }) {
 
   const revealMedia = oathHeroRevealMedia()
 
+  // Products mode's static stand-in (mobile / tablet / reduced motion /
+  // no-WebGL); fades out when the canvas is live (`data-webgl="on"`).
+  const productsFallback = poster ?? heroImage ?? oathProductImage(1)
+
 
 
   return (
@@ -167,7 +179,35 @@ export function OathHero({ hero }: { hero: OathResolvedContent['hero'] }) {
 
           <div data-hero-kenburns className="absolute inset-0 will-change-transform">
 
-            {heroMode === 'image' && heroImage ? (
+            {heroMode === 'products' ? (
+              /* Products mode: the forged piece lives on the WebGL canvas
+                 (desktop). This static panel is the mobile / tablet /
+                 reduced-motion / no-WebGL stand-in — and it hands off
+                 (fades out) the moment the canvas is live. */
+              productsFallback ? (
+                <img
+                  src={productsFallback}
+                  alt=""
+                  className="h-full w-full object-cover object-center transition-opacity duration-700 group-data-[webgl=on]/oath:opacity-0 max-xl:object-center xl:object-top"
+                  decoding="async"
+                />
+              ) : (
+                <div
+                  aria-hidden="true"
+                  className="flex h-full w-full items-center justify-center transition-opacity duration-700 group-data-[webgl=on]/oath:opacity-0"
+                  style={{ background: oathDuotone() }}
+                >
+                  <img
+                    src={oathCrestEmblem()}
+                    alt=""
+                    width={280}
+                    height={280}
+                    decoding="async"
+                    className="h-[38%] w-auto opacity-25"
+                  />
+                </div>
+              )
+            ) : heroMode === 'image' && heroImage ? (
 
               <img
 
@@ -345,13 +385,13 @@ export function OathHero({ hero }: { hero: OathResolvedContent['hero'] }) {
 
 
 
-      <Container className="relative z-10 w-full max-xl:py-3 max-md:px-2">
+      <Container className="pointer-events-none relative z-10 w-full max-xl:py-3 max-md:px-2">
 
         <div
 
           data-hero-content
 
-          className="max-w-2xl will-change-transform max-xl:mx-auto max-xl:max-w-3xl max-xl:text-center max-md:flex max-md:w-full max-md:flex-col max-md:items-center xl:mb-[var(--anvl-header-h)] xl:text-left"
+          className="pointer-events-auto max-w-2xl will-change-transform max-xl:mx-auto max-xl:max-w-3xl max-xl:text-center max-md:flex max-md:w-full max-md:flex-col max-md:items-center xl:mb-[var(--anvl-header-h)] xl:text-left"
 
         >
 
@@ -534,6 +574,14 @@ export function OathHero({ hero }: { hero: OathResolvedContent['hero'] }) {
         </div>
 
       </Container>
+
+
+
+      {/* Hero product forge interaction layer (mode `products`, WebGL on):
+          click = re-forge next piece, hover = zoom breathe, plus the active
+          piece plate. Renders nothing in other modes / without the canvas. */}
+
+      {heroMode === 'products' ? <OathHeroProductStage /> : null}
 
 
 

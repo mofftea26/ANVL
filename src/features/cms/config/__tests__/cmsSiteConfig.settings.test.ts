@@ -36,18 +36,27 @@ describe('cmsSiteConfig.settings snapshots', () => {
     expect(first).toBe(second)
   })
 
+  // A user-created theme (non-retired id) used as the cache-change marker.
+  const customTheme = {
+    id: 'theme-1700000000001',
+    name: 'Cache marker',
+    appearance: 'dark' as const,
+    palette: DEFAULT_THEME_LIBRARY.themes[0].palette,
+  }
+  const customLibrary = {
+    activeThemeId: customTheme.id,
+    themes: [...DEFAULT_THEME_LIBRARY.themes, customTheme],
+  }
+
   it('refreshes the cached theme library after a write', () => {
     writeThemeLibraryToStorage(DEFAULT_THEME_LIBRARY)
     const before = readThemeLibraryFromStorage()
 
-    writeThemeLibraryToStorage({
-      ...DEFAULT_THEME_LIBRARY,
-      activeThemeId: 'bone-light-default',
-    })
+    writeThemeLibraryToStorage(customLibrary)
     const after = readThemeLibraryFromStorage()
 
     expect(before).not.toBe(after)
-    expect(after.activeThemeId).toBe('bone-light-default')
+    expect(after.activeThemeId).toBe(customTheme.id)
   })
 
   it('refreshes cached reads when localStorage is updated directly', () => {
@@ -56,15 +65,12 @@ describe('cmsSiteConfig.settings snapshots', () => {
 
     window.localStorage.setItem(
       THEME_CONFIG_STORAGE_KEY,
-      JSON.stringify({
-        ...DEFAULT_THEME_LIBRARY,
-        activeThemeId: 'bone-light-default',
-      }),
+      JSON.stringify(customLibrary),
     )
 
     const after = readThemeLibraryFromStorage()
     expect(before).not.toBe(after)
-    expect(after.activeThemeId).toBe('bone-light-default')
+    expect(after.activeThemeId).toBe(customTheme.id)
   })
 
   it('keeps font cache independent from theme cache', () => {

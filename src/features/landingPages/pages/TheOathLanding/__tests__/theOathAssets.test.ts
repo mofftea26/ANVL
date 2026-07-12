@@ -10,6 +10,7 @@ import {
   oathHeroImage,
   oathHeroMediaMode,
   oathHeroMobileVideo,
+  oathHeroProductImages,
   oathManifestoMedia,
   oathThemedMarkup,
   DEFAULT_HERO_VIDEO,
@@ -119,6 +120,28 @@ describe('theOathAssets hero media', () => {
     bindOathCmsAssets({ heroMedia: 'https://cdn.test/hero.jpg' })
     expect(oathHeroMediaMode()).toBe('image')
     expect(oathHeroImage()).toBe('https://cdn.test/hero.jpg')
+  })
+
+  it('reads explicit products mode', () => {
+    bindOathCmsAssets({ heroMediaMode: 'products' })
+    expect(oathHeroMediaMode()).toBe('products')
+  })
+
+  it('infers products mode from assigned hero product renders', () => {
+    bindOathCmsAssets({ heroProductImage1: 'https://cdn.test/tee.png' })
+    expect(oathHeroMediaMode()).toBe('products')
+  })
+
+  it('lists hero product renders in slot order, skipping blanks', () => {
+    bindOathCmsAssets({
+      heroProductImage1: 'https://cdn.test/one.png',
+      heroProductImage2: '   ',
+      heroProductImage3: 'https://cdn.test/three.png',
+    })
+    expect(oathHeroProductImages()).toEqual([
+      'https://cdn.test/one.png',
+      'https://cdn.test/three.png',
+    ])
   })
 })
 

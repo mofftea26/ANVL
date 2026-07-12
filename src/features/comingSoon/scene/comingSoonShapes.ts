@@ -1,4 +1,8 @@
-import * as THREE from 'three'
+import type * as THREE from 'three'
+import {
+  normalizeToFit as normalizeToFitShared,
+  sampleMeshSurface as sampleMeshSurfaceShared,
+} from '@/shared/webgl/particleShapes'
 
 /**
  * Target-shape sampling for the Coming Soon ember anvil.
@@ -7,7 +11,9 @@ import * as THREE from 'three'
  * the origin and normalized to the same {@link SHAPE_FIT} bounding box, so the
  * particle cloud can morph between any two of them 1:1 by index. Sources:
  *   - 3D meshes (anvil / hammer GLB) → area-weighted surface sampling
- *   - 2D brand marks (ANVL crest / The Oath SVG) → silhouette pixel sampling
+ *     (shared engine: `src/shared/webgl/particleShapes.ts`)
+ *   - 2D brand marks (ANVL crest / wordmark / The Oath SVG) → silhouette
+ *     pixel sampling
  *   - procedural solids (barbell, compression shirt) → math / canvas paths
  */
 
@@ -17,118 +23,12 @@ export const SHAPE_FIT = 4.3
 
 /** Center points on the origin and scale so the largest box dim == `fit`. */
 export function normalizeToFit(points: Float32Array, fit = SHAPE_FIT): Float32Array {
-  const count = points.length / 3
-  const box = new THREE.Box3()
-  const v = new THREE.Vector3()
-  for (let i = 0; i < count; i += 1) box.expandByPoint(v.fromArray(points, i * 3))
-  const center = box.getCenter(new THREE.Vector3())
-  const size = box.getSize(new THREE.Vector3())
-  const scale = fit / (Math.max(size.x, size.y, size.z) || 1)
-  for (let i = 0; i < count; i += 1) {
-    points[i * 3] = (points[i * 3] - center.x) * scale
-    points[i * 3 + 1] = (points[i * 3 + 1] - center.y) * scale
-    points[i * 3 + 2] = (points[i * 3 + 2] - center.z) * scale
-  }
-  return points
-}
-
-/* ------------------------------------------------------------------ *\
-   3D mesh (GLB) surface sampling
-\* ------------------------------------------------------------------ */
-
-type Triangle = { ax: number; ay: number; az: number; bx: number; by: number; bz: number; cx: number; cy: number; cz: number; cumArea: number }
-
-/**
- * Collect every finite, non-degenerate world-space triangle in the GLB. Reads
- * positions through the attribute getters so indexed, non-indexed, and
- * interleaved geometries all work (MeshSurfaceSampler chokes silently on some
- * exporter layouts — NaNs in, nothing on screen).
- */
-function collectTriangles(scene: THREE.Object3D): Triangle[] {
-  scene.updateMatrixWorld(true)
-  const triangles: Triangle[] = []
-  const a = new THREE.Vector3()
-  const b = new THREE.Vector3()
-  const c = new THREE.Vector3()
-  const ab = new THREE.Vector3()
-  const ac = new THREE.Vector3()
-  let cumArea = 0
-
-  scene.traverse((node) => {
-    const mesh = node as THREE.Mesh
-    if (!mesh.isMesh) return
-    const position = mesh.geometry?.getAttribute('position')
-    if (!position) return
-    const index = mesh.geometry.getIndex()
-    const triCount = (index ? index.count : position.count) / 3
-    const vertexAt = (tri: number, corner: number, out: THREE.Vector3) => {
-      const i = index ? index.getX(tri * 3 + corner) : tri * 3 + corner
-      out.set(position.getX(i), position.getY(i), position.getZ(i))
-      out.applyMatrix4(mesh.matrixWorld)
-    }
-    for (let t = 0; t < triCount; t += 1) {
-      vertexAt(t, 0, a)
-      vertexAt(t, 1, b)
-      vertexAt(t, 2, c)
-      const area = ab.subVectors(b, a).cross(ac.subVectors(c, a)).length() / 2
-      if (!Number.isFinite(area) || area <= 0) continue
-      if (!Number.isFinite(a.x + a.y + a.z + b.x + b.y + b.z + c.x + c.y + c.z)) continue
-      cumArea += area
-      triangles.push({
-        ax: a.x, ay: a.y, az: a.z,
-        bx: b.x, by: b.y, bz: b.z,
-        cx: c.x, cy: c.y, cz: c.z,
-        cumArea,
-      })
-    }
-  })
-  return triangles
+  return normalizeToFitShared(points, fit)
 }
 
 /** Area-weighted surface sampling of `count` points across a GLB, fit-normalized. */
 export function sampleMeshSurface(scene: THREE.Object3D, count: number): Float32Array {
-  const out = new Float32Array(count * 3)
-  const triangles = collectTriangles(scene)
-
-  if (triangles.length === 0) {
-    // Defensive: an empty/atypical GLB degrades to a sphere, never a crash.
-    const v = new THREE.Vector3()
-    for (let i = 0; i < count; i += 1) {
-      v.randomDirection().multiplyScalar(1.4 + Math.random() * 0.1)
-      out.set([v.x, v.y, v.z], i * 3)
-    }
-    return normalizeToFit(out)
-  }
-
-  const totalArea = triangles[triangles.length - 1].cumArea
-  const pickTriangle = (r: number): Triangle => {
-    // Binary search the cumulative-area table.
-    let lo = 0
-    let hi = triangles.length - 1
-    const needle = r * totalArea
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1
-      if (triangles[mid].cumArea < needle) lo = mid + 1
-      else hi = mid
-    }
-    return triangles[lo]
-  }
-
-  for (let i = 0; i < count; i += 1) {
-    const tri = pickTriangle(Math.random())
-    let u = Math.random()
-    let v = Math.random()
-    if (u + v > 1) {
-      u = 1 - u
-      v = 1 - v
-    }
-    const w = 1 - u - v
-    out[i * 3] = tri.ax * w + tri.bx * u + tri.cx * v
-    out[i * 3 + 1] = tri.ay * w + tri.by * u + tri.cy * v
-    out[i * 3 + 2] = tri.az * w + tri.bz * u + tri.cz * v
-  }
-
-  return normalizeToFit(out)
+  return sampleMeshSurfaceShared(scene, count, SHAPE_FIT)
 }
 
 /* ------------------------------------------------------------------ *\

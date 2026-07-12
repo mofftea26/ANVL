@@ -1,8 +1,10 @@
-import { useMemo } from 'react'
+import { Suspense, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { createDustDrive, DustField, type DustDrive } from '@/shared/webgl/DustField'
 import type { OathMotionState } from '../motion/oathMotionState'
+import { oathHeroMediaMode, oathHeroProductImages } from '../theOathAssets'
 import { readOathBrandColors } from './oathBrandColors'
+import { HeroProductParticles } from './HeroProductParticles'
 import { Monolith } from './Monolith'
 
 /** Maps the Oath scroll/pointer motion state onto the shared dust drive each
@@ -39,6 +41,13 @@ export default function OathCanvas({
 }) {
   const colors = useMemo(() => readOathBrandColors(), [])
   const drive = useMemo(() => createDustDrive(), [])
+  // Hero product forge (mode `products`): CMS product renders formed out of
+  // particles on the hero stage (their pixels are the silhouette source).
+  // Assets are bound by the page before this canvas mounts — one-time read.
+  const heroImages = useMemo(
+    () => (oathHeroMediaMode() === 'products' ? oathHeroProductImages() : []),
+    [],
+  )
   const coarse =
     typeof window !== 'undefined' &&
     window.matchMedia('(max-width: 1023.98px)').matches
@@ -68,6 +77,15 @@ export default function OathCanvas({
         }}
       >
         <Monolith motion={motion} colors={colors} />
+        {heroImages.length > 0 ? (
+          <Suspense fallback={null}>
+            <HeroProductParticles
+              motion={motion}
+              imageUrls={heroImages}
+              colors={colors}
+            />
+          </Suspense>
+        ) : null}
         <OathDustDriver motion={motion} drive={drive} />
         <DustField drive={drive} count={dustCount} />
       </Canvas>

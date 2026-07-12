@@ -4,6 +4,10 @@ import {
   DEFAULT_FONT_CONFIG,
   DEFAULT_THEME_CONFIG,
 } from '@/features/cms/config/cmsSiteConfig.zod'
+import {
+  DEFAULT_THEME_LIBRARY,
+  resolveThemeConfig,
+} from '@/features/cms/config/themeLibrary'
 import { DEFAULT_FONT_LIBRARY_CONFIG } from '@/features/cms/config/fontLibrary'
 import { getSupabasePublicationAnonClient } from '@/features/cms/api/supabasePublicationClient'
 import { normalizeStorefrontPublicationRow } from '@/features/cms/api/publicStorefrontPublication'
@@ -17,7 +21,8 @@ describe('normalizeStorefrontPublicationRow', () => {
       published_at: null,
     })
     expect(out).not.toBeNull()
-    expect(out!.theme).toEqual(DEFAULT_THEME_CONFIG)
+    // Empty config resolves to the Graphite & Champagne house preset.
+    expect(out!.theme).toEqual(resolveThemeConfig(DEFAULT_THEME_LIBRARY))
     expect(out!.fonts).toEqual(DEFAULT_FONT_LIBRARY_CONFIG)
     expect(out!.assets).toEqual(DEFAULT_ASSET_CONFIG)
     expect(out!.activeLandingPageKey).toBe('the-oath')
@@ -84,13 +89,13 @@ describe('normalizeStorefrontPublicationRow', () => {
       published_at: STAMP,
       active_landing_page_key: 'the-oath',
       theme_config: {
-        activeThemeId: 'oath-dark-default',
+        activeThemeId: 'custom-dark',
         // Legacy field — must no longer influence the resolved theme.
         landingPageThemes: { 'the-oath': 'bone' },
         themes: [
           {
-            id: 'oath-dark-default',
-            name: 'Oath dark',
+            id: 'custom-dark',
+            name: 'Custom dark',
             appearance: 'dark',
             palette: DEFAULT_THEME_CONFIG.palette,
           },
@@ -115,11 +120,11 @@ describe('normalizeStorefrontPublicationRow', () => {
       published_at: STAMP,
       active_landing_page_key: 'the-oath',
       theme_config: {
-        activeThemeId: 'oath-dark-default',
+        activeThemeId: 'custom-dark',
         themes: [
           {
-            id: 'oath-dark-default',
-            name: 'Oath dark',
+            id: 'custom-dark',
+            name: 'Custom dark',
             appearance: 'dark',
             palette: DEFAULT_THEME_CONFIG.palette,
           },

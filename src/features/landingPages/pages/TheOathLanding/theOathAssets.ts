@@ -15,7 +15,7 @@ import {
   resolveLoadingEmblemUrl,
 } from '@/features/landingPages/landingEntryLoad'
 
-export type OathHeroMediaMode = 'video' | 'image'
+export type OathHeroMediaMode = 'products' | 'video' | 'image'
 
 export const DEFAULT_HERO_VIDEO = '/videos/WarriorHero1.mp4'
 export const OATH_LOGO_PLACEHOLDER = '/brand/the-oath-shape.svg'
@@ -70,12 +70,27 @@ export function oathDefaultEmblem(): string {
 
 export function oathHeroMediaMode(): OathHeroMediaMode {
   const mode = cmsResolvedAssets.heroMediaMode
-  if (mode === 'image' || mode === 'video') return mode
+  if (mode === 'products' || mode === 'image' || mode === 'video') return mode
+
+  // No explicit mode: assigned product renders imply the particle forge.
+  if (oathHeroProductImages().length > 0) return 'products'
 
   const legacy = cmsResolvedAssets.heroMedia?.trim()
   if (legacy && !isVideoUrl(legacy)) return 'image'
   if (cmsResolvedAssets.heroImage?.trim()) return 'image'
   return 'video'
+}
+
+/**
+ * Transparent product renders for the hero forge (mode `products`), in slot
+ * order, blanks skipped. Each image is both the particle silhouette source and
+ * the render revealed once the embers settle. Empty ⇒ the hero falls back to
+ * image/video media so an unconfigured CMS never renders a dead canvas.
+ */
+export function oathHeroProductImages(): string[] {
+  return ['heroProductImage1', 'heroProductImage2', 'heroProductImage3']
+    .map((key) => cmsAsset(key))
+    .filter((url): url is string => Boolean(url))
 }
 
 export function oathHeroImage(): string | undefined {

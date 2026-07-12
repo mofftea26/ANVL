@@ -56,7 +56,7 @@ describe('SiteThemeEditor', () => {
 
   it('renders intro copy, component preview, and contrast report', () => {
     renderEditor()
-    expect(screen.getByText(/Ten brand presets/i)).toBeTruthy()
+    expect(screen.getByText(/Graphite & Champagne house preset/i)).toBeTruthy()
     expect(screen.getByTestId('theme-component-preview')).toBeTruthy()
     expect(screen.getByTestId('theme-contrast-report')).toBeTruthy()
   })

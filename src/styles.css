@@ -1580,6 +1580,26 @@ html[data-landing-entry='active'] body {
   }
 }
 
+/* Hero product forge — active-piece plate crossfade. The label remounts per
+ * re-forge (React `key`), so a one-shot entry animation reads as a crossfade
+ * timed to the particle morph. Reduced motion never reaches this layer (the
+ * WebGL gate already excludes it), but the guard keeps the rule honest. */
+@keyframes oath-hero-piece-label-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .oath-hero-piece-label {
+    animation: oath-hero-piece-label-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
+  }
+}
+
 /* Coming Soon entrance anti-flash.
  * The reveal page is server-rendered, so the browser paints the headline +
  * copy once — un-animated, in a fallback font, letters cramped — before React

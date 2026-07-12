@@ -61,19 +61,15 @@ const REQUIRED_VARS = [
 ]
 
 describe('ANVL theme presets', () => {
-  it('ships all twelve brand presets', () => {
-    expect(ANVL_PRESETS).toHaveLength(12)
-    expect(ANVL_PRESETS.map((p) => p.id)).toContain('oath-obsidian')
-    expect(ANVL_PRESETS.map((p) => p.id)).toContain('bone-relic')
-    expect(ANVL_PRESETS.map((p) => p.id)).toContain('theoath-modern-tech-forge')
-    expect(ANVL_PRESETS.map((p) => p.id)).toContain('forged-ceremonial')
+  it('ships only the Graphite & Champagne house preset (2026-07-12 consolidation)', () => {
+    expect(ANVL_PRESETS).toHaveLength(1)
+    expect(ANVL_PRESETS[0].id).toBe('graphite-champagne')
+    expect(ANVL_PRESETS[0].recommended).toBe(true)
   })
 
-  it('marks Oath Obsidian as the recommended Drop 01 theme but not the live default', () => {
-    const obsidian = ANVL_PRESETS.find((p) => p.id === 'oath-obsidian')
-    expect(obsidian?.recommended).toBe(true)
-    // Decision 1: do not flip the live default.
-    expect(DEFAULT_THEME_LIBRARY.activeThemeId).toBe('oath-dark-default')
+  it('makes the house preset the live default', () => {
+    expect(DEFAULT_THEME_LIBRARY.activeThemeId).toBe('graphite-champagne')
+    expect(DEFAULT_THEME_LIBRARY.themes.map((t) => t.id)).toEqual(['graphite-champagne'])
   })
 
   for (const preset of ANVL_PRESETS) {
@@ -227,7 +223,7 @@ describe('finalizeThemePalette derivations', () => {
 })
 
 describe('parseThemeLibrary migration', () => {
-  it('injects all built-in presets on top of a legacy two-theme library', () => {
+  it('drops retired presets and remaps the active id onto the house preset', () => {
     const legacy = {
       activeThemeId: 'oath-dark-default',
       landingPageThemes: {},
@@ -239,24 +235,45 @@ describe('parseThemeLibrary migration', () => {
           // Legacy palette keys — simulating pre-consolidation data.
           palette: { colorBg: '#0b0b0c', colorAccent: '#c7c2b8' },
         },
+        {
+          id: 'oath-obsidian',
+          name: 'Oath Obsidian',
+          appearance: 'dark',
+          palette: { colorBg: '#08090a' },
+        },
       ],
     }
     const lib = parseThemeLibrary(legacy)
     const ids = lib.themes.map((t) => t.id)
-    expect(ids).toContain('oath-obsidian')
-    expect(ids).toContain('bone-relic')
-    // Active default preserved.
-    expect(lib.activeThemeId).toBe('oath-dark-default')
-    // Legacy colors carried onto the normalized keys after migration.
-    const restored = lib.themes.find((t) => t.id === 'oath-dark-default')!
-    expect(restored.palette.background).toBe('#0b0b0c')
-    expect(restored.palette.primary).toBe('#c7c2b8')
-    expect(restored.palette.accentForeground).toBeTruthy()
+    // Retired stored copies are gone; the house preset is present.
+    expect(ids).not.toContain('oath-dark-default')
+    expect(ids).not.toContain('oath-obsidian')
+    expect(ids).toContain('graphite-champagne')
+    // Active pointed at a retired theme → remapped to the house preset.
+    expect(lib.activeThemeId).toBe('graphite-champagne')
+  })
+
+  it('preserves genuinely user-created themes and their active selection', () => {
+    const stored = {
+      activeThemeId: 'theme-1700000000000',
+      themes: [
+        {
+          id: 'theme-1700000000000',
+          name: 'My custom',
+          appearance: 'dark',
+          palette: { colorBg: '#111111' },
+        },
+      ],
+    }
+    const lib = parseThemeLibrary(stored)
+    expect(lib.themes.map((t) => t.id)).toContain('theme-1700000000000')
+    expect(lib.activeThemeId).toBe('theme-1700000000000')
   })
 
   it('falls back to the default library for unrecognized input', () => {
     const lib = parseThemeLibrary('garbage')
-    expect(lib.themes.length).toBeGreaterThanOrEqual(10)
+    expect(lib.themes.length).toBeGreaterThanOrEqual(1)
+    expect(lib.activeThemeId).toBe('graphite-champagne')
   })
 
   it('remaps pre-rename ember keys onto the accent token', () => {
