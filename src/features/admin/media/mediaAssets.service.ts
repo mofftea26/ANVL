@@ -99,12 +99,22 @@ export function buildMediaIndex(assets: CmsMediaAsset[]): MediaIndexEntry[] {
   }))
 }
 
+export type MediaAssignmentFilter = 'all' | 'assigned' | 'unassigned'
+
 export function filterMediaAssets(
   assets: CmsMediaAsset[],
   query: string,
   mimeFilter: string | null,
+  options?: {
+    formatFilter?: string | null
+    assignmentFilter?: MediaAssignmentFilter
+    assignedIds?: ReadonlySet<string>
+  },
 ): CmsMediaAsset[] {
   const q = query.trim().toLowerCase()
+  const formatFilter = options?.formatFilter
+  const assignmentFilter = options?.assignmentFilter ?? 'all'
+  const assignedIds = options?.assignedIds
   return assets.filter((a) => {
     if (mimeFilter && mimeFilter !== 'all') {
       if (mimeFilter === 'image' && !a.mime.startsWith('image/')) return false
@@ -113,10 +123,23 @@ export function filterMediaAssets(
         return false
       }
     }
+    if (formatFilter && formatFilter !== 'all' && a.mime !== formatFilter) {
+      return false
+    }
+    if (assignmentFilter !== 'all' && assignedIds) {
+      const isAssigned = assignedIds.has(a.id)
+      if (assignmentFilter === 'assigned' && !isAssigned) return false
+      if (assignmentFilter === 'unassigned' && isAssigned) return false
+    }
     if (!q) return true
     const hay = `${a.filename} ${a.alt} ${a.tags.join(' ')}`.toLowerCase()
     return hay.includes(q)
   })
+}
+
+/** Distinct mime types present in the library, sorted for a stable dropdown. */
+export function listPresentMediaFormats(assets: CmsMediaAsset[]): string[] {
+  return Array.from(new Set(assets.map((a) => a.mime))).sort()
 }
 
 export function mediaAssetPublicUrl(asset: CmsMediaAsset): string | null {
@@ -239,6 +262,33 @@ export async function updateMediaAssetAlt(
   return { ok: true, asset }
 }
 
+export async function updateMediaAssetFilename(
+  id: string,
+  filename: string,
+  client?: SupabaseClient | null,
+): Promise<MediaAssetMutationResult> {
+  const supabase = client ?? getAdminSupabaseBrowserClient()
+  if (!supabase) {
+    return { ok: false, error: 'Sign in to update media.' }
+  }
+
+  const next = filename.trim()
+  if (!next) return { ok: false, error: 'Filename cannot be blank.' }
+
+  const { data, error } = await supabase
+    .from('cms_media_assets')
+    .update({ filename: next })
+    .eq('id', id)
+    .select('*')
+    .single()
+
+  if (error) return { ok: false, error: error.message }
+
+  const asset = mapMediaAssetRow((data ?? {}) as Record<string, unknown>)
+  if (!asset) return { ok: false, error: 'Could not parse updated asset.' }
+  return { ok: true, asset }
+}
+
 export async function deleteMediaAsset(
   asset: CmsMediaAsset,
   client?: SupabaseClient | null,
@@ -261,6 +311,25 @@ export async function deleteMediaAsset(
 
   if (error) return { ok: false, error: error.message }
   return { ok: true }
+}
+
+/** Deletes each asset independently and reports per-asset failures. */
+export async function deleteMediaAssets(
+  assets: CmsMediaAsset[],
+  client?: SupabaseClient | null,
+): Promise<{ deleted: number; failures: { asset: CmsMediaAsset; error: string }[] }> {
+  const supabase = client ?? getAdminSupabaseBrowserClient()
+  const failures: { asset: CmsMediaAsset; error: string }[] = []
+  let deleted = 0
+  for (const asset of assets) {
+    const result = await deleteMediaAsset(asset, supabase)
+    if (result.ok) {
+      deleted += 1
+    } else {
+      failures.push({ asset, error: result.error })
+    }
+  }
+  return { deleted, failures }
 }
 
 export async function uploadLibraryMediaFile(

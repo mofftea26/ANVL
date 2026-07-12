@@ -67,6 +67,12 @@ export function ComingSoonExperience({
       style={accentStyle}
       className="cs-anim-pending fixed inset-0 z-[80] overflow-hidden bg-[var(--color-bg)] text-[color:var(--color-text)]"
     >
+      {/* No-JS fallback: the entrance animation can never remove
+          `.cs-anim-pending`, so force the pre-hidden copy back to visible. */}
+      <noscript>
+        <style>{`.cs-anim-pending [data-cs-reveal],.cs-anim-pending [data-cs-headline],.cs-anim-pending [data-cs-rule]{opacity:1 !important;}`}</style>
+      </noscript>
+
       <ComingSoonEnvironment
         backgroundUrl={content.backgroundUrl}
         ambientUrl={content.ambientUrl}

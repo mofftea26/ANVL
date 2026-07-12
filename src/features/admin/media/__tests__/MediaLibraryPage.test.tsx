@@ -23,7 +23,9 @@ vi.mock('../useMediaAssetsQuery', () => ({
   useMediaAssetsMutations: () => ({
     uploadMutation: { mutateAsync: vi.fn(), isPending: false },
     updateAltMutation: { mutateAsync: vi.fn() },
+    renameMutation: { mutateAsync: vi.fn() },
     deleteMutation: { mutateAsync: vi.fn(), isPending: false },
+    bulkDeleteMutation: { mutateAsync: vi.fn(), isPending: false },
     invalidate: vi.fn(),
   }),
 }))

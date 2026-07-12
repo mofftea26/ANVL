@@ -2,8 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import {
   deleteMediaAsset,
+  deleteMediaAssets,
   listMediaAssets,
   updateMediaAssetAlt,
+  updateMediaAssetFilename,
   uploadLibraryMediaFile,
 } from './mediaAssets.service'
 import type { CmsMediaAsset } from './mediaAssets.types'
@@ -64,5 +66,33 @@ export function useMediaAssetsMutations() {
     },
   })
 
-  return { uploadMutation, updateAltMutation, deleteMutation, invalidate }
+  const renameMutation = useMutation({
+    mutationFn: ({ id, filename }: { id: string; filename: string }) =>
+      updateMediaAssetFilename(id, filename),
+    onSuccess: () => {
+      void invalidate()
+      void import('@/features/admin/cmsRemote/adminCmsRemoteSync').then((m) =>
+        m.scheduleAdminCmsRemoteSync(),
+      )
+    },
+  })
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (assets: CmsMediaAsset[]) => deleteMediaAssets(assets),
+    onSuccess: () => {
+      void invalidate()
+      void import('@/features/admin/cmsRemote/adminCmsRemoteSync').then((m) =>
+        m.scheduleAdminCmsRemoteSync(),
+      )
+    },
+  })
+
+  return {
+    uploadMutation,
+    updateAltMutation,
+    deleteMutation,
+    renameMutation,
+    bulkDeleteMutation,
+    invalidate,
+  }
 }

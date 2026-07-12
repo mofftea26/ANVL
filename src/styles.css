@@ -1606,12 +1606,13 @@ html[data-landing-entry='active'] body {
  * hydrates and the GSAP entrance runs. Pre-hide the animated elements so that
  * first paint is blank; the entrance drops `.cs-anim-pending` after applying
  * its `from` states, so content appears *while* it animates, never before.
- * Gated to `scripting: enabled` so a no-JS client (which can never reveal it)
- * still shows the copy instead of a permanently blank screen. */
-@media (scripting: enabled) {
-  .cs-anim-pending [data-cs-reveal],
-  .cs-anim-pending [data-cs-headline],
-  .cs-anim-pending [data-cs-rule] {
-    opacity: 0;
-  }
+ * Unconditional (not gated behind `scripting: enabled` — that media feature
+ * is Firefox-only and silently never matches in Chrome/Safari, which was
+ * letting the un-animated fallback-font headline flash on first paint for
+ * most visitors). `ComingSoonExperience` renders a `<noscript>` override so
+ * a no-JS client (which can never reveal it) still sees the copy. */
+.cs-anim-pending [data-cs-reveal],
+.cs-anim-pending [data-cs-headline],
+.cs-anim-pending [data-cs-rule] {
+  opacity: 0;
 }

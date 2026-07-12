@@ -146,6 +146,24 @@ export function SiteAssetsEditor() {
     [mediaQuery.data],
   )
 
+  const assignedIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const id of Object.values(config.general)) {
+      if (id) ids.add(id)
+    }
+    for (const bucket of Object.values(config.drops)) {
+      for (const id of Object.values(bucket ?? {})) {
+        if (id) ids.add(id)
+      }
+    }
+    for (const bucket of Object.values(config.pages ?? {})) {
+      for (const id of Object.values(bucket ?? {})) {
+        if (id) ids.add(id)
+      }
+    }
+    return ids
+  }, [config])
+
   function setSlot(slotKey: string, mediaId: string) {
     setConfig((prev) => {
       if (scope === 'general') {
@@ -189,7 +207,7 @@ export function SiteAssetsEditor() {
   return (
     <AdminWorkspace asideLabel="Asset slot assignments" aside={slotAssignmentRail}>
       <div data-testid="site-assets-editor">
-        <MediaLibraryPage />
+        <MediaLibraryPage assignedIds={assignedIds} />
       </div>
     </AdminWorkspace>
   )
