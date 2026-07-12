@@ -65,7 +65,7 @@ export function ComingSoonExperience({
     <div
       ref={scopeRef}
       style={accentStyle}
-      className="fixed inset-0 z-[80] overflow-hidden bg-[var(--color-bg)] text-[color:var(--color-text)]"
+      className="cs-anim-pending fixed inset-0 z-[80] overflow-hidden bg-[var(--color-bg)] text-[color:var(--color-text)]"
     >
       <ComingSoonEnvironment
         backgroundUrl={content.backgroundUrl}

@@ -1,6 +1,6 @@
 ﻿import type { RuntimeClients } from '@/app/config/clients'
 import { mockAccountClient } from '@/app/config/accountMock'
-import { supabaseAccountClient } from '@/features/storefront-account/auth/supabaseAccountClient'
+import { lazySupabaseAccountClient } from '@/features/storefront-account/auth/lazySupabaseAccountClient'
 import { mockAnalyticsClient } from '@/features/analytics/api/analyticsClient.mock'
 import { mockPaymentClient } from '@/features/checkout/api/paymentGateway.mock'
 import { seedCmsClient } from '@/features/cms/api/cmsClient.seed'
@@ -22,7 +22,7 @@ import { createSupabaseStoryReadSlice } from '@/features/story/api/storyClient.s
 export function createRuntimeClients(options: { isServer: boolean }): RuntimeClients {
   const supabase = getSupabasePublicEnv()
   const commerce = createCommerceClient(options)
-  const accountClient = supabase ? supabaseAccountClient : mockAccountClient
+  const accountClient = supabase ? lazySupabaseAccountClient : mockAccountClient
   const story = supabase ? createSupabaseStoryReadSlice(supabase) : seedStoryClient
 
   if (options.isServer) {

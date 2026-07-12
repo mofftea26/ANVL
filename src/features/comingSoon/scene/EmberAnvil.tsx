@@ -7,136 +7,42 @@ import {
   EMBER_ANVIL_FRAGMENT,
   EMBER_ANVIL_VERTEX,
 } from './emberForgeShaders'
+import {
+  buildBarbell,
+  buildShirt,
+  sampleMeshSurface,
+  sampleSvgSilhouette,
+} from './comingSoonShapes'
 
 const ANVIL_GLB = '/about/anvil.glb'
-/** World size the sampled anvil is normalized to — oversized on purpose so
- *  its shoulders spill beyond the text column, outside the legibility shield,
- *  where they read at full ember brightness. */
-const ANVIL_FIT = 3.9
+const HAMMER_GLB = '/about/hammer.glb'
+const ANVL_MARK_SVG = '/brand/mark.svg'
+const ANVL_WORDMARK_SVG = '/brand/wordmark.svg'
+const OATH_SVG = '/brand/the-oath-shape.svg'
+
+/**
+ * The forms the ember cloud re-forges through, in cycle order. Index 0 (anvil)
+ * is the resting shape; a hammer strike advances to the next available one.
+ */
+export const SHAPE_ORDER = ['anvil', 'anvl', 'wordmark', 'oath', 'shirt', 'barbell', 'hammer'] as const
+export type ShapeKey = (typeof SHAPE_ORDER)[number]
 
 export type EmberAnvilHandle = {
   /** Fire the hammer-strike shockwave from a world-space point. */
   strike: (point: THREE.Vector3) => void
   /** Pointer position on the z=0 plane + how energetic it currently is. */
   setPointer: (point: THREE.Vector3, activity: number) => void
-}
-
-type Triangle = { ax: number; ay: number; az: number; bx: number; by: number; bz: number; cx: number; cy: number; cz: number; cumArea: number }
-
-/**
- * Collect every finite, non-degenerate world-space triangle in the GLB.
- * Reads positions through the attribute getters so indexed, non-indexed, and
- * interleaved geometries all work (MeshSurfaceSampler chokes silently on some
- * exporter layouts — NaNs in, nothing on screen).
- */
-function collectTriangles(scene: THREE.Object3D): Triangle[] {
-  scene.updateMatrixWorld(true)
-  const triangles: Triangle[] = []
-  const a = new THREE.Vector3()
-  const b = new THREE.Vector3()
-  const c = new THREE.Vector3()
-  const ab = new THREE.Vector3()
-  const ac = new THREE.Vector3()
-  let cumArea = 0
-
-  scene.traverse((node) => {
-    const mesh = node as THREE.Mesh
-    if (!mesh.isMesh) return
-    const position = mesh.geometry?.getAttribute('position')
-    if (!position) return
-    const index = mesh.geometry.getIndex()
-    const triCount = (index ? index.count : position.count) / 3
-    const vertexAt = (tri: number, corner: number, out: THREE.Vector3) => {
-      const i = index ? index.getX(tri * 3 + corner) : tri * 3 + corner
-      out.set(position.getX(i), position.getY(i), position.getZ(i))
-      out.applyMatrix4(mesh.matrixWorld)
-    }
-    for (let t = 0; t < triCount; t += 1) {
-      vertexAt(t, 0, a)
-      vertexAt(t, 1, b)
-      vertexAt(t, 2, c)
-      const area = ab.subVectors(b, a).cross(ac.subVectors(c, a)).length() / 2
-      if (!Number.isFinite(area) || area <= 0) continue
-      if (!Number.isFinite(a.x + a.y + a.z + b.x + b.y + b.z + c.x + c.y + c.z)) continue
-      cumArea += area
-      triangles.push({
-        ax: a.x, ay: a.y, az: a.z,
-        bx: b.x, by: b.y, bz: b.z,
-        cx: c.x, cy: c.y, cz: c.z,
-        cumArea,
-      })
-    }
-  })
-  return triangles
-}
-
-/** Area-weighted surface sampling of `count` points across the anvil GLB. */
-function sampleAnvilSurface(scene: THREE.Object3D, count: number): Float32Array {
-  const out = new Float32Array(count * 3)
-  const triangles = collectTriangles(scene)
-
-  if (triangles.length === 0) {
-    // Defensive: an empty/atypical GLB degrades to a sphere, never a crash.
-    const v = new THREE.Vector3()
-    for (let i = 0; i < count; i += 1) {
-      v.randomDirection().multiplyScalar(1.4 + Math.random() * 0.1)
-      out.set([v.x, v.y, v.z], i * 3)
-    }
-    return out
-  }
-
-  const totalArea = triangles[triangles.length - 1].cumArea
-  const pickTriangle = (r: number): Triangle => {
-    // Binary search the cumulative-area table.
-    let lo = 0
-    let hi = triangles.length - 1
-    const needle = r * totalArea
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1
-      if (triangles[mid].cumArea < needle) lo = mid + 1
-      else hi = mid
-    }
-    return triangles[lo]
-  }
-
-  for (let i = 0; i < count; i += 1) {
-    const tri = pickTriangle(Math.random())
-    // Uniform barycentric point.
-    let u = Math.random()
-    let v = Math.random()
-    if (u + v > 1) {
-      u = 1 - u
-      v = 1 - v
-    }
-    const w = 1 - u - v
-    out[i * 3] = tri.ax * w + tri.bx * u + tri.cx * v
-    out[i * 3 + 1] = tri.ay * w + tri.by * u + tri.cy * v
-    out[i * 3 + 2] = tri.az * w + tri.bz * u + tri.cz * v
-  }
-
-  // Normalize: center on origin, fit to ANVIL_FIT world units.
-  const box = new THREE.Box3()
-  const v = new THREE.Vector3()
-  for (let i = 0; i < count; i += 1) {
-    box.expandByPoint(v.fromArray(out, i * 3))
-  }
-  const center = box.getCenter(new THREE.Vector3())
-  const size = box.getSize(new THREE.Vector3())
-  const scale = ANVIL_FIT / (Math.max(size.x, size.y, size.z) || 1)
-  for (let i = 0; i < count; i += 1) {
-    out[i * 3] = (out[i * 3] - center.x) * scale
-    out[i * 3 + 1] = (out[i * 3 + 1] - center.y) * scale
-    out[i * 3 + 2] = (out[i * 3 + 2] - center.z) * scale
-  }
-  return out
+  /** Re-forge the cloud into the next shape in {@link SHAPE_ORDER}. */
+  cycleShape: () => void
 }
 
 /**
- * The centerpiece: the bundled About-altar anvil, forged out of `count` GPU
- * ember particles. Assembles from a scattered nebula on mount, breathes and
- * shimmers forever, ignites around the pointer, and detonates a radial
- * shockwave on strike. All motion is vertex-shader work; React only drives
- * uniforms.
+ * The centerpiece: an ember-particle cloud that assembles from a scattered
+ * nebula into the bundled anvil, breathes and shimmers forever, ignites around
+ * the pointer, detonates a radial shockwave on strike — and re-forges through
+ * the ANVL crest, The Oath emblem, a compression shirt, a barbell and a hammer
+ * on each strike before returning to the anvil. All motion is vertex-shader
+ * work; React only drives uniforms and swaps the two morph-target attributes.
  */
 export function EmberAnvil({
   count,
@@ -146,9 +52,9 @@ export function EmberAnvil({
 }: {
   count: number
   accent: string
-  /** Imperative bridge the scene uses to feed pointer + strike events. */
+  /** Imperative bridge the scene uses to feed pointer / strike / morph events. */
   handleRef: React.MutableRefObject<EmberAnvilHandle | null>
-  /** Uniform scale of the forged anvil — shrunk on small screens so it fits
+  /** Uniform scale of the forged shape — shrunk on small screens so it fits
    *  the viewport. Pointer/strike coords stay correct: they convert through
    *  `worldToLocal`, which accounts for this scale. */
   scale?: number
@@ -159,10 +65,25 @@ export function EmberAnvil({
   // (see DustField for the same pattern), so tweening the memoized object
   // would silently animate nothing.
   const materialRef = useRef<THREE.ShaderMaterial>(null)
-  const { scene } = useGLTF(ANVIL_GLB)
+  const { scene: anvilScene } = useGLTF(ANVIL_GLB)
+  const { scene: hammerScene } = useGLTF(HAMMER_GLB)
+
+  // The two 3D targets are ready synchronously from the loaded GLBs; the SVG
+  // marks and canvas solids fill in asynchronously (see the effect below).
+  const anvilTarget = useMemo(
+    () => sampleMeshSurface(anvilScene, count),
+    [anvilScene, count],
+  )
+  const hammerTarget = useMemo(
+    () => sampleMeshSurface(hammerScene, count),
+    [hammerScene, count],
+  )
+
+  // Live shape table (indexed by SHAPE_ORDER) + the currently-shown index.
+  const shapesRef = useRef<(Float32Array | null)[]>([])
+  const indexRef = useRef(0)
 
   const geometry = useMemo(() => {
-    const targets = sampleAnvilSurface(scene, count)
     const scatters = new Float32Array(count * 3)
     const seeds = new Float32Array(count)
     const v = new THREE.Vector3()
@@ -174,14 +95,16 @@ export function EmberAnvil({
       seeds[i] = Math.random()
     }
     const geo = new THREE.BufferGeometry()
-    geo.setAttribute('position', new THREE.BufferAttribute(targets.slice(), 3))
-    geo.setAttribute('aTarget', new THREE.BufferAttribute(targets, 3))
+    // Both morph targets start on the anvil so the entrance forges the anvil.
+    geo.setAttribute('position', new THREE.BufferAttribute(anvilTarget.slice(), 3))
+    geo.setAttribute('aFrom', new THREE.BufferAttribute(anvilTarget.slice(), 3))
+    geo.setAttribute('aTo', new THREE.BufferAttribute(anvilTarget.slice(), 3))
     geo.setAttribute('aScatter', new THREE.BufferAttribute(scatters, 3))
     geo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1))
     // The shader displaces freely — a generous static sphere avoids culling.
     geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 14)
     return geo
-  }, [scene, count])
+  }, [anvilTarget, count])
 
   const uniforms = useMemo(() => {
     const hot = new THREE.Color(accent)
@@ -190,6 +113,7 @@ export function EmberAnvil({
     return {
       uTime: { value: 0 },
       uAssemble: { value: 0 },
+      uMorph: { value: 0 },
       uPointer: { value: new THREE.Vector3(0, 0, 99) },
       uPointerActive: { value: 0 },
       uShockCenter: { value: new THREE.Vector3() },
@@ -197,8 +121,8 @@ export function EmberAnvil({
       uShockAmp: { value: 0 },
       uHeat: { value: 0 },
       // Final on-screen point size ≈ uSize × seed(0.55–1.45) × glow(1–2.4)
-      // × (280 / cameraZ≈8.4) device px — 0.13 lands fine 2–6px embers.
-      uSize: { value: 0.13 },
+      // × (280 / cameraZ≈8.4) device px — 0.155 lands brighter, fuller embers.
+      uSize: { value: 0.155 },
       uColdColor: { value: cold },
       uEmberColor: { value: ember },
       uHotColor: { value: hot },
@@ -207,10 +131,36 @@ export function EmberAnvil({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => () => geometry.dispose(), [geometry])
+
+  // Build the morph-target table: 3D GLBs are ready now; the SVG marks and the
+  // shirt canvas resolve asynchronously (all cheap, one-time work).
   useEffect(() => {
-    geometry.getAttribute('position')
-    return () => geometry.dispose()
-  }, [geometry])
+    let cancelled = false
+    // Index order must match SHAPE_ORDER.
+    shapesRef.current = [anvilTarget, null, null, null, null, buildBarbell(count), hammerTarget]
+    indexRef.current = 0
+    ;(async () => {
+      try {
+        const [mark, wordmark, oath] = await Promise.all([
+          sampleSvgSilhouette(ANVL_MARK_SVG, count),
+          sampleSvgSilhouette(ANVL_WORDMARK_SVG, count),
+          sampleSvgSilhouette(OATH_SVG, count),
+        ])
+        if (cancelled) return
+        shapesRef.current[1] = mark
+        shapesRef.current[2] = wordmark
+        shapesRef.current[3] = oath
+        shapesRef.current[4] = buildShirt(count)
+      } catch {
+        // Silhouette sourcing failed → those slots stay null and cycleShape
+        // simply skips them; the anvil/barbell/hammer morphs still work.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [anvilTarget, hammerTarget, count])
 
   // Entrance: forge the nebula into the anvil, with a heat bloom at landing.
   useEffect(() => {
@@ -230,8 +180,8 @@ export function EmberAnvil({
     }
   }, [])
 
-  // Imperative bridge for the scene's pointer/strike wiring. Points arrive in
-  // world space; the cloud rotates, so convert into its local frame first.
+  // Imperative bridge for the scene's pointer/strike/morph wiring. Points arrive
+  // in world space; the cloud rotates, so convert into its local frame first.
   useEffect(() => {
     const target = handleRef
     const local = new THREE.Vector3()
@@ -262,6 +212,41 @@ export function EmberAnvil({
           { value: 0, duration: 1.0, ease: 'power2.out' },
         )
       },
+      cycleShape: () => {
+        const u = materialRef.current?.uniforms
+        const geo = pointsRef.current?.geometry as THREE.BufferGeometry | undefined
+        const shapes = shapesRef.current
+        if (!u || !geo || shapes.length === 0) return
+
+        const from = shapes[indexRef.current]
+        // Skip forward over any target that hasn't finished loading yet.
+        let next = (indexRef.current + 1) % shapes.length
+        let guard = 0
+        while (!shapes[next] && guard < shapes.length) {
+          next = (next + 1) % shapes.length
+          guard += 1
+        }
+        const to = shapes[next]
+        if (!from || !to || next === indexRef.current) return
+
+        const aFrom = geo.getAttribute('aFrom') as THREE.BufferAttribute
+        const aTo = geo.getAttribute('aTo') as THREE.BufferAttribute
+        ;(aFrom.array as Float32Array).set(from)
+        ;(aTo.array as Float32Array).set(to)
+        aFrom.needsUpdate = true
+        aTo.needsUpdate = true
+
+        gsap.killTweensOf(u.uMorph)
+        u.uMorph.value = 0
+        gsap.to(u.uMorph, { value: 1, duration: 1.7, ease: 'power2.inOut' })
+        // Heat surge sells the re-forge (on top of the strike's own bloom).
+        gsap.fromTo(
+          u.uHeat,
+          { value: 0.7 },
+          { value: 0, duration: 1.6, ease: 'power2.out' },
+        )
+        indexRef.current = next
+      },
     }
     return () => {
       target.current = null
@@ -276,8 +261,11 @@ export function EmberAnvil({
       u.uPointerActive.value = (u.uPointerActive.value as number) * 0.96
     }
     if (pointsRef.current) {
+      // Gentle sway that always returns near front-facing — a full continuous
+      // spin would turn the flat morphed emblems (crest, oath, shirt) edge-on
+      // and unreadable. The parallax still gives the 3D shapes their depth.
       pointsRef.current.rotation.y =
-        state.clock.elapsedTime * 0.1 + state.pointer.x * 0.3
+        Math.sin(state.clock.elapsedTime * 0.28) * 0.16 + state.pointer.x * 0.28
     }
   })
 
@@ -298,3 +286,4 @@ export function EmberAnvil({
 }
 
 useGLTF.preload(ANVIL_GLB)
+useGLTF.preload(HAMMER_GLB)

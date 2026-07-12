@@ -1579,3 +1579,19 @@ html[data-landing-entry='active'] body {
     animation: none;
   }
 }
+
+/* Coming Soon entrance anti-flash.
+ * The reveal page is server-rendered, so the browser paints the headline +
+ * copy once — un-animated, in a fallback font, letters cramped — before React
+ * hydrates and the GSAP entrance runs. Pre-hide the animated elements so that
+ * first paint is blank; the entrance drops `.cs-anim-pending` after applying
+ * its `from` states, so content appears *while* it animates, never before.
+ * Gated to `scripting: enabled` so a no-JS client (which can never reveal it)
+ * still shows the copy instead of a permanently blank screen. */
+@media (scripting: enabled) {
+  .cs-anim-pending [data-cs-reveal],
+  .cs-anim-pending [data-cs-headline],
+  .cs-anim-pending [data-cs-rule] {
+    opacity: 0;
+  }
+}

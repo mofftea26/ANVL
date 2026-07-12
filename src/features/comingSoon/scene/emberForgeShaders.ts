@@ -2,16 +2,20 @@
  * GLSL for the Coming Soon "ember forge" particle systems.
  *
  * The anvil system morphs ~10–24k GPU particles from a scattered nebula
- * (`aScatter`) onto the sampled surface of the bundled anvil GLB (`aTarget`),
- * then keeps them alive with per-seed shimmer. Two interaction fields displace
- * them: the pointer (a forge-poke that pushes and ignites nearby embers) and a
- * radial hammer-strike shockwave. Everything is computed in the vertex stage —
- * zero per-frame CPU work on particle data.
+ * (`aScatter`) onto a target shape, then keeps them alive with per-seed
+ * shimmer. The target itself is a blend of two shapes (`aFrom` → `aTo` by
+ * `uMorph`), so a hammer strike can re-forge the whole cloud from the anvil
+ * into the ANVL crest, The Oath emblem, a compression shirt, a barbell, a
+ * hammer, and back. Two interaction fields displace the result: the pointer (a
+ * forge-poke that pushes and ignites nearby embers) and a radial hammer-strike
+ * shockwave. Everything is computed in the vertex stage — zero per-frame CPU
+ * work on particle data.
  */
 
 export const EMBER_ANVIL_VERTEX = /* glsl */ `
   uniform float uTime;
   uniform float uAssemble;
+  uniform float uMorph;
   uniform vec3 uPointer;
   uniform float uPointerActive;
   uniform vec3 uShockCenter;
@@ -20,7 +24,8 @@ export const EMBER_ANVIL_VERTEX = /* glsl */ `
   uniform float uHeat;
   uniform float uSize;
 
-  attribute vec3 aTarget;
+  attribute vec3 aFrom;
+  attribute vec3 aTo;
   attribute vec3 aScatter;
   attribute float aSeed;
 
@@ -30,10 +35,21 @@ export const EMBER_ANVIL_VERTEX = /* glsl */ `
   void main() {
     float seed = aSeed;
 
+    // Re-forge morph: per-seed stagger so the cloud dissolves and reforms
+    // shape-to-shape rather than sliding as a rigid block.
+    float m = clamp(uMorph * (1.25 + seed * 0.5) - seed * 0.35, 0.0, 1.0);
+    m = m * m * (3.0 - 2.0 * m);
+    vec3 target = mix(aFrom, aTo, m);
+
     // Staggered assembly: high-seed embers arrive last.
     float t = clamp(uAssemble * (1.35 + seed * 0.6) - seed * 0.55, 0.0, 1.0);
     t = t * t * (3.0 - 2.0 * t);
-    vec3 pos = mix(aScatter, aTarget, t);
+    vec3 pos = mix(aScatter, target, t);
+
+    // Mid-morph puff: embers bloom outward at the transition midpoint, then
+    // settle back onto the new shape — the visible "spark" of a re-forge.
+    float morphBurst = sin(clamp(uMorph, 0.0, 1.0) * 3.14159265);
+    pos += normalize(target + vec3(0.0, 0.0, 1e-4)) * morphBurst * 0.3 * (0.4 + seed) * t;
 
     // Living shimmer — larger while scattered, a breath once forged.
     float wobble = 0.016 + 0.09 * (1.0 - t);
@@ -58,7 +74,7 @@ export const EMBER_ANVIL_VERTEX = /* glsl */ `
     // Slow forge-breathing: the whole anvil swells with heat and settles —
     // motion carries visibility without brightening the text zone.
     float breath = 0.06 + 0.07 * (0.5 + 0.5 * sin(uTime * 0.55 + seed * 2.0));
-    vGlow = clamp(influence * 1.3 + shock * 2.2 + uHeat + breath * t, 0.0, 1.0);
+    vGlow = clamp(influence * 1.3 + shock * 2.2 + uHeat + breath * t + morphBurst * 0.7, 0.0, 1.0);
     vSeed = seed;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
@@ -87,10 +103,12 @@ export const EMBER_ANVIL_FRAGMENT = /* glsl */ `
     if (d2 > 0.25) discard;
     float core = smoothstep(0.25, 0.0, d2);
     float twinkle = 0.75 + 0.25 * sin(uTime * (1.5 + vSeed * 3.0) + vSeed * 40.0);
-    vec3 base = mix(uColdColor, uEmberColor, 0.2 + 0.8 * vSeed);
+    // Brighter forge: embers sit hotter at rest (more ember, less cold-grey) and
+    // carry a stronger additive core.
+    vec3 base = mix(uColdColor, uEmberColor, 0.35 + 0.65 * vSeed);
     vec3 color = mix(base, uHotColor, vGlow);
-    float alpha = core * (0.55 + 0.45 * twinkle) * (0.72 + 0.28 * vGlow);
-    gl_FragColor = vec4(color * (1.05 + twinkle * 0.45 + vGlow * 1.7), alpha);
+    float alpha = core * (0.62 + 0.42 * twinkle) * (0.78 + 0.22 * vGlow);
+    gl_FragColor = vec4(color * (1.32 + twinkle * 0.5 + vGlow * 1.9), alpha);
   }
 `
 

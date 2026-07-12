@@ -141,6 +141,9 @@ function InteractionRig({
       raycaster.setFromCamera(pointer, camera)
       if (raycaster.ray.intersectPlane(INTERACTION_PLANE, s.world)) {
         anvilRef.current?.strike(s.world)
+        // The strike re-forges the cloud into the next shape (anvil → crest →
+        // oath → shirt → barbell → hammer → anvil).
+        anvilRef.current?.cycleShape()
         // Camera recoil sells the impact.
         gsap.fromTo(
           camera.position,

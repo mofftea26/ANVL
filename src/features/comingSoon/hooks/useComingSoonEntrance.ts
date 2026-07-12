@@ -41,6 +41,9 @@ export function useComingSoonEntrance() {
 
           if (!cinematic) {
             gsap.set([...reveals, ...rules], { clearProps: 'all' })
+            // Nothing animates per-element here, so reveal the content (the CSS
+            // pre-hide is dropped) and let the whole scope fade in as one.
+            scope.classList.remove('cs-anim-pending')
             gsap.fromTo(
               scope,
               { autoAlpha: 0 },
@@ -93,6 +96,12 @@ export function useComingSoonEntrance() {
             { y: 26, autoAlpha: 0, duration: 0.85, stagger: 0.1 },
             1.35,
           )
+
+          // Every animated element now holds a GSAP `from` state inline
+          // (SplitText chars + reveals + rules), so the CSS pre-hide has done
+          // its job of covering the pre-hydration first paint — drop it and let
+          // the timeline own visibility. Content appears *as* it animates.
+          scope.classList.remove('cs-anim-pending')
 
           return undefined
         },

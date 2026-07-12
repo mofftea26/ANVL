@@ -100,6 +100,10 @@ const config = defineConfig(({ isSsrBuild }) => ({
             return 'vendor-three'
           }
           if (id.includes('node_modules/zod')) return 'vendor-zod'
+          // supabase-js (GoTrue + Realtime) is deferred off the storefront
+          // entry (lazy account client) — keep it in one cacheable chunk for
+          // the auth / account routes that do load it.
+          if (id.includes('node_modules/@supabase')) return 'vendor-supabase'
           if (id.includes('node_modules/fuse.js')) return 'vendor-fuse'
           if (id.includes('node_modules/@tanstack')) return 'vendor-tanstack'
           if (
