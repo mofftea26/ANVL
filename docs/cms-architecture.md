@@ -13,6 +13,7 @@ The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing p
 | Landing Content | `/admin/content` | `cms_settings.landing_content` (per-landing-key copy blobs) + reads/writes `asset_config.drops` for non-tenet scene media |
 | About Page | `/admin/about` | `cms_settings.landing_content.about` — hero + marquee copy and the **orbs array** (free-form sections with label/color/copy/lines/points/stats/CTAs/`mediaId`; add/edit/remove, The Oath tenets ownership contract). Anvil/hammer GLBs + page imagery assign on `/admin/assets` (`asset_config.pages.about`) |
 | Coming Soon | `/admin/coming-soon` | `cms_settings.coming_soon` — site-mode `enabled` toggle + reveal-page copy, countdown (wall-clock + IANA timezone), CTAs, email-capture config, media-id asset refs, SEO/OG overrides |
+| Passports | `/admin/passports` | `product_passports` — generate per-unit QR batches (product picker from the commerce catalog, manual quantity), claimed/unclaimed ledger with claimant snapshots, unassign/delete, printable QR sheet (see `docs/features/product-passport.md`) |
 | Story | `/admin/story` | `story_chapters` + `story_acts` + `story_cast` (+ `story-media` bucket) |
 | Settings | `/admin/settings` | Session + local reset only |
 

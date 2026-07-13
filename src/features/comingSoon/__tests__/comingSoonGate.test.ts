@@ -6,20 +6,28 @@ import {
 } from '@/features/comingSoon/lib/comingSoonGate'
 
 describe('isComingSoonExemptPath', () => {
-  it('exempts the admin tree only', () => {
+  it('exempts the admin tree', () => {
     expect(isComingSoonExemptPath('/admin')).toBe(true)
     expect(isComingSoonExemptPath('/admin/coming-soon')).toBe(true)
     expect(isComingSoonExemptPath('/admin/theme')).toBe(true)
   })
 
-  it('gates every public route', () => {
-    for (const path of ['/', '/shop', '/shop/oath-tee', '/about', '/story', '/cart', '/auth/sign-in', '/account']) {
+  it('exempts product passports and auth (QR cards ship with physical products)', () => {
+    expect(isComingSoonExemptPath('/p/some-claim-token')).toBe(true)
+    expect(isComingSoonExemptPath('/auth/sign-in')).toBe(true)
+    expect(isComingSoonExemptPath('/auth/sign-up')).toBe(true)
+  })
+
+  it('gates every other public route', () => {
+    for (const path of ['/', '/shop', '/shop/oath-tee', '/about', '/story', '/cart', '/account']) {
       expect(isComingSoonExemptPath(path)).toBe(false)
     }
   })
 
   it('does not exempt lookalike prefixes', () => {
     expect(isComingSoonExemptPath('/administration')).toBe(false)
+    expect(isComingSoonExemptPath('/products')).toBe(false)
+    expect(isComingSoonExemptPath('/press')).toBe(false)
   })
 })
 

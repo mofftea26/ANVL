@@ -95,6 +95,7 @@ src/features/cms/**            → shared CMS read models, theme/font/asset conf
 src/features/experience/**     → centralized experience system (registry, provider, variant seam) — storefront-safe; the ONLY place experience variants are selected (no scattered key conditionals)
 src/features/landingPages/**   → code-owned landing pages (registry, renderer, asset slots, TheOathLanding)
 src/features/marketing/**      → storefront home sections (home/: campaign cards, lookbook strip)
+src/features/passport/**       → product passports: /p/$token claim flow (teaser → onboarding → GSAP claim ceremony → passport dossier), RPC client, Armory ranks — storefront-safe
 src/features/about/**          → About page: desktop "Forge Altar" (non-scrollable 3D anvil + orbiting content orbs + hammer-strike modals) + normal mobile page — not registered in landingPages/registry.ts (About is a fixed page, not a swappable drop)
 src/features/story/**          → Story saga: schemas, clients, 3D shelf + book overlay
 src/features/products/**       → product catalog, commerce adapters, shop components
@@ -136,6 +137,7 @@ src/
     experience/      Centralized experience system: registry (keyed 1:1 to active landing key), ExperienceProvider/useExperience, useExperienceVariant (structural variant seam), data-experience storefront wrapper, ExperiencePageTransition
     landingPages/    Code-owned landing pages: registry, renderer, asset slots, pages/TheOathLanding (the single Drop 01 cinematic landing)
     marketing/       Storefront home sections (home/: campaign cards, lookbook strip)
+    passport/        Product passports: Zod schemas, RPC client (get/claim), usePassport hooks, ranks lib, /p/$token experience components (teaser, onboarding, ClaimCeremony, PassportPage)
     products/        Commerce adapters (localStorage, seed, Shopify, Supabase), catalog, hooks
     search/          Storefront global search: Fuse.js-backed matching engine (types/, lib/matchEngine.ts, index-agnostic), corpus assembly (lib/searchCorpus.ts, reshapes existing runtimeClients/CMS reads), useGlobalSearch hook + GlobalSearchBar/Dropdown/Overlay UI — mounted in PremiumNavTopbar + PremiumNavMobile
     seo/             SEO document schema + types
@@ -149,6 +151,7 @@ src/
     cart.tsx
     checkout/
     account/         Customer account (stub)
+    p/$token.tsx     Product passport page — QR scan target (claim flow / owner dossier / public authenticity view; noindex)
     story.tsx        Story saga page (chapter shelf + deep-linkable book overlay)
     about.tsx        About page — renders <AboutExperience> (desktop Forge Altar / mobile normal page; CMS-editable copy + assets)
     auth/            Sign in / sign up / forgot password
@@ -234,6 +237,7 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 | `cms_settings.coming_soon` / `storefront_publication.coming_soon` | Coming Soon site-mode blob (jsonb) — `enabled` toggle + reveal-page copy/countdown/assets/SEO; mirrors `shop_config` flow | Public read, editor update |
 | `public.coming_soon_subscribers` | Early-access emails from the Coming Soon page (write-only mailbox, unique lower(email)) | Anon INSERT only; admin SELECT |
 | `cms_settings.pdp_content` / `storefront_publication.pdp_content` | Per-product PDP editorial content (jsonb `{ [slug]: {...} }`) — bento copy + per-product assets; commerce data stays on the product | Public read, editor update |
+| `public.product_passports` | Per-unit QR claim tokens (`#serial / edition_total` forge plates). **No public SELECT** (token enumeration); reads via `get_passport_by_token` RPC, atomic first-claim via `claim_passport` RPC (both SECURITY DEFINER) | Owner reads own claimed rows; CMS read all; editor write |
 | `public.story_chapters` | Story "books" — one per **product** (`product_slug` = Shopify handle), grouped by `drop_label`/`drop_slug`; acts are its pages | Public read published; editor write |
 | `public.story_acts` | Ordered story beats (book pages) within a chapter | Public read (parent published); editor write |
 | `public.story_cast` | CMS-authored characters (army roster) | Public read (parent published); editor write |
@@ -285,6 +289,7 @@ Storefront never reads admin draft data directly. Landing page **content** is co
 | `/admin/content` | Landing content editor — per-scene copy overrides with code-default fallbacks |
 | `/admin/about` | About page editor — hero, the **orbs** (add/edit/remove free-form sections: label, color, copy, lines, points, stats, CTAs, image), marquee (`landing_content.about`); anvil/hammer GLBs + page imagery assign on `/admin/assets` |
 | `/admin/coming-soon` | Coming Soon site mode — master toggle + reveal-page copy, countdown, early-access capture, assets, SEO (`coming_soon`) |
+| `/admin/passports` | Product passports — generate per-unit QR batches (product from commerce catalog + manual quantity), claimed/unclaimed ledger, unassign/delete, printable QR sheet (relational; Supabase CRUD via `product_passports`) |
 | `/admin/story` | Story saga editor — chapters, acts, cast (relational; Supabase CRUD) |
 | `/admin/settings` | Session + local reset |
 

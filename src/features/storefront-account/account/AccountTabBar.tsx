@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { MapPin, Package, Settings, UserRound } from 'lucide-react'
+import { MapPin, Package, Settings, Shield, UserRound } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
 import { ACCOUNT_TABS, type AccountTab } from '@/features/storefront-account/account/accountTabs'
 
@@ -7,6 +7,7 @@ const TAB_LABELS: Record<AccountTab, string> = {
   personal: 'Personal',
   addresses: 'Addresses',
   orders: 'Orders',
+  armory: 'Armory',
   settings: 'Settings',
 }
 
@@ -14,6 +15,7 @@ const TAB_ICONS: Record<AccountTab, typeof UserRound> = {
   personal: UserRound,
   addresses: MapPin,
   orders: Package,
+  armory: Shield,
   settings: Settings,
 }
 

@@ -81,6 +81,14 @@ export const adminNavItems: AdminNavItem[] = [
     badge: 'Launch',
   },
   {
+    label: 'Passports',
+    href: '/admin/passports',
+    description: 'Per-unit QR passports — generate, track claims, print sheets.',
+    cluster: 'Site',
+    cta: 'Forge',
+    badge: 'QR',
+  },
+  {
     label: 'Story',
     href: '/admin/story',
     description: 'Author the saga — chapters, acts, and cast.',

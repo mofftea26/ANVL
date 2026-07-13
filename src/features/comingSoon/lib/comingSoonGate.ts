@@ -5,11 +5,13 @@
  * When `coming_soon.enabled` is on, every public route renders the reveal
  * page — no redirects, HTTP 200 everywhere, so deep links resolve and turning
  * the flag off instantly restores every route. `/admin` is exempt so the CMS
- * is always reachable.
+ * is always reachable; `/p` (product passports) is exempt because the QR cards
+ * ship with physical products — a customer holding one must always reach their
+ * passport — and `/auth` is exempt so the passport claim's sign-in step works.
  */
 
-/** Route prefixes that are never gated. Extend here (e.g. '/auth') if needed. */
-export const COMING_SOON_EXEMPT_PREFIXES = ['/admin'] as const
+/** Route prefixes that are never gated. */
+export const COMING_SOON_EXEMPT_PREFIXES = ['/admin', '/p', '/auth'] as const
 
 export function isComingSoonExemptPath(pathname: string): boolean {
   return COMING_SOON_EXEMPT_PREFIXES.some(

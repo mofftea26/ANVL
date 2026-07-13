@@ -29,6 +29,7 @@ import { Route as CheckoutIndexRouteImport } from './routes/checkout/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
 import { Route as ShopSlugRouteImport } from './routes/shop/$slug'
+import { Route as PTokenRouteImport } from './routes/p/$token'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout/success'
 import { Route as AuthVerifyEmailRouteImport } from './routes/auth/verify-email'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
@@ -42,6 +43,7 @@ import { Route as AdminStoryRouteImport } from './routes/admin/story'
 import { Route as AdminShopRouteImport } from './routes/admin/shop'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminProductsRouteImport } from './routes/admin/products'
+import { Route as AdminPassportsRouteImport } from './routes/admin/passports'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminFontsRouteImport } from './routes/admin/fonts'
 import { Route as AdminContentRouteImport } from './routes/admin/content'
@@ -154,6 +156,11 @@ const ShopSlugRoute = ShopSlugRouteImport.update({
   path: '/shop/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PTokenRoute = PTokenRouteImport.update({
+  id: '/p/$token',
+  path: '/p/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
   id: '/checkout/success',
   path: '/checkout/success',
@@ -217,6 +224,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
 const AdminProductsRoute = AdminProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPassportsRoute = AdminPassportsRouteImport.update({
+  id: '/passports',
+  path: '/passports',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
@@ -300,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/passports': typeof AdminPassportsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
@@ -313,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/p/$token': typeof PTokenRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -344,6 +358,7 @@ export interface FileRoutesByTo {
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/passports': typeof AdminPassportsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
@@ -357,6 +372,7 @@ export interface FileRoutesByTo {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/p/$token': typeof PTokenRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/account': typeof AccountIndexRoute
   '/admin': typeof AdminIndexRoute
@@ -391,6 +407,7 @@ export interface FileRoutesById {
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/passports': typeof AdminPassportsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
@@ -404,6 +421,7 @@ export interface FileRoutesById {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/p/$token': typeof PTokenRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -439,6 +457,7 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
+    | '/admin/passports'
     | '/admin/products'
     | '/admin/settings'
     | '/admin/shop'
@@ -452,6 +471,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/auth/verify-email'
     | '/checkout/success'
+    | '/p/$token'
     | '/shop/$slug'
     | '/account/'
     | '/admin/'
@@ -483,6 +503,7 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
+    | '/admin/passports'
     | '/admin/products'
     | '/admin/settings'
     | '/admin/shop'
@@ -496,6 +517,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/auth/verify-email'
     | '/checkout/success'
+    | '/p/$token'
     | '/shop/$slug'
     | '/account'
     | '/admin'
@@ -529,6 +551,7 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/login'
+    | '/admin/passports'
     | '/admin/products'
     | '/admin/settings'
     | '/admin/shop'
@@ -542,6 +565,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/auth/verify-email'
     | '/checkout/success'
+    | '/p/$token'
     | '/shop/$slug'
     | '/account/'
     | '/admin/'
@@ -575,6 +599,7 @@ export interface RootRouteChildren {
   AuthSignUpRoute: typeof AuthSignUpRoute
   AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+  PTokenRoute: typeof PTokenRoute
   ShopSlugRoute: typeof ShopSlugRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
@@ -722,6 +747,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$token': {
+      id: '/p/$token'
+      path: '/p/$token'
+      fullPath: '/p/$token'
+      preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/checkout/success': {
       id: '/checkout/success'
       path: '/checkout/success'
@@ -811,6 +843,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/admin/products'
       preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/passports': {
+      id: '/admin/passports'
+      path: '/passports'
+      fullPath: '/admin/passports'
+      preLoaderRoute: typeof AdminPassportsRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/login': {
@@ -922,6 +961,7 @@ interface AdminRouteRouteChildren {
   AdminContentRoute: typeof AdminContentRoute
   AdminFontsRoute: typeof AdminFontsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminPassportsRoute: typeof AdminPassportsRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminShopRoute: typeof AdminShopRoute
@@ -937,6 +977,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminContentRoute: AdminContentRoute,
   AdminFontsRoute: AdminFontsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminPassportsRoute: AdminPassportsRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminShopRoute: AdminShopRoute,
@@ -973,6 +1014,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignUpRoute: AuthSignUpRoute,
   AuthVerifyEmailRoute: AuthVerifyEmailRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
+  PTokenRoute: PTokenRoute,
   ShopSlugRoute: ShopSlugRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
   ShopIndexRoute: ShopIndexRoute,

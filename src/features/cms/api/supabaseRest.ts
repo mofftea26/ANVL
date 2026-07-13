@@ -58,6 +58,35 @@ export async function restSelectMaybeSingle(
   }
 }
 
+/**
+ * Call a PostgREST RPC under the anon role. Returns the raw JSON result —
+ * callers validate with Zod. Used by SSR-safe public reads (e.g. the product
+ * passport token lookup) where the full supabase-js client is unnecessary.
+ */
+export async function restRpc(
+  env: SupabasePublicEnv,
+  fn: string,
+  args: Record<string, unknown>,
+): Promise<{ data: unknown; error: SupabaseRestError | null }> {
+  try {
+    const res = await fetch(`${env.url}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: anonHeaders(env, {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      }),
+      body: JSON.stringify(args),
+    })
+    if (!res.ok) return { data: null, error: await readError(res) }
+    return { data: (await res.json()) as unknown, error: null }
+  } catch (err) {
+    return {
+      data: null,
+      error: { message: err instanceof Error ? err.message : 'network error' },
+    }
+  }
+}
+
 /** Insert a single row under anon RLS. */
 export async function restInsert(
   env: SupabasePublicEnv,

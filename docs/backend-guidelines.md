@@ -90,13 +90,20 @@ RLS is enabled on all tables. Rules are enforced at the database level even if a
 anon:
   - SELECT on storefront_publication
   - SELECT on published story_chapters / story_acts / story_cast (parent is_published)
+  - EXECUTE get_passport_by_token(token) (SECURITY DEFINER — safe projection only;
+    product_passports has NO public SELECT so claim tokens cannot be enumerated)
 
 authenticated (viewer/editor/admin):
-  - SELECT on cms_settings, landing_pages, cms_media_assets, story_* (all rows for CMS roles)
+  - SELECT on cms_settings, landing_pages, cms_media_assets, story_*, product_passports (all rows for CMS roles)
   - SELECT on cms_profiles (own row)
 
+authenticated (customer):
+  - SELECT on product_passports where claimed_by = auth.uid() (account Armory)
+  - EXECUTE claim_passport(token, color, size, display_name) (SECURITY DEFINER —
+    atomic first-claim: UPDATE ... WHERE token = $1 AND claimed_by IS NULL)
+
 authenticated (editor/admin):
-  - INSERT/UPDATE/DELETE on cms_media_assets, story_*
+  - INSERT/UPDATE/DELETE on cms_media_assets, story_*, product_passports
   - UPDATE on cms_settings
 
 authenticated (admin):

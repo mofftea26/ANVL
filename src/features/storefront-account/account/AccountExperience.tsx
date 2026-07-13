@@ -9,6 +9,7 @@ import { useAccountCarousel } from '@/features/storefront-account/account/useAcc
 import { useAccountSaveStore } from '@/features/storefront-account/account/accountSave.store'
 import { PersonalPanel } from '@/features/storefront-account/account/panels/PersonalPanel'
 import { AddressesPanel } from '@/features/storefront-account/account/panels/AddressesPanel'
+import { ArmoryPanel } from '@/features/storefront-account/account/panels/ArmoryPanel'
 import { OrdersPanel } from '@/features/storefront-account/account/panels/OrdersPanel'
 import { SettingsPanel } from '@/features/storefront-account/account/panels/SettingsPanel'
 
@@ -108,6 +109,7 @@ export function AccountExperience({
                 {t === 'personal' ? <PersonalPanel customer={customer} /> : null}
                 {t === 'addresses' ? <AddressesPanel customer={customer} /> : null}
                 {t === 'orders' ? <OrdersPanel customer={customer} /> : null}
+                {t === 'armory' ? <ArmoryPanel /> : null}
                 {t === 'settings' ? <SettingsPanel customer={customer} /> : null}
               </Container>
             </section>
