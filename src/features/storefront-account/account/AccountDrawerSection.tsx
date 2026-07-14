@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { LogOut, Package, Settings, UserRound } from 'lucide-react'
+import { LogOut, Package, Settings, Shield, UserRound } from 'lucide-react'
 import {
   useCustomerProfileQuery,
   useHydrateStorefrontAccountSession,
@@ -63,6 +63,9 @@ export function AccountDrawerSection({ onNavigate }: { onNavigate?: () => void }
         </Link>
         <Link to="/account" search={{ tab: 'orders' }} onClick={onNavigate} className={linkChip}>
           <Package size={13} aria-hidden="true" /> Orders
+        </Link>
+        <Link to="/account" search={{ tab: 'armory' }} onClick={onNavigate} className={linkChip}>
+          <Shield size={13} aria-hidden="true" /> Armory
         </Link>
         <Link to="/account" search={{ tab: 'settings' }} onClick={onNavigate} className={linkChip}>
           <Settings size={13} aria-hidden="true" /> Settings

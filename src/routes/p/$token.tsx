@@ -5,19 +5,33 @@ import { loadStorefrontProjection } from '@/features/cms/api/loadStorefrontProje
 import { resolveStorefrontPageAssets } from '@/features/cms/assets/resolvePublishedAssets'
 import { fetchPassportByTokenAnon } from '@/features/passport/api/passportClient'
 import { PassportExperience } from '@/features/passport/components/PassportExperience'
+import { resolvePassportContent } from '@/features/passport/lib/resolvePassportContent'
 import { resolvePdpContent } from '@/features/products/pdp/resolvePdpContent'
 
 export const Route = createFileRoute('/p/$token')({
-  loader: async ({ params }) => {
+  validateSearch: (search: Record<string, unknown>): { transfer?: string } => {
+    const raw = search.transfer
+    return typeof raw === 'string' && raw.length >= 8 && raw.length <= 128
+      ? { transfer: raw }
+      : {}
+  },
+  loaderDeps: ({ search }) => ({ transfer: search.transfer }),
+  loader: async ({ params, deps }) => {
     // Anon-scoped lookup only (SSR has no customer session). Owner resolution
     // happens client-side via the session-aware query in PassportExperience.
-    const view = await fetchPassportByTokenAnon(params.token)
+    const view = await fetchPassportByTokenAnon(params.token, deps.transfer)
     if (!view) {
       return {
         token: params.token,
         view: null,
         product: null,
-        content: null,
+        content: resolvePassportContent({
+          product: null,
+          passportContent: {},
+          pdpContent: null,
+          mediaIndex: [],
+          productSlug: '',
+        }),
         hasStoryBook: false,
       }
     }
@@ -26,7 +40,7 @@ export const Route = createFileRoute('/p/$token')({
       loadStorefrontProjection(),
       runtimeClients.story.getChapterByProductSlug(view.productSlug).catch(() => null),
     ])
-    const content = product
+    const pdpResolved = product
       ? resolvePdpContent({
           product,
           pdpContent: projection.pdpContent,
@@ -38,6 +52,13 @@ export const Route = createFileRoute('/p/$token')({
           mediaIndex: projection.mediaIndex,
         })
       : null
+    const content = resolvePassportContent({
+      product,
+      passportContent: projection.passportContent,
+      pdpContent: pdpResolved,
+      mediaIndex: projection.mediaIndex,
+      productSlug: view.productSlug,
+    })
     return { token: params.token, view, product, content, hasStoryBook: Boolean(storyBook) }
   },
   head: ({ loaderData }) =>
@@ -55,5 +76,6 @@ export const Route = createFileRoute('/p/$token')({
 
 function PassportRoute() {
   const data = Route.useLoaderData()
-  return <PassportExperience {...data} />
+  const { transfer } = Route.useSearch()
+  return <PassportExperience {...data} transferCode={transfer} />
 }

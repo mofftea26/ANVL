@@ -1,13 +1,17 @@
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { restRpc } from '@/features/cms/api/supabaseRest'
 import {
+  acceptTransferResultSchema,
   claimPassportResultSchema,
+  initiateTransferResultSchema,
   ownedPassportSchema,
   passportViewSchema,
 } from '../schemas/passport.schema'
 import type {
+  AcceptTransferResult,
   ClaimPassportInput,
   ClaimPassportResult,
+  InitiateTransferResult,
   OwnedPassport,
   PassportView,
 } from '../schemas/passport.schema'
@@ -37,10 +41,16 @@ async function getAuthedClient() {
  * Public/anon token lookup — safe projection only. Returns `null` when the
  * token is unknown or Supabase is not configured. Works on server and browser.
  */
-export async function fetchPassportByTokenAnon(token: string): Promise<PassportView | null> {
+export async function fetchPassportByTokenAnon(
+  token: string,
+  transferCode?: string,
+): Promise<PassportView | null> {
   const env = getSupabasePublicEnv()
   if (!env) return null
-  const { data, error } = await restRpc(env, 'get_passport_by_token', { p_token: token })
+  const { data, error } = await restRpc(env, 'get_passport_by_token', {
+    p_token: token,
+    p_transfer_code: transferCode ?? null,
+  })
   if (error || data === null) return null
   const parsed = passportViewSchema.safeParse(data)
   return parsed.success ? parsed.data : null
@@ -51,11 +61,19 @@ export async function fetchPassportByTokenAnon(token: string): Promise<PassportV
  * RPC can resolve `isOwner` and include owner-only fields. Falls back to the
  * anon path when signed out or unconfigured.
  */
-export async function fetchPassportByToken(token: string): Promise<PassportView | null> {
+export async function fetchPassportByToken(
+  token: string,
+  transferCode?: string,
+): Promise<PassportView | null> {
   const client = await getAuthedClient()
-  if (!client) return fetchPassportByTokenAnon(token)
-  const { data, error } = await client.rpc('get_passport_by_token', { p_token: token })
-  if (error || data === null || data === undefined) return fetchPassportByTokenAnon(token)
+  if (!client) return fetchPassportByTokenAnon(token, transferCode)
+  const { data, error } = await client.rpc('get_passport_by_token', {
+    p_token: token,
+    p_transfer_code: transferCode ?? null,
+  })
+  if (error || data === null || data === undefined) {
+    return fetchPassportByTokenAnon(token, transferCode)
+  }
   const parsed = passportViewSchema.safeParse(data)
   return parsed.success ? parsed.data : null
 }
@@ -74,6 +92,42 @@ export async function claimPassport(input: ClaimPassportInput): Promise<ClaimPas
   const parsed = claimPassportResultSchema.safeParse(data)
   if (!parsed.success) return { ok: false, error: 'invalid_input' }
   return parsed.data
+}
+
+/** Owner mints a one-time transfer code (7-day expiry, replaces any pending). */
+export async function initiatePassportTransfer(token: string): Promise<InitiateTransferResult> {
+  const client = await getAuthedClient()
+  if (!client) return { ok: false, error: 'not_authenticated' }
+  const { data, error } = await client.rpc('initiate_passport_transfer', { p_token: token })
+  if (error) return { ok: false, error: 'not_owner' }
+  const parsed = initiateTransferResultSchema.safeParse(data)
+  return parsed.success ? parsed.data : { ok: false, error: 'not_owner' }
+}
+
+/** Owner voids the pending transfer code. */
+export async function cancelPassportTransfer(token: string): Promise<boolean> {
+  const client = await getAuthedClient()
+  if (!client) return false
+  const { data, error } = await client.rpc('cancel_passport_transfer', { p_token: token })
+  return !error && Boolean((data as { ok?: boolean } | null)?.ok)
+}
+
+/** Recipient accepts a transfer — atomically re-forges the passport to them. */
+export async function acceptPassportTransfer(input: {
+  token: string
+  code: string
+  displayName: string
+}): Promise<AcceptTransferResult> {
+  const client = await getAuthedClient()
+  if (!client) return { ok: false, error: 'not_authenticated' }
+  const { data, error } = await client.rpc('accept_passport_transfer', {
+    p_token: input.token,
+    p_code: input.code,
+    p_display_name: input.displayName,
+  })
+  if (error) return { ok: false, error: 'transfer_invalid' }
+  const parsed = acceptTransferResultSchema.safeParse(data)
+  return parsed.success ? parsed.data : { ok: false, error: 'transfer_invalid' }
 }
 
 /** The signed-in user's claimed passports (Armory), newest claim first. */

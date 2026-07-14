@@ -262,6 +262,58 @@ Any landing motion that uses GSAP must:
 
 ---
 
+## The ANVL particle-forge standard (THE quality benchmark)
+
+The Coming Soon ember anvil (`src/features/comingSoon/scene/`) and The Oath
+hero product forge (`TheOathLanding/webgl/HeroProductParticles.tsx` +
+`heroForgeShaders.ts`) define the visual bar every new cinematic surface must
+meet (the product passport experience is built on the same engine —
+`src/features/passport/webgl/`). The recipe, so we can repeat it:
+
+1. **One fixed particle pool, morphed in the vertex shader.** Allocate N
+   points once (10–14k). Never add/remove points — morph between pre-sampled
+   targets via `aFrom`/`aTo` buffers and a `uMorph` uniform. React only writes
+   uniforms/buffers; all motion is GPU work.
+2. **Silhouette sampling registers particles to real pixels.**
+   `sampleImageSilhouette(url, count, fit, zThickness)`
+   (`src/shared/webgl/particleShapes.ts`) alpha-gates a transparent PNG into a
+   particle cloud + per-point luminance `shades` (bright print details burn
+   hotter). Because targets come from the same pixels as the DOM render, the
+   ember form and the revealed image are registered 1:1 — the thing genuinely
+   *becomes* the image.
+3. **Per-seed stagger on every transition.** Each point owns an `aSeed`;
+   morphs/assembly are staggered by seed (`clamp(u * (1.25 + seed*0.5) -
+   seed*0.35)` + smoothstep) so the cloud dissolves and reforms organically,
+   never sliding as a rigid block.
+4. **The uniform vocabulary:** `uAssemble` (scatter nebula → form, entry),
+   `uMorph` (shape → shape), `uBurst` (heat pulse, decays ~1.4s),
+   `uReveal` (fusion: the cloud condenses/flattens/stills/all-but-vanishes
+   INTO the resolving DOM render — never "parks behind" it), `uZoom` (hover
+   magnetism breathe ~1.035), plus `uTime` shimmer that stills as forms settle.
+5. **A shared choreography clock.** WebGL tree and DOM tree never call each
+   other — both schedule GSAP against exported timing constants
+   (`heroForgeTiming.ts` / `passportForgeTiming.ts`), so ember settle and DOM
+   reveal land in lock-step by construction.
+6. **A mutable motion-state bridge** (`oathMotionState.ts` pattern): DOM
+   writes plain mutable fields (strike counters, hover 0..1, reveal 0..1,
+   pointer); the R3F `useFrame` loop lerps uniforms toward them. No React
+   state in the hot path.
+7. **Brand-token colors only** — read `--particle-*` / palette vars at mount
+   (`readOathBrandColors()` / `readThemeCssColor`); additive blending,
+   `depthWrite: false`, point size hard-capped (a near-camera additive point
+   can wedge the GPU).
+8. **Gate + degrade:** lazy `vendor-three` import behind
+   `isWebglAvailable()` + reduced-motion + viewport gates, canvas
+   teardown-guard (`useCanvasTeardownMark`/`useCanvasMountGate`), context-lost
+   self-heal remount. The DOM-only choreography must stand alone as the
+   fallback — WebGL is a layer, never a dependency.
+9. **Feel targets:** entry assembly ~2.4s, morphs ~1.6s `power2.inOut`,
+   bursts decay ~1.4s `power2.out`, reveal ~0.9s starting ~0.1s before the
+   morph settles (the render resolves *out of* the settled cloud). Everything
+   eases; nothing pops.
+
+---
+
 ## Performance
 
 - Never block the main thread with heavy GSAP setup — defer to `useGSAP` lifecycle

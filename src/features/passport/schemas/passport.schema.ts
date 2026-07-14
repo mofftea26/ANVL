@@ -19,6 +19,9 @@ export const passportViewSchema = z
     claimed_at: z.string().nullable().catch(null),
     claimed_color: z.string().nullable().catch(null),
     claimed_size: z.string().nullable().catch(null),
+    // Transfer state (absent from claim/accept RPC payloads → defaults).
+    is_transfer_pending: z.boolean().default(false).catch(false),
+    transfer_valid: z.boolean().default(false).catch(false),
   })
   .transform((raw) => ({
     productSlug: raw.product_slug,
@@ -31,6 +34,8 @@ export const passportViewSchema = z
     claimedAt: raw.claimed_at,
     claimedColor: raw.claimed_color,
     claimedSize: raw.claimed_size,
+    isTransferPending: raw.is_transfer_pending,
+    transferValid: raw.transfer_valid,
   }))
 
 export type PassportView = z.infer<typeof passportViewSchema>
@@ -56,6 +61,32 @@ export const claimPassportInputSchema = z.object({
   displayName: z.string().min(1).max(120),
 })
 export type ClaimPassportInput = z.infer<typeof claimPassportInputSchema>
+
+export const initiateTransferResultSchema = z.discriminatedUnion('ok', [
+  z.object({
+    ok: z.literal(true),
+    code: z.string().min(8),
+    expires_at: z.string(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    error: z.enum(['not_authenticated', 'not_owner']).catch('not_owner'),
+  }),
+])
+export type InitiateTransferResult = z.infer<typeof initiateTransferResultSchema>
+
+export const acceptTransferErrorSchema = z.enum([
+  'not_authenticated',
+  'invalid_input',
+  'transfer_invalid',
+])
+export type AcceptTransferError = z.infer<typeof acceptTransferErrorSchema>
+
+export const acceptTransferResultSchema = z.discriminatedUnion('ok', [
+  z.object({ ok: z.literal(true), passport: passportViewSchema }),
+  z.object({ ok: z.literal(false), error: acceptTransferErrorSchema }),
+])
+export type AcceptTransferResult = z.infer<typeof acceptTransferResultSchema>
 
 /** Row shape for the owner's Armory list (RLS `product_passports_select_own`). */
 export const ownedPassportSchema = z

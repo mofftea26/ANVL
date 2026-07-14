@@ -10,6 +10,7 @@ import { Loader2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/Button'
 import { cn } from '@/shared/lib/cn'
+import { MediaUploadNamingModal } from './MediaUploadNamingModal'
 import { useMediaAssetsMutations } from './useMediaAssetsQuery'
 
 const ACCEPT =
@@ -45,17 +46,25 @@ export function MediaUploadZone({ disabled }: MediaUploadZoneProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const fileId = useId()
   const [isOver, setIsOver] = useState(false)
+  // Files staged for the enforced-naming modal — nothing uploads unnamed.
+  const [pending, setPending] = useState<File[] | null>(null)
   const { uploadMutation } = useMediaAssetsMutations()
 
-  const uploadFiles = async (files: FileList | File[]) => {
-    const list = Array.from(files)
-    if (!list.length) return
-    for (const file of list) {
+  const stageFiles = (files: FileList | File[]) => {
+    const valid: File[] = []
+    for (const file of Array.from(files)) {
       const validationError = validateUploadFile(file)
       if (validationError) {
         toast.error(validationError)
         continue
       }
+      valid.push(file)
+    }
+    if (valid.length) setPending(valid)
+  }
+
+  const uploadRenamed = async (files: File[]) => {
+    for (const file of files) {
       const result = await uploadMutation.mutateAsync(file)
       if (result.ok) {
         toast.success(`Uploaded ${file.name}`)
@@ -63,11 +72,12 @@ export function MediaUploadZone({ disabled }: MediaUploadZoneProps) {
         toast.error(result.error)
       }
     }
+    setPending(null)
   }
 
   const onFileInput = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (files?.length) void uploadFiles(files)
+    if (files?.length) stageFiles(files)
     e.target.value = ''
   }
 
@@ -75,7 +85,7 @@ export function MediaUploadZone({ disabled }: MediaUploadZoneProps) {
     e.preventDefault()
     setIsOver(false)
     if (disabled || uploadMutation.isPending) return
-    if (e.dataTransfer.files.length) void uploadFiles(e.dataTransfer.files)
+    if (e.dataTransfer.files.length) stageFiles(e.dataTransfer.files)
   }
 
   const busy = uploadMutation.isPending
@@ -125,8 +135,18 @@ export function MediaUploadZone({ disabled }: MediaUploadZoneProps) {
         </Button>
         <span className="text-xs text-[var(--color-text-muted)]">
           Drag images, videos, or 3D models (GLB/GLTF) here — max 50 MB per file.
+          Each upload is named by function: <code className="font-mono">[page]-[slot].ext</code>.
         </span>
       </div>
+
+      {pending ? (
+        <MediaUploadNamingModal
+          files={pending}
+          busy={busy}
+          onCancel={() => setPending(null)}
+          onConfirm={(renamed) => void uploadRenamed(renamed)}
+        />
+      ) : null}
     </div>
   )
 }

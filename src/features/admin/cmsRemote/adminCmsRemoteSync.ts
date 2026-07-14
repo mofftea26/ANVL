@@ -6,6 +6,7 @@ import { readActiveLandingPageFromStorage } from '@/features/cms/landingPageActi
 import { readLandingContentFromStorage } from '@/features/cms/landingContent/landingContent.settings'
 import { readShopConfigFromStorage } from '@/features/cms/shop/shopExperience.settings'
 import { readPdpContentFromStorage } from '@/features/cms/pdpContent/pdpContent.settings'
+import { readPassportContentFromStorage } from '@/features/cms/passportContent/passportContent.settings'
 import { readComingSoonConfigFromStorage } from '@/features/cms/comingSoon/comingSoon.settings'
 import {
   readAssetConfigFromStorage,
@@ -41,6 +42,7 @@ export type CmsSettingsFieldKey =
   | 'landing_content'
   | 'shop_config'
   | 'pdp_content'
+  | 'passport_content'
   | 'coming_soon'
 
 /**
@@ -95,6 +97,7 @@ export async function flushAdminCmsRemoteSync(
     landing_content: readLandingContentFromStorage(),
     shop_config: readShopConfigFromStorage(),
     pdp_content: readPdpContentFromStorage(),
+    passport_content: readPassportContentFromStorage(),
     coming_soon: readComingSoonConfigFromStorage(),
   }
   // No `fields` given (the debounced auto-sync paths) keeps the previous

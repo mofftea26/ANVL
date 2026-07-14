@@ -1,29 +1,37 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useStorefrontAccountSession } from '@/features/storefront-account/publicAccount.core'
 import {
+  acceptPassportTransfer,
+  cancelPassportTransfer,
   claimPassport,
   fetchPassportByToken,
+  initiatePassportTransfer,
   listOwnedPassports,
 } from '../api/passportClient'
 import type { ClaimPassportInput, PassportView } from '../schemas/passport.schema'
 
 export const passportQueryKeys = {
   all: ['productPassport'] as const,
-  byToken: (token: string, customerId: string | null) =>
-    [...passportQueryKeys.all, 'token', token, customerId] as const,
+  byToken: (token: string, customerId: string | null, transferCode: string | null) =>
+    [...passportQueryKeys.all, 'token', token, customerId, transferCode] as const,
   owned: (customerId: string | null) =>
     [...passportQueryKeys.all, 'owned', customerId] as const,
 }
 
 /**
- * Token lookup keyed by the current customer so the owner projection refreshes
- * when the session appears (post sign-in redirect back to /p/$token).
+ * Token lookup keyed by the current customer (and any transfer code in the
+ * URL) so the owner/recipient projection refreshes when the session appears
+ * (post sign-in redirect back to /p/$token).
  */
-export function usePassportQuery(token: string, initialData?: PassportView | null) {
+export function usePassportQuery(
+  token: string,
+  initialData?: PassportView | null,
+  transferCode?: string,
+) {
   const customerId = useStorefrontAccountSession((s) => s.customerId)
   return useQuery({
-    queryKey: passportQueryKeys.byToken(token, customerId),
-    queryFn: () => fetchPassportByToken(token),
+    queryKey: passportQueryKeys.byToken(token, customerId, transferCode ?? null),
+    queryFn: () => fetchPassportByToken(token, transferCode),
     enabled: Boolean(token),
     // Loader data is anon-scoped; only seed the signed-out cache entry with it.
     initialData: customerId ? undefined : initialData,
@@ -39,6 +47,35 @@ export function useClaimPassportMutation() {
       if (result.ok) {
         void qc.invalidateQueries({ queryKey: passportQueryKeys.all })
       }
+    },
+  })
+}
+
+export function useInitiateTransferMutation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (token: string) => initiatePassportTransfer(token),
+    onSuccess: (result) => {
+      if (result.ok) void qc.invalidateQueries({ queryKey: passportQueryKeys.all })
+    },
+  })
+}
+
+export function useCancelTransferMutation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (token: string) => cancelPassportTransfer(token),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: passportQueryKeys.all }),
+  })
+}
+
+export function useAcceptTransferMutation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { token: string; code: string; displayName: string }) =>
+      acceptPassportTransfer(input),
+    onSuccess: (result) => {
+      if (result.ok) void qc.invalidateQueries({ queryKey: passportQueryKeys.all })
     },
   })
 }

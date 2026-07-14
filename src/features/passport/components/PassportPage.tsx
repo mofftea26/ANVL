@@ -1,52 +1,96 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
-import { BadgeCheck, BookOpen, Flame, Shirt, Sparkles } from 'lucide-react'
+import { BadgeCheck, BookOpen } from 'lucide-react'
 import type { Product } from '@/features/products/types/product.types'
-import type { ResolvedPdpContent } from '@/features/products/pdp/resolvePdpContent'
 import { SectionEyebrow } from '@/shared/components/premium/SectionEyebrow'
 import { buttonVariants } from '@/shared/components/ui/Button'
 import { cn } from '@/shared/lib/cn'
 import { usePassportReveal } from '../hooks/usePassportReveal'
+import type { ResolvedPassportContent } from '../lib/resolvePassportContent'
 import type { PassportView } from '../schemas/passport.schema'
+import { PassportConsole } from './console/PassportConsole'
+import {
+  PASSPORT_SECTIONS,
+  type PassportSectionContext,
+} from './console/passportSections'
+import { PASSPORT_CONSOLE_MQ } from '../webgl/PassportForgeGate'
 import { ForgeSerialPlate } from './ForgeSerialPlate'
-import { PassportOriginMap } from './PassportOriginMap'
+import { PassportAtmosphere } from './PassportAtmosphere'
 
 export interface PassportPageProps {
   variant: 'owner' | 'public'
   view: PassportView
   product: Product | null
-  content: ResolvedPdpContent | null
+  content: ResolvedPassportContent
   hasStoryBook: boolean
   claimedDate: string | null
+  /** Owner-only extra controls (e.g. transfer ownership) rendered by the hero. */
+  actions?: ReactNode
+}
+
+/** Console tier: big screens with motion allowed get the no-scroll experience. */
+function useConsoleMode(): boolean {
+  const [on, setOn] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia(PASSPORT_CONSOLE_MQ)
+    const update = () => setOn(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+  return on
 }
 
 /**
- * The passport itself. `owner` renders the full dossier; `public` renders the
- * authenticity view (product + serial + "Forged by") for anyone else who
- * scans an already-claimed code.
+ * The passport itself. Owners on large motion-capable screens get the
+ * no-scroll particle console; phones/tablets/reduced-motion get the scrolling
+ * dossier (both driven by the same PASSPORT_SECTIONS registry). `public` is
+ * the read-only authenticity view for anyone else scanning a claimed code.
  */
-export function PassportPage({
+export function PassportPage(props: PassportPageProps) {
+  const consoleMode = useConsoleMode()
+
+  if (props.variant === 'owner' && consoleMode) {
+    return (
+      <PassportConsole
+        view={props.view}
+        product={props.product}
+        content={props.content}
+        hasStoryBook={props.hasStoryBook}
+        claimedDate={props.claimedDate}
+        actions={props.actions}
+      />
+    )
+  }
+
+  return <PassportDossier {...props} />
+}
+
+/* ----------------------------------------------------------------------- */
+
+/** The scrolling passport (mobile / tablet / reduced motion / public view). */
+function PassportDossier({
   variant,
   view,
   product,
   content,
   hasStoryBook,
   claimedDate,
+  actions,
 }: PassportPageProps) {
   const scopeRef = useRef<HTMLDivElement>(null)
   usePassportReveal(scopeRef)
 
-  const heroImage = resolveHeroImage(view, product)
+  const heroImage = resolveHeroImage(view, product, content)
   const isOwner = variant === 'owner'
+  const ctx: PassportSectionContext = { view, product, content, claimedDate }
 
   return (
-    <div ref={scopeRef} className="bg-[var(--color-bg)]">
+    <div ref={scopeRef} className="relative bg-[var(--color-bg)]">
       {/* Identity plate ------------------------------------------------- */}
       <section className="relative overflow-hidden px-6 pb-16 pt-14 sm:pt-20">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(ellipse_at_top,color-mix(in_oklab,var(--color-highlight)_14%,transparent)_0%,transparent_70%)]"
-        />
+        <PassportAtmosphere imageSrc={heroImage?.src} />
         <div className="relative mx-auto max-w-3xl text-center">
           <div data-pp-hero>
             <SectionEyebrow ember className="justify-center">
@@ -59,6 +103,11 @@ export function PassportPage({
           >
             {view.productName}
           </h1>
+          {content.identity.tagline ? (
+            <p data-pp-hero className="mt-3 text-sm text-[var(--color-text-muted)]">
+              {content.identity.tagline}
+            </p>
+          ) : null}
           <div data-pp-hero className="mt-8 flex justify-center">
             <ForgeSerialPlate
               serialNumber={view.serialNumber}
@@ -89,6 +138,11 @@ export function PassportPage({
               {view.claimedSize ? <Chip label="Size" value={view.claimedSize} /> : null}
             </div>
           ) : null}
+          {isOwner && actions ? (
+            <div data-pp-hero className="mt-6 flex justify-center">
+              {actions}
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -112,164 +166,50 @@ export function PassportPage({
       {variant === 'public' ? (
         <PublicFooter productSlug={product?.slug ?? null} />
       ) : (
-        <OwnerDossier
-          view={view}
-          product={product}
-          content={content}
-          hasStoryBook={hasStoryBook}
-        />
-      )}
-    </div>
-  )
-}
+        <div className="mx-auto max-w-3xl space-y-16 px-6 pb-24">
+          {PASSPORT_SECTIONS.filter((s) => s.available(ctx)).map((s) => (
+            <section key={s.key} data-pp-reveal>
+              <h2 className="anvl-heading inline-flex items-center gap-3 text-2xl text-[var(--color-heading)]">
+                <s.icon aria-hidden="true" className="h-4 w-4 text-[var(--color-highlight-bright)]" />
+                {s.title}
+              </h2>
+              <div className="mt-6">
+                <s.Detail ctx={ctx} />
+              </div>
+            </section>
+          ))}
 
-/* ----------------------------------------------------------------------- */
-
-function OwnerDossier({
-  view,
-  product,
-  content,
-  hasStoryBook,
-}: {
-  view: PassportView
-  product: Product | null
-  content: ResolvedPdpContent | null
-  hasStoryBook: boolean
-}) {
-  const care = content?.care.length ? content.care : (product?.careInstructions ?? [])
-  const details = content?.designDetails.length
-    ? content.designDetails
-    : (product?.designDetails ?? [])
-  const story = content?.storyBody || product?.storytelling || ''
-
-  return (
-    <div className="mx-auto max-w-3xl space-y-16 px-6 pb-24">
-      {/* Material dossier */}
-      {product || content ? (
-        <section data-pp-reveal>
-          <SectionHeading icon={<Shirt aria-hidden="true" className="h-4 w-4" />}>
-            Material dossier
-          </SectionHeading>
-          <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {product?.fabric ? <Stat term="Fabric" detail={product.fabric} /> : null}
-            {product?.gsm ? <Stat term="Weight" detail={product.gsm} /> : null}
-            {product?.fit ? <Stat term="Fit" detail={product.fit} /> : null}
-          </dl>
-          {content?.materialNote ? (
-            <p className="mt-5 text-sm leading-relaxed text-[var(--color-text-muted)]">
-              {content.materialNote}
-            </p>
-          ) : null}
-          {content?.materialMacro ? (
-            <div className="mt-6 overflow-hidden rounded-xl border border-[var(--color-line)]">
-              <img
-                src={content.materialMacro}
-                alt={`${view.productName} fabric macro`}
-                width={1200}
-                height={800}
-                loading="lazy"
-                decoding="async"
-                className="h-auto w-full object-cover"
-              />
-            </div>
-          ) : null}
-        </section>
-      ) : null}
-
-      {/* Care ritual */}
-      {care.length > 0 ? (
-        <section data-pp-reveal>
-          <SectionHeading icon={<Flame aria-hidden="true" className="h-4 w-4" />}>
-            Care ritual
-          </SectionHeading>
-          <ol className="mt-6 space-y-3">
-            {care.map((step, i) => (
-              <li key={step} className="flex gap-4 text-sm text-[var(--color-text-muted)]">
-                <span className="anvl-heading text-[var(--color-highlight-bright)]">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="pt-0.5">{step}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
-
-      {/* Design details + story */}
-      {details.length > 0 || story ? (
-        <section data-pp-reveal>
-          <SectionHeading icon={<Sparkles aria-hidden="true" className="h-4 w-4" />}>
-            {content?.storyHeading || 'Forged details'}
-          </SectionHeading>
-          {story ? (
-            <p className="mt-6 text-sm leading-relaxed text-[var(--color-text-muted)]">{story}</p>
-          ) : null}
-          {details.length > 0 ? (
-            <ul className="mt-5 space-y-2 text-sm text-[var(--color-text-muted)]">
-              {details.map((d) => (
-                <li key={d} className="flex gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="mt-2 h-px w-4 shrink-0 bg-[var(--color-highlight)]"
-                  />
-                  {d}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
-      ) : null}
-
-      {/* Story chapter */}
-      {hasStoryBook && product ? (
-        <section
-          data-pp-reveal
-          className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-8 text-center"
-        >
-          <BookOpen
-            aria-hidden="true"
-            className="mx-auto h-6 w-6 text-[var(--color-highlight-bright)]"
-          />
-          <h2 className="anvl-heading mt-4 text-2xl text-[var(--color-heading)]">
-            This piece has a story
-          </h2>
-          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-            Open its chapter in the ANVL saga.
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link
-              to="/story"
-              search={{ product: product.slug }}
-              className={cn(buttonVariants({ variant: 'secondary', size: 'md' }), 'no-underline')}
+          {hasStoryBook && product ? (
+            <section
+              data-pp-reveal
+              className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-8 text-center"
             >
-              Read the chapter
-            </Link>
-          </div>
-        </section>
-      ) : null}
-
-      {/* Origin */}
-      <section data-pp-reveal>
-        <SectionHeading icon={<BadgeCheck aria-hidden="true" className="h-4 w-4" />}>
-          Origin
-        </SectionHeading>
-        <div className="mt-6">
-          <PassportOriginMap />
+              <BookOpen
+                aria-hidden="true"
+                className="mx-auto h-6 w-6 text-[var(--color-highlight-bright)]"
+              />
+              <h2 className="anvl-heading mt-4 text-2xl text-[var(--color-heading)]">
+                This piece has a story
+              </h2>
+              <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                Open its chapter in the ANVL saga.
+              </p>
+              <div className="mt-6 flex justify-center">
+                <Link
+                  to="/story"
+                  search={{ product: product.slug }}
+                  className={cn(
+                    buttonVariants({ variant: 'secondary', size: 'md' }),
+                    'no-underline',
+                  )}
+                >
+                  Read the chapter
+                </Link>
+              </div>
+            </section>
+          ) : null}
         </div>
-      </section>
-
-      {/* Authenticity footer */}
-      <section
-        data-pp-reveal
-        className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-8 py-6 text-center"
-      >
-        <p className="anvl-micro text-[var(--color-text-muted)]">
-          Token-verified · Forge number {view.serialNumber} of {view.editionTotal}
-        </p>
-        <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-          This passport is bound to its owner&apos;s account and cannot be claimed again.
-        </p>
-      </section>
+      )}
     </div>
   )
 }
@@ -301,37 +241,13 @@ function PublicFooter({ productSlug }: { productSlug: string | null }) {
 function resolveHeroImage(
   view: PassportView,
   product: Product | null,
+  content: ResolvedPassportContent,
 ): { src: string; alt: string } | null {
-  if (!product) return null
   if (view.claimedColor) {
-    const byColor = product.shop?.imagesByColorName?.[view.claimedColor]
+    const byColor = product?.shop?.imagesByColorName?.[view.claimedColor]
     if (byColor?.length) return byColor[0]
   }
-  return product.images[0] ?? null
-}
-
-function Stat({ term, detail }: { term: string; detail: string }) {
-  return (
-    <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3">
-      <dt className="anvl-micro text-[var(--color-text-muted)]">{term}</dt>
-      <dd className="mt-1 text-sm font-semibold text-[var(--color-text)]">{detail}</dd>
-    </div>
-  )
-}
-
-function SectionHeading({
-  icon,
-  children,
-}: {
-  icon: React.ReactNode
-  children: React.ReactNode
-}) {
-  return (
-    <h2 className="anvl-heading inline-flex items-center gap-3 text-2xl text-[var(--color-heading)]">
-      <span className="text-[var(--color-highlight-bright)]">{icon}</span>
-      {children}
-    </h2>
-  )
+  return content.piece.gallery[0] ?? product?.images[0] ?? null
 }
 
 function Chip({ label, value }: { label: string; value: string }) {

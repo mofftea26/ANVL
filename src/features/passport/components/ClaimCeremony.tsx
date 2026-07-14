@@ -75,9 +75,18 @@ export function ClaimCeremony({
         },
       })
 
-      // 1. The mark appears out of the dark.
-      tl.from(q('[data-cer-eyebrow]'), { autoAlpha: 0, y: 14, duration: 0.7 })
-        .from(q('[data-cer-title]'), { autoAlpha: 0, y: 20, duration: 0.8 }, '-=0.35')
+      // 1. The mark appears out of the dark. (fromTo, never from — StrictMode
+      // double-mounts would capture the killed run's hidden state otherwise.)
+      tl.fromTo(
+        q('[data-cer-eyebrow]'),
+        { autoAlpha: 0, y: 14 },
+        { autoAlpha: 1, y: 0, duration: 0.7 },
+      ).fromTo(
+        q('[data-cer-title]'),
+        { autoAlpha: 0, y: 20 },
+        { autoAlpha: 1, y: 0, duration: 0.8 },
+        '-=0.35',
+      )
 
         // 2. The strike: flash + shake + spark burst + ember glint.
         .add('strike', '+=0.35')
@@ -141,9 +150,19 @@ export function ClaimCeremony({
       )
 
         // 4. Name + date engrave.
-        .from(q('[data-cer-owner]'), { autoAlpha: 0, y: 16, duration: 0.7 }, '+=0.15')
-        .from(q('[data-cer-date]'), { autoAlpha: 0, duration: 0.6 }, '-=0.3')
-        .from(q('[data-cer-sealed]'), { autoAlpha: 0, y: 10, duration: 0.6 }, '-=0.2')
+        .fromTo(
+          q('[data-cer-owner]'),
+          { autoAlpha: 0, y: 16 },
+          { autoAlpha: 1, y: 0, duration: 0.7 },
+          '+=0.15',
+        )
+        .fromTo(q('[data-cer-date]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.6 }, '-=0.3')
+        .fromTo(
+          q('[data-cer-sealed]'),
+          { autoAlpha: 0, y: 10 },
+          { autoAlpha: 1, y: 0, duration: 0.6 },
+          '-=0.2',
+        )
 
       return () => tl.kill()
     },

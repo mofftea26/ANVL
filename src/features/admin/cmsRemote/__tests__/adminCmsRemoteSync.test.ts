@@ -12,6 +12,7 @@ const allValues: Record<CmsSettingsFieldKey, unknown> = {
   landing_content: { name: 'landing' },
   shop_config: { name: 'shop' },
   pdp_content: { name: 'pdp' },
+  passport_content: { name: 'passport' },
   coming_soon: { name: 'coming_soon' },
 }
 

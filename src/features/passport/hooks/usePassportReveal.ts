@@ -9,6 +9,10 @@ import { gsap, ScrollTrigger } from '@/shared/lib/gsap'
  *    sections snap visible (no ScrollTrigger, no pinning on mobile)
  *  - ≥768px → hero entrance + batched ScrollTrigger reveals per section
  * Elements opt in via [data-pp-hero] (hero children) and [data-pp-reveal].
+ *
+ * All entrances are explicit `fromTo` tweens (never `from`): React StrictMode
+ * double-mounts effects in dev, and a killed `from` tween leaves elements at
+ * autoAlpha 0 for the second run to capture as the end state — stuck hidden.
  */
 export function usePassportReveal(scope: RefObject<HTMLElement | null>) {
   useGSAP(
@@ -21,33 +25,31 @@ export function usePassportReveal(scope: RefObject<HTMLElement | null>) {
       const sections = () => root.querySelectorAll<HTMLElement>('[data-pp-reveal]')
 
       mm.add('(prefers-reduced-motion: reduce)', () => {
-        gsap.set([...heroItems(), ...sections()], { clearProps: 'all' })
+        gsap.set([...heroItems(), ...sections()], { clearProps: 'all', autoAlpha: 1 })
       })
 
-      const heroEntrance = () => {
-        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
-        tl.from(heroItems(), {
-          autoAlpha: 0,
-          y: 26,
-          duration: 0.9,
-          stagger: 0.12,
-        })
-        return tl
-      }
+      const heroEntrance = () =>
+        gsap.fromTo(
+          heroItems(),
+          { autoAlpha: 0, y: 26 },
+          { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.12, ease: 'power3.out' },
+        )
 
       mm.add(
         '(max-width: 767.98px) and (prefers-reduced-motion: no-preference)',
         () => {
-          const tl = heroEntrance()
-          gsap.set(sections(), { clearProps: 'all' })
-          return () => tl.kill()
+          const tween = heroEntrance()
+          gsap.set(sections(), { clearProps: 'all', autoAlpha: 1 })
+          return () => {
+            tween.kill()
+          }
         },
       )
 
       mm.add(
         '(min-width: 768px) and (prefers-reduced-motion: no-preference)',
         () => {
-          const tl = heroEntrance()
+          const tween = heroEntrance()
           gsap.set(sections(), { autoAlpha: 0, y: 32 })
           ScrollTrigger.batch(sections(), {
             start: 'top 85%',
@@ -61,7 +63,9 @@ export function usePassportReveal(scope: RefObject<HTMLElement | null>) {
                 stagger: 0.1,
               }),
           })
-          return () => tl.kill()
+          return () => {
+            tween.kill()
+          }
         },
       )
 

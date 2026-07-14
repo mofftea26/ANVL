@@ -12,6 +12,8 @@ import { writeLandingContentToStorage } from '@/features/cms/landingContent/land
 import { parseLandingContentConfig } from '@/features/cms/landingContent/landingContent.zod'
 import { writeComingSoonConfigToStorage } from '@/features/cms/comingSoon/comingSoon.settings'
 import { parseComingSoonConfig } from '@/features/cms/comingSoon/comingSoon.zod'
+import { writePassportContentToStorage } from '@/features/cms/passportContent/passportContent.settings'
+import { parsePassportContent } from '@/features/cms/passportContent/passportContent.zod'
 import { migrateOathTenetAssetsFromSlots } from '@/features/cms/landingContent/migrateOathTenetAssets'
 import {
   beginAdminCmsRemoteHydration,
@@ -69,6 +71,20 @@ export async function hydrateAdminCmsFromSupabase(
     if (!comingSoonRes.error && comingSoonRes.data) {
       writeComingSoonConfigToStorage(
         parseComingSoonConfig(comingSoonRes.data.coming_soon),
+      )
+    }
+
+    // Same tolerant treatment for `passport_content` — a fresh browser must
+    // hydrate the authored passports before the editor's first save, or it
+    // would clobber them with an empty local snapshot.
+    const passportRes = await client
+      .from('cms_settings')
+      .select('passport_content')
+      .eq('id', 1)
+      .maybeSingle()
+    if (!passportRes.error && passportRes.data) {
+      writePassportContentToStorage(
+        parsePassportContent(passportRes.data.passport_content),
       )
     }
   } finally {

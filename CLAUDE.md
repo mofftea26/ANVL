@@ -237,7 +237,9 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 | `cms_settings.coming_soon` / `storefront_publication.coming_soon` | Coming Soon site-mode blob (jsonb) — `enabled` toggle + reveal-page copy/countdown/assets/SEO; mirrors `shop_config` flow | Public read, editor update |
 | `public.coming_soon_subscribers` | Early-access emails from the Coming Soon page (write-only mailbox, unique lower(email)) | Anon INSERT only; admin SELECT |
 | `cms_settings.pdp_content` / `storefront_publication.pdp_content` | Per-product PDP editorial content (jsonb `{ [slug]: {...} }`) — bento copy + per-product assets; commerce data stays on the product | Public read, editor update |
-| `public.product_passports` | Per-unit QR claim tokens (`#serial / edition_total` forge plates). **No public SELECT** (token enumeration); reads via `get_passport_by_token` RPC, atomic first-claim via `claim_passport` RPC (both SECURITY DEFINER) | Owner reads own claimed rows; CMS read all; editor write |
+| `public.product_passports` | Per-unit QR claim tokens (`#serial / edition_total` forge plates) + one-time transfer codes. **No public SELECT** (token enumeration); reads via `get_passport_by_token` RPC, atomic first-claim via `claim_passport`, hand-over via `initiate/cancel/accept_passport_transfer` RPCs (all SECURITY DEFINER) | Owner reads own claimed rows; CMS read all; editor write |
+| `public.passport_transfers` | Passport ownership hand-over log (written by the accept RPC) | Participants read own rows; CMS read all |
+| `cms_settings.passport_content` / `storefront_publication.passport_content` | Per-product passport section content (jsonb `{ [slug]: {...} }`) — identity/piece/material/care/details/origin copy + assets, authored in the passports wizard; mirrors `pdp_content` flow | Public read, editor update |
 | `public.story_chapters` | Story "books" — one per **product** (`product_slug` = Shopify handle), grouped by `drop_label`/`drop_slug`; acts are its pages | Public read published; editor write |
 | `public.story_acts` | Ordered story beats (book pages) within a chapter | Public read (parent published); editor write |
 | `public.story_cast` | CMS-authored characters (army roster) | Public read (parent published); editor write |
@@ -289,7 +291,7 @@ Storefront never reads admin draft data directly. Landing page **content** is co
 | `/admin/content` | Landing content editor — per-scene copy overrides with code-default fallbacks |
 | `/admin/about` | About page editor — hero, the **orbs** (add/edit/remove free-form sections: label, color, copy, lines, points, stats, CTAs, image), marquee (`landing_content.about`); anvil/hammer GLBs + page imagery assign on `/admin/assets` |
 | `/admin/coming-soon` | Coming Soon site mode — master toggle + reveal-page copy, countdown, early-access capture, assets, SEO (`coming_soon`) |
-| `/admin/passports` | Product passports — generate per-unit QR batches (product from commerce catalog + manual quantity), claimed/unclaimed ledger, unassign/delete, printable QR sheet (relational; Supabase CRUD via `product_passports`) |
+| `/admin/passports` | Product passports, two tabs: **QR codes** (generate per-unit batches, claimed/unclaimed ledger, unassign/delete, printable QR sheet — relational CRUD via `product_passports`) and **Passport content** (per-product editorial sections authored in a multi-step wizard — one step per passport section, each with copy + assets — saved to `passport_content`) |
 | `/admin/story` | Story saga editor — chapters, acts, cast (relational; Supabase CRUD) |
 | `/admin/settings` | Session + local reset |
 
@@ -316,6 +318,7 @@ Admin editor (localStorage working copy)
 - New `dangerouslySetInnerHTML` requires: justification comment + sanitizer + Vitest test.
 - Landing pages are **code-owned** (`src/features/landingPages/`). CMS controls the active key, asset slot overrides, and — for pages that define a content schema (The Oath) — per-scene **copy overrides** via `landing_content`, where every field falls back to designed code defaults when blank.
 - Asset slots are defined in code per drop (`assetSlots.ts`); CMS assigns media IDs to slots.
+- **Asset naming convention:** every media upload is force-named `[page]-[slot].ext` via the upload naming modal (`MediaUploadNamingModal` — contexts/slots come from the real slot registries; free-purpose contexts still enforce the kebab format). The library's filenames therefore always say where an asset belongs.
 - Nav/footer/SEO use code defaults — not CMS-editable.
 
 ---
@@ -366,6 +369,7 @@ Admin editor (localStorage working copy)
 - Keep animation logic in dedicated hooks/utilities, not scattered in component render bodies.
 - `useReducedMotion()` hook (`src/shared/hooks/useReducedMotion.ts`) — use before creating expensive animations.
 - Reference cinematic implementation: `TheOathLanding` — timeline in `hooks/useTheOathScrollTimeline.ts` composing the per-scene `motion/buildOath*.ts` builders, with a DOM⇄WebGL motion bridge (`motion/oathMotionState.ts`).
+- **The particle-forge standard is THE quality bar for cinematic surfaces** (Coming Soon ember anvil, The Oath hero product forge, the passport forge). Recipe — fixed particle pool morphed in the vertex shader via `aFrom→aTo` + per-seed stagger, `sampleImageSilhouette()` registering embers 1:1 to real pixels, the uniform vocabulary (`uAssemble`/`uMorph`/`uBurst`/`uReveal`/`uZoom`), a shared choreography-clock constants file per surface, a mutable motion-state bridge, brand-token colors only, lazy `vendor-three` gates with a DOM-only fallback that stands alone — documented in full in `docs/animation-guidelines.md` ("The ANVL particle-forge standard"). New cinematic features must follow it.
 
 ---
 

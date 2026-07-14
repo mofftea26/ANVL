@@ -83,6 +83,34 @@ unions, Zod at the write boundary): `src/features/admin/passports/`.
   data-URLs for `${BRAND.canonicalBaseUrl}/p/<token>` in a print-isolated
   overlay → browser print / Save as PDF.
 
+## Phase 2 (2026-07-14)
+
+- **Passport console** (`src/features/passport/components/console/` +
+  `src/features/passport/webgl/`): owners on ≥1280px motion-capable screens get
+  a no-scroll split — the piece forged out of ember particles on the left
+  (particle-forge standard: `passportForgeShaders.ts`, `passportForgeTiming.ts`,
+  `passportMotionState.ts`; silhouette from the CMS hero render, ANVL mark
+  fallback), bento section cards on the right. Opening a section shatters the
+  whole composition into a screen-filling particle cloud and re-forges it
+  around the section content; the DOM choreography stands alone without WebGL.
+  Mobile/tablet/reduced-motion keep the scrolling dossier — both surfaces
+  render from the shared `PASSPORT_SECTIONS` registry.
+- **Ownership transfer** (link + accept): the owner mints a one-time 7-day
+  code (`initiate_passport_transfer`) baked into
+  `/p/<token>?transfer=<code>`; the recipient signs in and accepts
+  (`accept_passport_transfer` — atomic re-forge, keeps colorway/size, logs to
+  `passport_transfers`). `get_passport_by_token(p_token, p_transfer_code)`
+  reports `is_transfer_pending` (owner) and `transfer_valid` (recipient).
+- **Passport content CMS**: `passport_content` jsonb on both singletons
+  (`passportContent.zod.ts` / `.settings.ts`, synced via `adminCmsRemoteSync`
+  + hydrated on admin load); authored in the `/admin/passports` →
+  "Passport content" tab through a multi-step wizard (one step per section,
+  each with its own assets). Storefront resolution:
+  `resolvePassportContent()` layers passport_content → pdp_content → product
+  fields → code defaults.
+- **Armory everywhere**: account dropdown + mobile drawer card link to
+  `/account?tab=armory`.
+
 ## Follow-ups
 
 - RPC rate limiting (Phase-J family; 122-bit tokens make brute force

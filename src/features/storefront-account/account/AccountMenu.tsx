@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { LogOut, Package, Settings, UserRound } from 'lucide-react'
+import { LogOut, Package, Settings, Shield, UserRound } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
 import type { Customer } from '@/app/config/accountContracts'
 import {
@@ -124,6 +124,9 @@ export function AccountMenu({ triggerClassName }: { triggerClassName?: string })
             </Link>
             <Link to="/account" search={{ tab: 'orders' }} className={itemClass} onClick={() => setOpen(false)} role="menuitem">
               <Package size={15} aria-hidden="true" /> Orders
+            </Link>
+            <Link to="/account" search={{ tab: 'armory' }} className={itemClass} onClick={() => setOpen(false)} role="menuitem">
+              <Shield size={15} aria-hidden="true" /> Armory
             </Link>
             <Link to="/account" search={{ tab: 'settings' }} className={itemClass} onClick={() => setOpen(false)} role="menuitem">
               <Settings size={15} aria-hidden="true" /> Settings

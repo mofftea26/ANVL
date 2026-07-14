@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Product } from '@/features/products/types/product.types'
-import type { ResolvedPdpContent } from '@/features/products/pdp/resolvePdpContent'
+import type { ResolvedPassportContent } from '../lib/resolvePassportContent'
 import {
   useHydrateStorefrontAccountSession,
   useStorefrontAccountSession,
@@ -13,21 +13,25 @@ import { PassportNotFound } from './PassportNotFound'
 import { PassportOnboarding } from './PassportOnboarding'
 import { PassportPage } from './PassportPage'
 import { PassportTeaser } from './PassportTeaser'
+import { PassportTransferAccept, PassportTransferAction } from './PassportTransfer'
 
 export interface PassportExperienceProps {
   token: string
   view: PassportView | null
   product: Product | null
-  content: ResolvedPdpContent | null
+  content: ResolvedPassportContent
   hasStoryBook: boolean
+  /** One-time transfer code from the share link (?transfer=). */
+  transferCode?: string
 }
 
 /**
  * The /p/$token state machine. The loader supplies the anon projection; this
  * component re-resolves it with the browser session (owner detection) and
  * walks: not_found → teaser (signed out) → onboarding (signed in, unclaimed)
- * → claim ceremony → owner passport, or the public authenticity view when the
- * piece belongs to someone else.
+ * → claim ceremony → owner passport; the public authenticity view when the
+ * piece belongs to someone else; and the transfer accept flow when a live
+ * transfer code rides along in the URL.
  */
 export function PassportExperience({
   token,
@@ -35,13 +39,14 @@ export function PassportExperience({
   product,
   content,
   hasStoryBook,
+  transferCode,
 }: PassportExperienceProps) {
   useHydrateStorefrontAccountSession()
   const customerId = useStorefrontAccountSession((s) => s.customerId)
-  const passportQuery = usePassportQuery(token, loaderView)
+  const passportQuery = usePassportQuery(token, loaderView, transferCode)
   const [ceremony, setCeremony] = useState<'idle' | 'playing' | 'done'>('idle')
-  // The claim RPC returns the owner projection immediately; hold it so the
-  // ceremony/owner view renders without waiting for the query invalidation.
+  // The claim/accept RPCs return the owner projection immediately; hold it so
+  // the ceremony/owner view renders without waiting for query invalidation.
   const [claimedView, setClaimedView] = useState<PassportView | null>(null)
 
   // Freshest wins: just-claimed override → session-aware query → loader anon view.
@@ -54,6 +59,11 @@ export function PassportExperience({
       ? null
       : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   }, [view?.claimedAt])
+
+  const onForged = (claimed: PassportView) => {
+    setClaimedView(claimed)
+    setCeremony('playing')
+  }
 
   if (!view) {
     // Loader found nothing; if a client refetch is still in flight, hold a beat.
@@ -86,6 +96,7 @@ export function PassportExperience({
             content={content}
             hasStoryBook={hasStoryBook}
             claimedDate={claimedDate}
+            actions={<PassportTransferAction token={token} view={view} />}
           />
         </>
       )
@@ -105,6 +116,27 @@ export function PassportExperience({
     case 'teaser':
       return <PassportTeaser token={token} view={view} product={product} />
 
+    case 'transfer_teaser':
+      return (
+        <PassportTeaser
+          token={token}
+          view={view}
+          product={product}
+          transferCode={transferCode}
+        />
+      )
+
+    case 'transfer_offer':
+      return (
+        <PassportTransferAccept
+          token={token}
+          code={transferCode ?? ''}
+          view={view}
+          product={product}
+          onAccepted={onForged}
+        />
+      )
+
     case 'onboarding':
       // Session hydration is synchronous-ish (layout effect + GoTrue reconcile);
       // the claim RPC remains the real gate if the session turns out stale.
@@ -113,10 +145,7 @@ export function PassportExperience({
           token={token}
           view={view}
           product={product}
-          onClaimed={(claimed) => {
-            setClaimedView(claimed)
-            setCeremony('playing')
-          }}
+          onClaimed={onForged}
         />
       )
   }

@@ -14,6 +14,8 @@ function view(overrides: Partial<PassportView>): PassportView {
     claimedAt: null,
     claimedColor: null,
     claimedSize: null,
+    isTransferPending: false,
+    transferValid: false,
     ...overrides,
   }
 }
@@ -40,5 +42,21 @@ describe('resolvePassportStage', () => {
 
   it('unclaimed + signed in → onboarding', () => {
     expect(resolvePassportStage(view({}), 'user-1')).toBe('onboarding')
+  })
+
+  it('live transfer code on a claimed piece → offer (signed in) / teaser (signed out)', () => {
+    const offered = view({ isClaimed: true, isOwner: false, transferValid: true })
+    expect(resolvePassportStage(offered, 'user-2')).toBe('transfer_offer')
+    expect(resolvePassportStage(offered, null)).toBe('transfer_teaser')
+  })
+
+  it('a dead transfer code falls back to the public view', () => {
+    const claimed = view({ isClaimed: true, isOwner: false, transferValid: false })
+    expect(resolvePassportStage(claimed, 'user-2')).toBe('public')
+  })
+
+  it('the owner stays owner even while a transfer is pending', () => {
+    const mine = view({ isClaimed: true, isOwner: true, isTransferPending: true })
+    expect(resolvePassportStage(mine, 'user-1')).toBe('owner')
   })
 })
