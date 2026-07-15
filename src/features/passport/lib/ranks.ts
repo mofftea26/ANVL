@@ -1,19 +1,28 @@
 import type { OwnedPassport } from '../schemas/passport.schema'
 
 /**
- * Armory gamification — ranks, badges, and drop completion are derived
- * client-side from the owner's claimed passports plus the storefront catalog.
- * No server state: tamper-proofing is a future concern (see feature doc).
+ * Armory gamification — ranks (with three levels each), badges, and drop
+ * completion are derived client-side from the owner's registered passports
+ * plus the storefront catalog. No server state: tamper-proofing is a future
+ * concern (see feature doc). NO serial-number-based mechanics (final product
+ * decision).
  */
 
+export type ArmoryRankKey = 'initiate' | 'forged' | 'oathbound' | 'warlord'
+
 export interface ArmoryRank {
-  key: 'initiate' | 'forged' | 'oathbound' | 'warlord'
+  key: ArmoryRankKey
+  /** 1..3 within the rank (rendered as I · II · III pips). */
+  level: 1 | 2 | 3
+  /** e.g. "Forged II". */
   title: string
   description: string
+  /** Rank emblem artwork (code-owned, public/brand/ranks). */
+  emblemSrc: string
 }
 
 export interface ArmoryBadge {
-  key: 'first-claim' | 'low-serial' | 'full-drop'
+  key: 'first-claim' | 'full-drop'
   title: string
   description: string
 }
@@ -32,7 +41,25 @@ export interface CatalogProductRef {
   dropName: string
 }
 
-export const LOW_SERIAL_THRESHOLD = 10
+const ROMAN: Record<1 | 2 | 3, string> = { 1: 'I', 2: 'II', 3: 'III' }
+
+const RANK_COPY: Record<ArmoryRankKey, { title: string; description: string }> = {
+  initiate: { title: 'Initiate', description: 'The forge has noticed you.' },
+  forged: { title: 'Forged', description: 'Steel with your name on it.' },
+  oathbound: { title: 'Oathbound', description: 'The oath holds — piece by piece.' },
+  warlord: { title: 'Warlord', description: 'A full drop stands forged in your armory.' },
+}
+
+function rank(key: ArmoryRankKey, level: 1 | 2 | 3): ArmoryRank {
+  const copy = RANK_COPY[key]
+  return {
+    key,
+    level,
+    title: `${copy.title} ${ROMAN[level]}`,
+    description: copy.description,
+    emblemSrc: `/brand/ranks/${key}.png`,
+  }
+}
 
 /**
  * Distinct-product completion per drop. Only drops present in the catalog
@@ -63,63 +90,54 @@ export function hasFullDrop(completion: readonly DropCompletion[]): boolean {
   return completion.some((d) => d.total > 0 && d.claimed >= d.total)
 }
 
-/** Rank ladder: 0 → Initiate, 1+ → Forged, 3+ → Oathbound, full drop → Warlord. */
+function completedDropCount(completion: readonly DropCompletion[]): number {
+  return completion.filter((d) => d.total > 0 && d.claimed >= d.total).length
+}
+
+/**
+ * Rank ladder (each rank has levels I–III; thresholds are tunable copy):
+ *   Initiate  I/II/III → 0 / 1 / 2 registrations
+ *   Forged    I/II/III → 3 / 4 / 5
+ *   Oathbound I/II/III → 6 / 8 / 10
+ *   Warlord   I → one full drop · II → full drop + 12 pieces · III → two full drops
+ */
 export function deriveArmoryRank(
   claimCount: number,
   completion: readonly DropCompletion[],
 ): ArmoryRank {
-  if (hasFullDrop(completion)) {
-    return {
-      key: 'warlord',
-      title: 'Warlord',
-      description: 'A full drop stands forged in your armory.',
-    }
-  }
-  if (claimCount >= 3) {
-    return {
-      key: 'oathbound',
-      title: 'Oathbound',
-      description: 'Three pieces sworn. The oath holds.',
-    }
-  }
-  if (claimCount >= 1) {
-    return {
-      key: 'forged',
-      title: 'Forged',
-      description: 'Your first piece bears your name.',
-    }
-  }
-  return {
-    key: 'initiate',
-    title: 'Initiate',
-    description: 'Scan your first passport to enter the forge.',
-  }
+  const fullDrops = completedDropCount(completion)
+  if (fullDrops >= 2) return rank('warlord', 3)
+  if (fullDrops >= 1 && claimCount >= 12) return rank('warlord', 2)
+  if (fullDrops >= 1) return rank('warlord', 1)
+  if (claimCount >= 10) return rank('oathbound', 3)
+  if (claimCount >= 8) return rank('oathbound', 2)
+  if (claimCount >= 6) return rank('oathbound', 1)
+  if (claimCount >= 5) return rank('forged', 3)
+  if (claimCount >= 4) return rank('forged', 2)
+  if (claimCount >= 3) return rank('forged', 1)
+  if (claimCount >= 2) return rank('initiate', 3)
+  if (claimCount >= 1) return rank('initiate', 2)
+  return rank('initiate', 1)
 }
 
+/** Badges — none are serial-number based (final product decision). */
 export function deriveArmoryBadges(
-  owned: readonly Pick<OwnedPassport, 'serialNumber'>[],
+  ownedCount: number,
   completion: readonly DropCompletion[],
 ): ArmoryBadge[] {
   const badges: ArmoryBadge[] = []
-  if (owned.length >= 1) {
+  if (ownedCount >= 1) {
     badges.push({
       key: 'first-claim',
       title: 'First Strike',
-      description: 'Claimed your first passport.',
-    })
-  }
-  if (owned.some((p) => p.serialNumber <= LOW_SERIAL_THRESHOLD)) {
-    badges.push({
-      key: 'low-serial',
-      title: 'Early Steel',
-      description: `Holds a forge number of ${LOW_SERIAL_THRESHOLD} or lower.`,
+      description: 'Registered your first passport.',
     })
   }
   if (hasFullDrop(completion)) {
     badges.push({
       key: 'full-drop',
       title: 'Drop Complete',
-      description: 'Every piece of a drop, claimed.',
+      description: 'Every piece of a drop, registered.',
     })
   }
   return badges

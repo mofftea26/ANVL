@@ -6,21 +6,15 @@ import type { PassportMotionState } from './passportMotionState'
 import { PassportForgeParticles } from './PassportForgeParticles'
 
 /**
- * The passport console's fixed full-viewport canvas: the piece's ember forge
- * plus a quiet dust field. Lazy-loaded (vendor-three) behind PassportForgeGate.
- * Pointer-transparent — all interaction stays in the DOM.
+ * The passport console's fixed full-viewport canvas: the bento-card ember
+ * tracing plus a quiet dust field. Lazy-loaded (vendor-three) behind
+ * PassportForgeGate. Pointer-transparent — all interaction stays in the DOM.
  */
-export default function PassportForgeCanvas({
-  motion,
-  imageUrl,
-}: {
-  motion: PassportMotionState
-  imageUrl: string | null
-}) {
+export default function PassportForgeCanvas({ motion }: { motion: PassportMotionState }) {
   useCanvasTeardownMark()
   const dust = useMemo(() => createDustDrive({ decayGlint: true, lift: 0.5 }), [])
 
-  // One passive pointer listener feeds both the forge parallax and the dust.
+  // One passive pointer listener feeds the dust parallax.
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
       const nx = (e.clientX / window.innerWidth) * 2 - 1
@@ -42,8 +36,8 @@ export default function PassportForgeCanvas({
         dpr={[1, 1.75]}
         style={{ pointerEvents: 'none' }}
       >
-        <PassportForgeParticles motion={motion} imageUrl={imageUrl} />
-        <DustField drive={dust} count={320} />
+        <PassportForgeParticles motion={motion} />
+        <DustField drive={dust} count={280} />
       </Canvas>
     </div>
   )

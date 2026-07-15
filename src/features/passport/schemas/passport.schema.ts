@@ -19,6 +19,8 @@ export const passportViewSchema = z
     claimed_at: z.string().nullable().catch(null),
     claimed_color: z.string().nullable().catch(null),
     claimed_size: z.string().nullable().catch(null),
+    // Owner-controlled visibility (absent from claim/accept payloads → default).
+    is_public: z.boolean().default(false).catch(false),
     // Transfer state (absent from claim/accept RPC payloads → defaults).
     is_transfer_pending: z.boolean().default(false).catch(false),
     transfer_valid: z.boolean().default(false).catch(false),
@@ -34,6 +36,7 @@ export const passportViewSchema = z
     claimedAt: raw.claimed_at,
     claimedColor: raw.claimed_color,
     claimedSize: raw.claimed_size,
+    isPublic: raw.is_public,
     isTransferPending: raw.is_transfer_pending,
     transferValid: raw.transfer_valid,
   }))
@@ -115,8 +118,3 @@ export const ownedPassportSchema = z
 
 export type OwnedPassport = z.infer<typeof ownedPassportSchema>
 
-/** Formats a forge serial as an engraved plate string, e.g. `#017 / 100`. */
-export function formatForgeSerial(serialNumber: number, editionTotal: number): string {
-  const padded = String(serialNumber).padStart(3, '0')
-  return `#${padded} / ${editionTotal}`
-}

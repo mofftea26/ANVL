@@ -58,6 +58,9 @@ export const passportOriginSectionSchema = z.object({
   story: z.string().catch(''),
   /** Optional custom map/atelier image (media id) — blank uses the SVG map. */
   asset: z.string().catch(''),
+  /** Country preset keys (passportCountries.ts) — pins on the world map. */
+  madeIn: z.string().catch(''),
+  designedIn: z.string().catch(''),
 })
 
 export const passportProductContentSchema = z.object({
@@ -72,7 +75,14 @@ export const passportProductContentSchema = z.object({
     funFact: '',
     asset: '',
   }),
-  origin: passportOriginSectionSchema.catch({ label: '', place: '', story: '', asset: '' }),
+  origin: passportOriginSectionSchema.catch({
+    label: '',
+    place: '',
+    story: '',
+    asset: '',
+    madeIn: '',
+    designedIn: '',
+  }),
 })
 
 export type PassportProductContent = z.infer<typeof passportProductContentSchema>
@@ -83,7 +93,7 @@ export const DEFAULT_PASSPORT_PRODUCT_CONTENT: PassportProductContent = {
   material: { title: '', note: '', macroAsset: '' },
   care: { intro: '', steps: [], asset: '' },
   details: { heading: '', story: '', facts: [], funFact: '', asset: '' },
-  origin: { label: '', place: '', story: '', asset: '' },
+  origin: { label: '', place: '', story: '', asset: '', madeIn: '', designedIn: '' },
 }
 
 export type PassportContentConfig = Record<string, PassportProductContent>

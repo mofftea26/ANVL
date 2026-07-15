@@ -7,6 +7,7 @@ import {
   fetchPassportByToken,
   initiatePassportTransfer,
   listOwnedPassports,
+  setPassportVisibility,
 } from '../api/passportClient'
 import type { ClaimPassportInput, PassportView } from '../schemas/passport.schema'
 
@@ -47,6 +48,17 @@ export function useClaimPassportMutation() {
       if (result.ok) {
         void qc.invalidateQueries({ queryKey: passportQueryKeys.all })
       }
+    },
+  })
+}
+
+export function useSetVisibilityMutation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { token: string; isPublic: boolean }) =>
+      setPassportVisibility(input.token, input.isPublic),
+    onSuccess: (ok) => {
+      if (ok) void qc.invalidateQueries({ queryKey: passportQueryKeys.all })
     },
   })
 }

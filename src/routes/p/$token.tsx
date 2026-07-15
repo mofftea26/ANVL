@@ -32,7 +32,7 @@ export const Route = createFileRoute('/p/$token')({
           mediaIndex: [],
           productSlug: '',
         }),
-        hasStoryBook: false,
+        storyChapter: null,
       }
     }
     const [product, projection, storyBook] = await Promise.all([
@@ -59,7 +59,7 @@ export const Route = createFileRoute('/p/$token')({
       mediaIndex: projection.mediaIndex,
       productSlug: view.productSlug,
     })
-    return { token: params.token, view, product, content, hasStoryBook: Boolean(storyBook) }
+    return { token: params.token, view, product, content, storyChapter: storyBook }
   },
   head: ({ loaderData }) =>
     buildSeoMeta({

@@ -7,7 +7,7 @@ import {
   deriveArmoryBadges,
   deriveArmoryRank,
 } from '@/features/passport/lib/ranks'
-import { ForgeSerialPlate } from '@/features/passport/components/ForgeSerialPlate'
+import { AuthenticityPlate } from '@/features/passport/components/AuthenticityPlate'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import {
   accountCardBg,
@@ -41,15 +41,46 @@ export function ArmoryPanel() {
 
   const completion = computeDropCompletion(owned, catalog)
   const rank = deriveArmoryRank(owned.length, completion)
-  const badges = deriveArmoryBadges(owned, completion)
+  const badges = deriveArmoryBadges(owned.length, completion)
   const startedDrops = completion.filter((d) => d.claimed > 0)
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Rank" icon={<Medal size={15} />}>
-          <p className="anvl-heading mt-1 text-3xl text-[var(--color-heading)]">{rank.title}</p>
-          <p className="anvl-micro text-[var(--color-text-muted)]">{rank.description}</p>
+          <div className="mt-1 flex items-center gap-3">
+            <img
+              src={rank.emblemSrc}
+              alt={`${rank.title} rank emblem`}
+              width={96}
+              height={96}
+              loading="lazy"
+              decoding="async"
+              className="h-14 w-14 shrink-0 object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)]"
+            />
+            <div className="min-w-0">
+              <p className="anvl-heading truncate text-2xl text-[var(--color-heading)]">
+                {rank.title}
+              </p>
+              <span
+                className="mt-1 inline-flex items-center gap-1"
+                aria-label={`Level ${rank.level} of 3`}
+              >
+                {[1, 2, 3].map((pip) => (
+                  <span
+                    key={pip}
+                    aria-hidden="true"
+                    className={
+                      pip <= rank.level
+                        ? 'h-1.5 w-4 rounded-full bg-[var(--color-highlight-bright)]'
+                        : 'h-1.5 w-4 rounded-full bg-[var(--color-surface-elevated)]'
+                    }
+                  />
+                ))}
+              </span>
+            </div>
+          </div>
+          <p className="anvl-micro mt-2 text-[var(--color-text-muted)]">{rank.description}</p>
         </AccountBentoCard>
         <AccountBentoCard bg={accountCardBg('gold')} eyebrow="Forged" icon={<Swords size={15} />}>
           <p className="anvl-heading mt-1 text-3xl text-[var(--color-heading)]">{owned.length}</p>
@@ -137,11 +168,7 @@ export function ArmoryPanel() {
               icon={<QrCode size={15} />}
             >
               <div className="mt-1 flex flex-wrap items-center gap-3">
-                <ForgeSerialPlate
-                  serialNumber={p.serialNumber}
-                  editionTotal={p.editionTotal}
-                  size="sm"
-                />
+                <AuthenticityPlate editionTotal={p.editionTotal} size="sm" />
                 {p.claimedColor ? (
                   <span className="anvl-micro text-[var(--color-text-muted)]">{p.claimedColor}</span>
                 ) : null}

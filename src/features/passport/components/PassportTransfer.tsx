@@ -16,7 +16,7 @@ import {
   useInitiateTransferMutation,
 } from '../hooks/usePassport'
 import type { AcceptTransferError, PassportView } from '../schemas/passport.schema'
-import { ForgeSerialPlate } from './ForgeSerialPlate'
+import { AuthenticityPlate } from './AuthenticityPlate'
 import { PassportAtmosphere } from './PassportAtmosphere'
 
 /* ------------------------------------------------------------------------ *
@@ -218,7 +218,7 @@ export function PassportTransferAccept({
           {view.productName}
         </h1>
         <div className="mt-8 flex justify-center">
-          <ForgeSerialPlate serialNumber={view.serialNumber} editionTotal={view.editionTotal} />
+          <AuthenticityPlate editionTotal={view.editionTotal} />
         </div>
         <p className="mt-8 text-sm leading-relaxed text-[var(--color-text-muted)]">
           Accepting re-forges this passport to your name — it leaves{' '}

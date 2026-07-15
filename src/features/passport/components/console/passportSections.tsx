@@ -1,24 +1,39 @@
-import type { LucideIcon } from 'lucide-react'
-import { BadgeCheck, Flame, MapPin, Shirt, Sparkles } from 'lucide-react'
 import type { Product } from '@/features/products/types/product.types'
+import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import type { ResolvedPassportContent } from '../../lib/resolvePassportContent'
 import type { PassportView } from '../../schemas/passport.schema'
-import { PassportOriginMap } from '../PassportOriginMap'
+import { PassportStoryChapter } from '../PassportStoryChapter'
+import { WorldOriginMap } from '../WorldOriginMap'
 
 export interface PassportSectionContext {
   view: PassportView
   product: Product | null
   content: ResolvedPassportContent
   claimedDate: string | null
+  storyChapter: StoryChapter | null
 }
 
-export type PassportSectionKey = 'material' | 'care' | 'details' | 'origin' | 'authenticity'
+export type PassportSectionKey =
+  | 'material'
+  | 'details'
+  | 'care'
+  | 'story'
+  | 'origin'
+  | 'authenticity'
+
+export type PassportSectionGroup = 'craft' | 'ritual' | 'legacy'
+
+export const PASSPORT_GROUPS: Array<{ key: PassportSectionGroup; label: string }> = [
+  { key: 'craft', label: 'The Craft' },
+  { key: 'ritual', label: 'The Ritual' },
+  { key: 'legacy', label: 'The Legacy' },
+]
 
 export interface PassportSectionDef {
   key: PassportSectionKey
+  group: PassportSectionGroup
   title: string
   eyebrow: string
-  icon: LucideIcon
   available: (ctx: PassportSectionContext) => boolean
   teaser: (ctx: PassportSectionContext) => string
   cardImage?: (ctx: PassportSectionContext) => string | undefined
@@ -27,15 +42,16 @@ export interface PassportSectionDef {
 
 /**
  * The passport's section registry — one entry per bento card on the desktop
- * console AND per step in the CMS wizard AND per block in the mobile dossier,
- * so the three surfaces can never drift apart.
+ * console AND per block in the mobile dossier AND (loosely) per CMS wizard
+ * step, grouped into the console's tab categories, so the surfaces can never
+ * drift apart. No icons by design — cards carry champagne numerals instead.
  */
 export const PASSPORT_SECTIONS: PassportSectionDef[] = [
   {
     key: 'material',
+    group: 'craft',
     title: 'Material dossier',
     eyebrow: 'Fabric',
-    icon: Shirt,
     available: ({ content, product }) =>
       Boolean(content.material.title || content.material.note || product?.fabric),
     teaser: ({ content, product }) =>
@@ -61,51 +77,23 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
             height={800}
             loading="lazy"
             decoding="async"
-            className="max-h-[38vh] w-auto rounded-xl border border-[var(--color-line)] object-cover"
+            className="max-h-[26vh] w-full rounded-xl border border-[var(--color-line)] object-cover"
           />
         ) : null}
       </div>
     ),
   },
   {
-    key: 'care',
-    title: 'Care ritual',
-    eyebrow: 'Ritual',
-    icon: Flame,
-    available: ({ content }) => content.care.steps.length > 0,
-    teaser: ({ content }) =>
-      content.care.intro || `${content.care.steps.length} steps to keep the forge sharp.`,
-    Detail: ({ ctx }) => (
-      <div className="space-y-6">
-        {ctx.content.care.intro ? (
-          <p className="max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)]">
-            {ctx.content.care.intro}
-          </p>
-        ) : null}
-        <ol className="space-y-4">
-          {ctx.content.care.steps.map((step, i) => (
-            <li key={step} className="flex gap-4 text-sm text-[var(--color-text-muted)]">
-              <span className="anvl-heading text-lg text-[var(--color-highlight-bright)]">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <span className="pt-1">{step}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-    ),
-  },
-  {
     key: 'details',
+    group: 'craft',
     title: 'Forged details',
-    eyebrow: 'Story',
-    icon: Sparkles,
+    eyebrow: 'Design',
     available: ({ content }) =>
       Boolean(content.details.story || content.details.facts.length || content.details.funFact),
     teaser: ({ content }) =>
       content.details.funFact ||
       content.details.story.slice(0, 90) ||
-      'Design decisions, hidden details, one fun fact.',
+      'Design decisions, hidden details, one forge fact.',
     cardImage: ({ content }) => content.details.assetUrl,
     Detail: ({ ctx }) => (
       <div className="space-y-6">
@@ -139,10 +127,51 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
     ),
   },
   {
+    key: 'care',
+    group: 'ritual',
+    title: 'Care ritual',
+    eyebrow: 'Preserve',
+    available: ({ content }) => content.care.steps.length > 0,
+    teaser: ({ content }) =>
+      content.care.intro || `${content.care.steps.length} steps to keep the forge sharp.`,
+    Detail: ({ ctx }) => (
+      <div className="space-y-6">
+        {ctx.content.care.intro ? (
+          <p className="max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)]">
+            {ctx.content.care.intro}
+          </p>
+        ) : null}
+        <ol className="space-y-4">
+          {ctx.content.care.steps.map((step, i) => (
+            <li key={step} className="flex gap-4 text-sm text-[var(--color-text-muted)]">
+              <span className="anvl-heading text-lg text-[var(--color-highlight-bright)]">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span className="pt-1">{step}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    ),
+  },
+  {
+    key: 'story',
+    group: 'legacy',
+    title: 'The story',
+    eyebrow: 'Saga',
+    available: ({ storyChapter }) => Boolean(storyChapter && storyChapter.acts.length > 0),
+    teaser: ({ storyChapter }) =>
+      storyChapter?.subtitle ||
+      storyChapter?.description.slice(0, 90) ||
+      'The chapter behind this piece.',
+    Detail: ({ ctx }) =>
+      ctx.storyChapter ? <PassportStoryChapter chapter={ctx.storyChapter} /> : null,
+  },
+  {
     key: 'origin',
+    group: 'legacy',
     title: 'Origin',
     eyebrow: 'Provenance',
-    icon: MapPin,
     available: () => true,
     teaser: ({ content }) =>
       content.origin.place
@@ -151,12 +180,11 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
     cardImage: ({ content }) => content.origin.assetUrl,
     Detail: ({ ctx }) => (
       <div className="space-y-6">
-        <PassportOriginMap />
-        {ctx.content.origin.place ? (
-          <p className="anvl-micro text-center text-[var(--color-text-muted)]">
-            {ctx.content.origin.place}
-          </p>
-        ) : null}
+        <WorldOriginMap
+          madeIn={ctx.content.origin.madeIn}
+          designedIn={ctx.content.origin.designedIn}
+          label={ctx.content.origin.label}
+        />
         {ctx.content.origin.story ? (
           <p className="mx-auto max-w-xl text-center text-sm leading-relaxed text-[var(--color-text-muted)]">
             {ctx.content.origin.story}
@@ -167,25 +195,23 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
   },
   {
     key: 'authenticity',
+    group: 'legacy',
     title: 'Authenticity',
     eyebrow: 'Verified',
-    icon: BadgeCheck,
     available: () => true,
-    teaser: ({ view }) => `Token-verified · one of ${view.editionTotal}`,
+    teaser: ({ view }) => `Verified · limited to ${view.editionTotal} pieces`,
     Detail: ({ ctx }) => (
       <div className="max-w-xl space-y-4">
         <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
           {ctx.content.identity.authenticityNote ||
-            'This passport is bound to a single unit and a single owner. The claim is atomic — once forged to a name, this QR can never be claimed again.'}
+            'This passport is bound to a single unit and a single owner. The registration is atomic — once forged to a name, this QR can never be claimed again.'}
         </p>
         <dl className="grid grid-cols-2 gap-4">
-          <DetailStat
-            term="Forge number"
-            detail={`${ctx.view.serialNumber} of ${ctx.view.editionTotal}`}
-          />
-          {ctx.claimedDate ? <DetailStat term="Forged on" detail={ctx.claimedDate} /> : null}
+          <DetailStat term="Status" detail="Authentic ANVL product" />
+          <DetailStat term="Edition" detail={`Limited to ${ctx.view.editionTotal} pieces`} />
+          {ctx.claimedDate ? <DetailStat term="Registered" detail={ctx.claimedDate} /> : null}
           {ctx.view.claimedDisplayName ? (
-            <DetailStat term="Forged by" detail={ctx.view.claimedDisplayName} />
+            <DetailStat term="Registered to" detail={ctx.view.claimedDisplayName} />
           ) : null}
         </dl>
       </div>

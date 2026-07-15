@@ -94,6 +94,17 @@ export async function claimPassport(input: ClaimPassportInput): Promise<ClaimPas
   return parsed.data
 }
 
+/** Owner toggles whether their passport is publicly verifiable with their name. */
+export async function setPassportVisibility(token: string, isPublic: boolean): Promise<boolean> {
+  const client = await getAuthedClient()
+  if (!client) return false
+  const { data, error } = await client.rpc('set_passport_visibility', {
+    p_token: token,
+    p_public: isPublic,
+  })
+  return !error && Boolean((data as { ok?: boolean } | null)?.ok)
+}
+
 /** Owner mints a one-time transfer code (7-day expiry, replaces any pending). */
 export async function initiatePassportTransfer(token: string): Promise<InitiateTransferResult> {
   const client = await getAuthedClient()

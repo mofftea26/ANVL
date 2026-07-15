@@ -23,7 +23,15 @@ export interface ResolvedPassportContent {
   material: { title: string; note: string; macroUrl?: string }
   care: { intro: string; steps: string[] }
   details: { heading: string; story: string; facts: string[]; funFact: string; assetUrl?: string }
-  origin: { label: string; place: string; story: string; assetUrl?: string }
+  origin: {
+    label: string
+    place: string
+    story: string
+    assetUrl?: string
+    /** Country preset keys for the world-map pins (passportCountries.ts). */
+    madeIn: string
+    designedIn: string
+  }
 }
 
 function firstNonEmpty(...vals: (string | undefined)[]): string {
@@ -97,6 +105,8 @@ export function resolvePassportContent(input: {
       place: c.origin.place.trim(),
       story: c.origin.story.trim(),
       assetUrl: media(c.origin.asset),
+      madeIn: firstNonEmpty(c.origin.madeIn, 'lebanon'),
+      designedIn: firstNonEmpty(c.origin.designedIn, 'lebanon'),
     },
   }
 }

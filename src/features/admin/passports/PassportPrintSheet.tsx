@@ -107,9 +107,9 @@ export default function PassportPrintSheet({
               <div className="aspect-square w-full animate-pulse bg-neutral-100" />
             )}
             <figcaption className="mt-2">
-              <p className="font-mono text-sm font-bold">
-                #{String(p.serialNumber).padStart(3, '0')} / {p.editionTotal}
-              </p>
+              {/* No serial on the printed card — it reaches the customer
+                  (final product decision: serials are internal-only). */}
+              <p className="text-sm font-bold uppercase tracking-[0.14em]">ANVL</p>
               <p className="truncate text-[10px] uppercase tracking-wider text-neutral-500">
                 {p.productName}
               </p>

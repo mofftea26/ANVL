@@ -14,6 +14,7 @@ function view(overrides: Partial<PassportView>): PassportView {
     claimedAt: null,
     claimedColor: null,
     claimedSize: null,
+    isPublic: false,
     isTransferPending: false,
     transferValid: false,
     ...overrides,

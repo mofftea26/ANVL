@@ -3,10 +3,10 @@ import { useGSAP } from '@gsap/react'
 import { createDustDrive } from '@/shared/webgl/DustField'
 import { isWebglAvailable } from '@/shared/webgl/isWebglAvailable'
 import { useCanvasMountGate } from '@/shared/webgl/canvasTeardownGuard'
+import { AnvlCrest } from '@/shared/assets/brand'
 import { useLockPageScroll } from '@/shared/hooks/useLockPageScroll'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import { gsap } from '@/shared/lib/gsap'
-import { formatForgeSerial } from '../schemas/passport.schema'
 
 const CeremonyEmberLayer = lazy(() => import('./CeremonyEmberLayer'))
 
@@ -20,14 +20,12 @@ const SPARK_COUNT = 26
  */
 export function ClaimCeremony({
   productName,
-  serialNumber,
   editionTotal,
   ownerName,
   claimedDate,
   onComplete,
 }: {
   productName: string
-  serialNumber: number
   editionTotal: number
   ownerName: string
   claimedDate: string
@@ -217,8 +215,20 @@ export function ClaimCeremony({
             ))}
           </div>
           <div data-cer-plate className="relative opacity-0">
-            <span className="anvl-heading inline-flex items-center rounded-lg border border-[color-mix(in_oklab,var(--color-highlight)_40%,var(--color-line))] bg-[linear-gradient(160deg,var(--color-surface-elevated)_0%,var(--color-surface)_60%)] px-8 py-4 text-4xl tracking-[0.18em] text-[var(--color-heading)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_20px_60px_-20px_rgba(0,0,0,0.9)] sm:text-5xl">
-              {formatForgeSerial(serialNumber, editionTotal)}
+            {/* The seal stamps in — crest + authenticity, never a serial. */}
+            <span className="inline-flex items-center gap-4 rounded-lg border border-[color-mix(in_oklab,var(--color-highlight)_40%,var(--color-line))] bg-[linear-gradient(160deg,var(--color-surface-elevated)_0%,var(--color-surface)_60%)] px-8 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_20px_60px_-20px_rgba(0,0,0,0.9)]">
+              <AnvlCrest
+                aria-label="ANVL crest"
+                className="h-12 w-auto text-[var(--color-highlight-bright)] sm:h-14"
+              />
+              <span className="flex flex-col text-left">
+                <span className="anvl-heading text-2xl tracking-[0.2em] text-[var(--color-heading)] sm:text-3xl">
+                  Authentic ANVL
+                </span>
+                <span className="anvl-micro text-[var(--color-text-muted)]">
+                  Limited to {editionTotal} pieces
+                </span>
+              </span>
             </span>
           </div>
         </div>

@@ -87,7 +87,7 @@ export function ComingSoonExperience({
           Pointer-transparent: strikes still pass through to the canvas. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-[5] [background:radial-gradient(42%_58%_at_50%_46%,color-mix(in_oklab,var(--color-bg)_74%,transparent)_0%,color-mix(in_oklab,var(--color-bg)_48%,transparent)_52%,transparent_78%)]"
+        className="pointer-events-none absolute inset-0 z-[5] [background:radial-gradient(42%_58%_at_50%_46%,color-mix(in_oklab,var(--color-bg)_55%,transparent)_0%,color-mix(in_oklab,var(--color-bg)_32%,transparent)_52%,transparent_78%)]"
       />
 
       {/* Content column — pointer-transparent so the forge stays strikable;

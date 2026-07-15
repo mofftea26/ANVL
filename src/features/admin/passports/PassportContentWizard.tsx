@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import type { CmsMediaAsset } from '@/features/admin/media/mediaAssets.types'
 import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotField'
+import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
+import { PASSPORT_COUNTRIES } from '@/features/passport/lib/passportCountries'
 import type { PassportProductContent } from '@/features/cms/passportContent/passportContent.zod'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
@@ -265,6 +267,24 @@ export function PassportContentWizard({
 
           {active.key === 'origin' ? (
             <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <AdminFieldSelect
+                  label="Designed in"
+                  value={draft.origin.designedIn}
+                  onChange={(v) => patch('origin', { designedIn: v })}
+                  options={PASSPORT_COUNTRIES.map((c) => ({ value: c.key, label: c.label }))}
+                  placeholder="Pick a country…"
+                  hint="Outline pin on the passport's world map."
+                />
+                <AdminFieldSelect
+                  label="Made in"
+                  value={draft.origin.madeIn}
+                  onChange={(v) => patch('origin', { madeIn: v })}
+                  options={PASSPORT_COUNTRIES.map((c) => ({ value: c.key, label: c.label }))}
+                  placeholder="Pick a country…"
+                  hint="Pulsing pin on the passport's world map."
+                />
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField label="Label" hint="Blank → “Forged in Lebanon”." labelStyle="stacked">
                   <Input

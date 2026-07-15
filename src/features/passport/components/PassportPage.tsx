@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
-import { BadgeCheck, BookOpen } from 'lucide-react'
+import { BadgeCheck } from 'lucide-react'
 import type { Product } from '@/features/products/types/product.types'
+import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import { SectionEyebrow } from '@/shared/components/premium/SectionEyebrow'
 import { buttonVariants } from '@/shared/components/ui/Button'
 import { cn } from '@/shared/lib/cn'
@@ -11,11 +12,12 @@ import type { ResolvedPassportContent } from '../lib/resolvePassportContent'
 import type { PassportView } from '../schemas/passport.schema'
 import { PassportConsole } from './console/PassportConsole'
 import {
+  PASSPORT_GROUPS,
   PASSPORT_SECTIONS,
   type PassportSectionContext,
 } from './console/passportSections'
 import { PASSPORT_CONSOLE_MQ } from '../webgl/PassportForgeGate'
-import { ForgeSerialPlate } from './ForgeSerialPlate'
+import { AuthenticityPlate } from './AuthenticityPlate'
 import { PassportAtmosphere } from './PassportAtmosphere'
 
 export interface PassportPageProps {
@@ -23,9 +25,9 @@ export interface PassportPageProps {
   view: PassportView
   product: Product | null
   content: ResolvedPassportContent
-  hasStoryBook: boolean
+  storyChapter: StoryChapter | null
   claimedDate: string | null
-  /** Owner-only extra controls (e.g. transfer ownership) rendered by the hero. */
+  /** Owner-only extra controls (visibility switch, transfer) in the hero. */
   actions?: ReactNode
 }
 
@@ -44,9 +46,9 @@ function useConsoleMode(): boolean {
 
 /**
  * The passport itself. Owners on large motion-capable screens get the
- * no-scroll particle console; phones/tablets/reduced-motion get the scrolling
- * dossier (both driven by the same PASSPORT_SECTIONS registry). `public` is
- * the read-only authenticity view for anyone else scanning a claimed code.
+ * no-scroll ember console; phones/tablets/reduced-motion get the scrolling
+ * dossier (same PASSPORT_SECTIONS registry, grouped under the same category
+ * headings). `public` is the read-only authenticity view for anyone else.
  */
 export function PassportPage(props: PassportPageProps) {
   const consoleMode = useConsoleMode()
@@ -57,7 +59,7 @@ export function PassportPage(props: PassportPageProps) {
         view={props.view}
         product={props.product}
         content={props.content}
-        hasStoryBook={props.hasStoryBook}
+        storyChapter={props.storyChapter}
         claimedDate={props.claimedDate}
         actions={props.actions}
       />
@@ -75,7 +77,7 @@ function PassportDossier({
   view,
   product,
   content,
-  hasStoryBook,
+  storyChapter,
   claimedDate,
   actions,
 }: PassportPageProps) {
@@ -84,7 +86,8 @@ function PassportDossier({
 
   const heroImage = resolveHeroImage(view, product, content)
   const isOwner = variant === 'owner'
-  const ctx: PassportSectionContext = { view, product, content, claimedDate }
+  const ctx: PassportSectionContext = { view, product, content, claimedDate, storyChapter }
+  const availableSections = PASSPORT_SECTIONS.filter((s) => s.available(ctx))
 
   return (
     <div ref={scopeRef} className="relative bg-[var(--color-bg)]">
@@ -109,8 +112,8 @@ function PassportDossier({
             </p>
           ) : null}
           <div data-pp-hero className="mt-8 flex justify-center">
-            <ForgeSerialPlate
-              serialNumber={view.serialNumber}
+            <AuthenticityPlate
+              dropLabel={product?.dropName}
               editionTotal={view.editionTotal}
               size="lg"
             />
@@ -118,7 +121,7 @@ function PassportDossier({
           <div data-pp-hero className="mt-6 space-y-1">
             {view.claimedDisplayName ? (
               <p className="text-sm text-[var(--color-text)]">
-                Forged by{' '}
+                Registered to{' '}
                 <span className="font-semibold text-[var(--color-heading)]">
                   {view.claimedDisplayName}
                 </span>
@@ -129,7 +132,7 @@ function PassportDossier({
             ) : null}
             <p className="inline-flex items-center gap-1.5 text-xs text-[var(--color-success)]">
               <BadgeCheck aria-hidden="true" className="h-4 w-4" />
-              Verified authentic — one of {view.editionTotal}
+              Authentic ANVL product
             </p>
           </div>
           {isOwner && (view.claimedColor || view.claimedSize) ? (
@@ -146,10 +149,11 @@ function PassportDossier({
         </div>
       </section>
 
-      {/* The piece ------------------------------------------------------- */}
+      {/* The piece — deliberately modest on phones: the passport is a
+          dossier, not a product gallery, and the copy below is the point. */}
       {heroImage ? (
-        <section data-pp-reveal className="px-6 pb-16">
-          <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-[var(--color-line)]">
+        <section data-pp-reveal className="px-6 pb-14">
+          <div className="mx-auto w-full max-w-[14rem] overflow-hidden rounded-2xl border border-[var(--color-line)] sm:max-w-xs md:max-w-md">
             <img
               src={heroImage.src}
               alt={heroImage.alt || view.productName}
@@ -167,47 +171,36 @@ function PassportDossier({
         <PublicFooter productSlug={product?.slug ?? null} />
       ) : (
         <div className="mx-auto max-w-3xl space-y-16 px-6 pb-24">
-          {PASSPORT_SECTIONS.filter((s) => s.available(ctx)).map((s) => (
-            <section key={s.key} data-pp-reveal>
-              <h2 className="anvl-heading inline-flex items-center gap-3 text-2xl text-[var(--color-heading)]">
-                <s.icon aria-hidden="true" className="h-4 w-4 text-[var(--color-highlight-bright)]" />
-                {s.title}
-              </h2>
-              <div className="mt-6">
-                <s.Detail ctx={ctx} />
-              </div>
-            </section>
-          ))}
-
-          {hasStoryBook && product ? (
-            <section
-              data-pp-reveal
-              className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-8 text-center"
-            >
-              <BookOpen
-                aria-hidden="true"
-                className="mx-auto h-6 w-6 text-[var(--color-highlight-bright)]"
-              />
-              <h2 className="anvl-heading mt-4 text-2xl text-[var(--color-heading)]">
-                This piece has a story
-              </h2>
-              <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                Open its chapter in the ANVL saga.
-              </p>
-              <div className="mt-6 flex justify-center">
-                <Link
-                  to="/story"
-                  search={{ product: product.slug }}
-                  className={cn(
-                    buttonVariants({ variant: 'secondary', size: 'md' }),
-                    'no-underline',
-                  )}
+          {PASSPORT_GROUPS.map((g) => {
+            const sections = availableSections.filter((s) => s.group === g.key)
+            if (!sections.length) return null
+            return (
+              <div key={g.key} className="space-y-12">
+                <p
+                  data-pp-reveal
+                  className="anvl-micro border-b border-[var(--color-line)] pb-3 uppercase tracking-[0.24em] text-[var(--color-highlight-bright)]"
                 >
-                  Read the chapter
-                </Link>
+                  {g.label}
+                </p>
+                {sections.map((s, i) => (
+                  <section key={s.key} data-pp-reveal>
+                    <h2 className="anvl-heading inline-flex items-baseline gap-3 text-2xl text-[var(--color-heading)]">
+                      <span
+                        aria-hidden="true"
+                        className="text-base text-[var(--color-highlight-bright)]"
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      {s.title}
+                    </h2>
+                    <div className="mt-6">
+                      <s.Detail ctx={ctx} />
+                    </div>
+                  </section>
+                ))}
               </div>
-            </section>
-          ) : null}
+            )
+          })}
         </div>
       )}
     </div>
@@ -218,7 +211,7 @@ function PublicFooter({ productSlug }: { productSlug: string | null }) {
   return (
     <div className="mx-auto max-w-3xl px-6 pb-24 text-center" data-pp-reveal>
       <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-        This piece is already forged to its owner. Passports are one-owner, forever —
+        This piece is already registered to its owner. Passports are one-owner —
         scanning this code cannot transfer or duplicate it.
       </p>
       {productSlug ? (

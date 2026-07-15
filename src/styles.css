@@ -1616,3 +1616,40 @@ html[data-landing-entry='active'] body {
 .cs-anim-pending [data-cs-rule] {
   opacity: 0;
 }
+
+/* Passport console — a slow champagne light sweep over the product render
+ * (the embers live on the bento cards; the piece itself stays clean). */
+.pp-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.pp-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 32%,
+    color-mix(in oklab, var(--color-highlight-bright) 20%, transparent) 48%,
+    transparent 64%
+  );
+  transform: translateX(-130%);
+  animation: pp-sheen-sweep 6s ease-in-out infinite;
+}
+@keyframes pp-sheen-sweep {
+  0%,
+  55% {
+    transform: translateX(-130%);
+  }
+  80%,
+  100% {
+    transform: translateX(130%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-sheen::after {
+    animation: none;
+    opacity: 0;
+  }
+}

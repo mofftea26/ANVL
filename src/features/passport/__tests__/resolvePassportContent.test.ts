@@ -65,7 +65,14 @@ describe('resolvePassportContent', () => {
             funFact: 'Fun!',
             asset: '',
           },
-          origin: { label: 'Forged in Beirut', place: 'Beirut', story: '', asset: '' },
+          origin: {
+            label: 'Forged in Beirut',
+            place: 'Beirut',
+            story: '',
+            asset: '',
+            madeIn: 'lebanon',
+            designedIn: 'portugal',
+          },
         },
       },
       pdpContent: {

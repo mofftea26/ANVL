@@ -220,7 +220,8 @@ function StorefrontLayout() {
             <Outlet />
           </AppErrorBoundary>
         </main>
-        {showChrome ? (
+        {/* Passports (/p/*) are a focused artifact surface — no footer. */}
+        {showChrome && !pathname.startsWith('/p/') ? (
           <div className={cn('relative z-10', pathname === '/about' ? 'xl:hidden' : undefined)}>
             <SiteFooter navigation={navigation} />
           </div>

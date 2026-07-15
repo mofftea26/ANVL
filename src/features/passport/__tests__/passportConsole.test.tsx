@@ -4,8 +4,8 @@ import type { ResolvedPassportContent } from '@/features/passport/lib/resolvePas
 import type { PassportView } from '@/features/passport/schemas/passport.schema'
 
 // GSAP is decoration in the console — mock it away entirely. The regression
-// this suite guards: the section swap must work WITHOUT any animation clock
-// (it once hinged on a mid-timeline GSAP callback and content never appeared).
+// this suite guards: tab/section swaps must work WITHOUT any animation clock
+// (they once hinged on a mid-timeline GSAP callback and content never appeared).
 vi.mock('@/shared/lib/gsap', () => {
   const chain: Record<string, unknown> = {}
   chain.fromTo = () => chain
@@ -46,6 +46,7 @@ const view: PassportView = {
   claimedAt: '2026-07-14T10:00:00Z',
   claimedColor: 'Onyx',
   claimedSize: 'M',
+  isPublic: false,
   isTransferPending: false,
   transferValid: false,
 }
@@ -56,7 +57,14 @@ const content: ResolvedPassportContent = {
   material: { title: 'Heavyweight cotton', note: '240 GSM', macroUrl: undefined },
   care: { intro: '', steps: ['Cold wash', 'Hang dry'] },
   details: { heading: 'Forged details', story: 'A story.', facts: ['Fact'], funFact: '' },
-  origin: { label: 'Forged in Lebanon', place: 'Beirut', story: '', assetUrl: undefined },
+  origin: {
+    label: 'Forged in Lebanon',
+    place: 'Beirut',
+    story: '',
+    assetUrl: undefined,
+    madeIn: 'lebanon',
+    designedIn: 'portugal',
+  },
 }
 
 function renderConsole() {
@@ -65,13 +73,13 @@ function renderConsole() {
       view={view}
       product={null}
       content={content}
-      hasStoryBook={false}
+      storyChapter={null}
       claimedDate="14 July 2026"
     />,
   )
 }
 
-describe('PassportConsole section swap (no animation clock required)', () => {
+describe('PassportConsole tabs + section swap (no animation clock required)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
   })
@@ -79,39 +87,55 @@ describe('PassportConsole section swap (no animation clock required)', () => {
     vi.useRealTimers()
   })
 
-  it('opens a section detail after the swap timer and returns to the bento', () => {
+  it('defaults to THE CRAFT and opens a section detail after the swap timer', () => {
     renderConsole()
 
-    // Bento view: product heading + section cards.
     expect(screen.getByRole('heading', { name: 'Oversized Tee' })).toBeTruthy()
-    const originCard = screen.getByRole('button', { name: /origin/i })
-
-    fireEvent.click(originCard)
-    // Content swaps via setTimeout — never a GSAP callback.
-    act(() => {
-      vi.advanceTimersByTime(700)
-    })
-
-    expect(screen.getByRole('heading', { name: 'Origin' })).toBeTruthy()
-    expect(screen.getByText('Beirut')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: /back to the passport/i }))
-    act(() => {
-      vi.advanceTimersByTime(700)
-    })
-
-    expect(screen.getByRole('heading', { name: 'Oversized Tee' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /the craft/i })).toBeTruthy()
+    // Craft group cards only.
     expect(screen.getByRole('button', { name: /material dossier/i })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /origin/i })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /material dossier/i }))
+    act(() => {
+      vi.advanceTimersByTime(700)
+    })
+    expect(screen.getByRole('heading', { name: 'Material dossier' })).toBeTruthy()
+    expect(screen.getByText('240 GSM')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: /back to the craft/i }))
+    act(() => {
+      vi.advanceTimersByTime(700)
+    })
+    expect(screen.getByRole('heading', { name: 'Oversized Tee' })).toBeTruthy()
+  })
+
+  it('switches groups via tabs and shows the world-map origin section', () => {
+    renderConsole()
+
+    fireEvent.click(screen.getByRole('tab', { name: /the legacy/i }))
+    act(() => {
+      vi.advanceTimersByTime(700)
+    })
+    expect(screen.getByRole('button', { name: /origin/i })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: /origin/i }))
+    act(() => {
+      vi.advanceTimersByTime(700)
+    })
+    expect(screen.getByRole('heading', { name: 'Origin' })).toBeTruthy()
+    // Two pins: designed in Portugal, made in Lebanon.
+    expect(screen.getByText('Portugal')).toBeTruthy()
+    expect(screen.getByText('Lebanon')).toBeTruthy()
   })
 
   it('ignores re-clicks while a transition is in flight', () => {
     renderConsole()
-    fireEvent.click(screen.getByRole('button', { name: /origin/i }))
-    // Mid-flight: clicking another card must not double-swap.
-    fireEvent.click(screen.getByRole('button', { name: /care ritual/i }))
+    fireEvent.click(screen.getByRole('button', { name: /material dossier/i }))
+    fireEvent.click(screen.getByRole('button', { name: /forged details/i }))
     act(() => {
       vi.advanceTimersByTime(700)
     })
-    expect(screen.getByRole('heading', { name: 'Origin' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Material dossier' })).toBeTruthy()
   })
 })

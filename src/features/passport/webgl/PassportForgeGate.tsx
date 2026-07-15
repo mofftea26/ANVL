@@ -14,13 +14,7 @@ export const PASSPORT_CONSOLE_MQ =
  * the `lazy()` import is what pulls `vendor-three`, so it only happens after
  * the gate passes; context-lost self-heals via a keyed remount.
  */
-export function PassportForgeGate({
-  motion,
-  imageUrl,
-}: {
-  motion: PassportMotionState
-  imageUrl: string | null
-}) {
+export function PassportForgeGate({ motion }: { motion: PassportMotionState }) {
   const [active, setActive] = useState(false)
   const mountable = useCanvasMountGate(active)
 
@@ -38,7 +32,7 @@ export function PassportForgeGate({
 
   return (
     <Suspense fallback={null}>
-      <PassportForgeCanvas motion={motion} imageUrl={imageUrl} />
+      <PassportForgeCanvas motion={motion} />
     </Suspense>
   )
 }

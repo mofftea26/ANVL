@@ -16,7 +16,7 @@ import type {
   ClaimPassportError,
   PassportView,
 } from '../schemas/passport.schema'
-import { ForgeSerialPlate } from './ForgeSerialPlate'
+import { AuthenticityPlate } from './AuthenticityPlate'
 import { PassportAtmosphere } from './PassportAtmosphere'
 
 const onboardingSchema = z.object({
@@ -153,11 +153,7 @@ export function PassportOnboarding({
             </div>
           )}
           <div className="absolute -bottom-4 left-1/2 -translate-x-1/2">
-            <ForgeSerialPlate
-              serialNumber={view.serialNumber}
-              editionTotal={view.editionTotal}
-              size="sm"
-            />
+            <AuthenticityPlate editionTotal={view.editionTotal} size="sm" />
           </div>
         </div>
 
@@ -173,8 +169,8 @@ export function PassportOnboarding({
             {view.productName}
           </h1>
           <p data-onb className="mt-3 max-w-md text-sm leading-relaxed text-[var(--color-text-muted)]">
-            Forge number {view.serialNumber} of {view.editionTotal}. Tell the ledger
-            which unit you hold — then it carries your name, forever.
+            A one-owner piece, limited to {view.editionTotal}. Tell the ledger which
+            unit you hold — then it carries your name, forever.
           </p>
 
           <div className="mt-9 space-y-7">

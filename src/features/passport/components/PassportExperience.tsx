@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Product } from '@/features/products/types/product.types'
+import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import type { ResolvedPassportContent } from '../lib/resolvePassportContent'
 import {
   useHydrateStorefrontAccountSession,
@@ -14,13 +15,15 @@ import { PassportOnboarding } from './PassportOnboarding'
 import { PassportPage } from './PassportPage'
 import { PassportTeaser } from './PassportTeaser'
 import { PassportTransferAccept, PassportTransferAction } from './PassportTransfer'
+import { PassportVisibilityToggle } from './PassportVisibilityToggle'
 
 export interface PassportExperienceProps {
   token: string
   view: PassportView | null
   product: Product | null
   content: ResolvedPassportContent
-  hasStoryBook: boolean
+  /** The product's saga chapter, embedded in the passport (null = none). */
+  storyChapter: StoryChapter | null
   /** One-time transfer code from the share link (?transfer=). */
   transferCode?: string
 }
@@ -38,7 +41,7 @@ export function PassportExperience({
   view: loaderView,
   product,
   content,
-  hasStoryBook,
+  storyChapter,
   transferCode,
 }: PassportExperienceProps) {
   useHydrateStorefrontAccountSession()
@@ -82,7 +85,6 @@ export function PassportExperience({
           {ceremony === 'playing' ? (
             <ClaimCeremony
               productName={view.productName}
-              serialNumber={view.serialNumber}
               editionTotal={view.editionTotal}
               ownerName={view.claimedDisplayName ?? ''}
               claimedDate={claimedDate ?? ''}
@@ -94,9 +96,14 @@ export function PassportExperience({
             view={view}
             product={product}
             content={content}
-            hasStoryBook={hasStoryBook}
+            storyChapter={storyChapter}
             claimedDate={claimedDate}
-            actions={<PassportTransferAction token={token} view={view} />}
+            actions={
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <PassportVisibilityToggle token={token} view={view} />
+                <PassportTransferAction token={token} view={view} />
+              </div>
+            }
           />
         </>
       )
@@ -108,7 +115,7 @@ export function PassportExperience({
           view={view}
           product={product}
           content={content}
-          hasStoryBook={hasStoryBook}
+          storyChapter={storyChapter}
           claimedDate={claimedDate}
         />
       )

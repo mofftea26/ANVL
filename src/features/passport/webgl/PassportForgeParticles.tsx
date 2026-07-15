@@ -1,71 +1,46 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { gsap } from '@/shared/lib/gsap'
 import { readThemeCssColor } from '@/shared/lib/themeColor'
-import {
-  sampleImageSilhouette,
-  type SilhouetteCloud,
-} from '@/shared/webgl/particleShapes'
-import type { PassportMotionState } from './passportMotionState'
+import type { SilhouetteCloud } from '@/shared/webgl/particleShapes'
+import type { PassportCardRect, PassportMotionState } from './passportMotionState'
 import {
   PASSPORT_ASSEMBLE_DURATION,
   PASSPORT_ENTRY_DELAY,
-  PASSPORT_SHATTER_HOLD,
   PASSPORT_SHATTER_IN,
   PASSPORT_SHATTER_OUT,
 } from './passportForgeTiming'
 import { PASSPORT_FORGE_FRAGMENT, PASSPORT_FORGE_VERTEX } from './passportForgeShaders'
 
-const COUNT = 11_000
-/** World height the formed piece is normalized to (camera z=5, fov 40 ⇒ ~3.64 tall). */
-export const PASSPORT_PIECE_FIT = 2.5
-/** Silhouette fallback when no transparent render exists — the ANVL mark. */
-const FALLBACK_SILHOUETTE_URL = '/brand/mark.svg'
+const COUNT = 9_000
+/** Rounded-corner radius the ember tracing assumes (matches rounded-2xl). */
+const CORNER_PX = 16
+/** Share of points tracing card borders vs. sparse interior fill. */
+const BORDER_SHARE = 0.72
 
 /**
- * The passport console centerpiece (particle-forge standard). The claimed
- * piece's silhouette assembles out of an ember nebula on the left stage and
- * fuses into the DOM render; every section transition shatters the form
- * across the whole screen and re-forges it while the DOM swaps content.
+ * The passport console's ember layer (particle-forge standard): the BENTO
+ * CARDS themselves are traced out of champagne embers — borders burn bright,
+ * interiors carry a sparse drift — measured 1:1 from the DOM via
+ * `motion.cardRects`. Section/tab transitions dissolve the layout into a soft
+ * veil; the next measured layout re-forges. After the DOM cards resolve,
+ * `motion.reveal` settles the embers into a faint living trace (never fully
+ * gone).
  */
-export function PassportForgeParticles({
-  motion,
-  imageUrl,
-}: {
-  motion: PassportMotionState
-  imageUrl: string | null
-}) {
+export function PassportForgeParticles({ motion }: { motion: PassportMotionState }) {
   const pointsRef = useRef<THREE.Points>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
   const { viewport, size } = useThree()
 
-  const [silhouette, setSilhouette] = useState<SilhouetteCloud | null>(null)
-  useEffect(() => {
-    let cancelled = false
-    void sampleImageSilhouette(
-      imageUrl ?? FALLBACK_SILHOUETTE_URL,
-      COUNT,
-      PASSPORT_PIECE_FIT,
-      0.22,
-    ).then((cloud) => {
-      if (!cancelled) setSilhouette(cloud)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [imageUrl])
-
-  // Screen-filling shatter cloud — the transition target: a soft veil drifting
-  // across the whole page (positions are in the points' local space, so the
-  // spread is generous enough to cover the viewport at any stage scale).
+  // Screen-filling veil — the transition target between layouts.
   const shatterCloud = useMemo<SilhouetteCloud>(() => {
     const positions = new Float32Array(COUNT * 3)
     const shades = new Float32Array(COUNT)
     const w = Math.max(viewport.width, 6)
     const h = Math.max(viewport.height, 4)
     for (let i = 0; i < COUNT; i += 1) {
-      positions[i * 3] = (Math.random() - 0.3) * w * 1.5
+      positions[i * 3] = (Math.random() - 0.5) * w * 1.3
       positions[i * 3 + 1] = (Math.random() - 0.5) * h * 1.25
       positions[i * 3 + 2] = (Math.random() - 0.7) * 1.4
       shades[i] = 0.3 + Math.random() * 0.3
@@ -74,9 +49,10 @@ export function PassportForgeParticles({
   }, [viewport.width, viewport.height])
 
   const geometry = useMemo(() => {
-    if (!silhouette) return null
     const scatters = new Float32Array(COUNT * 3)
     const seeds = new Float32Array(COUNT)
+    const zeros = new Float32Array(COUNT * 3)
+    const dimShades = new Float32Array(COUNT).fill(0.3)
     const v = new THREE.Vector3()
     for (let i = 0; i < COUNT; i += 1) {
       v.randomDirection().multiplyScalar(3.2 + Math.random() * 3.4)
@@ -84,18 +60,18 @@ export function PassportForgeParticles({
       seeds[i] = Math.random()
     }
     const geo = new THREE.BufferGeometry()
-    geo.setAttribute('position', new THREE.BufferAttribute(silhouette.positions.slice(), 3))
-    geo.setAttribute('aFrom', new THREE.BufferAttribute(silhouette.positions.slice(), 3))
-    geo.setAttribute('aTo', new THREE.BufferAttribute(silhouette.positions.slice(), 3))
-    geo.setAttribute('aShadeFrom', new THREE.BufferAttribute(silhouette.shades.slice(), 1))
-    geo.setAttribute('aShadeTo', new THREE.BufferAttribute(silhouette.shades.slice(), 1))
+    geo.setAttribute('position', new THREE.BufferAttribute(zeros.slice(), 3))
+    geo.setAttribute('aFrom', new THREE.BufferAttribute(zeros.slice(), 3))
+    geo.setAttribute('aTo', new THREE.BufferAttribute(zeros.slice(), 3))
+    geo.setAttribute('aShadeFrom', new THREE.BufferAttribute(dimShades.slice(), 1))
+    geo.setAttribute('aShadeTo', new THREE.BufferAttribute(dimShades.slice(), 1))
     geo.setAttribute('aScatter', new THREE.BufferAttribute(scatters, 3))
     geo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1))
     geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 16)
     return geo
-  }, [silhouette])
+  }, [])
 
-  useEffect(() => () => geometry?.dispose(), [geometry])
+  useEffect(() => () => geometry.dispose(), [geometry])
 
   const uniforms = useMemo(
     () => ({
@@ -105,7 +81,7 @@ export function PassportForgeParticles({
       uZoom: { value: 1 },
       uBurst: { value: 0 },
       uReveal: { value: 0 },
-      uSize: { value: 0.11 },
+      uSize: { value: 0.1 },
       uColdColor: {
         value: new THREE.Color(readThemeCssColor('--color-surface-elevated', '#34373A')).lerp(
           new THREE.Color(readThemeCssColor('--color-heading', '#E7E4DF')),
@@ -122,26 +98,108 @@ export function PassportForgeParticles({
     [],
   )
 
-  /** Swap morph buffers to `target` and tween uMorph 0→1 with a burst. */
-  const forgeTo = (
-    target: SilhouetteCloud,
-    burst: number,
-    duration: number,
-    ease: string = 'power2.inOut',
-  ) => {
-    const u = materialRef.current?.uniforms
-    const geo = pointsRef.current?.geometry as THREE.BufferGeometry | undefined
-    if (!u || !geo) return
+  /** Build the ember tracing of the measured card rects (px → world). */
+  const buildRectCloud = (rects: PassportCardRect[]): SilhouetteCloud | null => {
+    if (!rects.length || size.width <= 0 || size.height <= 0) return null
+    const worldPerPx = viewport.width / size.width
+    const toWorldX = (px: number) => (px - size.width / 2) * worldPerPx
+    const toWorldY = (py: number) => (size.height / 2 - py) * worldPerPx
+
+    const perimeters = rects.map((r) => 2 * (r.w + r.h))
+    const totalPerimeter = perimeters.reduce((a, b) => a + b, 0) || 1
+
+    const positions = new Float32Array(COUNT * 3)
+    const shades = new Float32Array(COUNT)
+    for (let i = 0; i < COUNT; i += 1) {
+      // Weight rect choice by perimeter so big cards get more embers.
+      let pick = Math.random() * totalPerimeter
+      let ri = 0
+      while (ri < rects.length - 1 && pick > perimeters[ri]) {
+        pick -= perimeters[ri]
+        ri += 1
+      }
+      const r = rects[ri]
+      const border = Math.random() < BORDER_SHARE
+      let px: number
+      let py: number
+      if (border) {
+        // Walk the perimeter; soften corners toward the rounded radius.
+        const t = Math.random() * perimeters[ri]
+        if (t < r.w) {
+          px = r.x + t
+          py = r.y
+        } else if (t < r.w + r.h) {
+          px = r.x + r.w
+          py = r.y + (t - r.w)
+        } else if (t < 2 * r.w + r.h) {
+          px = r.x + (t - r.w - r.h)
+          py = r.y + r.h
+        } else {
+          px = r.x
+          py = r.y + (t - 2 * r.w - r.h)
+        }
+        // Nudge extreme corners inward so the trace reads rounded.
+        const cx = Math.min(Math.max(px, r.x + CORNER_PX), r.x + r.w - CORNER_PX)
+        const cy = Math.min(Math.max(py, r.y + CORNER_PX), r.y + r.h - CORNER_PX)
+        px = px * 0.85 + cx * 0.15
+        py = py * 0.85 + cy * 0.15
+        // Slight breathing room off the exact edge.
+        px += (Math.random() - 0.5) * 3
+        py += (Math.random() - 0.5) * 3
+      } else {
+        px = r.x + Math.random() * r.w
+        py = r.y + Math.random() * r.h
+      }
+      positions[i * 3] = toWorldX(px)
+      positions[i * 3 + 1] = toWorldY(py)
+      positions[i * 3 + 2] = (Math.random() * 2 - 1) * 0.1
+      shades[i] = border ? 0.7 + Math.random() * 0.3 : 0.2 + Math.random() * 0.15
+    }
+    return { positions, shades }
+  }
+  const buildRectCloudRef = useRef(buildRectCloud)
+  buildRectCloudRef.current = buildRectCloud
+
+  /**
+   * Freeze the cloud's CURRENT visual position into `aFrom` — a CPU mirror of
+   * the vertex shader's per-seed staggered morph. Called before every new
+   * morph so interrupting one mid-flight continues from where the embers
+   * actually are instead of snapping back to the previous shape.
+   */
+  const freezeCurrent = (geo: THREE.BufferGeometry, morph: number) => {
     const aFrom = geo.getAttribute('aFrom') as THREE.BufferAttribute
     const aTo = geo.getAttribute('aTo') as THREE.BufferAttribute
     const aShadeFrom = geo.getAttribute('aShadeFrom') as THREE.BufferAttribute
     const aShadeTo = geo.getAttribute('aShadeTo') as THREE.BufferAttribute
-    if (u.uMorph.value >= 0.999) {
-      ;(aFrom.array as Float32Array).set(aTo.array as Float32Array)
-      aFrom.needsUpdate = true
-      ;(aShadeFrom.array as Float32Array).set(aShadeTo.array as Float32Array)
-      aShadeFrom.needsUpdate = true
+    const aSeed = geo.getAttribute('aSeed') as THREE.BufferAttribute
+    const from = aFrom.array as Float32Array
+    const to = aTo.array as Float32Array
+    const shadeFrom = aShadeFrom.array as Float32Array
+    const shadeTo = aShadeTo.array as Float32Array
+    const seeds = aSeed.array as Float32Array
+    for (let i = 0; i < seeds.length; i += 1) {
+      const seed = seeds[i]
+      // Must match PASSPORT_FORGE_VERTEX's morph stagger exactly.
+      let m = Math.min(1, Math.max(0, morph * (1.25 + seed * 0.5) - seed * 0.35))
+      m = m * m * (3 - 2 * m)
+      const i3 = i * 3
+      from[i3] += (to[i3] - from[i3]) * m
+      from[i3 + 1] += (to[i3 + 1] - from[i3 + 1]) * m
+      from[i3 + 2] += (to[i3 + 2] - from[i3 + 2]) * m
+      shadeFrom[i] += (shadeTo[i] - shadeFrom[i]) * m
     }
+    aFrom.needsUpdate = true
+    aShadeFrom.needsUpdate = true
+  }
+
+  /** Swap morph buffers to `target` and tween uMorph 0→1 with a soft burst. */
+  const forgeTo = (target: SilhouetteCloud, burst: number, duration: number, ease: string) => {
+    const u = materialRef.current?.uniforms
+    const geo = pointsRef.current?.geometry as THREE.BufferGeometry | undefined
+    if (!u || !geo) return
+    const aTo = geo.getAttribute('aTo') as THREE.BufferAttribute
+    const aShadeTo = geo.getAttribute('aShadeTo') as THREE.BufferAttribute
+    freezeCurrent(geo, u.uMorph.value)
     ;(aTo.array as Float32Array).set(target.positions)
     aTo.needsUpdate = true
     ;(aShadeTo.array as Float32Array).set(target.shades)
@@ -155,33 +213,14 @@ export function PassportForgeParticles({
   const forgeToRef = useRef(forgeTo)
   forgeToRef.current = forgeTo
 
-  // Entry: nebula → silhouette, on the shared clock.
-  useEffect(() => {
-    const u = materialRef.current?.uniforms
-    if (!u || !silhouette) return
-    const tl = gsap.timeline({ delay: PASSPORT_ENTRY_DELAY })
-    tl.to(u.uAssemble, {
-      value: 1,
-      duration: PASSPORT_ASSEMBLE_DURATION,
-      ease: 'power2.inOut',
-    })
-    tl.fromTo(
-      u.uBurst,
-      { value: 0.5 },
-      { value: 0, duration: 1.2, ease: 'power2.out' },
-      PASSPORT_ASSEMBLE_DURATION - 0.5,
-    )
-    return () => {
-      tl.kill()
-    }
-  }, [silhouette])
-
-  // Section transitions: shatter across the screen, hold, re-forge.
+  // Frame loop: react to layout measurements + shatters, follow reveal.
   const seenShatter = useRef(0)
-  const shatterTl = useRef<gsap.core.Timeline | null>(null)
+  const seenRects = useRef(0)
+  const entered = useRef(false)
+  const entryTl = useRef<gsap.core.Timeline | null>(null)
   useEffect(
     () => () => {
-      shatterTl.current?.kill()
+      entryTl.current?.kill()
     },
     [],
   )
@@ -189,60 +228,58 @@ export function PassportForgeParticles({
   useFrame((state) => {
     const u = materialRef.current?.uniforms
     const points = pointsRef.current
-    if (!u || !points || !silhouette) return
+    if (!u || !points) return
     u.uTime.value = state.clock.elapsedTime
 
+    // Dissolve into the veil when the console starts a transition.
     if (motion.shatter !== seenShatter.current) {
       seenShatter.current = motion.shatter
-      shatterTl.current?.kill()
-      // Soft veil: drift out with a whisper of heat, breathe back in.
-      const tl = gsap.timeline()
-      tl.call(
-        () => forgeToRef.current(shatterCloud, 0.35, PASSPORT_SHATTER_OUT, 'sine.inOut'),
-        undefined,
-        0,
-      )
-      tl.call(
-        () => forgeToRef.current(silhouette, 0.3, PASSPORT_SHATTER_IN, 'power2.inOut'),
-        undefined,
-        PASSPORT_SHATTER_OUT + PASSPORT_SHATTER_HOLD,
-      )
-      shatterTl.current = tl
+      forgeToRef.current(shatterCloud, 0.3, PASSPORT_SHATTER_OUT, 'sine.inOut')
     }
 
-    // Hover magnetism + DOM reveal (both DOM-written, lerped here).
-    u.uZoom.value += (1 + motion.hover * 0.035 - u.uZoom.value) * 0.07
-    u.uReveal.value += (motion.reveal - u.uReveal.value) * 0.1
-
-    // Register the form to the MEASURED DOM render rect (position AND scale),
-    // so the embers always match the image 1:1. Falls back to the left-panel
-    // anchor until the console reports a measurement.
-    let targetX = -viewport.width * 0.24
-    let targetY = 0
-    let targetScale = 1
-    const stage = motion.stage
-    if (stage && size.width > 0 && size.height > 0) {
-      const worldPerPx = viewport.width / size.width
-      targetX = (stage.cx - size.width / 2) * worldPerPx
-      targetY = (size.height / 2 - stage.cy) * worldPerPx
-      targetScale = Math.min(
-        1.6,
-        Math.max(0.35, (stage.dim * worldPerPx) / PASSPORT_PIECE_FIT),
-      )
+    // New measured layout → forge the embers into the card shapes.
+    if (motion.cardRectsVersion !== seenRects.current) {
+      const cloud = buildRectCloudRef.current(motion.cardRects)
+      if (cloud) {
+        seenRects.current = motion.cardRectsVersion
+        if (!entered.current) {
+          // First layout: seed the buffers, then run the entry assembly.
+          entered.current = true
+          const geo = points.geometry as THREE.BufferGeometry
+          for (const name of ['position', 'aFrom', 'aTo'] as const) {
+            const attr = geo.getAttribute(name) as THREE.BufferAttribute
+            ;(attr.array as Float32Array).set(cloud.positions)
+            attr.needsUpdate = true
+          }
+          for (const name of ['aShadeFrom', 'aShadeTo'] as const) {
+            const attr = geo.getAttribute(name) as THREE.BufferAttribute
+            ;(attr.array as Float32Array).set(cloud.shades)
+            attr.needsUpdate = true
+          }
+          u.uMorph.value = 1
+          const tl = gsap.timeline({ delay: PASSPORT_ENTRY_DELAY })
+          tl.to(u.uAssemble, {
+            value: 1,
+            duration: PASSPORT_ASSEMBLE_DURATION,
+            ease: 'power2.inOut',
+          })
+          tl.fromTo(
+            u.uBurst,
+            { value: 0.4 },
+            { value: 0, duration: 1.2, ease: 'sine.out' },
+            PASSPORT_ASSEMBLE_DURATION - 0.5,
+          )
+          entryTl.current = tl
+        } else {
+          forgeToRef.current(cloud, 0.28, PASSPORT_SHATTER_IN, 'power2.inOut')
+        }
+      }
     }
-    points.position.x += (targetX - points.position.x) * 0.08
-    points.position.y += (targetY - points.position.y) * 0.08
-    const s = points.scale.x + (targetScale - points.scale.x) * 0.08
-    points.scale.set(s, s, s)
 
-    // Damped sway + pointer parallax, stilled while the render is fused.
-    const still = 1 - u.uReveal.value * 0.65
-    points.rotation.y =
-      (Math.sin(state.clock.elapsedTime * 0.22) * 0.11 + motion.pointerX * 0.14) * still
-    points.rotation.x = motion.pointerY * -0.04 * still
+    // Cards resolved → embers recede to a faint living trace (uReveal ~0.8
+    // keeps ~25% alpha + the shade glow along the borders).
+    u.uReveal.value += (motion.reveal * 0.8 - u.uReveal.value) * 0.08
   })
-
-  if (!geometry) return null
 
   return (
     <points ref={pointsRef} frustumCulled={false}>

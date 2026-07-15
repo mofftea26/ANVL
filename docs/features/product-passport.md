@@ -111,6 +111,45 @@ unions, Zod at the write boundary): `src/features/admin/passports/`.
 - **Armory everywhere**: account dropdown + mobile drawer card link to
   `/account?tab=armory`.
 
+## Phase A rework (2026-07-15) — locked product decisions
+
+Final decisions now enforced in code:
+- **No serial numbers on any customer surface.** `AuthenticityPlate` (crest +
+  "Authentic ANVL" + drop + "Limited to N pieces") replaced the serial plate
+  everywhere — teaser, onboarding, ceremony seal, console, dossier, Armory,
+  and the printed QR card. `serial_number` stays in the DB/admin ledger for
+  operations only; no formatter is exported for UI.
+- **Owner-controlled visibility.** `product_passports.is_public` (default
+  false) + `set_passport_visibility` RPC; `get_passport_by_token` only reveals
+  the engraved name/date to non-owners when the owner opted in (or when the
+  caller holds a live transfer code — they were invited).
+- No warranty, no claim codes, no crypto. Registration is QR-scan-direct.
+
+Console/UX rework:
+- **Particles moved to the bento cards.** `PassportForgeParticles` traces the
+  MEASURED card rects (borders ~72% of points + sparse fill) instead of the
+  product silhouette; the product render stays clean with a CSS champagne
+  sweep (`.pp-sheen`). Accuracy rules: nothing in the panel animates with a
+  transform (cards fade only), rects are read on the frame after commit, and
+  a redundant measure never re-forges. Interrupts are seamless — `forgeTo`
+  freezes the cloud's current interpolated position into `aFrom` via a CPU
+  mirror of the shader's per-seed stagger (`freezeCurrent`).
+- **Group tabs**: THE CRAFT (material, details) · THE RITUAL (care) · THE
+  LEGACY (story, origin, authenticity). Cards carry champagne numerals, no
+  icons. The mobile dossier renders the same groups as headings.
+- **Story embedded in-page** (`PassportStoryChapter`) — the loader returns the
+  full `StoryChapter`; no redirect to /story, no 3D book.
+- **Origin = world map** (`WorldOriginMap` + `passportCountries.ts`):
+  equirectangular projection, CMS-assigned **Designed in** (outline pin) and
+  **Made in** (pulsing pin) joined by a champagne arc. Height-capped so it
+  fits its panel; the detail panel scrolls only when content genuinely
+  exceeds it.
+- Footer is hidden on `/p/*`; the mobile hero image is deliberately small.
+- **Ranks**: three levels each (Initiate I–III · Forged I–III · Oathbound
+  I–III · Warlord I–III) with Higgsfield-generated emblems in
+  `public/brand/ranks/*.png` (256px, transparent). The serial-based "Early
+  Steel" badge is gone.
+
 ## Follow-ups
 
 - RPC rate limiting (Phase-J family; 122-bit tokens make brute force

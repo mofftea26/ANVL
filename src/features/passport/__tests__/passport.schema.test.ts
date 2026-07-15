@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   claimPassportResultSchema,
-  formatForgeSerial,
   ownedPassportSchema,
   passportViewSchema,
 } from '@/features/passport/schemas/passport.schema'
@@ -91,13 +90,11 @@ describe('ownedPassportSchema', () => {
   })
 })
 
-describe('formatForgeSerial', () => {
-  it('zero-pads to three digits', () => {
-    expect(formatForgeSerial(7, 100)).toBe('#007 / 100')
-    expect(formatForgeSerial(17, 100)).toBe('#017 / 100')
-  })
-
-  it('does not truncate serials past three digits', () => {
-    expect(formatForgeSerial(1250, 2000)).toBe('#1250 / 2000')
+describe('serial privacy (final product decision: no serial display)', () => {
+  it('keeps serial data internal — the view parses it but marks nothing for display', () => {
+    const view = passportViewSchema.parse(rpcView)
+    // Data-layer field exists (admin ledger, sorting) …
+    expect(view.serialNumber).toBe(17)
+    // … and there is deliberately no formatter exported for customer surfaces.
   })
 })

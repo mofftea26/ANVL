@@ -3,9 +3,8 @@ import { Fingerprint } from 'lucide-react'
 import type { Product } from '@/features/products/types/product.types'
 import { buttonVariants } from '@/shared/components/ui/Button'
 import { cn } from '@/shared/lib/cn'
-import { formatForgeSerial } from '../schemas/passport.schema'
 import type { PassportView } from '../schemas/passport.schema'
-import { ForgeSerialPlate } from './ForgeSerialPlate'
+import { AuthenticityPlate } from './AuthenticityPlate'
 import { PassportAtmosphere } from './PassportAtmosphere'
 
 /**
@@ -36,17 +35,13 @@ export function PassportTeaser({
           className="mx-auto mb-6 h-9 w-9 text-[var(--color-highlight-bright)]"
         />
         <p className="anvl-micro mb-4 text-[var(--color-text-muted)]">
-          {isTransfer ? 'Ownership transfer' : 'Unclaimed passport'} ·{' '}
-          {formatForgeSerial(view.serialNumber, view.editionTotal)}
+          {isTransfer ? 'Ownership transfer' : 'Unregistered passport'}
         </p>
         <h1 className="anvl-heading text-4xl text-[var(--color-heading)] sm:text-5xl">
           {view.productName}
         </h1>
         <div className="mt-8 flex justify-center">
-          <ForgeSerialPlate
-            serialNumber={view.serialNumber}
-            editionTotal={view.editionTotal}
-          />
+          <AuthenticityPlate editionTotal={view.editionTotal} />
         </div>
         <p className="mt-8 text-sm leading-relaxed text-[var(--color-text-muted)]">
           {isTransfer

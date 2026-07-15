@@ -22,7 +22,7 @@ export function ComingSoonEnvironment({
         height={768}
         decoding="async"
         fetchPriority="high"
-        className="absolute inset-0 h-full w-full scale-105 object-cover opacity-40"
+        className="absolute inset-0 h-full w-full scale-105 object-cover opacity-55"
         onError={(e) => {
           // Missing asset → the void + glows carry the page.
           e.currentTarget.style.display = 'none'
@@ -42,8 +42,9 @@ export function ComingSoonEnvironment({
         }}
       />
 
-      {/* Clear the center stage for the anvil + type, then close the frame. */}
-      <div className="absolute inset-0 [background:radial-gradient(90%_75%_at_50%_46%,color-mix(in_oklab,var(--color-bg)_62%,transparent)_0%,transparent_55%,color-mix(in_oklab,var(--color-bg)_88%,transparent)_100%)]" />
+      {/* Clear the center stage for the anvil + type, then close the frame.
+          Kept airy on purpose — the page read too dark at 62%/88%. */}
+      <div className="absolute inset-0 [background:radial-gradient(90%_75%_at_50%_46%,color-mix(in_oklab,var(--color-bg)_40%,transparent)_0%,transparent_55%,color-mix(in_oklab,var(--color-bg)_72%,transparent)_100%)]" />
 
       {/* Champagne under-glow rising from the forge floor. */}
       <div className="absolute inset-x-0 bottom-0 h-[45%] opacity-25 [background:radial-gradient(60%_100%_at_50%_100%,color-mix(in_oklab,var(--cs-accent)_30%,transparent),transparent_70%)]" />
