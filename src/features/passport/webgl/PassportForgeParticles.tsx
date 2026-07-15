@@ -38,7 +38,7 @@ export function PassportForgeParticles({
 }) {
   const pointsRef = useRef<THREE.Points>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
-  const { viewport } = useThree()
+  const { viewport, size } = useThree()
 
   const [silhouette, setSilhouette] = useState<SilhouetteCloud | null>(null)
   useEffect(() => {
@@ -56,17 +56,18 @@ export function PassportForgeParticles({
     }
   }, [imageUrl])
 
-  // Screen-filling shatter cloud — the transition target. Spans the viewport
-  // (compensating for the stage anchor) so the burst sweeps the whole page.
+  // Screen-filling shatter cloud — the transition target: a soft veil drifting
+  // across the whole page (positions are in the points' local space, so the
+  // spread is generous enough to cover the viewport at any stage scale).
   const shatterCloud = useMemo<SilhouetteCloud>(() => {
     const positions = new Float32Array(COUNT * 3)
     const shades = new Float32Array(COUNT)
     const w = Math.max(viewport.width, 6)
     const h = Math.max(viewport.height, 4)
     for (let i = 0; i < COUNT; i += 1) {
-      positions[i * 3] = (Math.random() - 0.28) * w * 1.35
-      positions[i * 3 + 1] = (Math.random() - 0.5) * h * 1.3
-      positions[i * 3 + 2] = (Math.random() - 0.75) * 2.2
+      positions[i * 3] = (Math.random() - 0.3) * w * 1.5
+      positions[i * 3 + 1] = (Math.random() - 0.5) * h * 1.25
+      positions[i * 3 + 2] = (Math.random() - 0.7) * 1.4
       shades[i] = 0.3 + Math.random() * 0.3
     }
     return { positions, shades }
@@ -104,7 +105,7 @@ export function PassportForgeParticles({
       uZoom: { value: 1 },
       uBurst: { value: 0 },
       uReveal: { value: 0 },
-      uSize: { value: 0.13 },
+      uSize: { value: 0.11 },
       uColdColor: {
         value: new THREE.Color(readThemeCssColor('--color-surface-elevated', '#34373A')).lerp(
           new THREE.Color(readThemeCssColor('--color-heading', '#E7E4DF')),
@@ -122,7 +123,12 @@ export function PassportForgeParticles({
   )
 
   /** Swap morph buffers to `target` and tween uMorph 0→1 with a burst. */
-  const forgeTo = (target: SilhouetteCloud, burst: number, duration: number) => {
+  const forgeTo = (
+    target: SilhouetteCloud,
+    burst: number,
+    duration: number,
+    ease: string = 'power2.inOut',
+  ) => {
     const u = materialRef.current?.uniforms
     const geo = pointsRef.current?.geometry as THREE.BufferGeometry | undefined
     if (!u || !geo) return
@@ -142,9 +148,9 @@ export function PassportForgeParticles({
     aShadeTo.needsUpdate = true
     gsap.killTweensOf(u.uMorph)
     u.uMorph.value = 0
-    gsap.to(u.uMorph, { value: 1, duration, ease: 'power2.inOut' })
+    gsap.to(u.uMorph, { value: 1, duration, ease })
     gsap.killTweensOf(u.uBurst)
-    gsap.fromTo(u.uBurst, { value: burst }, { value: 0, duration: 1.4, ease: 'power2.out' })
+    gsap.fromTo(u.uBurst, { value: burst }, { value: 0, duration: 1.6, ease: 'sine.out' })
   }
   const forgeToRef = useRef(forgeTo)
   forgeToRef.current = forgeTo
@@ -189,10 +195,15 @@ export function PassportForgeParticles({
     if (motion.shatter !== seenShatter.current) {
       seenShatter.current = motion.shatter
       shatterTl.current?.kill()
+      // Soft veil: drift out with a whisper of heat, breathe back in.
       const tl = gsap.timeline()
-      tl.call(() => forgeToRef.current(shatterCloud, 0.9, PASSPORT_SHATTER_OUT), undefined, 0)
       tl.call(
-        () => forgeToRef.current(silhouette, 0.6, PASSPORT_SHATTER_IN),
+        () => forgeToRef.current(shatterCloud, 0.35, PASSPORT_SHATTER_OUT, 'sine.inOut'),
+        undefined,
+        0,
+      )
+      tl.call(
+        () => forgeToRef.current(silhouette, 0.3, PASSPORT_SHATTER_IN, 'power2.inOut'),
         undefined,
         PASSPORT_SHATTER_OUT + PASSPORT_SHATTER_HOLD,
       )
@@ -203,15 +214,32 @@ export function PassportForgeParticles({
     u.uZoom.value += (1 + motion.hover * 0.035 - u.uZoom.value) * 0.07
     u.uReveal.value += (motion.reveal - u.uReveal.value) * 0.1
 
-    // Stage anchor: left-of-centre panel (the console's piece stage).
-    const anchorX = -viewport.width * 0.24
-    points.position.x += (anchorX - points.position.x) * 0.08
+    // Register the form to the MEASURED DOM render rect (position AND scale),
+    // so the embers always match the image 1:1. Falls back to the left-panel
+    // anchor until the console reports a measurement.
+    let targetX = -viewport.width * 0.24
+    let targetY = 0
+    let targetScale = 1
+    const stage = motion.stage
+    if (stage && size.width > 0 && size.height > 0) {
+      const worldPerPx = viewport.width / size.width
+      targetX = (stage.cx - size.width / 2) * worldPerPx
+      targetY = (size.height / 2 - stage.cy) * worldPerPx
+      targetScale = Math.min(
+        1.6,
+        Math.max(0.35, (stage.dim * worldPerPx) / PASSPORT_PIECE_FIT),
+      )
+    }
+    points.position.x += (targetX - points.position.x) * 0.08
+    points.position.y += (targetY - points.position.y) * 0.08
+    const s = points.scale.x + (targetScale - points.scale.x) * 0.08
+    points.scale.set(s, s, s)
 
     // Damped sway + pointer parallax, stilled while the render is fused.
     const still = 1 - u.uReveal.value * 0.65
     points.rotation.y =
-      (Math.sin(state.clock.elapsedTime * 0.22) * 0.13 + motion.pointerX * 0.16) * still
-    points.rotation.x = motion.pointerY * -0.05 * still
+      (Math.sin(state.clock.elapsedTime * 0.22) * 0.11 + motion.pointerX * 0.14) * still
+    points.rotation.x = motion.pointerY * -0.04 * still
   })
 
   if (!geometry) return null

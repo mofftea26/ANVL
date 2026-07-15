@@ -17,11 +17,9 @@ export const PASSPORT_CONSOLE_MQ =
 export function PassportForgeGate({
   motion,
   imageUrl,
-  onActiveChange,
 }: {
   motion: PassportMotionState
   imageUrl: string | null
-  onActiveChange?: (active: boolean) => void
 }) {
   const [active, setActive] = useState(false)
   const mountable = useCanvasMountGate(active)
@@ -29,14 +27,12 @@ export function PassportForgeGate({
   useEffect(() => {
     const mq = window.matchMedia(PASSPORT_CONSOLE_MQ)
     const update = () => {
-      const on = mq.matches && isWebglAvailable()
-      setActive(on)
-      onActiveChange?.(on)
+      setActive(mq.matches && isWebglAvailable())
     }
     update()
     mq.addEventListener('change', update)
     return () => mq.removeEventListener('change', update)
-  }, [onActiveChange])
+  }, [])
 
   if (!active || !mountable) return null
 

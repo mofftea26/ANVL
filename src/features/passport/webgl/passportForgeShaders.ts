@@ -46,9 +46,9 @@ export const PASSPORT_FORGE_VERTEX = /* glsl */ `
     t = t * t * (3.0 - 2.0 * t);
     vec3 pos = mix(aScatter, target, t);
 
-    // Mid-morph spark puff.
+    // Mid-morph spark puff — kept gentle so re-forges breathe, never explode.
     float morphBurst = sin(clamp(uMorph, 0.0, 1.0) * 3.14159265);
-    pos += normalize(target + vec3(0.0, 0.0, 1e-4)) * morphBurst * 0.3 * (0.4 + seed) * t;
+    pos += normalize(target + vec3(0.0, 0.0, 1e-4)) * morphBurst * 0.14 * (0.4 + seed) * t;
 
     // Reveal = fusion: condense onto the render plane and still every spark.
     pos.z *= 1.0 - uReveal * 0.85;
@@ -57,7 +57,7 @@ export const PASSPORT_FORGE_VERTEX = /* glsl */ `
     pos *= uZoom;
 
     // Living shimmer — larger while scattered, stilled as the render fuses.
-    float wobble = (0.012 + 0.08 * (1.0 - t)) * (1.0 - uReveal * 0.9);
+    float wobble = (0.01 + 0.05 * (1.0 - t)) * (1.0 - uReveal * 0.9);
     pos += vec3(
       sin(uTime * (0.6 + seed) + seed * 31.4),
       cos(uTime * (0.5 + seed * 0.7) + seed * 17.2),
@@ -80,9 +80,9 @@ export const PASSPORT_FORGE_VERTEX = /* glsl */ `
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
     // Hard cap — a near-camera additive point would rasterize screen-sized.
-    float sizePx = uSize * (0.55 + seed * 0.9) * (1.0 + vGlow * 1.35)
+    float sizePx = uSize * (0.55 + seed * 0.9) * (1.0 + vGlow * 1.2)
       * (1.0 - uReveal * 0.35) * (170.0 / max(-mvPosition.z, 0.5));
-    gl_PointSize = min(sizePx, 18.0);
+    gl_PointSize = min(sizePx, 13.0);
   }
 `
 
