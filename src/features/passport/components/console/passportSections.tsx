@@ -1,7 +1,10 @@
 import type { Product } from '@/features/products/types/product.types'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import type { ResolvedPassportContent } from '../../lib/resolvePassportContent'
+import { recommendSizes, type PassportSizeGuide } from '../../lib/sizeRecommendation'
 import type { PassportView } from '../../schemas/passport.schema'
+import { CareGuide } from '../CareGuide'
+import { ForgeNotes } from '../ForgeNotes'
 import { PassportStoryChapter } from '../PassportStoryChapter'
 import { WorldOriginMap } from '../WorldOriginMap'
 
@@ -11,13 +14,18 @@ export interface PassportSectionContext {
   content: ResolvedPassportContent
   claimedDate: string | null
   storyChapter: StoryChapter | null
+  /** Cross-product size map (loader-built, user-independent). */
+  sizeGuide: PassportSizeGuide | null
 }
 
 export type PassportSectionKey =
   | 'material'
+  | 'specs'
   | 'details'
   | 'care'
+  | 'fit'
   | 'story'
+  | 'forge-notes'
   | 'origin'
   | 'authenticity'
 
@@ -84,6 +92,26 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
     ),
   },
   {
+    key: 'specs',
+    group: 'craft',
+    title: 'Specifications',
+    eyebrow: 'Built',
+    available: ({ content }) =>
+      Object.values(content.specs).some((v) => Boolean(v)),
+    teaser: ({ content }) =>
+      content.specs.construction || content.specs.intendedUse || 'How this piece is built.',
+    Detail: ({ ctx }) => (
+      <dl className="grid max-w-xl grid-cols-2 gap-4">
+        <SpecStat term="Construction" detail={ctx.content.specs.construction} />
+        <SpecStat term="Fit type" detail={ctx.content.specs.fitType} />
+        <SpecStat term="Compression" detail={ctx.content.specs.compression} />
+        <SpecStat term="Stretch" detail={ctx.content.specs.stretch} />
+        <SpecStat term="Breathability" detail={ctx.content.specs.breathability} />
+        <SpecStat term="Intended use" detail={ctx.content.specs.intendedUse} />
+      </dl>
+    ),
+  },
+  {
     key: 'details',
     group: 'craft',
     title: 'Forged details',
@@ -131,28 +159,27 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
     group: 'ritual',
     title: 'Care ritual',
     eyebrow: 'Preserve',
-    available: ({ content }) => content.care.steps.length > 0,
+    available: ({ content }) =>
+      content.care.steps.length > 0 || content.care.symbols.length > 0,
     teaser: ({ content }) =>
       content.care.intro || `${content.care.steps.length} steps to keep the forge sharp.`,
-    Detail: ({ ctx }) => (
-      <div className="space-y-6">
-        {ctx.content.care.intro ? (
-          <p className="max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)]">
-            {ctx.content.care.intro}
-          </p>
-        ) : null}
-        <ol className="space-y-4">
-          {ctx.content.care.steps.map((step, i) => (
-            <li key={step} className="flex gap-4 text-sm text-[var(--color-text-muted)]">
-              <span className="anvl-heading text-lg text-[var(--color-highlight-bright)]">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <span className="pt-1">{step}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-    ),
+    Detail: ({ ctx }) => <CareGuide care={ctx.content.care} />,
+  },
+  {
+    key: 'fit',
+    group: 'ritual',
+    title: 'Fit & sizing',
+    eyebrow: 'Measure',
+    available: ({ content }) =>
+      Boolean(
+        content.fit.intendedFit ||
+          content.fit.measurements.length ||
+          content.fit.modelSize ||
+          content.fit.sizeAdvice,
+      ),
+    teaser: ({ content }) =>
+      content.fit.intendedFit || content.fit.sizeAdvice || 'Measurements, stretch, model fit.',
+    Detail: ({ ctx }) => <FitDetail ctx={ctx} />,
   },
   {
     key: 'story',
@@ -166,6 +193,16 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
       'The chapter behind this piece.',
     Detail: ({ ctx }) =>
       ctx.storyChapter ? <PassportStoryChapter chapter={ctx.storyChapter} /> : null,
+  },
+  {
+    key: 'forge-notes',
+    group: 'legacy',
+    title: 'Forge notes',
+    eyebrow: 'Development',
+    available: ({ content }) => content.forgeNotes.length > 0,
+    teaser: ({ content }) =>
+      content.forgeNotes[0]?.title || 'Notes from the development floor.',
+    Detail: ({ ctx }) => <ForgeNotes notes={ctx.content.forgeNotes} />,
   },
   {
     key: 'origin',
@@ -224,6 +261,79 @@ function DetailStat({ term, detail }: { term: string; detail: string }) {
     <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3">
       <dt className="anvl-micro text-[var(--color-text-muted)]">{term}</dt>
       <dd className="mt-1 text-sm font-semibold text-[var(--color-text)]">{detail}</dd>
+    </div>
+  )
+}
+
+/** Spec rows hide themselves when unauthored (never show an empty stat). */
+function SpecStat({ term, detail }: { term: string; detail: string }) {
+  if (!detail) return null
+  return <DetailStat term={term} detail={detail} />
+}
+
+/**
+ * Fit & sizing — facts first, then (owner-only) the cross-product size advice
+ * derived from the size they registered. Silent when the CMS hasn't mapped
+ * this product's sizes: no map, no guess.
+ */
+function FitDetail({ ctx }: { ctx: PassportSectionContext }) {
+  const { fit } = ctx.content
+  const recommendations = recommendSizes(ctx.sizeGuide, ctx.view.claimedSize)
+
+  return (
+    <div className="max-w-xl space-y-6">
+      <dl className="grid grid-cols-2 gap-4">
+        <SpecStat term="Intended fit" detail={fit.intendedFit} />
+        <SpecStat term="Stretch" detail={fit.stretchRange} />
+        {fit.modelHeight || fit.modelSize ? (
+          <SpecStat
+            term="On the model"
+            detail={[fit.modelHeight, fit.modelSize ? `wears ${fit.modelSize}` : '']
+              .filter(Boolean)
+              .join(' · ')}
+          />
+        ) : null}
+        {ctx.view.claimedSize ? (
+          <SpecStat term="Your size" detail={ctx.view.claimedSize} />
+        ) : null}
+      </dl>
+
+      {fit.measurements.length > 0 ? (
+        <div>
+          <p className="anvl-micro mb-2 text-[var(--color-text-muted)]">Measurements</p>
+          <dl className="divide-y divide-[var(--color-line)] rounded-xl border border-[var(--color-line)]">
+            {fit.measurements.map((m) => (
+              <div key={m.label} className="flex justify-between px-4 py-2 text-sm">
+                <dt className="text-[var(--color-text-muted)]">{m.label}</dt>
+                <dd className="font-semibold text-[var(--color-text)]">{m.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ) : null}
+
+      {fit.sizeAdvice ? (
+        <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">{fit.sizeAdvice}</p>
+      ) : null}
+
+      {recommendations.length > 0 ? (
+        <div className="rounded-xl border border-[color-mix(in_oklab,var(--color-highlight)_30%,var(--color-line))] bg-[var(--color-surface)] p-4">
+          <p className="anvl-micro text-[var(--color-highlight-bright)]">
+            You wear {ctx.view.claimedSize} in this piece
+          </p>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+            Across the rest of the armory, that maps to:
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {recommendations.map((r) => (
+              <li key={r.slug} className="flex justify-between text-sm">
+                <span className="text-[var(--color-text-muted)]">{r.name}</span>
+                <span className="font-semibold text-[var(--color-heading)]">{r.size}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   )
 }

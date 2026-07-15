@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import type { CmsMediaAsset } from '@/features/admin/media/mediaAssets.types'
 import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotField'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
+import { CARE_SYMBOLS } from '@/features/passport/components/careSymbols'
 import { PASSPORT_COUNTRIES } from '@/features/passport/lib/passportCountries'
 import type { PassportProductContent } from '@/features/cms/passportContent/passportContent.zod'
 import { Button } from '@/shared/components/ui/Button'
@@ -31,7 +32,27 @@ const STEPS: Array<{ key: WizardStepKey; title: string; blurb: string }> = [
     title: 'Material',
     blurb: 'Fabric story + macro shot. Blank falls back to PDP content / product data.',
   },
-  { key: 'care', title: 'Care ritual', blurb: 'Intro + numbered steps.' },
+  {
+    key: 'specs',
+    title: 'Specifications',
+    blurb: 'The technical panel — construction, fit type, compression, stretch, breathability, use.',
+  },
+  {
+    key: 'care',
+    title: 'Care ritual',
+    blurb: 'Care symbols, numbered steps, and the "why" note behind each step.',
+  },
+  {
+    key: 'fit',
+    title: 'Fit & sizing',
+    blurb:
+      'Measurements, model fit, and the canonical size map that powers cross-product size advice.',
+  },
+  {
+    key: 'forgeNotes',
+    title: 'Forge notes',
+    blurb: 'Development fact cards — revisions, testing, hidden details.',
+  },
   {
     key: 'details',
     title: 'Details & story',
@@ -195,6 +216,53 @@ export function PassportContentWizard({
             </>
           ) : null}
 
+          {active.key === 'specs' ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField label="Construction" labelStyle="stacked">
+                <Input
+                  density="compact"
+                  value={draft.specs.construction}
+                  onChange={(e) => patch('specs', { construction: e.target.value })}
+                />
+              </FormField>
+              <FormField label="Fit type" hint="Blank → the product's fit." labelStyle="stacked">
+                <Input
+                  density="compact"
+                  value={draft.specs.fitType}
+                  onChange={(e) => patch('specs', { fitType: e.target.value })}
+                />
+              </FormField>
+              <FormField label="Compression" labelStyle="stacked">
+                <Input
+                  density="compact"
+                  value={draft.specs.compression}
+                  onChange={(e) => patch('specs', { compression: e.target.value })}
+                />
+              </FormField>
+              <FormField label="Stretch" labelStyle="stacked">
+                <Input
+                  density="compact"
+                  value={draft.specs.stretch}
+                  onChange={(e) => patch('specs', { stretch: e.target.value })}
+                />
+              </FormField>
+              <FormField label="Breathability" labelStyle="stacked">
+                <Input
+                  density="compact"
+                  value={draft.specs.breathability}
+                  onChange={(e) => patch('specs', { breathability: e.target.value })}
+                />
+              </FormField>
+              <FormField label="Intended use" labelStyle="stacked">
+                <Input
+                  density="compact"
+                  value={draft.specs.intendedUse}
+                  onChange={(e) => patch('specs', { intendedUse: e.target.value })}
+                />
+              </FormField>
+            </div>
+          ) : null}
+
           {active.key === 'care' ? (
             <>
               <FormField label="Intro" labelStyle="stacked">
@@ -203,6 +271,39 @@ export function PassportContentWizard({
                   value={draft.care.intro}
                   onChange={(e) => patch('care', { intro: e.target.value })}
                 />
+              </FormField>
+              <FormField
+                label="Care symbols"
+                hint="Tap to toggle — shown as icons the customer can tap for the meaning."
+                labelStyle="stacked"
+              >
+                <div className="flex flex-wrap gap-1.5">
+                  {CARE_SYMBOLS.map((symbol) => {
+                    const on = draft.care.symbols.includes(symbol.key)
+                    return (
+                      <button
+                        key={symbol.key}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() =>
+                          patch('care', {
+                            symbols: on
+                              ? draft.care.symbols.filter((s) => s !== symbol.key)
+                              : [...draft.care.symbols, symbol.key],
+                          })
+                        }
+                        className={cn(
+                          'focus-ring rounded-md border px-2 py-1 text-[10px] transition-colors',
+                          on
+                            ? 'border-[var(--color-highlight)] bg-[color-mix(in_oklab,var(--color-highlight)_14%,transparent)] text-[var(--color-heading)]'
+                            : 'border-[var(--color-line)] text-[var(--color-text-muted)]',
+                        )}
+                      >
+                        {symbol.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </FormField>
               <FormField
                 label="Steps (one per line)"
@@ -215,6 +316,19 @@ export function PassportContentWizard({
                   onChange={(e) => patch('care', { steps: lines(e.target.value) })}
                 />
               </FormField>
+              <FormField
+                label="Step notes (one per line, aligned to the steps above)"
+                hint="The “why” revealed when a customer expands that step. Leave a line blank to skip."
+                labelStyle="stacked"
+              >
+                <Textarea
+                  rows={4}
+                  value={draft.care.notes.join('\n')}
+                  onChange={(e) =>
+                    patch('care', { notes: e.target.value.split('\n').map((l) => l.trim()) })
+                  }
+                />
+              </FormField>
               <MediaLibrarySlotField
                 label="Care illustration (optional)"
                 kind="image"
@@ -223,6 +337,103 @@ export function PassportContentWizard({
                 onMediaIdChange={(id) => patch('care', { asset: id })}
               />
             </>
+          ) : null}
+
+          {active.key === 'fit' ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField label="Intended fit" labelStyle="stacked">
+                  <Input
+                    density="compact"
+                    value={draft.fit.intendedFit}
+                    onChange={(e) => patch('fit', { intendedFit: e.target.value })}
+                  />
+                </FormField>
+                <FormField label="Stretch range" labelStyle="stacked">
+                  <Input
+                    density="compact"
+                    value={draft.fit.stretchRange}
+                    onChange={(e) => patch('fit', { stretchRange: e.target.value })}
+                  />
+                </FormField>
+                <FormField label="Model height" labelStyle="stacked">
+                  <Input
+                    density="compact"
+                    value={draft.fit.modelHeight}
+                    onChange={(e) => patch('fit', { modelHeight: e.target.value })}
+                  />
+                </FormField>
+                <FormField label="Size worn by the model" labelStyle="stacked">
+                  <Input
+                    density="compact"
+                    value={draft.fit.modelSize}
+                    onChange={(e) => patch('fit', { modelSize: e.target.value })}
+                  />
+                </FormField>
+              </div>
+              <FormField
+                label="Measurements (one per line — Label|Value)"
+                hint="e.g. Chest|52 cm"
+                labelStyle="stacked"
+              >
+                <Textarea
+                  rows={4}
+                  value={draft.fit.measurements.join('\n')}
+                  onChange={(e) => patch('fit', { measurements: lines(e.target.value) })}
+                />
+              </FormField>
+              <FormField label="Sizing advice" labelStyle="stacked">
+                <Textarea
+                  rows={2}
+                  value={draft.fit.sizeAdvice}
+                  onChange={(e) => patch('fit', { sizeAdvice: e.target.value })}
+                />
+              </FormField>
+              <FormField
+                label="Size map (one per line — ThisSize|CanonicalSize)"
+                hint="Powers cross-product size advice: map each of THIS product's sizes to a canonical body size (e.g. an oversized cut's M|S). Products sharing a canonical fit the same body. Leave blank to keep this product out of size advice entirely."
+                labelStyle="stacked"
+              >
+                <Textarea
+                  rows={4}
+                  value={Object.entries(draft.fit.sizeEquivalence)
+                    .map(([size, canonical]) => `${size}|${canonical}`)
+                    .join('\n')}
+                  onChange={(e) => {
+                    const next: Record<string, string> = {}
+                    for (const line of lines(e.target.value)) {
+                      const [size, canonical] = line.split('|')
+                      if (size?.trim() && canonical?.trim()) {
+                        next[size.trim()] = canonical.trim()
+                      }
+                    }
+                    patch('fit', { sizeEquivalence: next })
+                  }}
+                />
+              </FormField>
+            </>
+          ) : null}
+
+          {active.key === 'forgeNotes' ? (
+            <FormField
+              label="Forge notes (one per line — Title|Body)"
+              hint="Development facts shown as expandable cards, e.g. Eleven revisions|The collar alone took four."
+              labelStyle="stacked"
+            >
+              <Textarea
+                rows={6}
+                value={draft.forgeNotes.map((n) => `${n.title}|${n.body}`).join('\n')}
+                onChange={(e) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    forgeNotes: lines(e.target.value).map((line) => {
+                      const [title, ...rest] = line.split('|')
+                      return { title: (title ?? '').trim(), body: rest.join('|').trim() }
+                    }),
+                  }))
+                }
+              />
+            </FormField>
           ) : null}
 
           {active.key === 'details' ? (

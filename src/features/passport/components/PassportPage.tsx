@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { Product } from '@/features/products/types/product.types'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import type { ResolvedPassportContent } from '../lib/resolvePassportContent'
+import type { PassportSizeGuide } from '../lib/sizeRecommendation'
 import type { PassportView } from '../schemas/passport.schema'
 import { PassportConsole } from './console/PassportConsole'
 import { PassportMobile } from './PassportMobile'
@@ -14,6 +15,7 @@ export interface PassportPageProps {
   product: Product | null
   content: ResolvedPassportContent
   storyChapter: StoryChapter | null
+  sizeGuide: PassportSizeGuide | null
   claimedDate: string | null
   /** Owner-only extra controls (visibility switch, transfer) in the hero. */
   actions?: ReactNode
@@ -50,6 +52,7 @@ export function PassportPage(props: PassportPageProps) {
         product={props.product}
         content={props.content}
         storyChapter={props.storyChapter}
+        sizeGuide={props.sizeGuide}
         claimedDate={props.claimedDate}
         actions={props.actions}
       />

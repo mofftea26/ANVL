@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { Product } from '@/features/products/types/product.types'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import type { ResolvedPassportContent } from '../lib/resolvePassportContent'
+import type { PassportSizeGuide } from '../lib/sizeRecommendation'
 import {
   useHydrateStorefrontAccountSession,
   useStorefrontAccountSession,
@@ -24,6 +25,8 @@ export interface PassportExperienceProps {
   content: ResolvedPassportContent
   /** The product's saga chapter, embedded in the passport (null = none). */
   storyChapter: StoryChapter | null
+  /** Cross-product size map (loader-built, user-independent). */
+  sizeGuide: PassportSizeGuide | null
   /** One-time transfer code from the share link (?transfer=). */
   transferCode?: string
 }
@@ -42,6 +45,7 @@ export function PassportExperience({
   product,
   content,
   storyChapter,
+  sizeGuide,
   transferCode,
 }: PassportExperienceProps) {
   useHydrateStorefrontAccountSession()
@@ -97,6 +101,7 @@ export function PassportExperience({
             product={product}
             content={content}
             storyChapter={storyChapter}
+            sizeGuide={sizeGuide}
             claimedDate={claimedDate}
             actions={
               <div className="flex flex-wrap items-center justify-center gap-3">
@@ -116,6 +121,7 @@ export function PassportExperience({
           product={product}
           content={content}
           storyChapter={storyChapter}
+          sizeGuide={sizeGuide}
           claimedDate={claimedDate}
         />
       )

@@ -1,4 +1,13 @@
-﻿## 2026-07-15 — Passport Phase A: no serials, owner visibility switch, ember bento cards, group tabs, in-page story, world map, rank levels
+﻿## 2026-07-15 — Passport Phase B: specifications, interactive care guide, fit & sizing with size recommendations, forge notes
+
+- **Specifications panel** (CRAFT): construction, fit type, compression, stretch, breathability, intended use — unauthored rows hide rather than render empty.
+- **Interactive care guide** (RITUAL): `careSymbols.tsx` draws 13 standard care marks as inline SVG in brand tokens (wash temps, bleach/tumble/iron/dry-clean prohibitions, inside-out, line/flat dry); tapping a mark explains it in plain language, and each numbered step expands to the CMS-authored "why" note. CSS/DOM only — works on every device, `motion-safe:` gated.
+- **Fit & sizing** (RITUAL) + **personal size recommendation** (approved this session): every product maps its own sizes to a **canonical body size** (`fit.sizeEquivalence` — an oversized cut's `M → S`), so a registered size translates across the armory: this size → canonical → the other product's size. `buildPassportSizeGuide()` runs in the SSR loader (user-independent); `recommendSizes()` applies the viewer's size client-side, since SSR is anon and only the owner ever learns their registered size. **It stays silent rather than guessing** (no map / unmapped size / no matching canonical → no advice), and the map is CMS-maintained per product so a cut that runs big is mapped honestly. 11 unit tests cover the translation, case-insensitivity, and every silent path.
+- **Forge notes** (LEGACY): expandable `Title|Body` development fact cards.
+- **Wizard grew to 9 steps** (specs, care symbols + step notes, fit + size map, forge notes) — `passport_content` is jsonb with `.catch()` defaults and back-filling, so **no migration was needed**.
+- **Verified**: `pnpm verify` green (118 files / 664 tests).
+
+## 2026-07-15 — Passport Phase A: no serials, owner visibility switch, ember bento cards, group tabs, in-page story, world map, rank levels
 
 Implements the locked ANVL Passport product decisions + the UX corrections. **Ask-before-build protocol is now in force** for every optional feature (each phase opens with its own yes/no questions).
 

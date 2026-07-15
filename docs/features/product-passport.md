@@ -150,6 +150,40 @@ Console/UX rework:
   `public/brand/ranks/*.png` (256px, transparent). The serial-based "Early
   Steel" badge is gone.
 
+## Phase B (2026-07-15) — passport content depth
+
+Nine sections now, still one registry (`PASSPORT_SECTIONS`), still three tabs:
+
+| Group | Sections |
+|---|---|
+| THE CRAFT | Material dossier · **Specifications** · Forged details |
+| THE RITUAL | **Care ritual** (interactive) · **Fit & sizing** |
+| THE LEGACY | The story · **Forge notes** · Origin · Authenticity |
+
+- **Specifications** (`specs`): construction, fit type, compression, stretch,
+  breathability, intended use. Unauthored rows hide themselves.
+- **Interactive care guide** (`CareGuide` + `careSymbols.tsx`): 13 standard
+  care marks drawn as inline SVG in brand tokens — tap one for its plain
+  meaning; numbered steps expand to the "why" note the CMS authored.
+- **Fit & sizing** (`fit`): intended fit, measurements (`Label|Value` lines),
+  stretch range, model height + size worn, sizing advice.
+- **Personal size recommendation** (approved 2026-07-15). Each product maps
+  ITS sizes to a **canonical body size** (`fit.sizeEquivalence`, e.g. an
+  oversized cut's `M → S`). The viewer's registered size translates:
+  this size → canonical → the other product's size for that canonical.
+  `buildPassportSizeGuide()` runs in the SSR loader (user-independent);
+  `recommendSizes()` applies the viewer's own size client-side (SSR is anon —
+  only the owner ever learns their size). **It stays silent rather than
+  guessing**: no map, unmapped size, or no matching canonical → no advice.
+  Maintained per product in the wizard, so a cut that runs big is mapped
+  honestly.
+- **Forge notes** (`forgeNotes`): `Title|Body` development fact cards,
+  expandable.
+
+`passport_content` is jsonb, so **no migration was needed** — every new
+section has `.catch()` defaults and `deepMergeDefaults` back-fills blobs
+authored before the section existed.
+
 ## Follow-ups
 
 - RPC rate limiting (Phase-J family; 122-bit tokens make brute force

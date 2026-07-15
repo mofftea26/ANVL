@@ -21,7 +21,33 @@ export interface ResolvedPassportContent {
     gallery: Array<{ src: string; alt: string }>
   }
   material: { title: string; note: string; macroUrl?: string }
-  care: { intro: string; steps: string[] }
+  specs: {
+    construction: string
+    fitType: string
+    compression: string
+    stretch: string
+    breathability: string
+    intendedUse: string
+  }
+  fit: {
+    intendedFit: string
+    /** Parsed "Chest|52 cm" lines. */
+    measurements: Array<{ label: string; value: string }>
+    stretchRange: string
+    modelHeight: string
+    modelSize: string
+    sizeAdvice: string
+  }
+  forgeNotes: Array<{ title: string; body: string }>
+  care: {
+    intro: string
+    steps: string[]
+    /** Care-symbol preset keys (careSymbols.tsx). */
+    symbols: string[]
+    /** Optional per-step "why" note (index-aligned with `steps`). */
+    notes: string[]
+    assetUrl?: string
+  }
   details: { heading: string; story: string; facts: string[]; funFact: string; assetUrl?: string }
   origin: {
     label: string
@@ -89,9 +115,36 @@ export function resolvePassportContent(input: {
       note: firstNonEmpty(c.material.note, pdpContent?.materialNote, product?.gsm),
       macroUrl: media(c.material.macroAsset) ?? pdpContent?.materialMacro,
     },
+    specs: {
+      construction: c.specs.construction.trim(),
+      fitType: firstNonEmpty(c.specs.fitType, product?.fit),
+      compression: c.specs.compression.trim(),
+      stretch: c.specs.stretch.trim(),
+      breathability: c.specs.breathability.trim(),
+      intendedUse: c.specs.intendedUse.trim(),
+    },
+    fit: {
+      intendedFit: firstNonEmpty(c.fit.intendedFit, product?.fit),
+      measurements: c.fit.measurements
+        .map((line) => {
+          const [label, ...rest] = line.split('|')
+          return { label: (label ?? '').trim(), value: rest.join('|').trim() }
+        })
+        .filter((m) => m.label && m.value),
+      stretchRange: c.fit.stretchRange.trim(),
+      modelHeight: c.fit.modelHeight.trim(),
+      modelSize: c.fit.modelSize.trim(),
+      sizeAdvice: c.fit.sizeAdvice.trim(),
+    },
+    forgeNotes: c.forgeNotes
+      .map((n) => ({ title: n.title.trim(), body: n.body.trim() }))
+      .filter((n) => n.title || n.body),
     care: {
       intro: c.care.intro.trim(),
       steps: careSteps,
+      symbols: c.care.symbols.map((s) => s.trim()).filter(Boolean),
+      notes: c.care.notes.map((n) => n.trim()),
+      assetUrl: media(c.care.asset),
     },
     details: {
       heading: firstNonEmpty(c.details.heading, pdpContent?.storyHeading, 'Forged details'),

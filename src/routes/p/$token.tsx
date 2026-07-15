@@ -6,6 +6,7 @@ import { resolveStorefrontPageAssets } from '@/features/cms/assets/resolvePublis
 import { fetchPassportByTokenAnon } from '@/features/passport/api/passportClient'
 import { PassportExperience } from '@/features/passport/components/PassportExperience'
 import { resolvePassportContent } from '@/features/passport/lib/resolvePassportContent'
+import { buildPassportSizeGuide } from '@/features/passport/lib/sizeRecommendation'
 import { resolvePdpContent } from '@/features/products/pdp/resolvePdpContent'
 
 export const Route = createFileRoute('/p/$token')({
@@ -33,12 +34,14 @@ export const Route = createFileRoute('/p/$token')({
           productSlug: '',
         }),
         storyChapter: null,
+        sizeGuide: null,
       }
     }
-    const [product, projection, storyBook] = await Promise.all([
+    const [product, projection, storyBook, catalog] = await Promise.all([
       runtimeClients.commerce.getProductBySlug(view.productSlug).catch(() => null),
       loadStorefrontProjection(),
       runtimeClients.story.getChapterByProductSlug(view.productSlug).catch(() => null),
+      runtimeClients.commerce.getShopListingCatalog().catch(() => ({ items: [], drops: [] })),
     ])
     const pdpResolved = product
       ? resolvePdpContent({
@@ -59,7 +62,21 @@ export const Route = createFileRoute('/p/$token')({
       mediaIndex: projection.mediaIndex,
       productSlug: view.productSlug,
     })
-    return { token: params.token, view, product, content, storyChapter: storyBook }
+    // User-independent (the viewer's own size is applied client-side, since
+    // SSR is anon and only the owner ever learns their registered size).
+    const sizeGuide = buildPassportSizeGuide({
+      productSlug: view.productSlug,
+      passportContent: projection.passportContent,
+      catalog: catalog.items.map((p) => ({ slug: p.slug, name: p.name })),
+    })
+    return {
+      token: params.token,
+      view,
+      product,
+      content,
+      storyChapter: storyBook,
+      sizeGuide,
+    }
   },
   head: ({ loaderData }) =>
     buildSeoMeta({

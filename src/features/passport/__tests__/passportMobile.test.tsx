@@ -33,7 +33,24 @@ const content: ResolvedPassportContent = {
   identity: { tagline: 'Forged for the off-day.', authenticityNote: '' },
   piece: { heroRenderUrl: undefined, gallery: [] },
   material: { title: 'Heavyweight cotton', note: '240 GSM', macroUrl: undefined },
-  care: { intro: '', steps: ['Cold wash', 'Hang dry'] },
+  specs: {
+    construction: 'Seamless knit',
+    fitType: 'Relaxed',
+    compression: '',
+    stretch: '',
+    breathability: '',
+    intendedUse: '',
+  },
+  fit: {
+    intendedFit: 'Relaxed',
+    measurements: [],
+    stretchRange: '',
+    modelHeight: '',
+    modelSize: '',
+    sizeAdvice: '',
+  },
+  forgeNotes: [],
+  care: { intro: '', steps: ['Cold wash', 'Hang dry'], symbols: [], notes: [] },
   details: { heading: 'Forged details', story: 'A story.', facts: ['Fact'], funFact: '' },
   origin: {
     label: 'Forged in Lebanon',
@@ -53,6 +70,7 @@ function renderMobile(variant: 'owner' | 'public' = 'owner') {
       product={null}
       content={content}
       storyChapter={null}
+      sizeGuide={null}
       claimedDate="14 July 2026"
     />,
   )

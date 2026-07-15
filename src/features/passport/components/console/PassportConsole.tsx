@@ -9,6 +9,7 @@ import { gsap } from '@/shared/lib/gsap'
 import { isWebglAvailable } from '@/shared/webgl/isWebglAvailable'
 import { usePassportSectionNav } from '../../hooks/usePassportSectionNav'
 import type { ResolvedPassportContent } from '../../lib/resolvePassportContent'
+import type { PassportSizeGuide } from '../../lib/sizeRecommendation'
 import type { PassportView } from '../../schemas/passport.schema'
 import { createPassportMotionState } from '../../webgl/passportMotionState'
 import { PassportForgeGate } from '../../webgl/PassportForgeGate'
@@ -39,6 +40,7 @@ export function PassportConsole({
   product,
   content,
   storyChapter,
+  sizeGuide,
   claimedDate,
   actions,
 }: {
@@ -46,6 +48,7 @@ export function PassportConsole({
   product: Product | null
   content: ResolvedPassportContent
   storyChapter: StoryChapter | null
+  sizeGuide: PassportSizeGuide | null
   claimedDate: string | null
   actions?: ReactNode
 }) {
@@ -75,7 +78,14 @@ export function PassportConsole({
     },
   })
 
-  const ctx: PassportSectionContext = { view, product, content, claimedDate, storyChapter }
+  const ctx: PassportSectionContext = {
+    view,
+    product,
+    content,
+    claimedDate,
+    storyChapter,
+    sizeGuide,
+  }
   const availableSections = PASSPORT_SECTIONS.filter((s) => s.available(ctx))
   const groups = PASSPORT_GROUPS.filter((g) =>
     availableSections.some((s) => s.group === g.key),

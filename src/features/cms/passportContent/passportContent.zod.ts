@@ -39,6 +39,45 @@ export const passportCareSectionSchema = z.object({
   steps: z.array(z.string()).catch([]),
   /** Optional care illustration (media id). */
   asset: z.string().catch(''),
+  /** Care-symbol preset keys (see careSymbols.tsx) — rendered as icons. */
+  symbols: z.array(z.string()).catch([]),
+  /** Longer "why" notes shown when a care step is expanded. */
+  notes: z.array(z.string()).catch([]),
+})
+
+/** Technical specifications — the CRAFT tab's data panel. */
+export const passportSpecsSectionSchema = z.object({
+  construction: z.string().catch(''),
+  fitType: z.string().catch(''),
+  compression: z.string().catch(''),
+  stretch: z.string().catch(''),
+  breathability: z.string().catch(''),
+  intendedUse: z.string().catch(''),
+})
+
+/** Fit & sizing — measurements + the canonical size map that drives advice. */
+export const passportFitSectionSchema = z.object({
+  intendedFit: z.string().catch(''),
+  /** "Chest|52 cm" per line — parsed into label/value pairs. */
+  measurements: z.array(z.string()).catch([]),
+  stretchRange: z.string().catch(''),
+  modelHeight: z.string().catch(''),
+  modelSize: z.string().catch(''),
+  /** Free advice, e.g. "Size down for a compressive fit." */
+  sizeAdvice: z.string().catch(''),
+  /**
+   * This product's size → a CANONICAL body size (S/M/L/XL…). Two products
+   * that fit the same body share a canonical value, which is what lets the
+   * passport translate a registered size into other pieces. Kept per-product
+   * in the CMS so a cut that runs big can be mapped honestly.
+   */
+  sizeEquivalence: z.record(z.string(), z.string()).catch({}),
+})
+
+/** A single Forge Note — a development fact card. */
+export const passportForgeNoteSchema = z.object({
+  title: z.string().catch(''),
+  body: z.string().catch(''),
 })
 
 export const passportDetailsSectionSchema = z.object({
@@ -67,7 +106,31 @@ export const passportProductContentSchema = z.object({
   identity: passportIdentitySectionSchema.catch({ tagline: '', authenticityNote: '' }),
   piece: passportPieceSectionSchema.catch({ heroRender: '', gallery: [] }),
   material: passportMaterialSectionSchema.catch({ title: '', note: '', macroAsset: '' }),
-  care: passportCareSectionSchema.catch({ intro: '', steps: [], asset: '' }),
+  specs: passportSpecsSectionSchema.catch({
+    construction: '',
+    fitType: '',
+    compression: '',
+    stretch: '',
+    breathability: '',
+    intendedUse: '',
+  }),
+  fit: passportFitSectionSchema.catch({
+    intendedFit: '',
+    measurements: [],
+    stretchRange: '',
+    modelHeight: '',
+    modelSize: '',
+    sizeAdvice: '',
+    sizeEquivalence: {},
+  }),
+  forgeNotes: z.array(passportForgeNoteSchema).catch([]),
+  care: passportCareSectionSchema.catch({
+    intro: '',
+    steps: [],
+    asset: '',
+    symbols: [],
+    notes: [],
+  }),
   details: passportDetailsSectionSchema.catch({
     heading: '',
     story: '',
@@ -91,7 +154,25 @@ export const DEFAULT_PASSPORT_PRODUCT_CONTENT: PassportProductContent = {
   identity: { tagline: '', authenticityNote: '' },
   piece: { heroRender: '', gallery: [] },
   material: { title: '', note: '', macroAsset: '' },
-  care: { intro: '', steps: [], asset: '' },
+  specs: {
+    construction: '',
+    fitType: '',
+    compression: '',
+    stretch: '',
+    breathability: '',
+    intendedUse: '',
+  },
+  fit: {
+    intendedFit: '',
+    measurements: [],
+    stretchRange: '',
+    modelHeight: '',
+    modelSize: '',
+    sizeAdvice: '',
+    sizeEquivalence: {},
+  },
+  forgeNotes: [],
+  care: { intro: '', steps: [], asset: '', symbols: [], notes: [] },
   details: { heading: '', story: '', facts: [], funFact: '', asset: '' },
   origin: { label: '', place: '', story: '', asset: '', madeIn: '', designedIn: '' },
 }
@@ -115,6 +196,11 @@ export function parsePassportContent(raw: unknown): PassportContentConfig {
   return out
 }
 
+/**
+ * Fill missing keys from the defaults so a blob authored before a section
+ * existed still parses (every section is object-shaped except `forgeNotes`,
+ * which is a list).
+ */
 function deepMergeDefaults(value: Record<string, unknown>): PassportProductContent {
   const d = DEFAULT_PASSPORT_PRODUCT_CONTENT
   const section = (key: keyof PassportProductContent) => {
@@ -127,6 +213,9 @@ function deepMergeDefaults(value: Record<string, unknown>): PassportProductConte
     identity: section('identity'),
     piece: section('piece'),
     material: section('material'),
+    specs: section('specs'),
+    fit: section('fit'),
+    forgeNotes: Array.isArray(value.forgeNotes) ? value.forgeNotes : [],
     care: section('care'),
     details: section('details'),
     origin: section('origin'),

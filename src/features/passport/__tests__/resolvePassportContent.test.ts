@@ -57,7 +57,13 @@ describe('resolvePassportContent', () => {
         'seamless-tee': {
           ...DEFAULT_PASSPORT_PRODUCT_CONTENT,
           material: { title: 'Wizard fabric', note: '', macroAsset: 'asset-1' },
-          care: { intro: 'Treat it well.', steps: ['Authored step'], asset: '' },
+          care: {
+            intro: 'Treat it well.',
+            steps: ['Authored step'],
+            asset: '',
+            symbols: ['no-bleach'],
+            notes: ['Bleach eats elastane.'],
+          },
           details: {
             heading: 'From the wizard',
             story: '',
