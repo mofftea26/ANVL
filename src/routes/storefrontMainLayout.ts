@@ -9,6 +9,18 @@
  *  no PageBackdrop — the page paints its own fixed backdrops). */
 export const FULL_BLEED_STOREFRONT_PATHS: ReadonlySet<string> = new Set(['/', '/about'])
 
+/** Full-bleed path prefixes (dynamic routes the exact-match Set can't cover).
+ *  `/p/<token>` — the passport paints its own atmosphere edge-to-edge, so the
+ *  transparent bar sits ON the page instead of over a seam. */
+const FULL_BLEED_STOREFRONT_PREFIXES = ['/p/'] as const
+
+export function isFullBleedStorefrontPath(pathname: string): boolean {
+  return (
+    FULL_BLEED_STOREFRONT_PATHS.has(pathname) ||
+    FULL_BLEED_STOREFRONT_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  )
+}
+
 export function getStorefrontMainClassName(options: {
   showChrome: boolean
   isFullBleed: boolean

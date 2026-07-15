@@ -203,7 +203,7 @@ export function PassportTransferAccept({
   })
 
   return (
-    <div className="relative flex min-h-[calc(100svh-var(--anvl-header-h))] items-center justify-center overflow-hidden bg-[var(--color-bg)] px-6 py-16">
+    <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-[var(--color-bg)] px-6 pb-20 pt-[calc(var(--anvl-header-h)+3rem)]">
       <PassportAtmosphere imageSrc={product?.images[0]?.src} />
       <form onSubmit={onSubmit} className="relative mx-auto max-w-lg text-center">
         <ArrowLeftRight

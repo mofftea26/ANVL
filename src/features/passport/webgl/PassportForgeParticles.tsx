@@ -276,9 +276,14 @@ export function PassportForgeParticles({ motion }: { motion: PassportMotionState
       }
     }
 
-    // Cards resolved → embers recede to a faint living trace (uReveal ~0.8
-    // keeps ~25% alpha + the shade glow along the borders).
-    u.uReveal.value += (motion.reveal * 0.8 - u.uReveal.value) * 0.08
+    // Cards resolved → the embers fade out entirely and stop rendering: they
+    // exist only while something is in motion. Any new shatter/layout drops
+    // motion.reveal, which brings them straight back.
+    u.uReveal.value += (motion.reveal - u.uReveal.value) * 0.08
+    // Land the asymptote so the field actually reaches zero and switches off
+    // (the last 3% of alpha is invisible anyway).
+    if (motion.reveal >= 1 && u.uReveal.value > 0.97) u.uReveal.value = 1
+    points.visible = u.uReveal.value < 0.999
   })
 
   return (

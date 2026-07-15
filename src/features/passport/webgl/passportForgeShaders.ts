@@ -72,8 +72,9 @@ export const PASSPORT_FORGE_VERTEX = /* glsl */ `
       1.0
     );
     vSeed = seed;
-    // Embers all but vanish INTO the resolved render — a whisper of heat only.
-    vFade = 1.0 - uReveal * 0.94;
+    // Embers vanish completely INTO the resolved cards — they exist only
+    // while something is moving (the console also stops rendering them).
+    vFade = 1.0 - uReveal;
     vShade = mix(aShadeFrom, aShadeTo, m);
     vForm = t;
 

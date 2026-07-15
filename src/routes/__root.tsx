@@ -46,7 +46,7 @@ import {
   useLandingEntry,
 } from '@/features/landingPages/LandingEntryContext'
 import {
-  FULL_BLEED_STOREFRONT_PATHS,
+  isFullBleedStorefrontPath,
   getStorefrontMainClassName,
 } from '@/routes/storefrontMainLayout'
 import { PageBackdrop } from '@/shared/components/layout/PageBackdrop'
@@ -174,7 +174,7 @@ function StorefrontLayout() {
     select: (state) => state.location.pathname,
   })
   const isHome = pathname === '/'
-  const isFullBleed = FULL_BLEED_STOREFRONT_PATHS.has(pathname)
+  const isFullBleed = isFullBleedStorefrontPath(pathname)
   const backdropSrc =
     !isFullBleed ? resolvePageBackdropSrc(pathname, assets, mediaIndex) : null
   const { homeEntryComplete, resetHomeEntry } = useLandingEntry()

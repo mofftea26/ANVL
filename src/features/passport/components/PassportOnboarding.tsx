@@ -123,11 +123,11 @@ export function PassportOnboarding({
   return (
     <div
       ref={scopeRef}
-      className="relative min-h-[calc(100svh-var(--anvl-header-h))] overflow-hidden bg-[var(--color-bg)]"
+      className="relative min-h-svh overflow-hidden bg-[var(--color-bg)]"
     >
       <PassportAtmosphere imageSrc={product?.images[0]?.src} />
 
-      <div className="relative mx-auto grid min-h-[calc(100svh-var(--anvl-header-h))] max-w-6xl items-center gap-10 px-6 py-14 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
+      <div className="relative mx-auto grid min-h-svh max-w-6xl items-center gap-10 px-6 pb-20 pt-[calc(var(--anvl-header-h)+2.5rem)] lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
         {/* The piece ----------------------------------------------------- */}
         <div data-onb-image className="relative mx-auto w-full max-w-sm lg:max-w-none">
           {heroImage ? (

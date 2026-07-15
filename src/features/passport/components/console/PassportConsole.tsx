@@ -7,6 +7,7 @@ import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import { cn } from '@/shared/lib/cn'
 import { gsap } from '@/shared/lib/gsap'
 import { isWebglAvailable } from '@/shared/webgl/isWebglAvailable'
+import { usePassportSectionNav } from '../../hooks/usePassportSectionNav'
 import type { ResolvedPassportContent } from '../../lib/resolvePassportContent'
 import type { PassportView } from '../../schemas/passport.schema'
 import { createPassportMotionState } from '../../webgl/passportMotionState'
@@ -23,8 +24,6 @@ import {
   PASSPORT_GROUPS,
   PASSPORT_SECTIONS,
   type PassportSectionContext,
-  type PassportSectionGroup,
-  type PassportSectionKey,
 } from './passportSections'
 
 /**
@@ -54,19 +53,27 @@ export function PassportConsole({
   const panelRef = useRef<HTMLDivElement>(null)
   const motion = useMemo(() => createPassportMotionState(), [])
   const [webglOn] = useState(() => isWebglAvailable())
-  const [group, setGroup] = useState<PassportSectionGroup>('craft')
-  const [active, setActive] = useState<PassportSectionKey | null>(null)
-  const [panelVisible, setPanelVisible] = useState(true)
-  const transitioning = useRef(false)
   const firstEntrance = useRef(true)
-  const swapTimer = useRef<number | null>(null)
 
-  useEffect(
-    () => () => {
-      if (swapTimer.current !== null) window.clearTimeout(swapTimer.current)
+  // Shared with the mobile passport — the swap is state + a timer; the ember
+  // choreography below only decorates it.
+  const { group, active, panelVisible, transitionTo } = usePassportSectionNav({
+    swapDelayMs: PASSPORT_SWAP_AT * 1000,
+    onOut: () => {
+      motion.shatter += 1
+      gsap.killTweensOf(motion, 'reveal')
+      gsap.to(motion, { reveal: 0, duration: PASSPORT_SHATTER_OUT * 0.7, ease: 'sine.in' })
     },
-    [],
-  )
+    onIn: () => {
+      gsap.killTweensOf(motion, 'reveal')
+      gsap.to(motion, {
+        reveal: 1,
+        duration: 1.2,
+        ease: 'power2.out',
+        delay: PASSPORT_SHATTER_IN * 0.5,
+      })
+    },
+  })
 
   const ctx: PassportSectionContext = { view, product, content, claimedDate, storyChapter }
   const availableSections = PASSPORT_SECTIONS.filter((s) => s.available(ctx))
@@ -194,37 +201,10 @@ export function PassportConsole({
     { scope: scopeRef, dependencies: [group, active, panelVisible] },
   )
 
-  /** Veil out, swap panel state, re-forge around the new layout. */
-  const transitionTo = (next: { group?: PassportSectionGroup; section: PassportSectionKey | null }) => {
-    const nextGroup = next.group ?? group
-    if (transitioning.current) return
-    if (nextGroup === group && next.section === active) return
-    transitioning.current = true
-
-    motion.shatter += 1
-    gsap.killTweensOf(motion, 'reveal')
-    gsap.to(motion, { reveal: 0, duration: PASSPORT_SHATTER_OUT * 0.7, ease: 'sine.in' })
-    setPanelVisible(false)
-
-    swapTimer.current = window.setTimeout(() => {
-      setGroup(nextGroup)
-      setActive(next.section)
-      setPanelVisible(true)
-      gsap.killTweensOf(motion, 'reveal')
-      gsap.to(motion, {
-        reveal: 1,
-        duration: 1.2,
-        ease: 'power2.out',
-        delay: PASSPORT_SHATTER_IN * 0.5,
-      })
-      transitioning.current = false
-    }, PASSPORT_SWAP_AT * 1000)
-  }
-
   return (
     <div
       ref={scopeRef}
-      className="relative isolate h-[calc(100svh-var(--anvl-header-h))] overflow-hidden bg-[var(--color-bg)]"
+      className="relative isolate h-svh overflow-hidden bg-[var(--color-bg)] pt-[var(--anvl-header-h)]"
       data-passport-console
     >
       <PassportForgeGate motion={motion} />
