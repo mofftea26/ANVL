@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Award, Medal, QrCode, Swords } from 'lucide-react'
+import { Award, Medal, QrCode } from 'lucide-react'
+import { useArmoryFeatsQuery } from '@/features/passport/hooks/useArmory'
 import { useOwnedPassportsQuery } from '@/features/passport/hooks/usePassport'
 import type { ArmoryCatalogEntry } from '@/features/passport/lib/armory'
+import {
+  buildChallengeContext,
+  evaluateChallenges,
+} from '@/features/passport/lib/challenges'
+import { computeForgeLevel, nextForgeMilestone } from '@/features/passport/lib/forgeXp'
 import {
   computeDropCompletion,
   deriveArmoryBadges,
@@ -11,6 +17,7 @@ import {
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
 import { cn } from '@/shared/lib/cn'
+import { ArmoryChallenges } from './armory/ArmoryChallenges'
 import { ArmoryFeats } from './armory/ArmoryFeats'
 import { ArmoryHonor } from './armory/ArmoryHonor'
 import { ArmoryShareCard } from './armory/ArmoryShareCard'
@@ -23,6 +30,8 @@ import {
   ArmoryVaultView,
   type ArmoryViewKey,
 } from './armory/ArmoryViews'
+import { CollectionCrest } from './armory/CollectionCrest'
+import { ForgeProgress } from './armory/ForgeProgress'
 
 /** Catalog for the Armory's views — light, cached, storefront-safe. */
 function useArmoryCatalogQuery() {
@@ -51,16 +60,27 @@ function useArmoryCatalogQuery() {
 export function ArmoryPanel() {
   const passportsQuery = useOwnedPassportsQuery()
   const catalogQuery = useArmoryCatalogQuery()
+  const featsQuery = useArmoryFeatsQuery()
   const owned = passportsQuery.data ?? []
   const catalog = catalogQuery.data ?? []
+  const featCount = featsQuery.data?.length ?? 0
   const [view, setView] = useState<ArmoryViewKey>('grid')
 
   const completion = computeDropCompletion(owned, catalog)
   const rank = deriveArmoryRank(owned.length, completion)
   const badges = deriveArmoryBadges(owned.length, completion)
+  const forge = computeForgeLevel({ owned, featCount, completion })
+  const milestone = nextForgeMilestone({ claimCount: owned.length, completion, forge })
+  const challenges = evaluateChallenges(
+    buildChallengeContext({ owned, featCount, completion }),
+  )
+  const honorPinned = owned.filter((p) => p.featuredSlot !== null).length
 
   return (
     <div className="space-y-4">
+      {/* Forge progress — the live XP loop ----------------------------- */}
+      <ForgeProgress forge={forge} milestone={milestone} />
+
       {/* Standing ------------------------------------------------------- */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Rank" icon={<Medal size={15} />}>
@@ -99,11 +119,25 @@ export function ArmoryPanel() {
           <p className="anvl-micro mt-2 text-[var(--color-text-muted)]">{rank.description}</p>
         </AccountBentoCard>
 
-        <AccountBentoCard bg={accountCardBg('gold')} eyebrow="Forged" icon={<Swords size={15} />}>
-          <p className="anvl-heading mt-1 text-3xl text-[var(--color-heading)]">{owned.length}</p>
-          <p className="anvl-micro text-[var(--color-text-muted)]">
-            {owned.length === 1 ? 'piece registered' : 'pieces registered'}
-          </p>
+        <AccountBentoCard bg={accountCardBg('gold')} eyebrow="Crest" icon={<Medal size={15} />}>
+          <div className="mt-1 flex items-center gap-3">
+            <div className="h-16 w-16 shrink-0">
+              <CollectionCrest
+                registrations={owned.length}
+                fullDrops={completion.filter((d) => d.total > 0 && d.claimed >= d.total).length}
+                honorPinned={honorPinned}
+                level={forge.level}
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="anvl-heading text-3xl leading-none text-[var(--color-heading)]">
+                {owned.length}
+              </p>
+              <p className="anvl-micro text-[var(--color-text-muted)]">
+                {owned.length === 1 ? 'piece forged' : 'pieces forged'}
+              </p>
+            </div>
+          </div>
         </AccountBentoCard>
 
         <AccountBentoCard
@@ -189,6 +223,7 @@ export function ArmoryPanel() {
             {view === 'loadout' ? <ArmoryLoadoutView owned={owned} catalog={catalog} /> : null}
           </div>
 
+          <ArmoryChallenges challenges={challenges} />
           <ArmoryFeats />
           <ArmoryShareCard />
         </>
