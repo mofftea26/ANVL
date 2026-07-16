@@ -37,6 +37,7 @@ import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as ArmoryHandleRouteImport } from './routes/armory/$handle'
 import { Route as ApiCspReportRouteImport } from './routes/api/csp-report'
 import { Route as AdminThemeRouteImport } from './routes/admin/theme'
 import { Route as AdminStoryRouteImport } from './routes/admin/story'
@@ -196,6 +197,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArmoryHandleRoute = ArmoryHandleRouteImport.update({
+  id: '/armory/$handle',
+  path: '/armory/$handle',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCspReportRoute = ApiCspReportRouteImport.update({
   id: '/api/csp-report',
   path: '/api/csp-report',
@@ -319,6 +325,7 @@ export interface FileRoutesByFullPath {
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
   '/api/csp-report': typeof ApiCspReportRoute
+  '/armory/$handle': typeof ArmoryHandleRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -365,6 +372,7 @@ export interface FileRoutesByTo {
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
   '/api/csp-report': typeof ApiCspReportRoute
+  '/armory/$handle': typeof ArmoryHandleRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -414,6 +422,7 @@ export interface FileRoutesById {
   '/admin/story': typeof AdminStoryRoute
   '/admin/theme': typeof AdminThemeRoute
   '/api/csp-report': typeof ApiCspReportRoute
+  '/armory/$handle': typeof ArmoryHandleRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -464,6 +473,7 @@ export interface FileRouteTypes {
     | '/admin/story'
     | '/admin/theme'
     | '/api/csp-report'
+    | '/armory/$handle'
     | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/admin/story'
     | '/admin/theme'
     | '/api/csp-report'
+    | '/armory/$handle'
     | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -558,6 +569,7 @@ export interface FileRouteTypes {
     | '/admin/story'
     | '/admin/theme'
     | '/api/csp-report'
+    | '/armory/$handle'
     | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -592,6 +604,7 @@ export interface RootRouteChildren {
   StoryRoute: typeof StoryRoute
   TermsRoute: typeof TermsRoute
   ApiCspReportRoute: typeof ApiCspReportRoute
+  ArmoryHandleRoute: typeof ArmoryHandleRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
@@ -803,6 +816,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/armory/$handle': {
+      id: '/armory/$handle'
+      path: '/armory/$handle'
+      fullPath: '/armory/$handle'
+      preLoaderRoute: typeof ArmoryHandleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/csp-report': {
       id: '/api/csp-report'
       path: '/api/csp-report'
@@ -1007,6 +1027,7 @@ const rootRouteChildren: RootRouteChildren = {
   StoryRoute: StoryRoute,
   TermsRoute: TermsRoute,
   ApiCspReportRoute: ApiCspReportRoute,
+  ArmoryHandleRoute: ArmoryHandleRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,

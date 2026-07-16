@@ -18,6 +18,10 @@ describe('isComingSoonExemptPath', () => {
     expect(isComingSoonExemptPath('/auth/sign-up')).toBe(true)
   })
 
+  it('exempts shared public armories so shared links keep resolving', () => {
+    expect(isComingSoonExemptPath('/armory/deadbeefdeadbeef')).toBe(true)
+  })
+
   it('gates every other public route', () => {
     for (const path of ['/', '/shop', '/shop/oath-tee', '/about', '/story', '/cart', '/account']) {
       expect(isComingSoonExemptPath(path)).toBe(false)

@@ -7,11 +7,13 @@
  * the flag off instantly restores every route. `/admin` is exempt so the CMS
  * is always reachable; `/p` (product passports) is exempt because the QR cards
  * ship with physical products — a customer holding one must always reach their
- * passport — and `/auth` is exempt so the passport claim's sign-in step works.
+ * passport; `/armory` (shared public armories) is exempt so a link an owner
+ * shared keeps resolving; and `/auth` is exempt so the passport claim's sign-in
+ * step works.
  */
 
 /** Route prefixes that are never gated. */
-export const COMING_SOON_EXEMPT_PREFIXES = ['/admin', '/p', '/auth'] as const
+export const COMING_SOON_EXEMPT_PREFIXES = ['/admin', '/p', '/armory', '/auth'] as const
 
 export function isComingSoonExemptPath(pathname: string): boolean {
   return COMING_SOON_EXEMPT_PREFIXES.some(

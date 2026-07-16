@@ -13,6 +13,7 @@ import { accountCardBg } from '@/features/storefront-account/account/accountCard
 import { cn } from '@/shared/lib/cn'
 import { ArmoryFeats } from './armory/ArmoryFeats'
 import { ArmoryHonor } from './armory/ArmoryHonor'
+import { ArmoryShareCard } from './armory/ArmoryShareCard'
 import {
   ARMORY_VIEWS,
   ArmoryCollectionView,
@@ -189,6 +190,7 @@ export function ArmoryPanel() {
           </div>
 
           <ArmoryFeats />
+          <ArmoryShareCard />
         </>
       )}
     </div>
