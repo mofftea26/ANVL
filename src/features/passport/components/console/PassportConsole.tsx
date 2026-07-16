@@ -21,6 +21,7 @@ import {
   PASSPORT_SWAP_AT,
 } from '../../webgl/passportForgeTiming'
 import { AuthenticityPlate } from '../AuthenticityPlate'
+import { PassportHotspotDetail, PassportHotspots } from '../PassportHotspots'
 import {
   PASSPORT_GROUPS,
   PASSPORT_SECTIONS,
@@ -57,6 +58,8 @@ export function PassportConsole({
   const motion = useMemo(() => createPassportMotionState(), [])
   const [webglOn] = useState(() => isWebglAvailable())
   const firstEntrance = useRef(true)
+  // Design-detail markers live on the render, independent of the section nav.
+  const [hotspot, setHotspot] = useState<number | null>(null)
 
   // Shared with the mobile passport — the swap is state + a timer; the ember
   // choreography below only decorates it.
@@ -147,7 +150,7 @@ export function PassportConsole({
       window.clearTimeout(settle)
       window.removeEventListener('resize', onResize)
     }
-  }, [motion, panelVisible, group, active])
+  }, [motion, panelVisible, group, active, hotspot])
 
   // Mount entrance — image sweeps in immediately; cards breathe in as the
   // embers assemble (shared clock); reveal settles the embers to a trace.
@@ -219,32 +222,44 @@ export function PassportConsole({
     >
       <PassportForgeGate motion={motion} />
 
-      <div className="relative z-10 mx-auto grid h-full max-w-[110rem] grid-cols-[minmax(0,5fr)_minmax(0,6fr)] items-center gap-14 px-12 2xl:gap-20 2xl:px-20">
+      {/* Both columns are flex + min-h-0 so the render and the panel SHRINK to
+          whatever height is left — on a short laptop nothing can spill past
+          the bottom edge (the console never scrolls). */}
+      <div className="relative z-10 mx-auto grid h-full max-w-[110rem] grid-cols-[minmax(0,5fr)_minmax(0,6fr)] items-center gap-14 px-12 pb-14 pt-6 2xl:gap-20 2xl:px-20">
         {/* The piece stage ------------------------------------------------ */}
-        <div className="flex h-full flex-col items-center justify-center py-10">
-          {stageImage ? (
-            <div data-pc-image className="pp-sheen relative">
-              <img
-                src={stageImage}
-                alt={view.productName}
-                width={1200}
-                height={1500}
-                decoding="async"
-                className="max-h-[58vh] w-auto object-contain drop-shadow-[0_50px_80px_rgba(0,0,0,0.55)]"
-              />
-            </div>
-          ) : (
-            <div
-              data-pc-image
-              className="flex aspect-[4/5] max-h-[58vh] items-center justify-center rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-10"
-            >
-              <span className="anvl-heading text-3xl text-[var(--color-text-muted)]">
-                {view.productName}
-              </span>
-            </div>
-          )}
+        <div className="flex h-full min-h-0 flex-col items-center justify-center gap-6">
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            {stageImage ? (
+              <div data-pc-image className="relative flex h-full items-center">
+                <div className="pp-sheen relative">
+                  <img
+                    src={stageImage}
+                    alt={view.productName}
+                    width={1200}
+                    height={1500}
+                    decoding="async"
+                    className="max-h-full w-auto object-contain drop-shadow-[0_50px_80px_rgba(0,0,0,0.55)]"
+                  />
+                  <PassportHotspots
+                    hotspots={content.hotspots}
+                    activeIndex={hotspot}
+                    onSelect={setHotspot}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div
+                data-pc-image
+                className="flex aspect-[4/5] h-full max-h-full items-center justify-center rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-10"
+              >
+                <span className="anvl-heading text-3xl text-[var(--color-text-muted)]">
+                  {view.productName}
+                </span>
+              </div>
+            )}
+          </div>
 
-          <div data-pc-plate className="mt-8 flex flex-col items-center gap-3 text-center">
+          <div data-pc-plate className="flex shrink-0 flex-col items-center gap-3 text-center">
             <AuthenticityPlate
               dropLabel={product?.dropName}
               editionTotal={view.editionTotal}
@@ -270,12 +285,12 @@ export function PassportConsole({
         </div>
 
         {/* Section panel --------------------------------------------------- */}
-        <div className="flex h-full min-h-0 flex-col justify-center py-10">
+        <div className="flex h-full min-h-0 flex-col justify-center">
           {/* Group tabs */}
           <div
             role="tablist"
             aria-label="Passport sections"
-            className="mb-6 flex items-center gap-6"
+            className="mb-6 flex shrink-0 items-center gap-6"
           >
             {groups.map((g) => {
               const isActive = g.key === group
@@ -285,7 +300,10 @@ export function PassportConsole({
                   type="button"
                   role="tab"
                   aria-selected={isActive}
-                  onClick={() => transitionTo({ group: g.key, section: null })}
+                  onClick={() => {
+                    setHotspot(null)
+                    transitionTo({ group: g.key, section: null })
+                  }}
                   className={cn(
                     'focus-ring anvl-micro relative pb-2 uppercase tracking-[0.22em] transition-colors',
                     isActive
@@ -313,17 +331,31 @@ export function PassportConsole({
           <div
             ref={panelRef}
             className={cn(
-              'min-h-0 transition-opacity duration-500 ease-out',
+              // flex-1 + min-h-0: the panel owns the leftover height, so its
+              // children can cap at max-h-full and scroll instead of spilling.
+              'flex min-h-0 flex-1 flex-col justify-center transition-opacity duration-500 ease-out',
               panelVisible ? 'opacity-100' : 'opacity-0',
             )}
           >
-            {/* The detail fits the console by design; it scrolls only when a
-                section's content genuinely exceeds the panel (long saga). */}
-            {activeDef ? (
+            {/* A design-detail marker takes the panel while it's open — the
+                embers re-trace around it (the measure effect follows the
+                layout, so this costs no extra choreography). */}
+            {hotspot !== null && content.hotspots[hotspot] ? (
+              <div data-pc-shape data-pc-item>
+                <PassportHotspotDetail
+                  hotspot={content.hotspots[hotspot]}
+                  index={hotspot}
+                  total={content.hotspots.length}
+                  onDismiss={() => setHotspot(null)}
+                />
+              </div>
+            ) : /* The detail fits the console by design; it scrolls only when a
+                  section's content genuinely exceeds the panel (long saga). */
+            activeDef ? (
               <div
                 data-pc-shape
                 data-pc-item
-                className="max-h-[66vh] overflow-y-auto overscroll-contain rounded-2xl border border-[color-mix(in_oklab,var(--color-highlight)_18%,var(--color-line))] bg-[color-mix(in_oklab,var(--color-surface)_88%,transparent)] p-8 [scrollbar-width:thin]"
+                className="max-h-full overflow-y-auto overscroll-contain rounded-2xl border border-[color-mix(in_oklab,var(--color-highlight)_18%,var(--color-line))] bg-[color-mix(in_oklab,var(--color-surface)_88%,transparent)] p-7 [scrollbar-width:thin]"
               >
                 <button
                   type="button"

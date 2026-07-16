@@ -72,6 +72,7 @@ const content: ResolvedPassportContent = {
     sizeAdvice: '',
   },
   forgeNotes: [{ title: 'Eleven revisions', body: 'The collar alone took four.' }],
+  hotspots: [{ x: 50, y: 30, title: 'Shoulder knit', body: 'Ribbed for load.' }],
   care: { intro: '', steps: ['Cold wash', 'Hang dry'], symbols: ['no-bleach'], notes: [] },
   details: { heading: 'Forged details', story: 'A story.', facts: ['Fact'], funFact: '' },
   origin: {

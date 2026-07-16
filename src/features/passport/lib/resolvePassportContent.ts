@@ -39,6 +39,8 @@ export interface ResolvedPassportContent {
     sizeAdvice: string
   }
   forgeNotes: Array<{ title: string; body: string }>
+  /** Design-detail markers pinned to the render (x/y are % of the image box). */
+  hotspots: Array<{ x: number; y: number; title: string; body: string }>
   care: {
     intro: string
     steps: string[]
@@ -139,6 +141,15 @@ export function resolvePassportContent(input: {
     forgeNotes: c.forgeNotes
       .map((n) => ({ title: n.title.trim(), body: n.body.trim() }))
       .filter((n) => n.title || n.body),
+    hotspots: c.hotspots
+      .map((h) => ({
+        // Clamp defensively: a bad number must never park a marker off-image.
+        x: Math.min(100, Math.max(0, h.x)),
+        y: Math.min(100, Math.max(0, h.y)),
+        title: h.title.trim(),
+        body: h.body.trim(),
+      }))
+      .filter((h) => h.title),
     care: {
       intro: c.care.intro.trim(),
       steps: careSteps,

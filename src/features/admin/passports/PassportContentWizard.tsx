@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { mediaAssetPublicUrl } from '@/features/admin/media/mediaAssets.service'
 import type { CmsMediaAsset } from '@/features/admin/media/mediaAssets.types'
 import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotField'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
+import { HotspotPlacer } from './HotspotPlacer'
 import { CARE_SYMBOLS } from '@/features/passport/components/careSymbols'
 import { PASSPORT_COUNTRIES } from '@/features/passport/lib/passportCountries'
 import type { PassportProductContent } from '@/features/cms/passportContent/passportContent.zod'
@@ -47,6 +49,11 @@ const STEPS: Array<{ key: WizardStepKey; title: string; blurb: string }> = [
     title: 'Fit & sizing',
     blurb:
       'Measurements, model fit, and the canonical size map that powers cross-product size advice.',
+  },
+  {
+    key: 'hotspots',
+    title: 'Design details',
+    blurb: 'Click the render to pin markers customers can tap to explore the garment.',
   },
   {
     key: 'forgeNotes',
@@ -109,6 +116,14 @@ export function PassportContentWizard({
 
   const active = STEPS[step]!
   const isLast = step === STEPS.length - 1
+
+  // The hero render is the canvas hotspots are pinned to.
+  const heroRenderUrl = useMemo(() => {
+    const id = draft.piece.heroRender.trim()
+    if (!id) return null
+    const asset = mediaAssets.find((a) => a.id === id)
+    return asset ? mediaAssetPublicUrl(asset) : null
+  }, [draft.piece.heroRender, mediaAssets])
 
   return (
     <Modal
@@ -412,6 +427,14 @@ export function PassportContentWizard({
                 />
               </FormField>
             </>
+          ) : null}
+
+          {active.key === 'hotspots' ? (
+            <HotspotPlacer
+              imageUrl={heroRenderUrl}
+              hotspots={draft.hotspots}
+              onChange={(hotspots) => setDraft((prev) => ({ ...prev, hotspots }))}
+            />
           ) : null}
 
           {active.key === 'forgeNotes' ? (

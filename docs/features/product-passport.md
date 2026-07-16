@@ -184,6 +184,25 @@ Nine sections now, still one registry (`PASSPORT_SECTIONS`), still three tabs:
 section has `.catch()` defaults and `deepMergeDefaults` back-fills blobs
 authored before the section existed.
 
+## Phase C (2026-07-15) — design-detail hotspots
+
+Approved concept: **pulse markers + side reveal**, authored by **click-to-place**.
+
+- **Storefront** (`PassportHotspots.tsx`): champagne markers pulse on the
+  product render (the pulse stops while a detail is open, so the composition
+  goes quiet while you read; unselected markers dim to 30%). Selecting one
+  reveals its copy — in the console that takes the panel beside the piece (and
+  the embers re-trace around the new card shape, because the measure effect
+  follows the layout); on mobile it's a sheet directly under the render.
+  Markers are pointer-enabled islands over a pointer-transparent overlay, so
+  the render keeps its sheen and never steals clicks.
+- **Authoring** (`HotspotPlacer.tsx`, wizard step "Design details"): click the
+  hero render to drop a numbered marker, then write its title + story.
+  Positions are stored as **percent of the image box** (`x`/`y` 0–100), so a
+  marker holds its spot at every display size; the resolver clamps defensively
+  so a bad number can never park a marker off-image. Hotspots without a title
+  are dropped. The step explains itself when no hero render is assigned yet.
+
 ## Follow-ups
 
 - RPC rate limiting (Phase-J family; 122-bit tokens make brute force

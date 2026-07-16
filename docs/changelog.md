@@ -1,4 +1,11 @@
-﻿## 2026-07-15 — Passport Phase B: specifications, interactive care guide, fit & sizing with size recommendations, forge notes
+﻿## 2026-07-15 — Passport Phase C: design-detail hotspots (pulse markers + side reveal, click-to-place authoring) + console fit fixes
+
+- **Design-detail hotspots** (approved concept: pulse markers + side reveal). Champagne markers pulse on the product render; selecting one dims the rest, stops the pulse, and reveals its copy — in the console it takes the panel beside the piece (**the embers re-trace around the new card**, since the measure effect already follows the layout), on mobile it's a sheet under the render. The overlay is pointer-transparent except the markers, so the render keeps its sheen and never steals clicks.
+- **Click-to-place authoring** (approved): the wizard's new "Design details" step shows the hero render — click to drop a numbered marker, then write its title/story. Positions are stored as **percent of the image box**, so markers hold their spot at any display size; the resolver clamps defensively so a bad value can't park a marker off-image, and untitled hotspots are dropped. The step explains itself when no hero render is assigned yet. No migration (jsonb + `.catch()` defaults + back-fill).
+- **Console fit fixes** (reported): both columns are now `flex` + `min-h-0`, so the render and the panel **shrink** to the leftover height instead of spilling past the bottom on short laptops — the console never scrolls, and the grid gained real bottom padding. The **world map is capped tighter** (22vh, narrower figure, compact legend) so the origin section fits its panel rather than scrolling.
+- **Verified**: `pnpm verify` green (119 files / 668 tests, incl. 4 new hotspot tests covering percent positioning, select/dismiss, and the empty case).
+
+## 2026-07-15 — Passport Phase B: specifications, interactive care guide, fit & sizing with size recommendations, forge notes
 
 - **Specifications panel** (CRAFT): construction, fit type, compression, stretch, breathability, intended use — unauthored rows hide rather than render empty.
 - **Interactive care guide** (RITUAL): `careSymbols.tsx` draws 13 standard care marks as inline SVG in brand tokens (wash temps, bleach/tumble/iron/dry-clean prohibitions, inside-out, line/flat dry); tapping a mark explains it in plain language, and each numbered step expands to the CMS-authored "why" note. CSS/DOM only — works on every device, `motion-safe:` gated.

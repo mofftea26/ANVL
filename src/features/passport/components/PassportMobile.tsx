@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useGSAP } from '@gsap/react'
@@ -19,6 +19,7 @@ import {
 } from './console/passportSections'
 import { AuthenticityPlate } from './AuthenticityPlate'
 import { PassportAtmosphere } from './PassportAtmosphere'
+import { PassportHotspotDetail, PassportHotspots } from './PassportHotspots'
 
 const SWAP_MS = 260
 
@@ -50,6 +51,7 @@ export function PassportMobile({
   actions?: ReactNode
 }) {
   const scopeRef = useRef<HTMLDivElement>(null)
+  const [hotspot, setHotspot] = useState<number | null>(null)
   const { group, active, panelVisible, transitionTo } = usePassportSectionNav({
     swapDelayMs: SWAP_MS,
   })
@@ -123,21 +125,36 @@ export function PassportMobile({
           ) : null}
         </header>
 
-        {/* 2 — The piece (small) */}
+        {/* 2 — The piece (small), with its design-detail markers */}
         {heroImage ? (
-          <div
-            data-pm-in
-            className="mx-auto mt-6 w-full max-w-[11rem] overflow-hidden rounded-xl border border-[var(--color-line)] sm:max-w-[13rem]"
-          >
-            <img
-              src={heroImage.src}
-              alt={heroImage.alt || view.productName}
-              width={800}
-              height={1000}
-              decoding="async"
-              className="h-auto w-full object-cover"
-            />
+          <div data-pm-in className="mx-auto mt-6 w-full max-w-[11rem] sm:max-w-[13rem]">
+            <div className="relative overflow-hidden rounded-xl border border-[var(--color-line)]">
+              <img
+                src={heroImage.src}
+                alt={heroImage.alt || view.productName}
+                width={800}
+                height={1000}
+                decoding="async"
+                className="h-auto w-full object-cover"
+              />
+              <PassportHotspots
+                hotspots={content.hotspots}
+                activeIndex={hotspot}
+                onSelect={setHotspot}
+              />
+            </div>
           </div>
+        ) : null}
+
+        {/* The selected detail — a sheet directly under the piece. */}
+        {hotspot !== null && content.hotspots[hotspot] ? (
+          <PassportHotspotDetail
+            hotspot={content.hotspots[hotspot]}
+            index={hotspot}
+            total={content.hotspots.length}
+            onDismiss={() => setHotspot(null)}
+            className="mx-auto mt-4 max-w-sm"
+          />
         ) : null}
 
         {/* 3 — Identity strip: authenticity + chips + actions, compact */}

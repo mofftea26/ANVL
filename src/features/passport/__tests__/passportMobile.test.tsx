@@ -50,6 +50,7 @@ const content: ResolvedPassportContent = {
     sizeAdvice: '',
   },
   forgeNotes: [],
+  hotspots: [{ x: 50, y: 30, title: 'Shoulder knit', body: 'Ribbed for load.' }],
   care: { intro: '', steps: ['Cold wash', 'Hang dry'], symbols: [], notes: [] },
   details: { heading: 'Forged details', story: 'A story.', facts: ['Fact'], funFact: '' },
   origin: {

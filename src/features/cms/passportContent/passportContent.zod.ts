@@ -80,6 +80,18 @@ export const passportForgeNoteSchema = z.object({
   body: z.string().catch(''),
 })
 
+/**
+ * A design-detail hotspot pinned to the product render. `x`/`y` are PERCENT
+ * of the rendered image box (0–100), authored by clicking the render in the
+ * CMS — percentages so a marker holds its spot at any display size.
+ */
+export const passportHotspotSchema = z.object({
+  x: z.number().min(0).max(100).catch(50),
+  y: z.number().min(0).max(100).catch(50),
+  title: z.string().catch(''),
+  body: z.string().catch(''),
+})
+
 export const passportDetailsSectionSchema = z.object({
   heading: z.string().catch(''),
   story: z.string().catch(''),
@@ -124,6 +136,7 @@ export const passportProductContentSchema = z.object({
     sizeEquivalence: {},
   }),
   forgeNotes: z.array(passportForgeNoteSchema).catch([]),
+  hotspots: z.array(passportHotspotSchema).catch([]),
   care: passportCareSectionSchema.catch({
     intro: '',
     steps: [],
@@ -172,6 +185,7 @@ export const DEFAULT_PASSPORT_PRODUCT_CONTENT: PassportProductContent = {
     sizeEquivalence: {},
   },
   forgeNotes: [],
+  hotspots: [],
   care: { intro: '', steps: [], asset: '', symbols: [], notes: [] },
   details: { heading: '', story: '', facts: [], funFact: '', asset: '' },
   origin: { label: '', place: '', story: '', asset: '', madeIn: '', designedIn: '' },
@@ -216,6 +230,7 @@ function deepMergeDefaults(value: Record<string, unknown>): PassportProductConte
     specs: section('specs'),
     fit: section('fit'),
     forgeNotes: Array.isArray(value.forgeNotes) ? value.forgeNotes : [],
+    hotspots: Array.isArray(value.hotspots) ? value.hotspots : [],
     care: section('care'),
     details: section('details'),
     origin: section('origin'),

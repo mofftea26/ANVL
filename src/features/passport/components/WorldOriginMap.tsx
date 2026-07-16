@@ -65,9 +65,11 @@ export function WorldOriginMap({
   const midY = Math.min(madePt.y, designedPt.y) - Math.max(10, dist * 0.28)
 
   // The svg's viewBox letterboxes (preserveAspectRatio "meet"), so capping its
-  // height makes the map fit its panel instead of forcing a scroll.
+  // height makes the map fit its panel instead of forcing a scroll. The cap is
+  // deliberately tight: this sits inside a fixed-height console panel with a
+  // heading, legend and story around it.
   return (
-    <figure className="mx-auto w-full max-w-2xl">
+    <figure className="mx-auto w-full max-w-xl">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         role="img"
@@ -76,7 +78,7 @@ export function WorldOriginMap({
             ? `World map — designed and made in ${made.label}`
             : `World map — designed in ${designed.label}, made in ${made.label}`
         }
-        className="h-auto max-h-[34vh] w-full"
+        className="h-auto max-h-[22vh] w-full"
       >
         {LANDMASSES.map((poly, i) => (
           <polygon
@@ -132,7 +134,7 @@ export function WorldOriginMap({
         </g>
       </svg>
 
-      <figcaption className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center">
+      <figcaption className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-center">
         <span className="anvl-micro text-[var(--color-text-muted)]">{label}</span>
         {samePlace ? (
           <span className="inline-flex items-center gap-2 text-xs text-[var(--color-text)]">
