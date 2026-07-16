@@ -8,6 +8,7 @@ import {
   useStorefrontAccountSession,
 } from '@/features/storefront-account/publicAccount.core'
 import { usePassportQuery } from '../hooks/usePassport'
+import { buildCeremonyLines } from '../lib/ceremonyLines'
 import { resolvePassportStage } from '../lib/passportStage'
 import type { PassportView } from '../schemas/passport.schema'
 import { ClaimCeremony } from './ClaimCeremony'
@@ -89,9 +90,16 @@ export function PassportExperience({
           {ceremony === 'playing' ? (
             <ClaimCeremony
               productName={view.productName}
-              editionTotal={view.editionTotal}
+              imageUrl={
+                content.piece.heroRenderUrl ??
+                (view.claimedColor
+                  ? product?.shop?.imagesByColorName?.[view.claimedColor]?.[0]?.src
+                  : undefined) ??
+                content.piece.gallery[0]?.src ??
+                null
+              }
+              lines={buildCeremonyLines({ view, product, content, claimedDate })}
               ownerName={view.claimedDisplayName ?? ''}
-              claimedDate={claimedDate ?? ''}
               onComplete={() => setCeremony('done')}
             />
           ) : null}

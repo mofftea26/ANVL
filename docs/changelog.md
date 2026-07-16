@@ -1,4 +1,14 @@
-﻿## 2026-07-15 — Passport Phase D: Armory views (Vault · Collection · Timeline · Loadout)
+﻿## 2026-07-15 — Passport Phase E: the registration ceremony, "The Authentication"
+
+Approved concept, and approved that the verification beat carries **real record data**. The ceremony plays only after the atomic claim has already succeeded — it never gates registration.
+
+- **Beat sheet** on a shared clock (`webgl/ceremonyTiming.ts`; the DOM timeline and the particle forge never call each other — both schedule against the same constants, so the hand-off can't desync): champagne beam sweeps down and a lit copy wipes in behind it via `clip-path`, so the beam genuinely *reveals* the piece out of the dark (0.35s) → real record lines tick in (1.35s) → embers gather into the ANVL crest (2.35s) → **the seal locks as the embers fuse into it** with a champagne flash (3.25s) → "Registered to <name>" settles (3.85s) → "Added to your Armory" (4.5s) → hand-off.
+- **The crest is the real mark** (`CeremonyCrestParticles.tsx`): embers sample `/brand/mark.svg` through `sampleImageSilhouette` and reuse the passport forge shaders, so the cloud *is* the crest and the solid seal resolves **out of** it (`uReveal` fusion) rather than crossfading over it — the particle-forge standard, not a lookalike.
+- **Honesty rule** (`lib/ceremonyLines.ts`, 4 tests): every line is a true statement from the record just written (Piece · Drop · Material · Origin · Colorway · Size · Registered); anything without a real value is **omitted, never faked** — no "AUTHENTICATING…" theater implying checks that aren't happening, and an unknown origin key produces no line rather than a bogus one. No serial engraving (final product decision).
+- Mobile-first: DOM/CSS/GSAP core with the crest forge + ember field gated behind `isWebglAvailable()` + the canvas teardown guard; reduced motion skips straight to the passport.
+- **Verified**: `pnpm verify` green (122 files / 686 tests); `vendor-three` stays lazy.
+
+## 2026-07-15 — Passport Phase D: Armory views (Vault · Collection · Timeline · Loadout)
 
 Approved this session: Vault, Collection, Timeline, Loadout — Grid stays the default. Declined/deferred: **Hall of Honor** (needs a `featured` flag per passport; deferred to the personalization family so its storage is designed once), **Mannequin** (needs a rigged 3D garment per product — only the anvil/hammer GLBs exist, so it would have been a fabrication), **Archive** (meaningless until lifecycle/retirement exists).
 

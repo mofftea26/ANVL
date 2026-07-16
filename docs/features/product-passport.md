@@ -230,6 +230,37 @@ Duplicate units collapse to one Vault/Collection slot (the newest fills it)
 but each keeps its own Timeline row — a slot is a product, a timeline row is a
 unit.
 
+## Phase E (2026-07-15) — the registration ceremony, "The Authentication"
+
+Approved concept + approved that the verification lines carry **real record
+data**. Plays only AFTER the atomic claim has succeeded — it never gates
+registration, and skipping it loses nothing.
+
+Beat sheet, on the shared clock (`webgl/ceremonyTiming.ts` — the DOM timeline
+and the particle forge never call each other, they schedule against the same
+constants):
+
+| t | Beat |
+|---|---|
+| 0.35s | A champagne beam sweeps down the piece; a lit copy wipes in behind it (`clip-path`), so the beam *reveals* the product out of the dark |
+| 1.35s | Verification lines tick in — Piece · Drop · Material · Origin · Colorway · Size · Registered |
+| 2.35s | Embers gather into the ANVL crest (WebGL) |
+| 3.25s | The seal locks: the solid crest resolves as the embers **fuse into it** (`uReveal`), with a champagne flash |
+| 3.85s | "Registered to <name>" settles onto the plate |
+| 4.5s | "Added to your Armory" → hand-off |
+
+- **The crest is real** (`webgl/CeremonyCrestParticles.tsx`): the embers sample
+  `/brand/mark.svg` via `sampleImageSilhouette` and reuse the passport forge
+  shaders, so the cloud IS the mark rather than an approximation — and the DOM
+  seal resolves out of it instead of crossfading over it.
+- **Honesty rule** (`lib/ceremonyLines.ts`, tested): every line is a true
+  statement from the record just written; a value that doesn't exist is
+  omitted, never faked. No "AUTHENTICATING…" theater, and **no serial
+  engraving** (final product decision).
+- Mobile-first: DOM/CSS/GSAP core; the crest forge + ember field layer in only
+  on capable devices behind `isWebglAvailable()` + the canvas teardown guard.
+  Reduced motion skips straight to the passport.
+
 ## Follow-ups
 
 - RPC rate limiting (Phase-J family; 122-bit tokens make brute force
