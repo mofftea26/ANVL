@@ -33,14 +33,33 @@ async function getAuthedClient() {
 
 /* ------------------------------------------------------------------ wear --- */
 
-/** One tap of "Wore it" (+1) or its undo (-1). Returns the new count, or null. */
-export async function logPassportWear(id: string, delta: 1 | -1 = 1): Promise<number | null> {
+export type LogWearResult =
+  | { ok: true; wearCount: number }
+  | { ok: false; error: 'cooldown'; wearCount: number; nextAt: string | null }
+  | { ok: false; error: 'not_owner' | 'not_authenticated' | 'unknown' }
+
+/** One tap of "Wore it" (+1) or its undo (-1). Wear is limited to once per 24h. */
+export async function logPassportWear(id: string, delta: 1 | -1 = 1): Promise<LogWearResult> {
   const client = await getAuthedClient()
-  if (!client) return null
+  if (!client) return { ok: false, error: 'not_authenticated' }
   const { data, error } = await client.rpc('log_passport_wear', { p_id: id, p_delta: delta })
-  if (error) return null
-  const result = data as { ok?: boolean; wear_count?: number } | null
-  return result?.ok && typeof result.wear_count === 'number' ? result.wear_count : null
+  if (error) return { ok: false, error: 'unknown' }
+  const result = data as
+    | { ok?: boolean; wear_count?: number; error?: string; next_at?: string }
+    | null
+  if (result?.ok && typeof result.wear_count === 'number') {
+    return { ok: true, wearCount: result.wear_count }
+  }
+  if (result?.error === 'cooldown') {
+    return {
+      ok: false,
+      error: 'cooldown',
+      wearCount: result.wear_count ?? 0,
+      nextAt: result.next_at ?? null,
+    }
+  }
+  const known = ['not_owner', 'not_authenticated'] as const
+  return { ok: false, error: known.find((k) => k === result?.error) ?? 'unknown' }
 }
 
 /* --------------------------------------------------------- hall of honor --- */
@@ -80,6 +99,7 @@ export async function createArmoryFeat(input: ArmoryFeatInput): Promise<boolean>
     title: input.title,
     achieved_on: input.achievedOn,
     is_public: input.isPublic,
+    product_slug: input.productSlug,
   })
   return !error
 }
@@ -89,7 +109,12 @@ export async function updateArmoryFeat(id: string, input: ArmoryFeatInput): Prom
   if (!client) return false
   const { error } = await client
     .from('armory_feats')
-    .update({ title: input.title, achieved_on: input.achievedOn, is_public: input.isPublic })
+    .update({
+      title: input.title,
+      achieved_on: input.achievedOn,
+      is_public: input.isPublic,
+      product_slug: input.productSlug,
+    })
     .eq('id', id)
   return !error
 }

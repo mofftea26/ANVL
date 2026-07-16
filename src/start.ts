@@ -18,6 +18,8 @@ import { CSRF_COOKIE_NAME, readCsrfCookieFromHeader } from '@/features/admin/aut
 const SUPABASE_ORIGIN = 'https://cptebkgyrfmokklwtrgp.supabase.co'
 const SHOPIFY_API_ORIGIN = 'https://anvl-2.myshopify.com'
 const SHOPIFY_CDN_ORIGIN = 'https://cdn.shopify.com'
+// Google account avatars (OAuth sign-in) are served from lh3–lh6.googleusercontent.com.
+const GOOGLE_AVATAR_ORIGIN = 'https://*.googleusercontent.com'
 
 /**
  * Report-only CSP. Built per-request so the dev-only relaxations aren't baked
@@ -46,7 +48,7 @@ function buildCspReportOnly(isDev: boolean): string {
     `default-src 'self'`,
     `script-src ${scriptSrc}`,
     `style-src 'self' 'unsafe-inline'`,
-    `img-src 'self' data: blob: ${SUPABASE_ORIGIN} ${SHOPIFY_CDN_ORIGIN}`,
+    `img-src 'self' data: blob: ${SUPABASE_ORIGIN} ${SHOPIFY_CDN_ORIGIN} ${GOOGLE_AVATAR_ORIGIN}`,
     `font-src 'self' data:`,
     `connect-src 'self' blob: ${SUPABASE_ORIGIN} ${SHOPIFY_API_ORIGIN} ${SHOPIFY_CDN_ORIGIN}`,
     `media-src 'self' ${SUPABASE_ORIGIN}`,

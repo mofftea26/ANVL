@@ -127,7 +127,14 @@ export async function generateBatch(
   }
 }
 
-/** Reset a claim so the passport becomes claimable again. */
+/**
+ * Reset a claim so the passport becomes claimable again — and pristine. This
+ * wipes not just the claimant but all of the owner's Armory life on the piece
+ * (wear count, last-worn, Hall-of-Honor pin, public visibility, any pending
+ * transfer), so once unassigned it vanishes from their armory as if never
+ * owned. (Feats are the user's own log, keyed to them — not the piece — so
+ * they're untouched.)
+ */
 export async function unassignPassport(id: string): Promise<PassportResult<null>> {
   const c = client()
   if (!c.ok) return c
@@ -140,6 +147,12 @@ export async function unassignPassport(id: string): Promise<PassportResult<null>
       claimed_size: null,
       claimed_email: null,
       claimed_display_name: null,
+      wear_count: 0,
+      last_worn_at: null,
+      featured_slot: null,
+      is_public: false,
+      transfer_code: null,
+      transfer_expires_at: null,
     })
     .eq('id', id)
   if (res.error) return { ok: false, error: res.error.message }

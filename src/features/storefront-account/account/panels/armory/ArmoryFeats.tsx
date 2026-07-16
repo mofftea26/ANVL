@@ -14,11 +14,18 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-export function ArmoryFeats() {
+/** A piece the owner can attach a feat to. */
+export interface FeatPiece {
+  slug: string
+  name: string
+}
+
+export function ArmoryFeats({ pieces }: { pieces: FeatPiece[] }) {
   const featsQuery = useArmoryFeatsQuery()
   const { create, update, remove } = useFeatMutations()
   const feats = featsQuery.data ?? []
   const [editing, setEditing] = useState<ArmoryFeat | 'new' | null>(null)
+  const nameBySlug = new Map(pieces.map((p) => [p.slug, p.name]))
 
   const closeForm = () => setEditing(null)
 
@@ -46,6 +53,7 @@ export function ArmoryFeats() {
 
       {editing === 'new' ? (
         <FeatForm
+          pieces={pieces}
           pending={create.isPending}
           onCancel={closeForm}
           onSubmit={(input) => create.mutate(input, { onSuccess: closeForm })}
@@ -58,6 +66,7 @@ export function ArmoryFeats() {
             <li key={feat.id}>
               <FeatForm
                 initial={feat}
+                pieces={pieces}
                 pending={update.isPending}
                 onCancel={closeForm}
                 onSubmit={(input) =>
@@ -74,8 +83,13 @@ export function ArmoryFeats() {
                 <p className="truncate text-sm font-semibold text-[var(--color-heading)]">
                   {feat.title}
                 </p>
-                <p className="anvl-micro mt-0.5 flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
+                <p className="anvl-micro mt-0.5 flex flex-wrap items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
                   <span>{new Date(feat.achievedOn).toLocaleDateString()}</span>
+                  {feat.productSlug && nameBySlug.has(feat.productSlug) ? (
+                    <span className="text-[var(--color-highlight-bright)]">
+                      {nameBySlug.get(feat.productSlug)}
+                    </span>
+                  ) : null}
                   <span className="inline-flex items-center gap-1">
                     {feat.isPublic ? (
                       <>
@@ -122,25 +136,33 @@ export function ArmoryFeats() {
 
 function FeatForm({
   initial,
+  pieces,
   pending,
   onCancel,
   onSubmit,
 }: {
   initial?: ArmoryFeat
+  pieces: FeatPiece[]
   pending: boolean
   onCancel: () => void
-  onSubmit: (input: { title: string; achievedOn: string; isPublic: boolean }) => void
+  onSubmit: (input: {
+    title: string
+    achievedOn: string
+    isPublic: boolean
+    productSlug: string | null
+  }) => void
 }) {
   const [title, setTitle] = useState(initial?.title ?? '')
   const [achievedOn, setAchievedOn] = useState(initial?.achievedOn ?? todayIso())
   const [isPublic, setIsPublic] = useState(initial?.isPublic ?? false)
+  const [productSlug, setProductSlug] = useState<string>(initial?.productSlug ?? '')
   const trimmed = title.trim()
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault()
-        if (trimmed) onSubmit({ title: trimmed, achievedOn, isPublic })
+        if (trimmed) onSubmit({ title: trimmed, achievedOn, isPublic, productSlug: productSlug || null })
       }}
       className="mt-4 space-y-3 rounded-xl border border-[color-mix(in_oklab,var(--color-highlight)_30%,var(--color-line))] bg-[var(--color-surface-elevated)] p-4"
     >
@@ -161,6 +183,29 @@ function FeatForm({
           className="focus-ring w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-2 text-base text-[var(--color-heading)] placeholder:text-[var(--color-text-muted)] md:text-sm"
         />
       </div>
+      {pieces.length > 0 ? (
+        <div>
+          <label
+            htmlFor="feat-piece"
+            className="anvl-micro mb-1 block text-[10px] text-[var(--color-text-muted)]"
+          >
+            Wearing (optional)
+          </label>
+          <select
+            id="feat-piece"
+            value={productSlug}
+            onChange={(e) => setProductSlug(e.target.value)}
+            className="focus-ring w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-2 text-base text-[var(--color-heading)] md:text-sm"
+          >
+            <option value="">— No piece —</option>
+            {pieces.map((p) => (
+              <option key={p.slug} value={p.slug}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-end gap-4">
         <div>
           <label

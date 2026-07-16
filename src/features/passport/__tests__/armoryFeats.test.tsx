@@ -28,18 +28,24 @@ describe('ArmoryFeats', () => {
     state.remove = vi.fn()
   })
 
+  const pieces = [
+    { slug: 'oversized-tee', name: 'Oversized Tee' },
+    { slug: 'stringer', name: 'Stringer' },
+  ]
+
   it('shows the empty state until a feat is logged', () => {
-    render(<ArmoryFeats />)
+    render(<ArmoryFeats pieces={pieces} />)
     expect(screen.getByText(/no feats logged yet/i)).toBeTruthy()
   })
 
-  it('opens the form and submits a new feat with its visibility', () => {
-    render(<ArmoryFeats />)
+  it('opens the form and submits a new feat with visibility and the piece', () => {
+    render(<ArmoryFeats pieces={pieces} />)
     fireEvent.click(screen.getByRole('button', { name: /log a feat/i }))
 
     fireEvent.change(screen.getByLabelText(/the feat/i), {
       target: { value: 'Deadlift PR — 240 kg' },
     })
+    fireEvent.change(screen.getByLabelText(/wearing/i), { target: { value: 'stringer' } })
     // Default private → flip to public.
     fireEvent.click(screen.getByRole('switch'))
     fireEvent.click(screen.getByRole('button', { name: /add feat/i }))
@@ -48,11 +54,12 @@ describe('ArmoryFeats', () => {
     const [input] = state.create.mock.calls[0]!
     expect(input.title).toBe('Deadlift PR — 240 kg')
     expect(input.isPublic).toBe(true)
+    expect(input.productSlug).toBe('stringer')
     expect(input.achievedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 
   it('does not submit a blank feat', () => {
-    render(<ArmoryFeats />)
+    render(<ArmoryFeats pieces={pieces} />)
     fireEvent.click(screen.getByRole('button', { name: /log a feat/i }))
     const submit = screen.getByRole('button', { name: /add feat/i }) as HTMLButtonElement
     expect(submit.disabled).toBe(true)
@@ -60,26 +67,37 @@ describe('ArmoryFeats', () => {
     expect(state.create).not.toHaveBeenCalled()
   })
 
-  it('edits an existing feat', () => {
+  it('edits an existing feat, keeping its attached piece prefilled', () => {
     state.feats = [
-      { id: 'f1', title: 'Squat PR', achievedOn: '2026-07-01', isPublic: false },
+      {
+        id: 'f1',
+        title: 'Squat PR',
+        achievedOn: '2026-07-01',
+        isPublic: false,
+        productSlug: 'oversized-tee',
+      },
     ]
-    render(<ArmoryFeats />)
+    render(<ArmoryFeats pieces={pieces} />)
+    // The attached piece surfaces on the row.
+    expect(screen.getByText('Oversized Tee')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /edit feat: squat pr/i }))
 
     const input = screen.getByLabelText(/the feat/i) as HTMLInputElement
     expect(input.value).toBe('Squat PR')
+    expect((screen.getByLabelText(/wearing/i) as HTMLSelectElement).value).toBe('oversized-tee')
     fireEvent.change(input, { target: { value: 'Squat PR — 200 kg' } })
     fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
 
     expect(state.update).toHaveBeenCalledTimes(1)
     const [payload] = state.update.mock.calls[0]!
-    expect(payload).toMatchObject({ id: 'f1', title: 'Squat PR — 200 kg' })
+    expect(payload).toMatchObject({ id: 'f1', title: 'Squat PR — 200 kg', productSlug: 'oversized-tee' })
   })
 
   it('deletes a feat', () => {
-    state.feats = [{ id: 'f2', title: 'Bench PR', achievedOn: '2026-07-02', isPublic: true }]
-    render(<ArmoryFeats />)
+    state.feats = [
+      { id: 'f2', title: 'Bench PR', achievedOn: '2026-07-02', isPublic: true, productSlug: null },
+    ]
+    render(<ArmoryFeats pieces={pieces} />)
     fireEvent.click(screen.getByRole('button', { name: /delete feat: bench pr/i }))
     expect(state.remove).toHaveBeenCalledWith('f2')
   })

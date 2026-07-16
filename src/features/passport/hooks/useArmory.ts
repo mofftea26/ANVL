@@ -32,7 +32,8 @@ export const armoryQueryKeys = {
 
 /**
  * "Wore it" with an optimistic bump — the counter must feel instant to be a
- * ritual worth tapping. Rolls back on failure.
+ * ritual worth tapping. Wear is limited to once per 24h; a rejected wear rolls
+ * the optimistic bump back (the button reflects the cooldown from last_worn_at).
  */
 export function useLogWearMutation() {
   const qc = useQueryClient()
@@ -47,7 +48,11 @@ export function useLogWearMutation() {
       qc.setQueryData<OwnedPassport[]>(ownedKey, (old) =>
         (old ?? []).map((p) =>
           p.id === input.id
-            ? { ...p, wearCount: Math.max(0, p.wearCount + input.delta) }
+            ? {
+                ...p,
+                wearCount: Math.max(0, p.wearCount + input.delta),
+                lastWornAt: input.delta > 0 ? new Date().toISOString() : p.lastWornAt,
+              }
             : p,
         ),
       )
@@ -55,6 +60,10 @@ export function useLogWearMutation() {
     },
     onError: (_err, _input, context) => {
       if (context?.previous) qc.setQueryData(ownedKey, context.previous)
+    },
+    onSuccess: (result, _input, context) => {
+      // Server rejected (cooldown/not-owner) — undo the optimistic bump.
+      if (!result.ok && context?.previous) qc.setQueryData(ownedKey, context.previous)
     },
     onSettled: () => void qc.invalidateQueries({ queryKey: ownedKey }),
   })

@@ -75,6 +75,10 @@ export function ArmoryPanel() {
     buildChallengeContext({ owned, featCount, completion }),
   )
   const honorPinned = owned.filter((p) => p.featuredSlot !== null).length
+  // Distinct pieces the owner can attach a feat to.
+  const featPieces = Array.from(
+    new Map(owned.map((p) => [p.productSlug, p.productName])).entries(),
+  ).map(([slug, name]) => ({ slug, name }))
 
   return (
     <div className="space-y-4">
@@ -224,7 +228,7 @@ export function ArmoryPanel() {
           </div>
 
           <ArmoryChallenges challenges={challenges} />
-          <ArmoryFeats />
+          <ArmoryFeats pieces={featPieces} />
           <ArmoryShareCard />
         </>
       )}

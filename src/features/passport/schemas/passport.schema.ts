@@ -134,12 +134,15 @@ export const armoryFeatSchema = z
     title: z.string().min(1),
     achieved_on: z.string(),
     is_public: z.boolean().default(false).catch(false),
+    // Optional piece the feat was earned in ("PR wearing this").
+    product_slug: z.string().nullable().default(null).catch(null),
   })
   .transform((raw) => ({
     id: raw.id,
     title: raw.title,
     achievedOn: raw.achieved_on,
     isPublic: raw.is_public,
+    productSlug: raw.product_slug,
   }))
 
 export type ArmoryFeat = z.infer<typeof armoryFeatSchema>
@@ -148,6 +151,7 @@ export const armoryFeatInputSchema = z.object({
   title: z.string().trim().min(1).max(160),
   achievedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   isPublic: z.boolean(),
+  productSlug: z.string().nullable(),
 })
 export type ArmoryFeatInput = z.infer<typeof armoryFeatInputSchema>
 
@@ -194,8 +198,16 @@ export const publicArmorySchema = z
     feats: z
       .array(
         z
-          .object({ title: z.string(), achieved_on: z.string() })
-          .transform((f) => ({ title: f.title, achievedOn: f.achieved_on })),
+          .object({
+            title: z.string(),
+            achieved_on: z.string(),
+            product_slug: z.string().nullable().default(null).catch(null),
+          })
+          .transform((f) => ({
+            title: f.title,
+            achievedOn: f.achieved_on,
+            productSlug: f.product_slug,
+          })),
       )
       .default([]),
   })

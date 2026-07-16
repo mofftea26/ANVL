@@ -352,7 +352,11 @@ export function ArmoryGridView({ owned, catalog }: ViewProps) {
               </div>
             </Link>
             <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--color-line)] pt-3">
-              <WoreItButton passportId={passport.id} wearCount={passport.wearCount} />
+              <WoreItButton
+                passportId={passport.id}
+                wearCount={passport.wearCount}
+                lastWornAt={passport.lastWornAt}
+              />
               <div className="flex items-center gap-2">
                 {passport.lastWornAt ? (
                   <span className="anvl-micro text-[9px] text-[var(--color-text-muted)]">
