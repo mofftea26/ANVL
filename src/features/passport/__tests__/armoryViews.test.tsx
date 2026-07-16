@@ -36,6 +36,10 @@ const owned: OwnedPassport[] = [
     claimedAt: '2026-07-10T10:00:00Z',
     claimedColor: 'Onyx',
     claimedSize: 'M',
+    wearCount: 0,
+    lastWornAt: null,
+    featuredSlot: null,
+    isPublic: false,
   },
 ]
 

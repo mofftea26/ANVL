@@ -28,6 +28,10 @@ function passport(slug: string, claimedAt: string | null, id = slug): OwnedPassp
     claimedAt,
     claimedColor: 'Onyx',
     claimedSize: 'M',
+    wearCount: 0,
+    lastWornAt: null,
+    featuredSlot: null,
+    isPublic: false,
   }
 }
 

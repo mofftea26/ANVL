@@ -103,6 +103,11 @@ export const ownedPassportSchema = z
     claimed_at: z.string().nullable().catch(null),
     claimed_color: z.string().nullable().catch(null),
     claimed_size: z.string().nullable().catch(null),
+    // Phase G life fields (defaults keep pre-migration rows parseable).
+    wear_count: z.number().int().min(0).default(0).catch(0),
+    last_worn_at: z.string().nullable().default(null).catch(null),
+    featured_slot: z.number().int().min(1).max(3).nullable().default(null).catch(null),
+    is_public: z.boolean().default(false).catch(false),
   })
   .transform((raw) => ({
     id: raw.id,
@@ -114,7 +119,113 @@ export const ownedPassportSchema = z
     claimedAt: raw.claimed_at,
     claimedColor: raw.claimed_color,
     claimedSize: raw.claimed_size,
+    wearCount: raw.wear_count,
+    lastWornAt: raw.last_worn_at,
+    featuredSlot: raw.featured_slot,
+    isPublic: raw.is_public,
   }))
 
 export type OwnedPassport = z.infer<typeof ownedPassportSchema>
+
+/** A logged achievement in the owner's Armory ("Deadlift PR — 240 kg"). */
+export const armoryFeatSchema = z
+  .object({
+    id: z.string(),
+    title: z.string().min(1),
+    achieved_on: z.string(),
+    is_public: z.boolean().default(false).catch(false),
+  })
+  .transform((raw) => ({
+    id: raw.id,
+    title: raw.title,
+    achievedOn: raw.achieved_on,
+    isPublic: raw.is_public,
+  }))
+
+export type ArmoryFeat = z.infer<typeof armoryFeatSchema>
+
+export const armoryFeatInputSchema = z.object({
+  title: z.string().trim().min(1).max(160),
+  achievedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  isPublic: z.boolean(),
+})
+export type ArmoryFeatInput = z.infer<typeof armoryFeatInputSchema>
+
+/** Own armory-share state (read from the owner's profile row). */
+export const armoryShareSchema = z
+  .object({
+    armory_public: z.boolean().default(false).catch(false),
+    armory_handle: z.string().nullable().default(null).catch(null),
+  })
+  .transform((raw) => ({ isPublic: raw.armory_public, handle: raw.armory_handle }))
+export type ArmoryShare = z.infer<typeof armoryShareSchema>
+
+/**
+ * The anon projection of an opted-in public armory (`get_public_armory`).
+ * Only what the owner chose to show — no tokens, serials, ids or emails.
+ */
+export const publicArmorySchema = z
+  .object({
+    owner_name: z.string().min(1),
+    total_pieces: z.number().int().min(0),
+    pieces: z
+      .array(
+        z
+          .object({
+            product_slug: z.string(),
+            product_name: z.string(),
+            claimed_at: z.string().nullable().catch(null),
+            claimed_color: z.string().nullable().catch(null),
+            claimed_size: z.string().nullable().catch(null),
+            wear_count: z.number().int().min(0).default(0).catch(0),
+            featured_slot: z.number().int().nullable().default(null).catch(null),
+          })
+          .transform((p) => ({
+            productSlug: p.product_slug,
+            productName: p.product_name,
+            claimedAt: p.claimed_at,
+            claimedColor: p.claimed_color,
+            claimedSize: p.claimed_size,
+            wearCount: p.wear_count,
+            featuredSlot: p.featured_slot,
+          })),
+      )
+      .default([]),
+    feats: z
+      .array(
+        z
+          .object({ title: z.string(), achieved_on: z.string() })
+          .transform((f) => ({ title: f.title, achievedOn: f.achieved_on })),
+      )
+      .default([]),
+  })
+  .transform((raw) => ({
+    ownerName: raw.owner_name,
+    totalPieces: raw.total_pieces,
+    pieces: raw.pieces,
+    feats: raw.feats,
+  }))
+
+export type PublicArmory = z.infer<typeof publicArmorySchema>
+
+/** One PDP review from `get_product_reviews` (owner-verified by the RPC). */
+export const productReviewSchema = z
+  .object({
+    display_name: z.string().min(1),
+    rating: z.number().int().min(1).max(5),
+    title: z.string().nullable().catch(null),
+    body: z.string().min(1),
+    created_at: z.string(),
+    is_mine: z.boolean().default(false).catch(false),
+  })
+  .transform((raw) => ({
+    displayName: raw.display_name,
+    rating: raw.rating,
+    title: raw.title,
+    body: raw.body,
+    createdAt: raw.created_at,
+    isMine: raw.is_mine,
+  }))
+
+export type ProductReview = z.infer<typeof productReviewSchema>
 

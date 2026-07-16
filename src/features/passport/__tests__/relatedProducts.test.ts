@@ -26,6 +26,10 @@ function owns(...slugs: string[]): OwnedPassport[] {
     claimedAt: '2026-07-10T10:00:00Z',
     claimedColor: null,
     claimedSize: null,
+    wearCount: 0,
+    lastWornAt: null,
+    featuredSlot: null,
+    isPublic: false,
   }))
 }
 

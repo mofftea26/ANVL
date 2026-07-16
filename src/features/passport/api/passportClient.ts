@@ -27,7 +27,7 @@ import type {
  */
 
 const OWNED_SELECT =
-  'id, token, product_slug, product_name, serial_number, edition_total, claimed_at, claimed_color, claimed_size'
+  'id, token, product_slug, product_name, serial_number, edition_total, claimed_at, claimed_color, claimed_size, wear_count, last_worn_at, featured_slot, is_public'
 
 async function getAuthedClient() {
   if (typeof window === 'undefined') return null
