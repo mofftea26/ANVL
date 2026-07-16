@@ -10,6 +10,7 @@ import {
 } from '@/features/passport/lib/armory'
 import type { OwnedPassport } from '@/features/passport/schemas/passport.schema'
 import { cn } from '@/shared/lib/cn'
+import { WoreItButton } from './WoreItButton'
 
 /**
  * The Armory's views. All four read the same registered passports + catalog —
@@ -301,7 +302,11 @@ export function ArmoryLoadoutView({ owned, catalog }: ViewProps) {
 
 /* ---------------------------------------------------------------- Grid --- */
 
-/** The practical default: every registered unit as a plate. */
+/**
+ * The practical default: every registered unit as a plate, with the owner's
+ * wear ritual and Hall-of-Honor pin inline. The nav link wraps only the piece
+ * itself so the action row's controls stay independently clickable.
+ */
 export function ArmoryGridView({ owned, catalog }: ViewProps) {
   const catalogBySlug = new Map(catalog.map((p) => [p.slug, p]))
   return (
@@ -309,39 +314,51 @@ export function ArmoryGridView({ owned, catalog }: ViewProps) {
       {owned.map((passport) => {
         const image = catalogBySlug.get(passport.productSlug)?.image
         return (
-          <Link
+          <div
             key={passport.id}
-            to="/p/$token"
-            params={{ token: passport.token }}
-            className="focus-ring flex gap-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4 no-underline motion-safe:transition-colors hover:border-[color-mix(in_oklab,var(--color-highlight)_45%,var(--color-line))]"
+            className="flex flex-col rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4 motion-safe:transition-colors"
           >
-            {image ? (
-              <img
-                src={image}
-                alt=""
-                aria-hidden="true"
-                loading="lazy"
-                decoding="async"
-                width={120}
-                height={150}
-                className="h-20 w-16 shrink-0 rounded-lg object-cover"
-              />
-            ) : null}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-[var(--color-heading)]">
-                {passport.productName}
-              </p>
-              <div className="mt-2">
-                <AuthenticityPlate editionTotal={passport.editionTotal} size="sm" />
+            <Link
+              to="/p/$token"
+              params={{ token: passport.token }}
+              className="focus-ring flex gap-4 no-underline"
+            >
+              {image ? (
+                <img
+                  src={image}
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  decoding="async"
+                  width={120}
+                  height={150}
+                  className="h-20 w-16 shrink-0 rounded-lg object-cover"
+                />
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-[var(--color-heading)]">
+                  {passport.productName}
+                </p>
+                <div className="mt-2">
+                  <AuthenticityPlate editionTotal={passport.editionTotal} size="sm" />
+                </div>
+                <p className="anvl-micro mt-2 text-[10px] text-[var(--color-text-muted)]">
+                  {[passport.claimedColor, passport.claimedSize].filter(Boolean).join(' / ')}
+                  {passport.claimedAt
+                    ? ` · ${new Date(passport.claimedAt).toLocaleDateString()}`
+                    : ''}
+                </p>
               </div>
-              <p className="anvl-micro mt-2 text-[10px] text-[var(--color-text-muted)]">
-                {[passport.claimedColor, passport.claimedSize].filter(Boolean).join(' / ')}
-                {passport.claimedAt
-                  ? ` · ${new Date(passport.claimedAt).toLocaleDateString()}`
-                  : ''}
-              </p>
+            </Link>
+            <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--color-line)] pt-3">
+              <WoreItButton passportId={passport.id} wearCount={passport.wearCount} />
+              {passport.lastWornAt ? (
+                <span className="anvl-micro text-[9px] text-[var(--color-text-muted)]">
+                  Last worn {new Date(passport.lastWornAt).toLocaleDateString()}
+                </span>
+              ) : null}
             </div>
-          </Link>
+          </div>
         )
       })}
     </div>

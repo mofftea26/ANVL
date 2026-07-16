@@ -11,6 +11,7 @@ import {
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
 import { cn } from '@/shared/lib/cn'
+import { ArmoryFeats } from './armory/ArmoryFeats'
 import {
   ARMORY_VIEWS,
   ArmoryCollectionView,
@@ -183,6 +184,8 @@ export function ArmoryPanel() {
             {view === 'timeline' ? <ArmoryTimelineView owned={owned} catalog={catalog} /> : null}
             {view === 'loadout' ? <ArmoryLoadoutView owned={owned} catalog={catalog} /> : null}
           </div>
+
+          <ArmoryFeats />
         </>
       )}
     </div>
