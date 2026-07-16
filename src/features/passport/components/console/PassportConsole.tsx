@@ -23,6 +23,7 @@ import {
 } from '../../webgl/passportForgeTiming'
 import { AuthenticityPlate } from '../AuthenticityPlate'
 import { PassportHotspotDetail, PassportHotspots } from '../PassportHotspots'
+import { ProductForgeImage } from '../ProductForgeImage'
 import {
   PASSPORT_GROUPS,
   PASSPORT_SECTIONS,
@@ -235,21 +236,17 @@ export function PassportConsole({
           <div className="flex min-h-0 flex-1 items-center justify-center">
             {stageImage ? (
               <div data-pc-image className="relative flex h-full items-center">
-                <div className="pp-sheen relative">
-                  <img
-                    src={stageImage}
-                    alt={view.productName}
-                    width={1200}
-                    height={1500}
-                    decoding="async"
-                    className="max-h-full w-auto object-contain drop-shadow-[0_50px_80px_rgba(0,0,0,0.55)]"
-                  />
+                <ProductForgeImage
+                  src={stageImage}
+                  alt={view.productName}
+                  imgClassName="pp-sheen max-h-full w-auto object-contain drop-shadow-[0_50px_80px_rgba(0,0,0,0.55)]"
+                >
                   <PassportHotspots
                     hotspots={content.hotspots}
                     activeIndex={hotspot}
                     onSelect={setHotspot}
                   />
-                </div>
+                </ProductForgeImage>
               </div>
             ) : (
               <div

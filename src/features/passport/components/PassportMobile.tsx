@@ -21,6 +21,7 @@ import {
 import { AuthenticityPlate } from './AuthenticityPlate'
 import { PassportAtmosphere } from './PassportAtmosphere'
 import { PassportHotspotDetail, PassportHotspots } from './PassportHotspots'
+import { ProductForgeImage } from './ProductForgeImage'
 
 const SWAP_MS = 260
 
@@ -133,19 +134,17 @@ export function PassportMobile({
         {heroImage ? (
           <div data-pm-in className="mx-auto mt-6 w-full max-w-[11rem] sm:max-w-[13rem]">
             <div className="relative overflow-hidden rounded-xl border border-[var(--color-line)]">
-              <img
+              <ProductForgeImage
                 src={heroImage.src}
                 alt={heroImage.alt || view.productName}
-                width={800}
-                height={1000}
-                decoding="async"
-                className="h-auto w-full object-cover"
-              />
-              <PassportHotspots
-                hotspots={content.hotspots}
-                activeIndex={hotspot}
-                onSelect={setHotspot}
-              />
+                imgClassName="h-auto w-full object-cover"
+              >
+                <PassportHotspots
+                  hotspots={content.hotspots}
+                  activeIndex={hotspot}
+                  onSelect={setHotspot}
+                />
+              </ProductForgeImage>
             </div>
           </div>
         ) : null}

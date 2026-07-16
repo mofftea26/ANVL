@@ -98,6 +98,53 @@ export function PassportForgeParticles({ motion }: { motion: PassportMotionState
     [],
   )
 
+  /**
+   * A point on a card's ROUNDED-rectangle outline at arc-length `t`, walked
+   * clockwise from the top edge through true quarter-circle corners — so the
+   * ember trace curves at the corners exactly like `rounded-2xl`, instead of
+   * squaring off.
+   */
+  const pointOnRoundedRect = (r: PassportCardRect, rad: number, t: number) => {
+    const sw = Math.max(0, r.w - 2 * rad)
+    const sh = Math.max(0, r.h - 2 * rad)
+    const arc = (Math.PI / 2) * rad
+    // 1 — top edge (left→right)
+    if (t < sw) return { x: r.x + rad + t, y: r.y }
+    t -= sw
+    // 2 — top-right corner (−90°→0°)
+    if (t < arc) {
+      const a = -Math.PI / 2 + (t / arc) * (Math.PI / 2)
+      return { x: r.x + r.w - rad + rad * Math.cos(a), y: r.y + rad + rad * Math.sin(a) }
+    }
+    t -= arc
+    // 3 — right edge (top→bottom)
+    if (t < sh) return { x: r.x + r.w, y: r.y + rad + t }
+    t -= sh
+    // 4 — bottom-right corner (0°→90°)
+    if (t < arc) {
+      const a = (t / arc) * (Math.PI / 2)
+      return { x: r.x + r.w - rad + rad * Math.cos(a), y: r.y + r.h - rad + rad * Math.sin(a) }
+    }
+    t -= arc
+    // 5 — bottom edge (right→left)
+    if (t < sw) return { x: r.x + r.w - rad - t, y: r.y + r.h }
+    t -= sw
+    // 6 — bottom-left corner (90°→180°)
+    if (t < arc) {
+      const a = Math.PI / 2 + (t / arc) * (Math.PI / 2)
+      return { x: r.x + rad + rad * Math.cos(a), y: r.y + r.h - rad + rad * Math.sin(a) }
+    }
+    t -= arc
+    // 7 — left edge (bottom→top)
+    if (t < sh) return { x: r.x, y: r.y + r.h - rad - t }
+    t -= sh
+    // 8 — top-left corner (180°→270°)
+    const a = Math.PI + (t / arc) * (Math.PI / 2)
+    return { x: r.x + rad + rad * Math.cos(a), y: r.y + rad + rad * Math.sin(a) }
+  }
+
+  const radiusOf = (r: PassportCardRect) => Math.min(CORNER_PX, r.w / 2, r.h / 2)
+
   /** Build the ember tracing of the measured card rects (px → world). */
   const buildRectCloud = (rects: PassportCardRect[]): SilhouetteCloud | null => {
     if (!rects.length || size.width <= 0 || size.height <= 0) return null
@@ -105,7 +152,11 @@ export function PassportForgeParticles({ motion }: { motion: PassportMotionState
     const toWorldX = (px: number) => (px - size.width / 2) * worldPerPx
     const toWorldY = (py: number) => (size.height / 2 - py) * worldPerPx
 
-    const perimeters = rects.map((r) => 2 * (r.w + r.h))
+    // True rounded-rect perimeter (weights big cards; matches the walk).
+    const perimeters = rects.map((r) => {
+      const rad = radiusOf(r)
+      return 2 * Math.max(0, r.w - 2 * rad) + 2 * Math.max(0, r.h - 2 * rad) + 2 * Math.PI * rad
+    })
     const totalPerimeter = perimeters.reduce((a, b) => a + b, 0) || 1
 
     const positions = new Float32Array(COUNT * 3)
@@ -123,29 +174,10 @@ export function PassportForgeParticles({ motion }: { motion: PassportMotionState
       let px: number
       let py: number
       if (border) {
-        // Walk the perimeter; soften corners toward the rounded radius.
-        const t = Math.random() * perimeters[ri]
-        if (t < r.w) {
-          px = r.x + t
-          py = r.y
-        } else if (t < r.w + r.h) {
-          px = r.x + r.w
-          py = r.y + (t - r.w)
-        } else if (t < 2 * r.w + r.h) {
-          px = r.x + (t - r.w - r.h)
-          py = r.y + r.h
-        } else {
-          px = r.x
-          py = r.y + (t - 2 * r.w - r.h)
-        }
-        // Nudge extreme corners inward so the trace reads rounded.
-        const cx = Math.min(Math.max(px, r.x + CORNER_PX), r.x + r.w - CORNER_PX)
-        const cy = Math.min(Math.max(py, r.y + CORNER_PX), r.y + r.h - CORNER_PX)
-        px = px * 0.85 + cx * 0.15
-        py = py * 0.85 + cy * 0.15
-        // Slight breathing room off the exact edge.
-        px += (Math.random() - 0.5) * 3
-        py += (Math.random() - 0.5) * 3
+        const p = pointOnRoundedRect(r, radiusOf(r), Math.random() * perimeters[ri])
+        // Tight breathing room so the outline stays crisp (was ±3px).
+        px = p.x + (Math.random() - 0.5) * 1.4
+        py = p.y + (Math.random() - 0.5) * 1.4
       } else {
         px = r.x + Math.random() * r.w
         py = r.y + Math.random() * r.h
