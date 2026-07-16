@@ -1,51 +1,64 @@
-import { Link } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Award, Medal, QrCode, Shield, Swords } from 'lucide-react'
+import { Award, Medal, QrCode, Swords } from 'lucide-react'
 import { useOwnedPassportsQuery } from '@/features/passport/hooks/usePassport'
+import type { ArmoryCatalogEntry } from '@/features/passport/lib/armory'
 import {
   computeDropCompletion,
   deriveArmoryBadges,
   deriveArmoryRank,
 } from '@/features/passport/lib/ranks'
-import { AuthenticityPlate } from '@/features/passport/components/AuthenticityPlate'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
+import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
+import { cn } from '@/shared/lib/cn'
 import {
-  accountCardBg,
-  type AccountCardBgKey,
-} from '@/features/storefront-account/account/accountCardBg'
+  ARMORY_VIEWS,
+  ArmoryCollectionView,
+  ArmoryGridView,
+  ArmoryLoadoutView,
+  ArmoryTimelineView,
+  ArmoryVaultView,
+  type ArmoryViewKey,
+} from './armory/ArmoryViews'
 
-const BG_CYCLE: AccountCardBgKey[] = ['carbon', 'steel', 'stone', 'smoke', 'gold', 'ember']
-
-/** Catalog slugs/drops for completion math — light, cached, storefront-safe. */
+/** Catalog for the Armory's views — light, cached, storefront-safe. */
 function useArmoryCatalogQuery() {
   return useQuery({
     queryKey: ['storefrontAccount', 'armory-catalog'],
-    queryFn: async () => {
+    queryFn: async (): Promise<ArmoryCatalogEntry[]> => {
       const { runtimeClients } = await import('@/app/config/runtime')
       const catalog = await runtimeClients.commerce.getShopListingCatalog()
-      return catalog.items.map((p) => ({ slug: p.slug, dropName: p.dropName }))
+      return catalog.items.map((p) => ({
+        slug: p.slug,
+        name: p.name,
+        dropName: p.dropName,
+        image: p.images[0]?.src,
+        category: p.shop?.category,
+      }))
     },
     staleTime: 5 * 60_000,
   })
 }
 
 /**
- * The Armory — every physical piece the athlete has claimed via its product
- * passport, plus derived rank, badges, and drop completion.
+ * The Armory — every physical piece the athlete has registered via its product
+ * passport: rank, badges, and the collection itself through five views (grid,
+ * vault, collection, timeline, loadout — all shaped by `passport/lib/armory`).
  */
 export function ArmoryPanel() {
   const passportsQuery = useOwnedPassportsQuery()
   const catalogQuery = useArmoryCatalogQuery()
   const owned = passportsQuery.data ?? []
   const catalog = catalogQuery.data ?? []
+  const [view, setView] = useState<ArmoryViewKey>('grid')
 
   const completion = computeDropCompletion(owned, catalog)
   const rank = deriveArmoryRank(owned.length, completion)
   const badges = deriveArmoryBadges(owned.length, completion)
-  const startedDrops = completion.filter((d) => d.claimed > 0)
 
   return (
     <div className="space-y-4">
+      {/* Standing ------------------------------------------------------- */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Rank" icon={<Medal size={15} />}>
           <div className="mt-1 flex items-center gap-3">
@@ -82,12 +95,14 @@ export function ArmoryPanel() {
           </div>
           <p className="anvl-micro mt-2 text-[var(--color-text-muted)]">{rank.description}</p>
         </AccountBentoCard>
+
         <AccountBentoCard bg={accountCardBg('gold')} eyebrow="Forged" icon={<Swords size={15} />}>
           <p className="anvl-heading mt-1 text-3xl text-[var(--color-heading)]">{owned.length}</p>
           <p className="anvl-micro text-[var(--color-text-muted)]">
-            {owned.length === 1 ? 'piece claimed' : 'pieces claimed'}
+            {owned.length === 1 ? 'piece registered' : 'pieces registered'}
           </p>
         </AccountBentoCard>
+
         <AccountBentoCard
           bg={accountCardBg('steel')}
           eyebrow="Badges"
@@ -108,42 +123,13 @@ export function ArmoryPanel() {
             </ul>
           ) : (
             <p className="anvl-micro mt-1 text-[var(--color-text-muted)]">
-              None yet — claim a piece to earn your first.
+              None yet — register a piece to earn your first.
             </p>
           )}
         </AccountBentoCard>
       </div>
 
-      {startedDrops.length > 0 ? (
-        <AccountBentoCard bg={accountCardBg('smoke')} eyebrow="Drop completion" icon={<Shield size={15} />}>
-          <ul className="mt-2 space-y-3">
-            {startedDrops.map((d) => (
-              <li key={d.dropName}>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-[var(--color-text)]">{d.dropName}</span>
-                  <span className="anvl-micro text-[var(--color-text-muted)]">
-                    {d.claimed} of {d.total} forged
-                  </span>
-                </div>
-                <div
-                  role="progressbar"
-                  aria-valuenow={d.claimed}
-                  aria-valuemin={0}
-                  aria-valuemax={d.total}
-                  aria-label={`${d.dropName} completion`}
-                  className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-elevated)]"
-                >
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[var(--color-highlight)] to-[var(--color-highlight-bright)] transition-[width] duration-700 ease-out"
-                    style={{ width: `${Math.round((d.claimed / Math.max(1, d.total)) * 100)}%` }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </AccountBentoCard>
-      ) : null}
-
+      {/* The collection -------------------------------------------------- */}
       {passportsQuery.isLoading ? (
         <p className="text-sm text-[var(--color-text-muted)]">Opening the armory…</p>
       ) : owned.length === 0 ? (
@@ -154,44 +140,50 @@ export function ArmoryPanel() {
           className="items-start"
         >
           <p className="mt-1 max-w-md text-sm text-[var(--color-text-muted)]">
-            Every ANVL piece ships with a passport card. Scan its QR code to forge the
+            Every ANVL piece ships with a passport card. Scan its QR code to register the
             piece to your name — it appears here, permanently yours.
           </p>
         </AccountBentoCard>
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {owned.map((p, i) => (
-            <AccountBentoCard
-              key={p.id}
-              bg={accountCardBg(BG_CYCLE[i % BG_CYCLE.length]!)}
-              eyebrow={p.productName}
-              icon={<QrCode size={15} />}
-            >
-              <div className="mt-1 flex flex-wrap items-center gap-3">
-                <AuthenticityPlate editionTotal={p.editionTotal} size="sm" />
-                {p.claimedColor ? (
-                  <span className="anvl-micro text-[var(--color-text-muted)]">{p.claimedColor}</span>
-                ) : null}
-                {p.claimedSize ? (
-                  <span className="anvl-micro text-[var(--color-text-muted)]">· {p.claimedSize}</span>
-                ) : null}
-              </div>
-              <div className="mt-3 flex items-center justify-between border-t border-[var(--color-line)] pt-2">
-                <span className="anvl-micro text-[var(--color-text-muted)]">
-                  Forged{' '}
-                  {p.claimedAt ? new Date(p.claimedAt).toLocaleDateString() : ''}
-                </span>
-                <Link
-                  to="/p/$token"
-                  params={{ token: p.token }}
-                  className="focus-ring anvl-micro text-[var(--color-highlight-bright)] underline-offset-4 hover:underline"
+        <>
+          <div
+            role="tablist"
+            aria-label="Armory views"
+            className="flex gap-1 overflow-x-auto rounded-full border border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-surface)_55%,transparent)] p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {ARMORY_VIEWS.map((v) => {
+              const active = v.key === view
+              return (
+                <button
+                  key={v.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  title={v.blurb}
+                  onClick={() => setView(v.key)}
+                  className={cn(
+                    'focus-ring shrink-0 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] motion-safe:transition-colors',
+                    active
+                      ? 'bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] text-[color:var(--color-on-highlight)]'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
+                  )}
                 >
-                  Open passport
-                </Link>
-              </div>
-            </AccountBentoCard>
-          ))}
-        </div>
+                  {v.label}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="pt-1">
+            {view === 'grid' ? <ArmoryGridView owned={owned} catalog={catalog} /> : null}
+            {view === 'vault' ? <ArmoryVaultView owned={owned} catalog={catalog} /> : null}
+            {view === 'collection' ? (
+              <ArmoryCollectionView owned={owned} catalog={catalog} />
+            ) : null}
+            {view === 'timeline' ? <ArmoryTimelineView owned={owned} catalog={catalog} /> : null}
+            {view === 'loadout' ? <ArmoryLoadoutView owned={owned} catalog={catalog} /> : null}
+          </div>
+        </>
       )}
     </div>
   )

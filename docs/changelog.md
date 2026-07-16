@@ -1,4 +1,16 @@
-﻿## 2026-07-15 — Passport Phase C: design-detail hotspots (pulse markers + side reveal, click-to-place authoring) + console fit fixes
+﻿## 2026-07-15 — Passport Phase D: Armory views (Vault · Collection · Timeline · Loadout)
+
+Approved this session: Vault, Collection, Timeline, Loadout — Grid stays the default. Declined/deferred: **Hall of Honor** (needs a `featured` flag per passport; deferred to the personalization family so its storage is designed once), **Mannequin** (needs a rigged 3D garment per product — only the anvil/hammer GLBs exist, so it would have been a fabrication), **Archive** (meaningless until lifecycle/retirement exists).
+
+- **Shaping is pure and tested** (`passport/lib/armory.ts`, 10 tests): `buildVaultDrops`, `buildCollectionDrops`, `buildTimeline`, `buildLoadout`. The views (`account/panels/armory/ArmoryViews.tsx`) are presentational, CSS-only motion, `motion-safe:` gated.
+- **Vault** — your *started* drops as a lit slot wall: registered pieces are champagne-washed plates that lift on hover, the rest of the drop sits as dashed empty sockets so the gap is visible. It never lists untouched drops (an armory is a record of what you own, not a shop shelf).
+- **Collection** — every drop with a completion bar; owned pieces as champagne chips linking to their passport, missing ones as dashed chips.
+- **Timeline** — every registered unit newest-first on a champagne spine, with drop, colorway/size and date.
+- **Loadout** — grouped by the product's commerce `category`; anything without one lands in an `Other` catch-all (sorted last) rather than being invented into a slot.
+- Semantics worth knowing: duplicate units of the same product collapse into **one** Vault/Collection slot (newest fills it) but keep **separate** Timeline rows — a slot is a product, a timeline row is a unit. The Armory catalog query now also carries name/image/category.
+- **Verified**: `pnpm verify` green (121 files / 682 tests, incl. 14 new Armory tests).
+
+## 2026-07-15 — Passport Phase C: design-detail hotspots (pulse markers + side reveal, click-to-place authoring) + console fit fixes
 
 - **Design-detail hotspots** (approved concept: pulse markers + side reveal). Champagne markers pulse on the product render; selecting one dims the rest, stops the pulse, and reveals its copy — in the console it takes the panel beside the piece (**the embers re-trace around the new card**, since the measure effect already follows the layout), on mobile it's a sheet under the render. The overlay is pointer-transparent except the markers, so the render keeps its sheen and never steals clicks.
 - **Click-to-place authoring** (approved): the wizard's new "Design details" step shows the hero render — click to drop a numbered marker, then write its title/story. Positions are stored as **percent of the image box**, so markers hold their spot at any display size; the resolver clamps defensively so a bad value can't park a marker off-image, and untitled hotspots are dropped. The step explains itself when no hero render is assigned yet. No migration (jsonb + `.catch()` defaults + back-fill).

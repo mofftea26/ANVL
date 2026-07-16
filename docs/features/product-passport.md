@@ -203,6 +203,33 @@ Approved concept: **pulse markers + side reveal**, authored by **click-to-place*
   so a bad number can never park a marker off-image. Hotspots without a title
   are dropped. The step explains itself when no hero render is assigned yet.
 
+## Phase D (2026-07-15) — Armory views
+
+Approved: **Vault, Collection, Timeline, Loadout** (Grid stays the default).
+Declined/deferred: Hall of Honor (needs a `featured` flag → deferred to the
+personalization family so its storage is designed once), Mannequin (needs a
+rigged 3D garment per product — we only have the anvil/hammer GLBs), Archive
+(meaningless until lifecycle/retirement exists).
+
+Shaping lives in `src/features/passport/lib/armory.ts` (pure, 10 tests); the
+views in `storefront-account/account/panels/armory/ArmoryViews.tsx` are
+presentational and CSS-only.
+
+- **Vault** — your STARTED drops as a lit slot wall: registered pieces are
+  champagne-washed plates, the rest of the drop sits as dashed empty sockets,
+  so the gap is visible. Never lists untouched drops (an armory is a record of
+  what you own, not a shop shelf).
+- **Collection** — every drop in the catalog with a completion bar, owned
+  pieces as champagne chips and missing ones as dashed chips.
+- **Timeline** — every registered *unit* (duplicates included) newest-first on
+  a champagne spine, with drop + colorway/size + date.
+- **Loadout** — grouped by the product's commerce `category`; anything without
+  one lands in an `Other` catch-all (last), never invented into a slot.
+
+Duplicate units collapse to one Vault/Collection slot (the newest fills it)
+but each keeps its own Timeline row — a slot is a product, a timeline row is a
+unit.
+
 ## Follow-ups
 
 - RPC rate limiting (Phase-J family; 122-bit tokens make brute force
