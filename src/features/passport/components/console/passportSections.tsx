@@ -1,10 +1,12 @@
 import type { Product } from '@/features/products/types/product.types'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import type { ResolvedPassportContent } from '../../lib/resolvePassportContent'
+import type { PassportRelated } from '../../lib/relatedProducts'
 import { recommendSizes, type PassportSizeGuide } from '../../lib/sizeRecommendation'
 import type { PassportView } from '../../schemas/passport.schema'
 import { CareGuide } from '../CareGuide'
 import { ForgeNotes } from '../ForgeNotes'
+import { PassportRelatedStrip } from '../PassportRelatedStrip'
 import { PassportStoryChapter } from '../PassportStoryChapter'
 import { WorldOriginMap } from '../WorldOriginMap'
 
@@ -16,6 +18,8 @@ export interface PassportSectionContext {
   storyChapter: StoryChapter | null
   /** Cross-product size map (loader-built, user-independent). */
   sizeGuide: PassportSizeGuide | null
+  /** Candidate related pieces (loader-built; owner filters client-side). */
+  related: PassportRelated | null
 }
 
 export type PassportSectionKey =
@@ -27,6 +31,8 @@ export type PassportSectionKey =
   | 'story'
   | 'forge-notes'
   | 'origin'
+  | 'complete-drop'
+  | 'matching'
   | 'authenticity'
 
 export type PassportSectionGroup = 'craft' | 'ritual' | 'legacy'
@@ -229,6 +235,34 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
         ) : null}
       </div>
     ),
+  },
+  {
+    key: 'complete-drop',
+    group: 'legacy',
+    title: 'Complete the drop',
+    eyebrow: 'Collection',
+    // Owner-only, and only when this piece's drop has other pieces at all.
+    available: ({ view, related }) =>
+      view.isOwner && (related?.dropMates.length ?? 0) > 0,
+    teaser: ({ related }) =>
+      related?.dropName ? `Finish ${related.dropName}` : 'Complete the collection.',
+    Detail: ({ ctx }) =>
+      ctx.related ? (
+        <PassportRelatedStrip mode="drop" related={ctx.related} />
+      ) : null,
+  },
+  {
+    key: 'matching',
+    group: 'legacy',
+    title: 'Matching pieces',
+    eyebrow: 'Loadout',
+    available: ({ view, related }) =>
+      view.isOwner && (related?.categoryMates.length ?? 0) > 0,
+    teaser: () => 'Complete your loadout.',
+    Detail: ({ ctx }) =>
+      ctx.related ? (
+        <PassportRelatedStrip mode="category" related={ctx.related} />
+      ) : null,
   },
   {
     key: 'authenticity',

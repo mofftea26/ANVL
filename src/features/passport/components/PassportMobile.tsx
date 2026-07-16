@@ -10,6 +10,7 @@ import { cn } from '@/shared/lib/cn'
 import { gsap } from '@/shared/lib/gsap'
 import { usePassportSectionNav } from '../hooks/usePassportSectionNav'
 import type { ResolvedPassportContent } from '../lib/resolvePassportContent'
+import type { PassportRelated } from '../lib/relatedProducts'
 import type { PassportSizeGuide } from '../lib/sizeRecommendation'
 import type { PassportView } from '../schemas/passport.schema'
 import {
@@ -38,6 +39,7 @@ export function PassportMobile({
   content,
   storyChapter,
   sizeGuide,
+  related,
   claimedDate,
   actions,
 }: {
@@ -47,6 +49,7 @@ export function PassportMobile({
   content: ResolvedPassportContent
   storyChapter: StoryChapter | null
   sizeGuide: PassportSizeGuide | null
+  related: PassportRelated | null
   claimedDate: string | null
   actions?: ReactNode
 }) {
@@ -63,6 +66,7 @@ export function PassportMobile({
     claimedDate,
     storyChapter,
     sizeGuide,
+    related,
   }
   const availableSections = PASSPORT_SECTIONS.filter((s) => s.available(ctx))
   const groups = PASSPORT_GROUPS.filter((g) => availableSections.some((s) => s.group === g.key))

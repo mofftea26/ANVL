@@ -10,6 +10,7 @@ import {
 import { usePassportQuery } from '../hooks/usePassport'
 import { buildCeremonyLines } from '../lib/ceremonyLines'
 import { resolvePassportStage } from '../lib/passportStage'
+import type { PassportRelated } from '../lib/relatedProducts'
 import type { PassportView } from '../schemas/passport.schema'
 import { ClaimCeremony } from './ClaimCeremony'
 import { PassportNotFound } from './PassportNotFound'
@@ -28,6 +29,8 @@ export interface PassportExperienceProps {
   storyChapter: StoryChapter | null
   /** Cross-product size map (loader-built, user-independent). */
   sizeGuide: PassportSizeGuide | null
+  /** Candidate related pieces (loader-built; owner filters client-side). */
+  related: PassportRelated | null
   /** One-time transfer code from the share link (?transfer=). */
   transferCode?: string
 }
@@ -47,6 +50,7 @@ export function PassportExperience({
   content,
   storyChapter,
   sizeGuide,
+  related,
   transferCode,
 }: PassportExperienceProps) {
   useHydrateStorefrontAccountSession()
@@ -110,6 +114,7 @@ export function PassportExperience({
             content={content}
             storyChapter={storyChapter}
             sizeGuide={sizeGuide}
+            related={related}
             claimedDate={claimedDate}
             actions={
               <div className="flex flex-wrap items-center justify-center gap-3">
@@ -130,6 +135,7 @@ export function PassportExperience({
           content={content}
           storyChapter={storyChapter}
           sizeGuide={sizeGuide}
+          related={related}
           claimedDate={claimedDate}
         />
       )

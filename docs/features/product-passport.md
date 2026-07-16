@@ -261,6 +261,24 @@ constants):
   on capable devices behind `isWebglAvailable()` + the canvas teardown guard.
   Reduced motion skips straight to the passport.
 
+## Phase F (2026-07-15) — related products ("Complete the Loadout")
+
+Approved: **two** LEGACY-tab sections, both owner-only, both deliberately
+un-salesy (they mirror the collection gap the owner already sees in the Armory
+and link to the shop PDP — never a popup or checkout push).
+
+- **Complete the drop** — the rest of THIS piece's drop the owner hasn't
+  registered. When they hold the whole drop it becomes a quiet **completion
+  seal** (crest + "<drop> — complete") instead of an empty strip.
+- **Matching pieces** — other pieces in the same commerce category still to
+  collect; a one-line acknowledgement when they already hold them all.
+
+`lib/relatedProducts.ts` (pure, tested) builds the candidate lists in the SSR
+loader (user-independent); the strip filters by the owner's registrations
+client-side via `useOwnedPassportsQuery` (SSR is anon), the same split as the
+size recommendation. Never shown on the public authenticity view — the
+`available` predicate gates on `view.isOwner`.
+
 ## Follow-ups
 
 - RPC rate limiting (Phase-J family; 122-bit tokens make brute force

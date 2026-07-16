@@ -1,4 +1,13 @@
-﻿## 2026-07-15 — Passport Phase E: the registration ceremony, "The Authentication"
+﻿## 2026-07-15 — Passport Phase F: related products ("Complete the Loadout")
+
+Approved: **two** LEGACY-tab sections, owner-only, deliberately subtle (they mirror the collection gap already visible in the Armory and link to the shop PDP — never a popup or a checkout push; never shown on the public authenticity view).
+
+- **Complete the drop** — the rest of this piece's drop the owner hasn't registered yet; once they hold the whole drop it becomes a quiet **completion seal** (crest + "<drop> — complete") rather than an empty strip.
+- **Matching pieces** — other pieces in the same commerce category still to collect; a one-line acknowledgement when they hold them all.
+- `lib/relatedProducts.ts` (pure, 9 tests) builds the candidate lists in the SSR loader (user-independent); the strip filters by the owner's registrations **client-side** via `useOwnedPassportsQuery` (SSR is anon — the same split as the size recommendation). Gated on `view.isOwner`, so it never appears for someone else scanning the code.
+- **Verified**: `pnpm verify` green (124 files / 695 tests, incl. new related-products + strip tests).
+
+## 2026-07-15 — Passport Phase E: the registration ceremony, "The Authentication"
 
 Approved concept, and approved that the verification beat carries **real record data**. The ceremony plays only after the atomic claim has already succeeded — it never gates registration.
 

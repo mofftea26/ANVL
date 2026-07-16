@@ -72,6 +72,7 @@ function renderMobile(variant: 'owner' | 'public' = 'owner') {
       content={content}
       storyChapter={null}
       sizeGuide={null}
+      related={null}
       claimedDate="14 July 2026"
     />,
   )

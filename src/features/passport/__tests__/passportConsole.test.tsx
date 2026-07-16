@@ -93,6 +93,7 @@ function renderConsole() {
       content={content}
       storyChapter={null}
       sizeGuide={null}
+      related={null}
       claimedDate="14 July 2026"
     />,
   )

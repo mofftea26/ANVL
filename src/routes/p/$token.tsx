@@ -7,6 +7,7 @@ import { fetchPassportByTokenAnon } from '@/features/passport/api/passportClient
 import { PassportExperience } from '@/features/passport/components/PassportExperience'
 import { resolvePassportContent } from '@/features/passport/lib/resolvePassportContent'
 import { buildPassportSizeGuide } from '@/features/passport/lib/sizeRecommendation'
+import { buildPassportRelated } from '@/features/passport/lib/relatedProducts'
 import { resolvePdpContent } from '@/features/products/pdp/resolvePdpContent'
 
 export const Route = createFileRoute('/p/$token')({
@@ -35,6 +36,7 @@ export const Route = createFileRoute('/p/$token')({
         }),
         storyChapter: null,
         sizeGuide: null,
+        related: null,
       }
     }
     const [product, projection, storyBook, catalog] = await Promise.all([
@@ -69,6 +71,20 @@ export const Route = createFileRoute('/p/$token')({
       passportContent: projection.passportContent,
       catalog: catalog.items.map((p) => ({ slug: p.slug, name: p.name })),
     })
+    // Candidate related pieces (user-independent — the owner's registrations
+    // filter these client-side, since SSR is anon).
+    const related = buildPassportRelated({
+      productSlug: view.productSlug,
+      dropName: product?.dropName ?? '',
+      category: product?.shop?.category,
+      catalog: catalog.items.map((p) => ({
+        slug: p.slug,
+        name: p.name,
+        dropName: p.dropName,
+        category: p.shop?.category,
+        image: p.images[0]?.src,
+      })),
+    })
     return {
       token: params.token,
       view,
@@ -76,6 +92,7 @@ export const Route = createFileRoute('/p/$token')({
       content,
       storyChapter: storyBook,
       sizeGuide,
+      related,
     }
   },
   head: ({ loaderData }) =>
