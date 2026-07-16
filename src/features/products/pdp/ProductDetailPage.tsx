@@ -12,6 +12,7 @@ import { PdpBuyPanel } from '@/features/products/pdp/PdpBuyPanel'
 import { PdpStickyBar } from '@/features/products/pdp/PdpStickyBar'
 import { PdpBento } from '@/features/products/pdp/PdpBento'
 import { PdpRelated } from '@/features/products/pdp/PdpRelated'
+import { PdpReviews } from '@/features/products/pdp/PdpReviews'
 import type { ResolvedPdpContent } from '@/features/products/pdp/resolvePdpContent'
 import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { JsonLd } from '@/shared/components/seo/JsonLd'
@@ -83,6 +84,7 @@ export function ProductDetailPage({ product, related, assets, content, shopConfi
       {/* Cinematic zone — a compact bento grid (the "second screen"). */}
       <div className="mt-2">
         <PdpBento product={product} variant={variant} content={content} pdp={pdp} hasStoryBook={hasStoryBook} />
+        <PdpReviews slug={product.slug} />
         {pdp.showRelated ? <PdpRelated products={related} count={pdp.relatedCount} /> : null}
       </div>
 
