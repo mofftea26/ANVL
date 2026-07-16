@@ -12,6 +12,7 @@ import { AccountBentoCard } from '@/features/storefront-account/account/AccountB
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
 import { cn } from '@/shared/lib/cn'
 import { ArmoryFeats } from './armory/ArmoryFeats'
+import { ArmoryHonor } from './armory/ArmoryHonor'
 import {
   ARMORY_VIEWS,
   ArmoryCollectionView,
@@ -147,6 +148,8 @@ export function ArmoryPanel() {
         </AccountBentoCard>
       ) : (
         <>
+          <ArmoryHonor owned={owned} catalog={catalog} />
+
           <div
             role="tablist"
             aria-label="Armory views"

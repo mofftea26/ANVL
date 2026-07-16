@@ -10,6 +10,7 @@ import {
 } from '@/features/passport/lib/armory'
 import type { OwnedPassport } from '@/features/passport/schemas/passport.schema'
 import { cn } from '@/shared/lib/cn'
+import { FeaturedPin } from './FeaturedPin'
 import { WoreItButton } from './WoreItButton'
 
 /**
@@ -352,11 +353,14 @@ export function ArmoryGridView({ owned, catalog }: ViewProps) {
             </Link>
             <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--color-line)] pt-3">
               <WoreItButton passportId={passport.id} wearCount={passport.wearCount} />
-              {passport.lastWornAt ? (
-                <span className="anvl-micro text-[9px] text-[var(--color-text-muted)]">
-                  Last worn {new Date(passport.lastWornAt).toLocaleDateString()}
-                </span>
-              ) : null}
+              <div className="flex items-center gap-2">
+                {passport.lastWornAt ? (
+                  <span className="anvl-micro text-[9px] text-[var(--color-text-muted)]">
+                    Last worn {new Date(passport.lastWornAt).toLocaleDateString()}
+                  </span>
+                ) : null}
+                <FeaturedPin passport={passport} owned={owned} />
+              </div>
             </div>
           </div>
         )
