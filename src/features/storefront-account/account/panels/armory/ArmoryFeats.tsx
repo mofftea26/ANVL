@@ -93,7 +93,7 @@ export function ArmoryFeats() {
                 type="button"
                 onClick={() => setEditing(feat)}
                 aria-label={`Edit feat: ${feat.title}`}
-                className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-text)]"
+                className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-text)]"
               >
                 <Pencil size={14} aria-hidden="true" />
               </button>
@@ -102,7 +102,7 @@ export function ArmoryFeats() {
                 onClick={() => remove.mutate(feat.id)}
                 disabled={remove.isPending}
                 aria-label={`Delete feat: ${feat.title}`}
-                className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-destructive)] disabled:opacity-40"
+                className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-destructive)] disabled:opacity-40"
               >
                 <X size={15} aria-hidden="true" />
               </button>

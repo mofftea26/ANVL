@@ -44,7 +44,7 @@ export function FeaturedPin({
         })
       }
       className={cn(
-        'focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full motion-safe:transition-colors disabled:opacity-30',
+        'focus-ring inline-flex h-10 w-10 items-center justify-center rounded-full motion-safe:transition-colors disabled:opacity-30',
         isFeatured
           ? 'text-[var(--color-highlight-bright)]'
           : 'text-[var(--color-text-muted)] hover:text-[var(--color-highlight-bright)]',

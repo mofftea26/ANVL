@@ -279,6 +279,57 @@ client-side via `useOwnedPassportsQuery` (SSR is anon), the same split as the
 size recommendation. Never shown on the public authenticity view — the
 `available` predicate gates on `view.isOwner`.
 
+## Phase G (2026-07-16) — the Armory comes alive
+
+Approved from the Phase G menu: wear journal, Feats, Hall of Honor, public
+armory (both directions), verified-owner reviews, and the full gamification
+family. Declined/deferred: lifecycle (care reminders, repair log, retirement),
+owner perks (early access, exclusives). Built as G1–G7, one commit each.
+
+**G1 — DB foundation** (`supabase/migrations/20260716120000_armory_life.sql`).
+`product_passports` gains `wear_count`/`last_worn_at` + `featured_slot` (1-3,
+unique per owner). New `armory_feats` (per-entry public flag), `product_reviews`
+(one per owner per product), and `storefront_profiles.armory_public` +
+`armory_handle` (minted once, 72 bits). Every anon read is a SECURITY DEFINER
+RPC projecting only safe fields — never tokens, serials, ids or emails.
+
+**G2 — wear journal + Feats.** "Wore it" is a one-tap optimistic counter on each
+Grid piece (stokes a flame + count, muted undo). Feats are the owner's
+achievement log — add/edit/delete "Deadlift PR — 240 kg" with a date and a
+per-entry public/private switch.
+
+**G3 — Hall of Honor.** A star pin on each piece fills the next of three shrine
+slots (disabled when full — unpin first, never silent eviction). `ArmoryHonor`
+is the pedestal strip, shown once anything is pinned. `honorSlots.ts` is pure +
+tested.
+
+**G4 — public armory (two states).** `ArmoryShareCard` (owner, read+write) mints
+a shareable link; `/armory/$handle` (`PublicArmoryView`, read-only) shows the
+owner name, rank, Hall of Honor, shared pieces and public feats — no controls,
+pieces aren't links (tokens never exposed). noindex + Coming-Soon-exempt.
+
+**G5 — verified-owner reviews.** `PdpReviews` on the product page: everyone
+reads (with a "Verified owner" badge + average); only a signed-in holder of a
+registered passport for that product sees the write form. Ownership is proven by
+`submit_product_review`, not claimed. One review per owner, editable + deletable.
+
+**G6 — gamification.** All client-derived (same tamper posture as ranks):
+- **Forge XP / Level** (`forgeXp.ts`): registrations + wears + feats + full drops
+  on a quadratic curve; `ForgeProgress` shows the level, a live XP bar, and the
+  nearest goal (next rank if close, else next level). Ranks stay the identity.
+- **Collection Crest** (`CollectionCrest.tsx`): an SVG that grows — rivets count
+  pieces, laurel at three, crown at a full drop, star at a full shrine, glow
+  ramps with level.
+- **Challenges** (`challenges.ts` + `ArmoryChallenges`): a quest log with live
+  progress bars, nearest-to-done first.
+
+**G7 — particle polish.** The bento ember tracing now walks a TRUE rounded-rect
+outline (four edges + four quarter-circle corners via `pointOnRoundedRect`), so
+corners curve like `rounded-2xl`; edge jitter tightened ±3px→±1.4px. The passport
+product render now forges from embers sampled from the real image on first load
+only (`ProductForgeImage` → lazy `ProductForgeCanvas`/`ProductForgeParticles`),
+then the canvas unmounts; reduced motion / no WebGL shows the image immediately.
+
 ## Follow-ups
 
 - RPC rate limiting (Phase-J family; 122-bit tokens make brute force

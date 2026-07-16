@@ -1,4 +1,16 @@
-﻿## 2026-07-15 — Passport Phase F: related products ("Complete the Loadout")
+﻿## 2026-07-16 — Passport Phase G: the Armory comes alive (G1–G7)
+
+Approved from the Phase G menu: wear journal, Feats, Hall of Honor, public armory (both directions), verified-owner reviews, full gamification. Declined/deferred: lifecycle (care reminders, repair log, retirement) and owner perks (early access, exclusives). Shipped as G1–G7, one commit each; final `pnpm verify` green (130 files / 722 tests), `vendor-three` stays lazy.
+
+- **G1 — DB foundation** (`20260716120000_armory_life.sql`): `product_passports` gains `wear_count`/`last_worn_at` + `featured_slot` (1-3, unique per owner); new `armory_feats` (per-entry public flag) + `product_reviews` (one per owner/product); `storefront_profiles` gains `armory_public` + a minted-once `armory_handle` (72 bits). Every anon read is a SECURITY DEFINER RPC projecting only safe fields — never tokens, serials, ids or emails. Smoke-tested.
+- **G2 — wear journal + Feats**: one-tap optimistic "Wore it" counter per Grid piece (muted undo); Feats = add/edit/delete achievement log with date + per-entry public/private switch.
+- **G3 — Hall of Honor**: star-pin up to three pieces (disabled when full, never silent eviction); shrine pedestal strip; `honorSlots.ts` pure + tested.
+- **G4 — public armory (two states)**: `ArmoryShareCard` (owner, read+write) mints a shareable link; `/armory/$handle` (`PublicArmoryView`, read-only) shows name, rank, Hall of Honor, shared pieces + public feats — no controls, pieces aren't links. noindex + Coming-Soon-exempt.
+- **G5 — verified-owner reviews**: `PdpReviews` — everyone reads (Verified owner badge + average); only a passport-holding owner of that product sees the write form (proven by `submit_product_review`). One review per owner, edit + delete.
+- **G6 — gamification** (all client-derived, same tamper posture as ranks): Forge XP/Level on a quadratic curve (`forgeXp.ts`, `ForgeProgress`) with the nearest goal always dangled; an evolving Collection Crest SVG (rivets/laurel/crown/star/glow by milestone); a Challenges quest log (`challenges.ts`, `ArmoryChallenges`), nearest-to-done first. Logic pure + tested.
+- **G7 — particle polish**: bento ember tracing now walks a TRUE rounded-rect outline (four edges + four quarter-circle corners, `pointOnRoundedRect`) so corners curve like `rounded-2xl`; edge jitter tightened ±3→±1.4px. The passport product render forges from embers sampled off the real image on first load only (`ProductForgeImage` → lazy canvas), then unmounts; reduced motion / no WebGL shows the image immediately.
+
+## 2026-07-15 — Passport Phase F: related products ("Complete the Loadout")
 
 Approved: **two** LEGACY-tab sections, owner-only, deliberately subtle (they mirror the collection gap already visible in the Armory and link to the shop PDP — never a popup or a checkout push; never shown on the public authenticity view).
 
