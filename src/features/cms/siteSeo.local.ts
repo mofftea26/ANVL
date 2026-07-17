@@ -154,7 +154,7 @@ function notifySiteSeoChange() {
 export function defaultSiteSeoContent(): SiteSeoContent {
   return {
     globalDefaults: {
-      defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.svg`,
+      defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.png`,
     },
     staticPages: {},
     marketingTools: [],

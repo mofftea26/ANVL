@@ -46,7 +46,12 @@ export function PieceFeats({ slug }: { slug: string }) {
           pending={create.isPending}
           onCancel={closeForm}
           onSubmit={(input) =>
-            create.mutate({ ...input, productSlug: slug }, { onSuccess: closeForm })
+            create.mutate(
+              { ...input, productSlug: slug },
+              // Close only on a REAL success — a failed write keeps the form
+              // (and its values) so nothing looks silently "added".
+              { onSuccess: (r) => r.ok && closeForm() },
+            )
           }
         />
       ) : null}
@@ -63,7 +68,7 @@ export function PieceFeats({ slug }: { slug: string }) {
                   onSubmit={(input) =>
                     update.mutate(
                       { id: feat.id, ...input, productSlug: slug },
-                      { onSuccess: closeForm },
+                      { onSuccess: (r) => r.ok && closeForm() },
                     )
                   }
                 />

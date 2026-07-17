@@ -29,7 +29,7 @@ export const Route = createFileRoute('/story')({
     return { chapters }
   },
   head: () => {
-    const fb = { defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.svg` }
+    const fb = { defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.png` }
     return buildSeoMetaFromCmsSource(
       seoContentToMetaSource(
         {

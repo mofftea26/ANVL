@@ -41,7 +41,7 @@ export function organizationJsonLd() {
       url: `${BRAND.canonicalBaseUrl}/brand/logo-stacked-dark.png`,
       contentUrl: `${BRAND.canonicalBaseUrl}/brand/stacked.svg`,
     },
-    image: `${BRAND.canonicalBaseUrl}/brand/og-default.svg`,
+    image: `${BRAND.canonicalBaseUrl}/brand/og-default.png`,
   }
 }
 

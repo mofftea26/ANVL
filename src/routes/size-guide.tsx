@@ -53,7 +53,7 @@ export const Route = createFileRoute('/size-guide')({
   head: ({ loaderData }) => {
     const site = loaderData?.siteSeo
     const doc = loaderData?.seoDoc
-    const fb = { defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.svg` }
+    const fb = { defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.png` }
     if (!site || !doc) {
       return buildSeoMetaFromCmsSource(
         seoContentToMetaSource(

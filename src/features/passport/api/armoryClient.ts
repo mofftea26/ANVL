@@ -31,6 +31,33 @@ async function getAuthedClient() {
   return getStorefrontSupabaseClient()
 }
 
+/** Result union for armory writes — failures carry the REAL reason so the UI
+ *  can toast it instead of silently doing nothing. */
+export type ArmoryWriteResult = { ok: true } | { ok: false; error: string }
+
+/**
+ * Writes must run on a LIVE session. getSession() hands back whatever is in
+ * storage — including a corpse — so when the access token is at/past expiry we
+ * force a refresh and surface the failure loudly instead of letting RLS
+ * silently reject the write.
+ */
+async function ensureLiveSession(
+  client: NonNullable<Awaited<ReturnType<typeof getAuthedClient>>>,
+): Promise<string | null> {
+  const { data } = await client.auth.getSession()
+  let session = data.session
+  if (session) {
+    const expiresAt = (session.expires_at ?? 0) * 1000
+    if (expiresAt && expiresAt < Date.now() + 30_000) {
+      const refreshed = await client.auth.refreshSession()
+      session = refreshed.data.session
+      if (!session) return 'Your session expired — sign in again and retry.'
+    }
+    return null
+  }
+  return 'You are signed out — sign in and retry.'
+}
+
 /* ------------------------------------------------------------------ wear --- */
 
 export type LogWearResult =
@@ -42,6 +69,7 @@ export type LogWearResult =
 export async function logPassportWear(id: string, delta: 1 | -1 = 1): Promise<LogWearResult> {
   const client = await getAuthedClient()
   if (!client) return { ok: false, error: 'not_authenticated' }
+  if (await ensureLiveSession(client)) return { ok: false, error: 'not_authenticated' }
   const { data, error } = await client.rpc('log_passport_wear', { p_id: id, p_delta: delta })
   if (error) return { ok: false, error: 'unknown' }
   const result = data as
@@ -68,6 +96,7 @@ export async function logPassportWear(id: string, delta: 1 | -1 = 1): Promise<Lo
 export async function setPassportFeatured(id: string, slot: 1 | 2 | 3 | null): Promise<boolean> {
   const client = await getAuthedClient()
   if (!client) return false
+  if (await ensureLiveSession(client)) return false
   const { data, error } = await client.rpc('set_passport_featured', { p_id: id, p_slot: slot })
   return !error && Boolean((data as { ok?: boolean } | null)?.ok)
 }
@@ -92,21 +121,28 @@ export async function listArmoryFeats(): Promise<ArmoryFeat[]> {
   return out
 }
 
-export async function createArmoryFeat(input: ArmoryFeatInput): Promise<boolean> {
+export async function createArmoryFeat(input: ArmoryFeatInput): Promise<ArmoryWriteResult> {
   const client = await getAuthedClient()
-  if (!client) return false
+  if (!client) return { ok: false, error: 'Sign in to log feats.' }
+  const sessionError = await ensureLiveSession(client)
+  if (sessionError) return { ok: false, error: sessionError }
   const { error } = await client.from('armory_feats').insert({
     title: input.title,
     achieved_on: input.achievedOn,
     is_public: input.isPublic,
     product_slug: input.productSlug,
   })
-  return !error
+  return error ? { ok: false, error: error.message } : { ok: true }
 }
 
-export async function updateArmoryFeat(id: string, input: ArmoryFeatInput): Promise<boolean> {
+export async function updateArmoryFeat(
+  id: string,
+  input: ArmoryFeatInput,
+): Promise<ArmoryWriteResult> {
   const client = await getAuthedClient()
-  if (!client) return false
+  if (!client) return { ok: false, error: 'Sign in to edit feats.' }
+  const sessionError = await ensureLiveSession(client)
+  if (sessionError) return { ok: false, error: sessionError }
   const { error } = await client
     .from('armory_feats')
     .update({
@@ -116,14 +152,16 @@ export async function updateArmoryFeat(id: string, input: ArmoryFeatInput): Prom
       product_slug: input.productSlug,
     })
     .eq('id', id)
-  return !error
+  return error ? { ok: false, error: error.message } : { ok: true }
 }
 
-export async function deleteArmoryFeat(id: string): Promise<boolean> {
+export async function deleteArmoryFeat(id: string): Promise<ArmoryWriteResult> {
   const client = await getAuthedClient()
-  if (!client) return false
+  if (!client) return { ok: false, error: 'Sign in to delete feats.' }
+  const sessionError = await ensureLiveSession(client)
+  if (sessionError) return { ok: false, error: sessionError }
   const { error } = await client.from('armory_feats').delete().eq('id', id)
-  return !error
+  return error ? { ok: false, error: error.message } : { ok: true }
 }
 
 /* --------------------------------------------------------------- sharing --- */

@@ -177,7 +177,7 @@ export function buildSeoMetaFromCmsSource(
     'Premium bodybuilding gymwear built for disciplined lifters.'
   const shareFallback =
     resolveAssetUrl(g.defaultShareImage?.trim()) ??
-    `${BRAND.canonicalBaseUrl}/brand/og-default.svg`
+    `${BRAND.canonicalBaseUrl}/brand/og-default.png`
   const image =
     resolveAssetUrl(pickStr(page.ogImage, g.ogImage, g.defaultShareImage)) ?? shareFallback
 

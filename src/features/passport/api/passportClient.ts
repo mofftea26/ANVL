@@ -94,15 +94,32 @@ export async function claimPassport(input: ClaimPassportInput): Promise<ClaimPas
   return parsed.data
 }
 
-/** Owner toggles whether their passport is publicly verifiable with their name. */
-export async function setPassportVisibility(token: string, isPublic: boolean): Promise<boolean> {
+/** Owner toggles whether their passport is publicly verifiable with their name.
+ *  Failures carry the real reason (session rot, RPC error) so the UI toasts it
+ *  instead of silently doing nothing. */
+export async function setPassportVisibility(
+  token: string,
+  isPublic: boolean,
+): Promise<{ ok: boolean; error?: string }> {
   const client = await getAuthedClient()
-  if (!client) return false
+  if (!client) return { ok: false, error: 'Sign in to change visibility.' }
+  // Refresh a dying access token before the write (RLS rejects silently).
+  const { data: sessionData } = await client.auth.getSession()
+  const expiresAt = (sessionData.session?.expires_at ?? 0) * 1000
+  if (!sessionData.session) return { ok: false, error: 'You are signed out — sign in and retry.' }
+  if (expiresAt && expiresAt < Date.now() + 30_000) {
+    const refreshed = await client.auth.refreshSession()
+    if (!refreshed.data.session) {
+      return { ok: false, error: 'Your session expired — sign in again and retry.' }
+    }
+  }
   const { data, error } = await client.rpc('set_passport_visibility', {
     p_token: token,
     p_public: isPublic,
   })
-  return !error && Boolean((data as { ok?: boolean } | null)?.ok)
+  if (error) return { ok: false, error: error.message }
+  const ok = Boolean((data as { ok?: boolean } | null)?.ok)
+  return ok ? { ok: true } : { ok: false, error: 'The server rejected the change.' }
 }
 
 /** Owner mints a one-time transfer code (7-day expiry, replaces any pending). */

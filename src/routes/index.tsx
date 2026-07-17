@@ -83,9 +83,9 @@ export const Route = createFileRoute("/")({
               "Premium bodybuilding gymwear built through pressure, repetition, discipline, and heat.",
             canonicalPath: "/",
           },
-          { defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.svg` },
+          { defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.png` },
         ),
-      { defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.svg` },
+      { defaultShareImage: `${BRAND.canonicalBaseUrl}/brand/og-default.png` },
     ),
   component: HomePage,
 });

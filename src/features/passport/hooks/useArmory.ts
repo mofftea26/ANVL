@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { useStorefrontAccountSession } from '@/features/storefront-account/publicAccount.core'
 import {
   createArmoryFeat,
@@ -12,6 +13,7 @@ import {
   setPassportFeatured,
   submitProductReview,
   updateArmoryFeat,
+  type ArmoryWriteResult,
 } from '../api/armoryClient'
 import type { ArmoryFeatInput, OwnedPassport } from '../schemas/passport.schema'
 import { passportQueryKeys } from './usePassport'
@@ -64,6 +66,14 @@ export function useLogWearMutation() {
     onSuccess: (result, _input, context) => {
       // Server rejected (cooldown/not-owner) — undo the optimistic bump.
       if (!result.ok && context?.previous) qc.setQueryData(ownedKey, context.previous)
+      // Cooldown has its own button state; everything else surfaces loudly.
+      if (!result.ok && result.error !== 'cooldown') {
+        toast.error(
+          result.error === 'not_authenticated'
+            ? 'Your session expired — sign in again and retry.'
+            : 'Could not log the wear — reload and retry.',
+        )
+      }
     },
     onSettled: () => void qc.invalidateQueries({ queryKey: ownedKey }),
   })
@@ -96,20 +106,27 @@ export function useArmoryFeatsQuery() {
 export function useFeatMutations() {
   const qc = useQueryClient()
   const customerId = useStorefrontAccountSession((s) => s.customerId)
-  const invalidate = () =>
-    void qc.invalidateQueries({ queryKey: armoryQueryKeys.feats(customerId) })
+  // Failures TOAST their real reason (session rot, RLS, network) — a feat
+  // that doesn't appear must never be silent.
+  const settle = (result: ArmoryWriteResult) => {
+    if (result.ok) {
+      void qc.invalidateQueries({ queryKey: armoryQueryKeys.feats(customerId) })
+    } else {
+      toast.error(result.error)
+    }
+  }
   const create = useMutation({
     mutationFn: (input: ArmoryFeatInput) => createArmoryFeat(input),
-    onSuccess: invalidate,
+    onSuccess: settle,
   })
   const update = useMutation({
     mutationFn: (input: { id: string } & ArmoryFeatInput) =>
       updateArmoryFeat(input.id, input),
-    onSuccess: invalidate,
+    onSuccess: settle,
   })
   const remove = useMutation({
     mutationFn: (id: string) => deleteArmoryFeat(id),
-    onSuccess: invalidate,
+    onSuccess: settle,
   })
   return { create, update, remove }
 }

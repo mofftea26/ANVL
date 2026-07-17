@@ -53,7 +53,7 @@ export function buildSeoMeta(input: SeoInput) {
   })
   const ogImage =
     resolveAssetUrl(input.image) ??
-    `${BRAND.canonicalBaseUrl}/brand/og-default.svg`
+    `${BRAND.canonicalBaseUrl}/brand/og-default.png`
   const title = input.title
   const description = input.description
   const ogTitle = input.ogTitle?.trim() || title

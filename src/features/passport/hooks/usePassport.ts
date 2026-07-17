@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { useStorefrontAccountSession } from '@/features/storefront-account/publicAccount.core'
 import {
   acceptPassportTransfer,
@@ -57,8 +58,13 @@ export function useSetVisibilityMutation() {
   return useMutation({
     mutationFn: (input: { token: string; isPublic: boolean }) =>
       setPassportVisibility(input.token, input.isPublic),
-    onSuccess: (ok) => {
-      if (ok) void qc.invalidateQueries({ queryKey: passportQueryKeys.all })
+    onSuccess: (result) => {
+      if (result.ok) {
+        void qc.invalidateQueries({ queryKey: passportQueryKeys.all })
+      } else {
+        // Never fail silently — the reason surfaces.
+        toast.error(result.error ?? 'Could not update visibility.')
+      }
     },
   })
 }
