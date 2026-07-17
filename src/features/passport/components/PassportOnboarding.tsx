@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useGSAP } from '@gsap/react'
 import { useForm } from 'react-hook-form'
@@ -9,6 +9,7 @@ import { useCustomerProfileQuery } from '@/features/storefront-account/publicAcc
 import { Button } from '@/shared/components/ui/Button'
 import { ColorSwatch } from '@/shared/components/ui/ColorSwatch'
 import { Input } from '@/shared/components/ui/Input'
+import { Modal } from '@/shared/components/ui/Modal'
 import { SizeSelector } from '@/shared/components/ui/SizeSelector'
 import { gsap } from '@/shared/lib/gsap'
 import { useClaimPassportMutation } from '../hooks/usePassport'
@@ -52,6 +53,8 @@ export function PassportOnboarding({
   const profileQuery = useCustomerProfileQuery()
   const claim = useClaimPassportMutation()
   const scopeRef = useRef<HTMLDivElement>(null)
+  // The claim is permanent — always confirm before forging.
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const colorways = product?.colorways ?? []
   const sizes = product?.sizes ?? []
 
@@ -105,14 +108,19 @@ export function PassportOnboarding({
     { scope: scopeRef },
   )
 
-  const onSubmit = form.handleSubmit(async (values) => {
+  // Submit validates and asks; the actual claim runs from the confirm dialog.
+  const onSubmit = form.handleSubmit(() => setConfirmOpen(true))
+
+  const forge = async () => {
+    const values = form.getValues()
     const result = await claim.mutateAsync({ token, ...values })
+    setConfirmOpen(false)
     if (result.ok) {
       onClaimed(result.passport)
       return
     }
     toast.error(CLAIM_ERROR_COPY[result.error])
-  })
+  }
 
   const color = form.watch('color')
   const size = form.watch('size')
@@ -184,7 +192,9 @@ export function PassportOnboarding({
                 Your colorway
               </legend>
               {colorways.length > 0 ? (
-                <div className="flex flex-wrap items-center gap-3">
+                // scale (not size props) keeps the shared swatch behavior while
+                // reading "slightly smaller" on phones.
+                <div className="flex origin-left scale-[0.88] flex-wrap items-center gap-3 sm:scale-100">
                   {colorways.map((c) => (
                     <span key={c.name} className="inline-flex flex-col items-center gap-1">
                       <ColorSwatch
@@ -208,11 +218,13 @@ export function PassportOnboarding({
                 Your size
               </legend>
               {sizes.length > 0 ? (
-                <SizeSelector
-                  sizes={sizes}
-                  value={size}
-                  onChange={(s) => form.setValue('size', s, { shouldValidate: true })}
-                />
+                <div className="origin-left scale-[0.88] sm:scale-100">
+                  <SizeSelector
+                    sizes={sizes}
+                    value={size}
+                    onChange={(s) => form.setValue('size', s, { shouldValidate: true })}
+                  />
+                </div>
               ) : (
                 <Input placeholder="e.g. M" aria-label="Size" {...form.register('size')} />
               )}
@@ -229,6 +241,7 @@ export function PassportOnboarding({
               <Input
                 id="passport-display-name"
                 placeholder="The name engraved on your passport"
+                className="h-10 sm:h-11"
                 {...form.register('displayName')}
               />
               <FieldError message={form.formState.errors.displayName?.message} />
@@ -238,16 +251,67 @@ export function PassportOnboarding({
             </div>
           </div>
 
-          <div data-onb className="mt-4 sm:mt-9">
-            <Button type="submit" variant="primary" size="lg" loading={claim.isPending}>
-              {claim.isPending ? 'Forging…' : 'Forge it to my name'}
+          {/* Submit: a fixed bottom action bar on phones (adds no page height
+              — the form reserves pb for it); inline from sm up. */}
+          <div
+            data-onb
+            className="fixed inset-x-0 bottom-0 z-30 border-t border-[color-mix(in_oklab,var(--color-line)_70%,transparent)] bg-[color-mix(in_oklab,var(--color-bg)_90%,transparent)] px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur-md sm:static sm:mt-9 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none"
+          >
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              loading={claim.isPending}
+              className="w-full sm:w-auto"
+            >
+              Forge it to my name
             </Button>
-            <p className="mt-1.5 text-[10px] text-[var(--color-text-muted)] sm:mt-3 sm:text-xs">
+            <p className="hidden sm:mt-3 sm:block sm:text-xs sm:text-[var(--color-text-muted)]">
               One claim, permanent. This QR will belong to your account only.
             </p>
           </div>
+          {/* Spacer so the fixed bar never covers the last field on phones. */}
+          <div aria-hidden="true" className="h-20 sm:hidden" />
         </form>
       </div>
+
+      {/* Confirmation — the claim is permanent, so it asks first. */}
+      <Modal
+        open={confirmOpen}
+        onClose={() => (claim.isPending ? undefined : setConfirmOpen(false))}
+        title="Forge it to your name?"
+        className="max-w-sm"
+      >
+        <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
+          <span className="font-semibold text-[var(--color-heading)]">{view.productName}</span>
+          {color || size ? ` — ${[color, size].filter(Boolean).join(' / ')}` : ''} will be
+          registered to{' '}
+          <span className="font-semibold text-[var(--color-heading)]">
+            {form.getValues('displayName') || 'your name'}
+          </span>
+          . One claim, permanent — this QR belongs to your account only.
+        </p>
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={claim.isPending}
+            onClick={() => setConfirmOpen(false)}
+          >
+            Not yet
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            loading={claim.isPending}
+            onClick={() => void forge()}
+          >
+            Forge it
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -1,4 +1,11 @@
-﻿## 2026-07-17 — Feedback round 6: identity chrome, composed Armory tab, timeline v4
+﻿## 2026-07-17 — Feedback round 7: ceremony smoothness, claim confirm, passport share studio
+
+- **Ceremony forge, smoothed**: the crest no longer waits for the product image — its silhouette samples **alone** and the entrance is a **disperse-in** (scattered embers assemble into the crest, Coming-Soon style); the product silhouette streams into the morph target in the background and is swapped only while the morph hasn't begun (no mid-flight pop, no stutter). The regrouped piece is now **sized off the live viewport** to match the DOM render (was a fixed world constant that overshot). Disperse eased `sine.inOut`.
+- **Claim page** fits phones without scrolling: colorway/size selectors scaled down slightly, name input compact; the submit is a **fixed bottom action bar** (safe-area padded, adds no page height) and forging now asks first — a confirmation dialog restating piece, colorway/size, and the engraved name ("One claim, permanent").
+- **Passport share = the full studio**: "Create a share image" on the passport now opens the same share modal as the Armory (formats, templates, gallery/**camera photo + HUD overlays**) preset to that piece — so the owner can post themselves wearing it. Modal gained `initialSubjectKey`.
+- "View this product in the shop" → **"View in shop"**, smaller on mobile. Share-image icon → `Images` (lucide).
+
+## 2026-07-17 — Feedback round 6: identity chrome, composed Armory tab, timeline v4
 
 - **Share sheet**: "Stop sharing" removed; the generated images now print only the **domain, small and quiet** (the real link travels with the post, not the pixels).
 - **Per-piece sharing switch** on every Armory grid card (`PieceShareSwitch`): Public/Private per piece — same RPC as the passport's visibility toggle.

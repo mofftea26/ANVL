@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { gsap } from '@/shared/lib/gsap'
 import { readThemeCssColor } from '@/shared/lib/themeColor'
 import {
@@ -17,21 +17,20 @@ import {
 } from './ceremonyTiming'
 import { PASSPORT_FORGE_FRAGMENT, PASSPORT_FORGE_VERTEX } from './passportForgeShaders'
 
-// 3.5k is indistinguishable at crest/product densities and cuts the additive
-// overdraw bill ~30% — the ceremony must stay fluid on mid phones.
+// 3.5k is indistinguishable at crest/product densities and keeps the additive
+// overdraw bill low — the ceremony must stay fluid on mid phones.
 const COUNT = 3_500
-/** World sizes (camera z=5, fov 40 ⇒ ~3.64 tall viewport). */
-const CREST_FIT = 1.6
-const PRODUCT_FIT = 3.1
 /** The real brand mark — the embers sample ITS pixels, not an approximation. */
 const CREST_URL = '/brand/mark.svg'
 
 /**
- * The interactive ceremony forge. The ANVL crest stands in embers, breathing;
- * each strike from the DOM (via the motion bridge) pulses it, and the final
- * strike runs the forge: disperse to the scatter cloud → a held breath →
- * regroup into the registered piece (sampled from the real product image) →
- * dissolve into the crisp DOM render. Phases never overlap.
+ * The interactive ceremony forge. Opens with a DISPERSE-IN: the embers drift
+ * scattered and assemble into the ANVL crest the moment its silhouette is
+ * sampled (no waiting on the product image — that streams into the morph
+ * target in the background). Strikes from the DOM pulse the crest; the final
+ * strike dissolves it to the scatter cloud, regroups into the piece — sized to
+ * MATCH the DOM render (fits are derived from the live viewport, not a fixed
+ * world constant) — and dissolves into the crisp image.
  */
 export function CeremonyCrestParticles({
   productImageUrl,
@@ -42,21 +41,21 @@ export function CeremonyCrestParticles({
 }) {
   const pointsRef = useRef<THREE.Points>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
-  const [shapes, setShapes] = useState<{ crest: SilhouetteCloud; product: SilhouetteCloud } | null>(
-    null,
-  )
+  const { viewport } = useThree()
+  const [crest, setCrest] = useState<SilhouetteCloud | null>(null)
 
+  // Fits derived from the live viewport so the ember silhouettes match the
+  // DOM: the product render is max-h-[46svh], the crest sits around a fifth.
+  const fits = useRef({
+    crest: Math.min(viewport.height * 0.24, viewport.width * 0.5),
+    product: Math.min(viewport.height * 0.46, viewport.width * 0.72),
+  })
+
+  // The crest arrives ALONE — first paint never waits on the product image.
   useEffect(() => {
     let cancelled = false
-    const crestP = sampleImageSilhouette(CREST_URL, COUNT, CREST_FIT, 0.14)
-    // No product image (or sampling fails) → the crest disperses into a wide
-    // drift instead; the DOM still resolves the plate + button on the clock.
-    const productP = productImageUrl
-      ? sampleImageSilhouette(productImageUrl, COUNT, PRODUCT_FIT, 0.12).catch(() => null)
-      : Promise.resolve(null)
-    void Promise.all([crestP, productP]).then(([crest, product]) => {
-      if (cancelled) return
-      setShapes({ crest, product: product ?? driftCloud(crest) })
+    void sampleImageSilhouette(CREST_URL, COUNT, fits.current.crest, 0.14).then((cloud) => {
+      if (!cancelled) setCrest(cloud)
     })
     return () => {
       cancelled = true
@@ -66,7 +65,7 @@ export function CeremonyCrestParticles({
   }, [])
 
   const geometry = useMemo(() => {
-    if (!shapes) return null
+    if (!crest) return null
     const scatters = new Float32Array(COUNT * 3)
     const seeds = new Float32Array(COUNT)
     const v = new THREE.Vector3()
@@ -76,24 +75,52 @@ export function CeremonyCrestParticles({
       seeds[i] = Math.random()
     }
     const geo = new THREE.BufferGeometry()
-    geo.setAttribute('position', new THREE.BufferAttribute(shapes.crest.positions.slice(), 3))
-    geo.setAttribute('aFrom', new THREE.BufferAttribute(shapes.crest.positions.slice(), 3))
-    geo.setAttribute('aTo', new THREE.BufferAttribute(shapes.product.positions.slice(), 3))
-    geo.setAttribute('aShadeFrom', new THREE.BufferAttribute(shapes.crest.shades.slice(), 1))
-    geo.setAttribute('aShadeTo', new THREE.BufferAttribute(shapes.product.shades.slice(), 1))
+    geo.setAttribute('position', new THREE.BufferAttribute(scatters.slice(), 3))
+    geo.setAttribute('aFrom', new THREE.BufferAttribute(crest.positions.slice(), 3))
+    // Morph target starts as a wide drift; the sampled product replaces it the
+    // moment it's ready (usually well before the final strike).
+    geo.setAttribute('aTo', new THREE.BufferAttribute(driftCloud(crest).positions, 3))
+    geo.setAttribute('aShadeFrom', new THREE.BufferAttribute(crest.shades.slice(), 1))
+    geo.setAttribute('aShadeTo', new THREE.BufferAttribute(crest.shades.slice(), 1))
     geo.setAttribute('aScatter', new THREE.BufferAttribute(scatters, 3))
     geo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1))
     geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 12)
     return geo
-  }, [shapes])
+  }, [crest])
 
   useEffect(() => () => geometry?.dispose(), [geometry])
+
+  // Product silhouette streams in on the side and swaps into `aTo` — but only
+  // while the morph hasn't started, so nothing ever pops mid-flight.
+  useEffect(() => {
+    if (!geometry || !productImageUrl) return
+    let cancelled = false
+    void sampleImageSilhouette(productImageUrl, COUNT, fits.current.product, 0.12)
+      .then((cloud) => {
+        if (cancelled) return
+        const u = materialRef.current?.uniforms
+        if (u && u.uMorph.value > 0) return
+        const aTo = geometry.getAttribute('aTo') as THREE.BufferAttribute
+        const aShadeTo = geometry.getAttribute('aShadeTo') as THREE.BufferAttribute
+        ;(aTo.array as Float32Array).set(cloud.positions)
+        ;(aShadeTo.array as Float32Array).set(cloud.shades)
+        aTo.needsUpdate = true
+        aShadeTo.needsUpdate = true
+      })
+      .catch(() => {
+        /* keep the drift fallback */
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geometry])
 
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
-      // Fully assembled from frame one — the crest is simply PRESENT.
-      uAssemble: { value: 1 },
+      // Scattered at mount — the entrance IS a disperse-in.
+      uAssemble: { value: 0 },
       uMorph: { value: 0 },
       uZoom: { value: 1 },
       uBurst: { value: 0 },
@@ -114,6 +141,17 @@ export function CeremonyCrestParticles({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   )
+
+  // Entrance: the scattered embers assemble into the crest (Coming-Soon feel).
+  useEffect(() => {
+    const u = materialRef.current?.uniforms
+    if (!u || !crest) return
+    gsap.killTweensOf(u.uAssemble)
+    const tween = gsap.to(u.uAssemble, { value: 1, duration: 0.9, ease: 'power2.out' })
+    return () => {
+      tween.kill()
+    }
+  }, [crest])
 
   const seenStrike = useRef(0)
   const begun = useRef(false)
@@ -150,16 +188,16 @@ export function CeremonyCrestParticles({
     }
 
     // The final strike — run the forge once, phases strictly in order.
-    if (motion.begin && !begun.current && shapes) {
+    if (motion.begin && !begun.current && crest) {
       begun.current = true
-      gsap.killTweensOf([u.uBurst, u.uZoom])
+      gsap.killTweensOf([u.uBurst, u.uZoom, u.uAssemble])
       u.uZoom.value = 1
       const tl = gsap.timeline()
-      // Disperse: crest → scatter cloud (unhurried, eased both ways).
+      // Disperse: crest → scatter cloud (sine both ways: no kick, no brake).
       tl.to(u.uAssemble, {
         value: 0,
         duration: CEREMONY_DISPERSE_DURATION,
-        ease: 'power2.inOut',
+        ease: 'sine.inOut',
       })
       // While fully dispersed, the target silently becomes the product.
       tl.set(u.uMorph, { value: 1 }, CEREMONY_REGROUP_AT)
@@ -171,7 +209,7 @@ export function CeremonyCrestParticles({
       )
       tl.fromTo(
         u.uBurst,
-        { value: 0.25 },
+        { value: 0.22 },
         { value: 0, duration: CEREMONY_REGROUP_DURATION, ease: 'sine.out' },
         CEREMONY_REGROUP_AT + 0.15,
       )
@@ -206,15 +244,13 @@ export function CeremonyCrestParticles({
   )
 }
 
-/** Fallback target when no product image can be sampled: a soft wide drift. */
-function driftCloud(like: SilhouetteCloud): SilhouetteCloud {
+/** Fallback morph target when no product image can be sampled: a soft drift. */
+function driftCloud(like: SilhouetteCloud): { positions: Float32Array } {
   const positions = new Float32Array(like.positions.length)
-  const shades = new Float32Array(like.shades.length)
-  for (let i = 0; i < shades.length; i += 1) {
+  for (let i = 0; i < like.positions.length / 3; i += 1) {
     positions[i * 3] = (Math.random() - 0.5) * 6
     positions[i * 3 + 1] = (Math.random() - 0.5) * 4
     positions[i * 3 + 2] = (Math.random() - 0.5) * 1.2
-    shades[i] = 0.25 + Math.random() * 0.2
   }
-  return { positions, shades }
+  return { positions }
 }

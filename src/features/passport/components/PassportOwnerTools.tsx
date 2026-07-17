@@ -47,10 +47,13 @@ export function PassportOwnerTools({
       <Link
         to="/shop/$slug"
         params={{ slug: productSlug }}
-        className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }), 'no-underline')}
+        className={cn(
+          buttonVariants({ variant: 'secondary', size: 'sm' }),
+          'no-underline text-[11px] sm:text-xs',
+        )}
       >
-        <ExternalLink size={14} aria-hidden="true" className="mr-1.5" />
-        View this product in the shop
+        <ExternalLink size={13} aria-hidden="true" className="mr-1.5" />
+        View in shop
       </Link>
     </div>
   )

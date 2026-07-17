@@ -1,21 +1,23 @@
 import { useState } from 'react'
-import { Download, Share2, Sparkles } from 'lucide-react'
-import {
-  generateShareImage,
-} from '@/features/storefront-account/account/panels/armory/armoryShare'
+import { Images, Share2 } from 'lucide-react'
+import { ArmoryShareModal } from '@/features/storefront-account/account/panels/armory/ArmoryShareModal'
 import {
   FacebookIcon,
   TelegramIcon,
   WhatsAppIcon,
   XIcon,
 } from '@/features/storefront-account/account/panels/armory/socialIcons'
-import { BRAND } from '@/shared/constants/brand'
+import { useArmoryFeatsQuery } from '../hooks/useArmory'
 import { useOwnedPassportsQuery } from '../hooks/usePassport'
+import { deriveArmoryRank } from '../lib/ranks'
+import { BRAND } from '@/shared/constants/brand'
 
 /**
  * Share THIS piece to social — from the passport itself. Links always point
  * at the SHOP product page (never the passport URL: the token is the claim
- * secret and must not travel). The image generator renders the piece card.
+ * secret and must not travel). "Create a share image" opens the full share
+ * studio (formats, templates, gallery/camera photo + HUD overlays) preset to
+ * this piece — so the owner can post themselves wearing it.
  */
 export function PassportShareSection({
   productSlug,
@@ -29,10 +31,17 @@ export function PassportShareSection({
   imageUrl: string | null
 }) {
   const ownedQuery = useOwnedPassportsQuery()
-  const wearCount =
-    (ownedQuery.data ?? []).find((p) => p.productSlug === productSlug)?.wearCount ?? 0
-  const [result, setResult] = useState<{ dataUrl: string; blob: Blob | null } | null>(null)
-  const [busy, setBusy] = useState(false)
+  const featsQuery = useArmoryFeatsQuery()
+  const owned = ownedQuery.data ?? []
+  const [studioOpen, setStudioOpen] = useState(false)
+
+  const wearCount = owned.find((p) => p.productSlug === productSlug)?.wearCount ?? 0
+  const rank = deriveArmoryRank(owned.length, [])
+  const memberSince =
+    owned
+      .map((p) => p.claimedAt)
+      .filter((d): d is string => Boolean(d))
+      .sort()[0] ?? null
 
   const url = `${BRAND.canonicalBaseUrl}/shop/${productSlug}`
   const text = `${productName} — forged by ${ownerName} at ANVL.`
@@ -69,40 +78,7 @@ export function PassportShareSection({
     },
   ]
 
-  const generate = async () => {
-    setBusy(true)
-    try {
-      setResult(
-        await generateShareImage({
-          format: 'story',
-          template: 'forge',
-          subject: {
-            kind: 'piece',
-            pieceName: productName,
-            imageSrc: imageUrl ?? undefined,
-            wearCount,
-          },
-          ownerName,
-          url,
-        }),
-      )
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const shareImage = async () => {
-    if (!result?.blob) return
-    const file = new File([result.blob], 'anvl-piece.png', { type: 'image/png' })
-    const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean }
-    if (nav.canShare?.({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: productName, text })
-        return
-      } catch {
-        /* dismissed */
-      }
-    }
+  const nativeShare = async () => {
     try {
       await navigator.share({ title: productName, text, url })
     } catch {
@@ -129,7 +105,7 @@ export function PassportShareSection({
         {canNativeShare ? (
           <button
             type="button"
-            onClick={() => void shareImage()}
+            onClick={() => void nativeShare()}
             aria-label="Share…"
             title="Share…"
             className="focus-ring grid h-11 w-11 place-items-center rounded-full bg-[var(--color-surface-elevated)] text-[var(--color-heading)] motion-safe:transition-transform hover:-translate-y-0.5"
@@ -142,43 +118,28 @@ export function PassportShareSection({
         Links point at the product page — your passport stays private.
       </p>
 
-      {result ? (
-        <div className="flex items-end gap-3">
-          <img
-            src={result.dataUrl}
-            alt="Share image preview"
-            className="max-h-44 w-auto rounded-lg shadow-[0_14px_44px_-12px_rgba(0,0,0,0.8)]"
-          />
-          <div className="flex flex-col gap-2">
-            <a
-              href={result.dataUrl}
-              download="anvl-piece.png"
-              className="focus-ring inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-[color:var(--color-on-highlight)] no-underline"
-            >
-              <Download size={13} aria-hidden="true" /> Download
-            </a>
-            {canNativeShare ? (
-              <button
-                type="button"
-                onClick={() => void shareImage()}
-                className="focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-surface-elevated)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text)]"
-              >
-                <Share2 size={13} aria-hidden="true" /> Share image
-              </button>
-            ) : null}
-          </div>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => void generate()}
-          disabled={busy}
-          className="focus-ring inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-on-highlight)] disabled:opacity-50"
-        >
-          <Sparkles size={13} aria-hidden="true" />
-          {busy ? 'Forging…' : 'Create a share image'}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => setStudioOpen(true)}
+        className="focus-ring inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-on-highlight)]"
+      >
+        <Images size={14} aria-hidden="true" />
+        Create a share image
+      </button>
+
+      {/* The full studio, preset to this piece — formats, templates, and a
+          gallery/camera photo with the HUD overlays. */}
+      <ArmoryShareModal
+        open={studioOpen}
+        onClose={() => setStudioOpen(false)}
+        url={url}
+        ownerName={ownerName}
+        rank={rank}
+        pieces={[{ slug: productSlug, name: productName, image: imageUrl ?? undefined, wearCount }]}
+        feats={featsQuery.data ?? []}
+        memberSince={memberSince}
+        initialSubjectKey={`piece:${productSlug}`}
+      />
     </div>
   )
 }

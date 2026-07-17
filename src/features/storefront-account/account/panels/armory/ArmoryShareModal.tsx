@@ -78,6 +78,7 @@ export function ArmoryShareModal({
   pieces,
   feats,
   memberSince,
+  initialSubjectKey = 'armory',
 }: {
   open: boolean
   onClose: () => void
@@ -87,9 +88,17 @@ export function ArmoryShareModal({
   pieces: SharePiece[]
   feats: ArmoryFeat[]
   memberSince: string | null
+  /** Preselect a subject (e.g. `piece:<slug>` when opened from a passport). */
+  initialSubjectKey?: string
 }) {
   const [copied, setCopied] = useState(false)
-  const [subjectKey, setSubjectKey] = useState('armory')
+  const [subjectKey, setSubjectKey] = useState(initialSubjectKey)
+
+  // Re-arm the preset each time the sheet opens (it can be reopened for a
+  // different piece from the same mount).
+  useEffect(() => {
+    if (open) setSubjectKey(initialSubjectKey)
+  }, [open, initialSubjectKey])
   const [format, setFormat] = useState<ShareFormatKey>('story')
   const [template, setTemplate] = useState<ShareTemplateKey | HudTemplateKey>('forge')
   const [background, setBackground] = useState<string | null>(null)
