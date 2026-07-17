@@ -6,9 +6,12 @@ import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
 import {
   generateShareImage,
+  HUD_TEMPLATES,
+  isHudTemplate,
   SHARE_FORMATS,
   SHARE_TARGETS,
   SHARE_TEMPLATES,
+  type HudTemplateKey,
   type ShareFormatKey,
   type ShareSubject,
   type ShareTemplateKey,
@@ -41,10 +44,16 @@ const FORMAT_ASPECT: Record<ShareFormatKey, string> = {
 }
 
 /** Mini gradient swatches so templates read at a glance. */
-const TEMPLATE_SWATCH: Record<ShareTemplateKey, string> = {
+const TEMPLATE_SWATCH: Record<ShareTemplateKey | HudTemplateKey, string> = {
   forge: 'bg-[linear-gradient(160deg,#1D1F21_0%,#0B0B0C_70%)]',
   champagne: 'bg-[linear-gradient(160deg,#2A2118_0%,#0B0B0C_70%)]',
   stealth: 'bg-[#0B0B0C]',
+  'hud-modern': 'bg-[linear-gradient(90deg,#C5A56A_0%,#C5A56A_18%,#1D1F21_18%)]',
+  'hud-minimal': 'bg-[#141416]',
+  'hud-premium': 'bg-[#141416] ring-1 ring-inset ring-[#C5A56A]/60',
+  'hud-luxe': 'bg-[#141416] ring-2 ring-inset ring-[#C5A56A]',
+  'hud-game': 'bg-[conic-gradient(from_45deg,#C5A56A_0deg,#C5A56A_40deg,#141416_40deg)]',
+  'hud-jarvis': 'bg-[radial-gradient(circle_at_center,#C5A56A_0%,#C5A56A_18%,#141416_20%)]',
 }
 
 export interface SharePiece {
@@ -68,6 +77,7 @@ export function ArmoryShareModal({
   rank,
   pieces,
   feats,
+  memberSince,
   onStopSharing,
 }: {
   open: boolean
@@ -77,12 +87,13 @@ export function ArmoryShareModal({
   rank: ArmoryRank
   pieces: SharePiece[]
   feats: ArmoryFeat[]
+  memberSince: string | null
   onStopSharing: () => void
 }) {
   const [copied, setCopied] = useState(false)
   const [subjectKey, setSubjectKey] = useState('armory')
   const [format, setFormat] = useState<ShareFormatKey>('story')
-  const [template, setTemplate] = useState<ShareTemplateKey>('forge')
+  const [template, setTemplate] = useState<ShareTemplateKey | HudTemplateKey>('forge')
   const [background, setBackground] = useState<string | null>(null)
   const [result, setResult] = useState<{ dataUrl: string; blob: Blob | null } | null>(null)
   const [rendering, setRendering] = useState(false)
@@ -136,6 +147,16 @@ export function ArmoryShareModal({
         ownerName,
         url,
         backgroundDataUrl: background,
+        stats: {
+          rankTitle: rank.title,
+          pieceCount: pieces.length,
+          featCount: feats.length,
+          latestFeat: feats[0]
+            ? { title: feats[0].title, achievedOn: feats[0].achievedOn }
+            : null,
+          totalWears: pieces.reduce((sum, p) => sum + p.wearCount, 0),
+          memberSince,
+        },
       })
         .then((r) => {
           if (!cancelled) setResult(r)
@@ -200,10 +221,21 @@ export function ArmoryShareModal({
   const pickBackground = (file: File | undefined) => {
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () =>
+    reader.onload = () => {
       setBackground(typeof reader.result === 'string' ? reader.result : null)
+      // A photo backdrop switches the template set to the HUD styles.
+      if (!isHudTemplate(template)) setTemplate('hud-modern')
+    }
     reader.readAsDataURL(file)
   }
+
+  const removeBackground = () => {
+    setBackground(null)
+    if (isHudTemplate(template)) setTemplate('forge')
+  }
+
+  // With a photo, templates are HUD overlays; without, the brand backdrops.
+  const templateChoices = background ? HUD_TEMPLATES : SHARE_TEMPLATES
 
   return (
     <Modal
@@ -275,7 +307,7 @@ export function ArmoryShareModal({
 
         {/* Template + photo ------------------------------------------------ */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {SHARE_TEMPLATES.map((t) => (
+          {templateChoices.map((t) => (
             <button
               key={t.key}
               type="button"
@@ -304,7 +336,7 @@ export function ArmoryShareModal({
           />
           <button
             type="button"
-            onClick={() => (background ? setBackground(null) : fileRef.current?.click())}
+            onClick={() => (background ? removeBackground() : fileRef.current?.click())}
             className={cn(
               'focus-ring ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] motion-safe:transition-colors',
               background

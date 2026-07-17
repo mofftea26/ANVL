@@ -12,6 +12,8 @@ import { PASSPORT_CONSOLE_MQ } from '../webgl/PassportForgeGate'
 
 export interface PassportPageProps {
   variant: 'owner' | 'public'
+  /** Claim token (owner surfaces; null on public views). */
+  token: string | null
   view: PassportView
   product: Product | null
   content: ResolvedPassportContent
@@ -60,6 +62,7 @@ export function PassportPage(props: PassportPageProps) {
   if (props.variant === 'owner' && consoleMode) {
     return (
       <PassportConsole
+        token={props.token}
         view={props.view}
         product={props.product}
         content={props.content}

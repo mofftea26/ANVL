@@ -20,11 +20,13 @@ export function ArmoryShareButton({
   rank,
   pieces,
   feats,
+  memberSince,
 }: {
   ownerName: string
   rank: ArmoryRank
   pieces: SharePiece[]
   feats: ArmoryFeat[]
+  memberSince: string | null
 }) {
   const shareQuery = useArmoryShareQuery()
   const setShare = useSetArmoryShareMutation()
@@ -64,6 +66,7 @@ export function ArmoryShareButton({
           rank={rank}
           pieces={pieces}
           feats={feats}
+          memberSince={memberSince}
           onStopSharing={() => {
             setShare.mutate(false)
             setOpen(false)

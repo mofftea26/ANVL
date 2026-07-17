@@ -48,9 +48,10 @@ export function AccountExperience({
   return (
     // Extra bottom padding on phones clears the fixed bottom tab bar.
     <div ref={scopeRef} className="pb-28 sm:pb-16">
-      {/* Sticky header — sits flush under the top bar, shares its scrim, with a
-          separator line between them. */}
-      <div className="sticky top-[var(--anvl-header-h)] z-30 border-t border-b border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-bg)_86%,transparent)] backdrop-blur-md">
+      {/* Sticky header — one seamless panel with the top bar: solid page-bg
+          here plus a `before` block extending the same fill up behind the
+          (gradient-scrimmed) top bar, so there is no visible seam. */}
+      <div className="sticky top-[var(--anvl-header-h)] z-30 border-b border-[var(--color-line)] bg-[var(--color-bg)] before:pointer-events-none before:absolute before:inset-x-0 before:-top-[var(--anvl-header-h)] before:h-[var(--anvl-header-h)] before:bg-[var(--color-bg)]">
         <Container className="flex flex-col gap-3 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">

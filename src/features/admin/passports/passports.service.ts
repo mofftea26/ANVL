@@ -62,6 +62,23 @@ function client(): PassportResult<SupabaseClient> {
   return { ok: true, data: c }
 }
 
+/**
+ * Writes need a LIVE access token: the admin browser client never
+ * auto-refreshes (the server owns rotation), so after long idle its token
+ * expires and RLS-scoped writes would silently no-op / RPCs reject. Fail loud
+ * with a recovery hint instead.
+ */
+async function requireLiveSession(c: SupabaseClient): Promise<string | null> {
+  const { data } = await c.auth.getSession()
+  const session = data.session
+  if (!session) return 'Admin session missing — reload the admin page and try again.'
+  const expiresAt = (session.expires_at ?? 0) * 1000
+  if (expiresAt && expiresAt < Date.now() + 10_000) {
+    return 'Admin session expired — reload the admin page and try again.'
+  }
+  return null
+}
+
 function parseRows(rows: unknown[]): AdminPassport[] {
   const out: AdminPassport[] = []
   for (const row of rows) {
@@ -143,6 +160,8 @@ export async function unassignPassport(
 ): Promise<PassportResult<null>> {
   const c = client()
   if (!c.ok) return c
+  const sessionError = await requireLiveSession(c.data)
+  if (sessionError) return { ok: false, error: sessionError }
   const { data, error } = await c.data.rpc('admin_unassign_passport', {
     p_id: id,
     p_purge_feats: purgeFeats,

@@ -14,7 +14,6 @@ vi.mock('@tanstack/react-router', () => ({
 
 import {
   ArmoryCollectionView,
-  ArmoryLoadoutView,
   ArmoryTimelineView,
   ArmoryVaultView,
 } from '@/features/storefront-account/account/panels/armory/ArmoryViews'
@@ -69,17 +68,14 @@ describe('ArmoryCollectionView', () => {
 })
 
 describe('ArmoryTimelineView', () => {
-  it('lists registrations with their date', () => {
+  it('lists registrations grouped by month with drop chip + meta', () => {
     render(<ArmoryTimelineView owned={owned} catalog={catalog} />)
     expect(screen.getByText('Oversized Tee')).toBeTruthy()
-    expect(screen.getByText(/The Oath · Onyx \/ M/)).toBeTruthy()
+    // Drop renders as a chip; colorway/size as meta text.
+    expect(screen.getByText('The Oath')).toBeTruthy()
+    expect(screen.getByText(/Onyx \/ M/)).toBeTruthy()
+    // Month group header (entries are July 2026).
+    expect(screen.getByText(/july 2026/i)).toBeTruthy()
   })
 })
 
-describe('ArmoryLoadoutView', () => {
-  it('groups the kit by category', () => {
-    render(<ArmoryLoadoutView owned={owned} catalog={catalog} />)
-    expect(screen.getByText('Tops')).toBeTruthy()
-    expect(screen.getByText('Oversized Tee')).toBeTruthy()
-  })
-})

@@ -39,6 +39,7 @@ import {
  * panel swaps (React state + setTimeout + CSS — GSAP stays decoration).
  */
 export function PassportConsole({
+  token = null,
   view,
   product,
   content,
@@ -48,6 +49,7 @@ export function PassportConsole({
   claimedDate,
   actions,
 }: {
+  token?: string | null
   view: PassportView
   product: Product | null
   content: ResolvedPassportContent
@@ -93,6 +95,7 @@ export function PassportConsole({
     storyChapter,
     sizeGuide,
     related,
+    token,
   }
   const availableSections = PASSPORT_SECTIONS.filter((s) => s.available(ctx))
   const groups = PASSPORT_GROUPS.filter((g) =>

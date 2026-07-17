@@ -118,6 +118,7 @@ export function PassportExperience({
         <>
           <PassportPage
             variant="owner"
+            token={token}
             view={view}
             product={product}
             content={content}
@@ -139,6 +140,7 @@ export function PassportExperience({
       return (
         <PassportPage
           variant="public"
+          token={null}
           view={view}
           product={product}
           content={content}

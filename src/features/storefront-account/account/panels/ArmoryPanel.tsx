@@ -20,12 +20,12 @@ import { accountCardBg } from '@/features/storefront-account/account/accountCard
 import { cn } from '@/shared/lib/cn'
 import { ArmoryChallenges } from './armory/ArmoryChallenges'
 import { ArmoryHonor } from './armory/ArmoryHonor'
+import { ArmoryOverlay } from './armory/ArmoryOverlay'
 import { ArmoryShareButton } from './armory/ArmoryShareButton'
 import {
   ARMORY_VIEWS,
   ArmoryCollectionView,
   ArmoryGridView,
-  ArmoryLoadoutView,
   ArmoryTimelineView,
   ArmoryVaultView,
   type ArmoryViewKey,
@@ -67,6 +67,7 @@ export function ArmoryPanel() {
   const featCount = featsQuery.data?.length ?? 0
   const [view, setView] = useState<ArmoryViewKey>('grid')
   const [rankOpen, setRankOpen] = useState(false)
+  const [overlay, setOverlay] = useState<'collection' | 'timeline' | null>(null)
 
   const completion = computeDropCompletion(owned, catalog)
   const rank = deriveArmoryRank(owned.length, completion)
@@ -102,6 +103,14 @@ export function ArmoryPanel() {
           rank={rank}
           pieces={sharePieces}
           feats={featsQuery.data ?? []}
+          memberSince={
+            owned.length > 0
+              ? (owned
+                  .map((p) => p.claimedAt)
+                  .filter((d): d is string => Boolean(d))
+                  .sort()[0] ?? null)
+              : null
+          }
         />
       </div>
 
@@ -111,48 +120,48 @@ export function ArmoryPanel() {
       {/* Standing (stacks full-width on phones so nothing clips) -------- */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Rank" icon={<Medal size={15} />}>
+          <div className="mt-1 flex items-center gap-3">
+            <img
+              src={rank.emblemSrc}
+              alt={`${rank.title} rank emblem`}
+              width={96}
+              height={96}
+              loading="lazy"
+              decoding="async"
+              className="h-14 w-14 shrink-0 object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)]"
+            />
+            <div className="min-w-0">
+              <p className="anvl-heading truncate text-2xl text-[var(--color-heading)]">
+                {rank.title}
+              </p>
+              <span
+                className="mt-1 inline-flex items-center gap-1"
+                aria-label={`Level ${rank.level} of 3`}
+              >
+                {[1, 2, 3].map((pip) => (
+                  <span
+                    key={pip}
+                    aria-hidden="true"
+                    className={
+                      pip <= rank.level
+                        ? 'h-1.5 w-4 rounded-full bg-[var(--color-highlight-bright)]'
+                        : 'h-1.5 w-4 rounded-full bg-[var(--color-surface-elevated)]'
+                    }
+                  />
+                ))}
+              </span>
+            </div>
+          </div>
+          <p className="anvl-micro mt-2 text-[var(--color-highlight-bright)] opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
+            View ranks &amp; badges →
+          </p>
+          {/* Stretched hit-area: the WHOLE card opens the rank ladder. */}
           <button
             type="button"
             onClick={() => setRankOpen(true)}
             aria-label="View ranks and badges"
-            className="focus-ring group -m-1 mt-0 block w-full rounded-lg p-1 text-left"
-          >
-            <div className="mt-1 flex items-center gap-3">
-              <img
-                src={rank.emblemSrc}
-                alt={`${rank.title} rank emblem`}
-                width={96}
-                height={96}
-                loading="lazy"
-                decoding="async"
-                className="h-14 w-14 shrink-0 object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)]"
-              />
-              <div className="min-w-0">
-                <p className="anvl-heading truncate text-2xl text-[var(--color-heading)]">
-                  {rank.title}
-                </p>
-                <span
-                  className="mt-1 inline-flex items-center gap-1"
-                  aria-label={`Level ${rank.level} of 3`}
-                >
-                  {[1, 2, 3].map((pip) => (
-                    <span
-                      key={pip}
-                      aria-hidden="true"
-                      className={
-                        pip <= rank.level
-                          ? 'h-1.5 w-4 rounded-full bg-[var(--color-highlight-bright)]'
-                          : 'h-1.5 w-4 rounded-full bg-[var(--color-surface-elevated)]'
-                      }
-                    />
-                  ))}
-                </span>
-              </div>
-            </div>
-            <p className="anvl-micro mt-2 text-[var(--color-highlight-bright)] opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
-              View ranks &amp; badges →
-            </p>
-          </button>
+            className="focus-ring absolute inset-0 z-20 rounded-2xl"
+          />
         </AccountBentoCard>
 
         <AccountBentoCard bg={accountCardBg('gold')} eyebrow="Crest" icon={<Medal size={15} />}>
@@ -220,6 +229,46 @@ export function ArmoryPanel() {
         <>
           <ArmoryHonor owned={owned} catalog={catalog} />
 
+          {/* Collection + Timeline — bento cards opening their overlays. */}
+          <div className="grid grid-cols-2 gap-4">
+            <AccountBentoCard bg={accountCardBg('carbon')} eyebrow="Collection">
+              <p className="anvl-heading mt-1 text-2xl text-[var(--color-heading)]">
+                {completion.reduce((sum, d) => sum + d.claimed, 0)}
+                <span className="text-[var(--color-text-muted)]">
+                  {' '}
+                  / {completion.reduce((sum, d) => sum + d.total, 0)}
+                </span>
+              </p>
+              <p className="anvl-micro text-[var(--color-text-muted)]">
+                pieces across {completion.length}{' '}
+                {completion.length === 1 ? 'drop' : 'drops'}
+              </p>
+              <button
+                type="button"
+                onClick={() => setOverlay('collection')}
+                aria-label="Open the collection"
+                className="focus-ring absolute inset-0 z-20 rounded-2xl"
+              />
+            </AccountBentoCard>
+
+            <AccountBentoCard bg={accountCardBg('steel')} eyebrow="Timeline">
+              <p className="anvl-heading mt-1 truncate text-2xl text-[var(--color-heading)]">
+                {owned.length}
+              </p>
+              <p className="anvl-micro truncate text-[var(--color-text-muted)]">
+                {owned[0]?.claimedAt
+                  ? `latest · ${new Date(owned[0].claimedAt).toLocaleDateString()}`
+                  : 'registrations'}
+              </p>
+              <button
+                type="button"
+                onClick={() => setOverlay('timeline')}
+                aria-label="Open the timeline"
+                className="focus-ring absolute inset-0 z-20 rounded-2xl"
+              />
+            </AccountBentoCard>
+          </div>
+
           {/* View chips — swipeable on phones with scroll-snap and a soft
               edge fade hinting there's more; no visible scrollbar. */}
           <div
@@ -253,14 +302,24 @@ export function ArmoryPanel() {
           <div className="pt-1">
             {view === 'grid' ? <ArmoryGridView owned={owned} catalog={catalog} /> : null}
             {view === 'vault' ? <ArmoryVaultView owned={owned} catalog={catalog} /> : null}
-            {view === 'collection' ? (
-              <ArmoryCollectionView owned={owned} catalog={catalog} />
-            ) : null}
-            {view === 'timeline' ? <ArmoryTimelineView owned={owned} catalog={catalog} /> : null}
-            {view === 'loadout' ? <ArmoryLoadoutView owned={owned} catalog={catalog} /> : null}
           </div>
 
           <ArmoryChallenges challenges={challenges} />
+
+          <ArmoryOverlay
+            open={overlay === 'collection'}
+            onClose={() => setOverlay(null)}
+            title="The Collection"
+          >
+            <ArmoryCollectionView owned={owned} catalog={catalog} />
+          </ArmoryOverlay>
+          <ArmoryOverlay
+            open={overlay === 'timeline'}
+            onClose={() => setOverlay(null)}
+            title="Timeline"
+          >
+            <ArmoryTimelineView owned={owned} catalog={catalog} />
+          </ArmoryOverlay>
         </>
       )}
 

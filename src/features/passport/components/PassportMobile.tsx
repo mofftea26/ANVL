@@ -36,6 +36,7 @@ const SWAP_MS = 260
  */
 export function PassportMobile({
   variant,
+  token = null,
   view,
   product,
   content,
@@ -46,6 +47,7 @@ export function PassportMobile({
   actions,
 }: {
   variant: 'owner' | 'public'
+  token?: string | null
   view: PassportView
   product: Product | null
   content: ResolvedPassportContent
@@ -71,6 +73,7 @@ export function PassportMobile({
     storyChapter,
     sizeGuide,
     related,
+    token,
   }
   const availableSections = PASSPORT_SECTIONS.filter((s) => s.available(ctx))
   const groups = PASSPORT_GROUPS.filter((g) => availableSections.some((s) => s.group === g.key))

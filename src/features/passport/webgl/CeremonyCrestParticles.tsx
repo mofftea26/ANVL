@@ -7,8 +7,8 @@ import {
   sampleImageSilhouette,
   type SilhouetteCloud,
 } from '@/shared/webgl/particleShapes'
+import type { CeremonyMotionState } from './ceremonyMotionState'
 import {
-  CEREMONY_CREST_HOLD,
   CEREMONY_DISPERSE_DURATION,
   CEREMONY_REGROUP_AT,
   CEREMONY_REGROUP_DURATION,
@@ -25,14 +25,19 @@ const PRODUCT_FIT = 3.1
 const CREST_URL = '/brand/mark.svg'
 
 /**
- * The ceremony forge: the ANVL crest stands in embers for half a second, the
- * embers disperse (a burst mid-morph), then reassemble into the registered
- * piece's silhouette — sampled from the real product image — and finally
- * dissolve into the crisp DOM render. One buffer, one morph: `aFrom` = crest,
- * `aTo` = product, with the shader's per-seed stagger + uBurst supplying the
- * disperse-and-recollect in between.
+ * The interactive ceremony forge. The ANVL crest stands in embers, breathing;
+ * each strike from the DOM (via the motion bridge) pulses it, and the final
+ * strike runs the forge: disperse to the scatter cloud → a held breath →
+ * regroup into the registered piece (sampled from the real product image) →
+ * dissolve into the crisp DOM render. Phases never overlap.
  */
-export function CeremonyCrestParticles({ productImageUrl }: { productImageUrl: string | null }) {
+export function CeremonyCrestParticles({
+  productImageUrl,
+  motion,
+}: {
+  productImageUrl: string | null
+  motion: CeremonyMotionState
+}) {
   const pointsRef = useRef<THREE.Points>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
   const [shapes, setShapes] = useState<{ crest: SilhouetteCloud; product: SilhouetteCloud } | null>(
@@ -108,52 +113,75 @@ export function CeremonyCrestParticles({ productImageUrl }: { productImageUrl: s
     [],
   )
 
-  // Three EXPLICIT phases on the shared clock. The shader mixes
-  // aScatter → mix(aFrom, aTo, uMorph) by uAssemble, so:
-  //   hold     — uAssemble=1, uMorph=0 → the crest stands.
-  //   disperse — uAssemble 1→0        → embers drift out to the scatter cloud.
-  //   (silent) — uMorph set to 1 while fully dispersed (target becomes the
-  //              product; invisible because the cloud is showing aScatter).
-  //   regroup  — uAssemble 0→1        → embers gather into the piece.
-  //   reveal   — uReveal 0→1          → embers still + fade as the DOM image
-  //              resolves. No overlap between phases — each reads clearly.
-  useEffect(() => {
-    const u = materialRef.current?.uniforms
-    if (!u || !shapes) return
-    const tl = gsap.timeline()
-    tl.to(
-      u.uAssemble,
-      { value: 0, duration: CEREMONY_DISPERSE_DURATION, ease: 'power2.in' },
-      CEREMONY_CREST_HOLD,
-    )
-    tl.set(u.uMorph, { value: 1 }, CEREMONY_REGROUP_AT)
-    tl.to(
-      u.uAssemble,
-      { value: 1, duration: CEREMONY_REGROUP_DURATION, ease: 'power3.out' },
-      CEREMONY_REGROUP_AT,
-    )
-    // A soft spark as the regroup lands — heat, not an explosion.
-    tl.fromTo(
-      u.uBurst,
-      { value: 0.35 },
-      { value: 0, duration: CEREMONY_REGROUP_DURATION, ease: 'sine.out' },
-      CEREMONY_REGROUP_AT + 0.1,
-    )
-    tl.to(
-      u.uReveal,
-      { value: 1, duration: CEREMONY_REVEAL_DURATION, ease: 'power2.out' },
-      CEREMONY_REVEAL_AT,
-    )
-    return () => {
-      tl.kill()
-    }
-  }, [shapes])
+  const seenStrike = useRef(0)
+  const begun = useRef(false)
+  const forgeTl = useRef<gsap.core.Timeline | null>(null)
+  useEffect(
+    () => () => {
+      forgeTl.current?.kill()
+    },
+    [],
+  )
 
   useFrame((state) => {
     const u = materialRef.current?.uniforms
     const points = pointsRef.current
     if (!u || !points) return
     u.uTime.value = state.clock.elapsedTime
+
+    // Idle: the crest breathes gently until the forge begins.
+    if (!begun.current) {
+      u.uZoom.value = 1 + 0.018 * Math.sin(state.clock.elapsedTime * 1.5)
+    }
+
+    // A strike from the DOM — pulse the cloud (heat + a slight swell).
+    if (motion.strike !== seenStrike.current && !begun.current) {
+      seenStrike.current = motion.strike
+      gsap.killTweensOf(u.uBurst)
+      gsap.fromTo(u.uBurst, { value: 0.5 }, { value: 0, duration: 0.7, ease: 'sine.out' })
+      gsap.killTweensOf(u.uZoom)
+      gsap.fromTo(
+        u.uZoom,
+        { value: 1.09 },
+        { value: 1, duration: 0.6, ease: 'elastic.out(1, 0.55)' },
+      )
+    }
+
+    // The final strike — run the forge once, phases strictly in order.
+    if (motion.begin && !begun.current && shapes) {
+      begun.current = true
+      gsap.killTweensOf([u.uBurst, u.uZoom])
+      u.uZoom.value = 1
+      const tl = gsap.timeline()
+      // Disperse: crest → scatter cloud (unhurried, eased both ways).
+      tl.to(u.uAssemble, {
+        value: 0,
+        duration: CEREMONY_DISPERSE_DURATION,
+        ease: 'power2.inOut',
+      })
+      // While fully dispersed, the target silently becomes the product.
+      tl.set(u.uMorph, { value: 1 }, CEREMONY_REGROUP_AT)
+      // Regroup: scatter → the piece, landing softly.
+      tl.to(
+        u.uAssemble,
+        { value: 1, duration: CEREMONY_REGROUP_DURATION, ease: 'power2.out' },
+        CEREMONY_REGROUP_AT,
+      )
+      tl.fromTo(
+        u.uBurst,
+        { value: 0.25 },
+        { value: 0, duration: CEREMONY_REGROUP_DURATION, ease: 'sine.out' },
+        CEREMONY_REGROUP_AT + 0.15,
+      )
+      // Reveal: only after the silhouette has fully landed.
+      tl.to(
+        u.uReveal,
+        { value: 1, duration: CEREMONY_REVEAL_DURATION, ease: 'power2.out' },
+        CEREMONY_REVEAL_AT,
+      )
+      forgeTl.current = tl
+    }
+
     // Once dissolved there is nothing left to draw.
     points.visible = u.uReveal.value < 0.995
   })

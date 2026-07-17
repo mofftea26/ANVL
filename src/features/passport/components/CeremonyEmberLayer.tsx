@@ -3,6 +3,7 @@ import { DustField } from '@/shared/webgl/DustField'
 import type { DustDrive } from '@/shared/webgl/DustField'
 import { useCanvasTeardownMark } from '@/shared/webgl/canvasTeardownGuard'
 import { CeremonyCrestParticles } from '../webgl/CeremonyCrestParticles'
+import type { CeremonyMotionState } from '../webgl/ceremonyMotionState'
 
 /**
  * WebGL layer behind the registration ceremony: the ember field the DOM
@@ -13,9 +14,11 @@ import { CeremonyCrestParticles } from '../webgl/CeremonyCrestParticles'
 export default function CeremonyEmberLayer({
   drive,
   productImageUrl,
+  motion,
 }: {
   drive: DustDrive
   productImageUrl: string | null
+  motion: CeremonyMotionState
 }) {
   useCanvasTeardownMark()
   return (
@@ -26,7 +29,7 @@ export default function CeremonyEmberLayer({
         dpr={[1, 1.5]}
         style={{ pointerEvents: 'none' }}
       >
-        <CeremonyCrestParticles productImageUrl={productImageUrl} />
+        <CeremonyCrestParticles productImageUrl={productImageUrl} motion={motion} />
         <DustField drive={drive} count={420} />
       </Canvas>
     </div>

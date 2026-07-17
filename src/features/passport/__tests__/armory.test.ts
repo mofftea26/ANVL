@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildCollectionDrops,
-  buildLoadout,
   buildTimeline,
   buildVaultDrops,
-  LOADOUT_UNCATEGORIZED,
   type ArmoryCatalogEntry,
 } from '@/features/passport/lib/armory'
 import type { OwnedPassport } from '@/features/passport/schemas/passport.schema'
@@ -114,21 +112,3 @@ describe('buildTimeline', () => {
   })
 })
 
-describe('buildLoadout', () => {
-  it('groups by product category, catch-all last', () => {
-    const slots = buildLoadout(
-      [...owned, passport('future-hoodie', '2026-07-12T10:00:00Z')],
-      catalog,
-    )
-    expect(slots.map((s) => s.category)).toEqual(['Bottoms', 'Tops', LOADOUT_UNCATEGORIZED])
-    expect(slots.find((s) => s.category === 'Tops')!.pieces).toHaveLength(1)
-    // future-hoodie has no category on its commerce record.
-    expect(slots.at(-1)!.pieces[0]!.passport.productSlug).toBe('future-hoodie')
-  })
-
-  it('puts pieces missing from the catalog in the catch-all rather than dropping them', () => {
-    const slots = buildLoadout([passport('mystery', '2026-07-01T10:00:00Z')], catalog)
-    expect(slots).toHaveLength(1)
-    expect(slots[0]!.category).toBe(LOADOUT_UNCATEGORIZED)
-  })
-})

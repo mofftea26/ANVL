@@ -48,9 +48,22 @@ export function AccountTabBar({
     }
     measure()
 
+    // First-load accuracy: tab widths shift when the webfonts land, so
+    // re-measure once fonts are ready and whenever the bar itself resizes.
+    let cancelled = false
+    void (document as Document & { fonts?: FontFaceSet }).fonts?.ready.then(() => {
+      if (!cancelled) measure()
+    })
+    const ro = new ResizeObserver(measure)
+    ro.observe(container)
+
     const onResize = () => measure()
     window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+    return () => {
+      cancelled = true
+      ro.disconnect()
+      window.removeEventListener('resize', onResize)
+    }
   }, [tab])
 
   return (

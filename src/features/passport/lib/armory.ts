@@ -147,40 +147,5 @@ export function buildTimeline(
   })
 }
 
-export interface LoadoutSlot {
-  category: string
-  pieces: Array<{ passport: OwnedPassport; image?: string }>
-}
-
-/** Fallback bucket for products with no category on the commerce record. */
-export const LOADOUT_UNCATEGORIZED = 'Other'
-
-/**
- * The kit view — registered pieces grouped by product category. Products
- * whose commerce record carries no category land in `Other` rather than
- * being invented into a slot.
- */
-export function buildLoadout(
-  owned: readonly OwnedPassport[],
-  catalog: readonly ArmoryCatalogEntry[],
-): LoadoutSlot[] {
-  const catalogBySlug = new Map(catalog.map((p) => [p.slug, p]))
-  const byCategory = new Map<string, LoadoutSlot['pieces']>()
-
-  for (const passport of [...owned].sort(byNewestClaim)) {
-    const product = catalogBySlug.get(passport.productSlug)
-    const category = product?.category?.trim() || LOADOUT_UNCATEGORIZED
-    const pieces = byCategory.get(category) ?? []
-    pieces.push({ passport, image: product?.image })
-    byCategory.set(category, pieces)
-  }
-
-  return [...byCategory.entries()]
-    .map(([category, pieces]) => ({ category, pieces }))
-    .sort((a, b) => {
-      // Keep the catch-all last; otherwise alphabetical.
-      if (a.category === LOADOUT_UNCATEGORIZED) return 1
-      if (b.category === LOADOUT_UNCATEGORIZED) return -1
-      return a.category.localeCompare(b.category)
-    })
-}
+// (The Loadout view was retired 2026-07-17 — Grid + Vault are the wall views;
+// Collection and Timeline open as overlays from their bento cards.)
