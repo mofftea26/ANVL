@@ -1,4 +1,15 @@
-﻿## 2026-07-17 — Feedback round 8: loud armory writes, OG unfurl fix
+﻿## 2026-07-17 — Toast system redesigned: "the forged plate"
+
+Complete replacement of the default sonner look (`AnvlToaster` + `.anvl-toast*` in `styles.css`); every existing `toast.*` call site renders through it unchanged.
+
+- **Shape**: a beveled obsidian plate — two clipped corners (stamped-metal `clip-path`), 2px radius, brushed-metal top light (inset highlight), gradient surface from elevated-steel into near-black, and a deep `drop-shadow` that follows the bevel (box-shadow can't).
+- **Heat bar**: a 3px type-colored edge on the left that **flares on arrival** and settles into a soft glow — champagne by default, success/warning/destructive tokens per type. The plate itself stays obsidian so all types read as one family.
+- **Light sweep**: a one-time skewed highlight crosses the plate as it lands — metal catching the forge light.
+- **Maker's mark**: the icon sits in a bordered, bevel-clipped square stamp cell, tinted by type; custom lucide icons (Check / Info / Flame for warning / TriangleAlert / spinning Loader2).
+- **Layout**: Sora title in heading color, muted description, dismiss as a quiet corner control revealed on hover (sonner's default sat half-outside the plate and the bevel would clip it); action buttons restyled as forged champagne chips.
+- **Position**: bottom-center rising from the forge; mobile offset clears the home indicator + sticky bars. Reduced motion drops flare + sweep. Verified live in the preview (computed styles: bevel, gradient, heat bar, sweep animation, stamp cell, repositioned close).
+
+## 2026-07-17 — Feedback round 8: loud armory writes, OG unfurl fix
 
 - **Silent write failures eliminated**: live-DB forensics showed feats + visibility writes DID land at 11:30 UTC (server healthy; PostgREST sees `admin_unassign_passport` — anon probe returns the expected 401), so the reported "not working" is browser-session rot being **swallowed by the client code**. Every armory write (feat create/edit/delete, per-piece visibility, wear, honor pin) now: (1) preflights the session and **force-refreshes a dying access token** before writing, and (2) returns the REAL failure reason, which the mutation **toasts** — nothing no-ops silently anymore. Feat forms only close on a confirmed success (a failed save keeps the form + values).
 - **Shared links now unfurl as cards**: the site's `og:image` pointed at an SVG, which WhatsApp/Facebook/Telegram scrapers can't render — links degraded to plain text. Rasterized `og-default.svg` → **`og-default.png` (1200×630, 33 KB)** via sharp and pointed every share-image reference at it (in-app product-image fallback stays SVG). Social intents already carry the URL in their link field — with a scrapeable image the previews now render as proper link cards.

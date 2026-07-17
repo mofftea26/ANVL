@@ -1,6 +1,6 @@
 import { useEffect, useState, type PropsWithChildren } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Toaster } from 'sonner'
+import { AnvlToaster } from '@/shared/components/ui/AnvlToaster'
 import {
   invalidateStorefrontPublication,
   registerStorefrontPublicationInvalidator,
@@ -31,18 +31,9 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {/*
-        RESP-11 — bottom-center reads well on mobile (doesn't fight the
-        sticky header) and on desktop (sits above the fold without
-        obscuring primary chrome). `mobileOffset` raises the toast above
-        the iPhone home indicator + the PDP sticky purchase bar.
-      */}
-      <Toaster
-        richColors
-        position="bottom-center"
-        offset={16}
-        mobileOffset={{ bottom: 96 }}
-      />
+      {/* The forged-plate toast system (see AnvlToaster for the design
+          contract; positioning rationale RESP-11 lives there too). */}
+      <AnvlToaster />
     </QueryClientProvider>
   )
 }
