@@ -5,7 +5,7 @@ import type { AltarState } from './altarState'
 import { ORB_SEAT } from './AltarOrb'
 import { useFittedGltf } from './useFittedGltf'
 
-/** Warhammer bulk — oversized head, Warcraft proportions. */
+/** Full hammer length (head to handle butt) in world units. */
 const HAMMER_SIZE = 1.85
 /** Pivot arm length — the distance from the swing pivot to the striking head. */
 const ARM = 1.3
@@ -69,9 +69,14 @@ export function AltarHammer({ url, state }: { url: string; state: AltarState }) 
   return (
     <group ref={pivot} position={PIVOT.toArray()} rotation={[0, 0, RAISED_ANGLE]} visible={false}>
       {/* The model (vertical, head at +Y) is laid along the pivot arm with the
-          head toward the -X (seat) end. Offsets are tuned to the bundled
-          warhammer GLB's proportions. */}
-      <group position={[-ARM + 0.5, 0.05, 0]} rotation={[0, 0, Math.PI / 2]} scale={scale}>
+          head toward the -X (seat) end. The offset is CONSTRUCTED, not tuned:
+          the fitted model is bbox-centred, so shifting its centre to
+          -ARM + length/2 puts the striking face exactly at the seat. */}
+      <group
+        position={[-ARM + HAMMER_SIZE / 2, 0.05, 0]}
+        rotation={[0, 0, Math.PI / 2]}
+        scale={scale}
+      >
         <primitive object={object} />
       </group>
     </group>

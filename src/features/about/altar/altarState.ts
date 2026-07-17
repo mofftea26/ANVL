@@ -19,6 +19,15 @@ export interface AltarState {
   explodeT: number
   /** 0..1 — the shared burst-particle/shockwave playhead. */
   burstT: number
+  /** 0..1 — burst shards converge onto the modal rectangle (they FORM it). */
+  formT: number
+  /** 0..1 — the formed rectangle dissolves as the real panel materializes. */
+  formFade: number
+  /** Bumped per strike once {@link modalNdc} is measured — tells the burst to
+   *  rebuild its formation targets from the fresh rect. */
+  formSeq: number
+  /** The modal panel's rect in NDC (-1..1, y up), measured on mount. */
+  modalNdc: { x0: number; y0: number; x1: number; y1: number } | null
   /** Impact flash intensity (point light + orb emissive spike), decays fast. */
   flash: number
   /** Camera shake amplitude, decays after impact. */
@@ -40,6 +49,10 @@ export function createAltarState(orbCount: number): AltarState {
     hammerT: 0,
     explodeT: 0,
     burstT: 0,
+    formT: 0,
+    formFade: 0,
+    formSeq: 0,
+    modalNdc: null,
     flash: 0,
     shake: 0,
     pointerX: 0,

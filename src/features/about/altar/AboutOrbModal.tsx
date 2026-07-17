@@ -20,10 +20,14 @@ export function AboutOrbModal({
   orb,
   image,
   onClose,
+  onMeasure,
 }: {
   orb: AboutResolvedOrb | null
   image?: string
   onClose: () => void
+  /** Reports the panel's laid-out rect (pre-animation) — the burst shards
+   *  use it to converge into the panel's shape before it materializes. */
+  onMeasure?: (rect: DOMRect) => void
 }) {
   const root = useRef<HTMLDivElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
@@ -32,17 +36,22 @@ export function AboutOrbModal({
   useGSAP(
     () => {
       if (!orb || !root.current) return
+      // Measure at natural layout, BEFORE any transform, so the particle
+      // formation targets match where the panel will actually stand.
+      if (panelRef.current) onMeasure?.(panelRef.current.getBoundingClientRect())
       const q = gsap.utils.selector(root.current)
-      gsap.fromTo(q('[data-modal-backdrop]'), { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'power2.out' })
+      gsap.fromTo(q('[data-modal-backdrop]'), { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power2.out' })
+      // The panel holds back while the shards draw its rectangle, then
+      // materializes inside the formed frame as they dissolve.
       gsap.fromTo(
         q('[data-modal-panel]'),
-        { opacity: 0, y: 30, scale: 0.9 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: 'expo.out', delay: 0.05 },
+        { opacity: 0, scale: 0.965 },
+        { opacity: 1, scale: 1, duration: 0.6, ease: 'expo.out', delay: 0.6 },
       )
       gsap.fromTo(
         q('[data-modal-reveal]'),
         { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.06, delay: 0.2 },
+        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.06, delay: 0.8 },
       )
       for (const el of q('[data-modal-stat-value]')) {
         const target = Number((el as HTMLElement).dataset.statTarget)
@@ -53,7 +62,7 @@ export function AboutOrbModal({
           n: target,
           duration: 1.1,
           ease: 'power2.out',
-          delay: 0.35,
+          delay: 0.95,
           onUpdate: () => {
             el.textContent = String(Math.round(counter.n))
           },

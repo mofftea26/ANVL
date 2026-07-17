@@ -42,6 +42,7 @@ export default function AboutAltar({
   const state = useMemo(() => createAltarState(orbs.length), [orbs.length])
   const driveRef = useRef(createDustDrive({ decayGlint: true }))
   const timelineRef = useRef<gsap.core.Timeline | null>(null)
+  const formTweenRef = useRef<gsap.core.Tween | null>(null)
   const colors = useMemo(() => readAboutBrandColors(), [])
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   useCanvasTeardownMark()
@@ -82,8 +83,46 @@ export default function AboutAltar({
   useEffect(() => {
     return () => {
       timelineRef.current?.kill()
+      formTweenRef.current?.kill()
     }
   }, [])
+
+  /**
+   * The mounted (still-invisible) modal panel reports its rect — the burst
+   * shards get their formation targets and converge to DRAW the panel's
+   * rectangle; once formed they dissolve as the real panel materializes.
+   */
+  const handlePanelMeasure = useCallback(
+    (rect: DOMRect) => {
+      const w = window.innerWidth
+      const h = window.innerHeight
+      if (w === 0 || h === 0) return
+      state.modalNdc = {
+        x0: (rect.left / w) * 2 - 1,
+        y0: 1 - (rect.bottom / h) * 2,
+        x1: (rect.right / w) * 2 - 1,
+        y1: 1 - (rect.top / h) * 2,
+      }
+      state.formSeq += 1
+      formTweenRef.current?.kill()
+      state.formT = 0
+      state.formFade = 0
+      formTweenRef.current = gsap.to(state, {
+        formT: 1,
+        duration: 0.9,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          formTweenRef.current = gsap.to(state, {
+            formFade: 1,
+            duration: 0.55,
+            ease: 'power2.out',
+            delay: 0.12,
+          })
+        },
+      })
+    },
+    [state],
+  )
 
   const strike = useCallback(
     (index: number) => {
@@ -121,8 +160,10 @@ export default function AboutAltar({
       // Recoil bounce, then the hammer lifts away.
       tl.to(state, { hammerT: 0.72, duration: 0.26, ease: 'power2.out' }, IMPACT_AT + 0.04)
       tl.to(state, { hammerT: 0, duration: 0.55, ease: 'power2.inOut' }, IMPACT_AT + 0.36)
-      // The modal forges open out of the burst.
-      tl.call(() => setOpenIndex(index), [], IMPACT_AT + 0.28)
+      // Mount the modal (hidden) early — it measures itself and hands the
+      // burst its formation targets, so the shards flow straight from the
+      // explosion into drawing the panel's rectangle.
+      tl.call(() => setOpenIndex(index), [], IMPACT_AT + 0.15)
     },
     [state],
   )
@@ -132,6 +173,8 @@ export default function AboutAltar({
     const index = state.activeIndex
     if (index === -1) return
     timelineRef.current?.kill()
+    formTweenRef.current?.kill()
+    state.modalNdc = null
     const tl = gsap.timeline({
       onComplete: () => {
         state.activeIndex = -1
@@ -141,7 +184,7 @@ export default function AboutAltar({
     // The orb is still burst apart — snap it home invisibly, then let it
     // re-materialize in its orbit slot as the ring wakes back up.
     tl.set(state.focusT, { [index]: 0 }, 0)
-    tl.set(state, { burstT: 0, hammerT: 0 }, 0)
+    tl.set(state, { burstT: 0, hammerT: 0, formT: 0, formFade: 0 }, 0)
     tl.to(state, { ringDim: 0, orbitSpeed: 1, duration: 0.9, ease: 'power2.inOut' }, 0)
     tl.to(state, { explodeT: 0, duration: 0.6, ease: 'power2.out' }, 0.25)
   }, [state])
@@ -239,6 +282,7 @@ export default function AboutAltar({
         orb={openOrb}
         image={openOrb ? orbImage(openOrb, assets) : undefined}
         onClose={release}
+        onMeasure={handlePanelMeasure}
       />
     </div>
   )
