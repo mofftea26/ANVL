@@ -42,7 +42,7 @@ export function AdminPassportsEditor() {
                   : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
               )}
             >
-              <t.icon size={13} aria-hidden="true" />
+              <t.icon size={15} aria-hidden="true" />
               {t.label}
             </button>
           )

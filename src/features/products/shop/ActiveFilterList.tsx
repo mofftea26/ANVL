@@ -26,7 +26,7 @@ export function ActiveFilterList({
           className="focus-ring group inline-flex items-center gap-1.5 rounded-full border border-[var(--shop-card-border)] bg-[var(--shop-chip-selected)] py-1.5 pl-3 pr-2 text-xs text-[var(--shop-text)] transition-colors hover:border-[var(--shop-accent)] hover:text-[var(--shop-accent)]"
         >
           <span className="max-w-[14rem] truncate">{chip.label}</span>
-          <X size={13} aria-hidden="true" className="opacity-70 group-hover:opacity-100" />
+          <X size={15} aria-hidden="true" className="opacity-70 group-hover:opacity-100" />
         </button>
       ))}
       <button

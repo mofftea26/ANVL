@@ -1,10 +1,11 @@
-/** Canonical lucide-react icon pixel sizes. Pick the bucket, not a raw number. */
+/** Canonical icon pixel sizes (Phosphor duotone reads best a touch larger
+ *  than the old lucide strokes). Pick the bucket, not a raw number. */
 export const ICON_SIZE = {
-  xs: 12,
-  sm: 14,
-  md: 16,
-  lg: 20,
-  xl: 24,
+  xs: 14,
+  sm: 16,
+  md: 18,
+  lg: 22,
+  xl: 26,
 } as const
 
 export type IconSizeToken = keyof typeof ICON_SIZE

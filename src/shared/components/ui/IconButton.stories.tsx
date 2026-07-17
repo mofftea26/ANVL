@@ -5,7 +5,7 @@ import { IconButton } from './IconButton'
 const meta: Meta<typeof IconButton> = {
   title: 'Components/IconButton',
   component: IconButton,
-  args: { 'aria-label': 'Menu', children: <Menu size={16} /> },
+  args: { 'aria-label': 'Menu', children: <Menu size={18} /> },
 }
 export default meta
 
@@ -24,7 +24,7 @@ export const Overlay: Story = {
     variant: 'overlay',
     size: 'sm',
     'aria-label': 'Share',
-    children: <Share2 size={15} />,
+    children: <Share2 size={17} />,
   },
 }
 
@@ -32,10 +32,10 @@ export const Sizes: Story = {
   render: () => (
     <div className="flex items-center gap-3">
       <IconButton size="md" aria-label="Favorite">
-        <Heart size={16} />
+        <Heart size={18} />
       </IconButton>
       <IconButton size="sm" aria-label="Favorite">
-        <Heart size={14} />
+        <Heart size={16} />
       </IconButton>
     </div>
   ),

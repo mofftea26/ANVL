@@ -61,13 +61,13 @@ export function GlobalSearchOverlay({ search }: { search: UseGlobalSearchReturn 
         aria-label="Close search"
         className="absolute right-4 top-4 rounded-full bg-[var(--color-surface)]/80 sm:right-6 sm:top-6"
       >
-        <X size={18} aria-hidden={true} />
+        <X size={20} aria-hidden={true} />
       </IconButton>
 
       <div className="w-full max-w-2xl">
         <div className="relative">
           <Search
-            size={18}
+            size={20}
             aria-hidden={true}
             className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
           />

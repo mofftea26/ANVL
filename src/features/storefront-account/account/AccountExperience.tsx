@@ -81,9 +81,9 @@ export function AccountExperience({
                   aria-label={saveEntry.pending ? 'Saving changes' : 'Save changes'}
                 >
                   {saveEntry.pending ? (
-                    <Loader2 size={17} aria-hidden="true" className="animate-spin" />
+                    <Loader2 size={19} aria-hidden="true" className="animate-spin" />
                   ) : (
-                    <Save size={17} aria-hidden="true" />
+                    <Save size={19} aria-hidden="true" />
                   )}
                 </Button>
               ) : null}

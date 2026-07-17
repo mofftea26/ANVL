@@ -194,7 +194,7 @@ export function ArmoryCollectionView({ owned, catalog }: ViewProps) {
                 </div>
               </div>
               <ChevronDown
-                size={16}
+                size={18}
                 aria-hidden="true"
                 className={cn(
                   'shrink-0 text-[var(--color-text-muted)] motion-safe:transition-transform',

@@ -34,7 +34,7 @@ function AccountMenuLink({
       className="focus-ring group flex items-center gap-3 rounded-xl px-2.5 py-2 text-[var(--color-text-muted)] no-underline transition hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-text)]"
     >
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--color-line)]/70 bg-[var(--color-surface-soft)] text-[var(--color-text-muted)] transition group-hover:border-[var(--color-line)] group-hover:bg-[var(--color-surface-elevated)] group-hover:text-[var(--color-text)]">
-        <Icon size={15} aria-hidden />
+        <Icon size={17} aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13px] font-medium leading-tight text-[var(--color-heading)]">

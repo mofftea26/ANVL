@@ -73,7 +73,7 @@ function ReviewCard({ review }: { review: ProductReview }) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <StarRating value={review.rating} />
         <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-success)]">
-          <BadgeCheck size={13} aria-hidden="true" /> Verified owner
+          <BadgeCheck size={15} aria-hidden="true" /> Verified owner
         </span>
         <span className="anvl-micro ml-auto text-[10px] text-[var(--shop-text-muted)]">
           {new Date(review.createdAt).toLocaleDateString()}
@@ -108,7 +108,7 @@ function ReviewForm({ slug, existing }: { slug: string; existing: ProductReview 
         onClick={() => setOpen(true)}
         className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--shop-card-border)] bg-[var(--shop-card-bg)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--shop-text)] motion-safe:transition-colors hover:border-[var(--shop-accent)]"
       >
-        <Star size={13} aria-hidden="true" className="text-[var(--shop-accent)]" />
+        <Star size={15} aria-hidden="true" className="text-[var(--shop-accent)]" />
         {existing ? 'Edit your review' : 'Write a review'}
       </button>
     )
@@ -207,7 +207,7 @@ function StarRating({ value, onChange }: { value: number; onChange?: (v: number)
             className="focus-ring rounded"
           >
             <Star
-              size={18}
+              size={20}
               aria-hidden="true"
               className={
                 n <= value
@@ -219,7 +219,7 @@ function StarRating({ value, onChange }: { value: number; onChange?: (v: number)
         ) : (
           <Star
             key={n}
-            size={14}
+            size={16}
             aria-hidden="true"
             className={
               n <= value

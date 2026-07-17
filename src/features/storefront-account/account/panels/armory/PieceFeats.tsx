@@ -26,7 +26,7 @@ export function PieceFeats({ slug }: { slug: string }) {
     <div className="mt-3 border-t border-[var(--color-line)] pt-3">
       <div className="flex items-center justify-between gap-2">
         <p className="anvl-micro flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
-          <Trophy size={11} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
+          <Trophy size={13} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
           Feats{feats.length > 0 ? ` · ${feats.length}` : ''}
         </p>
         {editing === null ? (
@@ -36,7 +36,7 @@ export function PieceFeats({ slug }: { slug: string }) {
             aria-label="Log a feat in this piece"
             className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-highlight-bright)]"
           >
-            <Plus size={14} aria-hidden="true" />
+            <Plus size={16} aria-hidden="true" />
           </button>
         ) : null}
       </div>
@@ -82,9 +82,9 @@ export function PieceFeats({ slug }: { slug: string }) {
                   <p className="anvl-micro flex items-center gap-1.5 text-[9px] text-[var(--color-text-muted)]">
                     {new Date(feat.achievedOn).toLocaleDateString()}
                     {feat.isPublic ? (
-                      <Eye size={10} aria-hidden="true" aria-label="Public" />
+                      <Eye size={12} aria-hidden="true" aria-label="Public" />
                     ) : (
-                      <EyeOff size={10} aria-hidden="true" aria-label="Private" />
+                      <EyeOff size={12} aria-hidden="true" aria-label="Private" />
                     )}
                   </p>
                 </div>
@@ -94,7 +94,7 @@ export function PieceFeats({ slug }: { slug: string }) {
                   aria-label={`Edit feat: ${feat.title}`}
                   className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-text)]"
                 >
-                  <Pencil size={12} aria-hidden="true" />
+                  <Pencil size={14} aria-hidden="true" />
                 </button>
                 <button
                   type="button"
@@ -103,7 +103,7 @@ export function PieceFeats({ slug }: { slug: string }) {
                   aria-label={`Delete feat: ${feat.title}`}
                   className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-destructive)] disabled:opacity-40"
                 >
-                  <X size={13} aria-hidden="true" />
+                  <X size={15} aria-hidden="true" />
                 </button>
               </li>
             ),

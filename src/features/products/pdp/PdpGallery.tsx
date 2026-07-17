@@ -137,7 +137,7 @@ export function PdpGallery({
                   aria-label="Previous image"
                   className="absolute left-0 top-1/2 z-10 -translate-y-1/2 opacity-0 transition-opacity duration-300 group-hover/main:opacity-100"
                 >
-                  <ChevronLeft size={18} aria-hidden="true" />
+                  <ChevronLeft size={20} aria-hidden="true" />
                 </IconButton>
                 <IconButton
                   variant="overlay"
@@ -146,7 +146,7 @@ export function PdpGallery({
                   aria-label="Next image"
                   className="absolute right-0 top-1/2 z-10 -translate-y-1/2 opacity-0 transition-opacity duration-300 group-hover/main:opacity-100"
                 >
-                  <ChevronRight size={18} aria-hidden="true" />
+                  <ChevronRight size={20} aria-hidden="true" />
                 </IconButton>
               </ShopSurfaceScope>
             ) : null}

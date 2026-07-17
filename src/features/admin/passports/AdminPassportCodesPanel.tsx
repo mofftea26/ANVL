@@ -185,7 +185,7 @@ export function AdminPassportCodesPanel() {
         <>
           <AdminRailPanel
             title="Ledger"
-            icon={<QrCode size={14} aria-hidden="true" />}
+            icon={<QrCode size={16} aria-hidden="true" />}
             description="Every physical unit gets one QR passport; the first customer to scan and claim it owns it."
           >
             <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
@@ -238,7 +238,7 @@ export function AdminPassportCodesPanel() {
               disabled={!productSlug}
               onClick={() => void onGenerate()}
             >
-              <QrCode size={14} aria-hidden="true" />
+              <QrCode size={16} aria-hidden="true" />
               Generate
             </Button>
           </div>
@@ -270,7 +270,7 @@ export function AdminPassportCodesPanel() {
                       density="compact"
                       onClick={() => setPrintBatchId(b.batchId)}
                     >
-                      <Printer size={13} aria-hidden="true" />
+                      <Printer size={15} aria-hidden="true" />
                       QR sheet
                     </Button>
                     <Button
@@ -287,7 +287,7 @@ export function AdminPassportCodesPanel() {
                         })
                       }
                     >
-                      <Trash2 size={13} aria-hidden="true" />
+                      <Trash2 size={15} aria-hidden="true" />
                       Delete
                     </Button>
                   </div>
@@ -368,7 +368,7 @@ export function AdminPassportCodesPanel() {
                       aria-label="Copy claim URL"
                       onClick={() => copyClaimUrl(p.token)}
                     >
-                      <Copy size={13} aria-hidden="true" />
+                      <Copy size={15} aria-hidden="true" />
                     </Button>
                     {p.claimedBy ? (
                       <Button
@@ -378,7 +378,7 @@ export function AdminPassportCodesPanel() {
                         density="compact"
                         onClick={() => setConfirm({ kind: 'unassign', passport: p })}
                       >
-                        <RotateCcw size={13} aria-hidden="true" />
+                        <RotateCcw size={15} aria-hidden="true" />
                         Unassign
                       </Button>
                     ) : null}
@@ -390,7 +390,7 @@ export function AdminPassportCodesPanel() {
                       aria-label="Delete passport"
                       onClick={() => setConfirm({ kind: 'delete', passport: p })}
                     >
-                      <Trash2 size={13} aria-hidden="true" />
+                      <Trash2 size={15} aria-hidden="true" />
                     </Button>
                   </div>
                 </li>

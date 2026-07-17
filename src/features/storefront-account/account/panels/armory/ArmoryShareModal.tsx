@@ -260,7 +260,7 @@ export function ArmoryShareModal({
           aria-label="Close"
           className="focus-ring grid h-10 w-10 place-items-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-text)]"
         >
-          <X size={18} aria-hidden="true" className="block" />
+          <X size={20} aria-hidden="true" className="block" />
         </button>
       </div>
 
@@ -351,7 +351,7 @@ export function ArmoryShareModal({
                 : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
             )}
           >
-            <ImagePlus size={13} aria-hidden="true" />
+            <ImagePlus size={15} aria-hidden="true" />
             {background ? 'Photo ✕' : 'Photo'}
           </button>
         </div>
@@ -395,14 +395,14 @@ export function ArmoryShareModal({
               !result && 'pointer-events-none opacity-50',
             )}
           >
-            <Download size={15} aria-hidden="true" /> Download
+            <Download size={17} aria-hidden="true" /> Download
           </a>
           <button
             type="button"
             onClick={() => void (canNativeShare ? shareImage() : copy())}
             className="focus-ring flex items-center justify-center gap-2 rounded-xl bg-[var(--color-surface-elevated)] py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-heading)]"
           >
-            <Share2 size={15} aria-hidden="true" />
+            <Share2 size={17} aria-hidden="true" />
             {canNativeShare ? 'Share' : copied ? 'Copied' : 'Copy link'}
           </button>
         </div>
@@ -442,9 +442,9 @@ export function ArmoryShareModal({
             className="focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[var(--color-heading)] motion-safe:transition-colors hover:bg-[var(--color-surface)]"
           >
             {copied ? (
-              <Check size={15} aria-hidden="true" className="block text-[var(--color-success)]" />
+              <Check size={17} aria-hidden="true" className="block text-[var(--color-success)]" />
             ) : (
-              <Copy size={15} aria-hidden="true" className="block" />
+              <Copy size={17} aria-hidden="true" className="block" />
             )}
           </button>
         </div>

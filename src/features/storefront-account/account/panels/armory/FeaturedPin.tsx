@@ -52,7 +52,7 @@ export function FeaturedPin({
       )}
     >
       <Star
-        size={16}
+        size={18}
         aria-hidden="true"
         className={isFeatured ? 'fill-[var(--color-highlight-bright)]' : undefined}
       />

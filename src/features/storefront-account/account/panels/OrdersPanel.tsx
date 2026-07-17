@@ -23,7 +23,7 @@ export function OrdersPanel({ customer }: { customer: Customer | undefined }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Orders" icon={<Package size={15} />}>
+        <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Orders" icon={<Package size={17} />}>
           <p className="anvl-heading mt-1 text-3xl text-[var(--color-heading)]">{list.length}</p>
           <p className="anvl-micro text-[var(--color-text-muted)]">placed</p>
         </AccountBentoCard>
@@ -44,7 +44,7 @@ export function OrdersPanel({ customer }: { customer: Customer | undefined }) {
       {isLoading ? (
         <p className="text-sm text-[var(--color-text-muted)]">Loading orders…</p>
       ) : list.length === 0 ? (
-        <AccountBentoCard bg={accountCardBg('smoke')} eyebrow="No orders yet" icon={<ReceiptText size={15} />} className="items-start">
+        <AccountBentoCard bg={accountCardBg('smoke')} eyebrow="No orders yet" icon={<ReceiptText size={17} />} className="items-start">
           <p className="mt-1 max-w-md text-sm text-[var(--color-text-muted)]">
             When you place an order it appears here — confirmations, status, and totals. Drop 01 is live.
           </p>
@@ -59,7 +59,7 @@ export function OrdersPanel({ customer }: { customer: Customer | undefined }) {
               key={order.id}
               bg={accountCardBg(BG_CYCLE[i % BG_CYCLE.length]!)}
               eyebrow={order.orderNumber}
-              icon={<ReceiptText size={15} />}
+              icon={<ReceiptText size={17} />}
             >
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-[var(--color-line)] bg-[var(--color-surface-elevated)] px-2.5 py-0.5 text-[10px] uppercase tracking-[0.14em] text-[var(--color-text)]">

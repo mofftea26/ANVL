@@ -119,7 +119,7 @@ export function AdminPdpContentEditor() {
   const rail = (
     <AdminRailPanel
       title="How product content works"
-      icon={<Info size={15} />}
+      icon={<Info size={17} />}
       description="Authored per product, read by the PDP bento."
     >
       <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">
@@ -205,7 +205,7 @@ export function AdminPdpContentEditor() {
             </section>
 
             <p className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-              <Package size={13} aria-hidden="true" />
+              <Package size={15} aria-hidden="true" />
               Editing content for <span className="text-[var(--color-text)]">{products.find((p) => p.slug === slug)?.name ?? slug}</span>.
             </p>
           </>

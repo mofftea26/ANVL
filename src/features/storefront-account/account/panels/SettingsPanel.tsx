@@ -73,7 +73,7 @@ export function SettingsPanel({ customer }: { customer: Customer | undefined }) 
           submitPrefs()
         }}
       >
-        <AccountBentoCard bg={accountCardBg('carbon')} eyebrow="Notifications" icon={<Bell size={15} />} className="h-full">
+        <AccountBentoCard bg={accountCardBg('carbon')} eyebrow="Notifications" icon={<Bell size={17} />} className="h-full">
           <div className="space-y-4">
             <Switch
               label="Order updates"
@@ -95,7 +95,7 @@ export function SettingsPanel({ customer }: { customer: Customer | undefined }) 
       {/* Change password */}
       {realAuth ? (
         <form onSubmit={onChangePassword} noValidate>
-          <AccountBentoCard bg={accountCardBg('stone')} eyebrow="Password" icon={<KeyRound size={15} />} className="h-full">
+          <AccountBentoCard bg={accountCardBg('stone')} eyebrow="Password" icon={<KeyRound size={17} />} className="h-full">
             <div className="space-y-3">
               <FormField label="New password" error={pwForm.formState.errors.password?.message} htmlFor="set-pass">
                 <Input id="set-pass" type="password" autoComplete="new-password" {...pwForm.register('password')} />
@@ -110,7 +110,7 @@ export function SettingsPanel({ customer }: { customer: Customer | undefined }) 
       ) : null}
 
       {/* Security */}
-      <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Security" icon={<ShieldCheck size={15} />} className="lg:col-span-2">
+      <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Security" icon={<ShieldCheck size={17} />} className="lg:col-span-2">
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
           Sign out of every device where you&rsquo;re logged in.
         </p>

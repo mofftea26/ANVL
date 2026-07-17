@@ -100,7 +100,7 @@ export function AccountTabBar({
                   : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
               )}
             >
-              <Icon size={13} aria-hidden="true" />
+              <Icon size={15} aria-hidden="true" />
               {TAB_LABELS[t]}
             </button>
           )
@@ -131,7 +131,7 @@ export function AccountTabBar({
                     : 'text-[var(--color-text-muted)]',
                 )}
               >
-                <Icon size={19} aria-hidden="true" />
+                <Icon size={21} aria-hidden="true" />
                 <span className="truncate text-[9px] font-semibold uppercase tracking-[0.1em]">
                   {TAB_LABELS[t]}
                 </span>

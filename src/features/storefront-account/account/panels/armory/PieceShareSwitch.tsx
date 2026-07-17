@@ -33,9 +33,9 @@ export function PieceShareSwitch({
       )}
     >
       {isPublic ? (
-        <Eye size={12} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
+        <Eye size={14} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
       ) : (
-        <EyeOff size={12} aria-hidden="true" />
+        <EyeOff size={14} aria-hidden="true" />
       )}
       {isPublic ? 'Public' : 'Private'}
     </button>

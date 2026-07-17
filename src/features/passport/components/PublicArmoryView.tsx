@@ -100,7 +100,7 @@ export function PublicArmoryView({
         <section className="mt-12">
           <div className="mb-8 flex items-center justify-center gap-2">
             <Star
-              size={15}
+              size={17}
               aria-hidden="true"
               className="fill-[var(--color-highlight-bright)] text-[var(--color-highlight-bright)]"
             />
@@ -207,7 +207,7 @@ export function PublicArmoryView({
                     {piece.wearCount > 0 ? (
                       <span className="inline-flex items-center gap-0.5 text-[var(--color-heading)]">
                         <Flame
-                          size={9}
+                          size={11}
                           aria-hidden="true"
                           className="text-[var(--color-highlight-bright)]"
                         />
@@ -224,7 +224,7 @@ export function PublicArmoryView({
                           className="flex items-start gap-1.5 text-[10px] leading-snug text-[var(--color-text)]"
                         >
                           <Trophy
-                            size={10}
+                            size={12}
                             aria-hidden="true"
                             className="mt-0.5 shrink-0 text-[var(--color-highlight-bright)]"
                           />
@@ -253,7 +253,7 @@ export function PublicArmoryView({
       {looseFeats.length > 0 ? (
         <section className="mt-10">
           <div className="mb-3 flex items-center gap-2">
-            <Trophy size={15} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
+            <Trophy size={17} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
             <h2 className="anvl-heading text-lg text-[var(--color-heading)]">More feats</h2>
           </div>
           <ul className="space-y-2">

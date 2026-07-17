@@ -25,7 +25,7 @@ export function AboutCtaLink({ href, variant = 'primary', className, children }:
       {children}
       {isPrimary ? (
         <ArrowRight
-          size={15}
+          size={17}
           aria-hidden="true"
           className="shrink-0 transition-transform duration-300 group-hover:translate-x-0.5"
         />

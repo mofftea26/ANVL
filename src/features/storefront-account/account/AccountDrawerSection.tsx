@@ -60,16 +60,16 @@ export function AccountDrawerSection({ onNavigate }: { onNavigate?: () => void }
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <Link to="/account" search={{ tab: 'personal' }} onClick={onNavigate} className={linkChip}>
-          <UserRound size={13} aria-hidden="true" /> My account
+          <UserRound size={15} aria-hidden="true" /> My account
         </Link>
         <Link to="/account" search={{ tab: 'orders' }} onClick={onNavigate} className={linkChip}>
-          <Package size={13} aria-hidden="true" /> Orders
+          <Package size={15} aria-hidden="true" /> Orders
         </Link>
         <Link to="/account" search={{ tab: 'armory' }} onClick={onNavigate} className={linkChip}>
-          <Shield size={13} aria-hidden="true" /> Armory
+          <Shield size={15} aria-hidden="true" /> Armory
         </Link>
         <Link to="/account" search={{ tab: 'settings' }} onClick={onNavigate} className={linkChip}>
-          <Settings size={13} aria-hidden="true" /> Settings
+          <Settings size={15} aria-hidden="true" /> Settings
         </Link>
       </div>
     </div>
@@ -99,7 +99,7 @@ export function AccountDrawerSignOut({ onNavigate }: { onNavigate?: () => void }
         }}
         className="focus-ring flex w-full items-center justify-center gap-2 rounded-xl bg-[color-mix(in_oklab,var(--color-surface)_70%,transparent)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-elevated)] hover:text-[color:var(--color-danger)]"
       >
-        <LogOut size={14} aria-hidden="true" /> Sign out
+        <LogOut size={16} aria-hidden="true" /> Sign out
       </button>
     </div>
   )

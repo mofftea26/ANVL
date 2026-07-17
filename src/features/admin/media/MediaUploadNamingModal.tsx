@@ -137,7 +137,7 @@ export function MediaUploadNamingModal({
                 className="rounded-xl border border-[var(--color-line)] p-4"
               >
                 <p className="mb-3 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                  <FileUp size={13} aria-hidden="true" />
+                  <FileUp size={15} aria-hidden="true" />
                   <span className="truncate">{file.name}</span>
                   <span className="shrink-0">({(file.size / 1024).toFixed(0)} KB)</span>
                 </p>

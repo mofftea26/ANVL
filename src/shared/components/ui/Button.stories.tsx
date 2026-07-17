@@ -34,7 +34,7 @@ export const Sizes: Story = {
       <Button size="md">Medium</Button>
       <Button size="lg">Large</Button>
       <Button size="icon" aria-label="Add">
-        <Plus size={16} />
+        <Plus size={18} />
       </Button>
     </div>
   ),

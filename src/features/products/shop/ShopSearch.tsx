@@ -20,7 +20,7 @@ export function ShopSearch({
   return (
     <div className={cn('relative min-w-0', className)}>
       <Search
-        size={15}
+        size={17}
         aria-hidden="true"
         className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--shop-text-muted)]"
       />

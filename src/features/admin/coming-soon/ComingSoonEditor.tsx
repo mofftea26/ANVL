@@ -142,7 +142,7 @@ export function ComingSoonEditor() {
   const rail = (
     <AdminRailPanel
       title="How Coming Soon works"
-      icon={<Info size={15} />}
+      icon={<Info size={17} />}
       description="When enabled, every public page shows the reveal — the admin stays reachable."
     >
       <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">

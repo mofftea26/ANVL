@@ -59,7 +59,7 @@ export function AdminEntityCard({
             loading={saving}
             onClick={() => void onSave()}
           >
-            <Save size={14} />
+            <Save size={16} />
             {saveLabel}
           </Button>
           <Button
@@ -69,7 +69,7 @@ export function AdminEntityCard({
             density="compact"
             onClick={() => setConfirmOpen(true)}
           >
-            <Trash2 size={14} />
+            <Trash2 size={16} />
             {deleteLabel}
           </Button>
         </div>

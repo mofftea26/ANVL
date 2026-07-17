@@ -190,7 +190,7 @@ export function AdminLandingContentEditor() {
     <>
       <AdminRailPanel
         title="How overrides work"
-        icon={<Info size={15} />}
+        icon={<Info size={17} />}
         description="Every field is optional — the storefront stays designed by default."
       >
         <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">
@@ -201,7 +201,7 @@ export function AdminLandingContentEditor() {
         </ul>
       </AdminRailPanel>
       {scenes.length > 0 ? (
-        <AdminRailPanel title="Scenes" icon={<ListOrdered size={15} />}>
+        <AdminRailPanel title="Scenes" icon={<ListOrdered size={17} />}>
           <ol className="space-y-1.5 text-xs text-[var(--color-text-muted)]">
             {scenes.map((s) => (
               <li key={s}>{s}</li>

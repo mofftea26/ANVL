@@ -144,7 +144,7 @@ export function SiteFontEditor() {
 
   const previewRail = (
     <>
-      <AdminRailPanel title="Type preview" icon={<Type size={15} />}>
+      <AdminRailPanel title="Type preview" icon={<Type size={17} />}>
         <div className="space-y-3">
           <p
             className="text-sm"
@@ -168,7 +168,7 @@ export function SiteFontEditor() {
       </AdminRailPanel>
       <AdminRailPanel
         title="How roles map"
-        icon={<Info size={15} />}
+        icon={<Info size={17} />}
         description="Each role becomes a CSS variable on the storefront."
       >
         <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">

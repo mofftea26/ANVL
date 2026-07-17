@@ -25,7 +25,7 @@ export function ArmoryHonor({
       <div className="flex items-center gap-3">
         <div className="flex shrink-0 items-center gap-1.5">
           <Star
-            size={13}
+            size={15}
             aria-hidden="true"
             className="fill-[var(--color-highlight-bright)] text-[var(--color-highlight-bright)]"
           />
@@ -58,7 +58,7 @@ export function ArmoryHonor({
                   />
                 ) : (
                   <Star
-                    size={16}
+                    size={18}
                     aria-hidden="true"
                     className="absolute inset-0 m-auto text-[var(--color-highlight-bright)]"
                   />
@@ -71,7 +71,7 @@ export function ArmoryHonor({
                 className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-[var(--color-line)]"
               >
                 <Star
-                  size={13}
+                  size={15}
                   className="text-[color-mix(in_oklab,var(--color-text-muted)_50%,transparent)]"
                 />
               </div>

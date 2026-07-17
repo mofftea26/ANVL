@@ -125,7 +125,7 @@ export function DatePicker({
           )}
         >
           <span className="min-w-0 truncate">{display || placeholder}</span>
-          <Calendar size={15} aria-hidden="true" className="shrink-0 text-[var(--color-text-muted)]" />
+          <Calendar size={17} aria-hidden="true" className="shrink-0 text-[var(--color-text-muted)]" />
         </button>
       </PopoverPrimitive.Trigger>
       <PopoverPrimitive.Portal>
@@ -141,7 +141,7 @@ export function DatePicker({
               aria-label="Previous month"
               className="focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-chip)] hover:text-[var(--color-text)]"
             >
-              <ChevronLeft size={15} aria-hidden="true" />
+              <ChevronLeft size={17} aria-hidden="true" />
             </button>
             <div className="flex flex-1 gap-1.5">
               <Select
@@ -171,7 +171,7 @@ export function DatePicker({
               aria-label="Next month"
               className="focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-chip)] hover:text-[var(--color-text)]"
             >
-              <ChevronRight size={15} aria-hidden="true" />
+              <ChevronRight size={17} aria-hidden="true" />
             </button>
           </div>
 

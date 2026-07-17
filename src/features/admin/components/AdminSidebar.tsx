@@ -200,7 +200,7 @@ export function AdminSidebar({
               aria-label="Close navigation"
               className="focus-ring inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--color-line)]/70 bg-[var(--color-surface-soft)]/80 text-[var(--color-text-muted)] transition hover:border-[var(--color-line)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)]"
             >
-              <X size={15} aria-hidden />
+              <X size={17} aria-hidden />
             </button>
           ) : null}
         </div>

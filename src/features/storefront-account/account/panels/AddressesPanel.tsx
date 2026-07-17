@@ -49,7 +49,7 @@ export function AddressesPanel({ customer }: { customer: Customer | undefined })
             key={field.id}
             bg={accountCardBg(BG_CYCLE[index % BG_CYCLE.length]!)}
             eyebrow={`Address ${index + 1}`}
-            icon={<MapPin size={15} />}
+            icon={<MapPin size={17} />}
           >
             <div className="space-y-3">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -80,7 +80,7 @@ export function AddressesPanel({ customer }: { customer: Customer | undefined })
                   onClick={() => remove(index)}
                   className="focus-ring inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.14em] text-[color:var(--color-danger)] hover:opacity-80"
                 >
-                  <Trash2 size={13} /> Remove
+                  <Trash2 size={15} /> Remove
                 </button>
               ) : null}
             </div>
@@ -101,7 +101,7 @@ export function AddressesPanel({ customer }: { customer: Customer | undefined })
             })
           }
         >
-          <Plus size={15} /> Add address
+          <Plus size={17} /> Add address
         </Button>
       </div>
     </form>

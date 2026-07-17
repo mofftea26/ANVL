@@ -110,7 +110,7 @@ export function PassportShareSection({
             title="Share…"
             className="focus-ring grid h-11 w-11 place-items-center rounded-full bg-[var(--color-surface-elevated)] text-[var(--color-heading)] motion-safe:transition-transform hover:-translate-y-0.5"
           >
-            <Share2 size={17} aria-hidden="true" className="block" />
+            <Share2 size={19} aria-hidden="true" className="block" />
           </button>
         ) : null}
       </div>
@@ -123,7 +123,7 @@ export function PassportShareSection({
         onClick={() => setStudioOpen(true)}
         className="focus-ring inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-on-highlight)]"
       >
-        <Images size={14} aria-hidden="true" />
+        <Images size={16} aria-hidden="true" />
         Create a share image
       </button>
 

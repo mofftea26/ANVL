@@ -122,7 +122,7 @@ export function ShopExperienceEditor() {
   const rail = (
     <AdminRailPanel
       title="How shop settings apply"
-      icon={<Info size={15} />}
+      icon={<Info size={17} />}
       description="Saved to Supabase and read by the storefront /shop page."
     >
       <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">
@@ -379,7 +379,7 @@ export function ShopExperienceEditor() {
         </Section>
 
         <p className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-          <ShoppingBag size={13} aria-hidden="true" />
+          <ShoppingBag size={15} aria-hidden="true" />
           Changes preview live on /shop in this browser; Save publishes to all visitors.
         </p>
       </div>

@@ -57,7 +57,7 @@ export function SearchResultRow({
         active ? 'bg-[var(--color-surface-elevated)]' : 'hover:bg-[var(--color-surface-elevated)]',
       )}
     >
-      <Icon size={15} aria-hidden={true} />
+      <Icon size={17} aria-hidden={true} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm text-[var(--color-heading)]">
           {highlightTitle(result.document.title, result)}

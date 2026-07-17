@@ -99,7 +99,7 @@ export function PassportSheet({
               aria-label="Close section"
               className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-text)]"
             >
-              <X size={18} aria-hidden="true" />
+              <X size={20} aria-hidden="true" />
             </button>
           </div>
         </div>

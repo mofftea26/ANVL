@@ -92,9 +92,9 @@ export function PassportTransferAction({
                 <Input readOnly value={link} aria-label="Transfer link" className="flex-1" />
                 <Button type="button" variant="secondary" size="sm" onClick={copy}>
                   {copied ? (
-                    <Check size={14} aria-hidden="true" />
+                    <Check size={16} aria-hidden="true" />
                   ) : (
-                    <Copy size={14} aria-hidden="true" />
+                    <Copy size={16} aria-hidden="true" />
                   )}
                   {copied ? 'Copied' : 'Copy'}
                 </Button>
@@ -106,7 +106,7 @@ export function PassportTransferAction({
                 loading={cancel.isPending}
                 onClick={() => void void_()}
               >
-                <XCircle size={14} aria-hidden="true" />
+                <XCircle size={16} aria-hidden="true" />
                 Cancel transfer
               </Button>
             </div>
@@ -128,7 +128,7 @@ export function PassportTransferAction({
                 loading={cancel.isPending}
                 onClick={() => void void_()}
               >
-                <XCircle size={14} aria-hidden="true" />
+                <XCircle size={16} aria-hidden="true" />
                 Cancel pending transfer
               </Button>
             </div>
@@ -140,7 +140,7 @@ export function PassportTransferAction({
               loading={initiate.isPending}
               onClick={() => void mint()}
             >
-              <ArrowLeftRight size={14} aria-hidden="true" />
+              <ArrowLeftRight size={16} aria-hidden="true" />
               Mint transfer link
             </Button>
           )}

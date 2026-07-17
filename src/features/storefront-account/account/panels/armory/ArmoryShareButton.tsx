@@ -55,7 +55,7 @@ export function ArmoryShareButton({
         title="Share your armory"
         className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[color-mix(in_oklab,var(--color-highlight)_35%,var(--color-line))] bg-[color-mix(in_oklab,var(--color-highlight)_10%,var(--color-surface))] text-[var(--color-heading)] motion-safe:transition-colors hover:border-[var(--color-highlight-bright)] hover:bg-[color-mix(in_oklab,var(--color-highlight)_18%,var(--color-surface))] disabled:opacity-50"
       >
-        <Share2 size={17} aria-hidden="true" className="block" />
+        <Share2 size={19} aria-hidden="true" className="block" />
       </button>
       {url ? (
         <ArmoryShareModal

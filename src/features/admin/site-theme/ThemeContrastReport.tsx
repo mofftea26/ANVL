@@ -91,7 +91,7 @@ export function ThemeContrastReport({ palette, onApplyFix }: ThemeContrastReport
                 className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--color-line)] px-2 py-1 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-elevated)]"
                 title={`Set ${row.pair.fg} to ${row.suggestion}`}
               >
-                <Wand2 size={11} /> Fix
+                <Wand2 size={13} /> Fix
               </button>
             ) : (
               <Check size={ICON_SIZE.sm} className="shrink-0 text-[var(--color-success)]" />

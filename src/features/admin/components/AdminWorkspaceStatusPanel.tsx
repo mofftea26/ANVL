@@ -15,7 +15,7 @@ export function AdminWorkspaceStatusPanel() {
   return (
     <AdminRailPanel
       title="Workspace"
-      icon={supabaseMode ? <Database size={15} /> : <HardDrive size={15} />}
+      icon={supabaseMode ? <Database size={17} /> : <HardDrive size={17} />}
       testId="admin-workspace-status"
     >
       <div className="space-y-3 text-xs text-[var(--color-text-muted)]">

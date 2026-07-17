@@ -43,7 +43,7 @@ export function ShopToolbar({
             className="focus-ring relative inline-flex h-11 shrink-0 items-center gap-2 rounded-lg border border-[var(--shop-card-border)] bg-[var(--shop-surface)] px-3.5 text-sm text-[var(--shop-text)] transition-colors hover:border-[var(--shop-accent)] md:h-10 lg:hidden"
             aria-label={`Open filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
           >
-            <SlidersHorizontal size={15} aria-hidden="true" />
+            <SlidersHorizontal size={17} aria-hidden="true" />
             <span>Filters</span>
             {activeFilterCount > 0 ? (
               <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[var(--shop-accent)] px-1 text-[11px] font-semibold tabular-nums text-[var(--shop-on-accent)]">

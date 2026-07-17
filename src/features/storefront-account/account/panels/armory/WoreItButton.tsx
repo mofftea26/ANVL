@@ -49,10 +49,10 @@ export function WoreItButton({
         )}
       >
         {onCooldown ? (
-          <Check size={13} aria-hidden="true" className="text-[var(--color-success)]" />
+          <Check size={15} aria-hidden="true" className="text-[var(--color-success)]" />
         ) : (
           <Flame
-            size={13}
+            size={15}
             aria-hidden="true"
             className="text-[var(--color-highlight-bright)] motion-safe:transition-transform group-active:scale-125"
           />
@@ -79,7 +79,7 @@ export function WoreItButton({
           aria-label="Undo last wear"
           className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-text)] disabled:opacity-40"
         >
-          <Minus size={12} aria-hidden="true" />
+          <Minus size={14} aria-hidden="true" />
         </button>
       ) : null}
     </div>

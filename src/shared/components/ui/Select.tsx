@@ -90,7 +90,7 @@ export function Select({
         </span>
         <SelectPrimitive.Icon asChild>
           <ChevronDown
-            size={15}
+            size={17}
             aria-hidden="true"
             className="shrink-0 text-[var(--color-text-muted)] transition-transform duration-200 group-data-[state=open]:rotate-180"
           />
@@ -130,7 +130,7 @@ export const SelectItem = forwardRef<
     >
       <span className="absolute left-2.5 flex h-4 w-4 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <Check size={13} aria-hidden="true" className="text-[var(--color-accent)]" />
+          <Check size={15} aria-hidden="true" className="text-[var(--color-accent)]" />
         </SelectPrimitive.ItemIndicator>
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>

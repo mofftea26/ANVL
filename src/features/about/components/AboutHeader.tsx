@@ -43,7 +43,7 @@ export function AboutHeader({
                 : `${TOGGLE_BUTTON} text-[var(--color-text-muted)] hover:text-[var(--color-heading)]`
             }
           >
-            <Anvil size={13} aria-hidden="true" />
+            <Anvil size={15} aria-hidden="true" />
             <span className="sr-only">Animated Forge Altar view</span>
           </button>
           <button
@@ -57,7 +57,7 @@ export function AboutHeader({
                 : `${TOGGLE_BUTTON} text-[var(--color-text-muted)] hover:text-[var(--color-heading)]`
             }
           >
-            <Rows3 size={13} aria-hidden="true" />
+            <Rows3 size={15} aria-hidden="true" />
             <span className="sr-only">Classic scrolling view</span>
           </button>
         </div>

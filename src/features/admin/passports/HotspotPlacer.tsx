@@ -102,7 +102,7 @@ export function HotspotPlacer({
 
       {hotspots.length === 0 ? (
         <p className="flex items-center justify-center gap-2 text-xs text-[var(--color-text-muted)]">
-          <Crosshair size={13} aria-hidden="true" />
+          <Crosshair size={15} aria-hidden="true" />
           No markers yet.
         </p>
       ) : (
@@ -129,7 +129,7 @@ export function HotspotPlacer({
                   aria-label={`Remove marker ${i + 1}`}
                   onClick={() => remove(i)}
                 >
-                  <Trash2 size={12} aria-hidden="true" />
+                  <Trash2 size={14} aria-hidden="true" />
                 </Button>
               </div>
               <div className="space-y-2">

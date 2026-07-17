@@ -105,7 +105,7 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {/* Identity */}
-        <AccountBentoCard bg={accountCardBg('steel')} eyebrow="Identity" icon={<User size={15} />} className="sm:col-span-2 lg:col-span-2">
+        <AccountBentoCard bg={accountCardBg('steel')} eyebrow="Identity" icon={<User size={17} />} className="sm:col-span-2 lg:col-span-2">
           <div className="mb-3 mt-1 flex items-center gap-3">
             <AccountAvatar
               firstName={customer?.firstName}
@@ -183,7 +183,7 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
         </AccountBentoCard>
 
         {/* Contact */}
-        <AccountBentoCard bg={accountCardBg('carbon')} eyebrow="Contact" icon={<PhoneIcon size={15} />}>
+        <AccountBentoCard bg={accountCardBg('carbon')} eyebrow="Contact" icon={<PhoneIcon size={17} />}>
           <FormField label="Phone" htmlFor="pi-phone">
             <PhoneField id="pi-phone" value={phone} onChange={(v) => form.setValue('phone', v, { shouldDirty: true })} />
           </FormField>
@@ -191,7 +191,7 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
         </AccountBentoCard>
 
         {/* Details */}
-        <AccountBentoCard bg={accountCardBg('stone')} eyebrow="Details" icon={<CalendarDays size={15} />}>
+        <AccountBentoCard bg={accountCardBg('stone')} eyebrow="Details" icon={<CalendarDays size={17} />}>
           <FormField label="Date of birth" htmlFor="pi-dob">
             <DatePicker
               id="pi-dob"
@@ -217,7 +217,7 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
         </AccountBentoCard>
 
         {/* Fit / preferred size */}
-        <AccountBentoCard bg={accountCardBg('gold')} eyebrow="Fit" icon={<Shirt size={15} />}>
+        <AccountBentoCard bg={accountCardBg('gold')} eyebrow="Fit" icon={<Shirt size={17} />}>
           <FormField label="Preferred size" htmlFor="pi-size">
             <Select
               id="pi-size"
@@ -238,7 +238,7 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
         </AccountBentoCard>
 
         {/* Suggested size (live from measurements) */}
-        <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Suggested size" icon={<Sparkles size={15} />}>
+        <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Suggested size" icon={<Sparkles size={17} />}>
           <div className="flex h-full flex-1 flex-col justify-between">
             <div>
               {suggestion ? (
@@ -272,7 +272,7 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
         </AccountBentoCard>
 
         {/* Measurements */}
-        <AccountBentoCard bg={accountCardBg('smoke')} eyebrow="Measurements" icon={<Ruler size={15} />} className="sm:col-span-2 lg:col-span-3">
+        <AccountBentoCard bg={accountCardBg('smoke')} eyebrow="Measurements" icon={<Ruler size={17} />} className="sm:col-span-2 lg:col-span-3">
           <p className="anvl-micro mb-3 text-[var(--color-text-muted)]">
             Optional — power smarter size recommendations. Leave blank to skip.
           </p>

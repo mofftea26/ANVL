@@ -95,7 +95,7 @@ export function AboutEditor() {
     <>
       <AdminRailPanel
         title="How overrides work"
-        icon={<Info size={15} />}
+        icon={<Info size={17} />}
         description="Every field is optional — the storefront stays designed by default."
       >
         <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">
@@ -108,7 +108,7 @@ export function AboutEditor() {
           </li>
         </ul>
       </AdminRailPanel>
-      <AdminRailPanel title="How orbs render" icon={<ListOrdered size={15} />}>
+      <AdminRailPanel title="How orbs render" icon={<ListOrdered size={17} />}>
         <ol className="space-y-1.5 text-xs text-[var(--color-text-muted)]">
           <li>Desktop — each orb orbits the 3D anvil; the hammer strike opens its modal.</li>
           <li>Mobile — each orb is a stacked page section, in this order.</li>

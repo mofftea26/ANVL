@@ -119,7 +119,7 @@ export function ArmoryPanel() {
 
       {/* Standing (stacks full-width on phones so nothing clips) -------- */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Rank" icon={<Medal size={15} />}>
+        <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Rank" icon={<Medal size={17} />}>
           <div className="mt-1 flex items-center gap-3">
             <img
               src={rank.emblemSrc}
@@ -164,7 +164,7 @@ export function ArmoryPanel() {
           />
         </AccountBentoCard>
 
-        <AccountBentoCard bg={accountCardBg('gold')} eyebrow="Crest" icon={<Medal size={15} />}>
+        <AccountBentoCard bg={accountCardBg('gold')} eyebrow="Crest" icon={<Medal size={17} />}>
           <div className="mt-1 flex items-center gap-3">
             <div className="h-16 w-16 shrink-0">
               <CollectionCrest
@@ -188,7 +188,7 @@ export function ArmoryPanel() {
         <AccountBentoCard
           bg={accountCardBg('steel')}
           eyebrow="Badges"
-          icon={<Award size={15} />}
+          icon={<Award size={17} />}
         >
           {badges.length > 0 ? (
             <ul className="mt-1 flex flex-wrap gap-1.5">
@@ -217,7 +217,7 @@ export function ArmoryPanel() {
         <AccountBentoCard
           bg={accountCardBg('carbon')}
           eyebrow="Empty armory"
-          icon={<QrCode size={15} />}
+          icon={<QrCode size={17} />}
           className="items-start"
         >
           <p className="mt-1 max-w-md text-sm text-[var(--color-text-muted)]">

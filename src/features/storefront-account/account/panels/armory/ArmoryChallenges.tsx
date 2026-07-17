@@ -12,7 +12,7 @@ export function ArmoryChallenges({ challenges }: { challenges: ChallengeProgress
     <section className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Swords size={16} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
+          <Swords size={18} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
           <h3 className="anvl-heading text-lg text-[var(--color-heading)]">Challenges</h3>
         </div>
         <span className="anvl-micro text-[var(--color-text-muted)]">
@@ -32,7 +32,7 @@ export function ArmoryChallenges({ challenges }: { challenges: ChallengeProgress
                 <p className="flex items-center gap-2 text-sm font-semibold text-[var(--color-heading)]">
                   {c.complete ? (
                     <Check
-                      size={14}
+                      size={16}
                       aria-hidden="true"
                       className="text-[var(--color-success)]"
                     />

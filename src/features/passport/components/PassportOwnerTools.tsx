@@ -52,7 +52,7 @@ export function PassportOwnerTools({
           'no-underline text-[11px] sm:text-xs',
         )}
       >
-        <ExternalLink size={13} aria-hidden="true" className="mr-1.5" />
+        <ExternalLink size={15} aria-hidden="true" className="mr-1.5" />
         View in shop
       </Link>
     </div>

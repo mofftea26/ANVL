@@ -122,16 +122,16 @@ export function AccountMenu({ triggerClassName }: { triggerClassName?: string })
           </div>
           <div className="py-1.5">
             <Link to="/account" search={{ tab: 'personal' }} className={itemClass} onClick={() => setOpen(false)} role="menuitem">
-              <UserRound size={15} aria-hidden="true" /> My account
+              <UserRound size={17} aria-hidden="true" /> My account
             </Link>
             <Link to="/account" search={{ tab: 'orders' }} className={itemClass} onClick={() => setOpen(false)} role="menuitem">
-              <Package size={15} aria-hidden="true" /> Orders
+              <Package size={17} aria-hidden="true" /> Orders
             </Link>
             <Link to="/account" search={{ tab: 'armory' }} className={itemClass} onClick={() => setOpen(false)} role="menuitem">
-              <Shield size={15} aria-hidden="true" /> Armory
+              <Shield size={17} aria-hidden="true" /> Armory
             </Link>
             <Link to="/account" search={{ tab: 'settings' }} className={itemClass} onClick={() => setOpen(false)} role="menuitem">
-              <Settings size={15} aria-hidden="true" /> Settings
+              <Settings size={17} aria-hidden="true" /> Settings
             </Link>
           </div>
           <div className="border-t border-[var(--color-line)] pt-1.5">
@@ -145,7 +145,7 @@ export function AccountMenu({ triggerClassName }: { triggerClassName?: string })
               }}
               className={cn(itemClass, 'w-full text-left text-[color:var(--color-danger)]')}
             >
-              <LogOut size={15} aria-hidden="true" /> Sign out
+              <LogOut size={17} aria-hidden="true" /> Sign out
             </button>
           </div>
         </div>

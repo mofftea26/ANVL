@@ -136,7 +136,7 @@ function BannerColumn({
             data-cursor="view"
           >
             View piece
-            <ArrowUpRight size={13} aria-hidden="true" className="shrink-0" />
+            <ArrowUpRight size={15} aria-hidden="true" className="shrink-0" />
           </SafeLink>
           {product.price ? (
             <span className="anvl-display text-sm text-[var(--color-text)]">{product.price}</span>
@@ -267,7 +267,7 @@ export function ProductRevealSequence({
             data-cursor="view"
           >
             {content.viewAllLabel}
-            <ArrowUpRight size={15} aria-hidden="true" />
+            <ArrowUpRight size={17} aria-hidden="true" />
           </SafeLink>
         </div>
       </Container>

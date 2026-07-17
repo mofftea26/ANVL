@@ -119,7 +119,7 @@ export function PdpLightbox({
               aria-label="Previous image"
               className="absolute left-2 top-1/2 -translate-y-1/2"
             >
-              <ChevronLeft size={18} aria-hidden="true" />
+              <ChevronLeft size={20} aria-hidden="true" />
             </IconButton>
             <IconButton
               variant="overlay"
@@ -128,7 +128,7 @@ export function PdpLightbox({
               aria-label="Next image"
               className="absolute right-2 top-1/2 -translate-y-1/2"
             >
-              <ChevronRight size={18} aria-hidden="true" />
+              <ChevronRight size={20} aria-hidden="true" />
             </IconButton>
             <div className="mt-3 flex justify-center gap-2">
               {images.map((img, i) => (

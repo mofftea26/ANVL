@@ -105,7 +105,7 @@ function SettingsPage() {
                 'hover:border-[color-mix(in_oklab,var(--color-danger)_55%,transparent)] hover:bg-[color-mix(in_oklab,var(--color-danger)_28%,var(--color-surface))]',
               )}
             >
-              <RotateCcw size={18} className="mr-2 shrink-0" aria-hidden="true" />
+              <RotateCcw size={20} className="mr-2 shrink-0" aria-hidden="true" />
               Reset all local CMS data…
             </Button>
           </div>

@@ -187,7 +187,7 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
           ) : state === 'added' ? (
             <Check size={ICON_SIZE.md} aria-hidden="true" />
           ) : (
-            <Plus size={17} aria-hidden="true" />
+            <Plus size={19} aria-hidden="true" />
           )}
         </button>
 
@@ -208,7 +208,7 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
                 aria-label="Close quick add"
                 className="focus-ring rounded p-0.5 text-[var(--shop-text-muted)] hover:text-[var(--shop-text)]"
               >
-                <X size={13} aria-hidden="true" />
+                <X size={15} aria-hidden="true" />
               </button>
             </div>
 

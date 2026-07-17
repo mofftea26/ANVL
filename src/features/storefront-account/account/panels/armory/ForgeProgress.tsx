@@ -23,7 +23,7 @@ export function ForgeProgress({
             {forge.level}
           </p>
           <p className="anvl-micro mb-1 flex items-center gap-1.5 text-[var(--color-highlight-bright)]">
-            <Flame size={13} aria-hidden="true" /> Forge Level
+            <Flame size={15} aria-hidden="true" /> Forge Level
           </p>
         </div>
         <div className="text-right">
@@ -53,7 +53,7 @@ export function ForgeProgress({
           {forge.xpIntoLevel} / {forge.xpForLevel} XP
         </span>
         <span className="anvl-micro inline-flex min-w-0 items-center gap-1.5 text-[10px] text-[var(--color-highlight-bright)]">
-          <Target size={11} aria-hidden="true" className="shrink-0" />
+          <Target size={13} aria-hidden="true" className="shrink-0" />
           <span className="truncate">
             {milestone.label} · {milestone.detail}
           </span>

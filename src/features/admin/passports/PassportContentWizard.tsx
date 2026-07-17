@@ -563,7 +563,7 @@ export function PassportContentWizard({
             disabled={step === 0}
             onClick={() => setStep((s) => Math.max(0, s - 1))}
           >
-            <ArrowLeft size={13} aria-hidden="true" />
+            <ArrowLeft size={15} aria-hidden="true" />
             Back
           </Button>
           <div className="flex items-center gap-2">
@@ -575,7 +575,7 @@ export function PassportContentWizard({
               loading={saving}
               onClick={() => onSave(draft)}
             >
-              <Check size={13} aria-hidden="true" />
+              <Check size={15} aria-hidden="true" />
               Save passport
             </Button>
             {!isLast ? (
@@ -587,7 +587,7 @@ export function PassportContentWizard({
                 onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
               >
                 Next
-                <ArrowRight size={13} aria-hidden="true" />
+                <ArrowRight size={15} aria-hidden="true" />
               </Button>
             ) : null}
           </div>

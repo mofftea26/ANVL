@@ -89,7 +89,7 @@ export function StoryEditor() {
     <>
       <AdminRailPanel
         title="Saga model"
-        icon={<Info size={15} />}
+        icon={<Info size={17} />}
         description="The story is relational, not a single JSON blob."
       >
         <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">

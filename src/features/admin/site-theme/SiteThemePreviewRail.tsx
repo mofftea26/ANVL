@@ -42,7 +42,7 @@ export function SiteThemePreviewRail({
               aria-label="Desktop preview"
               title="Desktop preview"
             >
-              <Monitor size={15} />
+              <Monitor size={17} />
             </Button>
             <Button
               type="button"
@@ -53,7 +53,7 @@ export function SiteThemePreviewRail({
               aria-label="Mobile preview"
               title="Mobile preview"
             >
-              <Smartphone size={15} />
+              <Smartphone size={17} />
             </Button>
           </div>
         </div>

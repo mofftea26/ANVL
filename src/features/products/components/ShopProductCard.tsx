@@ -90,7 +90,7 @@ export const ShopProductCard = memo(function ShopProductCard({
               aria-label={`Share ${stripAngleBracketTags(product.name)}`}
               className="pointer-events-auto lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
             >
-              <Share2 size={15} aria-hidden="true" />
+              <Share2 size={17} aria-hidden="true" />
             </IconButton>
           </div>
         </ShopSurfaceScope>

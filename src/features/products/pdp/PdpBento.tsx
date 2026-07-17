@@ -190,7 +190,7 @@ export function PdpBento({
                       )}
                       style={{ backgroundColor: c.base, boxShadow: `inset 0 0 0 2px ${c.accent}33` }}
                     >
-                      {active ? <Check size={13} aria-hidden="true" style={{ color: '#fff', mixBlendMode: 'difference' }} /> : null}
+                      {active ? <Check size={15} aria-hidden="true" style={{ color: '#fff', mixBlendMode: 'difference' }} /> : null}
                       <span className="sr-only">{stripAngleBracketTags(c.name)}</span>
                     </button>
                   )

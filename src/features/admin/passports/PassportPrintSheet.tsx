@@ -79,11 +79,11 @@ export default function PassportPrintSheet({
             disabled={!ready}
             onClick={() => window.print()}
           >
-            <Printer size={14} aria-hidden="true" />
+            <Printer size={16} aria-hidden="true" />
             {ready ? 'Print / Save as PDF' : 'Rendering QRs…'}
           </Button>
           <Button type="button" variant="ghost" size="sm" density="compact" onClick={onClose}>
-            <X size={14} aria-hidden="true" />
+            <X size={16} aria-hidden="true" />
             Close
           </Button>
         </div>

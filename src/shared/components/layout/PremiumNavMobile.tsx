@@ -61,7 +61,7 @@ export function PremiumNavMobile({
               {stripAngleBracketTags(item.label)}
             </span>
             <ArrowUpRight
-              size={16}
+              size={18}
               aria-hidden="true"
               className="text-[var(--color-text-muted)] opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
             />

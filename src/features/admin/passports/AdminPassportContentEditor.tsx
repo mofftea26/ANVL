@@ -104,7 +104,7 @@ export function AdminPassportContentEditor() {
   const rail = (
     <AdminRailPanel
       title="How passport content works"
-      icon={<BookOpenText size={14} aria-hidden="true" />}
+      icon={<BookOpenText size={16} aria-hidden="true" />}
       description="Each product's passport is authored section by section — the wizard steps match the passport page's cards exactly."
     >
       <ul className="mt-2 space-y-2 text-xs text-[var(--color-text-muted)]">
@@ -151,7 +151,7 @@ export function AdminPassportContentEditor() {
                       density="compact"
                       onClick={() => setWizardSlug(row.slug)}
                     >
-                      <Pencil size={13} aria-hidden="true" />
+                      <Pencil size={15} aria-hidden="true" />
                       Edit
                     </Button>
                     <Button
@@ -162,7 +162,7 @@ export function AdminPassportContentEditor() {
                       aria-label={`Remove passport content for ${row.product?.name ?? row.slug}`}
                       onClick={() => setRemoveSlug(row.slug)}
                     >
-                      <Trash2 size={13} aria-hidden="true" />
+                      <Trash2 size={15} aria-hidden="true" />
                     </Button>
                   </div>
                 </li>
@@ -195,7 +195,7 @@ export function AdminPassportContentEditor() {
                     density="compact"
                     onClick={() => setWizardSlug(p.slug)}
                   >
-                    <Plus size={13} aria-hidden="true" />
+                    <Plus size={15} aria-hidden="true" />
                     Author passport
                   </Button>
                 </li>

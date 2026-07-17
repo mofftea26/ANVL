@@ -94,9 +94,9 @@ export function RankLadderModal({
                     >
                       <p className="flex items-center gap-1 text-[11px] font-semibold text-[var(--color-heading)]">
                         {unlocked ? (
-                          <Check size={11} aria-hidden="true" className="text-[var(--color-success)]" />
+                          <Check size={13} aria-hidden="true" className="text-[var(--color-success)]" />
                         ) : (
-                          <Lock size={10} aria-hidden="true" className="text-[var(--color-text-muted)]" />
+                          <Lock size={12} aria-hidden="true" className="text-[var(--color-text-muted)]" />
                         )}
                         {lvl.title}
                       </p>
@@ -115,7 +115,7 @@ export function RankLadderModal({
       {/* Badges */}
       <div className="mt-6">
         <h3 className="anvl-heading mb-3 flex items-center gap-2 text-lg text-[var(--color-heading)]">
-          <Award size={16} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
+          <Award size={18} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
           Badges
         </h3>
         <ul className="grid gap-2 sm:grid-cols-2">
@@ -139,7 +139,7 @@ export function RankLadderModal({
                       : 'bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)]',
                   )}
                 >
-                  {has ? <Check size={15} aria-hidden="true" /> : <Lock size={13} aria-hidden="true" />}
+                  {has ? <Check size={17} aria-hidden="true" /> : <Lock size={15} aria-hidden="true" />}
                 </span>
                 <div className={cn(!has && 'opacity-60')}>
                   <p className="text-sm font-semibold text-[var(--color-heading)]">{badge.title}</p>
