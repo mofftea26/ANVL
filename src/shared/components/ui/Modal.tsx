@@ -79,8 +79,9 @@ export function Modal({
         ref={panelRef}
         tabIndex={-1}
         className={cn(
-          'relative w-full max-w-lg rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-6 outline-none',
-          'motion-safe:transition-[border-color,box-shadow] motion-safe:duration-300 motion-reduce:transition-none',
+          // Borderless by design — depth comes from the shadow, not a line.
+          'relative w-full max-w-lg rounded-xl bg-[var(--color-surface)] p-6 shadow-[0_32px_90px_-18px_rgba(0,0,0,0.85)] outline-none',
+          'motion-safe:transition-shadow motion-safe:duration-300 motion-reduce:transition-none',
           className,
         )}
         role="dialog"

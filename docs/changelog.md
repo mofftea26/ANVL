@@ -1,4 +1,13 @@
-﻿## 2026-07-17 — Feedback round 3: ceremony v3, share studio, sheets, purge switch
+﻿## 2026-07-17 — Feedback round 4: mobile nav, phased ceremony, preview-first share
+
+- **Sheet scroll bug**: opening a passport bottom sheet no longer yanks the page to the top — the sheet now uses a plain `html { overflow: hidden }` lock (the shared `useLockPageScroll` pins `body` with `position: fixed`, which is wrong for mid-scroll sheets).
+- **Mobile nav (user-approved)**: the account tabs become an **app-style fixed bottom bar** on phones (icons + labels, safe-area padding, active underline; segmented pill stays ≥sm); the armory view chips get **scroll-snap + soft edge fades** with no scrollbar.
+- **Modals are borderless** (shadow-only depth) — shared `Modal` + the passport sheet.
+- **Share icon** centered via `grid place-items-center` (inline-flex baseline was nudging it).
+- **Ceremony phased explicitly**: the shader's `uAssemble` (scatter↔shape mix) now drives three clean beats — crest holds 0.5s → embers **disperse** to the scatter cloud (`uAssemble` 1→0) → the morph target silently flips to the product while fully dispersed → embers **regroup** into the piece (0→1, `power3.out`) → only then the crisp render resolves. No overlapping morph mush. Perf: the passport/console **no longer mounts underneath the playing ceremony** (was double WebGL + context churn).
+- **Share modal redesigned, preview-first**: live auto-regenerating preview (debounced) that leads the sheet; format segmented control (Story/Post/Message with real aspect frames), template chips with gradient swatches, one photo toggle, subject dropdown, Download/Share action pair, a horizontally snapping row of logo buttons, compact copy row. Mobile-first single column, internal scroll, no border.
+
+## 2026-07-17 — Feedback round 3: ceremony v3, share studio, sheets, purge switch
 
 - **Ceremony v3** (scan removed): the ANVL crest stands in embers for 0.5s → the embers disperse (burst mid-morph) → reassemble into the registered piece (sampled from the real product image) → the crisp render resolves with the seal + "Registered to <name>" and a **Continue to your Armory** button. Nothing auto-advances; a quiet "View this passport" link is the secondary exit. Verification lines + beam deleted (`ceremonyLines` lib removed).
 - **Share rework**: the share section/switch is gone — one **share icon** at the top of the Armory; first tap enables sharing (mints the handle) and opens the sheet in one move, "Stop sharing" lives inside the sheet. Real brand logos (inline SVG: WhatsApp, Facebook, X, Telegram, Instagram, TikTok, Discord). New **image studio**: subject (your armory / any piece / any feat) × format (Story 1080×1920 / Post 1080×1350 / Message 1080×1080) × template (Forge / Champagne / Stealth) × backdrop (brand gradient or a **gallery/camera photo** with a legibility scrim) → download or native file share.

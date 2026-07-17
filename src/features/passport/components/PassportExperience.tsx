@@ -94,23 +94,28 @@ export function PassportExperience({
       return <PassportNotFound />
 
     case 'owner':
+      // The ceremony and the passport are mutually exclusive: mounting the
+      // console (its own WebGL) underneath the ceremony's canvas doubled GPU
+      // work and caused context churn. The page mounts only after the exit.
+      if (ceremony === 'playing') {
+        return (
+          <ClaimCeremony
+            productName={view.productName}
+            imageUrl={
+              content.piece.heroRenderUrl ??
+              (view.claimedColor
+                ? product?.shop?.imagesByColorName?.[view.claimedColor]?.[0]?.src
+                : undefined) ??
+              content.piece.gallery[0]?.src ??
+              null
+            }
+            ownerName={view.claimedDisplayName ?? ''}
+            onComplete={() => setCeremony('done')}
+          />
+        )
+      }
       return (
         <>
-          {ceremony === 'playing' ? (
-            <ClaimCeremony
-              productName={view.productName}
-              imageUrl={
-                content.piece.heroRenderUrl ??
-                (view.claimedColor
-                  ? product?.shop?.imagesByColorName?.[view.claimedColor]?.[0]?.src
-                  : undefined) ??
-                content.piece.gallery[0]?.src ??
-                null
-              }
-              ownerName={view.claimedDisplayName ?? ''}
-              onComplete={() => setCeremony('done')}
-            />
-          ) : null}
           <PassportPage
             variant="owner"
             view={view}

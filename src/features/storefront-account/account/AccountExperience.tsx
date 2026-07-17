@@ -46,7 +46,8 @@ export function AccountExperience({
   const firstName = customer?.firstName || 'athlete'
 
   return (
-    <div ref={scopeRef} className="pb-16">
+    // Extra bottom padding on phones clears the fixed bottom tab bar.
+    <div ref={scopeRef} className="pb-28 sm:pb-16">
       {/* Sticky header — sits flush under the top bar, shares its scrim, with a
           separator line between them. */}
       <div className="sticky top-[var(--anvl-header-h)] z-30 border-t border-b border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-bg)_86%,transparent)] backdrop-blur-md">

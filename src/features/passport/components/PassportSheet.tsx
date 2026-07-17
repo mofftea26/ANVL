@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
-import { useLockPageScroll } from '@/shared/hooks/useLockPageScroll'
 import { cn } from '@/shared/lib/cn'
 
 /**
@@ -29,7 +28,19 @@ export function PassportSheet({
   const [entered, setEntered] = useState(false)
 
   useDialogFocusTrap({ open, panelRef, onClose })
-  useLockPageScroll(open)
+
+  // Plain overflow lock — the body-position:fixed approach (useLockPageScroll)
+  // yanks the page back to the top on open, which is exactly wrong for a
+  // sheet that opens mid-scroll. html overflow:hidden keeps the position.
+  useEffect(() => {
+    if (!open) return
+    const html = document.documentElement
+    const previous = html.style.overflow
+    html.style.overflow = 'hidden'
+    return () => {
+      html.style.overflow = previous
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) {
@@ -60,7 +71,7 @@ export function PassportSheet({
         aria-label={title}
         tabIndex={-1}
         className={cn(
-          'absolute inset-x-0 bottom-0 max-h-[86svh] overflow-y-auto rounded-t-2xl border-t border-[color-mix(in_oklab,var(--color-highlight)_25%,var(--color-line))] bg-[var(--color-surface)] pb-[max(env(safe-area-inset-bottom),1.25rem)] outline-none',
+          'absolute inset-x-0 bottom-0 max-h-[86svh] overflow-y-auto rounded-t-2xl bg-[var(--color-surface)] pb-[max(env(safe-area-inset-bottom),1.25rem)] shadow-[0_-24px_70px_rgba(0,0,0,0.55)] outline-none',
           'motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out',
           entered ? 'translate-y-0' : 'translate-y-full',
         )}

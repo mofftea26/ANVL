@@ -220,10 +220,12 @@ export function ArmoryPanel() {
         <>
           <ArmoryHonor owned={owned} catalog={catalog} />
 
+          {/* View chips — swipeable on phones with scroll-snap and a soft
+              edge fade hinting there's more; no visible scrollbar. */}
           <div
             role="tablist"
             aria-label="Armory views"
-            className="flex gap-1 overflow-x-auto rounded-full border border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-surface)_55%,transparent)] p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex snap-x snap-mandatory gap-1 overflow-x-auto rounded-full border border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-surface)_55%,transparent)] p-1 [mask-image:linear-gradient(90deg,transparent,black_14px,black_calc(100%-14px),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {ARMORY_VIEWS.map((v) => {
               const active = v.key === view
@@ -236,7 +238,7 @@ export function ArmoryPanel() {
                   title={v.blurb}
                   onClick={() => setView(v.key)}
                   className={cn(
-                    'focus-ring shrink-0 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] motion-safe:transition-colors',
+                    'focus-ring shrink-0 snap-start rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] motion-safe:transition-colors',
                     active
                       ? 'bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] text-[color:var(--color-on-highlight)]'
                       : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',

@@ -9,7 +9,9 @@ import {
 } from '@/shared/webgl/particleShapes'
 import {
   CEREMONY_CREST_HOLD,
-  CEREMONY_MORPH_DURATION,
+  CEREMONY_DISPERSE_DURATION,
+  CEREMONY_REGROUP_AT,
+  CEREMONY_REGROUP_DURATION,
   CEREMONY_REVEAL_AT,
   CEREMONY_REVEAL_DURATION,
 } from './ceremonyTiming'
@@ -106,24 +108,36 @@ export function CeremonyCrestParticles({ productImageUrl }: { productImageUrl: s
     [],
   )
 
-  // The ceremony clock: hold the crest, then one continuous
-  // disperse-and-reassemble into the piece, then dissolve into the DOM image.
+  // Three EXPLICIT phases on the shared clock. The shader mixes
+  // aScatter → mix(aFrom, aTo, uMorph) by uAssemble, so:
+  //   hold     — uAssemble=1, uMorph=0 → the crest stands.
+  //   disperse — uAssemble 1→0        → embers drift out to the scatter cloud.
+  //   (silent) — uMorph set to 1 while fully dispersed (target becomes the
+  //              product; invisible because the cloud is showing aScatter).
+  //   regroup  — uAssemble 0→1        → embers gather into the piece.
+  //   reveal   — uReveal 0→1          → embers still + fade as the DOM image
+  //              resolves. No overlap between phases — each reads clearly.
   useEffect(() => {
     const u = materialRef.current?.uniforms
     if (!u || !shapes) return
     const tl = gsap.timeline()
     tl.to(
-      u.uMorph,
-      { value: 1, duration: CEREMONY_MORPH_DURATION, ease: 'power2.inOut' },
+      u.uAssemble,
+      { value: 0, duration: CEREMONY_DISPERSE_DURATION, ease: 'power2.in' },
       CEREMONY_CREST_HOLD,
     )
-    // The burst peaks early in the morph — that's the visible disperse —
-    // and decays as the embers land in the silhouette.
+    tl.set(u.uMorph, { value: 1 }, CEREMONY_REGROUP_AT)
+    tl.to(
+      u.uAssemble,
+      { value: 1, duration: CEREMONY_REGROUP_DURATION, ease: 'power3.out' },
+      CEREMONY_REGROUP_AT,
+    )
+    // A soft spark as the regroup lands — heat, not an explosion.
     tl.fromTo(
       u.uBurst,
-      { value: 0.85 },
-      { value: 0, duration: CEREMONY_MORPH_DURATION, ease: 'sine.out' },
-      CEREMONY_CREST_HOLD + 0.05,
+      { value: 0.35 },
+      { value: 0, duration: CEREMONY_REGROUP_DURATION, ease: 'sine.out' },
+      CEREMONY_REGROUP_AT + 0.1,
     )
     tl.to(
       u.uReveal,
