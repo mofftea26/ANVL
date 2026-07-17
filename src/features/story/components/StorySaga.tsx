@@ -57,7 +57,9 @@ function groupByDrop(
   return [...groups.values()]
 }
 
-/** Volume plaque above each drop's shelf — numeral, drop label, book count. */
+/** Volume plaque above each drop's shelf — a forged plate (the toast/armory
+ *  plate language: bevel-cut corners, champagne heat hairline) carrying the
+ *  numeral, drop label, and book count. */
 function VolumePlaque({
   index,
   label,
@@ -70,18 +72,25 @@ function VolumePlaque({
   return (
     <Container>
       <RevealOnScroll>
-        <div className="flex items-end justify-between gap-6 border-b border-[color-mix(in_srgb,#c8a45a_22%,var(--color-line))] pb-4">
-          <div className="flex items-baseline gap-4">
-            <span className="anvl-display text-xs tracking-[0.34em] text-[#c8a45a]/90">
-              Vol. {romanNumeral(index + 1)}
+        <div className="[filter:drop-shadow(0_10px_22px_rgba(0,0,0,0.45))]">
+          <div className="relative flex items-end justify-between gap-6 bg-[linear-gradient(160deg,color-mix(in_oklab,var(--color-highlight)_9%,var(--color-surface-elevated))_0%,var(--color-surface)_55%,color-mix(in_oklab,var(--color-bg)_88%,black)_100%)] px-5 py-4 [clip-path:polygon(10px_0,100%_0,100%_calc(100%-10px),calc(100%-10px)_100%,0_100%,0_10px)]">
+            {/* Heat hairline along the top edge. */}
+            <span
+              aria-hidden="true"
+              className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent_0%,var(--color-highlight-bright)_30%,color-mix(in_srgb,var(--color-highlight)_60%,transparent)_70%,transparent_100%)]"
+            />
+            <div className="flex items-baseline gap-4">
+              <span className="anvl-display text-xs tracking-[0.34em] text-[var(--color-highlight-bright)]">
+                Vol. {romanNumeral(index + 1)}
+              </span>
+              <h2 className="anvl-heading font-normal leading-none text-[clamp(1.5rem,3.5vw,2.5rem)] text-[var(--color-heading)]">
+                {label}
+              </h2>
+            </div>
+            <span className="anvl-display hidden shrink-0 text-[11px] tracking-[0.26em] text-[var(--color-text-muted)] sm:block">
+              {count} {count === 1 ? 'book' : 'books'}
             </span>
-            <h2 className="anvl-heading font-normal leading-none text-[clamp(1.5rem,3.5vw,2.5rem)] text-[var(--color-heading)]">
-              {label}
-            </h2>
           </div>
-          <span className="anvl-display hidden shrink-0 text-[11px] tracking-[0.26em] text-[var(--color-text-muted)] sm:block">
-            {count} {count === 1 ? 'book' : 'books'}
-          </span>
         </div>
       </RevealOnScroll>
     </Container>
@@ -123,16 +132,16 @@ export function StorySaga({
       ) : (
         <Section>
           <Container className="max-w-2xl py-6 text-center">
-            <p aria-hidden="true" className="anvl-display text-xs tracking-[0.4em] text-[#c8a45a]/80">
+            <p aria-hidden="true" className="anvl-display text-xs tracking-[0.4em] text-[var(--color-highlight)]/80">
               Vol. I
             </p>
             <h2 className="anvl-heading mt-4 text-[clamp(1.75rem,4.5vw,3rem)] font-normal leading-[0.95]">
               The first volume is still on the anvil.
             </h2>
             <div className="mx-auto mt-6 flex items-center justify-center gap-3" aria-hidden="true">
-              <span className="h-px w-20 bg-gradient-to-r from-transparent to-[#c8a45a]/70" />
-              <span className="block h-1.5 w-1.5 rotate-45 border border-[#c8a45a]/80" />
-              <span className="h-px w-20 bg-gradient-to-l from-transparent to-[#c8a45a]/70" />
+              <span className="h-px w-20 bg-gradient-to-r from-transparent to-[var(--color-highlight)]/70" />
+              <span className="block h-1.5 w-1.5 rotate-45 border border-[var(--color-highlight)]/80" />
+              <span className="h-px w-20 bg-gradient-to-l from-transparent to-[var(--color-highlight)]/70" />
             </div>
             <p className="mt-6 text-base leading-relaxed text-[var(--color-text-muted)]">
               The saga is being forged. Enlist now and your name may be written into what comes next.
@@ -147,7 +156,7 @@ export function StorySaga({
       )}
 
       {/* The colophon — the archive's closing inscription. */}
-      <section className="relative mt-10 overflow-hidden border-t border-[color-mix(in_srgb,#c8a45a_18%,var(--color-line))]">
+      <section className="relative mt-10 overflow-hidden border-t border-[color-mix(in_srgb,var(--color-highlight)_18%,var(--color-line))]">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
@@ -158,7 +167,7 @@ export function StorySaga({
         />
         <Container className="relative z-10 flex flex-col items-center gap-6 py-20 text-center md:py-24">
           <RevealOnScroll>
-            <span aria-hidden="true" className="anvl-display block text-lg leading-none text-[#c8a45a]">
+            <span aria-hidden="true" className="anvl-display block text-lg leading-none text-[var(--color-highlight)]">
               ⚒
             </span>
           </RevealOnScroll>

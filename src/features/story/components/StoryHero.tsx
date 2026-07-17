@@ -8,9 +8,11 @@ const CTA_FORGE =
 const CTA_STEEL =
   'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-highlight)_60%,var(--color-line))]'
 
-/** Gilded foil gradient for display accents — the athenaeum's leaf. */
+/** Forged foil for display accents — champagne drawn from the theme tokens,
+ *  so the hall re-tempers with every CMS palette (never a hardcoded gold). */
 const FOIL_TEXT: React.CSSProperties = {
-  background: 'linear-gradient(100deg, #c8a45a 0%, #f3e3b3 45%, #c8a45a 70%, #8f7439 100%)',
+  background:
+    'linear-gradient(100deg, var(--color-highlight) 0%, var(--color-highlight-bright) 45%, var(--color-highlight) 70%, color-mix(in srgb, var(--color-highlight) 55%, black) 100%)',
   WebkitBackgroundClip: 'text',
   backgroundClip: 'text',
   color: 'transparent',
@@ -38,12 +40,12 @@ export function StoryHero() {
         }}
       />
       {/* Hall columns — thin gilded hairlines framing the frontispiece. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-y-10 left-[6%] hidden w-px bg-gradient-to-b from-transparent via-[color-mix(in_srgb,#c8a45a_35%,transparent)] to-transparent lg:block" />
-      <div aria-hidden="true" className="pointer-events-none absolute inset-y-10 right-[6%] hidden w-px bg-gradient-to-b from-transparent via-[color-mix(in_srgb,#c8a45a_35%,transparent)] to-transparent lg:block" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-10 left-[6%] hidden w-px bg-gradient-to-b from-transparent via-[color-mix(in_srgb,var(--color-highlight)_35%,transparent)] to-transparent lg:block" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-10 right-[6%] hidden w-px bg-gradient-to-b from-transparent via-[color-mix(in_srgb,var(--color-highlight)_35%,transparent)] to-transparent lg:block" />
 
       <Container className="relative z-10 flex flex-col items-center py-10 text-center md:py-14">
         <RevealOnScroll>
-          <p className="anvl-display inline-flex items-center gap-2.5 text-[11px] tracking-[0.36em] text-[var(--color-highlight-bright)] before:h-px before:w-7 before:bg-[color-mix(in_srgb,#c8a45a_60%,transparent)] before:content-[''] after:h-px after:w-7 after:bg-[color-mix(in_srgb,#c8a45a_60%,transparent)] after:content-['']">
+          <p className="anvl-display inline-flex items-center gap-2.5 text-[11px] tracking-[0.36em] text-[var(--color-highlight-bright)] before:h-px before:w-7 before:bg-[color-mix(in_srgb,var(--color-highlight)_60%,transparent)] before:content-[''] after:h-px after:w-7 after:bg-[color-mix(in_srgb,var(--color-highlight)_60%,transparent)] after:content-['']">
             The Saga of ANVL
           </p>
         </RevealOnScroll>
@@ -60,9 +62,9 @@ export function StoryHero() {
         {/* Frontispiece ornament — rule · diamond · rule. */}
         <RevealOnScroll>
           <div className="mt-4 flex items-center gap-2.5" aria-hidden="true">
-            <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#c8a45a]/70 sm:w-20" />
-            <span className="block h-1.5 w-1.5 rotate-45 border border-[#c8a45a]/80" />
-            <span className="h-px w-14 bg-gradient-to-l from-transparent to-[#c8a45a]/70 sm:w-20" />
+            <span className="h-px w-14 bg-gradient-to-r from-transparent to-[var(--color-highlight)]/70 sm:w-20" />
+            <span className="block h-1.5 w-1.5 rotate-45 border border-[var(--color-highlight)]/80" />
+            <span className="h-px w-14 bg-gradient-to-l from-transparent to-[var(--color-highlight)]/70 sm:w-20" />
           </div>
         </RevealOnScroll>
 
