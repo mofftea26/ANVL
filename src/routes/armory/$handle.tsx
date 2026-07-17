@@ -11,18 +11,26 @@ export const Route = createFileRoute('/armory/$handle')({
   loader: async ({ params }) => {
     const armory = await fetchPublicArmory(params.handle)
     if (!armory) {
-      return { handle: params.handle, armory: null, images: {} as Record<string, string> }
+      return {
+        handle: params.handle,
+        armory: null,
+        images: {} as Record<string, string>,
+        names: {} as Record<string, string>,
+      }
     }
-    // Resolve piece images from the catalog (public data carries slugs only).
+    // Resolve piece images + names from the catalog (public data carries slugs
+    // only; feats may reference pieces the owner hasn't made public).
     const catalog = await runtimeClients.commerce
       .getShopListingCatalog()
       .catch(() => ({ items: [], drops: [] }))
     const images: Record<string, string> = {}
+    const names: Record<string, string> = {}
     for (const product of catalog.items) {
       const src = product.images[0]?.src
       if (src) images[product.slug] = src
+      names[product.slug] = product.name
     }
-    return { handle: params.handle, armory, images }
+    return { handle: params.handle, armory, images, names }
   },
   head: ({ loaderData }) =>
     buildSeoMeta({
@@ -39,7 +47,7 @@ export const Route = createFileRoute('/armory/$handle')({
 })
 
 function PublicArmoryRoute() {
-  const { armory, images } = Route.useLoaderData()
+  const { armory, images, names } = Route.useLoaderData()
   if (!armory) return <PublicArmoryMissing />
-  return <PublicArmoryView armory={armory} images={images} />
+  return <PublicArmoryView armory={armory} images={images} names={names} />
 }

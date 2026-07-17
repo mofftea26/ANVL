@@ -1,4 +1,13 @@
-﻿## 2026-07-17 — Armory/passport feedback round (post-G live testing)
+﻿## 2026-07-17 — Feedback round 2: share fix, round veil, synced forges, feats-in-cards, War Record
+
+- **Share toggle actually works now**: `set_armory_share` was throwing at runtime — `gen_random_bytes` lives in the `extensions` schema, invisible under the function's `set search_path = public`, so the handle mint failed and the toggle silently did nothing. Re-minted with the built-in `gen_random_uuid()` (32 hex chars, 122 bits); migration `20260717130000`, verified live as the real user (rolled back).
+- **Rounder disperse**: the section-swap veil is now an **elliptical** cloud centred on the cards' region — sqrt-sampled density falling toward a feathered rim (dimmer shades at the edge) instead of a uniform box, so the burst reads as a soft bloom, not a square of static.
+- **Performance**: console forge 9k → 6k particles, canvas dpr capped 1.75 → 1.5 (additive point sprites gain nothing above it).
+- **Synced load forges**: the product render's first-load forge now runs on the SAME `passportForgeTiming` clock as the bento cards' entry — piece and cards gather and resolve as one.
+- **Feats live in the piece's card**: the standalone Feats section is gone; each Grid card embeds `PieceFeats` (add/edit/delete inline, date + public switch, product pre-assigned — no picker).
+- **Guest War Record**: `/armory/$handle` gets a designed card — watermark crest, owner name, stats row (pieces forged / wears logged / feats), and every public feat with its piece chip + date. Route resolves catalog names so feats on non-public pieces still show their product.
+
+## 2026-07-17 — Armory/passport feedback round (post-G live testing)
 
 Fixes and refinements from the user's first real walkthrough of Phase G:
 

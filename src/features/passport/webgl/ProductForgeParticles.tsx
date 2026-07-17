@@ -4,6 +4,12 @@ import { useFrame } from '@react-three/fiber'
 import { gsap } from '@/shared/lib/gsap'
 import { readThemeCssColor } from '@/shared/lib/themeColor'
 import { sampleImageSilhouette, type SilhouetteCloud } from '@/shared/webgl/particleShapes'
+import {
+  PASSPORT_ASSEMBLE_DURATION,
+  PASSPORT_ENTRY_DELAY,
+  PASSPORT_FIRST_REVEAL_AT,
+  PASSPORT_REVEAL_DURATION,
+} from './passportForgeTiming'
 import { PASSPORT_FORGE_FRAGMENT, PASSPORT_FORGE_VERTEX } from './passportForgeShaders'
 
 const COUNT = 4_000
@@ -100,14 +106,29 @@ export function ProductForgeParticles({
   useEffect(() => {
     const u = materialRef.current?.uniforms
     if (!u || !cloud) return
+    // The SAME clock as the cards' ember entry (passportForgeTiming) — the
+    // piece and its bento cards gather and settle as one synchronized forge.
     const tl = gsap.timeline()
-    // Gather into the silhouette — fast and clean (was ~2.6s total).
-    tl.to(u.uAssemble, { value: 1, duration: 0.8, ease: 'power3.out' }, 0.05)
-    tl.fromTo(u.uBurst, { value: 0.45 }, { value: 0, duration: 0.7, ease: 'sine.out' }, 0.05)
-    // Reveal: the image fades in as the embers dissolve.
-    tl.add(onReveal, 0.9)
-    tl.to(u.uReveal, { value: 1, duration: 0.45, ease: 'power2.out' }, 0.9)
-    tl.add(onComplete, 1.3)
+    tl.to(
+      u.uAssemble,
+      { value: 1, duration: PASSPORT_ASSEMBLE_DURATION, ease: 'power2.inOut' },
+      PASSPORT_ENTRY_DELAY,
+    )
+    tl.fromTo(
+      u.uBurst,
+      { value: 0.45 },
+      { value: 0, duration: 0.7, ease: 'sine.out' },
+      PASSPORT_ENTRY_DELAY,
+    )
+    // Reveal: the image fades in as the embers dissolve — same beat as the
+    // cards' reveal, so nothing resolves early or lags behind.
+    tl.add(onReveal, PASSPORT_FIRST_REVEAL_AT)
+    tl.to(
+      u.uReveal,
+      { value: 1, duration: PASSPORT_REVEAL_DURATION, ease: 'power2.out' },
+      PASSPORT_FIRST_REVEAL_AT,
+    )
+    tl.add(onComplete, PASSPORT_FIRST_REVEAL_AT + PASSPORT_REVEAL_DURATION)
     return () => {
       tl.kill()
     }

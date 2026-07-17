@@ -11,6 +11,7 @@ import {
 import type { OwnedPassport } from '@/features/passport/schemas/passport.schema'
 import { cn } from '@/shared/lib/cn'
 import { FeaturedPin } from './FeaturedPin'
+import { PieceFeats } from './PieceFeats'
 import { WoreItButton } from './WoreItButton'
 
 /**
@@ -366,6 +367,7 @@ export function ArmoryGridView({ owned, catalog }: ViewProps) {
                 <FeaturedPin passport={passport} owned={owned} />
               </div>
             </div>
+            <PieceFeats slug={passport.productSlug} />
           </div>
         )
       })}

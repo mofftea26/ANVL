@@ -13,7 +13,9 @@ import {
 } from './passportForgeTiming'
 import { PASSPORT_FORGE_FRAGMENT, PASSPORT_FORGE_VERTEX } from './passportForgeShaders'
 
-const COUNT = 9_000
+// 6k reads identically at card-trace densities but cuts vertex + overdraw cost
+// by a third (additive blending makes overdraw the real GPU bill).
+const COUNT = 6_000
 /** Rounded-corner radius the ember tracing assumes (matches rounded-2xl). */
 const CORNER_PX = 16
 /** Share of points tracing card borders vs. sparse interior fill. */
@@ -193,11 +195,10 @@ export function PassportForgeParticles({ motion }: { motion: PassportMotionState
   buildRectCloudRef.current = buildRectCloud
 
   /**
-   * The transition veil — bounded to the CARDS' OWN region (their bounding box
-   * plus a small margin), never the whole page. Particles disperse locally and
-   * recollect, so a section swap reads as the cards themselves reshaping rather
-   * than the screen erupting. Falls back to the soft full-screen veil only when
-   * nothing has been measured yet.
+   * The transition veil — an ELLIPTICAL cloud centred on the cards' region
+   * (never the whole page, never a hard box). Radius is sampled with sqrt so
+   * density falls toward the rim and the rim itself is feathered, so the
+   * disperse reads as a soft round bloom rather than a square of static.
    */
   const buildLocalVeil = (rects: PassportCardRect[]): SilhouetteCloud => {
     if (!rects.length || size.width <= 0 || size.height <= 0) return shatterCloud
@@ -214,19 +215,24 @@ export function PassportForgeParticles({ motion }: { motion: PassportMotionState
       maxX = Math.max(maxX, r.x + r.w)
       maxY = Math.max(maxY, r.y + r.h)
     }
-    const padX = (maxX - minX) * 0.12
-    const padY = (maxY - minY) * 0.12
-    minX -= padX
-    maxX += padX
-    minY -= padY
-    maxY += padY
+    const cx = (minX + maxX) / 2
+    const cy = (minY + maxY) / 2
+    // Semi-axes cover the region with a little breathing room.
+    const rx = ((maxX - minX) / 2) * 1.18
+    const ry = ((maxY - minY) / 2) * 1.18
     const positions = new Float32Array(COUNT * 3)
     const shades = new Float32Array(COUNT)
     for (let i = 0; i < COUNT; i += 1) {
-      positions[i * 3] = toWorldX(minX + Math.random() * (maxX - minX))
-      positions[i * 3 + 1] = toWorldY(minY + Math.random() * (maxY - minY))
+      const theta = Math.random() * Math.PI * 2
+      // sqrt → uniform disc; the ^1.25 pushes a touch of density inward and
+      // the feather lets a few embers drift softly past the rim.
+      const rho = Math.sqrt(Math.random()) ** 1.25
+      const feather = 1 + Math.random() * Math.random() * 0.22
+      positions[i * 3] = toWorldX(cx + Math.cos(theta) * rx * rho * feather)
+      positions[i * 3 + 1] = toWorldY(cy + Math.sin(theta) * ry * rho * feather)
       positions[i * 3 + 2] = (Math.random() * 2 - 1) * 0.35
-      shades[i] = 0.28 + Math.random() * 0.28
+      // Dimmer at the rim so the cloud's edge dissolves instead of cutting.
+      shades[i] = (0.3 + Math.random() * 0.26) * (1.05 - rho * 0.45)
     }
     return { positions, shades }
   }

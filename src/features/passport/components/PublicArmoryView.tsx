@@ -1,4 +1,5 @@
-import { Flame, Star, Trophy } from 'lucide-react'
+import { Flame, Star, Swords, Trophy } from 'lucide-react'
+import { AnvlCrest } from '@/shared/assets/brand'
 import { deriveArmoryRank } from '../lib/ranks'
 import type { PublicArmory } from '../schemas/passport.schema'
 
@@ -12,9 +13,12 @@ import type { PublicArmory } from '../schemas/passport.schema'
 export function PublicArmoryView({
   armory,
   images,
+  names = {},
 }: {
   armory: PublicArmory
   images: Record<string, string | undefined>
+  /** slug → product name (catalog-resolved for feats on non-public pieces). */
+  names?: Record<string, string | undefined>
 }) {
   // Rank from the true total (completion needs the catalog cross-reference we
   // don't expose publicly, so this never overstates — Warlord bonuses aside).
@@ -23,6 +27,12 @@ export function PublicArmoryView({
     .filter((p) => p.featuredSlot)
     .sort((a, b) => (a.featuredSlot ?? 9) - (b.featuredSlot ?? 9))
     .slice(0, 3)
+  const totalWears = armory.pieces.reduce((sum, p) => sum + p.wearCount, 0)
+  // Piece names from the shared pieces first, then the catalog fallback.
+  const nameOf = (slug: string | null): string | null => {
+    if (!slug) return null
+    return armory.pieces.find((p) => p.productSlug === slug)?.productName ?? names[slug] ?? null
+  }
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
@@ -134,28 +144,78 @@ export function PublicArmoryView({
         </p>
       )}
 
-      {/* Feats ---------------------------------------------------------- */}
-      {armory.feats.length > 0 ? (
+      {/* War Record — the athlete's achievements, as one designed card ---- */}
+      {armory.feats.length > 0 || totalWears > 0 ? (
         <section className="mt-10">
-          <div className="mb-3 flex items-center gap-2">
-            <Trophy size={15} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
-            <h2 className="anvl-heading text-lg text-[var(--color-heading)]">Feats</h2>
+          <div className="relative overflow-hidden rounded-2xl border border-[color-mix(in_oklab,var(--color-highlight)_35%,var(--color-line))] bg-[linear-gradient(160deg,color-mix(in_oklab,var(--color-highlight)_14%,var(--color-surface))_0%,var(--color-surface)_45%,color-mix(in_oklab,var(--color-bg)_88%,black)_100%)] p-6 sm:p-8">
+            {/* Watermark crest */}
+            <AnvlCrest
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-8 -top-8 h-44 w-auto text-[color-mix(in_oklab,var(--color-highlight)_14%,transparent)]"
+            />
+
+            <div className="relative">
+              <p className="anvl-micro flex items-center gap-1.5 text-[var(--color-highlight-bright)]">
+                <Swords size={13} aria-hidden="true" /> War record
+              </p>
+              <h2 className="anvl-heading mt-1 text-2xl text-[var(--color-heading)]">
+                {armory.ownerName}
+              </h2>
+
+              {/* Records row */}
+              <dl className="mt-5 grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Pieces forged', value: armory.totalPieces },
+                  { label: 'Wears logged', value: totalWears },
+                  { label: 'Feats', value: armory.feats.length },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-xl border border-[color-mix(in_oklab,var(--color-highlight)_22%,var(--color-line))] bg-[color-mix(in_oklab,var(--color-bg)_55%,transparent)] px-3 py-3 text-center"
+                  >
+                    <dd className="anvl-heading text-3xl leading-none text-[var(--color-heading)]">
+                      {stat.value}
+                    </dd>
+                    <dt className="anvl-micro mt-1 text-[9px] text-[var(--color-text-muted)]">
+                      {stat.label}
+                    </dt>
+                  </div>
+                ))}
+              </dl>
+
+              {/* The feats themselves, tied to their pieces */}
+              {armory.feats.length > 0 ? (
+                <ul className="mt-5 space-y-2">
+                  {armory.feats.map((feat, i) => {
+                    const pieceName = nameOf(feat.productSlug)
+                    return (
+                      <li
+                        key={`${feat.title}-${i}`}
+                        className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-surface)_80%,transparent)] px-4 py-3"
+                      >
+                        <Trophy
+                          size={14}
+                          aria-hidden="true"
+                          className="shrink-0 text-[var(--color-highlight-bright)]"
+                        />
+                        <span className="min-w-0 flex-1 text-sm font-semibold text-[var(--color-heading)]">
+                          {feat.title}
+                        </span>
+                        {pieceName ? (
+                          <span className="rounded-full border border-[color-mix(in_oklab,var(--color-highlight)_40%,var(--color-line))] bg-[color-mix(in_oklab,var(--color-highlight)_12%,transparent)] px-2.5 py-0.5 text-[9px] uppercase tracking-[0.12em] text-[var(--color-heading)]">
+                            {pieceName}
+                          </span>
+                        ) : null}
+                        <span className="anvl-micro shrink-0 text-[10px] text-[var(--color-text-muted)]">
+                          {new Date(feat.achievedOn).toLocaleDateString()}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : null}
+            </div>
           </div>
-          <ul className="space-y-2">
-            {armory.feats.map((feat, i) => (
-              <li
-                key={`${feat.title}-${i}`}
-                className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
-              >
-                <span className="text-sm font-semibold text-[var(--color-heading)]">
-                  {feat.title}
-                </span>
-                <span className="anvl-micro shrink-0 text-[10px] text-[var(--color-text-muted)]">
-                  {new Date(feat.achievedOn).toLocaleDateString()}
-                </span>
-              </li>
-            ))}
-          </ul>
         </section>
       ) : null}
     </div>

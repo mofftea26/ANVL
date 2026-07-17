@@ -19,7 +19,6 @@ import { AccountBentoCard } from '@/features/storefront-account/account/AccountB
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
 import { cn } from '@/shared/lib/cn'
 import { ArmoryChallenges } from './armory/ArmoryChallenges'
-import { ArmoryFeats } from './armory/ArmoryFeats'
 import { ArmoryHonor } from './armory/ArmoryHonor'
 import { ArmoryShareCard } from './armory/ArmoryShareCard'
 import {
@@ -78,10 +77,6 @@ export function ArmoryPanel() {
     buildChallengeContext({ owned, featCount, completion }),
   )
   const honorPinned = owned.filter((p) => p.featuredSlot !== null).length
-  // Distinct pieces the owner can attach a feat to.
-  const featPieces = Array.from(
-    new Map(owned.map((p) => [p.productSlug, p.productName])).entries(),
-  ).map(([slug, name]) => ({ slug, name }))
   const profileQuery = useCustomerProfileQuery()
   const ownerName =
     [profileQuery.data?.firstName, profileQuery.data?.lastName].filter(Boolean).join(' ') ||
@@ -244,7 +239,6 @@ export function ArmoryPanel() {
           </div>
 
           <ArmoryChallenges challenges={challenges} />
-          <ArmoryFeats pieces={featPieces} />
           <ArmoryShareCard ownerName={ownerName} rank={rank} pieceCount={owned.length} />
         </>
       )}

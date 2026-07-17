@@ -33,7 +33,9 @@ export default function PassportForgeCanvas({ motion }: { motion: PassportMotion
       <Canvas
         camera={{ position: [0, 0, 5], fov: 40 }}
         gl={{ alpha: true, antialias: false, powerPreference: 'high-performance' }}
-        dpr={[1, 1.75]}
+        // 1.5 max: additive point sprites gain nothing visible above it, and
+        // dropping from 1.75 cuts fragment work ~27% on high-dpi screens.
+        dpr={[1, 1.5]}
         style={{ pointerEvents: 'none' }}
       >
         <PassportForgeParticles motion={motion} />

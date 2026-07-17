@@ -60,11 +60,15 @@ describe('PublicArmoryView (read-only)', () => {
     feats: [{ title: 'Deadlift PR — 240 kg', achieved_on: '2026-07-01' }],
   })
 
-  it('renders the owner, honored piece, and public feat — with no interactive controls', () => {
+  it('renders the owner, honored piece, and the War Record — with no interactive controls', () => {
     render(<PublicArmoryView armory={armory} images={{ 'oversized-tee': 'tee.png' }} />)
-    expect(screen.getByRole('heading', { name: 'Test Warrior' })).toBeTruthy()
+    // h1 = the page header; the War Record card repeats the name as an h2.
+    expect(screen.getByRole('heading', { level: 1, name: 'Test Warrior' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Hall of Honor' })).toBeTruthy()
     expect(screen.getAllByText('Oversized Tee').length).toBeGreaterThan(0)
+    // War Record card: stats + the feat tied to its piece.
+    expect(screen.getByText(/war record/i)).toBeTruthy()
+    expect(screen.getByText('Wears logged')).toBeTruthy()
     expect(screen.getByText('Deadlift PR — 240 kg')).toBeTruthy()
     // Read-only: no wear button, no pin.
     expect(screen.queryByRole('button', { name: /wore it/i })).toBeNull()
