@@ -40,18 +40,23 @@ export function AboutOrbModal({
       // formation targets match where the panel will actually stand.
       if (panelRef.current) onMeasure?.(panelRef.current.getBoundingClientRect())
       const q = gsap.utils.selector(root.current)
-      gsap.fromTo(q('[data-modal-backdrop]'), { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power2.out' })
-      // The panel holds back while the shards draw its rectangle, then
-      // materializes inside the formed frame as they dissolve.
+      // Timed to the altar's ember choreography (measure → 0.55s drift hold →
+      // 0.85s gather → 0.12s → 0.5s dissolve): the backdrop dims under the
+      // drifting embers, and the panel only materializes as the formed swarm
+      // dissolves into it (~1.5s after this mounts/measures).
+      // Backdrop held back too — it blurs the canvas, so raising it early
+      // would obscure the very embers that are forming the plate. It comes in
+      // with the panel, once the swarm has gathered.
+      gsap.fromTo(q('[data-modal-backdrop]'), { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power2.out', delay: 1.35 })
       gsap.fromTo(
         q('[data-modal-panel]'),
-        { opacity: 0, scale: 0.965 },
-        { opacity: 1, scale: 1, duration: 0.6, ease: 'expo.out', delay: 0.6 },
+        { opacity: 0, scale: 0.975 },
+        { opacity: 1, scale: 1, duration: 0.55, ease: 'expo.out', delay: 1.5 },
       )
       gsap.fromTo(
         q('[data-modal-reveal]'),
         { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.06, delay: 0.8 },
+        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.06, delay: 1.72 },
       )
       for (const el of q('[data-modal-stat-value]')) {
         const target = Number((el as HTMLElement).dataset.statTarget)
@@ -62,7 +67,7 @@ export function AboutOrbModal({
           n: target,
           duration: 1.1,
           ease: 'power2.out',
-          delay: 0.95,
+          delay: 1.9,
           onUpdate: () => {
             el.textContent = String(Math.round(counter.n))
           },

@@ -107,14 +107,18 @@ export default function AboutAltar({
       formTweenRef.current?.kill()
       state.formT = 0
       state.formFade = 0
+      // Hold first — the embers must be seen dispersing and drifting BEFORE
+      // they gather. Then converge into the plate; then dissolve into the
+      // real panel (whose own reveal is timed to this fade).
       formTweenRef.current = gsap.to(state, {
         formT: 1,
-        duration: 0.9,
+        duration: 0.85,
+        delay: 0.55,
         ease: 'power2.inOut',
         onComplete: () => {
           formTweenRef.current = gsap.to(state, {
             formFade: 1,
-            duration: 0.55,
+            duration: 0.5,
             ease: 'power2.out',
             delay: 0.12,
           })
@@ -155,15 +159,18 @@ export default function AboutAltar({
         [],
         IMPACT_AT,
       )
-      tl.to(state, { explodeT: 1, duration: 0.4, ease: 'power3.out' }, IMPACT_AT)
-      tl.to(state, { burstT: 1, duration: 0.9, ease: 'power2.out' }, IMPACT_AT)
+      // The orb dissolves fast (it BECOMES the particles), which fly out and
+      // then hold, drifting, until the modal's measure kicks off the gather.
+      tl.to(state, { explodeT: 1, duration: 0.28, ease: 'power3.out' }, IMPACT_AT)
+      tl.to(state, { burstT: 1, duration: 0.6, ease: 'power2.out' }, IMPACT_AT)
       // Recoil bounce, then the hammer lifts away.
       tl.to(state, { hammerT: 0.72, duration: 0.26, ease: 'power2.out' }, IMPACT_AT + 0.04)
       tl.to(state, { hammerT: 0, duration: 0.55, ease: 'power2.inOut' }, IMPACT_AT + 0.36)
-      // Mount the modal (hidden) early — it measures itself and hands the
-      // burst its formation targets, so the shards flow straight from the
-      // explosion into drawing the panel's rectangle.
-      tl.call(() => setOpenIndex(index), [], IMPACT_AT + 0.15)
+      // Mount the modal (hidden) once the embers are out — it measures itself
+      // and hands the pool its formation targets; the measure starts the
+      // (delayed) gather, so disperse reads first, then the swarm draws the
+      // panel's rectangle.
+      tl.call(() => setOpenIndex(index), [], IMPACT_AT + 0.2)
     },
     [state],
   )
