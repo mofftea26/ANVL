@@ -1,4 +1,19 @@
-﻿## 2026-07-16 — Passport Phase G: the Armory comes alive (G1–G7)
+﻿## 2026-07-17 — Armory/passport feedback round (post-G live testing)
+
+Fixes and refinements from the user's first real walkthrough of Phase G:
+
+- **CSP**: `img-src` allows `https://*.googleusercontent.com` — Google OAuth avatars were blocked until a relog.
+- **Pristine unassign**: admin unassign now wipes wear count, last-worn, Hall-of-Honor pin, visibility and any pending transfer alongside the claim, so the piece vanishes from the ex-owner's armory as if never owned.
+- **Wear anti-spam**: `log_passport_wear` enforces one wear per 24h (undo exempt); `WoreItButton` shows a disabled "Worn today" state and the optimistic bump rolls back on rejection. Migration `20260717120000_armory_life_refinements` (applied + smoke-tested).
+- **Feats by product**: `armory_feats.product_slug` + a "Wearing" piece picker in the form; the piece shows on the feat row and in the public armory.
+- **Share sheet** (`ArmoryShareModal`): copy link · native share on mobile (all installed apps incl. Instagram/TikTok/Discord) · web intents for WhatsApp/Facebook/X/Telegram/Reddit · a generated 1080×1920 Instagram-story image (brand gradient, rank emblem, name, piece count, link) with download + native file share.
+- **Rank ladder modal**: the rank card opens every rank (levels I–III + unlock conditions, current highlighted, future locked) and the badge catalogue with earned ones marked.
+- **Compact Hall of Honor**: single slim row of thumbnails instead of the 3-pedestal grid.
+- **Animation perf**: ceremony 5.5s→~3.0s, console assembly 2.0s→1.1s, first-load product forge 2.6s→1.3s (6k→4k points); section swaps disperse into a veil **bounded to the cards' own region** (`buildLocalVeil`) and recollect fast (out 0.42s / hold 0.08s / in 0.72s) — continuous, no stall, never the whole page.
+- **Layout**: every product render in a fixed 4:5 box (42vh, max 26rem — same size, smaller); bento top-aligned under the tabs; mobile render in a fixed 4:5 box with the forge intro desktop-only (no extra WebGL context on phones).
+- **Console noise**: GSAP "target not found" on the mobile passport guarded (empty-selector states); tall modals scroll (`max-h-[85svh]`).
+
+## 2026-07-16 — Passport Phase G: the Armory comes alive (G1–G7)
 
 Approved from the Phase G menu: wear journal, Feats, Hall of Honor, public armory (both directions), verified-owner reviews, full gamification. Declined/deferred: lifecycle (care reminders, repair log, retirement) and owner perks (early access, exclusives). Shipped as G1–G7, one commit each; final `pnpm verify` green (130 files / 722 tests), `vendor-three` stays lazy.
 

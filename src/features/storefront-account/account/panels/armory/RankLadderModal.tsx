@@ -31,7 +31,12 @@ export function RankLadderModal({
   const earned = new Set(earnedBadges.map((b) => b.key))
 
   return (
-    <Modal open={open} onClose={onClose} title="Ranks & badges" className="max-w-2xl">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Ranks & badges"
+      className="max-h-[85svh] max-w-2xl overflow-y-auto"
+    >
       <p className="anvl-micro -mt-2 mb-5 text-[var(--color-text-muted)]">
         You are <span className="text-[var(--color-highlight-bright)]">{rank.title}</span> —{' '}
         {rank.description}

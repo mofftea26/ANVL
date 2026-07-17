@@ -87,7 +87,12 @@ export function ArmoryShareModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Share your armory" className="max-w-lg">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Share your armory"
+      className="max-h-[85svh] max-w-lg overflow-y-auto"
+    >
       {/* Copy link */}
       <div className="flex items-center gap-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-2">
         <input

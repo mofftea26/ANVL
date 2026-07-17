@@ -98,8 +98,12 @@ export function PassportMobile({
   useGSAP(
     () => {
       if (!panelVisible) return
+      // Query first — some states render no panel items, and tweening an empty
+      // selector logs a GSAP "target not found" warning.
+      const items = scopeRef.current?.querySelectorAll('[data-pm-panel-item]')
+      if (!items || items.length === 0) return
       gsap.fromTo(
-        '[data-pm-panel-item]',
+        items,
         { autoAlpha: 0 },
         { autoAlpha: 1, duration: 0.5, ease: 'power2.out', stagger: 0.04, overwrite: 'auto' },
       )
