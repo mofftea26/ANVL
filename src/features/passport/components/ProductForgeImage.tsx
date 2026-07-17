@@ -32,11 +32,17 @@ export function ProductForgeImage({
   src,
   alt,
   imgClassName,
+  wrapperClassName,
+  enableForge = true,
   children,
 }: {
   src: string
   alt: string
   imgClassName?: string
+  wrapperClassName?: string
+  /** Off on mobile — the forge is a desktop-only touch, kept off small
+   *  devices so there's no extra WebGL context or GPU cost there. */
+  enableForge?: boolean
   children?: ReactNode
 }) {
   const reduced = useReducedMotion()
@@ -46,14 +52,14 @@ export function ProductForgeImage({
   useIsoLayoutEffect(() => {
     if (decided.current) return
     decided.current = true
-    if (!reduced && isWebglAvailable()) setPhase('forging')
-  }, [reduced])
+    if (enableForge && !reduced && isWebglAvailable()) setPhase('forging')
+  }, [enableForge, reduced])
 
   const forging = phase === 'forging'
   const canvasMounted = phase === 'forging' || phase === 'revealing'
 
   return (
-    <div className="relative">
+    <div className={cn('relative', wrapperClassName)}>
       <img
         src={src}
         alt={alt}

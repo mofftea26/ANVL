@@ -9,21 +9,21 @@
  */
 
 /** Beat of darkness before the beam. */
-export const CEREMONY_SCAN_AT = 0.35
+export const CEREMONY_SCAN_AT = 0.2
 /** The champagne beam sweeping down the piece (and revealing it). */
-export const CEREMONY_SCAN_DURATION = 1.15
+export const CEREMONY_SCAN_DURATION = 0.7
 /** Verification lines start ticking in (real record data). */
-export const CEREMONY_LINES_AT = 1.35
-export const CEREMONY_LINE_STAGGER = 0.17
+export const CEREMONY_LINES_AT = 0.7
+export const CEREMONY_LINE_STAGGER = 0.08
 /** Embers gather into the ANVL crest. */
-export const CEREMONY_CREST_AT = 2.35
-export const CEREMONY_CREST_DURATION = 1.0
+export const CEREMONY_CREST_AT = 1.2
+export const CEREMONY_CREST_DURATION = 0.55
 /** The seal locks: the solid crest resolves as the embers vanish into it. */
-export const CEREMONY_SEAL_AT = 3.25
-export const CEREMONY_SEAL_DURATION = 0.7
+export const CEREMONY_SEAL_AT = 1.65
+export const CEREMONY_SEAL_DURATION = 0.4
 /** The owner's name settles onto the plate. */
-export const CEREMONY_NAME_AT = 3.85
+export const CEREMONY_NAME_AT = 2.0
 /** "Added to your Armory". */
-export const CEREMONY_ARMORY_AT = 4.5
+export const CEREMONY_ARMORY_AT = 2.4
 /** Hand-off to the passport. */
-export const CEREMONY_END_AT = 5.5
+export const CEREMONY_END_AT = 3.0

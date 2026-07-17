@@ -235,11 +235,18 @@ export function PassportConsole({
         <div className="flex h-full min-h-0 flex-col items-center justify-center gap-6">
           <div className="flex min-h-0 flex-1 items-center justify-center">
             {stageImage ? (
-              <div data-pc-image className="relative flex h-full items-center">
+              // Fixed portrait box (explicit height resolves the aspect) so
+              // every product renders at the SAME, smaller size regardless of
+              // its own aspect ratio.
+              <div
+                data-pc-image
+                className="relative flex aspect-[4/5] h-[42vh] max-h-[26rem] items-center justify-center"
+              >
                 <ProductForgeImage
                   src={stageImage}
                   alt={view.productName}
-                  imgClassName="pp-sheen max-h-full w-auto object-contain drop-shadow-[0_50px_80px_rgba(0,0,0,0.55)]"
+                  wrapperClassName="flex h-full w-full items-center justify-center"
+                  imgClassName="pp-sheen max-h-full max-w-full object-contain drop-shadow-[0_40px_70px_rgba(0,0,0,0.55)]"
                 >
                   <PassportHotspots
                     hotspots={content.hotspots}
@@ -251,7 +258,7 @@ export function PassportConsole({
             ) : (
               <div
                 data-pc-image
-                className="flex aspect-[4/5] h-full max-h-full items-center justify-center rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-10"
+                className="flex aspect-[4/5] h-[42vh] max-h-[26rem] items-center justify-center rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-10"
               >
                 <span className="anvl-heading text-3xl text-[var(--color-text-muted)]">
                   {view.productName}
@@ -285,8 +292,9 @@ export function PassportConsole({
           </div>
         </div>
 
-        {/* Section panel --------------------------------------------------- */}
-        <div className="flex h-full min-h-0 flex-col justify-center">
+        {/* Section panel — top-aligned so the bento sits right under the tabs
+            (never vertically centered in the column). */}
+        <div className="flex h-full min-h-0 flex-col justify-start pt-2">
           {/* Group tabs */}
           <div
             role="tablist"

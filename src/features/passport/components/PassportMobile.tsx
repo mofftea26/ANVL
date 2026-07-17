@@ -133,11 +133,13 @@ export function PassportMobile({
         {/* 2 — The piece (small), with its design-detail markers */}
         {heroImage ? (
           <div data-pm-in className="mx-auto mt-6 w-full max-w-[11rem] sm:max-w-[13rem]">
-            <div className="relative overflow-hidden rounded-xl border border-[var(--color-line)]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-xl border border-[var(--color-line)]">
               <ProductForgeImage
                 src={heroImage.src}
                 alt={heroImage.alt || view.productName}
-                imgClassName="h-auto w-full object-cover"
+                enableForge={false}
+                wrapperClassName="h-full w-full"
+                imgClassName="h-full w-full object-cover"
               >
                 <PassportHotspots
                   hotspots={content.hotspots}

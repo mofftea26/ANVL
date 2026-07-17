@@ -193,6 +193,47 @@ export function PassportForgeParticles({ motion }: { motion: PassportMotionState
   buildRectCloudRef.current = buildRectCloud
 
   /**
+   * The transition veil — bounded to the CARDS' OWN region (their bounding box
+   * plus a small margin), never the whole page. Particles disperse locally and
+   * recollect, so a section swap reads as the cards themselves reshaping rather
+   * than the screen erupting. Falls back to the soft full-screen veil only when
+   * nothing has been measured yet.
+   */
+  const buildLocalVeil = (rects: PassportCardRect[]): SilhouetteCloud => {
+    if (!rects.length || size.width <= 0 || size.height <= 0) return shatterCloud
+    const worldPerPx = viewport.width / size.width
+    const toWorldX = (px: number) => (px - size.width / 2) * worldPerPx
+    const toWorldY = (py: number) => (size.height / 2 - py) * worldPerPx
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    for (const r of rects) {
+      minX = Math.min(minX, r.x)
+      minY = Math.min(minY, r.y)
+      maxX = Math.max(maxX, r.x + r.w)
+      maxY = Math.max(maxY, r.y + r.h)
+    }
+    const padX = (maxX - minX) * 0.12
+    const padY = (maxY - minY) * 0.12
+    minX -= padX
+    maxX += padX
+    minY -= padY
+    maxY += padY
+    const positions = new Float32Array(COUNT * 3)
+    const shades = new Float32Array(COUNT)
+    for (let i = 0; i < COUNT; i += 1) {
+      positions[i * 3] = toWorldX(minX + Math.random() * (maxX - minX))
+      positions[i * 3 + 1] = toWorldY(minY + Math.random() * (maxY - minY))
+      positions[i * 3 + 2] = (Math.random() * 2 - 1) * 0.35
+      shades[i] = 0.28 + Math.random() * 0.28
+    }
+    return { positions, shades }
+  }
+  const buildLocalVeilRef = useRef(buildLocalVeil)
+  buildLocalVeilRef.current = buildLocalVeil
+
+  /**
    * Freeze the cloud's CURRENT visual position into `aFrom` — a CPU mirror of
    * the vertex shader's per-seed staggered morph. Called before every new
    * morph so interrupting one mid-flight continues from where the embers
@@ -240,7 +281,7 @@ export function PassportForgeParticles({ motion }: { motion: PassportMotionState
     u.uMorph.value = 0
     gsap.to(u.uMorph, { value: 1, duration, ease })
     gsap.killTweensOf(u.uBurst)
-    gsap.fromTo(u.uBurst, { value: burst }, { value: 0, duration: 1.6, ease: 'sine.out' })
+    gsap.fromTo(u.uBurst, { value: burst }, { value: 0, duration: 0.9, ease: 'sine.out' })
   }
   const forgeToRef = useRef(forgeTo)
   forgeToRef.current = forgeTo
@@ -263,10 +304,15 @@ export function PassportForgeParticles({ motion }: { motion: PassportMotionState
     if (!u || !points) return
     u.uTime.value = state.clock.elapsedTime
 
-    // Dissolve into the veil when the console starts a transition.
+    // Dissolve into a veil bounded to the cards' region (not the whole page).
     if (motion.shatter !== seenShatter.current) {
       seenShatter.current = motion.shatter
-      forgeToRef.current(shatterCloud, 0.3, PASSPORT_SHATTER_OUT, 'sine.inOut')
+      forgeToRef.current(
+        buildLocalVeilRef.current(motion.cardRects),
+        0.28,
+        PASSPORT_SHATTER_OUT,
+        'sine.inOut',
+      )
     }
 
     // New measured layout → forge the embers into the card shapes.

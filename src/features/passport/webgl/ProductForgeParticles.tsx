@@ -6,7 +6,7 @@ import { readThemeCssColor } from '@/shared/lib/themeColor'
 import { sampleImageSilhouette, type SilhouetteCloud } from '@/shared/webgl/particleShapes'
 import { PASSPORT_FORGE_FRAGMENT, PASSPORT_FORGE_VERTEX } from './passportForgeShaders'
 
-const COUNT = 6_000
+const COUNT = 4_000
 /** World height the product silhouette forms at (camera z=5, fov 40). */
 const FIT = 3.25
 
@@ -101,18 +101,13 @@ export function ProductForgeParticles({
     const u = materialRef.current?.uniforms
     if (!u || !cloud) return
     const tl = gsap.timeline()
-    // Gather into the silhouette.
-    tl.to(u.uAssemble, { value: 1, duration: 1.4, ease: 'power2.inOut' }, 0.1)
-    tl.fromTo(
-      u.uBurst,
-      { value: 0.5 },
-      { value: 0, duration: 1.2, ease: 'sine.out' },
-      0.1,
-    )
+    // Gather into the silhouette — fast and clean (was ~2.6s total).
+    tl.to(u.uAssemble, { value: 1, duration: 0.8, ease: 'power3.out' }, 0.05)
+    tl.fromTo(u.uBurst, { value: 0.45 }, { value: 0, duration: 0.7, ease: 'sine.out' }, 0.05)
     // Reveal: the image fades in as the embers dissolve.
-    tl.add(onReveal, 1.75)
-    tl.to(u.uReveal, { value: 1, duration: 0.7, ease: 'power2.out' }, 1.75)
-    tl.add(onComplete, 2.6)
+    tl.add(onReveal, 0.9)
+    tl.to(u.uReveal, { value: 1, duration: 0.45, ease: 'power2.out' }, 0.9)
+    tl.add(onComplete, 1.3)
     return () => {
       tl.kill()
     }
