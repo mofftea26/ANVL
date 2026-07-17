@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Crosshair, Trash2 } from 'lucide-react'
+import { Crosshair, Trash2 } from '@/shared/icons'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'

@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom'
-import { Search, X } from 'lucide-react'
+import { Search, X } from '@/shared/icons'
 import { useRef, type KeyboardEvent } from 'react'
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock'
 import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'

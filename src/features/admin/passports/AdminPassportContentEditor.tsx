@@ -1,5 +1,5 @@
 import { useMemo, useState, useSyncExternalStore } from 'react'
-import { BookOpenText, Pencil, Plus, Trash2 } from 'lucide-react'
+import { BookOpenText, Pencil, Plus, Trash2 } from '@/shared/icons'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'

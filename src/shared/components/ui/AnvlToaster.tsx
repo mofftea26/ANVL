@@ -1,4 +1,4 @@
-import { Check, Flame, Info, Loader2, TriangleAlert } from 'lucide-react'
+import { Check, Flame, Info, Loader2, TriangleAlert } from '@/shared/icons'
 import { Toaster } from 'sonner'
 
 /**

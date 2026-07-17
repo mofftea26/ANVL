@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight } from '@/shared/icons'
 import { memo } from 'react'
 import type { Product } from '@/features/products/types/product.types'
 import { WarBanner } from '@/shared/components/premium/WarBanner'

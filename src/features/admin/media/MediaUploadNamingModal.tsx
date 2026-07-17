@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { FileUp } from 'lucide-react'
+import { FileUp } from '@/shared/icons'
 import {
   DROP_ASSET_SLOTS,
   GENERAL_ASSET_SLOTS,

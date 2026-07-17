@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { X } from '@/shared/icons'
 import type { ShopActiveChip } from '@/features/products/shop/hooks/useShopFilters'
 
 /**

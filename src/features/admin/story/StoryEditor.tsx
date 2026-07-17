@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Info, Plus } from 'lucide-react'
+import { Info, Plus } from '@/shared/icons'
 import { Button } from '@/shared/components/ui/Button'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'

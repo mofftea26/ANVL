@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen } from 'lucide-react'
+import { BookOpen } from '@/shared/icons'
 import {
   formatChapterNumber,
   type StoryChapter,

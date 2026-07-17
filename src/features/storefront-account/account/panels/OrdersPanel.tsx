@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Package, ReceiptText } from 'lucide-react'
+import { Package, ReceiptText } from '@/shared/icons'
 import type { Customer } from '@/app/config/accountContracts'
 import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { Button } from '@/shared/components/ui/Button'

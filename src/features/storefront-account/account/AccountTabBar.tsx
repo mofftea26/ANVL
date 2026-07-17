@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { MapPin, Package, Settings, Shield, UserRound } from 'lucide-react'
+import { MapPin, Package, Settings, Shield, UserRound } from '@/shared/icons'
 import { cn } from '@/shared/lib/cn'
 import { ACCOUNT_TABS, type AccountTab } from '@/features/storefront-account/account/accountTabs'
 

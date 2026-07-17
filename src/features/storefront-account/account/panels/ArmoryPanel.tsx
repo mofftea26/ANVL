@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Award, Medal, QrCode } from 'lucide-react'
+import { Award, Medal, QrCode } from '@/shared/icons'
 import { useArmoryFeatsQuery } from '@/features/passport/hooks/useArmory'
 import { useOwnedPassportsQuery } from '@/features/passport/hooks/usePassport'
 import type { ArmoryCatalogEntry } from '@/features/passport/lib/armory'

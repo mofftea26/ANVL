@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Expand } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Expand } from '@/shared/icons'
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { IconButton } from '@/shared/components/ui/IconButton'
 import { ShopSurfaceScope } from '@/shared/components/layout/ShopSurfaceScope'

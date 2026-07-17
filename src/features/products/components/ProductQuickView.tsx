@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Check, Loader2 } from 'lucide-react'
+import { Check, Loader2 } from '@/shared/icons'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Product } from '@/features/products/types/product.types'
 import {

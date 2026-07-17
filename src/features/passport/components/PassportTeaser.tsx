@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Fingerprint } from 'lucide-react'
+import { Fingerprint } from '@/shared/icons'
 import type { Product } from '@/features/products/types/product.types'
 import { buttonVariants } from '@/shared/components/ui/Button'
 import { cn } from '@/shared/lib/cn'

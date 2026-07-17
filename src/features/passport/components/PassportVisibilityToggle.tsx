@@ -1,4 +1,4 @@
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from '@/shared/icons'
 import { toast } from 'sonner'
 import { cn } from '@/shared/lib/cn'
 import { useSetVisibilityMutation } from '../hooks/usePassport'

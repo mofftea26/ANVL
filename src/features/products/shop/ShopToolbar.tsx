@@ -1,4 +1,4 @@
-import { SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal } from '@/shared/icons'
 import { ShopSearch } from '@/features/products/shop/ShopSearch'
 import { ShopSort } from '@/features/products/shop/ShopSort'
 import type { ShopSort as ShopSortValue } from '@/features/products/shop/shopUrlSearch'

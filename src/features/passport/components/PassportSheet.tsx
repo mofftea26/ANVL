@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { X } from 'lucide-react'
+import { X } from '@/shared/icons'
 import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 import { cn } from '@/shared/lib/cn'
 

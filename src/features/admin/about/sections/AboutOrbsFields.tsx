@@ -1,4 +1,4 @@
-import { ImagePlus, Plus, Trash2 } from 'lucide-react'
+import { ImagePlus, Plus, Trash2 } from '@/shared/icons'
 import { useMemo, useState } from 'react'
 import type { Control, UseFormRegister, UseFormSetValue } from 'react-hook-form'
 import { useFieldArray, useWatch } from 'react-hook-form'

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ShieldOff } from 'lucide-react'
+import { ShieldOff } from '@/shared/icons'
 import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { buttonVariants } from '@/shared/components/ui/Button'
 import { cn } from '@/shared/lib/cn'

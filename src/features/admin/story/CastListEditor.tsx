@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Plus } from 'lucide-react'
+import { Plus } from '@/shared/icons'
 import { Button } from '@/shared/components/ui/Button'
 import { AdminEntityCard } from '@/features/admin/components/AdminEntityCard'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'

@@ -1,4 +1,4 @@
-import { Monitor, Smartphone } from 'lucide-react'
+import { Monitor, Smartphone } from '@/shared/icons'
 import type { ThemePalette } from '@/features/cms/config/cmsSiteConfig.zod'
 import type { ThemePreset } from '@/features/cms/config/themeLibrary'
 import { Button } from '@/shared/components/ui/Button'

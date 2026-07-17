@@ -6,7 +6,7 @@ import {
   useState,
 } from 'react'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
-import { Loader2, Upload } from 'lucide-react'
+import { Loader2, Upload } from '@/shared/icons'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/Button'
 import { cn } from '@/shared/lib/cn'

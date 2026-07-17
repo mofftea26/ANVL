@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from '@/shared/icons'
 import { useEffect, useRef, useState } from 'react'
 import { IconButton, Modal } from '@/shared/components/ui'
 import { ShopSurfaceScope } from '@/shared/components/layout/ShopSurfaceScope'

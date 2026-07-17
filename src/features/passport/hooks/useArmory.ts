@@ -66,6 +66,13 @@ export function useLogWearMutation() {
     onSuccess: (result, _input, context) => {
       // Server rejected (cooldown/not-owner) — undo the optimistic bump.
       if (!result.ok && context?.previous) qc.setQueryData(ownedKey, context.previous)
+      // A not_owner answer means this unit was unassigned out from under the
+      // list (admin freed the QR) — refetch so the phantom drops immediately.
+      if (!result.ok && result.error === 'not_owner') {
+        toast.error('This piece is no longer registered to you — removing it.')
+        void qc.invalidateQueries({ queryKey: ownedKey })
+        return
+      }
       // Cooldown has its own button state; everything else surfaces loudly.
       if (!result.ok && result.error !== 'cooldown') {
         toast.error(

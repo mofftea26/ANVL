@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Heart, Menu, Share2 } from 'lucide-react'
+import { Heart, Menu, Share2 } from '@/shared/icons'
 import { IconButton } from './IconButton'
 
 const meta: Meta<typeof IconButton> = {

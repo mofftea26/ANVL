@@ -1,4 +1,4 @@
-import { Check, Info, Save, ShoppingBag } from 'lucide-react'
+import { Check, Info, Save, ShoppingBag } from '@/shared/icons'
 import {
   useCallback,
   useEffect,

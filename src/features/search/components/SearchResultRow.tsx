@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react'
-import { BookOpen, FileText, Flame, Package, Users } from 'lucide-react'
+import { BookOpen, FileText, Flame, Package, Users } from '@/shared/icons'
 import { cn } from '@/shared/lib/cn'
 import type { SearchDocumentType, SearchResult } from '@/features/search/types/search.types'
 

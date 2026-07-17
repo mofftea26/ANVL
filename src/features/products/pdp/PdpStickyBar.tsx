@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { Check } from '@/shared/icons'
 import type { Product } from '@/features/products/types/product.types'
 import type { PdpVariant } from '@/features/products/pdp/hooks/usePdpVariant'
 import { Button, Container } from '@/shared/components/ui'

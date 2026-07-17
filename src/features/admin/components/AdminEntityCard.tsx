@@ -1,4 +1,4 @@
-import { Save, Trash2 } from 'lucide-react'
+import { Save, Trash2 } from '@/shared/icons'
 import { useState, type PropsWithChildren, type ReactNode } from 'react'
 import { Button } from '@/shared/components/ui/Button'
 import { AdminCard } from '@/features/admin/components/AdminCard'

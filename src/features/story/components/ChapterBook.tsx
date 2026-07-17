@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X } from 'lucide-react'
+import { X } from '@/shared/icons'
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock'
 import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'

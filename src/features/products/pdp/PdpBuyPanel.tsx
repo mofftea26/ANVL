@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Check, Loader2, Share2 } from 'lucide-react'
+import { Check, Loader2, Share2 } from '@/shared/icons'
 import type { Product } from '@/features/products/types/product.types'
 import type { PdpVariant } from '@/features/products/pdp/hooks/usePdpVariant'
 import { colorHasNoStock } from '@/features/products/pdp/hooks/usePdpVariant'

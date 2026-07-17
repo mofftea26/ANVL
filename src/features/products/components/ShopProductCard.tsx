@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowUpRight, Eye, Share2 } from 'lucide-react'
+import { ArrowUpRight, Eye, Share2 } from '@/shared/icons'
 import { memo } from 'react'
 import type { Product } from '@/features/products/types/product.types'
 import type { ShopConfig } from '@/features/cms/shop/shopExperience.zod'

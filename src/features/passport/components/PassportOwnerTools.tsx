@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink } from '@/shared/icons'
 import { PieceFeats } from '@/features/storefront-account/account/panels/armory/PieceFeats'
 import { WoreItButton } from '@/features/storefront-account/account/panels/armory/WoreItButton'
 import { buttonVariants } from '@/shared/components/ui/Button'

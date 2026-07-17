@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown } from '@/shared/icons'
 
 import { Container } from '@/shared/components/ui/Container'
 

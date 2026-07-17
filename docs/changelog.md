@@ -1,4 +1,12 @@
-﻿## 2026-07-17 — Toast system redesigned: "the forged plate"
+﻿## 2026-07-17 — Feedback round 10: feats root-caused, pedestal armory, Phosphor trial
+
+- **Feats not showing — root-caused**: the feats SELECT was missing `product_slug`, so every feat parsed with `productSlug: null` and the per-piece filters (grid cards, passport tab) matched nothing. Also armory reads (`listArmoryFeats`, `listOwnedPassports`) now **throw** on failure instead of returning `[]` — a swallowed error was being cached by React Query as a successful empty list.
+- **Phantom unassigned piece self-heals**: a `not_owner` answer to any action now toasts "no longer registered to you" and refetches the armory so the piece drops immediately; the owned list also refetches on every mount (`staleTime: 0`) instead of serving the 30s-stale default.
+- **Guest armory redesigned**: the athlete leads — emblem, name, rank, and a **record-numbers strip** (pieces / wears / feats); the **Hall of Honor stands on pedestals** (spotlight cone, floating piece with floor reflection, perspective plinth with an engraved I/II/III, light pool); every collection piece carries its wear count and **its own public feats**; feats on unshared pieces list under "More feats" with their piece name.
+- **Google icon** (official multicolor G, inline SVG) on the social sign-in button.
+- **Phosphor icon trial (reversible)**: added `@phosphor-icons/react` behind a new abstraction seam — `@/shared/icons` re-exports Phosphor under the historical lucide names (112 files repointed by codemod; `Anvil` stays lucide — Phosphor has none). Global weight is **duotone** via IconContext (`PHOSPHOR_ICON_WEIGHT` — one line to flip to regular/bold/fill). **lucide-react intentionally kept**: reverting is a one-file swap in the shim; final cleanup happens after the user's verdict.
+
+## 2026-07-17 — Toast system redesigned: "the forged plate"
 
 Complete replacement of the default sonner look (`AnvlToaster` + `.anvl-toast*` in `styles.css`); every existing `toast.*` call site renders through it unchanged.
 

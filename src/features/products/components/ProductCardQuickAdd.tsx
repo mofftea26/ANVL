@@ -1,4 +1,4 @@
-import { Check, Loader2, Plus, X } from 'lucide-react'
+import { Check, Loader2, Plus, X } from '@/shared/icons'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Product } from '@/features/products/types/product.types'
 import {

@@ -1,4 +1,4 @@
-import { Anvil, Rows3 } from 'lucide-react'
+import { Anvil, Rows3 } from '@/shared/icons'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import type { AboutViewMode } from '../hooks/useAboutViewMode'
 

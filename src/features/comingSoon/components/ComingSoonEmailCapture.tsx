@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight, Check, Loader2 } from 'lucide-react'
+import { ArrowRight, Check, Loader2 } from '@/shared/icons'
 import { subscribeComingSoon } from '@/features/comingSoon/api/subscribeComingSoon'
 import type { ResolvedComingSoonContent } from '@/features/comingSoon/content/resolveComingSoonContent'
 import { ICON_SIZE } from '@/shared/lib/iconSize'

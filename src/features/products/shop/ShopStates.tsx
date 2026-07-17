@@ -1,4 +1,4 @@
-import { PackageOpen, SearchX, TriangleAlert } from 'lucide-react'
+import { PackageOpen, SearchX, TriangleAlert } from '@/shared/icons'
 import type { ReactNode } from 'react'
 import { Button } from '@/shared/components/ui'
 

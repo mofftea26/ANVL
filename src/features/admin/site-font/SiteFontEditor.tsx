@@ -1,4 +1,4 @@
-import { Check, Info, Plus, Save, Type } from 'lucide-react'
+import { Check, Info, Plus, Save, Type } from '@/shared/icons'
 import {
   type ChangeEvent,
   type DragEvent,

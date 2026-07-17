@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
-import { Bell, KeyRound, ShieldCheck } from 'lucide-react'
+import { Bell, KeyRound, ShieldCheck } from '@/shared/icons'
 import type { Customer } from '@/app/config/accountContracts'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'

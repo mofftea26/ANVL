@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { BadgeCheck } from 'lucide-react'
+import { BadgeCheck } from '@/shared/icons'
 import { AnvlCrest } from '@/shared/assets/brand'
 import { useOwnedPassportsQuery } from '../hooks/usePassport'
 import { isDropComplete, unregistered } from '../lib/relatedProducts'

@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Loader2, Save } from 'lucide-react'
+import { Loader2, Save } from '@/shared/icons'
 import { RankBadge } from '@/features/passport/components/RankBadge'
 import { Button, Container } from '@/shared/components/ui'
 import { useCustomerProfileQuery } from '@/features/storefront-account/publicAccount.core'

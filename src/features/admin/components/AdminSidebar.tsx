@@ -10,7 +10,7 @@ import {
   LogOut,
   X,
   ChevronRight,
-} from 'lucide-react'
+} from '@/shared/icons'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { AnvlCompactMark } from '@/shared/assets/brand'

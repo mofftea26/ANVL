@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Copy, Download, ImagePlus, Share2, X } from 'lucide-react'
+import { Check, Copy, Download, ImagePlus, Share2, X } from '@/shared/icons'
 import type { ArmoryRank } from '@/features/passport/lib/ranks'
 import type { ArmoryFeat } from '@/features/passport/schemas/passport.schema'
 import { Modal } from '@/shared/components/ui/Modal'

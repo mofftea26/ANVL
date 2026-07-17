@@ -1,4 +1,4 @@
-import { Check, Info, ListOrdered, Save } from 'lucide-react'
+import { Check, Info, ListOrdered, Save } from '@/shared/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'

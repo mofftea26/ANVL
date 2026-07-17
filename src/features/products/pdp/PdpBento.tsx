@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowUpRight, Check } from 'lucide-react'
+import { ArrowUpRight, Check } from '@/shared/icons'
 import type { CSSProperties, ReactNode } from 'react'
 import type { Product } from '@/features/products/types/product.types'
 import type { ShopConfig } from '@/features/cms/shop/shopExperience.zod'

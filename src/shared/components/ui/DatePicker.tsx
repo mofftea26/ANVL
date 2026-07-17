@@ -1,5 +1,5 @@
 import * as PopoverPrimitive from '@radix-ui/react-popover'
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight } from '@/shared/icons'
 import { useMemo, useState } from 'react'
 import { inputBaseClass } from '@/shared/components/ui/Input'
 import { Select, SelectItem } from '@/shared/components/ui/Select'

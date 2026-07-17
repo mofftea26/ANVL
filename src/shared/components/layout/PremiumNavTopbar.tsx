@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Menu, ShoppingBag } from 'lucide-react'
+import { Menu, ShoppingBag } from '@/shared/icons'
 import type { ReactNode } from 'react'
 import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 import { useCart } from '@/features/cart/hooks/useCart'

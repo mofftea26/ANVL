@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { Copy, Printer, QrCode, RotateCcw, Trash2 } from 'lucide-react'
+import { Copy, Printer, QrCode, RotateCcw, Trash2 } from '@/shared/icons'
 import { toast } from 'sonner'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
 import { AdminCard } from '@/features/admin/components/AdminCard'

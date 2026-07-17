@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { X } from 'lucide-react'
+import { X } from '@/shared/icons'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 import type { AboutResolvedOrb } from '../content/aboutContent.defaults'

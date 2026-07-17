@@ -2,7 +2,7 @@ import { Suspense, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
-import { Box } from 'lucide-react'
+import { Box } from '@/shared/icons'
 import { ErrorBoundary } from '@/app/components/ErrorBoundary'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 

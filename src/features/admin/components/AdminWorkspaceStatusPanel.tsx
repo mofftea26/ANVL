@@ -1,4 +1,4 @@
-import { ExternalLink, Database, HardDrive } from 'lucide-react'
+import { ExternalLink, Database, HardDrive } from '@/shared/icons'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { ICON_SIZE } from '@/shared/lib/iconSize'

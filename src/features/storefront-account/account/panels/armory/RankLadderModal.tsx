@@ -1,4 +1,4 @@
-import { Award, Check, Lock } from 'lucide-react'
+import { Award, Check, Lock } from '@/shared/icons'
 import {
   ARMORY_BADGE_CATALOG,
   ARMORY_RANK_LADDER,

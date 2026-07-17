@@ -1,4 +1,4 @@
-import { ChevronRight, Menu } from 'lucide-react'
+import { ChevronRight, Menu } from '@/shared/icons'
 import type { ReactNode } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useAdminPageActionsSlot } from '@/features/admin/components/AdminPageActionsContext'

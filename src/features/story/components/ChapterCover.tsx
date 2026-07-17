@@ -1,4 +1,4 @@
-import { BookOpen } from 'lucide-react'
+import { BookOpen } from '@/shared/icons'
 import { AnvlCrest } from '@/shared/assets/brand'
 import {
   formatChapterNumber,

@@ -1,4 +1,4 @@
-import { Check, Copy, Plus, RotateCcw, Save, Sparkles, Trash2 } from 'lucide-react'
+import { Check, Copy, Plus, RotateCcw, Save, Sparkles, Trash2 } from '@/shared/icons'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'

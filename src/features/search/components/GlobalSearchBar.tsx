@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { Search } from '@/shared/icons'
 import { Suspense, lazy, useEffect, useId, useRef, type KeyboardEvent } from 'react'
 import { cn } from '@/shared/lib/cn'
 import { useGlobalSearch } from '@/features/search/hooks/useGlobalSearch'

@@ -1,4 +1,4 @@
-import { ImagePlus } from 'lucide-react'
+import { ImagePlus } from '@/shared/icons'
 import { useMemo, useState } from 'react'
 import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
 import { FormField } from '@/shared/components/ui/FormField'

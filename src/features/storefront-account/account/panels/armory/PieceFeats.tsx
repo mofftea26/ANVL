@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, EyeOff, Pencil, Plus, Trophy, X } from 'lucide-react'
+import { Eye, EyeOff, Pencil, Plus, Trophy, X } from '@/shared/icons'
 import { useArmoryFeatsQuery, useFeatMutations } from '@/features/passport/hooks/useArmory'
 import type { ArmoryFeat } from '@/features/passport/schemas/passport.schema'
 import { cn } from '@/shared/lib/cn'

@@ -5,7 +5,7 @@ import {
   ImagePlus,
   Info,
   Save,
-} from 'lucide-react'
+} from '@/shared/icons'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Sparkles } from 'lucide-react'
+import { Sparkles } from '@/shared/icons'
 import type { Measurements } from '@/app/config/accountContracts'
 import { useStorefrontAccountSession } from '@/features/storefront-account/publicAccount.core'
 import {

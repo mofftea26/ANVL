@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpenText, QrCode } from 'lucide-react'
+import { BookOpenText, QrCode } from '@/shared/icons'
 import { cn } from '@/shared/lib/cn'
 import { AdminPassportCodesPanel } from './AdminPassportCodesPanel'
 import { AdminPassportContentEditor } from './AdminPassportContentEditor'

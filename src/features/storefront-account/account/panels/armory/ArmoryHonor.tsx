@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Star } from 'lucide-react'
+import { Star } from '@/shared/icons'
 import type { ArmoryCatalogEntry } from '@/features/passport/lib/armory'
 import type { OwnedPassport } from '@/features/passport/schemas/passport.schema'
 import { buildHonorSlots } from './honorSlots'

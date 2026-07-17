@@ -158,7 +158,9 @@ export async function acceptPassportTransfer(input: {
   return parsed.success ? parsed.data : { ok: false, error: 'transfer_invalid' }
 }
 
-/** The signed-in user's claimed passports (Armory), newest claim first. */
+/** The signed-in user's claimed passports (Armory), newest claim first.
+ *  THROWS on failure — a swallowed error would be cached by React Query as a
+ *  successful empty (or stale) armory. Throwing lets RQ retry instead. */
 export async function listOwnedPassports(): Promise<OwnedPassport[]> {
   const client = await getAuthedClient()
   if (!client) return []
@@ -166,7 +168,8 @@ export async function listOwnedPassports(): Promise<OwnedPassport[]> {
     .from('product_passports')
     .select(OWNED_SELECT)
     .order('claimed_at', { ascending: false })
-  if (error || !Array.isArray(data)) return []
+  if (error) throw new Error(error.message)
+  if (!Array.isArray(data)) return []
   const out: OwnedPassport[] = []
   for (const row of data) {
     const parsed = ownedPassportSchema.safeParse(row)

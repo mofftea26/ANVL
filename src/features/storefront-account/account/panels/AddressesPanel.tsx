@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useFieldArray } from 'react-hook-form'
 import { toast } from 'sonner'
-import { MapPin, Plus, Trash2 } from 'lucide-react'
+import { MapPin, Plus, Trash2 } from '@/shared/icons'
 import type { Customer } from '@/app/config/accountContracts'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'

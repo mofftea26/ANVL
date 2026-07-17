@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { BadgeCheck, Star } from 'lucide-react'
+import { BadgeCheck, Star } from '@/shared/icons'
 import { useOwnedPassportsQuery } from '@/features/passport/hooks/usePassport'
 import {
   useDeleteReviewMutation,

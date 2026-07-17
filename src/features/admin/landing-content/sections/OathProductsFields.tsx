@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2 } from '@/shared/icons'
 import type { UseFieldArrayReturn, UseFormRegister } from 'react-hook-form'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'

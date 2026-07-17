@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Download, Inbox, RefreshCw, Users } from 'lucide-react'
+import { Download, Inbox, RefreshCw, Users } from '@/shared/icons'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { Button } from '@/shared/components/ui/Button'
 import {

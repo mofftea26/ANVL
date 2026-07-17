@@ -1,4 +1,4 @@
-import { ArrowUpRight, X } from 'lucide-react'
+import { ArrowUpRight, X } from '@/shared/icons'
 import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 import { AccountDrawerSection, AccountDrawerSignOut } from '@/features/storefront-account/account/AccountDrawerSection'
 import { GlobalSearchBar } from '@/features/search/components/GlobalSearchBar'

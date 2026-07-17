@@ -104,5 +104,9 @@ export function useOwnedPassportsQuery() {
     queryKey: passportQueryKeys.owned(customerId),
     queryFn: () => listOwnedPassports(),
     enabled: Boolean(customerId),
+    // The armory must reflect admin-side unassigns promptly — always refetch
+    // on mount instead of serving the 30s-stale default.
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 }

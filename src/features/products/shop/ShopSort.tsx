@@ -1,4 +1,4 @@
-import { ArrowDownUp } from 'lucide-react'
+import { ArrowDownUp } from '@/shared/icons'
 import { SHOP_SORT_OPTIONS, type ShopSort } from '@/features/products/shop/shopUrlSearch'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ChevronDown, ExternalLink, LogOut, Settings } from 'lucide-react'
+import { ChevronDown, ExternalLink, LogOut, Settings } from '@/shared/icons'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import {
   sessionInitial,

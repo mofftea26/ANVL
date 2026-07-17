@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Images, Share2 } from 'lucide-react'
+import { Images, Share2 } from '@/shared/icons'
 import { ArmoryShareModal } from '@/features/storefront-account/account/panels/armory/ArmoryShareModal'
 import {
   FacebookIcon,

@@ -1,4 +1,4 @@
-import { Check, Flame, Minus } from 'lucide-react'
+import { Check, Flame, Minus } from '@/shared/icons'
 import { useLogWearMutation } from '@/features/passport/hooks/useArmory'
 import { cn } from '@/shared/lib/cn'
 

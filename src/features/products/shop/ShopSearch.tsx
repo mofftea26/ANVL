@@ -1,4 +1,4 @@
-import { Search, X } from 'lucide-react'
+import { Search, X } from '@/shared/icons'
 import { cn } from '@/shared/lib/cn'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 

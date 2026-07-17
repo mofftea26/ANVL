@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown } from '@/shared/icons'
 import { cn } from '@/shared/lib/cn'
 import type { ResolvedPassportContent } from '../lib/resolvePassportContent'
 

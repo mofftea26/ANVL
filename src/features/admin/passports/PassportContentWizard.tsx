@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check } from '@/shared/icons'
 import { mediaAssetPublicUrl } from '@/features/admin/media/mediaAssets.service'
 import type { CmsMediaAsset } from '@/features/admin/media/mediaAssets.types'
 import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotField'

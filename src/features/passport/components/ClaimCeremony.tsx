@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useGSAP } from '@gsap/react'
-import { BadgeCheck } from 'lucide-react'
+import { BadgeCheck } from '@/shared/icons'
 import { AnvlCrest } from '@/shared/assets/brand'
 import { createDustDrive } from '@/shared/webgl/DustField'
 import { isWebglAvailable } from '@/shared/webgl/isWebglAvailable'

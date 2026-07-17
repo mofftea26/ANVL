@@ -26,7 +26,7 @@ describe('publicArmorySchema', () => {
           featured_slot: 1,
         },
       ],
-      feats: [{ title: 'Deadlift PR — 240 kg', achieved_on: '2026-07-01' }],
+      feats: [{ title: 'Deadlift PR — 240 kg', achieved_on: '2026-07-01', product_slug: 'oversized-tee' }],
     })
     expect(parsed.ownerName).toBe('Test Warrior')
     expect(parsed.totalPieces).toBe(3)
@@ -57,19 +57,19 @@ describe('PublicArmoryView (read-only)', () => {
         featured_slot: 1,
       },
     ],
-    feats: [{ title: 'Deadlift PR — 240 kg', achieved_on: '2026-07-01' }],
+    feats: [{ title: 'Deadlift PR — 240 kg', achieved_on: '2026-07-01', product_slug: 'oversized-tee' }],
   })
 
-  it('renders the owner, honored piece, and the War Record — with no interactive controls', () => {
+  it('renders the athlete, pedestal Hall of Honor, and per-piece feats — read-only', () => {
     render(<PublicArmoryView armory={armory} images={{ 'oversized-tee': 'tee.png' }} />)
-    // h1 = the page header; the War Record card repeats the name as an h2.
     expect(screen.getByRole('heading', { level: 1, name: 'Test Warrior' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Hall of Honor' })).toBeTruthy()
     expect(screen.getAllByText('Oversized Tee').length).toBeGreaterThan(0)
-    // War Record card: stats + the feat tied to its piece.
-    expect(screen.getByText(/war record/i)).toBeTruthy()
-    expect(screen.getByText('Wears logged')).toBeTruthy()
-    expect(screen.getByText('Deadlift PR — 240 kg')).toBeTruthy()
+    // The record numbers strip (sr-only dt + visible label).
+    expect(screen.getAllByText('Wears logged').length).toBeGreaterThan(0)
+    // The feat renders UNDER its piece (it's tied to a shared slug).
+    expect(screen.getByText(/Deadlift PR — 240 kg/)).toBeTruthy()
+    expect(screen.queryByText(/more feats/i)).toBeNull()
     // Read-only: no wear button, no pin.
     expect(screen.queryByRole('button', { name: /wore it/i })).toBeNull()
     expect(screen.queryByRole('button', { name: /hall of honor/i })).toBeNull()

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { LogOut, Package, Settings, Shield, UserRound } from 'lucide-react'
+import { LogOut, Package, Settings, Shield, UserRound } from '@/shared/icons'
 import {
   useCustomerProfileQuery,
   useHydrateStorefrontAccountSession,

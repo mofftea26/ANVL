@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight } from '@/shared/icons'
 import type { Product } from '@/features/products/types/product.types'
 import { Container } from '@/shared/components/ui/Container'
 import { cn } from '@/shared/lib/cn'

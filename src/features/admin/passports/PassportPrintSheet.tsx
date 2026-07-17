@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
-import { Printer, X } from 'lucide-react'
+import { Printer, X } from '@/shared/icons'
 import { Button } from '@/shared/components/ui/Button'
 import { BRAND } from '@/shared/constants/brand'
 import type { AdminPassport } from './passports.service'

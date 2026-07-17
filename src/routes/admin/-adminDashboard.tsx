@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { LinkProps } from '@tanstack/react-router'
-import { Hourglass } from 'lucide-react'
+import { Hourglass } from '@/shared/icons'
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import {
   readComingSoonConfigFromStorage,

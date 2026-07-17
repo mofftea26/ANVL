@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { ArrowUpRight, Ruler, User, Phone as PhoneIcon, CalendarDays, Shirt, Sparkles } from 'lucide-react'
+import { ArrowUpRight, Ruler, User, Phone as PhoneIcon, CalendarDays, Shirt, Sparkles } from '@/shared/icons'
 import type { Customer, Measurements } from '@/app/config/accountContracts'
 import { suggestSizeFromMeasurements } from '@/features/products/sizing/suggestSize'
 import { cn } from '@/shared/lib/cn'

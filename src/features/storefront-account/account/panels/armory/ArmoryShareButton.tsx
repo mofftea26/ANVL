@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Share2 } from 'lucide-react'
+import { Share2 } from '@/shared/icons'
 import type { ArmoryRank } from '@/features/passport/lib/ranks'
 import type { ArmoryFeat } from '@/features/passport/schemas/passport.schema'
 import {

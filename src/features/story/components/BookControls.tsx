@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from '@/shared/icons'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import { spreadLabel, type BookSpread } from '@/features/story/lib/bookSpreads'

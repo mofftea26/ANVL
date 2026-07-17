@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Facebook, Instagram, Mail, Youtube } from 'lucide-react'
+import { Facebook, Instagram, Mail, Youtube } from '@/shared/icons'
 import { gsap } from '@/shared/lib/gsap'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import type {

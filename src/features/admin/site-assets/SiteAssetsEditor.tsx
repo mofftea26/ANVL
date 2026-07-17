@@ -1,4 +1,4 @@
-import { Check, Save } from 'lucide-react'
+import { Check, Save } from '@/shared/icons'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'

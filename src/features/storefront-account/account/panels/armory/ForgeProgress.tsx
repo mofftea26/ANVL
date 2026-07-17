@@ -1,4 +1,4 @@
-import { Flame, Target } from 'lucide-react'
+import { Flame, Target } from '@/shared/icons'
 import type { ForgeLevel, NextMilestone } from '@/features/passport/lib/forgeXp'
 
 /**

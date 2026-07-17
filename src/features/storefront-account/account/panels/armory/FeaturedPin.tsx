@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react'
+import { Star } from '@/shared/icons'
 import { useSetFeaturedMutation } from '@/features/passport/hooks/useArmory'
 import type { OwnedPassport } from '@/features/passport/schemas/passport.schema'
 import { cn } from '@/shared/lib/cn'

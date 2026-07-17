@@ -103,16 +103,26 @@ export async function setPassportFeatured(id: string, slot: 1 | 2 | 3 | null): P
 
 /* ----------------------------------------------------------------- feats --- */
 
-/** The signed-in user's Feats, newest achievement first. */
+/**
+ * The signed-in user's Feats, newest achievement first.
+ *
+ * THROWS on failure (never returns `[]` for an error): a swallowed error here
+ * gets cached by React Query as a successful empty list, and "my feats
+ * disappeared" was exactly that — an early fetch racing a token refresh.
+ * Throwing lets RQ retry and keep any previous data instead.
+ */
 export async function listArmoryFeats(): Promise<ArmoryFeat[]> {
   const client = await getAuthedClient()
   if (!client) return []
+  const sessionError = await ensureLiveSession(client)
+  if (sessionError) throw new Error(sessionError)
   const { data, error } = await client
     .from('armory_feats')
-    .select('id, title, achieved_on, is_public')
+    .select('id, title, achieved_on, is_public, product_slug')
     .order('achieved_on', { ascending: false })
     .order('created_at', { ascending: false })
-  if (error || !Array.isArray(data)) return []
+  if (error) throw new Error(error.message)
+  if (!Array.isArray(data)) return []
   const out: ArmoryFeat[] = []
   for (const row of data) {
     const parsed = armoryFeatSchema.safeParse(row)

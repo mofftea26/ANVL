@@ -1,4 +1,4 @@
-import { Crown, Shield, Star, Swords, type LucideIcon } from 'lucide-react'
+import { Crown, Shield, Star, Swords, type LucideIcon } from '@/shared/icons'
 import { cn } from '@/shared/lib/cn'
 import type { StoryCastMember } from '@/features/story/schemas/story.schema'
 import { resolveStoryAsset } from '@/features/story/lib/resolveStoryAsset'

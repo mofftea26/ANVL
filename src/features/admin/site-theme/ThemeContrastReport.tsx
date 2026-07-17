@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { AlertTriangle, Check, Wand2 } from 'lucide-react'
+import { AlertTriangle, Check, Wand2 } from '@/shared/icons'
 import {
   THEME_CONTRAST_PAIRS,
   type ContrastPair,

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown } from '@/shared/icons'
 import { AuthenticityPlate } from '@/features/passport/components/AuthenticityPlate'
 import {
   buildCollectionDrops,

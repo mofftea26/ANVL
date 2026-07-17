@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { Check } from '@/shared/icons'
 import type {
   ShopDropFilterOption,
   StorefrontProductStatus,

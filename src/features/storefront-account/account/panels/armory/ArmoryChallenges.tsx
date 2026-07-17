@@ -1,4 +1,4 @@
-import { Check, Swords } from 'lucide-react'
+import { Check, Swords } from '@/shared/icons'
 import type { ChallengeProgress } from '@/features/passport/lib/challenges'
 
 /**

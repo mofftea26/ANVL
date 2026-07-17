@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Copy, Download, Pencil, Trash2 } from 'lucide-react'
+import { Copy, Download, Pencil, Trash2 } from '@/shared/icons'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/Button'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
