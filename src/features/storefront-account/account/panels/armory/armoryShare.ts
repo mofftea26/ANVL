@@ -174,12 +174,22 @@ function hudStatRows(h: HudCtx): Array<[string, string]> {
   return rows
 }
 
+/** Display form of the share link: just the host — small, never the long
+ *  handle path (the real URL travels with the post, not the pixels). */
+function displayLink(url: string): string {
+  try {
+    return new URL(url).host.replace(/^www\./, '')
+  } catch {
+    return url.replace(/^https?:\/\//, '').split('/')[0] ?? url
+  }
+}
+
 function hudFooterLink(ctx: CanvasRenderingContext2D, h: HudCtx, align: CanvasTextAlign = 'right') {
   ctx.textAlign = align
-  ctx.fillStyle = `${h.champagne}dd`
-  ctx.font = `600 ${24 * h.u}px Sora, sans-serif`
+  ctx.fillStyle = `${h.champagne}99`
+  ctx.font = `600 ${19 * h.u}px Sora, sans-serif`
   const x = align === 'right' ? h.W - 56 * h.u : align === 'left' ? 56 * h.u : h.W / 2
-  ctx.fillText(h.url.replace(/^https?:\/\//, ''), x, h.H - 56 * h.u)
+  ctx.fillText(displayLink(h.url), x, h.H - 56 * h.u)
 }
 
 function drawHud(
@@ -668,10 +678,10 @@ export async function generateShareImage(
     ctx.fillText(meta, W / 2, afterTitle + 96 * u)
   }
 
-  /* Footer link ------------------------------------------------------------ */
-  ctx.fillStyle = `${champagne}dd`
-  ctx.font = `600 ${28 * u}px Sora, sans-serif`
-  ctx.fillText(input.url.replace(/^https?:\/\//, ''), W / 2, H - 88 * u)
+  /* Footer link — the host only, quiet (the real URL travels with the post). */
+  ctx.fillStyle = `${champagne}99`
+  ctx.font = `600 ${20 * u}px Sora, sans-serif`
+  ctx.fillText(displayLink(input.url), W / 2, H - 80 * u)
 
   const dataUrl = canvas.toDataURL('image/png')
   const blob = await new Promise<Blob | null>((resolve) =>

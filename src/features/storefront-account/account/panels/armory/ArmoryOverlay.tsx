@@ -32,7 +32,9 @@ export function ArmoryOverlay({
         open={open}
         onClose={onClose}
         title={title}
-        className="max-h-[85svh] max-w-2xl overflow-y-auto"
+        // Fixed height: the frame never resizes with content — sparse states
+        // show their designed empty state instead of a collapsed sliver.
+        className="h-[72svh] max-w-2xl overflow-y-auto"
       >
         {children}
       </Modal>

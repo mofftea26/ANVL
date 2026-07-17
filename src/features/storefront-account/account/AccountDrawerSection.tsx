@@ -6,7 +6,7 @@ import {
   useStorefrontAccountSession,
 } from '@/features/storefront-account/publicAccount.core'
 import { AccountAvatar } from '@/features/storefront-account/account/AccountAvatar'
-import { cn } from '@/shared/lib/cn'
+import { RankBadge } from '@/features/passport/components/RankBadge'
 
 const linkChip =
   'focus-ring inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text)] no-underline transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'
@@ -52,10 +52,11 @@ export function AccountDrawerSection({ onNavigate }: { onNavigate?: () => void }
           src={customer?.avatarUrl}
           className="h-12 w-12 shrink-0 text-sm"
         />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="anvl-heading truncate text-base leading-tight text-[var(--color-heading)]">{name}</p>
           <p className="anvl-micro truncate text-[var(--color-text-muted)]">{customer?.email}</p>
         </div>
+        <RankBadge className="ml-auto" />
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <Link to="/account" search={{ tab: 'personal' }} onClick={onNavigate} className={linkChip}>
@@ -88,7 +89,7 @@ export function AccountDrawerSignOut({ onNavigate }: { onNavigate?: () => void }
   if (!customerId) return null
 
   return (
-    <div className="border-t border-[var(--color-line)] pt-4">
+    <div className="border-t border-[color-mix(in_oklab,var(--color-line)_70%,transparent)] pt-4">
       <button
         type="button"
         onClick={() => {
@@ -96,12 +97,9 @@ export function AccountDrawerSignOut({ onNavigate }: { onNavigate?: () => void }
           logout()
           window.location.assign('/')
         }}
-        className={cn(
-          linkChip,
-          'w-full justify-center border-transparent text-[color:var(--color-danger)] hover:border-[color:var(--color-danger)] hover:text-[color:var(--color-danger)]',
-        )}
+        className="focus-ring flex w-full items-center justify-center gap-2 rounded-xl bg-[color-mix(in_oklab,var(--color-surface)_70%,transparent)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-elevated)] hover:text-[color:var(--color-danger)]"
       >
-        <LogOut size={13} aria-hidden="true" /> Sign out
+        <LogOut size={14} aria-hidden="true" /> Sign out
       </button>
     </div>
   )

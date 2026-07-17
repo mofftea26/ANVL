@@ -9,6 +9,7 @@ import {
 } from '@/features/storefront-account/publicAccount.core'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AccountAvatar } from '@/features/storefront-account/account/AccountAvatar'
+import { RankBadge } from '@/features/passport/components/RankBadge'
 
 /**
  * Top-bar account control. Signed out → a round sign-in button. Signed in → a
@@ -113,10 +114,11 @@ export function AccountMenu({ triggerClassName }: { triggerClassName?: string })
               src={customer?.avatarUrl}
               className="h-10 w-10 text-sm"
             />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="anvl-heading truncate text-sm text-[var(--color-heading)]">{name}</p>
               <p className="anvl-micro truncate text-[var(--color-text-muted)]">{customer?.email}</p>
             </div>
+            <RankBadge className="ml-auto" />
           </div>
           <div className="py-1.5">
             <Link to="/account" search={{ tab: 'personal' }} className={itemClass} onClick={() => setOpen(false)} role="menuitem">

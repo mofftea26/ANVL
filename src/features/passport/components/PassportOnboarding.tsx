@@ -127,9 +127,11 @@ export function PassportOnboarding({
     >
       <PassportAtmosphere imageSrc={product?.images[0]?.src} />
 
-      <div className="relative mx-auto grid min-h-svh max-w-6xl items-center gap-10 px-6 pb-20 pt-[calc(var(--anvl-header-h)+2.5rem)] lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
+      {/* Phones get a compressed single-screen layout (small render, tight
+          rhythm); ≥lg it opens into the two-column ritual. */}
+      <div className="relative mx-auto grid min-h-svh max-w-6xl content-start gap-4 px-5 pb-6 pt-[calc(var(--anvl-header-h)+0.75rem)] sm:gap-10 sm:px-6 sm:pb-20 sm:pt-[calc(var(--anvl-header-h)+2.5rem)] lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:content-normal lg:items-center lg:gap-16">
         {/* The piece ----------------------------------------------------- */}
-        <div data-onb-image className="relative mx-auto w-full max-w-sm lg:max-w-none">
+        <div data-onb-image className="relative mx-auto w-full max-w-[8.5rem] sm:max-w-sm lg:max-w-none">
           {heroImage ? (
             <div className="relative overflow-hidden rounded-2xl border border-[color-mix(in_oklab,var(--color-highlight)_25%,var(--color-line))] shadow-[0_40px_120px_-40px_color-mix(in_oklab,var(--color-highlight)_35%,transparent)]">
               <img
@@ -152,30 +154,33 @@ export function PassportOnboarding({
               </span>
             </div>
           )}
-          <div className="absolute -bottom-4 left-1/2 -translate-x-1/2">
+          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 sm:-bottom-4">
             <AuthenticityPlate editionTotal={view.editionTotal} size="sm" />
           </div>
         </div>
 
         {/* The ritual ---------------------------------------------------- */}
-        <form onSubmit={onSubmit} data-passport-onboarding className="pt-6 lg:pt-0">
+        <form onSubmit={onSubmit} data-passport-onboarding className="pt-4 sm:pt-6 lg:pt-0">
           <p data-onb className="anvl-micro text-[var(--color-highlight-bright)]">
             Claim your piece
           </p>
           <h1
             data-onb
-            className="anvl-heading mt-3 text-3xl text-[var(--color-heading)] sm:text-4xl md:text-5xl"
+            className="anvl-heading mt-1.5 text-2xl text-[var(--color-heading)] sm:mt-3 sm:text-4xl md:text-5xl"
           >
             {view.productName}
           </h1>
-          <p data-onb className="mt-3 max-w-md text-sm leading-relaxed text-[var(--color-text-muted)]">
+          <p
+            data-onb
+            className="mt-1.5 max-w-md text-xs leading-relaxed text-[var(--color-text-muted)] sm:mt-3 sm:text-sm"
+          >
             A one-owner piece, limited to {view.editionTotal}. Tell the ledger which
             unit you hold — then it carries your name, forever.
           </p>
 
-          <div className="mt-9 space-y-7">
+          <div className="mt-4 space-y-4 sm:mt-9 sm:space-y-7">
             <fieldset data-onb>
-              <legend className="anvl-micro mb-3 text-[var(--color-text-muted)]">
+              <legend className="anvl-micro mb-2 text-[var(--color-text-muted)] sm:mb-3">
                 Your colorway
               </legend>
               {colorways.length > 0 ? (
@@ -199,7 +204,9 @@ export function PassportOnboarding({
             </fieldset>
 
             <fieldset data-onb>
-              <legend className="anvl-micro mb-3 text-[var(--color-text-muted)]">Your size</legend>
+              <legend className="anvl-micro mb-2 text-[var(--color-text-muted)] sm:mb-3">
+                Your size
+              </legend>
               {sizes.length > 0 ? (
                 <SizeSelector
                   sizes={sizes}
@@ -215,7 +222,7 @@ export function PassportOnboarding({
             <div data-onb>
               <label
                 htmlFor="passport-display-name"
-                className="anvl-micro mb-3 block text-[var(--color-text-muted)]"
+                className="anvl-micro mb-2 block text-[var(--color-text-muted)] sm:mb-3"
               >
                 Name on the plate
               </label>
@@ -225,17 +232,17 @@ export function PassportOnboarding({
                 {...form.register('displayName')}
               />
               <FieldError message={form.formState.errors.displayName?.message} />
-              <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+              <p className="mt-1.5 text-[10px] text-[var(--color-text-muted)] sm:mt-2 sm:text-xs">
                 Shown publicly when someone verifies this piece.
               </p>
             </div>
           </div>
 
-          <div data-onb className="mt-9">
+          <div data-onb className="mt-4 sm:mt-9">
             <Button type="submit" variant="primary" size="lg" loading={claim.isPending}>
               {claim.isPending ? 'Forging…' : 'Forge it to my name'}
             </Button>
-            <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+            <p className="mt-1.5 text-[10px] text-[var(--color-text-muted)] sm:mt-3 sm:text-xs">
               One claim, permanent. This QR will belong to your account only.
             </p>
           </div>

@@ -19,6 +19,7 @@ import {
   type PassportSectionContext,
 } from './console/passportSections'
 import { AuthenticityPlate } from './AuthenticityPlate'
+import { PassportArmoryPanel } from './PassportArmoryPanel'
 import { PassportAtmosphere } from './PassportAtmosphere'
 import { PassportHotspotDetail, PassportHotspots } from './PassportHotspots'
 import { PassportSheet } from './PassportSheet'
@@ -76,7 +77,10 @@ export function PassportMobile({
     token,
   }
   const availableSections = PASSPORT_SECTIONS.filter((s) => s.available(ctx))
-  const groups = PASSPORT_GROUPS.filter((g) => availableSections.some((s) => s.group === g.key))
+  // The armory group has no registry sections — it's the composed owner panel.
+  const groups = PASSPORT_GROUPS.filter((g) =>
+    g.key === 'armory' ? view.isOwner : availableSections.some((s) => s.group === g.key),
+  )
   const groupSections = availableSections.filter((s) => s.group === group)
   const activeDef = availableSections.find((s) => s.key === openSection) ?? null
   const isOwner = variant === 'owner'
@@ -273,6 +277,12 @@ export function PassportMobile({
                 panelVisible ? 'opacity-100' : 'opacity-0',
               )}
             >
+              {group === 'armory' ? (
+                /* One composed surface for the owner tools — no bentos. */
+                <div data-pm-panel-item>
+                  <PassportArmoryPanel ctx={ctx} />
+                </div>
+              ) : (
               <div className="grid grid-cols-2 gap-3">
                 {groupSections.map((s, i) => (
                   <button
@@ -309,6 +319,7 @@ export function PassportMobile({
                   </button>
                 ))}
               </div>
+              )}
             </div>
 
             {/* The open section, as a phone-native bottom sheet */}

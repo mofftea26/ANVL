@@ -13,6 +13,7 @@ import type { OwnedPassport } from '@/features/passport/schemas/passport.schema'
 import { cn } from '@/shared/lib/cn'
 import { FeaturedPin } from './FeaturedPin'
 import { PieceFeats } from './PieceFeats'
+import { PieceShareSwitch } from './PieceShareSwitch'
 import { WoreItButton } from './WoreItButton'
 
 /**
@@ -144,7 +145,14 @@ function VaultSlotCard({ slot }: { slot: VaultSlot }) {
 export function ArmoryCollectionView({ owned, catalog }: ViewProps) {
   const drops = buildCollectionDrops(owned, catalog)
   const [expanded, setExpanded] = useState<string | null>(drops[0]?.dropName ?? null)
-  if (drops.length === 0) return null
+  if (drops.length === 0) {
+    return (
+      <OverlayEmpty
+        title="Nothing to collect yet"
+        hint="When drops go live their pieces appear here — registered ones lit, the rest waiting."
+      />
+    )
+  }
 
   return (
     <div className="space-y-3">
@@ -250,28 +258,42 @@ export function ArmoryCollectionView({ owned, catalog }: ViewProps) {
 
 /* ------------------------------------------------------------ Timeline --- */
 
-/** "3 days ago" style stamp; falls back to the date for older entries. */
-function relativeDate(date: Date): string {
-  const days = Math.floor((Date.now() - date.getTime()) / 86_400_000)
-  if (days <= 0) return 'Today'
-  if (days === 1) return 'Yesterday'
-  if (days < 30) return `${days} days ago`
-  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
 function monthLabel(date: Date | null): string {
   if (!date) return 'Undated'
   return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
 }
 
+/** Shared empty state for the overlay surfaces. */
+function OverlayEmpty({ title, hint }: { title: string; hint: string }) {
+  return (
+    <div className="flex h-full min-h-[16rem] flex-col items-center justify-center gap-2 text-center">
+      <span
+        aria-hidden="true"
+        className="anvl-heading text-4xl text-[color-mix(in_oklab,var(--color-text-muted)_40%,transparent)]"
+      >
+        —
+      </span>
+      <p className="anvl-heading text-lg text-[var(--color-heading)]">{title}</p>
+      <p className="anvl-micro max-w-xs text-[var(--color-text-muted)]">{hint}</p>
+    </div>
+  )
+}
+
 /**
- * The registration record — every unit newest-first on a champagne spine,
- * grouped by month, each row opening its passport. Lives in the Timeline
- * overlay.
+ * The registration record — editorial rows: a big champagne day numeral leads
+ * each entry, month headers group them, hairlines divide. Every row opens its
+ * passport. Lives in the Timeline overlay.
  */
 export function ArmoryTimelineView({ owned, catalog }: ViewProps) {
   const entries = buildTimeline(owned, catalog)
-  if (entries.length === 0) return null
+  if (entries.length === 0) {
+    return (
+      <OverlayEmpty
+        title="No registrations yet"
+        hint="Scan a passport QR to forge your first entry — every registration lands here, dated."
+      />
+    )
+  }
 
   // Group consecutive entries by month (entries are already newest-first).
   const groups: Array<{ label: string; items: typeof entries }> = []
@@ -283,24 +305,42 @@ export function ArmoryTimelineView({ owned, catalog }: ViewProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {groups.map((group) => (
         <section key={group.label}>
-          <p className="anvl-micro mb-3 text-[10px] uppercase tracking-[0.2em] text-[var(--color-highlight-bright)]">
-            {group.label}
-          </p>
-          <ol className="relative space-y-2 border-l border-[color-mix(in_oklab,var(--color-highlight)_30%,var(--color-line))] pl-5">
-            {group.items.map((entry) => (
-              <li key={entry.passport.id} className="relative">
-                <span
-                  aria-hidden="true"
-                  className="absolute -left-[1.4rem] top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-[var(--color-highlight-bright)] shadow-[0_0_8px_2px_color-mix(in_oklab,var(--color-highlight)_45%,transparent)]"
-                />
+          <div className="mb-2 flex items-center gap-3">
+            <p className="anvl-micro shrink-0 text-[10px] uppercase tracking-[0.22em] text-[var(--color-highlight-bright)]">
+              {group.label}
+            </p>
+            <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-line)]" />
+            <span className="anvl-micro shrink-0 text-[9px] text-[var(--color-text-muted)]">
+              {group.items.length} {group.items.length === 1 ? 'piece' : 'pieces'}
+            </span>
+          </div>
+          <ol>
+            {group.items.map((entry, i) => (
+              <li
+                key={entry.passport.id}
+                className={cn(
+                  i > 0 && 'border-t border-[color-mix(in_oklab,var(--color-line)_60%,transparent)]',
+                )}
+              >
                 <Link
                   to="/p/$token"
                   params={{ token: entry.passport.token }}
-                  className="focus-ring flex items-center gap-3 rounded-xl bg-[var(--color-surface-elevated)] p-2.5 no-underline motion-safe:transition-transform hover:-translate-y-0.5"
+                  className="focus-ring group flex items-center gap-4 rounded-lg px-1 py-3 no-underline motion-safe:transition-colors hover:bg-[color-mix(in_oklab,var(--color-surface-elevated)_70%,transparent)]"
                 >
+                  {/* Date block — the day leads. */}
+                  <div className="w-12 shrink-0 text-center">
+                    <p className="anvl-heading text-3xl leading-none text-[var(--color-highlight-bright)]">
+                      {entry.date ? entry.date.getDate() : '—'}
+                    </p>
+                    <p className="anvl-micro mt-0.5 text-[8px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                      {entry.date
+                        ? entry.date.toLocaleDateString(undefined, { weekday: 'short' })
+                        : ''}
+                    </p>
+                  </div>
                   {entry.image ? (
                     <img
                       src={entry.image}
@@ -308,16 +348,16 @@ export function ArmoryTimelineView({ owned, catalog }: ViewProps) {
                       aria-hidden="true"
                       loading="lazy"
                       decoding="async"
-                      width={80}
-                      height={100}
-                      className="h-12 w-10 shrink-0 rounded-lg object-cover"
+                      width={96}
+                      height={120}
+                      className="h-14 w-12 shrink-0 rounded-lg object-cover shadow-[0_10px_26px_-12px_rgba(0,0,0,0.8)] motion-safe:transition-transform group-hover:scale-[1.04]"
                     />
                   ) : null}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-[var(--color-heading)]">
                       {entry.passport.productName}
                     </p>
-                    <p className="anvl-micro mt-0.5 flex flex-wrap items-center gap-1.5 text-[9px] text-[var(--color-text-muted)]">
+                    <p className="anvl-micro mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-[var(--color-text-muted)]">
                       {entry.dropName ? (
                         <span className="rounded-full bg-[color-mix(in_oklab,var(--color-highlight)_14%,transparent)] px-2 py-0.5 text-[var(--color-heading)]">
                           {entry.dropName}
@@ -328,8 +368,11 @@ export function ArmoryTimelineView({ owned, catalog }: ViewProps) {
                         .join(' / ')}
                     </p>
                   </div>
-                  <span className="anvl-micro shrink-0 text-[9px] text-[var(--color-text-muted)]">
-                    {entry.date ? relativeDate(entry.date) : '—'}
+                  <span
+                    aria-hidden="true"
+                    className="anvl-micro shrink-0 text-[var(--color-text-muted)] opacity-0 motion-safe:transition-opacity group-hover:opacity-100"
+                  >
+                    →
                   </span>
                 </Link>
               </li>
@@ -397,12 +440,8 @@ export function ArmoryGridView({ owned, catalog }: ViewProps) {
                 wearCount={passport.wearCount}
                 lastWornAt={passport.lastWornAt}
               />
-              <div className="flex items-center gap-2">
-                {passport.lastWornAt ? (
-                  <span className="anvl-micro text-[9px] text-[var(--color-text-muted)]">
-                    Last worn {new Date(passport.lastWornAt).toLocaleDateString()}
-                  </span>
-                ) : null}
+              <div className="flex items-center gap-1.5">
+                <PieceShareSwitch token={passport.token} isPublic={passport.isPublic} />
                 <FeaturedPin passport={passport} owned={owned} />
               </div>
             </div>

@@ -22,6 +22,7 @@ import {
   PASSPORT_SWAP_AT,
 } from '../../webgl/passportForgeTiming'
 import { AuthenticityPlate } from '../AuthenticityPlate'
+import { PassportArmoryPanel } from '../PassportArmoryPanel'
 import { PassportHotspotDetail, PassportHotspots } from '../PassportHotspots'
 import { ProductForgeImage } from '../ProductForgeImage'
 import {
@@ -98,8 +99,9 @@ export function PassportConsole({
     token,
   }
   const availableSections = PASSPORT_SECTIONS.filter((s) => s.available(ctx))
+  // The armory group has no registry sections — it's the composed owner panel.
   const groups = PASSPORT_GROUPS.filter((g) =>
-    availableSections.some((s) => s.group === g.key),
+    g.key === 'armory' ? view.isOwner : availableSections.some((s) => s.group === g.key),
   )
   const groupSections = availableSections.filter((s) => s.group === group)
   const activeDef = availableSections.find((s) => s.key === active) ?? null
@@ -345,7 +347,8 @@ export function PassportConsole({
             className={cn(
               // flex-1 + min-h-0: the panel owns the leftover height, so its
               // children can cap at max-h-full and scroll instead of spilling.
-              'flex min-h-0 flex-1 flex-col justify-center transition-opacity duration-500 ease-out',
+              // Top-aligned — the bento sits right under the tabs.
+              'flex min-h-0 flex-1 flex-col justify-start transition-opacity duration-500 ease-out',
               panelVisible ? 'opacity-100' : 'opacity-0',
             )}
           >
@@ -360,6 +363,15 @@ export function PassportConsole({
                   total={content.hotspots.length}
                   onDismiss={() => setHotspot(null)}
                 />
+              </div>
+            ) : group === 'armory' ? (
+              /* The Armory tab is ONE composed surface, not bento cards. */
+              <div
+                data-pc-shape
+                data-pc-item
+                className="max-h-full overflow-y-auto overscroll-contain rounded-2xl border border-[color-mix(in_oklab,var(--color-highlight)_18%,var(--color-line))] bg-[color-mix(in_oklab,var(--color-surface)_88%,transparent)] p-7 [scrollbar-width:thin]"
+              >
+                <PassportArmoryPanel ctx={ctx} />
               </div>
             ) : /* The detail fits the console by design; it scrolls only when a
                   section's content genuinely exceeds the panel (long saga). */

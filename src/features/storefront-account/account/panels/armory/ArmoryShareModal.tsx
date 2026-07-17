@@ -78,7 +78,6 @@ export function ArmoryShareModal({
   pieces,
   feats,
   memberSince,
-  onStopSharing,
 }: {
   open: boolean
   onClose: () => void
@@ -88,7 +87,6 @@ export function ArmoryShareModal({
   pieces: SharePiece[]
   feats: ArmoryFeat[]
   memberSince: string | null
-  onStopSharing: () => void
 }) {
   const [copied, setCopied] = useState(false)
   const [subjectKey, setSubjectKey] = useState('armory')
@@ -442,13 +440,6 @@ export function ArmoryShareModal({
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={onStopSharing}
-          className="focus-ring anvl-micro mt-4 rounded px-1 py-1 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-destructive)]"
-        >
-          Stop sharing — make my armory private
-        </button>
       </div>
     </Modal>
   )

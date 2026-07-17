@@ -6,9 +6,6 @@ import { recommendSizes, type PassportSizeGuide } from '../../lib/sizeRecommenda
 import type { PassportView } from '../../schemas/passport.schema'
 import { CareGuide } from '../CareGuide'
 import { ForgeNotes } from '../ForgeNotes'
-import { PassportOwnerTools } from '../PassportOwnerTools'
-import { PassportRelatedStrip } from '../PassportRelatedStrip'
-import { PassportShareSection } from '../PassportShareSection'
 import { PassportStoryChapter } from '../PassportStoryChapter'
 import { WorldOriginMap } from '../WorldOriginMap'
 
@@ -35,19 +32,19 @@ export type PassportSectionKey =
   | 'story'
   | 'forge-notes'
   | 'origin'
-  | 'wear-log'
-  | 'share-piece'
-  | 'complete-drop'
-  | 'matching'
   | 'authenticity'
 
 export type PassportSectionGroup = 'craft' | 'ritual' | 'legacy' | 'armory'
 
+/**
+ * NOTE: the `armory` group has NO registry sections — it renders as one
+ * composed surface (`PassportArmoryPanel`: controls, sharing, suggestions,
+ * drop carousel) instead of bento cards, and appears only for the owner.
+ */
 export const PASSPORT_GROUPS: Array<{ key: PassportSectionGroup; label: string }> = [
   { key: 'craft', label: 'The Craft' },
   { key: 'ritual', label: 'The Ritual' },
   { key: 'legacy', label: 'The Legacy' },
-  // Owner-only tools: wear/feats, sharing, shop + related jumps.
   { key: 'armory', label: 'The Armory' },
 ]
 
@@ -243,61 +240,6 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
         ) : null}
       </div>
     ),
-  },
-  {
-    key: 'wear-log',
-    group: 'armory',
-    title: 'Wear & feats',
-    eyebrow: 'Ritual log',
-    available: ({ view }) => view.isOwner,
-    teaser: () => 'Log a wear, mark a feat.',
-    Detail: ({ ctx }) => (
-      <PassportOwnerTools token={ctx.token} productSlug={ctx.view.productSlug} />
-    ),
-  },
-  {
-    key: 'share-piece',
-    group: 'armory',
-    title: 'Share this piece',
-    eyebrow: 'Spread the forge',
-    available: ({ view }) => view.isOwner,
-    teaser: () => 'Post it — the passport stays private.',
-    Detail: ({ ctx }) => (
-      <PassportShareSection
-        productSlug={ctx.view.productSlug}
-        productName={ctx.view.productName}
-        ownerName={ctx.view.claimedDisplayName ?? 'an ANVL athlete'}
-        imageUrl={ctx.content.piece.heroRenderUrl ?? ctx.content.piece.gallery[0]?.src ?? null}
-      />
-    ),
-  },
-  {
-    key: 'complete-drop',
-    group: 'armory',
-    title: 'Complete the drop',
-    eyebrow: 'Collection',
-    // Owner-only, and only when this piece's drop has other pieces at all.
-    available: ({ view, related }) =>
-      view.isOwner && (related?.dropMates.length ?? 0) > 0,
-    teaser: ({ related }) =>
-      related?.dropName ? `Finish ${related.dropName}` : 'Complete the collection.',
-    Detail: ({ ctx }) =>
-      ctx.related ? (
-        <PassportRelatedStrip mode="drop" related={ctx.related} />
-      ) : null,
-  },
-  {
-    key: 'matching',
-    group: 'armory',
-    title: 'Matching pieces',
-    eyebrow: 'Loadout',
-    available: ({ view, related }) =>
-      view.isOwner && (related?.categoryMates.length ?? 0) > 0,
-    teaser: () => 'Complete your loadout.',
-    Detail: ({ ctx }) =>
-      ctx.related ? (
-        <PassportRelatedStrip mode="category" related={ctx.related} />
-      ) : null,
   },
   {
     key: 'authenticity',

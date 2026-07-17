@@ -1,4 +1,16 @@
-﻿## 2026-07-17 — Feedback round 5: tap-to-forge, HUD templates, armory re-org, passport Armory tab
+﻿## 2026-07-17 — Feedback round 6: identity chrome, composed Armory tab, timeline v4
+
+- **Share sheet**: "Stop sharing" removed; the generated images now print only the **domain, small and quiet** (the real link travels with the post, not the pixels).
+- **Per-piece sharing switch** on every Armory grid card (`PieceShareSwitch`): Public/Private per piece — same RPC as the passport's visibility toggle.
+- **Timeline v4**: editorial rows — a big champagne **day numeral** leads each entry (weekday under it), month headers with hairline rules + piece counts, hover reveal arrow. **Overlays are now fixed-height** (72svh) with designed **empty states** for both Collection and Timeline.
+- **Passport Armory tab, composed**: no more bentos — one surface: *Ritual log* (wear + feats + shop link) → *Share this piece* → *Still to forge* (top-3 suggestions, or the completion seal) → *The collection* (horizontal snap carousel of the whole drop: owned pieces open their passports, the rest go to the shop). `PassportRelatedStrip` retired. Console bento grid now sticks to the top (was vertically centred).
+- **Rank badge everywhere**: the rank emblem rides the far right of the account welcome header, the nav-drawer account card, and the avatar dropdown (`RankBadge`, count-derived).
+- **Nav drawer redesigned**: ANVL **wordmark** (never per-drop logo), account card first, search under it, hairline-separated editorial nav rows with hover arrows, and a quiet full-width sign-out anchored at the bottom.
+- **Claim page fits phones**: compressed single-screen layout — small render (8.5rem), tight rhythm, smaller type; the two-column ritual returns ≥lg.
+- **Forge Level card breathes**: level + label on one baseline row, larger but airier numerals, wrapping footer (no more cramming).
+- **Ceremony perf**: 5k → 3.5k particles, dust 420 → 260, dpr cap 1.25 — fluid on mid phones.
+
+## 2026-07-17 — Feedback round 5: tap-to-forge, HUD templates, armory re-org, passport Armory tab
 
 - **Ceremony v5 — interactive**: the crest stands in embers, breathing; guided copy ("Tap the crest to begin the forging → Again — feel it heat → One more strike") walks the owner through **three strikes** (each pulses the cloud + haptics), and the final strike forges: slower, non-overlapping phases (disperse 0.9s → held breath → regroup 1.4s) with the crisp render resolving **only after** the silhouette lands. Strike progress pips + tap ripple; DOM-pulse fallback without WebGL.
 - **HUD share templates**: with a gallery/camera photo the template set switches to six heads-up overlays — **Modern, Minimal, Premium (Cinzel), Luxe, Game (level plate + XP bars), Jarvis (reticle + mono readout)** — content anchored to the edges (the photo stays the hero) carrying rank, pieces, feats + the most recent one, wears logged, and member-since. Photo removal restores the brand templates.

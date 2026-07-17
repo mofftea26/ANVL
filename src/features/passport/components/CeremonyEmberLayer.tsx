@@ -26,11 +26,13 @@ export default function CeremonyEmberLayer({
       <Canvas
         camera={{ position: [0, 0, 5], fov: 40 }}
         gl={{ alpha: true, antialias: false, powerPreference: 'low-power' }}
-        dpr={[1, 1.5]}
+        // 1.25 max: additive sprites gain nothing above it, and the ceremony
+        // must stay fluid on mid phones.
+        dpr={[1, 1.25]}
         style={{ pointerEvents: 'none' }}
       >
         <CeremonyCrestParticles productImageUrl={productImageUrl} motion={motion} />
-        <DustField drive={drive} count={420} />
+        <DustField drive={drive} count={260} />
       </Canvas>
     </div>
   )

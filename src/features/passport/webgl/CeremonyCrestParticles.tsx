@@ -17,7 +17,9 @@ import {
 } from './ceremonyTiming'
 import { PASSPORT_FORGE_FRAGMENT, PASSPORT_FORGE_VERTEX } from './passportForgeShaders'
 
-const COUNT = 5_000
+// 3.5k is indistinguishable at crest/product densities and cuts the additive
+// overdraw bill ~30% — the ceremony must stay fluid on mid phones.
+const COUNT = 3_500
 /** World sizes (camera z=5, fov 40 ⇒ ~3.64 tall viewport). */
 const CREST_FIT = 1.6
 const PRODUCT_FIT = 3.1

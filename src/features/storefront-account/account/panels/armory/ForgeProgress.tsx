@@ -15,21 +15,22 @@ export function ForgeProgress({
 }) {
   const pct = Math.round(forge.progress * 100)
   return (
-    <section className="rounded-2xl border border-[color-mix(in_oklab,var(--color-highlight)_30%,var(--color-line))] bg-[linear-gradient(180deg,color-mix(in_oklab,var(--color-highlight)_14%,var(--color-surface))_0%,var(--color-surface)_100%)] p-5">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="anvl-micro flex items-center gap-1.5 text-[var(--color-highlight-bright)]">
-            <Flame size={13} aria-hidden="true" /> Forge Level
-          </p>
-          <p className="anvl-heading text-4xl leading-none text-[var(--color-heading)]">
+    <section className="rounded-2xl border border-[color-mix(in_oklab,var(--color-highlight)_30%,var(--color-line))] bg-[linear-gradient(180deg,color-mix(in_oklab,var(--color-highlight)_14%,var(--color-surface))_0%,var(--color-surface)_100%)] p-5 sm:p-6">
+      {/* Level + total on one baseline row that can breathe (and wrap). */}
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        <div className="flex items-end gap-3">
+          <p className="anvl-heading text-5xl leading-none text-[var(--color-heading)]">
             {forge.level}
+          </p>
+          <p className="anvl-micro mb-1 flex items-center gap-1.5 text-[var(--color-highlight-bright)]">
+            <Flame size={13} aria-hidden="true" /> Forge Level
           </p>
         </div>
         <div className="text-right">
-          <p className="anvl-heading text-xl text-[var(--color-heading)]">
+          <p className="anvl-heading text-2xl leading-none text-[var(--color-heading)]">
             {forge.total.toLocaleString()}
           </p>
-          <p className="anvl-micro text-[10px] text-[var(--color-text-muted)]">total XP</p>
+          <p className="anvl-micro mt-1 text-[10px] text-[var(--color-text-muted)]">total XP</p>
         </div>
       </div>
 
@@ -39,20 +40,23 @@ export function ForgeProgress({
         aria-valuemin={0}
         aria-valuemax={forge.xpForLevel}
         aria-label={`Forge Level ${forge.level} progress`}
-        className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--color-surface-elevated)]"
+        className="mt-5 h-2 overflow-hidden rounded-full bg-[var(--color-surface-elevated)]"
       >
         <div
           className="h-full rounded-full bg-gradient-to-r from-[var(--color-highlight)] to-[var(--color-highlight-bright)] motion-safe:transition-[width] motion-safe:duration-700"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="mt-1.5 flex items-center justify-between">
+      {/* Footer wraps instead of cramming on narrow screens. */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <span className="anvl-micro text-[10px] text-[var(--color-text-muted)]">
           {forge.xpIntoLevel} / {forge.xpForLevel} XP
         </span>
-        <span className="anvl-micro inline-flex items-center gap-1 text-[10px] text-[var(--color-highlight-bright)]">
-          <Target size={11} aria-hidden="true" />
-          {milestone.label} · {milestone.detail}
+        <span className="anvl-micro inline-flex min-w-0 items-center gap-1.5 text-[10px] text-[var(--color-highlight-bright)]">
+          <Target size={11} aria-hidden="true" className="shrink-0" />
+          <span className="truncate">
+            {milestone.label} · {milestone.detail}
+          </span>
         </span>
       </div>
     </section>

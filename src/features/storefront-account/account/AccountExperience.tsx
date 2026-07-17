@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { Loader2, Save } from 'lucide-react'
+import { RankBadge } from '@/features/passport/components/RankBadge'
 import { Button, Container } from '@/shared/components/ui'
 import { useCustomerProfileQuery } from '@/features/storefront-account/publicAccount.core'
 import { AccountAvatar } from '@/features/storefront-account/account/AccountAvatar'
@@ -70,21 +71,25 @@ export function AccountExperience({
               </div>
             </div>
 
-            {saveEntry ? (
-              <Button
-                type="button"
-                size="icon"
-                onClick={saveEntry.submit}
-                disabled={saveEntry.pending}
-                aria-label={saveEntry.pending ? 'Saving changes' : 'Save changes'}
-              >
-                {saveEntry.pending ? (
-                  <Loader2 size={17} aria-hidden="true" className="animate-spin" />
-                ) : (
-                  <Save size={17} aria-hidden="true" />
-                )}
-              </Button>
-            ) : null}
+            <div className="flex shrink-0 items-center gap-3">
+              {saveEntry ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  onClick={saveEntry.submit}
+                  disabled={saveEntry.pending}
+                  aria-label={saveEntry.pending ? 'Saving changes' : 'Save changes'}
+                >
+                  {saveEntry.pending ? (
+                    <Loader2 size={17} aria-hidden="true" className="animate-spin" />
+                  ) : (
+                    <Save size={17} aria-hidden="true" />
+                  )}
+                </Button>
+              ) : null}
+              {/* The athlete's standing rides the far right of the header. */}
+              <RankBadge />
+            </div>
           </div>
 
           <AccountTabBar tab={tab} onTabChange={onTabChange} />

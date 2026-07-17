@@ -67,10 +67,6 @@ export function ArmoryShareButton({
           pieces={pieces}
           feats={feats}
           memberSince={memberSince}
-          onStopSharing={() => {
-            setShare.mutate(false)
-            setOpen(false)
-          }}
         />
       ) : null}
     </>
