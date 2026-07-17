@@ -128,34 +128,28 @@ export async function generateBatch(
 }
 
 /**
- * Reset a claim so the passport becomes claimable again — and pristine. This
- * wipes not just the claimant but all of the owner's Armory life on the piece
- * (wear count, last-worn, Hall-of-Honor pin, public visibility, any pending
- * transfer), so once unassigned it vanishes from their armory as if never
- * owned. (Feats are the user's own log, keyed to them — not the piece — so
- * they're untouched.)
+ * Reset a claim so the passport becomes claimable again — and pristine. Runs
+ * through the `admin_unassign_passport` SECURITY DEFINER RPC (editor/admin
+ * verified server-side), which wipes the claimant and every bit of the owner's
+ * Armory life on the piece (wear count, last-worn, Hall-of-Honor pin,
+ * visibility, pending transfer). With `purgeFeats` it also deletes the
+ * ex-owner's feats for that product — gone as if never owned; without it their
+ * feats survive, so re-claiming the same product later reattaches their
+ * records (feats are keyed user+product — nothing duplicates).
  */
-export async function unassignPassport(id: string): Promise<PassportResult<null>> {
+export async function unassignPassport(
+  id: string,
+  purgeFeats: boolean,
+): Promise<PassportResult<null>> {
   const c = client()
   if (!c.ok) return c
-  const res = await c.data
-    .from('product_passports')
-    .update({
-      claimed_by: null,
-      claimed_at: null,
-      claimed_color: null,
-      claimed_size: null,
-      claimed_email: null,
-      claimed_display_name: null,
-      wear_count: 0,
-      last_worn_at: null,
-      featured_slot: null,
-      is_public: false,
-      transfer_code: null,
-      transfer_expires_at: null,
-    })
-    .eq('id', id)
-  if (res.error) return { ok: false, error: res.error.message }
+  const { data, error } = await c.data.rpc('admin_unassign_passport', {
+    p_id: id,
+    p_purge_feats: purgeFeats,
+  })
+  if (error) return { ok: false, error: error.message }
+  const result = data as { ok?: boolean; error?: string } | null
+  if (!result?.ok) return { ok: false, error: result?.error ?? 'unassign_failed' }
   return { ok: true, data: null }
 }
 

@@ -195,10 +195,10 @@ export function PassportForgeParticles({ motion }: { motion: PassportMotionState
   buildRectCloudRef.current = buildRectCloud
 
   /**
-   * The transition veil — an ELLIPTICAL cloud centred on the cards' region
-   * (never the whole page, never a hard box). Radius is sampled with sqrt so
-   * density falls toward the rim and the rim itself is feathered, so the
-   * disperse reads as a soft round bloom rather than a square of static.
+   * The transition veil — the cards' region filled as a SUPERELLIPSE
+   * (squircle): squarish like the layout itself, but with softly rounded
+   * corners (exponent 5) and a feathered, dimmer rim so the edge dissolves
+   * instead of cutting. Never the whole page.
    */
   const buildLocalVeil = (rects: PassportCardRect[]): SilhouetteCloud => {
     if (!rects.length || size.width <= 0 || size.height <= 0) return shatterCloud
@@ -217,22 +217,31 @@ export function PassportForgeParticles({ motion }: { motion: PassportMotionState
     }
     const cx = (minX + maxX) / 2
     const cy = (minY + maxY) / 2
-    // Semi-axes cover the region with a little breathing room.
-    const rx = ((maxX - minX) / 2) * 1.18
-    const ry = ((maxY - minY) / 2) * 1.18
+    // Semi-axes with a little breathing room around the cards.
+    const rx = ((maxX - minX) / 2) * 1.1
+    const ry = ((maxY - minY) / 2) * 1.1
+    // |x|^P + |y|^P ≤ 1 — high exponent ⇒ near-rectangle, corners just eased.
+    const P = 5
     const positions = new Float32Array(COUNT * 3)
     const shades = new Float32Array(COUNT)
     for (let i = 0; i < COUNT; i += 1) {
-      const theta = Math.random() * Math.PI * 2
-      // sqrt → uniform disc; the ^1.25 pushes a touch of density inward and
-      // the feather lets a few embers drift softly past the rim.
-      const rho = Math.sqrt(Math.random()) ** 1.25
-      const feather = 1 + Math.random() * Math.random() * 0.22
-      positions[i * 3] = toWorldX(cx + Math.cos(theta) * rx * rho * feather)
-      positions[i * 3 + 1] = toWorldY(cy + Math.sin(theta) * ry * rho * feather)
+      // Rejection-sample the squircle (acceptance ~93% at P=5).
+      let nx = 0
+      let ny = 0
+      let edge = 1
+      for (let tries = 0; tries < 8; tries += 1) {
+        nx = Math.random() * 2 - 1
+        ny = Math.random() * 2 - 1
+        edge = Math.abs(nx) ** P + Math.abs(ny) ** P
+        if (edge <= 1) break
+      }
+      // Slight feather past the rim so the boundary breathes.
+      const feather = 1 + Math.random() * Math.random() * 0.06
+      positions[i * 3] = toWorldX(cx + nx * rx * feather)
+      positions[i * 3 + 1] = toWorldY(cy + ny * ry * feather)
       positions[i * 3 + 2] = (Math.random() * 2 - 1) * 0.35
-      // Dimmer at the rim so the cloud's edge dissolves instead of cutting.
-      shades[i] = (0.3 + Math.random() * 0.26) * (1.05 - rho * 0.45)
+      // Dimmer toward the rim so the edge dissolves instead of cutting.
+      shades[i] = (0.3 + Math.random() * 0.26) * (1.05 - edge * 0.4)
     }
     return { positions, shades }
   }

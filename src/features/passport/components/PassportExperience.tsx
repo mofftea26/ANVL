@@ -8,7 +8,6 @@ import {
   useStorefrontAccountSession,
 } from '@/features/storefront-account/publicAccount.core'
 import { usePassportQuery } from '../hooks/usePassport'
-import { buildCeremonyLines } from '../lib/ceremonyLines'
 import { resolvePassportStage } from '../lib/passportStage'
 import type { PassportRelated } from '../lib/relatedProducts'
 import type { PassportView } from '../schemas/passport.schema'
@@ -82,6 +81,12 @@ export function PassportExperience({
     return passportQuery.isLoading ? <PassportLoading /> : <PassportNotFound />
   }
 
+  // Signed in but still resolving the owner-aware projection: hold the splash
+  // instead of flashing the anon layout (teaser/public) and then swapping.
+  if (customerId && !claimedView && passportQuery.isLoading) {
+    return <PassportLoading />
+  }
+
   const stage = resolvePassportStage(view, customerId)
 
   switch (stage) {
@@ -102,7 +107,6 @@ export function PassportExperience({
                 content.piece.gallery[0]?.src ??
                 null
               }
-              lines={buildCeremonyLines({ view, product, content, claimedDate })}
               ownerName={view.claimedDisplayName ?? ''}
               onComplete={() => setCeremony('done')}
             />

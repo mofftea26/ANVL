@@ -23,9 +23,11 @@ export interface PassportPageProps {
   actions?: ReactNode
 }
 
-/** Console tier: big screens with motion allowed get the no-scroll experience. */
-function useConsoleMode(): boolean {
-  const [on, setOn] = useState(false)
+/** Console tier: big screens with motion allowed get the no-scroll experience.
+ *  `null` until the browser has answered — the page shows a stable splash
+ *  instead of committing to the wrong layout. */
+function useConsoleMode(): boolean | null {
+  const [on, setOn] = useState<boolean | null>(null)
   useEffect(() => {
     const mq = window.matchMedia(PASSPORT_CONSOLE_MQ)
     const update = () => setOn(mq.matches)
@@ -43,9 +45,17 @@ function useConsoleMode(): boolean {
  *    stacked mobile passport
  * Both drive the same PASSPORT_SECTIONS registry and the same section-nav
  * state machine, so behavior can never drift between them.
+ *
+ * Until the media query answers (SSR + the first client frame) we render a
+ * bare atmosphere splash — committing to either layout early is what caused
+ * the visible "layout settles after load" flash on desktop.
  */
 export function PassportPage(props: PassportPageProps) {
   const consoleMode = useConsoleMode()
+
+  if (consoleMode === null) {
+    return <div aria-hidden="true" className="min-h-svh bg-[var(--color-bg)]" />
+  }
 
   if (props.variant === 'owner' && consoleMode) {
     return (

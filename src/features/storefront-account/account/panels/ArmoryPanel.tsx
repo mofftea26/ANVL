@@ -20,7 +20,7 @@ import { accountCardBg } from '@/features/storefront-account/account/accountCard
 import { cn } from '@/shared/lib/cn'
 import { ArmoryChallenges } from './armory/ArmoryChallenges'
 import { ArmoryHonor } from './armory/ArmoryHonor'
-import { ArmoryShareCard } from './armory/ArmoryShareCard'
+import { ArmoryShareButton } from './armory/ArmoryShareButton'
 import {
   ARMORY_VIEWS,
   ArmoryCollectionView,
@@ -77,6 +77,16 @@ export function ArmoryPanel() {
     buildChallengeContext({ owned, featCount, completion }),
   )
   const honorPinned = owned.filter((p) => p.featuredSlot !== null).length
+  // Distinct pieces for the share studio (image from the catalog).
+  const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]))
+  const sharePieces = Array.from(
+    new Map(owned.map((p) => [p.productSlug, p])).values(),
+  ).map((p) => ({
+    slug: p.productSlug,
+    name: p.productName,
+    image: catalogBySlug.get(p.productSlug)?.image,
+    wearCount: p.wearCount,
+  }))
   const profileQuery = useCustomerProfileQuery()
   const ownerName =
     [profileQuery.data?.firstName, profileQuery.data?.lastName].filter(Boolean).join(' ') ||
@@ -84,11 +94,22 @@ export function ArmoryPanel() {
 
   return (
     <div className="space-y-4">
+      {/* Header row — the share entry point lives up here, not in a card. */}
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="anvl-heading text-xl text-[var(--color-heading)]">The Armory</h2>
+        <ArmoryShareButton
+          ownerName={ownerName}
+          rank={rank}
+          pieces={sharePieces}
+          feats={featsQuery.data ?? []}
+        />
+      </div>
+
       {/* Forge progress — the live XP loop ----------------------------- */}
       <ForgeProgress forge={forge} milestone={milestone} />
 
-      {/* Standing ------------------------------------------------------- */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      {/* Standing (stacks full-width on phones so nothing clips) -------- */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Rank" icon={<Medal size={15} />}>
           <button
             type="button"
@@ -159,7 +180,6 @@ export function ArmoryPanel() {
           bg={accountCardBg('steel')}
           eyebrow="Badges"
           icon={<Award size={15} />}
-          className="col-span-2 sm:col-span-1"
         >
           {badges.length > 0 ? (
             <ul className="mt-1 flex flex-wrap gap-1.5">
@@ -239,7 +259,6 @@ export function ArmoryPanel() {
           </div>
 
           <ArmoryChallenges challenges={challenges} />
-          <ArmoryShareCard ownerName={ownerName} rank={rank} pieceCount={owned.length} />
         </>
       )}
 

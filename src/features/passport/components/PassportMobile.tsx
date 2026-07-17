@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useGSAP } from '@gsap/react'
-import { ArrowLeft, BadgeCheck } from 'lucide-react'
+import { BadgeCheck } from 'lucide-react'
 import type { Product } from '@/features/products/types/product.types'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import { buttonVariants } from '@/shared/components/ui/Button'
@@ -21,6 +21,7 @@ import {
 import { AuthenticityPlate } from './AuthenticityPlate'
 import { PassportAtmosphere } from './PassportAtmosphere'
 import { PassportHotspotDetail, PassportHotspots } from './PassportHotspots'
+import { PassportSheet } from './PassportSheet'
 import { ProductForgeImage } from './ProductForgeImage'
 
 const SWAP_MS = 260
@@ -56,9 +57,11 @@ export function PassportMobile({
 }) {
   const scopeRef = useRef<HTMLDivElement>(null)
   const [hotspot, setHotspot] = useState<number | null>(null)
-  const { group, active, panelVisible, transitionTo } = usePassportSectionNav({
+  // Group tabs keep the soft swap; sections open instantly as a bottom sheet.
+  const { group, panelVisible, transitionTo } = usePassportSectionNav({
     swapDelayMs: SWAP_MS,
   })
+  const [openSection, setOpenSection] = useState<string | null>(null)
 
   const ctx: PassportSectionContext = {
     view,
@@ -72,7 +75,7 @@ export function PassportMobile({
   const availableSections = PASSPORT_SECTIONS.filter((s) => s.available(ctx))
   const groups = PASSPORT_GROUPS.filter((g) => availableSections.some((s) => s.group === g.key))
   const groupSections = availableSections.filter((s) => s.group === group)
-  const activeDef = availableSections.find((s) => s.key === active) ?? null
+  const activeDef = availableSections.find((s) => s.key === openSection) ?? null
   const isOwner = variant === 'owner'
 
   const heroImage =
@@ -108,7 +111,7 @@ export function PassportMobile({
         { autoAlpha: 1, duration: 0.5, ease: 'power2.out', stagger: 0.04, overwrite: 'auto' },
       )
     },
-    { scope: scopeRef, dependencies: [group, active, panelVisible] },
+    { scope: scopeRef, dependencies: [group, panelVisible] },
   )
 
   return (
@@ -260,73 +263,62 @@ export function PassportMobile({
               })}
             </div>
 
-            {/* 6 — Small bentos / detail, same behavior as desktop */}
+            {/* 6 — Small bentos; tapping opens the section as a bottom sheet */}
             <div
               className={cn(
                 'mt-5 transition-opacity duration-300 ease-out',
                 panelVisible ? 'opacity-100' : 'opacity-0',
               )}
             >
-              {activeDef ? (
-                <div
-                  data-pm-panel-item
-                  className="rounded-2xl border border-[color-mix(in_oklab,var(--color-highlight)_18%,var(--color-line))] bg-[color-mix(in_oklab,var(--color-surface)_88%,transparent)] p-5"
-                >
+              <div className="grid grid-cols-2 gap-3">
+                {groupSections.map((s, i) => (
                   <button
+                    key={s.key}
                     type="button"
-                    onClick={() => transitionTo({ section: null })}
-                    className="focus-ring anvl-micro mb-4 inline-flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]"
+                    data-pm-panel-item
+                    onClick={() => setOpenSection(s.key)}
+                    className="focus-ring group relative isolate overflow-hidden rounded-xl border border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-surface)_82%,transparent)] p-3.5 text-left transition-colors active:border-[color-mix(in_oklab,var(--color-highlight)_50%,var(--color-line))]"
                   >
-                    <ArrowLeft aria-hidden="true" className="h-3 w-3" />
-                    Back to {groups.find((g) => g.key === group)?.label ?? 'the passport'}
-                  </button>
-                  <p className="anvl-micro text-[10px] text-[var(--color-highlight-bright)]">
-                    {activeDef.eyebrow}
-                  </p>
-                  <h2 className="anvl-heading mb-5 mt-1 text-2xl text-[var(--color-heading)]">
-                    {activeDef.title}
-                  </h2>
-                  <activeDef.Detail ctx={ctx} />
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {groupSections.map((s, i) => (
-                    <button
-                      key={s.key}
-                      type="button"
-                      data-pm-panel-item
-                      onClick={() => transitionTo({ section: s.key })}
-                      className="focus-ring group relative isolate overflow-hidden rounded-xl border border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-surface)_82%,transparent)] p-3.5 text-left transition-colors active:border-[color-mix(in_oklab,var(--color-highlight)_50%,var(--color-line))]"
-                    >
-                      {s.cardImage?.(ctx) ? (
-                        <img
-                          src={s.cardImage(ctx)}
-                          alt=""
-                          aria-hidden="true"
-                          loading="lazy"
-                          decoding="async"
-                          width={400}
-                          height={300}
-                          className="absolute inset-0 -z-10 h-full w-full object-cover opacity-[0.14]"
-                        />
-                      ) : null}
-                      <span
+                    {s.cardImage?.(ctx) ? (
+                      <img
+                        src={s.cardImage(ctx)}
+                        alt=""
                         aria-hidden="true"
-                        className="anvl-heading text-xs text-[var(--color-highlight-bright)]"
-                      >
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                      <h3 className="anvl-heading mt-1 text-sm leading-tight text-[var(--color-heading)]">
-                        {s.title}
-                      </h3>
-                      <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-[var(--color-text-muted)]">
-                        {s.teaser(ctx)}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              )}
+                        loading="lazy"
+                        decoding="async"
+                        width={400}
+                        height={300}
+                        className="absolute inset-0 -z-10 h-full w-full object-cover opacity-[0.14]"
+                      />
+                    ) : null}
+                    <span
+                      aria-hidden="true"
+                      className="anvl-heading text-xs text-[var(--color-highlight-bright)]"
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <h3 className="anvl-heading mt-1 text-sm leading-tight text-[var(--color-heading)]">
+                      {s.title}
+                    </h3>
+                    <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-[var(--color-text-muted)]">
+                      {s.teaser(ctx)}
+                    </p>
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* The open section, as a phone-native bottom sheet */}
+            {activeDef ? (
+              <PassportSheet
+                open
+                onClose={() => setOpenSection(null)}
+                eyebrow={activeDef.eyebrow}
+                title={activeDef.title}
+              >
+                <activeDef.Detail ctx={ctx} />
+              </PassportSheet>
+            ) : null}
           </>
         )}
       </div>

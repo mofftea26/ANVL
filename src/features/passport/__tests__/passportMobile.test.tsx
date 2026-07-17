@@ -91,18 +91,16 @@ describe('PassportMobile — same section behavior as the desktop console', () =
     expect(screen.queryByRole('button', { name: /origin/i })).toBeNull()
   })
 
-  it('opens a bento detail and returns — no animation clock required', () => {
+  it('opens a bento as a bottom sheet and closes it — no animation clock required', () => {
     renderMobile()
     fireEvent.click(screen.getByRole('button', { name: /material dossier/i }))
-    act(() => {
-      vi.advanceTimersByTime(400)
-    })
-    expect(screen.getByRole('heading', { name: 'Material dossier' })).toBeTruthy()
+    // The sheet opens instantly (phone-native), content inside a dialog.
+    expect(screen.getByRole('dialog', { name: 'Material dossier' })).toBeTruthy()
+    expect(screen.getByText('240 GSM')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: /back to the craft/i }))
-    act(() => {
-      vi.advanceTimersByTime(400)
-    })
+    fireEvent.click(screen.getByRole('button', { name: /close section/i }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    // The grid never left.
     expect(screen.getByRole('button', { name: /material dossier/i })).toBeTruthy()
   })
 

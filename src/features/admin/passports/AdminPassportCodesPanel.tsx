@@ -46,6 +46,8 @@ export function AdminPassportCodesPanel() {
   const [filterStatus, setFilterStatus] = useState<StatusFilter>('all')
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null)
   const [confirmBusy, setConfirmBusy] = useState(false)
+  /** Unassign option: also purge the ex-owner's feats for this product. */
+  const [purgeFeats, setPurgeFeats] = useState(false)
   const [printBatchId, setPrintBatchId] = useState<string | null>(null)
 
   const reload = async () => {
@@ -144,12 +146,13 @@ export function AdminPassportCodesPanel() {
     setConfirmBusy(true)
     const res =
       confirm.kind === 'unassign'
-        ? await unassignPassport(confirm.passport.id)
+        ? await unassignPassport(confirm.passport.id, purgeFeats)
         : confirm.kind === 'delete'
           ? await deletePassport(confirm.passport.id)
           : await deleteBatch(confirm.batchId)
     setConfirmBusy(false)
     setConfirm(null)
+    setPurgeFeats(false)
     if (!res.ok) {
       toast.error(res.error)
       return
@@ -400,7 +403,10 @@ export function AdminPassportCodesPanel() {
       {/* Confirms ---------------------------------------------------------- */}
       <AdminConfirmDialog
         open={confirm !== null}
-        onClose={() => setConfirm(null)}
+        onClose={() => {
+          setConfirm(null)
+          setPurgeFeats(false)
+        }}
         title={
           confirm?.kind === 'unassign'
             ? 'Unassign this passport?'
@@ -418,6 +424,19 @@ export function AdminPassportCodesPanel() {
             <strong>{confirm.passport.productName}</strong> #{confirm.passport.serialNumber} will
             be released from {confirm.passport.claimedDisplayName ?? 'its owner'} and become
             claimable by the next person who scans it.
+            <label className="mt-4 flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={purgeFeats}
+                onChange={(e) => setPurgeFeats(e.target.checked)}
+                className="focus-ring mt-0.5 h-4 w-4 accent-[var(--color-highlight)]"
+              />
+              <span className="text-xs leading-relaxed">
+                <strong>Also remove their records for this product</strong> — feats and
+                achievements are deleted as if never owned. Leave off to keep them: if the same
+                customer re-claims this product, their records reattach (nothing duplicates).
+              </span>
+            </label>
           </>
         ) : confirm?.kind === 'delete' ? (
           <>

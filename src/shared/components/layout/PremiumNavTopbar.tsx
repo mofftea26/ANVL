@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Menu, ShoppingBag } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -5,6 +6,7 @@ import type { CmsLinkItem } from '@/features/cms/navigation/navigation.types'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { AccountMenu } from '@/features/storefront-account/account/AccountMenu'
+import { useStorefrontAccountSession } from '@/features/storefront-account/publicAccount.core'
 import { GlobalSearchBar } from '@/features/search/components/GlobalSearchBar'
 import { AnvlLogoImage } from '@/shared/components/brand/AnvlLogoImage'
 import { Container } from '@/shared/components/ui/Container'
@@ -38,6 +40,11 @@ export function PremiumNavTopbar({
   const { quantity } = useCart()
   const openCart = useCartDrawerStore((s) => s.openDrawer)
   const isSolid = variant === 'solid'
+  // Session is browser-only — gate on mount so SSR + first client paint match.
+  const customerId = useStorefrontAccountSession((s) => s.customerId)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  const isSignedIn = mounted && Boolean(customerId)
 
   // Shared variant-aware chrome for the right-side icon controls so the cart and
   // burger read cleanly over both the transparent hero and the solid bar.
@@ -116,6 +123,21 @@ export function PremiumNavTopbar({
               {stripAngleBracketTags(item.label)}
             </SafeLink>
           ))}
+          {/* Signed-in only: straight into the Armory. */}
+          {isSignedIn ? (
+            <Link
+              to="/account"
+              search={{ tab: 'armory' }}
+              className={cn(
+                'anvl-micro focus-ring text-xs no-underline transition-colors',
+                isSolid
+                  ? 'text-[var(--color-highlight-bright)] hover:text-[var(--color-heading)]'
+                  : 'text-[var(--color-highlight-bright)] hover:text-[var(--color-heading)]',
+              )}
+            >
+              Armory
+            </Link>
+          ) : null}
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <GlobalSearchBar triggerClassName={iconChromeRound} />

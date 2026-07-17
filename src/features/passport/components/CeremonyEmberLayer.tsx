@@ -10,7 +10,13 @@ import { CeremonyCrestParticles } from '../webgl/CeremonyCrestParticles'
  * fuses into the seal. Lazy-loaded (vendor-three) and mounted only on capable
  * devices — the DOM ceremony never depends on it.
  */
-export default function CeremonyEmberLayer({ drive }: { drive: DustDrive }) {
+export default function CeremonyEmberLayer({
+  drive,
+  productImageUrl,
+}: {
+  drive: DustDrive
+  productImageUrl: string | null
+}) {
   useCanvasTeardownMark()
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -20,8 +26,8 @@ export default function CeremonyEmberLayer({ drive }: { drive: DustDrive }) {
         dpr={[1, 1.5]}
         style={{ pointerEvents: 'none' }}
       >
-        <CeremonyCrestParticles />
-        <DustField drive={drive} count={520} />
+        <CeremonyCrestParticles productImageUrl={productImageUrl} />
+        <DustField drive={drive} count={420} />
       </Canvas>
     </div>
   )
