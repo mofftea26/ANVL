@@ -120,6 +120,48 @@ export function deriveArmoryRank(
   return rank('initiate', 1)
 }
 
+/** Full rank ladder for the "how do I rank up" modal (display metadata). */
+export interface RankLadderLevel {
+  level: 1 | 2 | 3
+  title: string
+  unlock: string
+}
+export interface RankLadderEntry {
+  key: ArmoryRankKey
+  name: string
+  description: string
+  emblemSrc: string
+  levels: RankLadderLevel[]
+}
+
+export const ARMORY_RANK_LADDER: RankLadderEntry[] = (
+  [
+    ['initiate', ['Begin your armory', 'Register 1 piece', 'Register 2 pieces']],
+    ['forged', ['Register 3 pieces', 'Register 4 pieces', 'Register 5 pieces']],
+    ['oathbound', ['Register 6 pieces', 'Register 8 pieces', 'Register 10 pieces']],
+    ['warlord', ['Complete a full drop', 'A full drop + 12 pieces', 'Complete two drops']],
+  ] as const
+).map(([key, unlocks]) => ({
+  key,
+  name: RANK_COPY[key].title,
+  description: RANK_COPY[key].description,
+  emblemSrc: `/brand/ranks/${key}.png`,
+  levels: unlocks.map((unlock, i) => {
+    const level = (i + 1) as 1 | 2 | 3
+    return { level, title: `${RANK_COPY[key].title} ${ROMAN[level]}`, unlock }
+  }),
+}))
+
+/** Every badge that can be earned, for display in the ranks modal. */
+export const ARMORY_BADGE_CATALOG: ArmoryBadge[] = [
+  {
+    key: 'first-claim',
+    title: 'First Strike',
+    description: 'Registered your first passport.',
+  },
+  { key: 'full-drop', title: 'Drop Complete', description: 'Every piece of a drop, registered.' },
+]
+
 /** Badges — none are serial-number based (final product decision). */
 export function deriveArmoryBadges(
   ownedCount: number,

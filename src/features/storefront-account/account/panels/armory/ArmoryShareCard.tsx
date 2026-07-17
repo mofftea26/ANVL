@@ -1,38 +1,38 @@
 import { useState } from 'react'
-import { Check, Copy, Share2 } from 'lucide-react'
+import { Share2 } from 'lucide-react'
+import type { ArmoryRank } from '@/features/passport/lib/ranks'
 import {
   useArmoryShareQuery,
   useSetArmoryShareMutation,
 } from '@/features/passport/hooks/useArmory'
 import { BRAND } from '@/shared/constants/brand'
 import { cn } from '@/shared/lib/cn'
+import { ArmoryShareModal } from './ArmoryShareModal'
 
 /**
  * The share control for the owner's Armory — the "write" side's gateway to the
  * public "read" side. Flip the switch to mint (once) a non-guessable handle and
  * expose a read-only /armory/$handle page; flip it off to hide it again. The
  * handle survives toggling, so a shared link revives rather than rotting.
+ * Once public, "Share" opens the full share sheet (copy, socials, story image).
  */
-export function ArmoryShareCard() {
+export function ArmoryShareCard({
+  ownerName,
+  rank,
+  pieceCount,
+}: {
+  ownerName: string
+  rank: ArmoryRank
+  pieceCount: number
+}) {
   const shareQuery = useArmoryShareQuery()
   const setShare = useSetArmoryShareMutation()
-  const [copied, setCopied] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
 
   const share = shareQuery.data
   const isPublic = share?.isPublic ?? false
   const url =
     isPublic && share?.handle ? `${BRAND.canonicalBaseUrl}/armory/${share.handle}` : null
-
-  const copy = async () => {
-    if (!url) return
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1800)
-    } catch {
-      /* clipboard denied — the field is selectable as a fallback */
-    }
-  }
 
   return (
     <section className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-5">
@@ -73,30 +73,24 @@ export function ArmoryShareCard() {
       </div>
 
       {url ? (
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-2">
-          <input
-            readOnly
-            value={url}
-            aria-label="Your public armory link"
-            onFocus={(e) => e.currentTarget.select()}
-            className="min-w-0 flex-1 bg-transparent px-2 text-xs text-[var(--color-text)] outline-none"
-          />
+        <>
           <button
             type="button"
-            onClick={copy}
-            className="focus-ring inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-[color:var(--color-on-highlight)]"
+            onClick={() => setModalOpen(true)}
+            className="focus-ring mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-on-highlight)]"
           >
-            {copied ? (
-              <>
-                <Check size={13} aria-hidden="true" /> Copied
-              </>
-            ) : (
-              <>
-                <Copy size={13} aria-hidden="true" /> Copy
-              </>
-            )}
+            <Share2 size={14} aria-hidden="true" /> Share
           </button>
-        </div>
+          <ArmoryShareModal
+            open={modalOpen}
+            onClose={() => setModalOpen(false)}
+            url={url}
+            ownerName={ownerName}
+            rankTitle={rank.title}
+            rankEmblemSrc={rank.emblemSrc}
+            pieceCount={pieceCount}
+          />
+        </>
       ) : null}
     </section>
   )

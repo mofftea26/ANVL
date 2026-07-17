@@ -14,6 +14,7 @@ import {
   deriveArmoryBadges,
   deriveArmoryRank,
 } from '@/features/passport/lib/ranks'
+import { useCustomerProfileQuery } from '@/features/storefront-account/publicAccount.core'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
 import { cn } from '@/shared/lib/cn'
@@ -32,6 +33,7 @@ import {
 } from './armory/ArmoryViews'
 import { CollectionCrest } from './armory/CollectionCrest'
 import { ForgeProgress } from './armory/ForgeProgress'
+import { RankLadderModal } from './armory/RankLadderModal'
 
 /** Catalog for the Armory's views — light, cached, storefront-safe. */
 function useArmoryCatalogQuery() {
@@ -65,6 +67,7 @@ export function ArmoryPanel() {
   const catalog = catalogQuery.data ?? []
   const featCount = featsQuery.data?.length ?? 0
   const [view, setView] = useState<ArmoryViewKey>('grid')
+  const [rankOpen, setRankOpen] = useState(false)
 
   const completion = computeDropCompletion(owned, catalog)
   const rank = deriveArmoryRank(owned.length, completion)
@@ -79,6 +82,10 @@ export function ArmoryPanel() {
   const featPieces = Array.from(
     new Map(owned.map((p) => [p.productSlug, p.productName])).entries(),
   ).map(([slug, name]) => ({ slug, name }))
+  const profileQuery = useCustomerProfileQuery()
+  const ownerName =
+    [profileQuery.data?.firstName, profileQuery.data?.lastName].filter(Boolean).join(' ') ||
+    'ANVL Athlete'
 
   return (
     <div className="space-y-4">
@@ -88,39 +95,48 @@ export function ArmoryPanel() {
       {/* Standing ------------------------------------------------------- */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Rank" icon={<Medal size={15} />}>
-          <div className="mt-1 flex items-center gap-3">
-            <img
-              src={rank.emblemSrc}
-              alt={`${rank.title} rank emblem`}
-              width={96}
-              height={96}
-              loading="lazy"
-              decoding="async"
-              className="h-14 w-14 shrink-0 object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)]"
-            />
-            <div className="min-w-0">
-              <p className="anvl-heading truncate text-2xl text-[var(--color-heading)]">
-                {rank.title}
-              </p>
-              <span
-                className="mt-1 inline-flex items-center gap-1"
-                aria-label={`Level ${rank.level} of 3`}
-              >
-                {[1, 2, 3].map((pip) => (
-                  <span
-                    key={pip}
-                    aria-hidden="true"
-                    className={
-                      pip <= rank.level
-                        ? 'h-1.5 w-4 rounded-full bg-[var(--color-highlight-bright)]'
-                        : 'h-1.5 w-4 rounded-full bg-[var(--color-surface-elevated)]'
-                    }
-                  />
-                ))}
-              </span>
+          <button
+            type="button"
+            onClick={() => setRankOpen(true)}
+            aria-label="View ranks and badges"
+            className="focus-ring group -m-1 mt-0 block w-full rounded-lg p-1 text-left"
+          >
+            <div className="mt-1 flex items-center gap-3">
+              <img
+                src={rank.emblemSrc}
+                alt={`${rank.title} rank emblem`}
+                width={96}
+                height={96}
+                loading="lazy"
+                decoding="async"
+                className="h-14 w-14 shrink-0 object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)]"
+              />
+              <div className="min-w-0">
+                <p className="anvl-heading truncate text-2xl text-[var(--color-heading)]">
+                  {rank.title}
+                </p>
+                <span
+                  className="mt-1 inline-flex items-center gap-1"
+                  aria-label={`Level ${rank.level} of 3`}
+                >
+                  {[1, 2, 3].map((pip) => (
+                    <span
+                      key={pip}
+                      aria-hidden="true"
+                      className={
+                        pip <= rank.level
+                          ? 'h-1.5 w-4 rounded-full bg-[var(--color-highlight-bright)]'
+                          : 'h-1.5 w-4 rounded-full bg-[var(--color-surface-elevated)]'
+                      }
+                    />
+                  ))}
+                </span>
+              </div>
             </div>
-          </div>
-          <p className="anvl-micro mt-2 text-[var(--color-text-muted)]">{rank.description}</p>
+            <p className="anvl-micro mt-2 text-[var(--color-highlight-bright)] opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
+              View ranks &amp; badges →
+            </p>
+          </button>
         </AccountBentoCard>
 
         <AccountBentoCard bg={accountCardBg('gold')} eyebrow="Crest" icon={<Medal size={15} />}>
@@ -229,9 +245,16 @@ export function ArmoryPanel() {
 
           <ArmoryChallenges challenges={challenges} />
           <ArmoryFeats pieces={featPieces} />
-          <ArmoryShareCard />
+          <ArmoryShareCard ownerName={ownerName} rank={rank} pieceCount={owned.length} />
         </>
       )}
+
+      <RankLadderModal
+        open={rankOpen}
+        onClose={() => setRankOpen(false)}
+        rank={rank}
+        earnedBadges={badges}
+      />
     </div>
   )
 }
