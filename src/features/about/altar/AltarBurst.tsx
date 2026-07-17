@@ -3,45 +3,59 @@ import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import type { AboutResolvedOrb } from '../content/aboutContent.defaults'
 import type { AltarState } from './altarState'
-import { ORB_SEAT } from './AltarOrb'
+import { ORB_RADIUS, ORB_SEAT, ORB_SEAT_SCALE } from './AltarOrb'
 
-/** Enough shards to draw a legible rectangle when they converge. */
-const PARTICLE_COUNT = 620
-/** Share of shards assigned to the rect's perimeter (the rest fill it). */
-const EDGE_SHARE = 0.68
+/**
+ * The site's particle standard (aFrom→aTo + per-seed stagger): enough embers
+ * to read as the orb's own matter AND to draw a legible plate when they land.
+ */
+const PARTICLE_COUNT = 1400
+/** Share of embers assigned to the rect's perimeter (the rest fill it). */
+const EDGE_SHARE = 0.6
+/** The seated (shrunken) orb's radius — the embers are born ON this sphere. */
+const SPHERE_R = ORB_RADIUS * ORB_SEAT_SCALE * 1.1
 
 const BURST_VERTEX = /* glsl */ `
 precision highp float;
 
+attribute vec3 aFrom;
 attribute vec3 aDir;
 attribute vec3 aTo;
-attribute float aSpread;
+attribute float aSeed;
 attribute float aSize;
-attribute float aDelay;
 
-uniform float uT;
+uniform float uBurst;
 uniform float uForm;
 uniform float uFormFade;
+uniform float uTime;
 uniform float uPixelRatio;
 
 varying float vAlpha;
 
 void main() {
-  float t = clamp(uT, 0.0, 1.0);
-  // Shards fly out fast, ease off, and sag under a little gravity.
-  vec3 disperse = aDir * (0.1 + t * 1.9 * aSpread);
-  disperse.y -= t * t * 0.6;
+  // Disperse: the sphere the orb was breaks apart — each ember leaves its
+  // surface point along its own radial, sags a little, and hangs drifting.
+  float sb = smoothstep(0.0, 1.0, uBurst);
+  vec3 scattered = aFrom * (1.0 + sb * 1.4) + aDir * (sb * (0.8 + aSeed * 1.0));
+  scattered.y -= sb * sb * 0.45;
+  scattered += 0.035 * sb * vec3(
+    sin(uTime * 1.3 + aSeed * 17.0),
+    cos(uTime * 1.1 + aSeed * 23.0),
+    sin(uTime * 0.9 + aSeed * 31.0)
+  );
 
-  // …then, per-shard staggered, they turn and converge onto the modal rect.
-  float f = smoothstep(aDelay * 0.35, aDelay * 0.35 + 0.65, uForm);
-  vec3 pos = mix(disperse, aTo, f);
+  // …then, per-seed staggered, the swarm turns and FORMS the modal plate.
+  float f = smoothstep(aSeed * 0.35, aSeed * 0.35 + 0.65, uForm);
+  vec3 pos = mix(scattered, aTo, f);
 
-  float burstAlpha = pow(1.0 - t, 1.7);
-  vAlpha = mix(burstAlpha, 0.9, f) * (1.0 - uFormFade);
+  // Alive for the whole flight; a soft ember flicker; dissolved by uFormFade
+  // as the real panel materializes inside the formed frame.
+  float flicker = 0.78 + 0.22 * sin(uTime * (2.0 + aSeed * 3.0) + aSeed * 40.0);
+  vAlpha = mix(1.0, 0.92, f) * flicker * (1.0 - uFormFade);
 
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
   gl_Position = projectionMatrix * mv;
-  gl_PointSize = aSize * uPixelRatio * mix(1.0 - 0.55 * t, 0.5, f) * (300.0 / -mv.z);
+  gl_PointSize = aSize * uPixelRatio * mix(1.0, 0.6, f) * (300.0 / -mv.z);
 }
 `
 
@@ -63,31 +77,45 @@ void main() {
 function buildBurstGeometry(): THREE.BufferGeometry {
   const geo = new THREE.BufferGeometry()
   const positions = new Float32Array(PARTICLE_COUNT * 3)
+  const from = new Float32Array(PARTICLE_COUNT * 3)
   const dirs = new Float32Array(PARTICLE_COUNT * 3)
   const targets = new Float32Array(PARTICLE_COUNT * 3)
-  const spread = new Float32Array(PARTICLE_COUNT)
+  const seed = new Float32Array(PARTICLE_COUNT)
   const size = new Float32Array(PARTICLE_COUNT)
-  const delay = new Float32Array(PARTICLE_COUNT)
 
   for (let i = 0; i < PARTICLE_COUNT; i++) {
-    // Random unit direction, biased slightly upward — sparks off an anvil.
+    // A point on (mostly the shell of) the seated orb's sphere — at rest the
+    // pool IS the orb, so the hand-off from the dissolving stone is 1:1.
     const theta = Math.random() * Math.PI * 2
-    const y = Math.random() * 1.4 - 0.4
-    const r = Math.sqrt(Math.max(0, 1 - Math.min(1, y * y)))
-    dirs[i * 3] = Math.cos(theta) * r
-    dirs[i * 3 + 1] = y
-    dirs[i * 3 + 2] = Math.sin(theta) * r
-    spread[i] = 0.6 + Math.random() * 0.8
-    size[i] = 2.0 + Math.random() * 3.5
-    delay[i] = Math.random()
+    const cosPhi = Math.random() * 2 - 1
+    const sinPhi = Math.sqrt(Math.max(0, 1 - cosPhi * cosPhi))
+    const nx = Math.cos(theta) * sinPhi
+    const ny = cosPhi
+    const nz = Math.sin(theta) * sinPhi
+    const r = SPHERE_R * (0.78 + 0.22 * Math.random())
+    from[i * 3] = nx * r
+    from[i * 3 + 1] = ny * r
+    from[i * 3 + 2] = nz * r
+
+    // Explosion radial = the surface normal, biased upward — sparks off an anvil.
+    const bx = nx
+    const by = ny + 0.35
+    const bz = nz
+    const bl = Math.hypot(bx, by, bz) || 1
+    dirs[i * 3] = bx / bl
+    dirs[i * 3 + 1] = by / bl
+    dirs[i * 3 + 2] = bz / bl
+
+    seed[i] = Math.random()
+    size[i] = 1.8 + Math.random() * 3.4
   }
 
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geo.setAttribute('aFrom', new THREE.BufferAttribute(from, 3))
   geo.setAttribute('aDir', new THREE.BufferAttribute(dirs, 3))
   geo.setAttribute('aTo', new THREE.BufferAttribute(targets, 3))
-  geo.setAttribute('aSpread', new THREE.BufferAttribute(spread, 1))
+  geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1))
   geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1))
-  geo.setAttribute('aDelay', new THREE.BufferAttribute(delay, 1))
   return geo
 }
 
@@ -105,9 +133,10 @@ function ndcToSeatPlane(
 }
 
 /**
- * Writes formation targets: shards land on the modal panel's rectangle
- * (mostly its perimeter, some interior fill), projected from the measured
- * DOM rect onto the orb-seat plane and expressed in group-local coords.
+ * Writes formation targets: embers land on the modal panel's rectangle
+ * (its perimeter plus an interior fill so the plate reads as a surface),
+ * projected from the measured DOM rect onto the orb-seat plane and expressed
+ * in group-local coords.
  */
 function buildFormTargets(
   geometry: THREE.BufferGeometry,
@@ -154,7 +183,7 @@ function buildFormTargets(
       x = minX + Math.sign(w) * x
       y = minY + Math.sign(h) * y
     } else {
-      // Sparse interior fill so the plate reads as a surface, not a wire.
+      // Interior fill so the plate reads as a surface, not a wire.
       x = minX + w * Math.random()
       y = minY + h * Math.random()
     }
@@ -166,12 +195,13 @@ function buildFormTargets(
 }
 
 /**
- * The strike explosion — the seated orb bursts into a spray of shards plus an
- * expanding shockwave ring, both in the struck orb's own color. Driven by
- * `state.burstT` (GSAP-tweened 0→1 at impact). Once the modal has measured
- * itself (`state.modalNdc` + `formSeq`), `state.formT` pulls the dispersed
- * shards back in to FORM the modal's rectangle; `state.formFade` dissolves
- * them as the real panel materializes inside. Idle frames render nothing.
+ * The strike's particle life — the site's disperse-and-rearrange embers. At
+ * impact the seated palantír EXPLODES INTO this pool (each ember is born on
+ * the orb's sphere, so the stone hands its matter over 1:1); `state.burstT`
+ * scatters them into a drifting cloud, and once the modal has measured itself
+ * (`state.modalNdc` + `formSeq`), `state.formT` staggers the swarm back in to
+ * FORM the modal's plate; `state.formFade` dissolves it as the real panel
+ * materializes. A shockwave ring marks the impact. Idle frames render nothing.
  */
 export function AltarBurst({ orbs, state }: { orbs: AboutResolvedOrb[]; state: AltarState }) {
   const points = useRef<THREE.Points>(null)
@@ -185,9 +215,10 @@ export function AltarBurst({ orbs, state }: { orbs: AboutResolvedOrb[]; state: A
 
   const uniforms = useMemo(
     () => ({
-      uT: { value: 0 },
+      uBurst: { value: 0 },
       uForm: { value: 0 },
       uFormFade: { value: 0 },
+      uTime: { value: 0 },
       uColor: { value: new THREE.Color('#E7E4DF') },
       uPixelRatio: {
         value: typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio, 2),
@@ -196,18 +227,18 @@ export function AltarBurst({ orbs, state }: { orbs: AboutResolvedOrb[]; state: A
     [],
   )
 
-  useFrame(({ camera }) => {
-    // Fresh strike measured — aim the shards at the new modal rect.
+  useFrame(({ camera, clock }) => {
+    // Fresh strike measured — aim the embers at the new modal rect.
     if (state.formSeq !== builtSeq.current && state.modalNdc) {
       buildFormTargets(geometry, state.modalNdc, camera)
       builtSeq.current = state.formSeq
     }
 
-    const bursting = state.burstT > 0.001 && state.burstT < 0.999
-    const forming = state.formT > 0.001 && state.formFade < 0.999
-    const active = bursting || forming
+    // The pool lives from the moment the orb bursts until the formed plate
+    // has fully dissolved into the real panel (or the stage resets).
+    const active = state.burstT > 0.001 && state.formFade < 0.999
 
-    // Tint shards + ring with the struck orb's color once per strike.
+    // Tint embers + ring with the struck orb's color once per strike.
     if (state.activeIndex >= 0 && state.activeIndex !== lastColored.current) {
       const color = orbs[state.activeIndex]?.color
       if (color) {
@@ -220,11 +251,13 @@ export function AltarBurst({ orbs, state }: { orbs: AboutResolvedOrb[]; state: A
 
     if (points.current) {
       points.current.visible = active
-      uniforms.uT.value = state.burstT
+      uniforms.uBurst.value = state.burstT
       uniforms.uForm.value = state.formT
       uniforms.uFormFade.value = state.formFade
+      uniforms.uTime.value = clock.elapsedTime
     }
     if (ring.current && ringMaterial.current) {
+      const bursting = state.burstT > 0.001 && state.burstT < 0.999
       ring.current.visible = bursting
       const s = 0.25 + state.burstT * 3.2
       ring.current.scale.setScalar(s)
