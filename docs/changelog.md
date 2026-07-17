@@ -1,4 +1,14 @@
-﻿## 2026-07-17 — Feedback round 10: feats root-caused, pedestal armory, Phosphor trial
+﻿## 2026-07-17 — Feedback round 11: Phosphor final, forged Switch, armory-first sharing
+
+- **Phosphor is final**: `lucide-react` removed from `package.json`; the `@/shared/icons` seam became `index.tsx` and inlines the one icon Phosphor lacks (`Anvil`, lucide path, ISC). Duotone weight stays the global default via IconContext.
+- **Reusable `Switch` rebuilt** (`src/shared/components/ui/Switch.tsx`): cva track/thumb variants (sm/md), champagne-gradient checked state, recessed-steel unchecked; three layouts — bare (aria-label), inline label, settings row (label + description). Now used by the armory card public/private toggle (`PieceShareSwitch`), the feat form's visibility toggle, admin unassign's "also remove their records" purge option, and the existing settings panel.
+- **Grid/Vault switcher shrunk** to a two-icon pill in the armory header (grid ⇄ vault), out of the layout's way; the old full-width tablist is gone.
+- **Challenges became a bento card + categorized log**: the card face shows the nearest-to-done challenge with its progress bar and the forged count; clicking opens an overlay grouping every challenge under The Forge / The Ritual / The Record / The Honor (`ChallengeCategory` on every definition).
+- **Passport share links now open the sharer's public armory** (`/armory/$handle`) instead of the shop page — first share enables sharing and mints the handle in one move (tab pre-opened inside the click gesture so popup blockers stay quiet); the share studio inherits the armory URL too. Passport tokens still never travel.
+- **Hall of Honor re-forged**: pedestals replaced with compact **forged plaques** — the toast plate language (bevel-cut corners via clip-path, champagne heat hairline, engraved I/II/III numeral, drop-shadow filter), each carrying the piece image, name, and wear count at a fraction of the old size.
+- **Phantom unassigned piece — fully self-healing**: `set_passport_visibility` failures pass the RPC's own error through, so a `not_owner` answer from *any* armory action (wear, visibility, Hall of Honor pin) now toasts and refetches the owned list immediately.
+
+## 2026-07-17 — Feedback round 10: feats root-caused, pedestal armory, Phosphor trial
 
 - **Feats not showing — root-caused**: the feats SELECT was missing `product_slug`, so every feat parsed with `productSlug: null` and the per-piece filters (grid cards, passport tab) matched nothing. Also armory reads (`listArmoryFeats`, `listOwnedPassports`) now **throw** on failure instead of returning `[]` — a swallowed error was being cached by React Query as a successful empty list.
 - **Phantom unassigned piece self-heals**: a `not_owner` answer to any action now toasts "no longer registered to you" and refetches the armory so the piece drops immediately; the owned list also refetches on every mount (`staleTime: 0`) instead of serving the 30s-stale default.

@@ -94,7 +94,12 @@ export function useSetFeaturedMutation() {
     mutationFn: (input: { id: string; slot: 1 | 2 | 3 | null }) =>
       setPassportFeatured(input.id, input.slot),
     onSuccess: (ok) => {
-      if (ok) void qc.invalidateQueries({ queryKey: passportQueryKeys.all })
+      if (!ok) {
+        // Covers both real failures and units unassigned mid-session — the
+        // refetch drops any phantom either way.
+        toast.error('Could not update the Hall of Honor — refreshing your armory.')
+      }
+      void qc.invalidateQueries({ queryKey: passportQueryKeys.all })
     },
   })
 }

@@ -7,15 +7,20 @@ import {
   WhatsAppIcon,
   XIcon,
 } from '@/features/storefront-account/account/panels/armory/socialIcons'
-import { useArmoryFeatsQuery } from '../hooks/useArmory'
+import {
+  useArmoryFeatsQuery,
+  useArmoryShareQuery,
+  useSetArmoryShareMutation,
+} from '../hooks/useArmory'
 import { useOwnedPassportsQuery } from '../hooks/usePassport'
 import { deriveArmoryRank } from '../lib/ranks'
 import { BRAND } from '@/shared/constants/brand'
 
 /**
  * Share THIS piece to social — from the passport itself. Links always point
- * at the SHOP product page (never the passport URL: the token is the claim
- * secret and must not travel). "Create a share image" opens the full share
+ * at the owner's PUBLIC ARMORY (never the passport URL: the token is the
+ * claim secret and must not travel). First share enables armory sharing and
+ * mints the handle in one move. "Create a share image" opens the full share
  * studio (formats, templates, gallery/camera photo + HUD overlays) preset to
  * this piece — so the owner can post themselves wearing it.
  */
@@ -32,6 +37,8 @@ export function PassportShareSection({
 }) {
   const ownedQuery = useOwnedPassportsQuery()
   const featsQuery = useArmoryFeatsQuery()
+  const shareQuery = useArmoryShareQuery()
+  const setShare = useSetArmoryShareMutation()
   const owned = ownedQuery.data ?? []
   const [studioOpen, setStudioOpen] = useState(false)
 
@@ -43,9 +50,40 @@ export function PassportShareSection({
       .filter((d): d is string => Boolean(d))
       .sort()[0] ?? null
 
-  const url = `${BRAND.canonicalBaseUrl}/shop/${productSlug}`
+  const share = shareQuery.data
+  const armoryUrl =
+    share?.isPublic && share.handle
+      ? `${BRAND.canonicalBaseUrl}/armory/${share.handle}`
+      : null
   const text = `${productName} — forged by ${ownerName} at ANVL.`
   const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+
+  /**
+   * Run `fn` with the public armory URL — enabling sharing (which mints the
+   * handle server-side) first if this is the owner's first share.
+   */
+  const withArmoryUrl = (fn: (url: string) => void) => {
+    if (armoryUrl) {
+      fn(armoryUrl)
+      return
+    }
+    setShare.mutate(true, {
+      onSuccess: (result) => {
+        if (result?.handle) fn(`${BRAND.canonicalBaseUrl}/armory/${result.handle}`)
+      },
+    })
+  }
+
+  const openIntent = (buildHref: (url: string) => string) => {
+    // Open the tab inside the click gesture so popup blockers stay quiet,
+    // then point it once the handle resolves.
+    const win = window.open('', '_blank', 'noopener')
+    withArmoryUrl((url) => {
+      const href = buildHref(url)
+      if (win) win.location.href = href
+      else window.open(href, '_blank', 'noopener')
+    })
+  }
 
   const intents = [
     {
@@ -53,75 +91,80 @@ export function PassportShareSection({
       label: 'WhatsApp',
       tint: '#25D366',
       Icon: WhatsAppIcon,
-      href: `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`,
+      buildHref: (url: string) => `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`,
     },
     {
       key: 'facebook',
       label: 'Facebook',
       tint: '#1877F2',
       Icon: FacebookIcon,
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      buildHref: (url: string) =>
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
     },
     {
       key: 'x',
       label: 'X',
       tint: '#E7E4DF',
       Icon: XIcon,
-      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      buildHref: (url: string) =>
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
     },
     {
       key: 'telegram',
       label: 'Telegram',
       tint: '#26A5E4',
       Icon: TelegramIcon,
-      href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+      buildHref: (url: string) =>
+        `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
     },
   ]
 
-  const nativeShare = async () => {
-    try {
-      await navigator.share({ title: productName, text, url })
-    } catch {
-      /* dismissed */
-    }
+  const nativeShare = () => {
+    withArmoryUrl((url) => {
+      void navigator.share({ title: productName, text, url }).catch(() => {
+        /* dismissed */
+      })
+    })
   }
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        {intents.map(({ key, label, tint, Icon, href }) => (
-          <a
+        {intents.map(({ key, label, tint, Icon, buildHref }) => (
+          <button
             key={key}
-            href={href}
-            target="_blank"
-            rel="noreferrer"
+            type="button"
+            onClick={() => openIntent(buildHref)}
+            disabled={setShare.isPending}
             aria-label={`Share on ${label}`}
             title={label}
-            className="focus-ring grid h-11 w-11 place-items-center rounded-full bg-[var(--color-surface-elevated)] motion-safe:transition-transform hover:-translate-y-0.5"
+            className="focus-ring grid h-11 w-11 place-items-center rounded-full bg-[var(--color-surface-elevated)] motion-safe:transition-transform hover:-translate-y-0.5 disabled:opacity-50"
           >
             <Icon className="block h-5 w-5" style={{ color: tint }} />
-          </a>
+          </button>
         ))}
         {canNativeShare ? (
           <button
             type="button"
-            onClick={() => void nativeShare()}
+            onClick={nativeShare}
+            disabled={setShare.isPending}
             aria-label="Share…"
             title="Share…"
-            className="focus-ring grid h-11 w-11 place-items-center rounded-full bg-[var(--color-surface-elevated)] text-[var(--color-heading)] motion-safe:transition-transform hover:-translate-y-0.5"
+            className="focus-ring grid h-11 w-11 place-items-center rounded-full bg-[var(--color-surface-elevated)] text-[var(--color-heading)] motion-safe:transition-transform hover:-translate-y-0.5 disabled:opacity-50"
           >
             <Share2 size={19} aria-hidden="true" className="block" />
           </button>
         ) : null}
       </div>
       <p className="anvl-micro text-[10px] text-[var(--color-text-muted)]">
-        Links point at the product page — your passport stays private.
+        Links open your public armory — your passport link stays private.
       </p>
 
       <button
         type="button"
-        onClick={() => setStudioOpen(true)}
-        className="focus-ring inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-on-highlight)]"
+        onClick={() => withArmoryUrl(() => setStudioOpen(true))}
+        disabled={setShare.isPending}
+        className="focus-ring inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-on-highlight)] disabled:opacity-50"
       >
         <Images size={16} aria-hidden="true" />
         Create a share image
@@ -129,17 +172,21 @@ export function PassportShareSection({
 
       {/* The full studio, preset to this piece — formats, templates, and a
           gallery/camera photo with the HUD overlays. */}
-      <ArmoryShareModal
-        open={studioOpen}
-        onClose={() => setStudioOpen(false)}
-        url={url}
-        ownerName={ownerName}
-        rank={rank}
-        pieces={[{ slug: productSlug, name: productName, image: imageUrl ?? undefined, wearCount }]}
-        feats={featsQuery.data ?? []}
-        memberSince={memberSince}
-        initialSubjectKey={`piece:${productSlug}`}
-      />
+      {armoryUrl ? (
+        <ArmoryShareModal
+          open={studioOpen}
+          onClose={() => setStudioOpen(false)}
+          url={armoryUrl}
+          ownerName={ownerName}
+          rank={rank}
+          pieces={[
+            { slug: productSlug, name: productName, image: imageUrl ?? undefined, wearCount },
+          ]}
+          feats={featsQuery.data ?? []}
+          memberSince={memberSince}
+          initialSubjectKey={`piece:${productSlug}`}
+        />
+      ) : null}
     </div>
   )
 }

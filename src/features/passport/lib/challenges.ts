@@ -18,8 +18,19 @@ export interface ChallengeContext {
   honorPinned: number
 }
 
+export type ChallengeCategory = 'forge' | 'ritual' | 'record' | 'honor'
+
+/** Display order + labels for the categorized challenge log. */
+export const CHALLENGE_CATEGORIES: Array<{ key: ChallengeCategory; label: string }> = [
+  { key: 'forge', label: 'The Forge' },
+  { key: 'ritual', label: 'The Ritual' },
+  { key: 'record', label: 'The Record' },
+  { key: 'honor', label: 'The Honor' },
+]
+
 export interface ChallengeDef {
   id: string
+  category: ChallengeCategory
   title: string
   description: string
   target: number
@@ -28,6 +39,7 @@ export interface ChallengeDef {
 
 export interface ChallengeProgress {
   id: string
+  category: ChallengeCategory
   title: string
   description: string
   current: number
@@ -40,6 +52,7 @@ export interface ChallengeProgress {
 export const CHALLENGES: ChallengeDef[] = [
   {
     id: 'first-strike',
+    category: 'forge',
     title: 'First Strike',
     description: 'Register your first piece.',
     target: 1,
@@ -47,6 +60,7 @@ export const CHALLENGES: ChallengeDef[] = [
   },
   {
     id: 'loadout',
+    category: 'forge',
     title: 'Full Loadout',
     description: 'Register three pieces.',
     target: 3,
@@ -54,6 +68,7 @@ export const CHALLENGES: ChallengeDef[] = [
   },
   {
     id: 'battle-worn',
+    category: 'ritual',
     title: 'Battle-Worn',
     description: 'Log 25 wears across your armory.',
     target: 25,
@@ -61,6 +76,7 @@ export const CHALLENGES: ChallengeDef[] = [
   },
   {
     id: 'devotion',
+    category: 'ritual',
     title: 'Devotion',
     description: 'Train in a single piece 20 times.',
     target: 20,
@@ -68,6 +84,7 @@ export const CHALLENGES: ChallengeDef[] = [
   },
   {
     id: 'record-keeper',
+    category: 'record',
     title: 'Record Keeper',
     description: 'Log five feats.',
     target: 5,
@@ -75,6 +92,7 @@ export const CHALLENGES: ChallengeDef[] = [
   },
   {
     id: 'curator',
+    category: 'honor',
     title: 'Curator',
     description: 'Fill all three Hall of Honor slots.',
     target: 3,
@@ -82,6 +100,7 @@ export const CHALLENGES: ChallengeDef[] = [
   },
   {
     id: 'warlord',
+    category: 'forge',
     title: 'Warlord',
     description: 'Complete a full drop.',
     target: 1,
@@ -114,6 +133,7 @@ export function evaluateChallenges(ctx: ChallengeContext): ChallengeProgress[] {
     const current = Math.min(def.measure(ctx), def.target)
     return {
       id: def.id,
+      category: def.category,
       title: def.title,
       description: def.description,
       current,

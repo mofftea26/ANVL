@@ -61,10 +61,16 @@ export function useSetVisibilityMutation() {
     onSuccess: (result) => {
       if (result.ok) {
         void qc.invalidateQueries({ queryKey: passportQueryKeys.all })
+        return
+      }
+      // The unit was unassigned out from under the list — drop the phantom.
+      if (result.error === 'not_owner') {
+        toast.error('This piece is no longer registered to you — removing it.')
       } else {
         // Never fail silently — the reason surfaces.
         toast.error(result.error ?? 'Could not update visibility.')
       }
+      void qc.invalidateQueries({ queryKey: passportQueryKeys.all })
     },
   })
 }

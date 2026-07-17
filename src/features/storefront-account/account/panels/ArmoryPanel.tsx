@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Award, Medal, QrCode } from '@/shared/icons'
+import { Award, LayoutDashboard, Medal, QrCode, Shield } from '@/shared/icons'
 import { useArmoryFeatsQuery } from '@/features/passport/hooks/useArmory'
 import { useOwnedPassportsQuery } from '@/features/passport/hooks/usePassport'
 import type { ArmoryCatalogEntry } from '@/features/passport/lib/armory'
@@ -67,7 +67,7 @@ export function ArmoryPanel() {
   const featCount = featsQuery.data?.length ?? 0
   const [view, setView] = useState<ArmoryViewKey>('grid')
   const [rankOpen, setRankOpen] = useState(false)
-  const [overlay, setOverlay] = useState<'collection' | 'timeline' | null>(null)
+  const [overlay, setOverlay] = useState<'collection' | 'timeline' | 'challenges' | null>(null)
 
   const completion = computeDropCompletion(owned, catalog)
   const rank = deriveArmoryRank(owned.length, completion)
@@ -95,10 +95,42 @@ export function ArmoryPanel() {
 
   return (
     <div className="space-y-4">
-      {/* Header row — the share entry point lives up here, not in a card. */}
+      {/* Header row — view toggle + share live up here, out of the layout. */}
       <div className="flex items-center justify-between gap-3">
         <h2 className="anvl-heading text-xl text-[var(--color-heading)]">The Armory</h2>
-        <ArmoryShareButton
+        <div className="flex items-center gap-2">
+          {owned.length > 0 ? (
+            <div
+              role="tablist"
+              aria-label="Armory view"
+              className="flex rounded-full bg-[var(--color-surface-elevated)] p-1"
+            >
+              {ARMORY_VIEWS.map((v) => {
+                const ViewIcon = v.key === 'grid' ? LayoutDashboard : Shield
+                const active = v.key === view
+                return (
+                  <button
+                    key={v.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    aria-label={`${v.label} view — ${v.blurb}`}
+                    title={v.label}
+                    onClick={() => setView(v.key)}
+                    className={cn(
+                      'focus-ring grid h-9 w-9 place-items-center rounded-full motion-safe:transition-colors',
+                      active
+                        ? 'bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] text-[color:var(--color-on-highlight)]'
+                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
+                    )}
+                  >
+                    <ViewIcon size={17} aria-hidden="true" />
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
+          <ArmoryShareButton
           ownerName={ownerName}
           rank={rank}
           pieces={sharePieces}
@@ -111,7 +143,8 @@ export function ArmoryPanel() {
                   .sort()[0] ?? null)
               : null
           }
-        />
+          />
+        </div>
       </div>
 
       {/* Forge progress — the live XP loop ----------------------------- */}
@@ -229,8 +262,8 @@ export function ArmoryPanel() {
         <>
           <ArmoryHonor owned={owned} catalog={catalog} />
 
-          {/* Collection + Timeline — bento cards opening their overlays. */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Collection · Timeline · Challenges — bento cards → overlays. */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <AccountBentoCard bg={accountCardBg('carbon')} eyebrow="Collection">
               <p className="anvl-heading mt-1 text-2xl text-[var(--color-heading)]">
                 {completion.reduce((sum, d) => sum + d.claimed, 0)}
@@ -267,36 +300,50 @@ export function ArmoryPanel() {
                 className="focus-ring absolute inset-0 z-20 rounded-2xl"
               />
             </AccountBentoCard>
-          </div>
 
-          {/* View chips — swipeable on phones with scroll-snap and a soft
-              edge fade hinting there's more; no visible scrollbar. */}
-          <div
-            role="tablist"
-            aria-label="Armory views"
-            className="flex snap-x snap-mandatory gap-1 overflow-x-auto rounded-full border border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-surface)_55%,transparent)] p-1 [mask-image:linear-gradient(90deg,transparent,black_14px,black_calc(100%-14px),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {ARMORY_VIEWS.map((v) => {
-              const active = v.key === view
-              return (
-                <button
-                  key={v.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  title={v.blurb}
-                  onClick={() => setView(v.key)}
-                  className={cn(
-                    'focus-ring shrink-0 snap-start rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] motion-safe:transition-colors',
-                    active
-                      ? 'bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] text-[color:var(--color-on-highlight)]'
-                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
-                  )}
-                >
-                  {v.label}
-                </button>
-              )
-            })}
+            {/* Challenges — the most-progressed open goal fronts the card. */}
+            <AccountBentoCard
+              bg={accountCardBg('ember')}
+              eyebrow="Challenges"
+              className="col-span-2 sm:col-span-1"
+            >
+              {(() => {
+                const next = challenges.find((c) => !c.complete)
+                const done = challenges.filter((c) => c.complete).length
+                if (!next) {
+                  return (
+                    <p className="anvl-heading mt-1 text-lg text-[var(--color-heading)]">
+                      All {challenges.length} forged
+                    </p>
+                  )
+                }
+                return (
+                  <>
+                    <p className="mt-1 truncate text-sm font-semibold text-[var(--color-heading)]">
+                      {next.title}
+                    </p>
+                    <div
+                      aria-hidden="true"
+                      className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-elevated)]"
+                    >
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[var(--color-highlight)] to-[var(--color-highlight-bright)]"
+                        style={{ width: `${Math.round(next.progress * 100)}%` }}
+                      />
+                    </div>
+                    <p className="anvl-micro mt-1.5 text-[9px] text-[var(--color-text-muted)]">
+                      {next.current} / {next.target} · {done} of {challenges.length} forged
+                    </p>
+                  </>
+                )
+              })()}
+              <button
+                type="button"
+                onClick={() => setOverlay('challenges')}
+                aria-label="Open the challenges"
+                className="focus-ring absolute inset-0 z-20 rounded-2xl"
+              />
+            </AccountBentoCard>
           </div>
 
           <div className="pt-1">
@@ -304,8 +351,13 @@ export function ArmoryPanel() {
             {view === 'vault' ? <ArmoryVaultView owned={owned} catalog={catalog} /> : null}
           </div>
 
-          <ArmoryChallenges challenges={challenges} />
-
+          <ArmoryOverlay
+            open={overlay === 'challenges'}
+            onClose={() => setOverlay(null)}
+            title="Challenges"
+          >
+            <ArmoryChallenges challenges={challenges} />
+          </ArmoryOverlay>
           <ArmoryOverlay
             open={overlay === 'collection'}
             onClose={() => setOverlay(null)}

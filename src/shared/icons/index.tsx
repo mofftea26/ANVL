@@ -6,12 +6,9 @@
  * component imports icons from `@/shared/icons` using the historical
  * lucide-react names, mapped below to their Phosphor equivalents.
  *
- * REVERT PATH (lucide-react is still installed, on purpose): replace the
- * Phosphor re-exports below with
- *   `export { AlertTriangle, ArrowLeft, ... } from 'lucide-react'`
- * (names already match) and drop the IconContext from AppProviders. No call
- * site changes anywhere. Once a pack is FINAL, delete the loser from
- * package.json and this comment.
+ * VERDICT (2026-07-17): Phosphor is FINAL — lucide-react removed. This file
+ * remains the single seam: any future pack swap happens here alone, with no
+ * call-site changes anywhere.
  */
 
 /** Site-wide Phosphor weight — flip to 'regular' | 'bold' | 'fill' to taste. */
@@ -133,8 +130,32 @@ export {
   MagnifyingGlassMinus as ZoomOut,
 } from '@phosphor-icons/react'
 
-// Phosphor has no anvil — the brand-adjacent glyph stays on lucide.
-export { Anvil } from 'lucide-react'
+// Phosphor has no anvil — inlined (stroke path from lucide, ISC license) so
+// the lucide dependency could be fully removed after the Phosphor verdict.
+export function Anvil({
+  size = 24,
+  ...props
+}: React.SVGProps<SVGSVGElement> & { size?: number | string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M7 10H6a4 4 0 0 1-4-4 1 1 0 0 1 1-1h4" />
+      <path d="M7 5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1 7 7 0 0 1-7 7H8a1 1 0 0 1-1-1z" />
+      <path d="M9 12v5" />
+      <path d="M15 12v5" />
+      <path d="M5 20a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1" />
+    </svg>
+  )
+}
 
 /** Component type for icon props/maps (was lucide's LucideIcon). */
 export type { Icon as LucideIcon } from '@phosphor-icons/react'

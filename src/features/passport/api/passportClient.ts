@@ -118,8 +118,11 @@ export async function setPassportVisibility(
     p_public: isPublic,
   })
   if (error) return { ok: false, error: error.message }
-  const ok = Boolean((data as { ok?: boolean } | null)?.ok)
-  return ok ? { ok: true } : { ok: false, error: 'The server rejected the change.' }
+  const result = data as { ok?: boolean; error?: string } | null
+  if (result?.ok) return { ok: true }
+  // Pass the RPC's own error through — 'not_owner' triggers the phantom
+  // self-heal in the mutation layer.
+  return { ok: false, error: result?.error ?? 'The server rejected the change.' }
 }
 
 /** Owner mints a one-time transfer code (7-day expiry, replaces any pending). */

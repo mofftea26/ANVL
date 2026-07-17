@@ -11,6 +11,7 @@ import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
+import { Switch } from '@/shared/components/ui/Switch'
 import { BRAND } from '@/shared/constants/brand'
 import {
   deleteBatch,
@@ -424,19 +425,14 @@ export function AdminPassportCodesPanel() {
             <strong>{confirm.passport.productName}</strong> #{confirm.passport.serialNumber} will
             be released from {confirm.passport.claimedDisplayName ?? 'its owner'} and become
             claimable by the next person who scans it.
-            <label className="mt-4 flex cursor-pointer items-start gap-3">
-              <input
-                type="checkbox"
+            <div className="mt-4">
+              <Switch
                 checked={purgeFeats}
-                onChange={(e) => setPurgeFeats(e.target.checked)}
-                className="focus-ring mt-0.5 h-4 w-4 accent-[var(--color-highlight)]"
+                onChange={setPurgeFeats}
+                label="Also remove their records for this product"
+                description="Feats and achievements are deleted as if never owned. Leave off to keep them: if the same customer re-claims this product, their records reattach (nothing duplicates)."
               />
-              <span className="text-xs leading-relaxed">
-                <strong>Also remove their records for this product</strong> — feats and
-                achievements are deleted as if never owned. Leave off to keep them: if the same
-                customer re-claims this product, their records reattach (nothing duplicates).
-              </span>
-            </label>
+            </div>
           </>
         ) : confirm?.kind === 'delete' ? (
           <>

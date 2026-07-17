@@ -95,80 +95,80 @@ export function PublicArmoryView({
         </dl>
       </header>
 
-      {/* Hall of Honor — pieces standing on lit pedestals ---------------- */}
+      {/* Hall of Honor — forged plaques (the toast plate language) -------- */}
       {honored.length > 0 ? (
         <section className="mt-12">
-          <div className="mb-8 flex items-center justify-center gap-2">
-            <Star
-              size={17}
-              aria-hidden="true"
-              className="fill-[var(--color-highlight-bright)] text-[var(--color-highlight-bright)]"
-            />
-            <h2 className="anvl-heading text-lg text-[var(--color-heading)]">Hall of Honor</h2>
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <span aria-hidden="true" className="h-px w-8 bg-[var(--color-line)]" />
+            <h2 className="anvl-micro text-[10px] uppercase tracking-[0.26em] text-[var(--color-highlight-bright)]">
+              Hall of Honor
+            </h2>
+            <span aria-hidden="true" className="h-px w-8 bg-[var(--color-line)]" />
           </div>
 
           <div
             className={cn(
-              'mx-auto grid max-w-2xl items-end gap-6',
-              honored.length === 1 ? 'grid-cols-1' : honored.length === 2 ? 'grid-cols-2' : 'grid-cols-3',
+              'mx-auto grid max-w-2xl gap-3',
+              honored.length === 1
+                ? 'grid-cols-1 max-w-xs'
+                : honored.length === 2
+                  ? 'grid-cols-2 max-w-md'
+                  : 'grid-cols-1 sm:grid-cols-3',
             )}
           >
             {honored.map((piece, i) => (
-              <figure key={piece.featuredSlot} className="group relative flex flex-col items-center">
-                {/* Spotlight cone from above. */}
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -top-10 left-1/2 h-[130%] w-[150%] -translate-x-1/2 bg-[radial-gradient(ellipse_50%_60%_at_50%_0%,color-mix(in_oklab,var(--color-highlight)_16%,transparent)_0%,transparent_70%)]"
-                />
-
-                {/* The piece — floating above its pedestal. */}
-                <div className="relative z-10 w-[72%] motion-safe:transition-transform motion-safe:duration-500 group-hover:-translate-y-1.5">
+              <figure
+                key={piece.featuredSlot}
+                className="group relative [filter:drop-shadow(0_10px_22px_rgba(0,0,0,0.5))] motion-safe:transition-transform motion-safe:duration-300 hover:-translate-y-0.5"
+              >
+                {/* The plate — bevel-cut steel with a champagne heat edge. */}
+                <div className="relative flex items-center gap-3 bg-[linear-gradient(160deg,color-mix(in_oklab,var(--color-highlight)_10%,var(--color-surface-elevated))_0%,var(--color-surface)_55%,color-mix(in_oklab,var(--color-bg)_85%,black)_100%)] p-2.5 pr-3 [clip-path:polygon(10px_0,100%_0,100%_calc(100%-10px),calc(100%-10px)_100%,0_100%,0_10px)]">
+                  {/* Heat hairline along the top edge. */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent_0%,var(--color-highlight-bright)_35%,color-mix(in_oklab,var(--color-highlight)_60%,transparent)_70%,transparent_100%)]"
+                  />
                   {images[piece.productSlug] ? (
                     <img
                       src={images[piece.productSlug]}
                       alt={piece.productName}
                       loading="lazy"
                       decoding="async"
-                      width={280}
-                      height={350}
-                      className="aspect-[4/5] w-full rounded-lg object-cover shadow-[0_28px_50px_-18px_rgba(0,0,0,0.85)]"
+                      width={112}
+                      height={140}
+                      className="h-16 w-[52px] shrink-0 rounded-[3px] object-cover [clip-path:polygon(6px_0,100%_0,100%_calc(100%-6px),calc(100%-6px)_100%,0_100%,0_6px)]"
                     />
                   ) : (
-                    <div className="flex aspect-[4/5] w-full items-center justify-center rounded-lg bg-[var(--color-surface-elevated)]">
-                      <Star size={20} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
+                    <div className="grid h-16 w-[52px] shrink-0 place-items-center rounded-[3px] bg-[var(--color-surface-elevated)]">
+                      <Star size={16} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
                     </div>
                   )}
-                  {/* Faint floor reflection. */}
-                  <img
-                    src={images[piece.productSlug] ?? ''}
-                    alt=""
-                    aria-hidden="true"
-                    className={cn(
-                      'absolute left-0 top-full mt-0.5 aspect-[4/5] w-full -scale-y-100 rounded-lg object-cover opacity-15 [mask-image:linear-gradient(180deg,transparent_55%,black_100%)]',
-                      !images[piece.productSlug] && 'hidden',
-                    )}
-                  />
-                </div>
-
-                {/* The pedestal: top face + front face + light pool. */}
-                <div aria-hidden="true" className="relative z-0 -mt-2 w-full">
-                  {/* Top face (perspective-squashed). */}
-                  <div className="mx-auto h-3 w-[86%] bg-[linear-gradient(180deg,color-mix(in_oklab,var(--color-highlight)_20%,var(--color-surface-elevated))_0%,var(--color-surface-elevated)_100%)] [clip-path:polygon(7%_0,93%_0,100%_100%,0_100%)]" />
-                  {/* Front face with engraved numeral. */}
-                  <div className="relative mx-auto flex h-16 w-full items-center justify-center bg-[linear-gradient(180deg,var(--color-surface-elevated)_0%,color-mix(in_oklab,var(--color-bg)_88%,black)_100%)] [clip-path:polygon(0_0,100%_0,94%_100%,6%_100%)]">
-                    <span className="anvl-heading text-2xl tracking-[0.3em] text-[color-mix(in_oklab,var(--color-highlight-bright)_75%,transparent)] [text-shadow:0_1px_0_rgba(0,0,0,0.8),0_-1px_0_rgba(255,255,255,0.08)]">
-                      {ROMAN[i] ?? ''}
-                    </span>
-                    {/* Hairline edge light. */}
-                    <span className="absolute inset-x-[6%] top-0 h-px bg-[color-mix(in_oklab,var(--color-highlight)_40%,transparent)]" />
+                  <div className="min-w-0 flex-1">
+                    <p className="anvl-micro text-[8px] uppercase tracking-[0.2em] text-[color-mix(in_oklab,var(--color-highlight-bright)_80%,transparent)]">
+                      Honor {ROMAN[i] ?? ''}
+                    </p>
+                    <figcaption className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-tight text-[var(--color-heading)]">
+                      {piece.productName}
+                    </figcaption>
+                    {piece.wearCount > 0 ? (
+                      <p className="anvl-micro mt-1 flex items-center gap-1 text-[9px] text-[var(--color-text-muted)]">
+                        <Flame
+                          size={10}
+                          aria-hidden="true"
+                          className="text-[var(--color-highlight-bright)]"
+                        />
+                        {piece.wearCount} {piece.wearCount === 1 ? 'wear' : 'wears'}
+                      </p>
+                    ) : null}
                   </div>
-                  {/* Light pool on the floor. */}
-                  <div className="mx-auto -mt-1 h-4 w-[110%] rounded-[50%] bg-[radial-gradient(ellipse_at_center,color-mix(in_oklab,var(--color-highlight)_22%,transparent)_0%,transparent_70%)] blur-[2px]" />
+                  {/* Engraved numeral seated in the cut corner. */}
+                  <span
+                    aria-hidden="true"
+                    className="anvl-heading self-start text-lg leading-none text-[color-mix(in_oklab,var(--color-highlight-bright)_45%,transparent)] [text-shadow:0_1px_0_rgba(0,0,0,0.8)]"
+                  >
+                    {ROMAN[i] ?? ''}
+                  </span>
                 </div>
-
-                <figcaption className="z-10 mt-2 line-clamp-2 max-w-[90%] text-center text-[11px] font-semibold leading-tight text-[var(--color-heading)]">
-                  {piece.productName}
-                </figcaption>
               </figure>
             ))}
           </div>

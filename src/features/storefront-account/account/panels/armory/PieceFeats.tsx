@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Eye, EyeOff, Pencil, Plus, Trophy, X } from '@/shared/icons'
 import { useArmoryFeatsQuery, useFeatMutations } from '@/features/passport/hooks/useArmory'
 import type { ArmoryFeat } from '@/features/passport/schemas/passport.schema'
-import { cn } from '@/shared/lib/cn'
+import { Switch } from '@/shared/components/ui/Switch'
 
 /**
  * Feats, embedded in a piece's card — the record of what was earned IN this
@@ -160,29 +160,12 @@ function PieceFeatForm({
           aria-label="Date"
           className="focus-ring rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] px-2.5 py-1.5 text-base text-[var(--color-heading)] md:text-xs"
         />
-        <button
-          type="button"
-          role="switch"
-          aria-checked={isPublic}
-          onClick={() => setIsPublic((v) => !v)}
-          className="focus-ring inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text)]"
-        >
-          <span
-            aria-hidden="true"
-            className={cn(
-              'relative h-3.5 w-6 rounded-full motion-safe:transition-colors',
-              isPublic ? 'bg-[var(--color-highlight-bright)]' : 'bg-[var(--color-surface)]',
-            )}
-          >
-            <span
-              className={cn(
-                'absolute top-0.5 h-2.5 w-2.5 rounded-full bg-[var(--color-heading)] motion-safe:transition-transform',
-                isPublic ? 'translate-x-3' : 'translate-x-0.5',
-              )}
-            />
-          </span>
-          {isPublic ? 'Public' : 'Private'}
-        </button>
+        <Switch
+          checked={isPublic}
+          onChange={setIsPublic}
+          size="sm"
+          label={isPublic ? 'Public' : 'Private'}
+        />
         <div className="ml-auto flex items-center gap-1">
           <button
             type="submit"
