@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from '@/shared/icons'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -7,7 +7,6 @@ import { z } from 'zod'
 import { getSupabaseEnvIssue } from '@/features/cms/api/supabasePublicEnv'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { Button } from '@/shared/components/ui/Button'
-import { Container } from '@/shared/components/ui/Container'
 import { FormField } from '@/shared/components/ui/FormField'
 import { IconButton } from '@/shared/components/ui/IconButton'
 import { Input } from '@/shared/components/ui/Input'
@@ -56,7 +55,7 @@ export function AdminLoginPageRoute() {
 
   return (
     <div className="grid min-h-screen place-items-center bg-[var(--color-bg)] px-4 py-10">
-      <Container className="max-w-md">
+      <div className="w-full max-w-md">
         <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-7 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.6)]">
           <div className="flex items-center gap-3 border-b border-[var(--color-line)] pb-5">
             <AnvlCompactMark
@@ -151,7 +150,7 @@ export function AdminLoginPageRoute() {
             their row in <span className="font-mono text-[10px]">public.cms_profiles</span>.
           </p>
         </div>
-      </Container>
+      </div>
     </div>
   )
 }

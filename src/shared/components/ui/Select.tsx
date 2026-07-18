@@ -101,7 +101,7 @@ export function Select({
           position="popper"
           sideOffset={8}
           collisionPadding={8}
-          className="z-[85] max-h-[min(22rem,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_20px_50px_-14px_rgba(0,0,0,0.65)] outline-none backdrop-blur-md data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1"
+          className="z-[100] max-h-[min(22rem,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_20px_50px_-14px_rgba(0,0,0,0.65)] outline-none backdrop-blur-md data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1"
         >
           <SelectPrimitive.ScrollUpButton className="flex h-6 items-center justify-center text-[var(--color-text-muted)]">
             <ChevronUp size={ICON_SIZE.sm} aria-hidden="true" />

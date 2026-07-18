@@ -132,7 +132,7 @@ export function DatePicker({
         <PopoverPrimitive.Content
           sideOffset={8}
           align="start"
-          className="z-[85] w-[21rem] rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_20px_50px_-14px_rgba(0,0,0,0.65)] outline-none backdrop-blur-md"
+          className="z-[100] w-[21rem] rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-elevated)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_20px_50px_-14px_rgba(0,0,0,0.65)] outline-none backdrop-blur-md"
         >
           <div className="flex items-center gap-1.5">
             <button
