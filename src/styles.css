@@ -1847,3 +1847,38 @@ html[data-landing-entry='active'] body {
     opacity: 0;
   }
 }
+
+/* Shared Modal — the ember materialization handshake. ModalForgeEffect draws
+   the converging swarm on a canvas overlay; the panel itself holds back
+   (opacity 0) and materializes as the embers land and dissolve. The backdrop
+   fades rather than snapping. Reduced motion strips the whole ceremony. */
+@keyframes anvl-modal-materialize {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes anvl-modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.anvl-modal-forge {
+  animation: anvl-modal-materialize 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+}
+.anvl-modal-backdrop-fade {
+  animation: anvl-modal-backdrop-in 0.35s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .anvl-modal-forge,
+  .anvl-modal-backdrop-fade {
+    animation: none !important;
+  }
+}

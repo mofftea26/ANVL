@@ -67,11 +67,27 @@ describe('PublicArmoryView (read-only)', () => {
     expect(screen.getAllByText('Oversized Tee').length).toBeGreaterThan(0)
     // The record numbers strip (sr-only dt + visible label).
     expect(screen.getAllByText('Wears logged').length).toBeGreaterThan(0)
-    // The feat renders UNDER its piece (it's tied to a shared slug).
+    // The feat renders on its piece's card back (it's tied to a shared slug).
     expect(screen.getByText(/Deadlift PR — 240 kg/)).toBeTruthy()
     expect(screen.queryByText(/more feats/i)).toBeNull()
     // Read-only: no wear button, no pin.
     expect(screen.queryByRole('button', { name: /wore it/i })).toBeNull()
     expect(screen.queryByRole('button', { name: /hall of honor/i })).toBeNull()
+  })
+
+  it('flips a collection card to its service record and back', async () => {
+    const { fireEvent } = await import('@testing-library/react')
+    const { container } = render(
+      <PublicArmoryView armory={armory} images={{ 'oversized-tee': 'tee.png' }} />,
+    )
+    const back = container.querySelector('[inert]')
+    // The record face starts hidden behind the art.
+    expect(back?.getAttribute('aria-hidden')).toBe('true')
+    fireEvent.click(
+      screen.getByRole('button', { name: /flip to see the record of oversized tee/i }),
+    )
+    expect(back?.getAttribute('aria-hidden')).toBe('false')
+    fireEvent.click(screen.getByRole('button', { name: /flip back to the card art/i }))
+    expect(back?.getAttribute('aria-hidden')).toBe('true')
   })
 })

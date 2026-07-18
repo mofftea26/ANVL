@@ -159,13 +159,37 @@ export default function AboutAltar({
         [],
         IMPACT_AT,
       )
+      // Impact frames (anime staging): a white-hot screen flash and a ring of
+      // radial speed-lines snap in on the hit and burn off fast.
+      if (root.current) {
+        const q = gsap.utils.selector(root.current)
+        tl.fromTo(
+          q('[data-strike-flash]'),
+          { opacity: 0 },
+          { opacity: 0.9, duration: 0.06, ease: 'power4.out' },
+          IMPACT_AT,
+        )
+        tl.to(q('[data-strike-flash]'), { opacity: 0, duration: 0.3, ease: 'power2.out' }, IMPACT_AT + 0.06)
+        tl.fromTo(
+          q('[data-strike-lines]'),
+          { opacity: 0, scale: 0.55 },
+          { opacity: 0.8, scale: 1, duration: 0.09, ease: 'power4.out' },
+          IMPACT_AT,
+        )
+        tl.to(
+          q('[data-strike-lines]'),
+          { opacity: 0, scale: 1.45, duration: 0.32, ease: 'power2.out' },
+          IMPACT_AT + 0.09,
+        )
+      }
       // The orb dissolves fast (it BECOMES the particles), which fly out and
       // then hold, drifting, until the modal's measure kicks off the gather.
       tl.to(state, { explodeT: 1, duration: 0.28, ease: 'power3.out' }, IMPACT_AT)
-      tl.to(state, { burstT: 1, duration: 0.6, ease: 'power2.out' }, IMPACT_AT)
-      // Recoil bounce, then the hammer lifts away.
-      tl.to(state, { hammerT: 0.72, duration: 0.26, ease: 'power2.out' }, IMPACT_AT + 0.04)
-      tl.to(state, { hammerT: 0, duration: 0.55, ease: 'power2.inOut' }, IMPACT_AT + 0.36)
+      tl.to(state, { burstT: 1, duration: 0.7, ease: 'power3.out' }, IMPACT_AT)
+      // Hit-stop: the hammer stays buried in the impact for a few frames
+      // (anime freeze) before the recoil bounce, then lifts away.
+      tl.to(state, { hammerT: 0.72, duration: 0.26, ease: 'power2.out' }, IMPACT_AT + 0.14)
+      tl.to(state, { hammerT: 0, duration: 0.55, ease: 'power2.inOut' }, IMPACT_AT + 0.46)
       // Mount the modal (hidden) once the embers are out — it measures itself
       // and hands the pool its formation targets; the measure starts the
       // (delayed) gather, so disperse reads first, then the swarm draws the
@@ -241,6 +265,32 @@ export default function AboutAltar({
           }}
         />
       </div>
+
+      {/* Impact frames — DOM overlays the strike timeline snaps on and burns
+          off (a white-hot flash + anime radial speed-lines centred on the
+          anvil seat). Above the canvas, below the modal. */}
+      <div
+        aria-hidden="true"
+        data-strike-flash
+        className="pointer-events-none absolute inset-0 z-20 opacity-0"
+        style={{
+          background:
+            'radial-gradient(circle at 50% 62%, color-mix(in srgb, var(--color-highlight-bright) 80%, white) 0%, color-mix(in srgb, var(--color-highlight) 38%, transparent) 20%, transparent 55%)',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        data-strike-lines
+        className="pointer-events-none absolute inset-0 z-20 opacity-0"
+        style={{
+          background:
+            'repeating-conic-gradient(from 0deg at 50% 62%, transparent 0deg 7deg, color-mix(in srgb, var(--color-highlight-bright) 55%, transparent) 7deg 8.4deg)',
+          maskImage:
+            'radial-gradient(circle at 50% 62%, transparent 13%, black 34%, transparent 60%)',
+          WebkitMaskImage:
+            'radial-gradient(circle at 50% 62%, transparent 13%, black 34%, transparent 60%)',
+        }}
+      />
 
       <div data-altar-canvas className="absolute inset-0">
         <Canvas

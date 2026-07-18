@@ -44,14 +44,50 @@ export function AboutOrbModal({
       // 0.85s gather → 0.12s → 0.5s dissolve): the backdrop dims under the
       // drifting embers, and the panel only materializes as the formed swarm
       // dissolves into it (~1.5s after this mounts/measures).
-      // Backdrop held back too — it blurs the canvas, so raising it early
-      // would obscure the very embers that are forming the plate. It comes in
-      // with the panel, once the swarm has gathered.
-      gsap.fromTo(q('[data-modal-backdrop]'), { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power2.out', delay: 1.35 })
+      // CRITICAL: the backdrop's blur must be animated as `backdropFilter`,
+      // not hidden via opacity — `backdrop-filter` keeps blurring the canvas
+      // even at opacity 0 (Chromium), which smeared the embers into nothing.
+      gsap.fromTo(
+        q('[data-modal-backdrop]'),
+        { opacity: 0, backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' },
+        {
+          opacity: 1,
+          backdropFilter: 'blur(10px)',
+          webkitBackdropFilter: 'blur(10px)',
+          duration: 0.6,
+          ease: 'power2.out',
+          delay: 1.35,
+        },
+      )
+      // The panel forges in with a touch of depth — tilting up out of the
+      // ember plate the swarm just drew.
       gsap.fromTo(
         q('[data-modal-panel]'),
-        { opacity: 0, scale: 0.975 },
-        { opacity: 1, scale: 1, duration: 0.55, ease: 'expo.out', delay: 1.5 },
+        { opacity: 0, scale: 0.94, y: 16, rotateX: 7, transformPerspective: 900 },
+        {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          rotateX: 0,
+          duration: 0.6,
+          ease: 'expo.out',
+          delay: 1.5,
+        },
+      )
+      // Ignition — the panel's edge flashes in the orb's color as the embers
+      // fuse into it, then the heat dies down.
+      gsap.fromTo(
+        q('[data-modal-ignite]'),
+        { opacity: 0 },
+        {
+          opacity: 1,
+          duration: 0.16,
+          ease: 'power4.out',
+          delay: 1.48,
+          onComplete: () => {
+            gsap.to(q('[data-modal-ignite]'), { opacity: 0, duration: 0.7, ease: 'power2.out' })
+          },
+        },
       )
       gsap.fromTo(
         q('[data-modal-reveal]'),
@@ -82,12 +118,15 @@ export function AboutOrbModal({
   return (
     <div ref={root} className="absolute inset-0 z-[75]">
       {/* Backdrop — dark glass with the orb's own bloom rising behind the panel. */}
+      {/* No blur utility class here — the blur is GSAP-driven (see above):
+          a static `backdrop-blur` would smear the forming embers from frame
+          one even while the element is at opacity 0. */}
       <button
         type="button"
         data-modal-backdrop
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 h-full w-full cursor-pointer bg-[color-mix(in_srgb,var(--color-bg)_62%,transparent)] backdrop-blur-md"
+        className="absolute inset-0 h-full w-full cursor-pointer bg-[color-mix(in_srgb,var(--color-bg)_62%,transparent)] opacity-0"
         style={{
           backgroundImage: `radial-gradient(ellipse 60% 45% at 50% 62%, color-mix(in srgb, ${orb.color} 18%, transparent) 0%, transparent 70%)`,
         }}
@@ -109,6 +148,16 @@ export function AboutOrbModal({
             className="pointer-events-none absolute inset-x-0 top-0 h-px"
             style={{
               background: `linear-gradient(90deg, transparent, ${orb.color} 30%, color-mix(in srgb, ${orb.color} 60%, transparent) 70%, transparent)`,
+            }}
+          />
+          {/* Ignition edge — flashes as the ember plate fuses into the panel. */}
+          <span
+            aria-hidden="true"
+            data-modal-ignite
+            className="pointer-events-none absolute inset-0 rounded-xl opacity-0"
+            style={{
+              border: `1px solid color-mix(in srgb, ${orb.color} 80%, white)`,
+              boxShadow: `0 0 34px color-mix(in srgb, ${orb.color} 55%, transparent), inset 0 0 26px color-mix(in srgb, ${orb.color} 30%, transparent)`,
             }}
           />
           {image ? (

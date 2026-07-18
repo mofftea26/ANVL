@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { runtimeClients } from '@/app/config/runtime'
 import { fetchPublicArmory } from '@/features/passport/api/armoryClient'
+import type { ArmoryProductMeta } from '@/features/passport/components/ArmoryTcgCard'
 import {
   PublicArmoryMissing,
   PublicArmoryView,
@@ -16,21 +17,32 @@ export const Route = createFileRoute('/armory/$handle')({
         armory: null,
         images: {} as Record<string, string>,
         names: {} as Record<string, string>,
+        meta: {} as Record<string, ArmoryProductMeta>,
       }
     }
-    // Resolve piece images + names from the catalog (public data carries slugs
-    // only; feats may reference pieces the owner hasn't made public).
+    // Resolve piece images + names + catalog facts (filters, detail modals)
+    // from the catalog — public data carries slugs only.
     const catalog = await runtimeClients.commerce
       .getShopListingCatalog()
       .catch(() => ({ items: [], drops: [] }))
     const images: Record<string, string> = {}
     const names: Record<string, string> = {}
+    const meta: Record<string, ArmoryProductMeta> = {}
     for (const product of catalog.items) {
       const src = product.images[0]?.src
       if (src) images[product.slug] = src
       names[product.slug] = product.name
+      meta[product.slug] = {
+        category: product.shop?.category || undefined,
+        dropName: product.dropName || undefined,
+        price: product.shop?.listPrice ?? product.price,
+        currency: product.shop?.currency,
+        fit: product.fit || undefined,
+        fabric: product.fabric || undefined,
+        gsm: product.gsm || undefined,
+      }
     }
-    return { handle: params.handle, armory, images, names }
+    return { handle: params.handle, armory, images, names, meta }
   },
   head: ({ loaderData }) =>
     buildSeoMeta({
@@ -47,7 +59,7 @@ export const Route = createFileRoute('/armory/$handle')({
 })
 
 function PublicArmoryRoute() {
-  const { armory, images, names } = Route.useLoaderData()
+  const { armory, images, names, meta } = Route.useLoaderData()
   if (!armory) return <PublicArmoryMissing />
-  return <PublicArmoryView armory={armory} images={images} names={names} />
+  return <PublicArmoryView armory={armory} images={images} names={names} meta={meta} />
 }

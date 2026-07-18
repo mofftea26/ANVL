@@ -9,7 +9,7 @@ const CTA_STEEL =
   'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-highlight)_60%,var(--color-line))]'
 
 /** Forged foil for display accents — champagne drawn from the theme tokens,
- *  so the hall re-tempers with every CMS palette (never a hardcoded gold). */
+ *  so the chronicle re-tempers with every CMS palette (never a hardcoded gold). */
 const FOIL_TEXT: React.CSSProperties = {
   background:
     'linear-gradient(100deg, var(--color-highlight) 0%, var(--color-highlight-bright) 45%, var(--color-highlight) 70%, color-mix(in srgb, var(--color-highlight) 55%, black) 100%)',
@@ -18,79 +18,128 @@ const FOIL_TEXT: React.CSSProperties = {
   color: 'transparent',
 }
 
+export interface StoryHeroStats {
+  /** Drop groups on the shelf. */
+  volumes: number
+  /** Chapter books across every volume. */
+  books: number
+  /** Acts (pages) across every book. */
+  acts: number
+}
+
 /**
- * The saga's introduction — the Athenaeum of the Forge. A candlelit hall of
- * records: centred gilded frontispiece typography over pooled ember light,
- * framing the shelves of chapter-books below. Copy is code-owned (the saga's
- * chapters are the CMS content; the hall itself is designed).
+ * The chronicle's opening spread — an asymmetric war-record frontispiece.
+ * A colossal ghost inscription bleeds off the right edge, the title block
+ * stands hard-left like a stamped cover, and the archive's ledger (volumes /
+ * books / acts) hangs off a hairline rail. Copy is code-owned; the chapters
+ * beneath are the CMS content.
  */
-export function StoryHero() {
+export function StoryHero({ stats }: { stats: StoryHeroStats }) {
+  const ledger: Array<[number, string, string]> = [
+    [stats.volumes, stats.volumes === 1 ? 'Volume' : 'Volumes', 'One per drop'],
+    [stats.books, stats.books === 1 ? 'Book' : 'Books', 'One per piece'],
+    [stats.acts, stats.acts === 1 ? 'Act' : 'Acts', 'The pages within'],
+  ]
+
   return (
-    <section
-      className="relative overflow-hidden border-b border-[var(--color-line)]"
-      aria-labelledby="story-hero-heading"
-    >
-      {/* Candlelit hall: two warm pools low in the frame + a cold fall-off up top. */}
+    <section className="relative overflow-hidden" aria-labelledby="story-hero-heading">
+      {/* Ghost inscription — outlined, colossal, bleeding off the right edge. */}
+      <span
+        aria-hidden="true"
+        className="anvl-heading pointer-events-none absolute -right-6 top-1/2 -translate-y-[46%] select-none leading-[0.8] text-transparent [font-size:clamp(9rem,26vw,22rem)]"
+        style={{
+          WebkitTextStroke:
+            '1px color-mix(in srgb, var(--color-heading) 11%, transparent)',
+        }}
+      >
+        SAGA
+      </span>
+      {/* A single ember shaft rising behind the title block. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 42% 34% at 22% 88%, color-mix(in srgb, var(--color-highlight) 13%, transparent) 0%, transparent 70%), radial-gradient(ellipse 42% 34% at 78% 88%, color-mix(in srgb, var(--color-highlight) 13%, transparent) 0%, transparent 70%), radial-gradient(ellipse 120% 80% at 50% 0%, color-mix(in srgb, var(--color-surface) 65%, transparent) 0%, transparent 60%)',
+            'radial-gradient(ellipse 34% 60% at 18% 100%, color-mix(in srgb, var(--color-highlight) 12%, transparent) 0%, transparent 70%)',
         }}
       />
-      {/* Hall columns — thin gilded hairlines framing the frontispiece. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-y-10 left-[6%] hidden w-px bg-gradient-to-b from-transparent via-[color-mix(in_srgb,var(--color-highlight)_35%,transparent)] to-transparent lg:block" />
-      <div aria-hidden="true" className="pointer-events-none absolute inset-y-10 right-[6%] hidden w-px bg-gradient-to-b from-transparent via-[color-mix(in_srgb,var(--color-highlight)_35%,transparent)] to-transparent lg:block" />
 
-      <Container className="relative z-10 flex flex-col items-center py-10 text-center md:py-14">
-        <RevealOnScroll>
-          <p className="anvl-display inline-flex items-center gap-2.5 text-[11px] tracking-[0.36em] text-[var(--color-highlight-bright)] before:h-px before:w-7 before:bg-[color-mix(in_srgb,var(--color-highlight)_60%,transparent)] before:content-[''] after:h-px after:w-7 after:bg-[color-mix(in_srgb,var(--color-highlight)_60%,transparent)] after:content-['']">
-            The Saga of ANVL
-          </p>
-        </RevealOnScroll>
+      <Container className="relative z-10 pb-12 pt-14 md:pb-16 md:pt-20">
+        <div className="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_auto]">
+          {/* The stamped cover block — everything ranged hard left. */}
+          <div className="max-w-2xl">
+            <RevealOnScroll>
+              <p className="anvl-display flex items-center gap-3 text-[11px] tracking-[0.36em] text-[var(--color-highlight-bright)]">
+                <span aria-hidden="true" className="h-px w-10 bg-[var(--color-highlight)]/70" />
+                The Saga of ANVL
+              </p>
+            </RevealOnScroll>
 
-        <RevealOnScroll>
-          <h1
-            id="story-hero-heading"
-            className="anvl-heading mt-4 max-w-2xl font-normal leading-[0.9] tracking-[-0.01em] text-[clamp(2rem,6vw,4.25rem)] text-[var(--color-heading)]"
-          >
-            The Forged <span style={FOIL_TEXT}>Kingdom</span>
-          </h1>
-        </RevealOnScroll>
+            <RevealOnScroll>
+              <h1
+                id="story-hero-heading"
+                className="anvl-heading mt-5 font-normal leading-[0.85] tracking-[-0.01em] text-[clamp(2.75rem,8vw,6rem)] text-[var(--color-heading)]"
+              >
+                The Forged
+                <br />
+                <span style={FOIL_TEXT}>Kingdom</span>
+              </h1>
+            </RevealOnScroll>
 
-        {/* Frontispiece ornament — rule · diamond · rule. */}
-        <RevealOnScroll>
-          <div className="mt-4 flex items-center gap-2.5" aria-hidden="true">
-            <span className="h-px w-14 bg-gradient-to-r from-transparent to-[var(--color-highlight)]/70 sm:w-20" />
-            <span className="block h-1.5 w-1.5 rotate-45 border border-[var(--color-highlight)]/80" />
-            <span className="h-px w-14 bg-gradient-to-l from-transparent to-[var(--color-highlight)]/70 sm:w-20" />
+            <RevealOnScroll>
+              <p className="mt-6 max-w-md border-l-2 border-[color-mix(in_srgb,var(--color-highlight)_55%,var(--color-line))] pl-4 text-sm leading-relaxed text-[var(--color-text-muted)] md:text-base">
+                A kingdom forging an army — its record kept in iron. Every drop binds a
+                volume, every piece a book. Pull one from the shelf and read the acts within.
+              </p>
+            </RevealOnScroll>
+
+            <RevealOnScroll>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/auth/sign-up" className={CTA_FORGE}>
+                  Enlist in the saga
+                </Link>
+                <Link to="/shop" search={defaultShopUrlSearch} className={CTA_STEEL}>
+                  Explore the armory
+                </Link>
+              </div>
+            </RevealOnScroll>
           </div>
-        </RevealOnScroll>
 
-        <RevealOnScroll>
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)] md:text-base">
-            ANVL is a kingdom forging an army, and this is its hall of records. Pull a book from
-            the shelf and read the acts within.
-          </p>
-        </RevealOnScroll>
+          {/* The ledger — the archive's running tally on a hairline rail.
+              Values wear the champagne foil so they separate from the bone
+              ghost inscription standing behind them. */}
+          <RevealOnScroll>
+            <dl className="relative flex gap-10 border-l border-[color-mix(in_srgb,var(--color-highlight)_35%,var(--color-line))] bg-[color-mix(in_srgb,var(--color-bg)_72%,transparent)] py-2 pl-6 pr-2 lg:flex-col lg:gap-7 lg:pb-3">
+              {ledger.map(([value, label, note]) => (
+                <div key={label}>
+                  <dt className="sr-only">{label}</dt>
+                  <dd
+                    className="anvl-heading leading-none text-[clamp(2rem,4vw,3rem)]"
+                    style={FOIL_TEXT}
+                  >
+                    {String(value).padStart(2, '0')}
+                  </dd>
+                  <dd className="anvl-display mt-1 text-[10px] tracking-[0.26em] text-[var(--color-heading)]">
+                    {label}
+                  </dd>
+                  <dd className="anvl-micro mt-0.5 hidden text-[9px] lg:block">{note}</dd>
+                </div>
+              ))}
+            </dl>
+          </RevealOnScroll>
+        </div>
 
+        {/* The spread's bottom rule — a heat hairline with the shelf direction. */}
         <RevealOnScroll>
-          <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <Link to="/auth/sign-up" className={CTA_FORGE}>
-              Enlist in the saga
-            </Link>
-            <Link to="/shop" search={defaultShopUrlSearch} className={CTA_STEEL}>
-              Explore the armory
-            </Link>
+          <div className="mt-12 flex items-center gap-4 md:mt-16">
+            <span
+              aria-hidden="true"
+              className="h-px flex-1 bg-[linear-gradient(90deg,var(--color-highlight-bright)_0%,color-mix(in_srgb,var(--color-highlight)_45%,transparent)_35%,transparent_100%)]"
+            />
+            <p className="anvl-display shrink-0 text-[10px] tracking-[0.3em] text-[var(--color-heading)]/60">
+              “The story is written in iron — and you are written into the story.”
+            </p>
           </div>
-        </RevealOnScroll>
-
-        {/* Epigraph — small caps, the archive's inscription. */}
-        <RevealOnScroll>
-          <p className="anvl-display mt-7 max-w-xl text-[10px] leading-loose tracking-[0.24em] text-[var(--color-heading)]/60">
-            “The story is written in iron — and you are written into the story.”
-          </p>
         </RevealOnScroll>
       </Container>
     </section>
