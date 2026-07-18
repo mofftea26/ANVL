@@ -4,6 +4,7 @@ import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { RevealOnScroll } from '@/shared/components/motion/RevealOnScroll'
 import { Input, Select, SelectItem } from '@/shared/components/ui'
 import { cn } from '@/shared/lib/cn'
+import { useGamificationRules } from '../hooks/useGamificationRules'
 import { deriveArmoryRank } from '../lib/ranks'
 import type { PublicArmory } from '../schemas/passport.schema'
 import { ArmoryTcgCard, type ArmoryProductMeta } from './ArmoryTcgCard'
@@ -38,9 +39,10 @@ export function PublicArmoryView({
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('all')
   const [drop, setDrop] = useState('all')
+  const rules = useGamificationRules()
   // Rank from the true total (completion needs the catalog cross-reference we
   // don't expose publicly, so this never overstates — Warlord bonuses aside).
-  const rank = deriveArmoryRank(armory.totalPieces, [])
+  const rank = deriveArmoryRank(armory.totalPieces, [], rules)
   const honored = armory.pieces
     .filter((p) => p.featuredSlot)
     .sort((a, b) => (a.featuredSlot ?? 9) - (b.featuredSlot ?? 9))

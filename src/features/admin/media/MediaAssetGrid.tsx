@@ -14,6 +14,7 @@ import {
 } from './mediaAssets.service'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import type { CmsMediaAsset } from './mediaAssets.types'
+import { MEDIA_DRAG_MIME } from './mediaDrag'
 import { useMediaAssetsMutations } from './useMediaAssetsQuery'
 
 const VIRTUALIZE_THRESHOLD = 100
@@ -131,8 +132,15 @@ function MediaAssetCard({
 
   return (
     <article
+      draggable
+      onDragStart={(e) => {
+        // Drag a card onto any media slot field / slot panel to assign it.
+        e.dataTransfer.effectAllowed = 'copy'
+        e.dataTransfer.setData(MEDIA_DRAG_MIME, asset.id)
+        e.dataTransfer.setData('text/plain', asset.filename)
+      }}
       className={cn(
-        'flex flex-col overflow-hidden rounded-lg border bg-[var(--color-surface)]',
+        'flex cursor-grab flex-col overflow-hidden rounded-lg border bg-[var(--color-surface)] active:cursor-grabbing',
         selected ? 'border-[var(--color-accent)]' : 'border-[var(--color-line)]',
       )}
     >

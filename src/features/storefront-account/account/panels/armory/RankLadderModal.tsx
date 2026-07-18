@@ -1,7 +1,8 @@
 import { Award, Check, Lock } from '@/shared/icons'
+import { useGamificationRules } from '@/features/passport/hooks/useGamificationRules'
 import {
-  ARMORY_BADGE_CATALOG,
-  ARMORY_RANK_LADDER,
+  buildBadgeCatalog,
+  buildRankLadder,
   type ArmoryBadge,
   type ArmoryRank,
 } from '@/features/passport/lib/ranks'
@@ -27,6 +28,9 @@ export function RankLadderModal({
   rank: ArmoryRank
   earnedBadges: ArmoryBadge[]
 }) {
+  const rules = useGamificationRules()
+  const ladder = buildRankLadder(rules)
+  const badgeCatalog = buildBadgeCatalog(rules)
   const currentRankIdx = RANK_ORDER.indexOf(rank.key)
   const earned = new Set(earnedBadges.map((b) => b.key))
 
@@ -43,7 +47,7 @@ export function RankLadderModal({
       </p>
 
       <div className="space-y-3">
-        {ARMORY_RANK_LADDER.map((entry, idx) => {
+        {ladder.map((entry, idx) => {
           const passed = idx < currentRankIdx
           const isCurrentRank = idx === currentRankIdx
           return (
@@ -119,7 +123,7 @@ export function RankLadderModal({
           Badges
         </h3>
         <ul className="grid gap-2 sm:grid-cols-2">
-          {ARMORY_BADGE_CATALOG.map((badge) => {
+          {badgeCatalog.map((badge) => {
             const has = earned.has(badge.key)
             return (
               <li

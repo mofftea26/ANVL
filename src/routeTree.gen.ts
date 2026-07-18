@@ -19,7 +19,6 @@ import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CareGuideRouteImport } from './routes/care-guide'
-import { Route as AdminPreviewRouteImport } from './routes/admin-preview'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AccountRouteRouteImport } from './routes/account/route'
@@ -46,6 +45,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminPassportsRouteImport } from './routes/admin/passports'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminGamificationRouteImport } from './routes/admin/gamification'
 import { Route as AdminFontsRouteImport } from './routes/admin/fonts'
 import { Route as AdminContentRouteImport } from './routes/admin/content'
 import { Route as AdminComingSoonRouteImport } from './routes/admin/coming-soon'
@@ -105,11 +105,6 @@ const CartRoute = CartRouteImport.update({
 const CareGuideRoute = CareGuideRouteImport.update({
   id: '/care-guide',
   path: '/care-guide',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminPreviewRoute = AdminPreviewRouteImport.update({
-  id: '/admin-preview',
-  path: '/admin-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -242,6 +237,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminGamificationRoute = AdminGamificationRouteImport.update({
+  id: '/gamification',
+  path: '/gamification',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminFontsRoute = AdminFontsRouteImport.update({
   id: '/fonts',
   path: '/fonts',
@@ -298,7 +298,6 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
   '/about': typeof AboutRoute
-  '/admin-preview': typeof AdminPreviewRoute
   '/care-guide': typeof CareGuideRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
@@ -317,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
+  '/admin/gamification': typeof AdminGamificationRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/passports': typeof AdminPassportsRoute
   '/admin/products': typeof AdminProductsRoute
@@ -345,7 +345,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin-preview': typeof AdminPreviewRoute
   '/care-guide': typeof CareGuideRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
@@ -364,6 +363,7 @@ export interface FileRoutesByTo {
   '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
+  '/admin/gamification': typeof AdminGamificationRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/passports': typeof AdminPassportsRoute
   '/admin/products': typeof AdminProductsRoute
@@ -395,7 +395,6 @@ export interface FileRoutesById {
   '/account': typeof AccountRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
   '/about': typeof AboutRoute
-  '/admin-preview': typeof AdminPreviewRoute
   '/care-guide': typeof CareGuideRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
@@ -414,6 +413,7 @@ export interface FileRoutesById {
   '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
+  '/admin/gamification': typeof AdminGamificationRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/passports': typeof AdminPassportsRoute
   '/admin/products': typeof AdminProductsRoute
@@ -446,7 +446,6 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/about'
-    | '/admin-preview'
     | '/care-guide'
     | '/cart'
     | '/contact'
@@ -465,6 +464,7 @@ export interface FileRouteTypes {
     | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
+    | '/admin/gamification'
     | '/admin/login'
     | '/admin/passports'
     | '/admin/products'
@@ -493,7 +493,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
-    | '/admin-preview'
     | '/care-guide'
     | '/cart'
     | '/contact'
@@ -512,6 +511,7 @@ export interface FileRouteTypes {
     | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
+    | '/admin/gamification'
     | '/admin/login'
     | '/admin/passports'
     | '/admin/products'
@@ -542,7 +542,6 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/about'
-    | '/admin-preview'
     | '/care-guide'
     | '/cart'
     | '/contact'
@@ -561,6 +560,7 @@ export interface FileRouteTypes {
     | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
+    | '/admin/gamification'
     | '/admin/login'
     | '/admin/passports'
     | '/admin/products'
@@ -592,7 +592,6 @@ export interface RootRouteChildren {
   AccountRouteRoute: typeof AccountRouteRouteWithChildren
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
-  AdminPreviewRoute: typeof AdminPreviewRoute
   CareGuideRoute: typeof CareGuideRoute
   CartRoute: typeof CartRoute
   ContactRoute: typeof ContactRoute
@@ -688,13 +687,6 @@ declare module '@tanstack/react-router' {
       path: '/care-guide'
       fullPath: '/care-guide'
       preLoaderRoute: typeof CareGuideRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin-preview': {
-      id: '/admin-preview'
-      path: '/admin-preview'
-      fullPath: '/admin-preview'
-      preLoaderRoute: typeof AdminPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -879,6 +871,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/gamification': {
+      id: '/admin/gamification'
+      path: '/gamification'
+      fullPath: '/admin/gamification'
+      preLoaderRoute: typeof AdminGamificationRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/fonts': {
       id: '/admin/fonts'
       path: '/fonts'
@@ -980,6 +979,7 @@ interface AdminRouteRouteChildren {
   AdminComingSoonRoute: typeof AdminComingSoonRoute
   AdminContentRoute: typeof AdminContentRoute
   AdminFontsRoute: typeof AdminFontsRoute
+  AdminGamificationRoute: typeof AdminGamificationRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminPassportsRoute: typeof AdminPassportsRoute
   AdminProductsRoute: typeof AdminProductsRoute
@@ -996,6 +996,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminComingSoonRoute: AdminComingSoonRoute,
   AdminContentRoute: AdminContentRoute,
   AdminFontsRoute: AdminFontsRoute,
+  AdminGamificationRoute: AdminGamificationRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminPassportsRoute: AdminPassportsRoute,
   AdminProductsRoute: AdminProductsRoute,
@@ -1015,7 +1016,6 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRouteRoute: AccountRouteRouteWithChildren,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   AboutRoute: AboutRoute,
-  AdminPreviewRoute: AdminPreviewRoute,
   CareGuideRoute: CareGuideRoute,
   CartRoute: CartRoute,
   ContactRoute: ContactRoute,

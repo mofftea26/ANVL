@@ -1,8 +1,51 @@
+import type { ComponentType } from 'react'
+
+import {
+  Anvil,
+  BookOpen,
+  FileText,
+  Hourglass,
+  Images,
+  LayoutDashboard,
+  Package,
+  Palette,
+  QrCode,
+  Settings,
+  ShoppingBag,
+  Trophy,
+  Type,
+} from '@/shared/icons'
+
+/** Icon component shape shared by the Phosphor seam + the inline Anvil. */
+export type AdminNavIcon = ComponentType<{
+  size?: number | string
+  className?: string
+  'aria-hidden'?: boolean | 'true' | 'false'
+}>
+
+/**
+ * Top-level admin IA — every surface belongs to exactly one category. The
+ * grouping is nav-only: `/admin/*` URLs are flat and unchanged.
+ */
+export const ADMIN_NAV_CATEGORIES = [
+  'Dashboard',
+  'Design',
+  'Content',
+  'Commerce',
+  'Passports',
+  'Gamification',
+  'Media',
+  'Settings',
+] as const
+
+export type AdminNavCategory = (typeof ADMIN_NAV_CATEGORIES)[number]
+
 export interface AdminNavItem {
   label: string
   href: string
   description: string
-  cluster: string
+  category: AdminNavCategory
+  icon: AdminNavIcon
   cta: string
   badge: string
 }
@@ -12,7 +55,8 @@ export const adminNavItems: AdminNavItem[] = [
     label: 'Dashboard',
     href: '/admin',
     description: 'Active drop and CMS shortcuts.',
-    cluster: 'Workspace',
+    category: 'Dashboard',
+    icon: LayoutDashboard,
     cta: 'Open',
     badge: 'Overview',
   },
@@ -20,7 +64,8 @@ export const adminNavItems: AdminNavItem[] = [
     label: 'Theme & Colors',
     href: '/admin/theme',
     description: 'Site-wide palette and theme mode.',
-    cluster: 'Site',
+    category: 'Design',
+    icon: Palette,
     cta: 'Edit',
     badge: 'Theme',
   },
@@ -28,39 +73,17 @@ export const adminNavItems: AdminNavItem[] = [
     label: 'Fonts',
     href: '/admin/fonts',
     description: 'Heading, body, and display typefaces.',
-    cluster: 'Site',
+    category: 'Design',
+    icon: Type,
     cta: 'Edit',
     badge: 'Type',
-  },
-  {
-    label: 'Assets',
-    href: '/admin/assets',
-    description: 'Upload media and assign slots per drop.',
-    cluster: 'Site',
-    cta: 'Manage',
-    badge: 'Media',
-  },
-  {
-    label: 'Shop Experience',
-    href: '/admin/shop',
-    description: 'Shop layout, product cards, filters, and copy.',
-    cluster: 'Site',
-    cta: 'Edit',
-    badge: 'Shop',
-  },
-  {
-    label: 'Products',
-    href: '/admin/products',
-    description: 'Per-product detail-page content and editorial assets.',
-    cluster: 'Site',
-    cta: 'Edit',
-    badge: 'PDP',
   },
   {
     label: 'Landing Content',
     href: '/admin/content',
     description: 'Per-scene landing copy with designed defaults.',
-    cluster: 'Site',
+    category: 'Content',
+    icon: FileText,
     cta: 'Edit',
     badge: 'Copy',
   },
@@ -68,58 +91,109 @@ export const adminNavItems: AdminNavItem[] = [
     label: 'About Page',
     href: '/admin/about',
     description: 'Hero, philosophy, forge process, and fun facts copy.',
-    cluster: 'Site',
+    category: 'Content',
+    icon: Anvil,
     cta: 'Edit',
     badge: 'About',
-  },
-  {
-    label: 'Coming Soon',
-    href: '/admin/coming-soon',
-    description: 'Pre-launch site mode and reveal-page content.',
-    cluster: 'Site',
-    cta: 'Edit',
-    badge: 'Launch',
-  },
-  {
-    label: 'Passports',
-    href: '/admin/passports',
-    description: 'Per-unit QR passports — generate, track claims, print sheets.',
-    cluster: 'Site',
-    cta: 'Forge',
-    badge: 'QR',
   },
   {
     label: 'Story',
     href: '/admin/story',
     description: 'Author the saga — chapters, acts, and cast.',
-    cluster: 'Site',
+    category: 'Content',
+    icon: BookOpen,
     cta: 'Author',
     badge: 'Saga',
+  },
+  {
+    label: 'Coming Soon',
+    href: '/admin/coming-soon',
+    description: 'Pre-launch site mode and reveal-page content.',
+    category: 'Content',
+    icon: Hourglass,
+    cta: 'Edit',
+    badge: 'Launch',
+  },
+  {
+    label: 'Shop Experience',
+    href: '/admin/shop',
+    description: 'Shop layout, product cards, filters, and copy.',
+    category: 'Commerce',
+    icon: ShoppingBag,
+    cta: 'Edit',
+    badge: 'Shop',
+  },
+  {
+    label: 'Products',
+    href: '/admin/products',
+    description: 'Per-product detail-page content and editorial assets.',
+    category: 'Commerce',
+    icon: Package,
+    cta: 'Edit',
+    badge: 'PDP',
+  },
+  {
+    label: 'Passports',
+    href: '/admin/passports',
+    description: 'Per-unit QR passports — generate, track claims, print sheets.',
+    category: 'Passports',
+    icon: QrCode,
+    cta: 'Forge',
+    badge: 'QR',
+  },
+  {
+    label: 'Gamification',
+    href: '/admin/gamification',
+    description: 'Ranks, challenges, Forge XP, and badges — the Armory rules.',
+    category: 'Gamification',
+    icon: Trophy,
+    cta: 'Tune',
+    badge: 'Armory',
+  },
+  {
+    label: 'Assets',
+    href: '/admin/assets',
+    description: 'Upload media and assign slots per drop and page.',
+    category: 'Media',
+    icon: Images,
+    cta: 'Manage',
+    badge: 'Media',
   },
   {
     label: 'Settings',
     href: '/admin/settings',
     description: 'Session and local reset.',
-    cluster: 'Workspace',
+    category: 'Settings',
+    icon: Settings,
     cta: 'Open',
     badge: 'System',
   },
 ]
 
-const CLUSTER_ORDER = ['Workspace', 'Site'] as const
-
-export function adminNavItemsByCluster(): {
-  cluster: string
+export interface AdminNavCategoryGroup {
+  category: AdminNavCategory
   items: AdminNavItem[]
-}[] {
-  const map = new Map<string, AdminNavItem[]>()
+}
+
+/** Nav items grouped by category, in the fixed IA order (empty categories dropped). */
+export function adminNavCategories(): AdminNavCategoryGroup[] {
+  const map = new Map<AdminNavCategory, AdminNavItem[]>()
   for (const item of adminNavItems) {
-    const list = map.get(item.cluster) ?? []
+    const list = map.get(item.category) ?? []
     list.push(item)
-    map.set(item.cluster, list)
+    map.set(item.category, list)
   }
-  return CLUSTER_ORDER.filter((c) => map.has(c)).map((cluster) => ({
-    cluster,
-    items: map.get(cluster)!,
+  return ADMIN_NAV_CATEGORIES.filter((c) => map.has(c)).map((category) => ({
+    category,
+    items: map.get(category)!,
   }))
+}
+
+/** The nav item owning a pathname (`/admin` exact; others by prefix). */
+export function findAdminNavItem(pathname: string): AdminNavItem | undefined {
+  return adminNavItems.find((item) =>
+    item.href === '/admin'
+      ? pathname === '/admin'
+      : pathname === item.href || pathname.startsWith(`${item.href}/`),
+  )
 }

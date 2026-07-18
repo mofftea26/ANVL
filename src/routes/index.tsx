@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { BRAND } from "@/shared/constants/brand";
+import { usePreviewDraft } from "@/features/cms/preview";
 import { buildSeoMetaFromCmsSource, seoContentToMetaSource } from "@/features/cms/seoMeta";
 import { runtimeClients } from "@/app/config/runtime";
 import { JsonLd } from "@/shared/components/seo/JsonLd";
@@ -104,6 +106,19 @@ function HomePage() {
   const landingKey = useActiveLandingPageKey(activeLandingKey);
   const { homeEntryComplete } = useLandingEntry();
 
+  // Admin live-preview iframe: unsaved landing-content / asset-slot edits
+  // override the published loader data. `null` for every real visitor.
+  const previewDraft = usePreviewDraft();
+  const effectiveLandingContent =
+    previewDraft?.landingContent?.[landingKey] ?? landingContent;
+  const effectiveAssets = useMemo(
+    () =>
+      previewDraft?.assetConfig
+        ? resolvePublishedAssets(previewDraft.assetConfig, landingKey, mediaIndex)
+        : resolvedAssets,
+    [previewDraft?.assetConfig, landingKey, mediaIndex, resolvedAssets],
+  );
+
   useLenisScroll(homeEntryComplete);
 
   return (
@@ -112,10 +127,10 @@ function HomePage() {
       <LandingPageRenderer
         activeKey={landingKey}
         products={products}
-        assets={resolvedAssets}
+        assets={effectiveAssets}
         loadingEmblemMarkup={loadingEmblemMarkup}
         themedMarkups={themedMarkups}
-        landingContent={landingContent}
+        landingContent={effectiveLandingContent}
         mediaIndex={mediaIndex}
       />
     </div>

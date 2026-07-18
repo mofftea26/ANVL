@@ -127,12 +127,12 @@ src/
     seo/             meta.ts (buildSeoMeta)
   content/           seed data + mocks
   features/
-    admin/           Slim CMS — dashboard (active drop), theme, fonts, assets, landing content, about, story, settings (+ auth). Wide-screen workspace shell (AdminLayout/AdminWorkspace/AdminRailPanel)
+    admin/           Slim CMS — dashboard (active drop + setup checklist), theme, fonts, assets, shop, products, landing content, about, coming-soon, passports, story, gamification, settings (+ auth). Shell: AdminLayout → AdminShell (persistent categorized sidebar + topbar Preview toggle) / AdminWorkspace / AdminRailPanel; preview/ (live-preview panel + draft channel), components/wizard/ (generic AdminWizard), hooks/useSortableList (native DnD reorder)
     analytics/       Analytics client mock + hooks
     about/           About page: content schema/defaults/resolver (CMS-driven orbs = sections) + altar/ (desktop Forge Altar — grabbable 3D anvil, aurora, per-color orbiting orbs, hammer-strike explosion → modal) + mobile/ (normal scrolling page; orbs render as stacked sections)
     cart/            Zustand cart store + hooks
     checkout/        Forms, schemas, payment config + mock adapters
-    cms/             Storefront-safe CMS reads: theme/font/asset config (cmsSiteConfig), landing content envelope, coming-soon config, publication readers, navigation + layout defaults
+    cms/             Storefront-safe CMS reads: theme/font/asset config (cmsSiteConfig), landing content envelope, coming-soon config, publication readers, navigation + layout defaults, preview/ (admin live-preview bridge: protocol, PreviewDraftProvider, targets/highlight)
     comingSoon/      Coming Soon reveal page: one-screen CMS-driven experience (backdrop/logo/countdown/email capture), GSAP entrance + pointer parallax, root-layout site-mode gate helpers
     experience/      Centralized experience system: registry (keyed 1:1 to active landing key), ExperienceProvider/useExperience, useExperienceVariant (structural variant seam), data-experience storefront wrapper, ExperiencePageTransition
     landingPages/    Code-owned landing pages: registry, renderer, asset slots, pages/TheOathLanding (the single Drop 01 cinematic landing)
@@ -155,7 +155,7 @@ src/
     story.tsx        Story saga page (chapter shelf + deep-linkable book overlay)
     about.tsx        About page — renders <AboutExperience> (desktop Forge Altar / mobile normal page; CMS-editable copy + assets)
     auth/            Sign in / sign up / forgot password
-    admin/           Slim CMS admin routes: dashboard (index), theme, fonts, assets, content, about, story, settings, login
+    admin/           Slim CMS admin routes: dashboard (index), theme, fonts, assets, shop, products, content, about, coming-soon, passports, story, gamification, settings, login
   shared/
     api/contracts/   Typed DTOs for future REST/BFF (scaffolding — not yet wired)
     assets/brand/    Inline SVG logo components (AnvlWordmark, AnvlCrest, etc.)
@@ -214,7 +214,7 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 - Allowed `VITE_*` vars (public, safe in browser):
   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` — Supabase project URL + anon/publishable key
   - `VITE_SHOPIFY_STORE_DOMAIN`, `VITE_SHOPIFY_STOREFRONT_API_VERSION`, `VITE_SHOPIFY_STOREFRONT_PUBLIC_TOKEN`
-  - `VITE_CANONICAL_BASE_URL`, `VITE_ADMIN_PREVIEW_ENABLED`, `VITE_ANVL_INTERNATIONAL_CHECKOUT`
+  - `VITE_CANONICAL_BASE_URL`, `VITE_ANVL_INTERNATIONAL_CHECKOUT`
 - Server-only / Edge (never `VITE_*`): `SUPABASE_SERVICE_ROLE_KEY`, `SHOPIFY_ADMIN_API_ACCESS_TOKEN`, `SHOPIFY_API_SECRET_KEY`, `ANVL_ADMIN_SESSION_SECRET` (seals the HttpOnly `/admin` session cookie — see `src/features/admin/auth/adminAuthSession.server.ts`; 32+ chars, rotating it signs out all admin sessions)
 - `.env.example` must have placeholder values only — never real credentials.
 - Env vars are validated by Zod in `src/app/config/publicEnv.ts` before use.
@@ -245,6 +245,7 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 | `public.story_chapters` | Story "books" — one per **product** (`product_slug` = Shopify handle), grouped by `drop_label`/`drop_slug`; acts are its pages | Public read published; editor write |
 | `public.story_acts` | Ordered story beats (book pages) within a chapter | Public read (parent published); editor write |
 | `public.story_cast` | CMS-authored characters (army roster) | Public read (parent published); editor write |
+| `public.gamification_settings` / `gamification_ranks` / `gamification_rank_levels` / `gamification_challenges` / `gamification_badges` | The Armory's editable gamification rules (Forge XP constants + level curve; 4 fixed rank keys with per-level AND-combined thresholds + optional `emblem_url` override; challenges/badges as declarative `metric ∈ {registrations, total_wears, max_wears, feat_count, full_drops, honor_pinned}` + target). Seeded == code defaults (`DEFAULT_GAMIFICATION_RULES`), so pre-migration behavior is identical. Storefront reads via anon fetch (`useGamificationRules`, React Query, defaults as placeholder); rules resolvers in `passport/lib/{ranks,challenges,forgeXp}.ts` take rules with default fallback | Public SELECT; editor/admin write |
 | `public.storefront_profiles` | Customer identity/profile — name, email, `phone`, `addresses` (jsonb), notification prefs; `armory_public` + minted-once `armory_handle` for the shareable read-only armory (`/armory/$handle` via `get_public_armory`, toggled by `set_armory_share`); auto-created on signup | Read/update own row |
 | `public.orders` | Shopify order mirror (written by `shopify-webhook` Edge Fn) for account order history | Read own (by id or email claim); service-role write only |
 
@@ -295,7 +296,12 @@ Storefront never reads admin draft data directly. Landing page **content** is co
 | `/admin/coming-soon` | Coming Soon site mode — master toggle + reveal-page copy, countdown, early-access capture, assets, SEO (`coming_soon`) |
 | `/admin/passports` | Product passports, two tabs: **QR codes** (generate per-unit batches, claimed/unclaimed ledger, unassign/delete, printable QR sheet — relational CRUD via `product_passports`) and **Passport content** (per-product editorial sections authored in a multi-step wizard — one step per passport section, each with copy + assets — saved to `passport_content`) |
 | `/admin/story` | Story saga editor — chapters, acts, cast (relational; Supabase CRUD) |
+| `/admin/gamification` | Gamification — the Armory's rules in four tabs: **Ranks** (fixed 4 keys; copy/emblem/per-level thresholds), **Challenges** (drag-reorder, metric+target, active toggle, create/delete), **Forge XP** (4 constants + level-curve factor with preview), **Badges** (metric+target milestones). Relational CRUD on the `gamification_*` tables |
 | `/admin/settings` | Session + local reset |
+
+> **Admin shell (2026-07-18 rework):** persistent categorized sidebar ≥1024px (collapsible to an icon rail, preference in `anvl.adminSidebar.v1`; drawer below `lg`). Categories: Dashboard · Design (theme, fonts) · Content (landing, about, story, coming-soon) · Commerce (shop, products) · Passports · Gamification · Media (assets) · Settings — nav-only grouping, `/admin/*` URLs unchanged (`adminNav.ts` is the single IA source; breadcrumbs derive from it). A topbar **Preview** toggle opens the live-preview panel (below).
+
+> **Live preview:** the admin embeds the REAL storefront in a same-origin iframe (`/<route>?anvl-cms-preview=1`) and pushes UNSAVED editor working copies over a Zod-validated postMessage bridge (v1: `hello`/`draft`/`focus` → `ready`/`located`). Storefront side lives in `src/features/cms/preview/` (storefront-safe; activation requires the query param + iframe + same-origin handshake — SSR-safe, null until post-mount); admin side in `src/features/admin/preview/` (draft store, lazy `AdminPreviewPanel` with device switcher — desktop 1280 triggers the real Oath cinematic gate — and locate buttons that scroll/ring `data-anvl-preview-target` elements; Oath scenes resolve via their existing `data-scene` contract). Save still = publish; the preview only covers the pre-save gap.
 
 ### localStorage Adapter Pattern
 
@@ -714,7 +720,7 @@ Every code change must check whether documentation needs updating. After any:
 | PERF-11 | Bundle size | Dependency cleanup: removed unused `@tanstack/react-table` + `@radix-ui/react-dropdown-menu` (2026-06-11), `@fontsource/bebas-neue`, `@fontsource/manrope`, `@tanstack/react-query-devtools`, `@tailwindcss/typography` (2026-06-20), and `react-colorful` (with the orphaned shared `ColorField`) + `react-day-picker` (with the orphaned `AdminDateTimeField`) (2026-06-27). `@tanstack/react-virtual` (admin media grid), `framer-motion` (RevealOnScroll), and the active fonts (Anton/Sora/Cinzel) remain in use. |
 | MAINT-01 | Large files | Several admin editor files exceed 500 lines (tracked refactor candidates). |
 | MAINT-02 | Feature boundary | Storefront-safe code imports from `admin/**` (media URL, types) — extract to `cms/**` |
-| MAINT-03 | localStorage reset | `resetAllLocalCmsKeys()` omits `anvl.landingContent.v1` |
+| MAINT-03 | localStorage reset | **Resolved.** `resetAllLocalCmsKeys()` clears every key in the `ADMIN_STORAGE_KEYS` registry (incl. `anvl.landingContent.v1` and the sidebar preference) |
 | MIG-01 | Supabase migrations | Orphaned publish RPC migrations post drop-builder teardown |
 | Phase I | Router repatch | `scripts/repatch-admin-route-tree.mjs` is a workaround for TanStack Start upstream limitation. |
 | Phase J | Production launch | Admin real server auth + HttpOnly sessions done (see SEC-11). **Hosting set up 2026-07-11: Cloudflare Workers SSR (`wrangler.jsonc` + `@cloudflare/vite-plugin`), verified via build + dry-run — see `docs/deployment.md`.** Remaining: first `wrangler deploy` + DNS cutover, flip CSP to enforcing (currently report-only, WASM/blob allowances added), rate limits, upload validation. CSRF double-submit cookie is in place (`src/start.ts`). |

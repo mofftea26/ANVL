@@ -96,7 +96,7 @@ describe('AdminSidebar', () => {
 
 
 
-  it('renders modern nav sections with descriptions and no badge pills', async () => {
+  it('renders categorized nav sections without badge pills', async () => {
 
     const user = userEvent.setup()
 
@@ -120,19 +120,16 @@ describe('AdminSidebar', () => {
 
     expect(dashboard.className).not.toContain('rounded-full')
 
-    expect(screen.getByText('Active drop and CMS shortcuts.')).toBeInTheDocument()
 
 
-
-    for (const cluster of ['Overview', 'Site & discovery']) {
-
-      expect(screen.getByText(cluster)).toBeInTheDocument()
-
+    // Category eyebrows — the new IA grouping. (getAllByText: "Passports" is
+    // both an eyebrow and a link label.)
+    for (const category of ['Design', 'Content', 'Commerce', 'Passports', 'Media']) {
+      expect(screen.getAllByText(category).length).toBeGreaterThanOrEqual(1)
     }
 
-
-
-    for (const badge of ['Theme', 'Type', 'Media']) {
+    // Old badge pills stay gone.
+    for (const badge of ['Type', 'QR', 'Saga']) {
       expect(screen.queryByText(badge)).not.toBeInTheDocument()
     }
 
@@ -160,6 +157,24 @@ describe('AdminSidebar', () => {
 
     expect(mockLogout).toHaveBeenCalledTimes(1)
 
+  })
+
+  it('shows a collapse toggle when onToggleCollapse is provided', async () => {
+    const user = userEvent.setup()
+    const onToggleCollapse = vi.fn()
+
+    render(<AdminSidebar onToggleCollapse={onToggleCollapse} />)
+
+    await user.click(screen.getByRole('button', { name: /collapse navigation/i }))
+    expect(onToggleCollapse).toHaveBeenCalledTimes(1)
+  })
+
+  it('rail density renders icon-only links with accessible names', () => {
+    render(<AdminSidebar density="rail" onToggleCollapse={() => {}} />)
+
+    expect(screen.getByRole('button', { name: /expand navigation/i })).toBeInTheDocument()
+    const nav = screen.getByRole('navigation', { name: 'Admin' })
+    expect(within(nav).getByRole('link', { name: /Theme & Colors/i })).toBeInTheDocument()
   })
 
 

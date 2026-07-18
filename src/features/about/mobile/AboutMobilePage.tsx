@@ -1,5 +1,6 @@
 import { Container } from '@/shared/components/ui/Container'
 import { RevealOnScroll } from '@/shared/components/motion/RevealOnScroll'
+import { usePreviewTargetProps } from '@/features/cms/preview'
 import { useHighlightOnArrival } from '@/shared/hooks/useHighlightOnArrival'
 import { BRAND } from '@/shared/constants/brand'
 import type { AboutResolvedContent, AboutResolvedOrb } from '../content/aboutContent.defaults'
@@ -17,12 +18,14 @@ import { AboutMarquee } from '../components/AboutMarquee'
 function OrbSection({ orb, image }: { orb: AboutResolvedOrb; image?: string }) {
   const anchorId = `about-orb-${orb.id}`
   useHighlightOnArrival(anchorId)
+  const previewTarget = usePreviewTargetProps('content-field', `about:${orb.id}`)
 
   return (
     <section
       id={anchorId}
       className="scroll-mt-[var(--anvl-header-h)] py-12 md:py-16"
       aria-labelledby={`${anchorId}-title`}
+      {...previewTarget}
     >
       <Container className="max-w-3xl">
         <RevealOnScroll>
@@ -166,12 +169,15 @@ export function AboutMobilePage({
   content: AboutResolvedContent
   assets: AboutPageAssets
 }) {
+  const heroPreviewTarget = usePreviewTargetProps('content-field', 'about:hero')
+
   return (
     <div className="relative">
       {/* Hero — full-bleed under the transparent header. */}
       <section
         className="relative flex min-h-[86svh] items-end overflow-hidden pb-14 pt-[calc(var(--anvl-header-h)+3rem)]"
         aria-labelledby="about-hero-heading"
+        {...heroPreviewTarget}
       >
         <div className="absolute inset-0 -z-10">
           {assets.heroImage ? (

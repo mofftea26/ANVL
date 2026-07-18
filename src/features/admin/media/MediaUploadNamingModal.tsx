@@ -67,10 +67,14 @@ interface PendingName {
   purpose: string
 }
 
+/** Slot-select sentinel: name the file with free text instead of a registry slot. */
+export const CUSTOM_SLOT = '__custom__'
+
 export function buildUploadName(file: File, entry: PendingName): string | null {
   const ctx = CONTEXTS.find((c) => c.key === entry.context)
   if (!ctx) return null
-  const part = ctx.slots ? entry.slot : kebab(entry.purpose)
+  const useCustom = !ctx.slots || entry.slot === CUSTOM_SLOT
+  const part = useCustom ? kebab(entry.purpose) : entry.slot
   if (!part) return null
   return `${kebab(ctx.key)}-${kebab(part)}.${extOf(file.name)}`
 }
@@ -153,12 +157,29 @@ export function MediaUploadNamingModal({
                     <AdminFieldSelect
                       label="Slot"
                       value={entry.slot}
-                      onChange={(slot) => patch(i, { slot })}
-                      options={ctx.slots}
+                      onChange={(slot) => patch(i, { slot, purpose: '' })}
+                      options={[
+                        ...ctx.slots,
+                        { value: CUSTOM_SLOT, label: 'Custom name…' },
+                      ]}
                       placeholder="Pick the slot…"
                     />
                   ) : ctx ? (
                     <FormField label="Purpose" hint="e.g. seamless-tee-macro" labelStyle="stacked">
+                      <Input
+                        density="compact"
+                        value={entry.purpose}
+                        onChange={(e) => patch(i, { purpose: e.target.value })}
+                      />
+                    </FormField>
+                  ) : null}
+                  {ctx?.slots && entry.slot === CUSTOM_SLOT ? (
+                    <FormField
+                      label="Custom name"
+                      hint="Kebab-case is enforced, e.g. hero-alt-cut"
+                      labelStyle="stacked"
+                      className="sm:col-span-2"
+                    >
                       <Input
                         density="compact"
                         value={entry.purpose}

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render as rtlRender, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import type { ReactElement } from 'react'
 import { publicArmorySchema } from '@/features/passport/schemas/passport.schema'
 
 vi.mock('@tanstack/react-router', () => ({
@@ -7,6 +9,14 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 import { PublicArmoryView } from '@/features/passport/components/PublicArmoryView'
+
+// The view reads gamification rules via React Query (placeholder = defaults).
+function render(ui: ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return rtlRender(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>)
+}
 
 describe('publicArmorySchema', () => {
   it('parses the RPC projection and ignores fields it does not expose', () => {

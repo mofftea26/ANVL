@@ -1,8 +1,11 @@
+import { useEffect, useRef } from 'react'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { matchesMediaKind } from '@/features/admin/media/filterMediaLibraryItems'
+import { hasDraggedMedia, readDraggedMediaId } from '@/features/admin/media/mediaDrag'
 import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
 import type { AssetSlotDefinition, AssetSlotKind } from '@/features/landingPages/assetSlots'
+import { cn } from '@/shared/lib/cn'
 
 export const ASSET_SLOT_UNASSIGNED = '__unassigned__'
 
@@ -38,6 +41,8 @@ export interface AssetSlotAssignmentPanelProps {
   assignmentValue: (key: string) => string
   onSlotChange: (slotKey: string, mediaId: string) => void
   mediaAssets: AssetSlotMediaOption[]
+  /** Slot to scroll into view + highlight (deep link from other editors). */
+  focusSlotKey?: string
 }
 
 /**
@@ -54,7 +59,15 @@ export function AssetSlotAssignmentPanel({
   assignmentValue,
   onSlotChange,
   mediaAssets,
+  focusSlotKey,
 }: AssetSlotAssignmentPanelProps) {
+  const focusRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!focusSlotKey) return
+    focusRef.current?.scrollIntoView({ block: 'center' })
+  }, [focusSlotKey])
+
   return (
     <AdminRailPanel
       title="Slot assignments"
@@ -92,8 +105,45 @@ export function AssetSlotAssignmentPanel({
                       ? [current, ...kindMatches]
                       : kindMatches
 
+                  const isFocused = focusSlotKey === slot.key
+                  const acceptsDrop = slot.kind !== 'select'
+
                   return (
-                  <div key={slot.key} className="space-y-1.5">
+                  <div
+                    key={slot.key}
+                    ref={isFocused ? focusRef : undefined}
+                    onDragOver={
+                      acceptsDrop
+                        ? (e) => {
+                            if (!hasDraggedMedia(e.dataTransfer)) return
+                            e.preventDefault()
+                            e.dataTransfer.dropEffect = 'copy'
+                            e.currentTarget.setAttribute('data-drag-over', '')
+                          }
+                        : undefined
+                    }
+                    onDragLeave={
+                      acceptsDrop
+                        ? (e) => e.currentTarget.removeAttribute('data-drag-over')
+                        : undefined
+                    }
+                    onDrop={
+                      acceptsDrop
+                        ? (e) => {
+                            if (!hasDraggedMedia(e.dataTransfer)) return
+                            e.preventDefault()
+                            e.currentTarget.removeAttribute('data-drag-over')
+                            const id = readDraggedMediaId(e.dataTransfer)
+                            if (id) onSlotChange(slot.key, id)
+                          }
+                        : undefined
+                    }
+                    className={cn(
+                      'space-y-1.5 rounded-lg transition-shadow data-[drag-over]:shadow-[0_0_0_2px_var(--color-accent)]',
+                      isFocused &&
+                        'p-2 -m-2 shadow-[0_0_0_1.5px_var(--color-accent)]',
+                    )}
+                  >
                     {slot.kind === 'select' ? (
                       <AdminFieldSelect
                         label={slot.label}

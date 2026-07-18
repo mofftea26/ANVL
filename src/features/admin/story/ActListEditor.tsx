@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Plus } from '@/shared/icons'
+import { ChevronDown, ChevronUp, Menu, Plus } from '@/shared/icons'
 import { Button } from '@/shared/components/ui/Button'
 import { AdminEntityCard } from '@/features/admin/components/AdminEntityCard'
+import { useSortableList } from '@/features/admin/hooks/useSortableList'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { Textarea } from '@/shared/components/ui/Textarea'
@@ -111,6 +112,45 @@ function ActCard({
 /** Manage the ordered acts within a chapter (each saved individually). */
 export function ActListEditor({ chapterId, chapterSlug, acts, onChanged }: ActListEditorProps) {
   const [adding, setAdding] = useState(false)
+  const [reordering, setReordering] = useState(false)
+
+  // Reorder = renumber the stored acts sequentially and upsert the changed
+  // ones. Uses stored values — save in-card edits before reordering.
+  async function reorder(from: number, to: number) {
+    if (reordering) return
+    setReordering(true)
+    try {
+      const next = [...acts]
+      const [moved] = next.splice(from, 1)
+      if (!moved) return
+      next.splice(to, 0, moved)
+      for (const [idx, act] of next.entries()) {
+        const n = idx + 1
+        if (act.actNumber === n) continue
+        const res = await upsertAct({
+          id: act.id,
+          chapterId,
+          actNumber: n,
+          title: act.title,
+          story: act.story,
+          asset: act.asset,
+          sortOrder: n,
+        })
+        if (!res.ok) {
+          toast.error(res.error)
+          break
+        }
+      }
+      await onChanged()
+    } finally {
+      setReordering(false)
+    }
+  }
+
+  const sortable = useSortableList({
+    length: acts.length,
+    onMove: (from, to) => void reorder(from, to),
+  })
 
   async function addAct() {
     setAdding(true)
@@ -147,8 +187,41 @@ export function ActListEditor({ chapterId, chapterSlug, acts, onChanged }: ActLi
         <p className="text-sm text-[var(--color-text-muted)]">No acts yet. Add the first beat of this chapter.</p>
       ) : (
         <div className="space-y-4">
-          {acts.map((act) => (
-            <ActCard key={act.id} act={act} chapterId={chapterId} chapterSlug={chapterSlug} onChanged={onChanged} />
+          {acts.map((act, i) => (
+            <div
+              key={act.id}
+              {...sortable.getItemProps(i)}
+              className="rounded-xl transition-shadow data-[drag-over]:shadow-[0_0_0_2px_var(--color-accent)]"
+            >
+              <div className="mb-1 flex items-center gap-1">
+                <span
+                  {...sortable.getHandleProps(i)}
+                  title="Drag to reorder acts (stored order — save in-card edits first)"
+                  className="inline-flex cursor-grab items-center px-1 text-[var(--color-text-muted)] active:cursor-grabbing"
+                >
+                  <Menu size={ICON_SIZE.sm} aria-hidden="true" />
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Move act ${i + 1} up`}
+                  disabled={i === 0 || reordering}
+                  onClick={() => sortable.moveUp(i)}
+                  className="focus-ring inline-flex h-6 w-6 items-center justify-center rounded text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] disabled:opacity-30"
+                >
+                  <ChevronUp size={ICON_SIZE.xs} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Move act ${i + 1} down`}
+                  disabled={i === acts.length - 1 || reordering}
+                  onClick={() => sortable.moveDown(i)}
+                  className="focus-ring inline-flex h-6 w-6 items-center justify-center rounded text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] disabled:opacity-30"
+                >
+                  <ChevronDown size={ICON_SIZE.xs} aria-hidden="true" />
+                </button>
+              </div>
+              <ActCard act={act} chapterId={chapterId} chapterSlug={chapterSlug} onChanged={onChanged} />
+            </div>
           ))}
         </div>
       )}

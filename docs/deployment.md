@@ -78,7 +78,7 @@ CI). They are **not** Worker secrets/vars. All are public/browser-safe:
 - `VITE_SHOPIFY_STORE_DOMAIN`, `VITE_SHOPIFY_STOREFRONT_API_VERSION`,
   `VITE_SHOPIFY_STOREFRONT_PUBLIC_TOKEN` (Storefront token is browser-safe)
 - Optional: `VITE_CANONICAL_BASE_URL`, `VITE_SITE_URL`,
-  `VITE_ANVL_INTERNATIONAL_CHECKOUT`, `VITE_ADMIN_PREVIEW_ENABLED`
+  `VITE_ANVL_INTERNATIONAL_CHECKOUT`
 
 ### Worker runtime
 - `NODE_ENV=production` — set in `wrangler.jsonc` `vars` (non-secret).

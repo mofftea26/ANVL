@@ -15,6 +15,7 @@ import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
+import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import {
   readFontLibraryFromStorage,
   saveFontConfigAsync,
@@ -63,6 +64,7 @@ export function SiteFontEditor() {
     successMessage: 'Fonts saved to Supabase.',
     errorFallbackMessage: 'Could not save fonts.',
   })
+  usePushPreviewDraft('fontLibrary', config)
   const [googleName, setGoogleName] = useState('')
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)

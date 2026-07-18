@@ -18,6 +18,7 @@ import {
   readThemeLibraryFromStorage,
   subscribeCmsSiteConfigChange,
 } from '@/features/cms/config/cmsSiteConfig.settings'
+import { usePreviewDraft } from '@/features/cms/preview'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 
 type Props = PropsWithChildren<{
@@ -71,13 +72,20 @@ export function SiteThemeProvider({
     () => DEFAULT_FONT_LIBRARY_CONFIG,
   )
 
-  const effectiveTheme = useMemo(
-    () => (useLocalConfig ? resolveThemeConfig(localThemeLibrary) : theme),
-    [useLocalConfig, localThemeLibrary, theme],
-  )
+  // Admin live-preview iframe: an UNSAVED editor draft (postMessage bridge)
+  // outranks both saved-local and published state. `null` for real visitors.
+  const previewDraft = usePreviewDraft()
+
+  const effectiveTheme = useMemo(() => {
+    if (previewDraft?.themeLibrary) return resolveThemeConfig(previewDraft.themeLibrary)
+    return useLocalConfig ? resolveThemeConfig(localThemeLibrary) : theme
+  }, [previewDraft?.themeLibrary, useLocalConfig, localThemeLibrary, theme])
   const fonts = useMemo(
-    () => parseFontLibrary(useLocalConfig ? localFontLibrary : fontsRaw),
-    [useLocalConfig, localFontLibrary, fontsRaw],
+    () =>
+      parseFontLibrary(
+        previewDraft?.fontLibrary ?? (useLocalConfig ? localFontLibrary : fontsRaw),
+      ),
+    [previewDraft?.fontLibrary, useLocalConfig, localFontLibrary, fontsRaw],
   )
 
   useEffect(() => {

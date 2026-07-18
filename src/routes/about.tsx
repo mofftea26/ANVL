@@ -9,6 +9,7 @@ import { runtimeClients } from '@/app/config/runtime'
 import { loadStorefrontProjection } from '@/features/cms/api/loadStorefrontProjection'
 import { resolveStorefrontPageAssets } from '@/features/cms/assets/resolvePublishedAssets'
 import { useLenisScroll } from '@/shared/hooks/useLenisScroll'
+import { usePreviewDraft } from '@/features/cms/preview'
 import { AboutExperience } from '@/features/about'
 
 export const Route = createFileRoute('/about')({
@@ -54,5 +55,18 @@ function AboutPage() {
   const { assets, landingContent, mediaIndex } = Route.useLoaderData()
   useLenisScroll(true)
 
-  return <AboutExperience landingContent={landingContent} assets={assets} mediaIndex={mediaIndex} />
+  // Admin live-preview iframe: unsaved About edits override published data.
+  const previewDraft = usePreviewDraft()
+  const effectiveContent = previewDraft?.landingContent?.about ?? landingContent
+  const effectiveAssets = previewDraft?.assetConfig
+    ? resolveStorefrontPageAssets(previewDraft.assetConfig, 'about', mediaIndex)
+    : assets
+
+  return (
+    <AboutExperience
+      landingContent={effectiveContent}
+      assets={effectiveAssets}
+      mediaIndex={mediaIndex}
+    />
+  )
 }

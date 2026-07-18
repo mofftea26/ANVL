@@ -1,4 +1,5 @@
-import { Check, Info, Package, Save } from '@/shared/icons'
+import { Check, Info, Package, QrCode, Save } from '@/shared/icons'
+import { Link } from '@tanstack/react-router'
 import {
   useCallback,
   useEffect,
@@ -14,6 +15,7 @@ import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
+import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotField'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import {
@@ -65,6 +67,7 @@ export function AdminPdpContentEditor() {
     successMessage: 'Product content saved.',
     errorFallbackMessage: 'Could not save product content.',
   })
+  usePushPreviewDraft('pdpContent', config)
   const [slug, setSlug] = useState<string>('')
 
   const productsQuery = useAdminProductCatalogQuery()
@@ -204,10 +207,20 @@ export function AdminPdpContentEditor() {
               </div>
             </section>
 
-            <p className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-              <Package size={15} aria-hidden="true" />
-              Editing content for <span className="text-[var(--color-text)]">{products.find((p) => p.slug === slug)?.name ?? slug}</span>.
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+                <Package size={15} aria-hidden="true" />
+                Editing content for <span className="text-[var(--color-text)]">{products.find((p) => p.slug === slug)?.name ?? slug}</span>.
+              </p>
+              <Link
+                to="/admin/passports"
+                search={{ tab: 'content', product: slug }}
+                className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-line)] px-3 py-1.5 text-xs text-[var(--color-text-muted)] no-underline transition-colors hover:border-[var(--color-accent)]/50 hover:text-[var(--color-text)]"
+              >
+                <QrCode size={ICON_SIZE.sm} aria-hidden="true" />
+                Passport content for this product
+              </Link>
+            </div>
           </>
         ) : (
           <p className="text-sm text-[var(--color-text-muted)]">

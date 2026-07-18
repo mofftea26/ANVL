@@ -10,7 +10,11 @@ const d = ABOUT_DEFAULT_CONTENT.hero
 
 export function AboutHeroFields({ register }: { register: UseFormRegister<AboutContentFormValues> }) {
   return (
-    <ContentSection title="Hero — Origin" hint="The opening scene. Headline drives the word reveal.">
+    <ContentSection
+      title="Hero — Origin"
+      hint="The opening scene. Headline drives the word reveal."
+      previewTarget={{ kind: 'content-field', id: 'about:hero' }}
+    >
       <FormField label="Eyebrow" htmlFor="about-hero-eyebrow" labelStyle="stacked">
         <Input id="about-hero-eyebrow" placeholder={d.eyebrow} {...register('hero.eyebrow')} density="compact" />
       </FormField>

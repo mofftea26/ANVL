@@ -5,6 +5,7 @@ import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
+import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import {
   readThemeLibraryFromStorage,
   saveThemeConfigAsync,
@@ -59,6 +60,13 @@ export function SiteThemeEditor() {
   })
   const [editingId, setEditingId] = useState(stored.activeThemeId)
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop')
+
+  // Live preview tracks the preset being edited, even before it's activated.
+  const previewLibrary = useMemo(
+    () => ({ ...library, activeThemeId: editingId }),
+    [library, editingId],
+  )
+  usePushPreviewDraft('themeLibrary', previewLibrary)
 
   useEffect(() => {
     setEditingId(stored.activeThemeId)

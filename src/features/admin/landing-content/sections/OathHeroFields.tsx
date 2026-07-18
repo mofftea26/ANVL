@@ -16,6 +16,7 @@ export function OathHeroFields({
   return (
     <ContentSection
       title="Hero — Genesis"
+      previewTarget={{ kind: 'content-field', id: 'the-oath:hero' }}
       hint="The scroll-scrubbed video opening. Headline drives the word reveal."
     >
       <FormField label="Eyebrow" htmlFor="oath-hero-eyebrow" labelStyle="stacked">

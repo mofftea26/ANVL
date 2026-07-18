@@ -1,8 +1,9 @@
-import { ChevronRight, Menu } from '@/shared/icons'
+import { ChevronRight, Eye, Menu } from '@/shared/icons'
 import type { ReactNode } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useAdminPageActionsSlot } from '@/features/admin/components/AdminPageActionsContext'
 import { AdminTopbarSessionChip } from '@/features/admin/components/AdminTopbarSessionChip'
+import { findAdminNavItem } from '@/features/admin/components/adminNav'
 import { cn } from '@/shared/lib/cn'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 
@@ -11,43 +12,25 @@ interface AdminTopbarProps {
   /** Shown under the title — dashboard only. */
   description?: ReactNode
   onOpenMenu: () => void
+  previewOpen?: boolean
+  onTogglePreview?: () => void
 }
 
+/** CMS → category → page, derived from the nav registry (single source of IA). */
 function useAdminBreadcrumbs(): { label: string; to?: string }[] {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const segments = pathname.split('/').filter(Boolean)
 
-  if (segments[0] !== 'admin') return []
+  if (!pathname.startsWith('/admin')) return []
 
-  const crumbs: { label: string; to?: string }[] = [
-    { label: 'CMS', to: '/admin' },
-  ]
+  const crumbs: { label: string; to?: string }[] = [{ label: 'CMS', to: '/admin' }]
+  if (pathname === '/admin') return crumbs
 
-  if (segments.length === 1) return crumbs
-
-  const section = segments[1]
-  const sectionLabels: Record<string, string> = {
-    drops: 'Drops',
-    products: 'Products',
-    media: 'Media',
-    theme: 'Theme',
-    'site-layout': 'Website layout',
-    seo: 'SEO',
-  }
-
-  if (section && sectionLabels[section]) {
-    crumbs.push({
-      label: sectionLabels[section],
-      to: `/admin/${section}`,
-    })
-  }
-
-  if (section === 'drops' && segments[2] === 'new') {
-    crumbs.push({ label: 'New drop' })
-  } else if (section === 'drops' && segments[2]) {
-    crumbs.push({ label: 'Editor' })
-  } else if (section === 'products' && segments[2]) {
-    crumbs.push({ label: 'Editor' })
+  const item = findAdminNavItem(pathname)
+  if (item) {
+    if (item.category !== 'Dashboard' && item.category !== 'Settings') {
+      crumbs.push({ label: item.category })
+    }
+    crumbs.push({ label: item.label, to: item.href })
   }
 
   return crumbs
@@ -57,6 +40,8 @@ export function AdminTopbar({
   title,
   description,
   onOpenMenu,
+  previewOpen = false,
+  onTogglePreview,
 }: AdminTopbarProps) {
   const pageActions = useAdminPageActionsSlot()
   const breadcrumbs = useAdminBreadcrumbs()
@@ -76,6 +61,7 @@ export function AdminTopbar({
           aria-label="Open admin navigation"
           className={cn(
             'focus-ring inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-text)]',
+            'lg:hidden',
           )}
         >
           <Menu size={ICON_SIZE.md} aria-hidden="true" className="text-[var(--color-text-muted)]" />
@@ -132,6 +118,25 @@ export function AdminTopbar({
           >
             {pageActions}
           </div>
+        ) : null}
+
+        {onTogglePreview ? (
+          <button
+            type="button"
+            onClick={onTogglePreview}
+            aria-pressed={previewOpen}
+            aria-label={previewOpen ? 'Close live preview' : 'Open live preview'}
+            title={previewOpen ? 'Close live preview' : 'Open live preview'}
+            className={cn(
+              'focus-ring hidden h-9 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs font-medium transition-colors lg:inline-flex',
+              previewOpen
+                ? 'border-[var(--color-accent)]/60 bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
+                : 'border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
+            )}
+          >
+            <Eye size={ICON_SIZE.sm} aria-hidden />
+            Preview
+          </button>
         ) : null}
 
         <AdminTopbarSessionChip className="hidden shrink-0 sm:flex" />

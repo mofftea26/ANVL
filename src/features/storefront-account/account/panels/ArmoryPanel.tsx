@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Award, LayoutDashboard, Medal, QrCode, Shield } from '@/shared/icons'
 import { useArmoryFeatsQuery } from '@/features/passport/hooks/useArmory'
+import { useGamificationRules } from '@/features/passport/hooks/useGamificationRules'
 import { useOwnedPassportsQuery } from '@/features/passport/hooks/usePassport'
 import type { ArmoryCatalogEntry } from '@/features/passport/lib/armory'
 import {
@@ -69,13 +70,18 @@ export function ArmoryPanel() {
   const [rankOpen, setRankOpen] = useState(false)
   const [overlay, setOverlay] = useState<'collection' | 'timeline' | 'challenges' | null>(null)
 
+  const rules = useGamificationRules()
   const completion = computeDropCompletion(owned, catalog)
-  const rank = deriveArmoryRank(owned.length, completion)
-  const badges = deriveArmoryBadges(owned.length, completion)
-  const forge = computeForgeLevel({ owned, featCount, completion })
-  const milestone = nextForgeMilestone({ claimCount: owned.length, completion, forge })
+  const rank = deriveArmoryRank(owned.length, completion, rules)
+  const badges = deriveArmoryBadges(owned.length, completion, rules)
+  const forge = computeForgeLevel({ owned, featCount, completion }, rules.settings)
+  const milestone = nextForgeMilestone(
+    { claimCount: owned.length, completion, forge },
+    rules,
+  )
   const challenges = evaluateChallenges(
     buildChallengeContext({ owned, featCount, completion }),
+    rules,
   )
   const honorPinned = owned.filter((p) => p.featuredSlot !== null).length
   // Distinct pieces for the share studio (image from the catalog).

@@ -1,14 +1,9 @@
 import {
   ExternalLink,
-  LayoutDashboard,
-  Globe,
-  Search,
-  Image,
-  ShoppingBag,
-  Package,
   Settings,
   LogOut,
   X,
+  ChevronLeft,
   ChevronRight,
 } from '@/shared/icons'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
@@ -16,7 +11,7 @@ import { Link, useRouterState } from '@tanstack/react-router'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import type { AdminNavItem } from '@/features/admin/components/adminNav'
-import { adminNavItemsByCluster } from '@/features/admin/components/adminNav'
+import { adminNavCategories } from '@/features/admin/components/adminNav'
 import {
   sessionInitial,
   sessionPrimaryLabel,
@@ -28,37 +23,14 @@ interface AdminSidebarProps {
   onNavigate?: () => void
   className?: string
   density?: 'default' | 'drawer' | 'rail'
-}
-
-const NAV_ICONS: Record<string, typeof LayoutDashboard> = {
-  '/admin': LayoutDashboard,
-  '/admin/theme': Globe,
-  '/admin/fonts': Search,
-  '/admin/assets': Image,
-  '/admin/shop': ShoppingBag,
-  '/admin/products': Package,
-  '/admin/settings': Settings,
+  /** Rendered as a collapse/expand chevron in the header (persistent shell only). */
+  onToggleCollapse?: () => void
 }
 
 function pathIsActive(pathname: string, href: string) {
   return href === '/admin'
     ? pathname === '/admin'
     : pathname === href || pathname.startsWith(`${href}/`)
-}
-
-function clusterHeadingLabel(cluster: string): string {
-  switch (cluster) {
-    case 'Workspace':
-      return 'Overview'
-    case 'Campaigns':
-      return 'Campaigns'
-    case 'Catalog':
-      return 'Catalog'
-    case 'Site':
-      return 'Site & discovery'
-    default:
-      return cluster
-  }
 }
 
 function SidebarNavLink({
@@ -72,7 +44,7 @@ function SidebarNavLink({
   compact: boolean
   onNavigate?: () => void
 }) {
-  const Icon = NAV_ICONS[item.href] ?? LayoutDashboard
+  const Icon = item.icon
 
   return (
     <Link
@@ -82,7 +54,7 @@ function SidebarNavLink({
       title={compact ? item.label : undefined}
       className={cn(
         'focus-ring group relative flex items-center gap-3 rounded-xl no-underline transition-[background-color,box-shadow,color] duration-200',
-        compact ? 'px-2 py-2' : 'px-2.5 py-2.5',
+        compact ? 'justify-center px-2 py-2' : 'px-2.5 py-2',
         isActive
           ? 'bg-[var(--color-surface-elevated)] text-[var(--color-heading)] shadow-[inset_0_0_0_1px_var(--color-line)]'
           : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-text)]',
@@ -91,33 +63,23 @@ function SidebarNavLink({
       <span
         className={cn(
           'flex shrink-0 items-center justify-center rounded-lg transition-colors duration-200',
-          compact ? 'h-8 w-8' : 'h-9 w-9',
+          compact ? 'h-9 w-9' : 'h-8 w-8',
           isActive
             ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
             : 'bg-[var(--color-surface-soft)] text-[var(--color-text-muted)] group-hover:bg-[var(--color-surface-elevated)] group-hover:text-[var(--color-text)]',
         )}
       >
-        <Icon size={compact ? 15 : 16} aria-hidden />
+        <Icon size={compact ? 17 : 15} aria-hidden />
       </span>
 
       {!compact ? (
         <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5">
-            <span className="truncate text-[13px] font-medium leading-tight">{item.label}</span>
-            {isActive ? (
-              <ChevronRight
-                size={ICON_SIZE.xs}
-                aria-hidden
-                className="shrink-0 text-[var(--color-accent)] opacity-80"
-              />
-            ) : null}
-          </span>
-          <span className="mt-0.5 block truncate text-[11px] leading-snug text-[var(--color-text-muted)]/85 group-hover:text-[var(--color-text-muted)]">
-            {item.description}
+          <span className="truncate text-[13px] font-medium leading-tight">
+            {item.label}
           </span>
         </span>
       ) : (
-        <span className="min-w-0 truncate text-[12px] font-medium">{item.label}</span>
+        <span className="sr-only">{item.label}</span>
       )}
 
       {isActive ? (
@@ -134,12 +96,13 @@ export function AdminSidebar({
   onNavigate,
   className,
   density = 'default',
+  onToggleCollapse,
 }: AdminSidebarProps) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
   const { logout, session } = useAdminAuth()
-  const clusters = adminNavItemsByCluster()
+  const categories = adminNavCategories()
   const isDrawer = density === 'drawer'
   const isRail = density === 'rail'
   const compact = isRail
@@ -150,7 +113,7 @@ export function AdminSidebar({
         'relative flex min-h-0 flex-col overflow-hidden',
         'border-r border-[var(--color-line)]/70',
         'bg-[linear-gradient(180deg,var(--color-surface)_0%,color-mix(in_srgb,var(--color-surface)_92%,var(--color-bg))_100%)]',
-        isRail ? 'h-full gap-2 px-2 py-3' : 'h-full gap-0',
+        'h-full gap-0',
         className,
       )}
     >
@@ -165,7 +128,12 @@ export function AdminSidebar({
           compact ? 'px-2 py-3' : 'px-4 pb-4 pt-5',
         )}
       >
-        <div className={cn('flex items-start gap-2', compact ? 'flex-col items-center' : 'justify-between')}>
+        <div
+          className={cn(
+            'flex items-start gap-2',
+            compact ? 'flex-col items-center' : 'justify-between',
+          )}
+        >
           <Link
             to="/admin"
             className="focus-ring flex min-w-0 items-center gap-3 rounded-xl no-underline"
@@ -177,7 +145,7 @@ export function AdminSidebar({
                 compact ? 'h-9 w-9' : 'h-10 w-10',
               )}
             >
-              <AnvlCompactMark className={cn('w-auto', compact ? 'h-5' : 'h-5')} aria-hidden />
+              <AnvlCompactMark className="h-5 w-auto" aria-hidden />
             </span>
             {!compact ? (
               <span className="min-w-0">
@@ -203,6 +171,21 @@ export function AdminSidebar({
               <X size={17} aria-hidden />
             </button>
           ) : null}
+
+          {onToggleCollapse ? (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              aria-label={compact ? 'Expand navigation' : 'Collapse navigation'}
+              className="focus-ring inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--color-line)]/70 bg-[var(--color-surface-soft)]/80 text-[var(--color-text-muted)] transition hover:border-[var(--color-line)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)]"
+            >
+              {compact ? (
+                <ChevronRight size={ICON_SIZE.sm} aria-hidden />
+              ) : (
+                <ChevronLeft size={ICON_SIZE.sm} aria-hidden />
+              )}
+            </button>
+          ) : null}
         </div>
       </header>
 
@@ -210,41 +193,38 @@ export function AdminSidebar({
         aria-label="Admin"
         className={cn(
           'relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain',
-          compact ? 'gap-2 px-2 py-3' : 'gap-5 px-3 py-4',
+          compact ? 'gap-2 px-2 py-3' : 'gap-4 px-3 py-4',
         )}
       >
-        {clusters.map(({ cluster, items }, clusterIndex) => (
-          <section key={cluster} className="space-y-1.5">
-            {!compact ? (
-              <div className="flex items-center gap-2 px-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]/75">
-                  {clusterHeadingLabel(cluster)}
-                </p>
-                <span
-                  aria-hidden
-                  className="h-px flex-1 bg-[var(--color-line)]/50"
-                />
-              </div>
-            ) : clusterIndex > 0 ? (
-              <div aria-hidden className="mx-1 border-t border-[var(--color-line)]/50" />
-            ) : null}
+        {categories
+          .filter(({ category }) => category !== 'Settings')
+          .map(({ category, items }, categoryIndex) => (
+            <section key={category} className="space-y-1">
+              {!compact && category !== 'Dashboard' ? (
+                <div className="flex items-center gap-2 px-2 pt-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]/75">
+                    {category}
+                  </p>
+                  <span aria-hidden className="h-px flex-1 bg-[var(--color-line)]/50" />
+                </div>
+              ) : compact && categoryIndex > 0 ? (
+                <div aria-hidden className="mx-1 border-t border-[var(--color-line)]/50" />
+              ) : null}
 
-            <ul className="space-y-1">
-              {items
-                .filter((item) => item.href !== '/admin/settings')
-                .map((item) => (
-                <li key={item.href}>
-                  <SidebarNavLink
-                    item={item}
-                    isActive={pathIsActive(pathname, item.href)}
-                    compact={compact}
-                    onNavigate={onNavigate}
-                  />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+              <ul className="space-y-1">
+                {items.map((item) => (
+                  <li key={item.href}>
+                    <SidebarNavLink
+                      item={item}
+                      isActive={pathIsActive(pathname, item.href)}
+                      compact={compact}
+                      onNavigate={onNavigate}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
       </nav>
 
       <footer

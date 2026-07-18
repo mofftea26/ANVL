@@ -5,6 +5,7 @@ import { FormField } from '@/shared/components/ui/FormField'
 import { cn } from '@/shared/lib/cn'
 import { isLikelySafeMediaSrc } from '@/shared/lib/url'
 import { MediaLibraryPickerModal } from './MediaLibraryPickerModal'
+import { hasDraggedMedia, readDraggedMediaId } from './mediaDrag'
 import { mediaAssetPublicUrl } from './mediaAssets.service'
 import type { CmsMediaAsset } from './mediaAssets.types'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
@@ -36,6 +37,7 @@ export function MediaLibrarySlotField({
   assets,
 }: MediaLibrarySlotFieldProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
   const assigned = useMemo(() => resolveAsset(mediaId, assets), [mediaId, assets])
   const previewUrl = assigned ? mediaAssetPublicUrl(assigned) : null
   const safePreview =
@@ -44,7 +46,28 @@ export function MediaLibrarySlotField({
 
   return (
     <FormField label={label} className="space-y-2" labelStyle="stacked">
-      <div className="flex flex-wrap items-start gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)]/30 p-3">
+      <div
+        onDragOver={(e) => {
+          if (!hasDraggedMedia(e.dataTransfer)) return
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'copy'
+          setDragOver(true)
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          if (!hasDraggedMedia(e.dataTransfer)) return
+          e.preventDefault()
+          setDragOver(false)
+          const id = readDraggedMediaId(e.dataTransfer)
+          if (id) onMediaIdChange(id)
+        }}
+        className={cn(
+          'flex flex-wrap items-start gap-3 rounded-lg border bg-[var(--color-bg)]/30 p-3 transition-colors',
+          dragOver
+            ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10'
+            : 'border-[var(--color-line)]',
+        )}
+      >
         <div
           className={cn(
             'flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--color-line)] bg-[var(--color-surface)]',

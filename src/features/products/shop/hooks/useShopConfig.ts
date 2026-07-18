@@ -5,6 +5,7 @@ import {
   readShopConfigFromStorage,
   subscribeShopConfigChange,
 } from '@/features/cms/shop/shopExperience.settings'
+import { usePreviewDraft } from '@/features/cms/preview'
 
 /**
  * Resolve the active Shop Experience config for the storefront.
@@ -16,6 +17,8 @@ import {
  */
 export function useShopConfig(initial: ShopConfig): ShopConfig {
   const [config, setConfig] = useState<ShopConfig>(initial)
+  // Admin live-preview iframe: unsaved Shop Experience edits win outright.
+  const previewDraft = usePreviewDraft()
 
   useEffect(() => {
     const sync = () => {
@@ -25,5 +28,5 @@ export function useShopConfig(initial: ShopConfig): ShopConfig {
     return subscribeShopConfigChange(sync)
   }, [initial])
 
-  return config
+  return previewDraft?.shopConfig ?? config
 }

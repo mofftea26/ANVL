@@ -1,5 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
+import { useMemo } from 'react'
 import { buildSeoMeta } from '@/app/seo/meta'
+import { usePreviewDraft } from '@/features/cms/preview'
 import { runtimeClients } from '@/app/config/runtime'
 import { loadStorefrontProjection } from '@/features/cms/api/loadStorefrontProjection'
 import { resolveStorefrontPageAssets } from '@/features/cms/assets/resolvePublishedAssets'
@@ -29,6 +31,7 @@ export const Route = createFileRoute('/shop/$slug')({
       content,
       shopConfig: projection.shopConfig,
       hasStoryBook: Boolean(storyBook),
+      mediaIndex: projection.mediaIndex,
     }
   },
   head: ({ loaderData }) => {
@@ -45,6 +48,25 @@ export const Route = createFileRoute('/shop/$slug')({
 })
 
 function ProductRoute() {
-  const data = Route.useLoaderData()
-  return <ProductDetailPage {...data} />
+  const { mediaIndex, ...data } = Route.useLoaderData()
+
+  // Admin live-preview iframe: unsaved PDP-content / asset edits re-resolve the
+  // editorial content client-side. `null` for every real visitor.
+  const previewDraft = usePreviewDraft()
+  const previewContent = useMemo(() => {
+    // Re-resolve only when PDP content itself is drafted — an asset-only draft
+    // falls through to the published resolution (loader data).
+    if (!previewDraft?.pdpContent) return null
+    const globalAssets = previewDraft.assetConfig
+      ? resolveStorefrontPageAssets(previewDraft.assetConfig, 'pdp', mediaIndex)
+      : data.assets
+    return resolvePdpContent({
+      product: data.product,
+      pdpContent: previewDraft.pdpContent,
+      globalAssets,
+      mediaIndex,
+    })
+  }, [previewDraft?.pdpContent, previewDraft?.assetConfig, data.product, data.assets, mediaIndex])
+
+  return <ProductDetailPage {...data} content={previewContent ?? data.content} />
 }

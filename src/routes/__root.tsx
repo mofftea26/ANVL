@@ -53,6 +53,7 @@ import { PageBackdrop } from '@/shared/components/layout/PageBackdrop'
 import { SiteDustGate } from '@/shared/webgl/SiteDustGate'
 import { resolvePageBackdropSrc } from '@/features/cms/assets/pageBackdrop'
 import { useComingSoonConfig } from '@/features/cms/hooks/useComingSoonConfig'
+import { PreviewDraftProvider, usePreviewDraft } from '@/features/cms/preview'
 import {
   isComingSoonExemptPath,
   readComingSoonPreviewBypass,
@@ -232,6 +233,14 @@ function StorefrontLayout() {
 }
 
 function RootLayout() {
+  return (
+    <PreviewDraftProvider>
+      <RootLayoutBody />
+    </PreviewDraftProvider>
+  )
+}
+
+function RootLayoutBody() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
@@ -249,8 +258,16 @@ function RootLayout() {
     setPreviewBypass(readComingSoonPreviewBypass())
   }, [pathname])
 
+  // Inside the admin live-preview iframe, only home shows the reveal gate —
+  // other routes stay editable/previewable while Coming Soon mode is on.
+  const previewDraft = usePreviewDraft()
+  const previewGateBypass = previewDraft !== null && pathname !== '/'
+
   const comingSoonActive =
-    comingSoon.enabled && !isComingSoonExemptPath(pathname) && !previewBypass
+    comingSoon.enabled &&
+    !isComingSoonExemptPath(pathname) &&
+    !previewBypass &&
+    !previewGateBypass
 
   // The home head-script arms the landing-entry scroll lock before hydration;
   // the reveal page replaces that whole flow, so release it while gated.

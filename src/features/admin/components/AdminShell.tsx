@@ -1,0 +1,154 @@
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useState,
+  type PropsWithChildren,
+  type ReactNode,
+} from 'react'
+
+import { subscribePreviewFocus } from '@/features/admin/preview/adminPreviewStore'
+import { ADMIN_STORAGE_KEYS } from '@/features/admin/storageKeys'
+import { Drawer } from '@/shared/components/ui/Drawer'
+import { cn } from '@/shared/lib/cn'
+
+import { AdminSidebar } from './AdminSidebar'
+import { AdminTopbar } from './AdminTopbar'
+
+/** Lazy — the live-preview iframe stack costs nothing until opened. */
+const AdminPreviewPanel = lazy(() =>
+  import('@/features/admin/preview/AdminPreviewPanel').then((m) => ({
+    default: m.AdminPreviewPanel,
+  })),
+)
+
+const SIDEBAR_PREF_KEY = ADMIN_STORAGE_KEYS.sidebarPref
+
+function readSidebarCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_PREF_KEY) === 'rail'
+  } catch {
+    return false
+  }
+}
+
+function persistSidebarCollapsed(collapsed: boolean) {
+  try {
+    window.localStorage.setItem(SIDEBAR_PREF_KEY, collapsed ? 'rail' : 'expanded')
+  } catch {
+    // Preference only — safe to drop when storage is unavailable.
+  }
+}
+
+interface AdminShellProps {
+  title: string
+  description?: ReactNode
+  /** Content-area mode — see {@link AdminLayout}. */
+  layout?: 'default' | 'wide' | 'workspace'
+}
+
+/**
+ * Admin chrome: persistent categorized sidebar (≥1024px, collapsible to an
+ * icon rail with the preference persisted) beside topbar + main, plus the
+ * toggleable live-preview panel docked on the right. Below `lg` the sidebar
+ * becomes the existing overlay drawer, opened from the topbar menu button.
+ */
+export function AdminShell({
+  title,
+  description,
+  layout = 'default',
+  children,
+}: PropsWithChildren<AdminShellProps>) {
+  const [navOpen, setNavOpen] = useState(false)
+  // Default expanded on server + first paint; stored preference applies post-mount.
+  const [collapsed, setCollapsed] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
+
+  useEffect(() => {
+    setCollapsed(readSidebarCollapsed())
+  }, [])
+
+  // A locate request from any editor opens the preview panel.
+  useEffect(() => {
+    return subscribePreviewFocus(() => setPreviewOpen(true))
+  }, [])
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      persistSidebarCollapsed(!prev)
+      return !prev
+    })
+  }
+
+  const isWide = layout === 'wide'
+  const isWorkspace = layout === 'workspace'
+
+  return (
+    <div className="flex h-full min-h-0 min-w-0">
+      <div
+        className={cn(
+          'hidden shrink-0 lg:block',
+          collapsed ? 'w-[4.5rem]' : 'w-[var(--admin-sidebar-width,17rem)]',
+        )}
+      >
+        <AdminSidebar
+          density={collapsed ? 'rail' : 'default'}
+          onToggleCollapse={toggleCollapsed}
+          className="h-full"
+        />
+      </div>
+
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <AdminTopbar
+          title={title}
+          description={description}
+          onOpenMenu={() => setNavOpen(true)}
+          previewOpen={previewOpen}
+          onTogglePreview={() => setPreviewOpen((open) => !open)}
+        />
+
+        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+          <main
+            className={cn(
+              'min-h-0 min-w-0 flex-1 overflow-hidden',
+              isWide
+                ? 'flex flex-col px-4 py-4 sm:px-5 lg:px-6 lg:py-5'
+                : 'overflow-y-auto px-4 py-6 pb-8 sm:px-6 lg:px-8 lg:py-10 lg:pb-8',
+            )}
+          >
+            <div
+              className={cn(
+                'mx-auto min-w-0 w-full',
+                isWide && 'flex min-h-0 flex-1 flex-col overflow-hidden max-w-[1600px]',
+                isWorkspace && 'max-w-[110rem] 2xl:max-w-[120rem]',
+                !isWide && !isWorkspace && 'max-w-5xl space-y-6',
+              )}
+            >
+              {children}
+            </div>
+          </main>
+
+          {previewOpen ? (
+            <Suspense fallback={null}>
+              <AdminPreviewPanel onClose={() => setPreviewOpen(false)} />
+            </Suspense>
+          ) : null}
+        </div>
+      </div>
+
+      <Drawer
+        placement="left"
+        open={navOpen}
+        onClose={() => setNavOpen(false)}
+        aria-label="Admin navigation"
+        className="overflow-hidden p-0 !w-[var(--admin-sidebar-width,17rem)] !max-w-[var(--admin-sidebar-width,17rem)]"
+      >
+        <AdminSidebar
+          density="drawer"
+          onNavigate={() => setNavOpen(false)}
+          className="h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-1 overflow-hidden border-r-0"
+        />
+      </Drawer>
+    </div>
+  )
+}

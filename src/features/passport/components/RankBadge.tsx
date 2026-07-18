@@ -1,5 +1,6 @@
 import { useStorefrontAccountSession } from '@/features/storefront-account/publicAccount.core'
 import { cn } from '@/shared/lib/cn'
+import { useGamificationRules } from '../hooks/useGamificationRules'
 import { useOwnedPassportsQuery } from '../hooks/usePassport'
 import { deriveArmoryRank } from '../lib/ranks'
 
@@ -17,11 +18,12 @@ export function RankBadge({
 }) {
   const customerId = useStorefrontAccountSession((s) => s.customerId)
   const ownedQuery = useOwnedPassportsQuery()
+  const rules = useGamificationRules()
   if (!customerId || !ownedQuery.data) return null
 
   // Count-based rank (no catalog cross-reference on chrome surfaces — the
   // full completion-aware rank lives in the Armory itself).
-  const rank = deriveArmoryRank(ownedQuery.data.length, [])
+  const rank = deriveArmoryRank(ownedQuery.data.length, [], rules)
 
   return (
     <span

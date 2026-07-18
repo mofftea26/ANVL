@@ -10,6 +10,7 @@ import {
   subscribeComingSoonConfigChange,
 } from '@/features/cms/comingSoon/comingSoon.settings'
 import type { ComingSoonConfig } from '@/features/cms/comingSoon/comingSoon.zod'
+import { usePreviewDraft } from '@/features/cms/preview'
 
 function useConfigFromLocalStorage(initial: ComingSoonConfig): ComingSoonConfig {
   return useSyncExternalStore(
@@ -42,5 +43,7 @@ function useConfigFromSupabase(initial: ComingSoonConfig): ComingSoonConfig {
 export function useComingSoonConfig(initial: ComingSoonConfig): ComingSoonConfig {
   const fromLocal = useConfigFromLocalStorage(initial)
   const fromSupabase = useConfigFromSupabase(initial)
-  return getSupabasePublicEnv() ? fromSupabase : fromLocal
+  // Admin live-preview iframe: unsaved Coming Soon edits win outright.
+  const previewDraft = usePreviewDraft()
+  return previewDraft?.comingSoon ?? (getSupabasePublicEnv() ? fromSupabase : fromLocal)
 }

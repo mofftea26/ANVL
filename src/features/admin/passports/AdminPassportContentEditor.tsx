@@ -1,4 +1,4 @@
-import { useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { BookOpenText, Pencil, Plus, Trash2 } from '@/shared/icons'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
@@ -46,7 +46,12 @@ function authoredSectionCount(c: PassportProductContent): number {
  * (one step per passport section). Saved to `passport_content` via the
  * shared CMS sync; blank fields fall back to PDP content / product data.
  */
-export function AdminPassportContentEditor() {
+export function AdminPassportContentEditor({
+  initialProductSlug,
+}: {
+  /** Deep-link: opens this product's wizard once the catalog loads. */
+  initialProductSlug?: string
+} = {}) {
   const stored = useStoredPassportContent()
   const productsQuery = useAdminProductCatalogQuery()
   const mediaQuery = useMediaAssetsQuery()
@@ -56,6 +61,15 @@ export function AdminPassportContentEditor() {
   const [wizardSlug, setWizardSlug] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [removeSlug, setRemoveSlug] = useState<string | null>(null)
+  const [consumedDeepLink, setConsumedDeepLink] = useState(false)
+
+  useEffect(() => {
+    if (consumedDeepLink || !initialProductSlug || products.length === 0) return
+    if (products.some((p) => p.slug === initialProductSlug)) {
+      setWizardSlug(initialProductSlug)
+    }
+    setConsumedDeepLink(true)
+  }, [consumedDeepLink, initialProductSlug, products])
 
   const authored = useMemo(
     () =>

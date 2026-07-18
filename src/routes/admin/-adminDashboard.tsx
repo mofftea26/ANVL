@@ -12,6 +12,7 @@ import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWorkspaceStatusPanel'
+import { AdminSetupChecklist } from '@/features/admin/components/AdminSetupChecklist'
 import { adminNavItems } from '@/features/admin/components/adminNav'
 import { LandingPagePickerCard } from '@/features/admin/landing-picker/LandingPagePickerCard'
 import { Badge } from '@/shared/components/ui/Badge'
@@ -76,6 +77,7 @@ function DashboardContent() {
         <div className="space-y-6">
           <ComingSoonLiveBanner />
           <LandingPagePickerCard />
+          <AdminSetupChecklist />
           <div className="grid items-stretch gap-6 sm:grid-cols-2 2xl:grid-cols-3">
             {dashboardCards.map((card) => (
               <AdminCard

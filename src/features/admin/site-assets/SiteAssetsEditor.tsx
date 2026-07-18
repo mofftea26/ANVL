@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
+import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import { MediaLibraryPage } from '@/features/admin/media/MediaLibraryPage'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import { collectAssignedMediaIds } from '@/features/cms/media/collectAssignedMediaIds'
@@ -38,7 +39,20 @@ function useAssetConfig(): AssetConfig {
   )
 }
 
-export function SiteAssetsEditor() {
+interface SiteAssetsEditorProps {
+  /** Deep-link: slot scope to open ('general', landing key, or page key). */
+  initialScope?: string
+  /** Deep-link: slot key to scroll to + highlight in the assignment panel. */
+  focusSlotKey?: string
+  /** Deep-link: initial media-library search text. */
+  initialSearch?: string
+}
+
+export function SiteAssetsEditor({
+  initialScope,
+  focusSlotKey,
+  initialSearch,
+}: SiteAssetsEditorProps = {}) {
   const setPageActions = useAdminPageActions()
   const stored = useAssetConfig()
   const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
@@ -48,7 +62,8 @@ export function SiteAssetsEditor() {
     successMessage: 'Asset assignments saved.',
     errorFallbackMessage: 'Could not save assets.',
   })
-  const [scope, setScope] = useState<'general' | string>('general')
+  const [scope, setScope] = useState<'general' | string>(initialScope ?? 'general')
+  usePushPreviewDraft('assetConfig', config)
   const mediaQuery = useMediaAssetsQuery()
   const fallbackDrops = useMemo(() => listLandingPages(), [])
   const [drops, setDrops] = useState(fallbackDrops)
@@ -191,13 +206,14 @@ export function SiteAssetsEditor() {
       assignmentValue={assignmentValue}
       onSlotChange={setSlot}
       mediaAssets={mediaAssets}
+      focusSlotKey={focusSlotKey}
     />
   )
 
   return (
     <AdminWorkspace asideLabel="Asset slot assignments" aside={slotAssignmentRail}>
       <div data-testid="site-assets-editor">
-        <MediaLibraryPage assignedIds={assignedIds} />
+        <MediaLibraryPage assignedIds={assignedIds} initialSearch={initialSearch} />
       </div>
     </AdminWorkspace>
   )

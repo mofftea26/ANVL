@@ -103,7 +103,6 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 | `privacy.tsx` | `/privacy` | Privacy policy |
 | `terms.tsx` | `/terms` | Terms of service |
 | `returns.tsx` | `/returns` | Returns policy |
-| `admin-preview.tsx` | `/admin-preview` | Gated by `VITE_ADMIN_PREVIEW_ENABLED` |
 | `admin/route.tsx` | `/admin` | Admin layout shell (lazy) |
 | `admin/index.tsx` | `/admin` | Dashboard — active landing-page picker |
 | `admin/login.tsx` | `/admin/login` | Admin sign-in |
@@ -112,6 +111,7 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 | `admin/assets.tsx` | `/admin/assets` | Media library + asset slot assignments |
 | `admin/content.tsx` | `/admin/content` | Landing content (per-scene copy overrides) |
 | `admin/story.tsx` | `/admin/story` | Story saga editor (chapters/acts/cast) |
+| `admin/gamification.tsx` | `/admin/gamification` | Gamification — ranks, challenges, Forge XP, badges |
 | `admin/settings.tsx` | `/admin/settings` | Session + local reset |
 | `auth/sign-in.tsx` | `/auth/sign-in` | Sign in (Supabase auth) |
 | `auth/sign-up.tsx` | `/auth/sign-up` | Sign up |

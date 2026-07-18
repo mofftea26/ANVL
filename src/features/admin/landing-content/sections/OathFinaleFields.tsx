@@ -16,6 +16,7 @@ export function OathFinaleFields({
   return (
     <ContentSection
       title="Finale — Take the Oath"
+      previewTarget={{ kind: 'content-field', id: 'the-oath:finale' }}
       hint="The closing vow. The brand line beneath it is fixed (global brand rule)."
     >
       <FormField label="Eyebrow" htmlFor="oath-finale-eyebrow" labelStyle="stacked">

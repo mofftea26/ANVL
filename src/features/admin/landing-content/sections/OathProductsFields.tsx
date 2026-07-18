@@ -20,6 +20,7 @@ export function OathProductsFields({
   return (
     <ContentSection
       title="Products — The Arsenal"
+      previewTarget={{ kind: 'content-field', id: 'the-oath:products' }}
       hint="Live catalog pieces render here; taglines attach by product slug."
     >
       <FormField label="Eyebrow" htmlFor="oath-products-eyebrow" labelStyle="stacked">

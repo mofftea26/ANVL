@@ -10,6 +10,7 @@ import { useAdminPageActions } from '@/features/admin/components/AdminPageAction
 import { fetchLandingPagePickerOptions } from '@/features/admin/landing-picker/fetchLandingPagePickerOptions'
 import { useRegisterAdminDirty } from '@/features/admin/hooks/useRegisterAdminDirty'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
+import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import {
   readAssetConfigFromStorage,
   saveAssetConfigAsync,
@@ -86,6 +87,18 @@ export function AdminLandingContentEditor() {
     [assetConfig, storedAssets],
   )
   useRegisterAdminDirty('landing-content', oathForm.formState.isDirty || isAssetConfigDirty)
+
+  // Live preview mirrors the in-progress Oath copy + landing asset slots.
+  const watchedOath = oathForm.watch()
+  const previewLandingContent = useMemo(
+    () => ({
+      ...readLandingContentFromStorage(),
+      [OATH_KEY]: toOathContentSlice(watchedOath),
+    }),
+    [watchedOath],
+  )
+  usePushPreviewDraft('landingContent', previewLandingContent)
+  usePushPreviewDraft('assetConfig', assetConfig)
 
   const reloadFormForKey = useCallback(
     (pageKey: string) => {

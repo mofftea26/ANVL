@@ -16,6 +16,7 @@ export function OathManifestoFields({
   return (
     <ContentSection
       title="Manifesto — The Creed"
+      previewTarget={{ kind: 'content-field', id: 'the-oath:manifesto' }}
       hint="Each non-empty row is one masked manifesto line (max 6)."
     >
       <FormField label="Eyebrow" htmlFor="oath-manifesto-eyebrow" labelStyle="stacked">

@@ -58,6 +58,27 @@ export async function restSelectMaybeSingle(
   }
 }
 
+/** Select a list of rows under anon RLS (callers validate with Zod). */
+export async function restSelectList(
+  env: SupabasePublicEnv,
+  table: string,
+  query: string,
+): Promise<{ data: unknown[] | null; error: SupabaseRestError | null }> {
+  try {
+    const res = await fetch(`${env.url}/rest/v1/${table}?${query}`, {
+      headers: anonHeaders(env, { Accept: 'application/json' }),
+    })
+    if (!res.ok) return { data: null, error: await readError(res) }
+    const rows = (await res.json()) as unknown
+    return { data: Array.isArray(rows) ? rows : [], error: null }
+  } catch (err) {
+    return {
+      data: null,
+      error: { message: err instanceof Error ? err.message : 'network error' },
+    }
+  }
+}
+
 /**
  * Call a PostgREST RPC under the anon role. Returns the raw JSON result —
  * callers validate with Zod. Used by SSR-safe public reads (e.g. the product

@@ -11,13 +11,23 @@ const TABS: Array<{ key: PassportTab; label: string; icon: typeof QrCode }> = [
   { key: 'content', label: 'Passport content', icon: BookOpenText },
 ]
 
+interface AdminPassportsEditorProps {
+  /** Deep-link: tab to open (default 'codes'). */
+  initialTab?: PassportTab
+  /** Deep-link: with the content tab, opens this product's wizard directly. */
+  initialProductSlug?: string
+}
+
 /**
  * /admin/passports — two surfaces behind tabs:
  *  - QR codes: per-unit code generation, claim ledger, print sheets
  *  - Passport content: per-product editorial sections (multi-step wizard)
  */
-export function AdminPassportsEditor() {
-  const [tab, setTab] = useState<PassportTab>('codes')
+export function AdminPassportsEditor({
+  initialTab,
+  initialProductSlug,
+}: AdminPassportsEditorProps = {}) {
+  const [tab, setTab] = useState<PassportTab>(initialTab ?? 'codes')
 
   return (
     <div className="space-y-6">
@@ -49,7 +59,11 @@ export function AdminPassportsEditor() {
         })}
       </div>
 
-      {tab === 'codes' ? <AdminPassportCodesPanel /> : <AdminPassportContentEditor />}
+      {tab === 'codes' ? (
+        <AdminPassportCodesPanel />
+      ) : (
+        <AdminPassportContentEditor initialProductSlug={initialProductSlug} />
+      )}
     </div>
   )
 }

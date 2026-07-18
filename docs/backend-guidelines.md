@@ -26,7 +26,6 @@ Commerce is handled by **Shopify** (when `VITE_SHOPIFY_*` are set) or falls back
 | `VITE_SHOPIFY_STOREFRONT_PUBLIC_TOKEN` | Shopify Storefront API public token |
 | `VITE_CANONICAL_BASE_URL` | e.g. `https://www.anvlathletics.com` |
 | `VITE_ANVL_INTERNATIONAL_CHECKOUT` | `true` enables non-Lebanon card checkout (dev/demo) |
-| `VITE_ADMIN_PREVIEW_ENABLED` | `true` to enable `/admin-preview` route |
 
 ### Server-only (never `VITE_*`)
 
@@ -90,6 +89,8 @@ RLS is enabled on all tables. Rules are enforced at the database level even if a
 anon:
   - SELECT on storefront_publication
   - SELECT on published story_chapters / story_acts / story_cast (parent is_published)
+  - SELECT on gamification_* (settings/ranks/rank_levels/challenges/badges — the
+    Armory's rules are public data; seeded == code defaults)
   - EXECUTE get_passport_by_token(token) (SECURITY DEFINER — safe projection only;
     product_passports has NO public SELECT so claim tokens cannot be enumerated)
 
@@ -103,7 +104,7 @@ authenticated (customer):
     atomic first-claim: UPDATE ... WHERE token = $1 AND claimed_by IS NULL)
 
 authenticated (editor/admin):
-  - INSERT/UPDATE/DELETE on cms_media_assets, story_*, product_passports
+  - INSERT/UPDATE/DELETE on cms_media_assets, story_*, product_passports, gamification_*
   - UPDATE on cms_settings
 
 authenticated (admin):

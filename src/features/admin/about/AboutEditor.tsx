@@ -8,6 +8,7 @@ import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWork
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useRegisterAdminDirty } from '@/features/admin/hooks/useRegisterAdminDirty'
 import { useSaveSuccessFlash } from '@/features/admin/hooks/useSaveSuccessFlash'
+import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import {
   readLandingContentFromStorage,
   saveLandingContentSliceAsync,
@@ -40,6 +41,18 @@ export function AboutEditor() {
     defaultValues: toAboutFormValues(readLandingContentFromStorage()[ABOUT_KEY]),
   })
   useRegisterAdminDirty('about', form.formState.isDirty)
+
+  // Live preview mirrors the in-progress form values (unsaved) over the
+  // stored landing-content envelope.
+  const watchedValues = form.watch()
+  const previewLandingContent = useMemo(
+    () => ({
+      ...readLandingContentFromStorage(),
+      [ABOUT_KEY]: toAboutContentSlice(watchedValues),
+    }),
+    [watchedValues],
+  )
+  usePushPreviewDraft('landingContent', previewLandingContent)
 
   const reloadForm = useCallback(() => {
     form.reset(toAboutFormValues(readLandingContentFromStorage()[ABOUT_KEY]))

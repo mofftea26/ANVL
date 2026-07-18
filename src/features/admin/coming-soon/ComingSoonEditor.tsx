@@ -13,6 +13,7 @@ import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
+import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import { MediaLibraryPickerModal } from '@/features/admin/media/MediaLibraryPickerModal'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import {
@@ -88,6 +89,7 @@ export function ComingSoonEditor() {
     successMessage: 'Coming Soon settings saved.',
     errorFallbackMessage: 'Could not save Coming Soon settings.',
   })
+  usePushPreviewDraft('comingSoon', config)
   const [pickSlot, setPickSlot] = useState<MediaSlotKey | null>(null)
 
   const mediaQuery = useMediaAssetsQuery()

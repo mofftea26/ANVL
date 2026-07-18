@@ -15,9 +15,32 @@ The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing p
 | Coming Soon | `/admin/coming-soon` | `cms_settings.coming_soon` — site-mode `enabled` toggle + reveal-page copy, countdown (wall-clock + IANA timezone), CTAs, email-capture config, media-id asset refs, SEO/OG overrides |
 | Passports | `/admin/passports` | `product_passports` — generate per-unit QR batches (product picker from the commerce catalog, manual quantity), claimed/unclaimed ledger with claimant snapshots, unassign/delete, printable QR sheet (see `docs/features/product-passport.md`) |
 | Story | `/admin/story` | `story_chapters` + `story_acts` + `story_cast` (+ `story-media` bucket) |
+| Gamification | `/admin/gamification` | `gamification_settings` + `gamification_ranks` + `gamification_rank_levels` + `gamification_challenges` + `gamification_badges` — the Armory's rules (Forge XP constants + curve, rank copy/emblem/thresholds, challenges + badges as declarative metric+target). Relational CRUD like Story; seeded == code defaults |
 | Settings | `/admin/settings` | Session + local reset only |
 
-Removed from CMS: Products editor, website layout, SEO, drop-builder, campaigns, lookbook, global brand.
+Removed from CMS: website layout, SEO, drop-builder, campaigns, lookbook, global brand.
+
+## Admin shell + IA (2026-07-18 rework)
+
+- **Persistent categorized sidebar** ≥1024px (collapsible to an icon rail; preference in `anvl.adminSidebar.v1`), drawer below `lg`. Categories — Dashboard · Design (theme, fonts) · Content (landing, about, story, coming-soon) · Commerce (shop, products) · Passports · Gamification · Media (assets) · Settings — are **nav-only**: `/admin/*` URLs are flat and unchanged. `adminNav.ts` is the single IA source (sidebar, breadcrumbs, dashboard cards all derive from it).
+- **Cross-navigation:** `/admin/assets` accepts `?page=<scope>&slot=<key>&q=<search>` (opens the slot panel scoped + highlights the slot + seeds the library search); `/admin/passports` accepts `?tab=content&product=<slug>` (opens that product's wizard). The PDP editor links to its product's passport content.
+- **Speed affordances:** generic `AdminWizard` (extracted from the passport content wizard); native HTML5 drag-reorder via `useSortableList` (About orbs, Oath showcase products, story acts, gamification challenges — always with keyboard up/down fallback); media library cards drag onto any `MediaLibrarySlotField` / slot-panel row to assign; the upload naming modal's slot select has a "Custom name…" option (kebab-forced) for every context; the dashboard carries a drop-setup checklist with live completion ticks.
+
+## Live preview (unsaved edits, real storefront)
+
+The topbar **Preview** toggle docks a panel embedding the REAL storefront in a same-origin iframe (`/<route>?anvl-cms-preview=1`, device switcher: desktop 1280 — the true Oath cinematic gate — / tablet 768 / mobile 390; closing unmounts the iframe).
+
+Protocol (v1, Zod-validated, `src/features/cms/preview/previewBridge.types.ts`):
+
+```
+admin → iframe   anvl-preview/hello · anvl-preview/draft { payload } · anvl-preview/focus { target }
+iframe → admin   anvl-preview/ready · anvl-preview/located { target, found }
+```
+
+- `payload` = the editors' UNSAVED in-memory working copies, keyed by the persisted slices (`themeLibrary`, `fontLibrary`, `assetConfig`, `landingContent`, `shopConfig`, `pdpContent`, `comingSoon`); each slice is re-parsed with its existing `parse*` on receipt. Editors push via `usePushPreviewDraft(field, config)` (debounced; draft dropped on unmount).
+- Storefront activation is **SSR-safe and visitor-safe**: `PreviewDraftProvider` (mounted once in `__root.tsx`) stays `null` on the server and first paint, and activates only when the query param is present AND the page runs inside an iframe AND a `hello` arrives from the **same origin** (re-checked per message). Consumers (`SiteThemeProvider`, home/about/PDP routes, `useShopConfig`, `useComingSoonConfig`) prefer a present draft slice, else published data.
+- **Locate**: editors' crosshair buttons send `focus`; the storefront scrolls to and rings the element carrying `data-anvl-preview-target` (via `usePreviewTargetProps`) — Oath scenes resolve through their existing `data-scene` contract, so the cinematic components carry no new attributes.
+- Save still = publish (dual-write untouched); the preview covers only the pre-save gap.
 
 > **Story is the one relational CMS surface.** Unlike the singleton-JSON config above, the saga is many rows across three tables with direct Supabase CRUD (editor-role RLS). It is **not** mirrored into `storefront_publication`; the storefront reads published rows directly via anon RLS (`is_published`).
 

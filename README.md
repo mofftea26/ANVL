@@ -213,7 +213,6 @@ Not all are required in mock mode, but planned:
 
 ```env
 VITE_CANONICAL_BASE_URL=https://www.anvlathletics.com
-VITE_ADMIN_PREVIEW_ENABLED=false
 MEDUSA_BACKEND_URL=
 MEDUSA_PUBLISHABLE_KEY=
 POSTHOG_KEY=
@@ -224,5 +223,5 @@ NETCOMMERCE_API_KEY=
 
 ## Notes
 
-- The route `/admin-preview` is intentionally gated with `VITE_ADMIN_PREVIEW_ENABLED=true`.
+- Live preview of unsaved CMS edits is built into the admin itself (the Preview panel embeds the real storefront) — there is no separate preview route or env flag.
 - Product media currently uses placeholders (`public/brand/placeholder-product.svg`) with descriptive alt text; replace with AVIF/WebP files in `public/brand/` per product.

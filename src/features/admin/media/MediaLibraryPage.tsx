@@ -29,12 +29,14 @@ type MediaLibraryPageProps = {
    *  assigned/unassigned badge + filter. Omitted where no slot config is
    *  in scope (assignment UI is hidden entirely in that case). */
   assignedIds?: ReadonlySet<string>
+  /** Deep-link seed for the search box (e.g. an asset's `context-slot` name). */
+  initialSearch?: string
 }
 
-export function MediaLibraryPage({ assignedIds }: MediaLibraryPageProps) {
+export function MediaLibraryPage({ assignedIds, initialSearch }: MediaLibraryPageProps) {
   const env = getSupabasePublicEnv()
   const query = useMediaAssetsQuery()
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch ?? '')
   const [mimeFilter, setMimeFilter] = useState<string>('all')
   const [formatFilter, setFormatFilter] = useState<string>('all')
   const [assignmentFilter, setAssignmentFilter] = useState<MediaAssignmentFilter>('all')

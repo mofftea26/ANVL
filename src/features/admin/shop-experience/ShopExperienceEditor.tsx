@@ -12,6 +12,7 @@ import { AdminRangeField } from '@/features/admin/components/AdminRangeField'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
+import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import {
   readShopConfigFromStorage,
   saveShopConfigAsync,
@@ -82,6 +83,7 @@ export function ShopExperienceEditor() {
     successMessage: 'Shop settings saved.',
     errorFallbackMessage: 'Could not save shop settings.',
   })
+  usePushPreviewDraft('shopConfig', config)
 
   const set = useCallback(
     <K extends keyof ShopConfig>(key: K, value: ShopConfig[K]) =>

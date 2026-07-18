@@ -33,6 +33,7 @@ export {
   Calendar,
   CalendarDots as CalendarDays,
   Check,
+  Circle,
   CaretDown as ChevronDown,
   CaretLeft as ChevronLeft,
   CaretRight as ChevronRight,
@@ -82,6 +83,7 @@ export {
   Monitor,
   // p
   Package,
+  Palette,
   Archive as PackageOpen,
   PencilSimple as Pencil,
   Phone,
@@ -107,6 +109,7 @@ export {
   ShoppingBag,
   SlidersHorizontal,
   DeviceMobile as Smartphone,
+  DeviceTablet as Tablet,
   Sparkle as Sparkles,
   Star,
   Sword as Swords,

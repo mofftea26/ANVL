@@ -12,6 +12,7 @@ import {
   useArmoryShareQuery,
   useSetArmoryShareMutation,
 } from '../hooks/useArmory'
+import { useGamificationRules } from '../hooks/useGamificationRules'
 import { useOwnedPassportsQuery } from '../hooks/usePassport'
 import { deriveArmoryRank } from '../lib/ranks'
 import { BRAND } from '@/shared/constants/brand'
@@ -43,7 +44,8 @@ export function PassportShareSection({
   const [studioOpen, setStudioOpen] = useState(false)
 
   const wearCount = owned.find((p) => p.productSlug === productSlug)?.wearCount ?? 0
-  const rank = deriveArmoryRank(owned.length, [])
+  const rules = useGamificationRules()
+  const rank = deriveArmoryRank(owned.length, [], rules)
   const memberSince =
     owned
       .map((p) => p.claimedAt)

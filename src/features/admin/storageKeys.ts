@@ -11,6 +11,8 @@ export const ADMIN_STORAGE_KEYS = {
   pdpContent: 'anvl.pdpContent.v1',
   passportContent: 'anvl.passportContent.v1',
   comingSoon: 'anvl.comingSoon.v1',
+  /** UI preference: persistent sidebar expanded vs icon rail. */
+  sidebarPref: 'anvl.adminSidebar.v1',
 } as const
 
 export type AdminStorageKey =

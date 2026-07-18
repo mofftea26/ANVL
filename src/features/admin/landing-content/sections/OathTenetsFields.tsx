@@ -1,4 +1,5 @@
-import { ImagePlus, Plus, Trash2 } from '@/shared/icons'
+import { ChevronDown, ChevronUp, ImagePlus, Menu, Plus, Trash2 } from '@/shared/icons'
+import { useSortableList } from '@/features/admin/hooks/useSortableList'
 import { useMemo, useState } from 'react'
 import type { Control, UseFormRegister, UseFormSetValue } from 'react-hook-form'
 import { useFieldArray, useWatch } from 'react-hook-form'
@@ -32,6 +33,10 @@ export function OathTenetsFields({
   const mediaQuery = useMediaAssetsQuery()
   const [pick, setPick] = useState<PickTarget | null>(null)
   const [removeIndex, setRemoveIndex] = useState<number | null>(null)
+  const sortable = useSortableList({
+    length: products.fields.length,
+    onMove: products.move,
+  })
 
   const mediaById = useMemo(() => {
     const map = new Map<string, string>()
@@ -56,6 +61,7 @@ export function OathTenetsFields({
   return (
     <ContentSection
       title="The Arsenal — Products"
+      previewTarget={{ kind: 'content-field', id: 'the-oath:tenets' }}
       hint="One product per slide in the pinned horizontal showcase. Assign a 3D model (GLB), a smokey background, and annotated points; blank fields fall back to the designed defaults."
     >
       <FormField label="Eyebrow" htmlFor="oath-tenets-eyebrow" className="sm:col-span-2" labelStyle="stacked">
@@ -67,9 +73,40 @@ export function OathTenetsFields({
         const item = watched?.[i]
         const hotspots = item?.hotspots ?? []
         return (
-          <fieldset key={field.id} className="rounded-lg border border-[var(--color-line)] p-4 sm:col-span-2">
-            <legend className="anvl-display px-1 text-[10px] tracking-[0.28em] text-[var(--color-highlight-bright)]">
+          <fieldset
+            key={field.id}
+            {...sortable.getItemProps(i)}
+            className="rounded-lg border border-[var(--color-line)] p-4 transition-shadow data-[drag-over]:shadow-[0_0_0_2px_var(--color-accent)] sm:col-span-2"
+          >
+            <legend className="anvl-display inline-flex items-center gap-2 px-1 text-[10px] tracking-[0.28em] text-[var(--color-highlight-bright)]">
+              <span
+                {...sortable.getHandleProps(i)}
+                title="Drag to reorder"
+                className="inline-flex cursor-grab items-center text-[var(--color-text-muted)] active:cursor-grabbing"
+              >
+                <Menu size={ICON_SIZE.sm} aria-hidden="true" />
+              </span>
               Product {String(i + 1).padStart(2, '0')}
+              <span className="inline-flex gap-0.5">
+                <button
+                  type="button"
+                  aria-label={`Move product ${i + 1} up`}
+                  disabled={i === 0}
+                  onClick={() => sortable.moveUp(i)}
+                  className="focus-ring inline-flex h-6 w-6 items-center justify-center rounded text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] disabled:opacity-30"
+                >
+                  <ChevronUp size={ICON_SIZE.xs} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Move product ${i + 1} down`}
+                  disabled={i === products.fields.length - 1}
+                  onClick={() => sortable.moveDown(i)}
+                  className="focus-ring inline-flex h-6 w-6 items-center justify-center rounded text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] disabled:opacity-30"
+                >
+                  <ChevronDown size={ICON_SIZE.xs} aria-hidden="true" />
+                </button>
+              </span>
             </legend>
 
             <div className="grid gap-4 sm:grid-cols-2">
