@@ -34,6 +34,14 @@ import {
   parseBannerConfig,
   type BannerConfig,
 } from '@/features/cms/banner/bannerConfig.zod'
+import {
+  parseLegalContent,
+  type LegalContentConfig,
+} from '@/features/cms/legal/legalContent.zod'
+import {
+  parseSupportContent,
+  type SupportContentConfig,
+} from '@/features/cms/support/supportContent.zod'
 import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
 
 const mediaIndexEntrySchema = z.object({
@@ -65,6 +73,10 @@ export type PublishedStorefrontProjection = {
   comingSoon: ComingSoonConfig
   /** Announcement banner (enabled toggle + message/link/colors/schedule). */
   bannerConfig: BannerConfig
+  /** Legal pages copy (privacy/terms/cookies/accessibility); code defaults fill gaps. */
+  legalContent: LegalContentConfig
+  /** Support pages copy (faq/contact/shipping/returns/care/size); code defaults fill gaps. */
+  supportContent: SupportContentConfig
   revision: number
   publishedAt: string | null
 }
@@ -83,9 +95,19 @@ export type StorefrontPublicationRow = {
   passport_content?: unknown
   coming_soon?: unknown
   banner_config?: unknown
+  legal_content?: unknown
+  support_content?: unknown
 }
 
 const PUBLICATION_SELECT =
+  'revision, published_at, active_landing_page_key, theme_config, font_config, asset_config, media_index, landing_content, shop_config, pdp_content, passport_content, coming_soon, banner_config, legal_content, support_content'
+
+/** Pre-`support_content` column list — retry path while that migration is pending. */
+const PUBLICATION_SELECT_NO_SUPPORT =
+  'revision, published_at, active_landing_page_key, theme_config, font_config, asset_config, media_index, landing_content, shop_config, pdp_content, passport_content, coming_soon, banner_config, legal_content'
+
+/** Pre-`legal_content` column list — retry path while that migration is pending. */
+const PUBLICATION_SELECT_NO_LEGAL =
   'revision, published_at, active_landing_page_key, theme_config, font_config, asset_config, media_index, landing_content, shop_config, pdp_content, passport_content, coming_soon, banner_config'
 
 /** Pre-`banner_config` column list — retry path while that migration is pending. */
@@ -155,6 +177,8 @@ export function normalizeStorefrontPublicationRow(
     passportContent: parsePassportContent(data.passport_content),
     comingSoon: parseComingSoonConfig(data.coming_soon),
     bannerConfig: parseBannerConfig(data.banner_config),
+    legalContent: parseLegalContent(data.legal_content),
+    supportContent: parseSupportContent(data.support_content),
     revision,
     publishedAt: data.published_at,
   }
@@ -180,9 +204,18 @@ async function fetchPublishedStorefrontProjectionOnce(
 ): Promise<PublishedStorefrontProjection | null> {
   let { data, error } = await selectPublicationRow(env, PUBLICATION_SELECT)
 
-  // Progressive fallback while migrations are pending: drop `banner_config`,
-  // then `passport_content`, then `coming_soon`, then `pdp_content`, then
-  // `shop_config`, then `landing_content`, so an older DB still serves the rest.
+  // Progressive fallback while migrations are pending: drop `support_content`,
+  // then `legal_content`, then `banner_config`, then `passport_content`, then
+  // `coming_soon`, then `pdp_content`, then `shop_config`, then
+  // `landing_content`, so an older DB still serves the rest.
+  if (error && isPostgrestMissingColumnError(error, 'support_content')) {
+    ;({ data, error } = await selectPublicationRow(env, PUBLICATION_SELECT_NO_SUPPORT))
+  }
+
+  if (error && isPostgrestMissingColumnError(error, 'legal_content')) {
+    ;({ data, error } = await selectPublicationRow(env, PUBLICATION_SELECT_NO_LEGAL))
+  }
+
   if (error && isPostgrestMissingColumnError(error, 'banner_config')) {
     ;({ data, error } = await selectPublicationRow(env, PUBLICATION_SELECT_NO_BANNER))
   }

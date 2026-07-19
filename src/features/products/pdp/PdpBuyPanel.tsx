@@ -12,6 +12,10 @@ import {
 } from '@/shared/components/ui'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { PdpSizeSuggestion } from '@/features/products/pdp/PdpSizeSuggestion'
+import {
+  PdpSupportDetails,
+  type PdpProductSupport,
+} from '@/features/products/pdp/PdpSupportDetails'
 
 function MetaChip({ label }: { label: string }) {
   return (
@@ -32,10 +36,13 @@ export function PdpBuyPanel({
   product,
   variant,
   showShare,
+  support,
 }: {
   product: Product
   variant: PdpVariant
   showShare: boolean
+  /** This product's authored measurements + care (from `support_content`). */
+  support?: PdpProductSupport
 }) {
   const {
     colorway,
@@ -142,6 +149,9 @@ export function PdpBuyPanel({
           <PdpSizeSuggestion sizes={product.sizes} currentSize={size} onSelect={setSize} />
         </div>
       ) : null}
+
+      {/* This product's measurements + care from support_content (if authored). */}
+      {support ? <PdpSupportDetails support={support} /> : null}
 
       {/* Quantity + actions. */}
       <div>

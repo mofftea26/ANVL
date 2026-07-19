@@ -43,11 +43,21 @@ describe('staticWebsiteNavigation', () => {
         '/faq',
         '/contact',
         '/returns',
+        '/shipping',
         '/privacy',
         '/terms',
         '/cookie-policy',
+        '/accessibility',
       ]),
     )
+  })
+
+  it('groups the net-new pages — Shipping under Support, Accessibility under Legal', () => {
+    const groups = buildStaticWebsiteNavigation().footerLinkGroups ?? []
+    const support = groups.find((g) => g.title === 'Support')
+    const legal = groups.find((g) => g.title === 'Legal')
+    expect(support?.links.some((l) => l.href === '/shipping')).toBe(true)
+    expect(legal?.links.some((l) => l.href === '/accessibility')).toBe(true)
   })
 
   it('does not link Account in the header — the avatar menu owns account access', () => {

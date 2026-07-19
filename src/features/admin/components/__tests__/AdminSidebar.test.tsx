@@ -151,10 +151,13 @@ describe('AdminSidebar', () => {
 
 
 
-    const logoutButton = screen.getByRole('button', { name: /sign out/i })
-
-    await user.click(logoutButton)
-
+    // Sign out asks for confirmation first, then logs out (the redirect that
+    // follows is a jsdom no-op — asserted via the logout call, which precedes it).
+    await user.click(screen.getByRole('button', { name: /sign out/i }))
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toBeInTheDocument()
+    expect(mockLogout).not.toHaveBeenCalled()
+    await user.click(within(dialog).getByRole('button', { name: /sign out/i }))
     expect(mockLogout).toHaveBeenCalledTimes(1)
 
   })

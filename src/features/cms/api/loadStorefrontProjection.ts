@@ -14,6 +14,8 @@ import { DEFAULT_PDP_CONTENT } from '@/features/cms/pdpContent/pdpContent.zod'
 import { DEFAULT_PASSPORT_CONTENT } from '@/features/cms/passportContent/passportContent.zod'
 import { parseComingSoonConfig } from '@/features/cms/comingSoon/comingSoon.zod'
 import { parseBannerConfig } from '@/features/cms/banner/bannerConfig.zod'
+import { parseLegalContent } from '@/features/cms/legal/legalContent.zod'
+import { parseSupportContent } from '@/features/cms/support/supportContent.zod'
 import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
 
 /** Last-resort projection when Supabase is unconfigured or the publication row is missing. */
@@ -30,6 +32,8 @@ export function defaultStorefrontProjection(): PublishedStorefrontProjection {
     passportContent: { ...DEFAULT_PASSPORT_CONTENT },
     comingSoon: parseComingSoonConfig(undefined),
     bannerConfig: parseBannerConfig(undefined),
+    legalContent: parseLegalContent(undefined),
+    supportContent: parseSupportContent(undefined),
     revision: 0,
     publishedAt: null,
   }

@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode } from 'react'
+import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react'
 import { cn } from '@/shared/lib/cn'
 
 const checkboxInputClass =
@@ -16,11 +16,21 @@ export type CheckboxProps = InputHTMLAttributes<HTMLInputElement> & {
  * `label` for a bare control meant to be composed by the caller's own label
  * markup; pass `label` (+ optional `description`) for a self-contained
  * labeled row.
+ *
+ * `forwardRef` is REQUIRED: React Hook Form's `register()` returns a `ref`
+ * that must reach the real `<input>` for RHF to read the checkbox's `checked`
+ * state (and to sync its default). A plain function component silently drops
+ * that ref, so `{...register('x')}` on this control would never track — the
+ * cause of the "Remember me" toggle doing nothing.
  */
-export function Checkbox({ className, label, description, disabled, id, ...props }: CheckboxProps) {
+export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
+  { className, label, description, disabled, id, ...props },
+  ref,
+) {
   if (label === undefined) {
     return (
       <input
+        ref={ref}
         type="checkbox"
         disabled={disabled}
         id={id}
@@ -40,6 +50,7 @@ export function Checkbox({ className, label, description, disabled, id, ...props
       )}
     >
       <input
+        ref={ref}
         id={id}
         type="checkbox"
         disabled={disabled}
@@ -56,4 +67,4 @@ export function Checkbox({ className, label, description, disabled, id, ...props
       </span>
     </label>
   )
-}
+})

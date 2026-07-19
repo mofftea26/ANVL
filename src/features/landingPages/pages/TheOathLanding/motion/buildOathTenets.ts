@@ -72,7 +72,10 @@ export function buildOathTenets(
     const media = panel.querySelector('[data-tenet-media]') as HTMLElement | null
     const dots = gsap.utils.toArray<HTMLElement>('[data-hotspot-dot]', panel)
     const linesEls = gsap.utils.toArray<HTMLElement>('[data-hotspot-line]', panel)
-    const cards = gsap.utils.toArray<HTMLElement>('[data-hotspot-card]', panel)
+    // The RESTING state is what the timeline reveals: reticle → leader → label
+    // chip. The full spec card opens on interaction only (React/CSS-owned), so
+    // the timeline must never touch `[data-hotspot-card]`.
+    const chips = gsap.utils.toArray<HTMLElement>('[data-hotspot-chip]', panel)
 
     // The reveal plays at the start of this piece's dwell, while it is centred.
     const inAt = at
@@ -111,13 +114,14 @@ export function buildOathTenets(
       }
       tl.to(linesEls, { scaleX: 1, ease: 'power2.out', duration: 0.22, stagger: 0.08 }, hsAt + 0.06)
     }
-    if (cards.length) {
-      // Cards slide in along the leader's direction (never `y` — vertical
-      // alignment lives on a wrapper the timeline must not touch).
-      for (const card of cards) {
-        gsap.set(card, { x: card.dataset.side === 'left' ? -14 : 14, opacity: 0 })
+    if (chips.length) {
+      // Chips slide in along the leader's direction (never `y` — vertical
+      // alignment lives on a wrapper the timeline must not touch). The chip's
+      // open/close fade is on its inner span, so this opacity write is safe.
+      for (const chip of chips) {
+        gsap.set(chip, { x: chip.dataset.side === 'left' ? -14 : 14, opacity: 0 })
       }
-      tl.to(cards, { x: 0, opacity: 1, ease: 'expo.out', duration: 0.3, stagger: 0.08 }, hsAt + 0.14)
+      tl.to(chips, { x: 0, opacity: 1, ease: 'expo.out', duration: 0.3, stagger: 0.08 }, hsAt + 0.14)
     }
 
     at += DWELL_DUR

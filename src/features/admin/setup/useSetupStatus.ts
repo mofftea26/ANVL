@@ -18,6 +18,16 @@ import {
   subscribeComingSoonConfigChange,
 } from '@/features/cms/comingSoon/comingSoon.settings'
 import {
+  readLegalContentFromStorage,
+  subscribeLegalContentChange,
+} from '@/features/cms/legal/legalContent.settings'
+import type { LegalContentConfig } from '@/features/cms/legal/legalContent.zod'
+import {
+  readSupportContentFromStorage,
+  subscribeSupportContentChange,
+} from '@/features/cms/support/supportContent.settings'
+import type { SupportContentConfig } from '@/features/cms/support/supportContent.zod'
+import {
   readPdpContentFromStorage,
   subscribePdpContentChange,
 } from '@/features/cms/pdpContent/pdpContent.settings'
@@ -139,6 +149,54 @@ export function useComingSoonEnabled(): boolean {
   return useSyncExternalStore(
     subscribeComingSoonConfigChange,
     () => readComingSoonConfigFromStorage().enabled,
+    () => false,
+  )
+}
+
+/** True when any legal page carries a saved CMS override (else running on defaults). */
+export function isLegalCustomized(config: LegalContentConfig): boolean {
+  return Object.values(config.pages).some(
+    (page) =>
+      page.title.trim().length > 0 ||
+      page.intro.trim().length > 0 ||
+      page.updatedAt.trim().length > 0 ||
+      page.sections.length > 0,
+  )
+}
+
+/** Whether the Legal content has any CMS override at all. */
+export function useLegalCustomized(): boolean {
+  return useSyncExternalStore(
+    subscribeLegalContentChange,
+    () => isLegalCustomized(readLegalContentFromStorage()),
+    () => false,
+  )
+}
+
+/** True when any support page carries a saved CMS override (else running on defaults). */
+export function isSupportCustomized(config: SupportContentConfig): boolean {
+  const listHasCopy = (list: { intro: string; sections: { heading: string; body: string }[] }) =>
+    list.intro.trim().length > 0 || list.sections.length > 0
+  return (
+    config.faq.intro.trim().length > 0 ||
+    config.faq.items.length > 0 ||
+    Object.values(config.contact).some((v) => v.trim().length > 0) ||
+    listHasCopy(config.shipping) ||
+    listHasCopy(config.returns) ||
+    config.careGuide.intro.trim().length > 0 ||
+    config.careGuide.sections.length > 0 ||
+    Object.keys(config.careGuide.perProduct).length > 0 ||
+    config.sizeGuide.intro.trim().length > 0 ||
+    config.sizeGuide.note.trim().length > 0 ||
+    Object.keys(config.sizeGuide.perProduct).length > 0
+  )
+}
+
+/** Whether the Support content has any CMS override at all. */
+export function useSupportCustomized(): boolean {
+  return useSyncExternalStore(
+    subscribeSupportContentChange,
+    () => isSupportCustomized(readSupportContentFromStorage()),
     () => false,
   )
 }

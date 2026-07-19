@@ -4,8 +4,10 @@ import {
   Anvil,
   BookOpen,
   Flame,
+  Info,
   Package,
   QrCode,
+  ShieldCheck,
   Trophy,
 } from '@/shared/icons'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
@@ -15,11 +17,21 @@ import type { AdminNavIcon } from '@/features/admin/components/adminNav'
 import { AboutSetupWizard } from './wizards/AboutSetupWizard'
 import { DropSetupWizard } from './wizards/DropSetupWizard'
 import { GamificationSetupWizard } from './wizards/GamificationSetupWizard'
+import { LegalSetupWizard } from './wizards/LegalSetupWizard'
 import { PassportsSetupWizard } from './wizards/PassportsSetupWizard'
 import { ProductsSetupWizard } from './wizards/ProductsSetupWizard'
 import { StorySetupWizard } from './wizards/StorySetupWizard'
+import { SupportSetupWizard } from './wizards/SupportSetupWizard'
 
-type WizardKey = 'drop' | 'products' | 'story' | 'about' | 'passports' | 'gamification'
+type WizardKey =
+  | 'drop'
+  | 'products'
+  | 'story'
+  | 'about'
+  | 'passports'
+  | 'gamification'
+  | 'legal'
+  | 'support'
 
 interface WizardEntry {
   key: WizardKey
@@ -35,6 +47,8 @@ const WIZARDS: WizardEntry[] = [
   { key: 'about', label: 'About page', blurb: 'Hero · orbs · altar', icon: Anvil },
   { key: 'passports', label: 'Passports', blurb: 'Content · QR · print', icon: QrCode },
   { key: 'gamification', label: 'Gamification', blurb: 'Ranks · XP · badges', icon: Trophy },
+  { key: 'legal', label: 'Legal', blurb: 'Privacy · terms · a11y', icon: ShieldCheck },
+  { key: 'support', label: 'Support', blurb: 'FAQ · contact · guides', icon: Info },
 ]
 
 /**
@@ -93,6 +107,8 @@ export function SetupWizardHub() {
       <AboutSetupWizard open={openKey === 'about'} onClose={close} />
       <PassportsSetupWizard open={openKey === 'passports'} onClose={close} />
       <GamificationSetupWizard open={openKey === 'gamification'} onClose={close} />
+      <LegalSetupWizard open={openKey === 'legal'} onClose={close} />
+      <SupportSetupWizard open={openKey === 'support'} onClose={close} />
     </section>
   )
 }

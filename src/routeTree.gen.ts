@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StoryRouteImport } from './routes/story'
 import { Route as SizeGuideRouteImport } from './routes/size-guide'
+import { Route as ShippingRouteImport } from './routes/shipping'
 import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -19,6 +20,7 @@ import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CareGuideRouteImport } from './routes/care-guide'
+import { Route as AccessibilityRouteImport } from './routes/accessibility'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AccountRouteRouteImport } from './routes/account/route'
@@ -39,12 +41,14 @@ import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as ArmoryHandleRouteImport } from './routes/armory/$handle'
 import { Route as ApiCspReportRouteImport } from './routes/api/csp-report'
 import { Route as AdminThemeRouteImport } from './routes/admin/theme'
+import { Route as AdminSupportRouteImport } from './routes/admin/support'
 import { Route as AdminStoryRouteImport } from './routes/admin/story'
 import { Route as AdminShopRouteImport } from './routes/admin/shop'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminPassportsRouteImport } from './routes/admin/passports'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminLegalRouteImport } from './routes/admin/legal'
 import { Route as AdminGamificationRouteImport } from './routes/admin/gamification'
 import { Route as AdminFontsRouteImport } from './routes/admin/fonts'
 import { Route as AdminContentRouteImport } from './routes/admin/content'
@@ -71,6 +75,11 @@ const StoryRoute = StoryRouteImport.update({
 const SizeGuideRoute = SizeGuideRouteImport.update({
   id: '/size-guide',
   path: '/size-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShippingRoute = ShippingRouteImport.update({
+  id: '/shipping',
+  path: '/shipping',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReturnsRoute = ReturnsRouteImport.update({
@@ -106,6 +115,11 @@ const CartRoute = CartRouteImport.update({
 const CareGuideRoute = CareGuideRouteImport.update({
   id: '/care-guide',
   path: '/care-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccessibilityRoute = AccessibilityRouteImport.update({
+  id: '/accessibility',
+  path: '/accessibility',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -208,6 +222,11 @@ const AdminThemeRoute = AdminThemeRouteImport.update({
   path: '/theme',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminSupportRoute = AdminSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminStoryRoute = AdminStoryRouteImport.update({
   id: '/story',
   path: '/story',
@@ -236,6 +255,11 @@ const AdminPassportsRoute = AdminPassportsRouteImport.update({
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminLegalRoute = AdminLegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminGamificationRoute = AdminGamificationRouteImport.update({
@@ -304,6 +328,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/accessibility': typeof AccessibilityRoute
   '/care-guide': typeof CareGuideRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
@@ -311,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
+  '/shipping': typeof ShippingRoute
   '/size-guide': typeof SizeGuideRoute
   '/story': typeof StoryRoute
   '/terms': typeof TermsRoute
@@ -324,12 +350,14 @@ export interface FileRoutesByFullPath {
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/gamification': typeof AdminGamificationRoute
+  '/admin/legal': typeof AdminLegalRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/passports': typeof AdminPassportsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/theme': typeof AdminThemeRoute
   '/api/csp-report': typeof ApiCspReportRoute
   '/armory/$handle': typeof ArmoryHandleRoute
@@ -352,6 +380,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/accessibility': typeof AccessibilityRoute
   '/care-guide': typeof CareGuideRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
@@ -359,6 +388,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
+  '/shipping': typeof ShippingRoute
   '/size-guide': typeof SizeGuideRoute
   '/story': typeof StoryRoute
   '/terms': typeof TermsRoute
@@ -372,12 +402,14 @@ export interface FileRoutesByTo {
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/gamification': typeof AdminGamificationRoute
+  '/admin/legal': typeof AdminLegalRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/passports': typeof AdminPassportsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/theme': typeof AdminThemeRoute
   '/api/csp-report': typeof ApiCspReportRoute
   '/armory/$handle': typeof ArmoryHandleRoute
@@ -403,6 +435,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/accessibility': typeof AccessibilityRoute
   '/care-guide': typeof CareGuideRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
@@ -410,6 +443,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
+  '/shipping': typeof ShippingRoute
   '/size-guide': typeof SizeGuideRoute
   '/story': typeof StoryRoute
   '/terms': typeof TermsRoute
@@ -423,12 +457,14 @@ export interface FileRoutesById {
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
   '/admin/gamification': typeof AdminGamificationRoute
+  '/admin/legal': typeof AdminLegalRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/passports': typeof AdminPassportsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/theme': typeof AdminThemeRoute
   '/api/csp-report': typeof ApiCspReportRoute
   '/armory/$handle': typeof ArmoryHandleRoute
@@ -455,6 +491,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/about'
+    | '/accessibility'
     | '/care-guide'
     | '/cart'
     | '/contact'
@@ -462,6 +499,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/privacy'
     | '/returns'
+    | '/shipping'
     | '/size-guide'
     | '/story'
     | '/terms'
@@ -475,12 +513,14 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/gamification'
+    | '/admin/legal'
     | '/admin/login'
     | '/admin/passports'
     | '/admin/products'
     | '/admin/settings'
     | '/admin/shop'
     | '/admin/story'
+    | '/admin/support'
     | '/admin/theme'
     | '/api/csp-report'
     | '/armory/$handle'
@@ -503,6 +543,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/accessibility'
     | '/care-guide'
     | '/cart'
     | '/contact'
@@ -510,6 +551,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/privacy'
     | '/returns'
+    | '/shipping'
     | '/size-guide'
     | '/story'
     | '/terms'
@@ -523,12 +565,14 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/gamification'
+    | '/admin/legal'
     | '/admin/login'
     | '/admin/passports'
     | '/admin/products'
     | '/admin/settings'
     | '/admin/shop'
     | '/admin/story'
+    | '/admin/support'
     | '/admin/theme'
     | '/api/csp-report'
     | '/armory/$handle'
@@ -553,6 +597,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/about'
+    | '/accessibility'
     | '/care-guide'
     | '/cart'
     | '/contact'
@@ -560,6 +605,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/privacy'
     | '/returns'
+    | '/shipping'
     | '/size-guide'
     | '/story'
     | '/terms'
@@ -573,12 +619,14 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/fonts'
     | '/admin/gamification'
+    | '/admin/legal'
     | '/admin/login'
     | '/admin/passports'
     | '/admin/products'
     | '/admin/settings'
     | '/admin/shop'
     | '/admin/story'
+    | '/admin/support'
     | '/admin/theme'
     | '/api/csp-report'
     | '/armory/$handle'
@@ -604,6 +652,7 @@ export interface RootRouteChildren {
   AccountRouteRoute: typeof AccountRouteRouteWithChildren
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
+  AccessibilityRoute: typeof AccessibilityRoute
   CareGuideRoute: typeof CareGuideRoute
   CartRoute: typeof CartRoute
   ContactRoute: typeof ContactRoute
@@ -611,6 +660,7 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   PrivacyRoute: typeof PrivacyRoute
   ReturnsRoute: typeof ReturnsRoute
+  ShippingRoute: typeof ShippingRoute
   SizeGuideRoute: typeof SizeGuideRoute
   StoryRoute: typeof StoryRoute
   TermsRoute: typeof TermsRoute
@@ -650,6 +700,13 @@ declare module '@tanstack/react-router' {
       path: '/size-guide'
       fullPath: '/size-guide'
       preLoaderRoute: typeof SizeGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shipping': {
+      id: '/shipping'
+      path: '/shipping'
+      fullPath: '/shipping'
+      preLoaderRoute: typeof ShippingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/returns': {
@@ -699,6 +756,13 @@ declare module '@tanstack/react-router' {
       path: '/care-guide'
       fullPath: '/care-guide'
       preLoaderRoute: typeof CareGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accessibility': {
+      id: '/accessibility'
+      path: '/accessibility'
+      fullPath: '/accessibility'
+      preLoaderRoute: typeof AccessibilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -841,6 +905,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminThemeRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/support': {
+      id: '/admin/support'
+      path: '/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AdminSupportRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/story': {
       id: '/admin/story'
       path: '/story'
@@ -881,6 +952,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/legal': {
+      id: '/admin/legal'
+      path: '/legal'
+      fullPath: '/admin/legal'
+      preLoaderRoute: typeof AdminLegalRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/gamification': {
@@ -1000,12 +1078,14 @@ interface AdminRouteRouteChildren {
   AdminContentRoute: typeof AdminContentRoute
   AdminFontsRoute: typeof AdminFontsRoute
   AdminGamificationRoute: typeof AdminGamificationRoute
+  AdminLegalRoute: typeof AdminLegalRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminPassportsRoute: typeof AdminPassportsRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminShopRoute: typeof AdminShopRoute
   AdminStoryRoute: typeof AdminStoryRoute
+  AdminSupportRoute: typeof AdminSupportRoute
   AdminThemeRoute: typeof AdminThemeRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -1018,12 +1098,14 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminContentRoute: AdminContentRoute,
   AdminFontsRoute: AdminFontsRoute,
   AdminGamificationRoute: AdminGamificationRoute,
+  AdminLegalRoute: AdminLegalRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminPassportsRoute: AdminPassportsRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminShopRoute: AdminShopRoute,
   AdminStoryRoute: AdminStoryRoute,
+  AdminSupportRoute: AdminSupportRoute,
   AdminThemeRoute: AdminThemeRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -1037,6 +1119,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRouteRoute: AccountRouteRouteWithChildren,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   AboutRoute: AboutRoute,
+  AccessibilityRoute: AccessibilityRoute,
   CareGuideRoute: CareGuideRoute,
   CartRoute: CartRoute,
   ContactRoute: ContactRoute,
@@ -1044,6 +1127,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   PrivacyRoute: PrivacyRoute,
   ReturnsRoute: ReturnsRoute,
+  ShippingRoute: ShippingRoute,
   SizeGuideRoute: SizeGuideRoute,
   StoryRoute: StoryRoute,
   TermsRoute: TermsRoute,

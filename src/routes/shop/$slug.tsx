@@ -7,6 +7,9 @@ import { loadStorefrontProjection } from '@/features/cms/api/loadStorefrontProje
 import { resolveStorefrontPageAssets } from '@/features/cms/assets/resolvePublishedAssets'
 import { ProductDetailPage } from '@/features/products/pdp/ProductDetailPage'
 import { resolvePdpContent } from '@/features/products/pdp/resolvePdpContent'
+import { resolveSupportContent } from '@/features/cms/support/resolveSupportContent'
+import type { PdpProductSupport } from '@/features/products/pdp/PdpSupportDetails'
+import type { SupportContentConfig } from '@/features/cms/support/supportContent.zod'
 
 export const Route = createFileRoute('/shop/$slug')({
   loader: async ({ params }) => {
@@ -32,6 +35,7 @@ export const Route = createFileRoute('/shop/$slug')({
       shopConfig: projection.shopConfig,
       hasStoryBook: Boolean(storyBook),
       mediaIndex: projection.mediaIndex,
+      supportContent: projection.supportContent,
     }
   },
   head: ({ loaderData }) => {
@@ -48,11 +52,22 @@ export const Route = createFileRoute('/shop/$slug')({
 })
 
 function ProductRoute() {
-  const { mediaIndex, ...data } = Route.useLoaderData()
+  const { mediaIndex, supportContent, ...data } = Route.useLoaderData()
 
   // Admin live-preview iframe: unsaved PDP-content / asset edits re-resolve the
   // editorial content client-side. `null` for every real visitor.
   const previewDraft = usePreviewDraft()
+
+  // This product's measurements + care from support_content (preview draft wins).
+  const support = useMemo<PdpProductSupport>(() => {
+    const effective: SupportContentConfig = previewDraft?.supportContent ?? supportContent
+    const resolved = resolveSupportContent(effective)
+    return {
+      size: resolved.sizeGuide.perProduct[data.product.slug] ?? null,
+      care: resolved.careGuide.perProduct[data.product.slug] ?? null,
+    }
+  }, [previewDraft?.supportContent, supportContent, data.product.slug])
+
   const previewContent = useMemo(() => {
     // Re-resolve only when PDP content itself is drafted — an asset-only draft
     // falls through to the published resolution (loader data).
@@ -68,5 +83,5 @@ function ProductRoute() {
     })
   }, [previewDraft?.pdpContent, previewDraft?.assetConfig, data.product, data.assets, mediaIndex])
 
-  return <ProductDetailPage {...data} content={previewContent ?? data.content} />
+  return <ProductDetailPage {...data} content={previewContent ?? data.content} support={support} />
 }

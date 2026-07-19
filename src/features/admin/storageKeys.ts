@@ -12,6 +12,8 @@ export const ADMIN_STORAGE_KEYS = {
   passportContent: 'anvl.passportContent.v1',
   comingSoon: 'anvl.comingSoon.v1',
   bannerConfig: 'anvl.bannerConfig.v1',
+  legalContent: 'anvl.legalContent.v1',
+  supportContent: 'anvl.supportContent.v1',
   /** UI preference: persistent sidebar expanded vs icon rail. */
   sidebarPref: 'anvl.adminSidebar.v1',
   /** UI preference: live-preview panel width (drag-resizable split). */

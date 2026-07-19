@@ -14,6 +14,10 @@ import { writeComingSoonConfigToStorage } from '@/features/cms/comingSoon/coming
 import { parseComingSoonConfig } from '@/features/cms/comingSoon/comingSoon.zod'
 import { writeBannerConfigToStorage } from '@/features/cms/banner/bannerConfig.settings'
 import { parseBannerConfig } from '@/features/cms/banner/bannerConfig.zod'
+import { writeLegalContentToStorage } from '@/features/cms/legal/legalContent.settings'
+import { parseLegalContent } from '@/features/cms/legal/legalContent.zod'
+import { writeSupportContentToStorage } from '@/features/cms/support/supportContent.settings'
+import { parseSupportContent } from '@/features/cms/support/supportContent.zod'
 import { writePassportContentToStorage } from '@/features/cms/passportContent/passportContent.settings'
 import { parsePassportContent } from '@/features/cms/passportContent/passportContent.zod'
 import { migrateOathTenetAssetsFromSlots } from '@/features/cms/landingContent/migrateOathTenetAssets'
@@ -98,6 +102,29 @@ export async function hydrateAdminCmsFromSupabase(
     if (!passportRes.error && passportRes.data) {
       writePassportContentToStorage(
         parsePassportContent(passportRes.data.passport_content),
+      )
+    }
+
+    // Same tolerant treatment for `legal_content` — pre-migration DBs must not
+    // fail hydration; the editor then starts from local/defaults.
+    const legalRes = await client
+      .from('cms_settings')
+      .select('legal_content')
+      .eq('id', 1)
+      .maybeSingle()
+    if (!legalRes.error && legalRes.data) {
+      writeLegalContentToStorage(parseLegalContent(legalRes.data.legal_content))
+    }
+
+    // Same tolerant treatment for `support_content`.
+    const supportRes = await client
+      .from('cms_settings')
+      .select('support_content')
+      .eq('id', 1)
+      .maybeSingle()
+    if (!supportRes.error && supportRes.data) {
+      writeSupportContentToStorage(
+        parseSupportContent(supportRes.data.support_content),
       )
     }
   } finally {

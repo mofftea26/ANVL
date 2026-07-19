@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { OathTenets } from '../components/OathTenets'
 import { OATH_DEFAULT_CONTENT } from '../content/oathContent.defaults'
@@ -58,6 +58,45 @@ describe('OathTenets', () => {
     expect(leftHalf.querySelector('[data-hotspot-card]')!.getAttribute('data-side')).toBe('right')
     expect(rightHalf.querySelector('[data-hotspot-line]')!.getAttribute('data-side')).toBe('left')
     expect(rightHalf.querySelector('[data-hotspot-card]')!.getAttribute('data-side')).toBe('left')
+  })
+
+  it('renders each callout marker as a disclosure button over its spec card', () => {
+    const { container } = render(<OathTenets tenets={OATH_DEFAULT_CONTENT.tenets} />)
+    const hotspot = OATH_DEFAULT_CONTENT.tenets.items[0]!.hotspots[0]!
+    const hotspotEl = container.querySelector(`[data-hotspot="${hotspot.id}"]`)!
+
+    const button = hotspotEl.querySelector('button')!
+    expect(button).not.toBeNull()
+    // Resting state: collapsed disclosure wired to its card by id.
+    expect(button.getAttribute('aria-expanded')).toBe('false')
+    const cardId = button.getAttribute('aria-controls')
+    expect(cardId).toBeTruthy()
+    const card = hotspotEl.querySelector('[data-hotspot-card]')!
+    expect(card.getAttribute('id')).toBe(cardId)
+    expect(card.getAttribute('data-open')).toBe('false')
+
+    // Card content is authored in the DOM even while collapsed.
+    expect(screen.getAllByText(hotspot.label).length).toBeGreaterThan(0)
+    expect(screen.getByText(hotspot.description)).toBeInTheDocument()
+  })
+
+  it('expands one card at a time on marker activation', () => {
+    const { container } = render(<OathTenets tenets={OATH_DEFAULT_CONTENT.tenets} />)
+    const [a, b] = OATH_DEFAULT_CONTENT.tenets.items[0]!.hotspots
+    const buttonA = container
+      .querySelector(`[data-hotspot="${a!.id}"]`)!
+      .querySelector('button')!
+    const buttonB = container
+      .querySelector(`[data-hotspot="${b!.id}"]`)!
+      .querySelector('button')!
+
+    fireEvent.click(buttonA)
+    expect(buttonA.getAttribute('aria-expanded')).toBe('true')
+
+    // Opening a sibling closes the first (one open per slide).
+    fireEvent.click(buttonB)
+    expect(buttonB.getAttribute('aria-expanded')).toBe('true')
+    expect(buttonA.getAttribute('aria-expanded')).toBe('false')
   })
 
   it('is hidden below xl (desktop-only panorama)', () => {

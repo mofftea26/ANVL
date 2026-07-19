@@ -8,8 +8,10 @@ import {
 } from '@/shared/icons'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { Link, useRouterState } from '@tanstack/react-router'
+import { useState } from 'react'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
+import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import type { AdminNavItem } from '@/features/admin/components/adminNav'
 import { adminNavCategories } from '@/features/admin/components/adminNav'
 import {
@@ -107,6 +109,22 @@ export function AdminSidebar({
   const isDrawer = density === 'drawer'
   const isRail = density === 'rail'
   const compact = isRail
+
+  const [confirmSignOut, setConfirmSignOut] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
+
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    try {
+      await logout()
+    } finally {
+      // Full navigation clears every in-memory admin surface and re-runs the
+      // route guard (logout only cleared the cookie + React state — the admin
+      // layout doesn't gate on the session, so without this the page lingered
+      // and the button looked dead).
+      window.location.assign('/admin/login')
+    }
+  }
 
   return (
     <aside
@@ -291,12 +309,25 @@ export function AdminSidebar({
             'focus-ring inline-flex w-full items-center justify-center gap-2 rounded-xl border border-transparent text-[var(--color-text-muted)] transition hover:border-[var(--color-line)]/60 hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-heading)]',
             compact ? 'h-8 px-2 text-[11px]' : 'h-9 px-2.5 text-xs font-medium',
           )}
-          onClick={() => void logout()}
+          onClick={() => setConfirmSignOut(true)}
         >
           <LogOut size={ICON_SIZE.sm} aria-hidden className="shrink-0" />
           {!compact ? <span>Sign out</span> : <span className="sr-only">Sign out</span>}
         </button>
       </footer>
+
+      <AdminConfirmDialog
+        open={confirmSignOut}
+        onClose={() => setConfirmSignOut(false)}
+        title="Sign out of ANVL Studio?"
+        confirmLabel="Sign out"
+        confirmVariant="destructive"
+        confirmLoading={signingOut}
+        onConfirm={() => void handleSignOut()}
+      >
+        You'll be returned to the sign-in screen. Unsaved edits in this browser
+        are kept as local drafts.
+      </AdminConfirmDialog>
     </aside>
   )
 }

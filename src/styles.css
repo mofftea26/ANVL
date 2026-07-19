@@ -1656,63 +1656,74 @@ html[data-landing-entry='active'] body {
 
 /* ------------------------------------------------------------------------- */
 /* ANVL toasts — "the forged plate" (mounted once via AnvlToaster).          */
-/* A beveled obsidian slab: type-colored heat bar on the leading edge that   */
-/* flares on arrival, a one-time light sweep as the plate lands, and the     */
-/* icon stamped in a maker's-mark cell. All colors are theme tokens.         */
+/* A beveled, edge-lit obsidian slab: a type-colored HEAT EDGE that glows    */
+/* hot on arrival then cools, a stamped maker's-mark icon cell, and a one-   */
+/* time light sweep as the plate lands. ToastForgeEffect crowns each arrival */
+/* with a converging ember swarm (canvas). All colors are theme tokens, so   */
+/* CMS palettes + oath-dark / bone-light stay legible. Reduced motion drops  */
+/* the cool + sweep (sonner's own entrance already respects it).             */
 /* ------------------------------------------------------------------------- */
 
 .anvl-toast[data-sonner-toast] {
-  /* Champagne by default; per-type overrides below. */
+  /* Ember by default; per-type overrides below. */
   --anvl-toast-edge: var(--color-highlight-bright);
   position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 0.8rem;
+  align-items: center;
+  gap: 0.85rem;
   width: var(--width);
-  padding: 0.9rem 2.4rem 0.95rem 1.15rem !important;
-  background: linear-gradient(
-    155deg,
-    color-mix(in oklab, var(--color-surface-elevated) 90%, var(--color-highlight) 6%) 0%,
-    var(--color-surface) 45%,
-    color-mix(in oklab, var(--color-bg) 90%, black) 100%
-  ) !important;
-  border: 1px solid color-mix(in oklab, var(--anvl-toast-edge) 26%, var(--color-line)) !important;
-  border-radius: 2px !important;
-  /* The bevel: two clipped corners, like a stamped metal plate. */
+  padding: 0.85rem 2.4rem 0.85rem 1rem !important;
+  /* Brushed dark steel: top light catching the bevel, cooling into the base. */
+  background:
+    linear-gradient(
+      158deg,
+      color-mix(in oklab, var(--color-surface-elevated) 88%, var(--anvl-toast-edge) 8%) 0%,
+      var(--color-surface) 46%,
+      color-mix(in oklab, var(--color-bg) 88%, black) 100%
+    ) !important;
+  border: 1px solid color-mix(in oklab, var(--anvl-toast-edge) 30%, var(--color-line)) !important;
+  border-left: 0 !important;
+  border-radius: 3px !important;
+  /* The forge bevel — two clipped corners, like a stamped metal plate. */
   clip-path: polygon(
-    12px 0,
+    13px 0,
     100% 0,
-    100% calc(100% - 12px),
-    calc(100% - 12px) 100%,
+    100% calc(100% - 13px),
+    calc(100% - 13px) 100%,
     0 100%,
-    0 12px
+    0 13px
   );
-  /* Outer depth must follow the bevel — drop-shadow does, box-shadow can't. */
-  filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.55));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+  /* Outer depth follows the bevel (drop-shadow does; box-shadow can't); the
+     inset lines give the slab its edge-lit, milled top + base. */
+  filter: drop-shadow(0 20px 34px rgba(0, 0, 0, 0.58));
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--color-heading) 9%, transparent),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4) !important;
   font-family: var(--font-sans) !important;
   color: var(--color-text) !important;
   overflow: hidden;
 }
 
-/* The heat bar — the plate's leading edge, flaring as it arrives. */
+/* The heat edge — the plate's leading side, glowing hot on arrival then
+   cooling as the embers fuse in (mirrors the modal forge handshake). */
 .anvl-toast[data-sonner-toast]::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 12px;
+  top: 13px;
   bottom: 0;
   width: 3px;
   background: linear-gradient(
     180deg,
-    var(--anvl-toast-edge) 0%,
-    color-mix(in oklab, var(--anvl-toast-edge) 45%, transparent) 100%
+    color-mix(in oklab, var(--anvl-toast-edge) 92%, white) 0%,
+    var(--anvl-toast-edge) 40%,
+    color-mix(in oklab, var(--anvl-toast-edge) 50%, transparent) 100%
   );
   box-shadow: 0 0 14px 1px color-mix(in oklab, var(--anvl-toast-edge) 55%, transparent);
-  animation: anvl-toast-heat 1.1s ease-out 1;
+  animation: anvl-toast-cool 0.85s ease-out 1;
 }
 
-/* One light sweep as the plate lands — metal catching the forge light. */
+/* One light sweep as the plate lands — milled metal catching the forge light. */
 .anvl-toast[data-sonner-toast]::after {
   content: '';
   position: absolute;
@@ -1721,20 +1732,22 @@ html[data-landing-entry='active'] body {
   background: linear-gradient(
     115deg,
     transparent 0%,
-    color-mix(in oklab, var(--color-heading) 9%, transparent) 50%,
+    color-mix(in oklab, var(--color-heading) 11%, transparent) 50%,
     transparent 100%
   );
   transform: translateX(-160%) skewX(-18deg);
-  animation: anvl-toast-sweep 0.9s ease-out 0.15s 1 forwards;
+  animation: anvl-toast-sweep 0.85s ease-out 0.12s 1 forwards;
   pointer-events: none;
 }
 
-@keyframes anvl-toast-heat {
+@keyframes anvl-toast-cool {
   0% {
-    box-shadow: 0 0 26px 4px color-mix(in oklab, var(--anvl-toast-edge) 85%, transparent);
+    box-shadow: 0 0 30px 5px color-mix(in oklab, var(--anvl-toast-edge) 90%, transparent);
+    filter: brightness(1.5);
   }
   100% {
     box-shadow: 0 0 14px 1px color-mix(in oklab, var(--anvl-toast-edge) 55%, transparent);
+    filter: brightness(1);
   }
 }
 @keyframes anvl-toast-sweep {
@@ -1743,31 +1756,36 @@ html[data-landing-entry='active'] body {
   }
 }
 
-/* Maker's-mark icon cell. */
+/* Stamped maker's-mark icon cell. */
 .anvl-toast[data-sonner-toast] .anvl-toast-icon[data-icon] {
   display: grid;
   place-items: center;
-  width: 2.1rem !important;
-  height: 2.1rem !important;
+  width: 2.15rem !important;
+  height: 2.15rem !important;
   margin: 0;
   flex-shrink: 0;
   color: var(--anvl-toast-edge);
-  background: color-mix(in oklab, var(--anvl-toast-edge) 12%, transparent);
-  border: 1px solid color-mix(in oklab, var(--anvl-toast-edge) 38%, transparent);
-  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--anvl-toast-edge) 20%, transparent) 0%,
+    color-mix(in oklab, var(--anvl-toast-edge) 8%, transparent) 100%
+  );
+  border: 1px solid color-mix(in oklab, var(--anvl-toast-edge) 42%, transparent);
+  box-shadow: inset 0 0 10px color-mix(in oklab, var(--anvl-toast-edge) 22%, transparent);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
 }
 .anvl-toast[data-sonner-toast] .anvl-toast-icon[data-icon] svg {
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .anvl-toast .anvl-toast-content {
-  gap: 2px;
+  gap: 3px;
 }
 .anvl-toast .anvl-toast-title {
-  font-size: 0.83rem;
+  font-size: 0.84rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.005em;
   line-height: 1.35;
   color: var(--color-heading) !important;
 }
@@ -1823,16 +1841,19 @@ html[data-landing-entry='active'] body {
   font-size: 0.66rem !important;
 }
 
-/* Type accents — the heat bar + stamp take the semantic color; the plate
-   itself stays obsidian so the system reads as one family. */
+/* Type accents — the heat edge + stamp take the semantic color; the slab
+   itself stays obsidian so the system reads as one forged family. */
 .anvl-toast[data-type='success'] {
   --anvl-toast-edge: var(--color-success);
 }
 .anvl-toast[data-type='error'] {
-  --anvl-toast-edge: var(--color-destructive);
+  --anvl-toast-edge: var(--color-danger);
 }
 .anvl-toast[data-type='warning'] {
   --anvl-toast-edge: var(--color-warning);
+}
+.anvl-toast[data-type='info'] {
+  --anvl-toast-edge: var(--color-info);
 }
 .anvl-toast[data-type='loading'] {
   --anvl-toast-edge: var(--color-highlight-bright);

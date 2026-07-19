@@ -1,25 +1,27 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { buildSeoMeta } from '@/app/seo/meta'
-import { ContentPage } from '@/shared/components/layout/ContentPage'
+import { loadStorefrontProjection } from '@/features/cms/api/loadStorefrontProjection'
+import { resolveLegalPage } from '@/features/cms/legal/resolveLegalContent'
+import { LegalDocumentRoute } from '@/features/legal/components'
 
 export const Route = createFileRoute('/terms')({
-  head: () =>
-    buildSeoMeta({
-      title: 'Terms of Service | ANVL Athletics',
-      description: 'Terms and conditions for ANVL Athletics purchases.',
+  loader: async () => {
+    const projection = await loadStorefrontProjection()
+    return { legalContent: projection.legalContent }
+  },
+  head: ({ loaderData }) => {
+    const page = loaderData ? resolveLegalPage(loaderData.legalContent, 'terms') : null
+    return buildSeoMeta({
+      title: `${page?.title ?? 'Terms of Service'} | ANVL Athletics`,
+      description:
+        page?.intro ?? 'Terms and conditions for ANVL Athletics purchases.',
       path: '/terms',
-    }),
+    })
+  },
   component: TermsPage,
 })
 
 function TermsPage() {
-  return (
-    <ContentPage
-      title="Terms of Service"
-      intro="By ordering from ANVL Athletics, you agree to our order, payment, and shipping terms."
-    >
-      <p>All orders are subject to stock availability and final verification.</p>
-      <p>Payment method placeholders are mocked in this build and intended for provider integration.</p>
-    </ContentPage>
-  )
+  const { legalContent } = Route.useLoaderData()
+  return <LegalDocumentRoute pageKey="terms" publishedContent={legalContent} />
 }

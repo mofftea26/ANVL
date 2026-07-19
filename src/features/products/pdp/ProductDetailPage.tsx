@@ -14,6 +14,7 @@ import { PdpBento } from '@/features/products/pdp/PdpBento'
 import { PdpRelated } from '@/features/products/pdp/PdpRelated'
 import { PdpReviews } from '@/features/products/pdp/PdpReviews'
 import type { ResolvedPdpContent } from '@/features/products/pdp/resolvePdpContent'
+import type { PdpProductSupport } from '@/features/products/pdp/PdpSupportDetails'
 import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { JsonLd } from '@/shared/components/seo/JsonLd'
 import { breadcrumbJsonLd, productJsonLd } from '@/shared/components/seo/structuredData'
@@ -28,6 +29,8 @@ export type ProductDetailPageProps = {
   shopConfig: ShopConfig
   /** True when this product has a published Story book to link to. */
   hasStoryBook?: boolean
+  /** This product's authored measurements + care (from `support_content`). */
+  support?: PdpProductSupport
 }
 
 /**
@@ -36,7 +39,7 @@ export type ProductDetailPageProps = {
  * in `usePdpVariant` (shared across gallery / buy panel / colorways / sticky
  * bar); scroll reveals come from `usePdpReveal`. Theme via `--shop-*`.
  */
-export function ProductDetailPage({ product, related, assets, content, shopConfig: initialConfig, hasStoryBook }: ProductDetailPageProps) {
+export function ProductDetailPage({ product, related, assets, content, shopConfig: initialConfig, hasStoryBook, support }: ProductDetailPageProps) {
   const config = useShopConfig(initialConfig)
   const pdp = config.pdp
   const variant = usePdpVariant(product)
@@ -77,7 +80,7 @@ export function ProductDetailPage({ product, related, assets, content, shopConfi
               galleryFallback={assets.galleryFallback}
             />
           </div>
-          <PdpBuyPanel product={product} variant={variant} showShare={pdp.showShare} />
+          <PdpBuyPanel product={product} variant={variant} showShare={pdp.showShare} support={support} />
         </div>
       </Container>
 
