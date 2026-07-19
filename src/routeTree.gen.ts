@@ -49,6 +49,7 @@ import { Route as AdminGamificationRouteImport } from './routes/admin/gamificati
 import { Route as AdminFontsRouteImport } from './routes/admin/fonts'
 import { Route as AdminContentRouteImport } from './routes/admin/content'
 import { Route as AdminComingSoonRouteImport } from './routes/admin/coming-soon'
+import { Route as AdminBannerRouteImport } from './routes/admin/banner'
 import { Route as AdminAssetsRouteImport } from './routes/admin/assets'
 import { Route as AdminAboutRouteImport } from './routes/admin/about'
 import { Route as AccountSettingsRouteImport } from './routes/account/settings'
@@ -257,6 +258,11 @@ const AdminComingSoonRoute = AdminComingSoonRouteImport.update({
   path: '/coming-soon',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminBannerRoute = AdminBannerRouteImport.update({
+  id: '/banner',
+  path: '/banner',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminAssetsRoute = AdminAssetsRouteImport.update({
   id: '/assets',
   path: '/assets',
@@ -313,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/account/settings': typeof AccountSettingsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/assets': typeof AdminAssetsRoute
+  '/admin/banner': typeof AdminBannerRoute
   '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
@@ -360,6 +367,7 @@ export interface FileRoutesByTo {
   '/account/settings': typeof AccountSettingsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/assets': typeof AdminAssetsRoute
+  '/admin/banner': typeof AdminBannerRoute
   '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
@@ -410,6 +418,7 @@ export interface FileRoutesById {
   '/account/settings': typeof AccountSettingsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/assets': typeof AdminAssetsRoute
+  '/admin/banner': typeof AdminBannerRoute
   '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
@@ -461,6 +470,7 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/admin/about'
     | '/admin/assets'
+    | '/admin/banner'
     | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
@@ -508,6 +518,7 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/admin/about'
     | '/admin/assets'
+    | '/admin/banner'
     | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/admin/about'
     | '/admin/assets'
+    | '/admin/banner'
     | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
@@ -899,6 +911,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminComingSoonRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/banner': {
+      id: '/admin/banner'
+      path: '/banner'
+      fullPath: '/admin/banner'
+      preLoaderRoute: typeof AdminBannerRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/assets': {
       id: '/admin/assets'
       path: '/assets'
@@ -976,6 +995,7 @@ const AccountRouteRouteWithChildren = AccountRouteRoute._addFileChildren(
 interface AdminRouteRouteChildren {
   AdminAboutRoute: typeof AdminAboutRoute
   AdminAssetsRoute: typeof AdminAssetsRoute
+  AdminBannerRoute: typeof AdminBannerRoute
   AdminComingSoonRoute: typeof AdminComingSoonRoute
   AdminContentRoute: typeof AdminContentRoute
   AdminFontsRoute: typeof AdminFontsRoute
@@ -993,6 +1013,7 @@ interface AdminRouteRouteChildren {
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminAboutRoute: AdminAboutRoute,
   AdminAssetsRoute: AdminAssetsRoute,
+  AdminBannerRoute: AdminBannerRoute,
   AdminComingSoonRoute: AdminComingSoonRoute,
   AdminContentRoute: AdminContentRoute,
   AdminFontsRoute: AdminFontsRoute,

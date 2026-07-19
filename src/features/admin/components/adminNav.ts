@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 
 import {
   Anvil,
+  Bell,
   BookOpen,
   FileText,
   Hourglass,
@@ -104,6 +105,15 @@ export const adminNavItems: AdminNavItem[] = [
     icon: BookOpen,
     cta: 'Author',
     badge: 'Saga',
+  },
+  {
+    label: 'Banner',
+    href: '/admin/banner',
+    description: 'Storefront announcement strip above the topbar.',
+    category: 'Content',
+    icon: Bell,
+    cta: 'Edit',
+    badge: 'Banner',
   },
   {
     label: 'Coming Soon',

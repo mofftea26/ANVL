@@ -4,10 +4,13 @@ import { useMemo, useState } from 'react'
 import type { Control, UseFormRegister, UseFormSetValue } from 'react-hook-form'
 import { useFieldArray, useWatch } from 'react-hook-form'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
+import { HotspotPositionField } from '@/features/admin/components/HotspotPositionField'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { MediaLibraryPickerModal } from '@/features/admin/media/MediaLibraryPickerModal'
+import { mediaAssetPublicUrl } from '@/features/admin/media/mediaAssets.service'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
+import type { CmsMediaAsset } from '@/features/admin/media/mediaAssets.types'
 import { OATH_DEFAULT_CONTENT } from '@/features/landingPages/pages/TheOathLanding/content/oathContent.defaults'
 import { createBlankTenetFormValues, type OathContentFormValues } from '../landingContentForm'
 import { ContentSection } from './ContentSection'
@@ -18,6 +21,14 @@ const d = OATH_DEFAULT_CONTENT.tenets
 type PickTarget =
   | { item: number; field: 'mediaId' | 'modelId' | 'bgId' }
   | { item: number; field: 'bubble'; hotspot: number }
+
+/** Effective marker percent: form override → code default → center. */
+function markerPercent(raw: string | undefined, fallback: number | undefined): number {
+  const t = raw?.trim() ?? ''
+  const n = Number(t)
+  if (t.length > 0 && Number.isFinite(n)) return Math.min(100, Math.max(0, n))
+  return fallback ?? 50
+}
 
 export function OathTenetsFields({
   register,
@@ -33,19 +44,29 @@ export function OathTenetsFields({
   const mediaQuery = useMediaAssetsQuery()
   const [pick, setPick] = useState<PickTarget | null>(null)
   const [removeIndex, setRemoveIndex] = useState<number | null>(null)
+  /** Which hotspot the next image click positions (one selection at a time). */
+  const [activeSpot, setActiveSpot] = useState<{ item: number; hotspot: number } | null>(
+    null,
+  )
   const sortable = useSortableList({
     length: products.fields.length,
     onMove: products.move,
   })
 
   const mediaById = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const asset of mediaQuery.data ?? []) map.set(asset.id, asset.filename)
+    const map = new Map<string, CmsMediaAsset>()
+    for (const asset of mediaQuery.data ?? []) map.set(asset.id, asset)
     return map
   }, [mediaQuery.data])
 
   const label = (id: string | undefined, empty: string) =>
-    id?.trim() ? mediaById.get(id) ?? 'Assigned' : empty
+    id?.trim() ? mediaById.get(id)?.filename ?? 'Assigned' : empty
+
+  /** Preview URL for an assigned media id (same assets the pickers show). */
+  const assetUrl = (id: string | undefined): string | null => {
+    const asset = id?.trim() ? mediaById.get(id.trim()) : undefined
+    return asset ? mediaAssetPublicUrl(asset) : null
+  }
 
   const pickerPath = (t: PickTarget) =>
     t.field === 'bubble'
@@ -144,22 +165,60 @@ export function OathTenetsFields({
             <p className="mt-5 text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
               Points on the product (label, description, % position, bubble image)
             </p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+              Click the still image to move the selected point — or type exact % values
+              below.
+            </p>
+            <HotspotPositionField
+              className="mt-3"
+              imageUrl={assetUrl(item?.mediaId)}
+              markers={hotspots.map((hs, h) => {
+                const hsDef = def?.hotspots?.[h]
+                return {
+                  x: markerPercent(hs?.x, hsDef?.x),
+                  y: markerPercent(hs?.y, hsDef?.y),
+                  label: hs?.label?.trim() || hsDef?.label,
+                }
+              })}
+              selectedIndex={activeSpot?.item === i ? activeSpot.hotspot : null}
+              onSelectMarker={(h) => setActiveSpot({ item: i, hotspot: h })}
+              onPlace={(x, y) => {
+                const h = activeSpot?.item === i ? activeSpot.hotspot : 0
+                if (activeSpot?.item !== i) setActiveSpot({ item: i, hotspot: h })
+                setValue(`tenets.items.${i}.hotspots.${h}.x` as const, String(x), {
+                  shouldDirty: true,
+                })
+                setValue(`tenets.items.${i}.hotspots.${h}.y` as const, String(y), {
+                  shouldDirty: true,
+                })
+              }}
+              emptyHint="Assign a still image above to place points by clicking; the % inputs below still work."
+            />
             <div className="mt-3 space-y-4">
               {hotspots.map((_, h) => {
                 const hsDef = def?.hotspots?.[h]
+                const isActive = activeSpot?.item === i && activeSpot.hotspot === h
+                const selectSpot = () => setActiveSpot({ item: i, hotspot: h })
                 return (
-                  <div key={h} className="grid gap-3 rounded-lg border border-[var(--color-line)] p-3 sm:grid-cols-2">
+                  <div
+                    key={h}
+                    className={
+                      isActive
+                        ? 'grid gap-3 rounded-lg border border-[color-mix(in_oklab,var(--color-accent)_45%,var(--color-line))] p-3 sm:grid-cols-2'
+                        : 'grid gap-3 rounded-lg border border-[var(--color-line)] p-3 sm:grid-cols-2'
+                    }
+                  >
                     <FormField label={`Point ${h + 1} label`} htmlFor={`oath-p-${i}-h-${h}-label`} labelStyle="stacked">
-                      <Input id={`oath-p-${i}-h-${h}-label`} placeholder={hsDef?.label} {...register(`tenets.items.${i}.hotspots.${h}.label` as const)} density="compact" />
+                      <Input id={`oath-p-${i}-h-${h}-label`} placeholder={hsDef?.label} {...register(`tenets.items.${i}.hotspots.${h}.label` as const)} onFocus={selectSpot} density="compact" />
                     </FormField>
                     <FormField label="Description" htmlFor={`oath-p-${i}-h-${h}-desc`} labelStyle="stacked">
-                      <Input id={`oath-p-${i}-h-${h}-desc`} placeholder={hsDef?.description} {...register(`tenets.items.${i}.hotspots.${h}.description` as const)} density="compact" />
+                      <Input id={`oath-p-${i}-h-${h}-desc`} placeholder={hsDef?.description} {...register(`tenets.items.${i}.hotspots.${h}.description` as const)} onFocus={selectSpot} density="compact" />
                     </FormField>
                     <FormField label="X (%)" htmlFor={`oath-p-${i}-h-${h}-x`} labelStyle="stacked">
-                      <Input id={`oath-p-${i}-h-${h}-x`} inputMode="numeric" placeholder={hsDef ? String(hsDef.x) : '50'} {...register(`tenets.items.${i}.hotspots.${h}.x` as const)} density="compact" />
+                      <Input id={`oath-p-${i}-h-${h}-x`} inputMode="numeric" placeholder={hsDef ? String(hsDef.x) : '50'} {...register(`tenets.items.${i}.hotspots.${h}.x` as const)} onFocus={selectSpot} density="compact" />
                     </FormField>
                     <FormField label="Y (%)" htmlFor={`oath-p-${i}-h-${h}-y`} labelStyle="stacked">
-                      <Input id={`oath-p-${i}-h-${h}-y`} inputMode="numeric" placeholder={hsDef ? String(hsDef.y) : '50'} {...register(`tenets.items.${i}.hotspots.${h}.y` as const)} density="compact" />
+                      <Input id={`oath-p-${i}-h-${h}-y`} inputMode="numeric" placeholder={hsDef ? String(hsDef.y) : '50'} {...register(`tenets.items.${i}.hotspots.${h}.y` as const)} onFocus={selectSpot} density="compact" />
                     </FormField>
                     <button
                       type="button"

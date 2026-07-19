@@ -9,19 +9,114 @@
  * VERDICT (2026-07-17): Phosphor is FINAL — lucide-react removed. This file
  * remains the single seam: any future pack swap happens here alone, with no
  * call-site changes anywhere.
+ *
+ * WEIGHT POLICY (2026-07-19): duotone is the site-wide default for
+ * decorative/pictorial icons, but small FUNCTIONAL glyphs read wrong in
+ * duotone. Those are pinned at the seam via `withWeight` (zero call-site
+ * changes):
+ *   - 'bold'    → checkmarks, plus/minus, close, chevrons, arrows, menu
+ *   - 'regular' → utility verbs (search, copy, trash, edit, refresh, upload,
+ *                 download, filters, eye toggles, zoom) and the spinner
+ * Everything not wrapped inherits 'duotone' from the IconContext.
  */
+
+import { forwardRef } from 'react'
+import type { Icon, IconProps, IconWeight } from '@phosphor-icons/react'
+import {
+  ArrowCounterClockwise as PhArrowCounterClockwise,
+  ArrowLeft as PhArrowLeft,
+  ArrowRight as PhArrowRight,
+  ArrowSquareOut as PhArrowSquareOut,
+  ArrowUpRight as PhArrowUpRight,
+  ArrowsClockwise as PhArrowsClockwise,
+  ArrowsDownUp as PhArrowsDownUp,
+  ArrowsLeftRight as PhArrowsLeftRight,
+  CaretDown as PhCaretDown,
+  CaretLeft as PhCaretLeft,
+  CaretRight as PhCaretRight,
+  CaretUp as PhCaretUp,
+  Check as PhCheck,
+  CircleNotch as PhCircleNotch,
+  Copy as PhCopy,
+  DownloadSimple as PhDownloadSimple,
+  Eye as PhEye,
+  EyeSlash as PhEyeSlash,
+  List as PhList,
+  MagnifyingGlass as PhMagnifyingGlass,
+  MagnifyingGlassMinus as PhMagnifyingGlassMinus,
+  MagnifyingGlassPlus as PhMagnifyingGlassPlus,
+  Minus as PhMinus,
+  PencilSimple as PhPencilSimple,
+  Plus as PhPlus,
+  SlidersHorizontal as PhSlidersHorizontal,
+  Trash as PhTrash,
+  UploadSimple as PhUploadSimple,
+  X as PhX,
+} from '@phosphor-icons/react'
 
 /** Site-wide Phosphor weight — flip to 'regular' | 'bold' | 'fill' to taste. */
 export const PHOSPHOR_ICON_WEIGHT = 'duotone' as const
 
+/**
+ * Pins an icon to a fixed weight regardless of the global IconContext.
+ * An explicit `weight` prop at a call site still wins; only the context
+ * default is overridden. Prop types (incl. `size`/`className`) are unchanged.
+ */
+function withWeight(BaseIcon: Icon, weight: IconWeight): Icon {
+  const Weighted = forwardRef<SVGSVGElement, IconProps>(
+    ({ weight: weightProp, ...props }, ref) => (
+      <BaseIcon ref={ref} weight={weightProp ?? weight} {...props} />
+    ),
+  )
+  Weighted.displayName = BaseIcon.displayName ?? 'WeightedIcon'
+  return Weighted
+}
+
+/* ------------------------------------------------------------------------- *
+ * Functional glyphs — fixed weight (never duotone).
+ * ------------------------------------------------------------------------- */
+
+// 'bold' — small assertive glyphs: checks, plus/minus, close, chevrons,
+// arrows, menu burger.
+export const ArrowDownUp = withWeight(PhArrowsDownUp, 'bold')
+export const ArrowLeft = withWeight(PhArrowLeft, 'bold')
+export const ArrowLeftRight = withWeight(PhArrowsLeftRight, 'bold')
+export const ArrowRight = withWeight(PhArrowRight, 'bold')
+export const ArrowUpRight = withWeight(PhArrowUpRight, 'bold')
+export const Check = withWeight(PhCheck, 'bold')
+export const ChevronDown = withWeight(PhCaretDown, 'bold')
+export const ChevronLeft = withWeight(PhCaretLeft, 'bold')
+export const ChevronRight = withWeight(PhCaretRight, 'bold')
+export const ChevronUp = withWeight(PhCaretUp, 'bold')
+export const Menu = withWeight(PhList, 'bold')
+export const Minus = withWeight(PhMinus, 'bold')
+export const Plus = withWeight(PhPlus, 'bold')
+export const X = withWeight(PhX, 'bold')
+
+// 'regular' — utility verbs + the spinner (a spinner reads cleaner thin).
+export const Copy = withWeight(PhCopy, 'regular')
+export const Download = withWeight(PhDownloadSimple, 'regular')
+export const ExternalLink = withWeight(PhArrowSquareOut, 'regular')
+export const Eye = withWeight(PhEye, 'regular')
+export const EyeOff = withWeight(PhEyeSlash, 'regular')
+export const Loader2 = withWeight(PhCircleNotch, 'regular')
+export const Pencil = withWeight(PhPencilSimple, 'regular')
+export const RefreshCw = withWeight(PhArrowsClockwise, 'regular')
+export const RotateCcw = withWeight(PhArrowCounterClockwise, 'regular')
+export const Search = withWeight(PhMagnifyingGlass, 'regular')
+export const SlidersHorizontal = withWeight(PhSlidersHorizontal, 'regular')
+export const Trash2 = withWeight(PhTrash, 'regular')
+export const Upload = withWeight(PhUploadSimple, 'regular')
+export const ZoomIn = withWeight(PhMagnifyingGlassPlus, 'regular')
+export const ZoomOut = withWeight(PhMagnifyingGlassMinus, 'regular')
+
+/* ------------------------------------------------------------------------- *
+ * Decorative / pictorial icons — inherit the global 'duotone' context.
+ * ------------------------------------------------------------------------- */
+
 export {
   // a
   Warning as AlertTriangle,
-  ArrowsDownUp as ArrowDownUp,
-  ArrowLeft,
-  ArrowsLeftRight as ArrowLeftRight,
-  ArrowRight,
-  ArrowUpRight,
   MedalMilitary as Award,
   // b
   SealCheck as BadgeCheck,
@@ -32,23 +127,13 @@ export {
   // c
   Calendar,
   CalendarDots as CalendarDays,
-  Check,
   Circle,
-  CaretDown as ChevronDown,
-  CaretLeft as ChevronLeft,
-  CaretRight as ChevronRight,
-  CaretUp as ChevronUp,
-  Copy,
   Crosshair,
   Crown,
   // d
   Database,
-  DownloadSimple as Download,
   // e
   ArrowsOutSimple as Expand,
-  ArrowSquareOut as ExternalLink,
-  Eye,
-  EyeSlash as EyeOff,
   // f
   FacebookLogo as Facebook,
   FileText,
@@ -71,34 +156,26 @@ export {
   Key as KeyRound,
   SquaresFour as LayoutDashboard,
   ListNumbers as ListOrdered,
-  CircleNotch as Loader2,
   Lock,
   SignOut as LogOut,
   // m
   EnvelopeSimple as Mail,
   MapPin,
   Medal,
-  List as Menu,
-  Minus,
   Monitor,
   // p
   Package,
   Palette,
   Archive as PackageOpen,
-  PencilSimple as Pencil,
   Phone,
-  Plus,
   Printer,
   // q–r
   QrCode,
   Receipt as ReceiptText,
-  ArrowsClockwise as RefreshCw,
-  ArrowCounterClockwise as RotateCcw,
   Rows as Rows3,
   Ruler,
   // s
   FloppyDisk as Save,
-  MagnifyingGlass as Search,
   MagnifyingGlassMinus as SearchX,
   GearSix as Settings,
   ShareNetwork as Share2,
@@ -107,7 +184,6 @@ export {
   ShieldSlash as ShieldOff,
   TShirt as Shirt,
   ShoppingBag,
-  SlidersHorizontal,
   DeviceMobile as Smartphone,
   DeviceTablet as Tablet,
   Sparkle as Sparkles,
@@ -115,22 +191,17 @@ export {
   Sword as Swords,
   // t
   Target,
-  Trash as Trash2,
   Warning as TriangleAlert,
   Trophy,
   TextT as Type,
   // u
-  UploadSimple as Upload,
   User,
   UserCircle as UserRound,
   Users,
   // w–z
   MagicWand as Wand2,
-  X,
   XCircle,
   YoutubeLogo as Youtube,
-  MagnifyingGlassPlus as ZoomIn,
-  MagnifyingGlassMinus as ZoomOut,
 } from '@phosphor-icons/react'
 
 // Phosphor has no anvil — inlined (stroke path from lucide, ISC license) so

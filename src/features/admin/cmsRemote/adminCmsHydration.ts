@@ -12,6 +12,8 @@ import { writeLandingContentToStorage } from '@/features/cms/landingContent/land
 import { parseLandingContentConfig } from '@/features/cms/landingContent/landingContent.zod'
 import { writeComingSoonConfigToStorage } from '@/features/cms/comingSoon/comingSoon.settings'
 import { parseComingSoonConfig } from '@/features/cms/comingSoon/comingSoon.zod'
+import { writeBannerConfigToStorage } from '@/features/cms/banner/bannerConfig.settings'
+import { parseBannerConfig } from '@/features/cms/banner/bannerConfig.zod'
 import { writePassportContentToStorage } from '@/features/cms/passportContent/passportContent.settings'
 import { parsePassportContent } from '@/features/cms/passportContent/passportContent.zod'
 import { migrateOathTenetAssetsFromSlots } from '@/features/cms/landingContent/migrateOathTenetAssets'
@@ -72,6 +74,17 @@ export async function hydrateAdminCmsFromSupabase(
       writeComingSoonConfigToStorage(
         parseComingSoonConfig(comingSoonRes.data.coming_soon),
       )
+    }
+
+    // Same tolerant treatment for `banner_config` — pre-migration DBs must
+    // not fail hydration; the editor then starts from local/defaults.
+    const bannerRes = await client
+      .from('cms_settings')
+      .select('banner_config')
+      .eq('id', 1)
+      .maybeSingle()
+    if (!bannerRes.error && bannerRes.data) {
+      writeBannerConfigToStorage(parseBannerConfig(bannerRes.data.banner_config))
     }
 
     // Same tolerant treatment for `passport_content` — a fresh browser must

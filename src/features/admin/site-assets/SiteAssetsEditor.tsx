@@ -5,8 +5,8 @@ import { useAdminPageActions } from '@/features/admin/components/AdminPageAction
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
 import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import { MediaLibraryPage } from '@/features/admin/media/MediaLibraryPage'
+import { useAssignedMediaIds } from '@/features/admin/media/useAssignedMediaIds'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
-import { collectAssignedMediaIds } from '@/features/cms/media/collectAssignedMediaIds'
 import {
   readAssetConfigFromStorage,
   saveAssetConfigAsync,
@@ -164,10 +164,9 @@ export function SiteAssetsEditor({
 
   // Assigned = referenced by ANY media-assigning editor (site-asset slots plus
   // landing/About, PDP, passport, shop, coming-soon content), not only the slot
-  // map being edited here. The live `config` working copy is passed so in-panel
-  // slot edits reflect at once; the other blobs are read from their persisted
-  // stores (they only change on their own routes, so a mount-time read is current).
-  const assignedIds = useMemo(() => collectAssignedMediaIds(config), [config])
+  // map being edited here. The live `config` working copy reflects in-panel
+  // edits instantly; the hook re-reads when any other blob's store changes.
+  const assignedIds = useAssignedMediaIds(config)
 
   function setSlot(slotKey: string, mediaId: string) {
     setConfig((prev) => {

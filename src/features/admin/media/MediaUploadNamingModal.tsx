@@ -13,12 +13,15 @@ import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { Modal } from '@/shared/components/ui/Modal'
+import { cn } from '@/shared/lib/cn'
 
 /**
- * Enforced functional naming for every upload: `[context]-[slot].ext`.
- * Contexts and slots come from the real asset-slot registries, so a file's
- * name tells you exactly where it belongs; free-purpose contexts (product
- * editorial, story, library) still force the same kebab format.
+ * Enforced functional naming for every upload. Two modes per file:
+ *   - Prefixed (default): `[context]-[slot].ext` — contexts and slots come
+ *     from the real asset-slot registries, so a file's name tells you exactly
+ *     where it belongs; free-purpose contexts (product editorial, story,
+ *     library) still force the same kebab format.
+ *   - Custom: one free-text name, kebab-forced, extension preserved.
  */
 
 interface ContextDef {
@@ -61,22 +64,67 @@ function extOf(name: string): string {
   return name.split('.').pop()?.toLowerCase() ?? ''
 }
 
+export type UploadNameMode = 'prefixed' | 'custom'
+
 interface PendingName {
+  mode: UploadNameMode
   context: string
   slot: string
   purpose: string
+  /** Full name for 'custom' mode (kebab-forced; extension appended). */
+  customName: string
 }
 
-/** Slot-select sentinel: name the file with free text instead of a registry slot. */
-export const CUSTOM_SLOT = '__custom__'
-
 export function buildUploadName(file: File, entry: PendingName): string | null {
+  if (entry.mode === 'custom') {
+    const name = kebab(entry.customName)
+    if (!name) return null
+    return `${name}.${extOf(file.name)}`
+  }
   const ctx = CONTEXTS.find((c) => c.key === entry.context)
   if (!ctx) return null
-  const useCustom = !ctx.slots || entry.slot === CUSTOM_SLOT
-  const part = useCustom ? kebab(entry.purpose) : entry.slot
+  const part = ctx.slots ? entry.slot : kebab(entry.purpose)
   if (!part) return null
   return `${kebab(ctx.key)}-${kebab(part)}.${extOf(file.name)}`
+}
+
+function ModeSwitch({
+  mode,
+  onChange,
+  fileIndex,
+}: {
+  mode: UploadNameMode
+  onChange: (mode: UploadNameMode) => void
+  fileIndex: number
+}) {
+  const options: Array<{ value: UploadNameMode; label: string }> = [
+    { value: 'prefixed', label: 'Prefixed' },
+    { value: 'custom', label: 'Custom' },
+  ]
+  return (
+    <div
+      role="group"
+      aria-label={`Naming mode for file ${fileIndex + 1}`}
+      className="inline-flex rounded-lg border border-[var(--color-line)] p-0.5"
+    >
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          aria-pressed={mode === opt.value}
+          onClick={() => onChange(opt.value)}
+          className={cn(
+            'focus-ring rounded-md px-3 py-1.5 text-xs transition-colors',
+            mode === opt.value
+              ? 'bg-[var(--color-surface-raised)] font-medium text-[var(--color-text)]'
+              : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
+          )}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  )
 }
 
 export function MediaUploadNamingModal({
@@ -91,7 +139,13 @@ export function MediaUploadNamingModal({
   busy: boolean
 }) {
   const [entries, setEntries] = useState<PendingName[]>(() =>
-    files.map(() => ({ context: '', slot: '', purpose: '' })),
+    files.map(() => ({
+      mode: 'prefixed' as const,
+      context: '',
+      slot: '',
+      purpose: '',
+      customName: '',
+    })),
   )
 
   const names = useMemo(
@@ -128,7 +182,8 @@ export function MediaUploadNamingModal({
         <p className="text-xs text-[var(--color-text-muted)]">
           Every asset is named by its function — <code className="font-mono">
           [page]-[slot].ext</code> — so the library always tells you where a file
-          belongs. Pick the destination for each upload.
+          belongs. Pick the destination for each upload, or switch to a custom
+          name.
         </p>
 
         <ul className="max-h-[50vh] space-y-4 overflow-y-auto pr-1 [scrollbar-width:thin]">
@@ -140,54 +195,58 @@ export function MediaUploadNamingModal({
                 key={`${file.name}-${i}`}
                 className="rounded-xl border border-[var(--color-line)] p-4"
               >
-                <p className="mb-3 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                  <FileUp size={15} aria-hidden="true" />
-                  <span className="truncate">{file.name}</span>
-                  <span className="shrink-0">({(file.size / 1024).toFixed(0)} KB)</span>
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <AdminFieldSelect
-                    label="Where is it used?"
-                    value={entry.context}
-                    onChange={(context) => patch(i, { context, slot: '', purpose: '' })}
-                    options={CONTEXTS.map((c) => ({ value: c.key, label: c.label }))}
-                    placeholder="Pick a page/context…"
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <p className="flex min-w-0 items-center gap-2 text-xs text-[var(--color-text-muted)]">
+                    <FileUp size={15} aria-hidden="true" />
+                    <span className="truncate">{file.name}</span>
+                    <span className="shrink-0">({(file.size / 1024).toFixed(0)} KB)</span>
+                  </p>
+                  <ModeSwitch
+                    mode={entry.mode}
+                    fileIndex={i}
+                    onChange={(mode) => patch(i, { mode })}
                   />
-                  {ctx?.slots ? (
-                    <AdminFieldSelect
-                      label="Slot"
-                      value={entry.slot}
-                      onChange={(slot) => patch(i, { slot, purpose: '' })}
-                      options={[
-                        ...ctx.slots,
-                        { value: CUSTOM_SLOT, label: 'Custom name…' },
-                      ]}
-                      placeholder="Pick the slot…"
-                    />
-                  ) : ctx ? (
-                    <FormField label="Purpose" hint="e.g. seamless-tee-macro" labelStyle="stacked">
-                      <Input
-                        density="compact"
-                        value={entry.purpose}
-                        onChange={(e) => patch(i, { purpose: e.target.value })}
-                      />
-                    </FormField>
-                  ) : null}
-                  {ctx?.slots && entry.slot === CUSTOM_SLOT ? (
-                    <FormField
-                      label="Custom name"
-                      hint="Kebab-case is enforced, e.g. hero-alt-cut"
-                      labelStyle="stacked"
-                      className="sm:col-span-2"
-                    >
-                      <Input
-                        density="compact"
-                        value={entry.purpose}
-                        onChange={(e) => patch(i, { purpose: e.target.value })}
-                      />
-                    </FormField>
-                  ) : null}
                 </div>
+                {entry.mode === 'prefixed' ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <AdminFieldSelect
+                      label="Where is it used?"
+                      value={entry.context}
+                      onChange={(context) => patch(i, { context, slot: '', purpose: '' })}
+                      options={CONTEXTS.map((c) => ({ value: c.key, label: c.label }))}
+                      placeholder="Pick a page/context…"
+                    />
+                    {ctx?.slots ? (
+                      <AdminFieldSelect
+                        label="Slot"
+                        value={entry.slot}
+                        onChange={(slot) => patch(i, { slot })}
+                        options={ctx.slots}
+                        placeholder="Pick the slot…"
+                      />
+                    ) : ctx ? (
+                      <FormField label="Purpose" hint="e.g. seamless-tee-macro" labelStyle="stacked">
+                        <Input
+                          density="compact"
+                          value={entry.purpose}
+                          onChange={(e) => patch(i, { purpose: e.target.value })}
+                        />
+                      </FormField>
+                    ) : null}
+                  </div>
+                ) : (
+                  <FormField
+                    label="File name"
+                    hint="Kebab-case is enforced, e.g. hero-alt-cut — the extension is kept automatically"
+                    labelStyle="stacked"
+                  >
+                    <Input
+                      density="compact"
+                      value={entry.customName}
+                      onChange={(e) => patch(i, { customName: e.target.value })}
+                    />
+                  </FormField>
+                )}
                 {finalNames[i] ? (
                   <p className="mt-2 text-xs">
                     <span className="text-[var(--color-text-muted)]">Will be saved as </span>

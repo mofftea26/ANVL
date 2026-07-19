@@ -39,13 +39,14 @@ function slotMediaKind(kind: AssetSlotKind): MediaPickerKind {
  * scene-level (the same targets the content editors use). Slots without a
  * mapped scene (general textures, GLBs, SEO images) return null.
  */
-function slotPreviewTarget(scope: string, slotKey: string): PreviewTarget | null {
+export function slotPreviewTarget(scope: string, slotKey: string): PreviewTarget | null {
   const key = slotKey.toLowerCase()
   if (scope === 'about') {
     if (key.includes('hero') || key.includes('forge')) {
       return { kind: 'asset-slot', id: 'about:hero' }
     }
-    return null
+    // Backdrops and models sit behind the whole page.
+    return { kind: 'asset-slot', id: 'site:page' }
   }
   if (scope === 'the-oath') {
     if (key.includes('hero') || key === 'droplogo' || key === 'crestsvg') {
@@ -55,8 +56,16 @@ function slotPreviewTarget(scope: string, slotKey: string): PreviewTarget | null
     if (key.startsWith('product')) return { kind: 'asset-slot', id: 'the-oath:products' }
     if (key.includes('tenet')) return { kind: 'asset-slot', id: 'the-oath:tenets' }
     if (key.includes('finale')) return { kind: 'asset-slot', id: 'the-oath:finale' }
+    return null
   }
-  return null
+  if (scope === 'shop') {
+    if (key.includes('hero')) return { kind: 'asset-slot', id: 'shop:hero' }
+    // Card texture / empty-state imagery all land in the product grid.
+    return { kind: 'asset-slot', id: 'shop:grid' }
+  }
+  if (scope === 'general') return null
+  // Any other storefront page scope: ring the page as a whole.
+  return { kind: 'asset-slot', id: 'site:page' }
 }
 
 export interface AssetSlotAssignmentPanelProps {

@@ -14,6 +14,7 @@ import {
   type AdminPreviewMessage,
 } from '@/features/cms/preview'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
+import { ADMIN_STORAGE_KEYS } from '@/features/admin/storageKeys'
 import { ExternalLink, Monitor, RefreshCw, Smartphone, Tablet, X } from '@/shared/icons'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { cn } from '@/shared/lib/cn'
@@ -65,6 +66,36 @@ function defaultRouteForAdminPath(pathname: string): string {
 
 const DRAFT_SEND_DEBOUNCE_MS = 200
 
+/** Preview panel width: drag-resizable, persisted, clamped to sane bounds. */
+const PANEL_WIDTH_KEY = ADMIN_STORAGE_KEYS.previewWidthPref
+const PANEL_MIN_WIDTH = 320
+const PANEL_DEFAULT_WIDTH = 480
+
+function clampPanelWidth(width: number): number {
+  const max =
+    typeof window !== 'undefined'
+      ? Math.max(PANEL_MIN_WIDTH, Math.round(window.innerWidth * 0.7))
+      : 960
+  return Math.min(Math.max(width, PANEL_MIN_WIDTH), max)
+}
+
+function readStoredPanelWidth(): number {
+  try {
+    const raw = Number(window.localStorage.getItem(PANEL_WIDTH_KEY))
+    return Number.isFinite(raw) && raw > 0 ? clampPanelWidth(raw) : PANEL_DEFAULT_WIDTH
+  } catch {
+    return PANEL_DEFAULT_WIDTH
+  }
+}
+
+function persistPanelWidth(width: number) {
+  try {
+    window.localStorage.setItem(PANEL_WIDTH_KEY, String(Math.round(width)))
+  } catch {
+    // Preference only.
+  }
+}
+
 interface AdminPreviewPanelProps {
   onClose: () => void
 }
@@ -96,6 +127,53 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const stageRef = useRef<HTMLDivElement | null>(null)
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 })
+
+  // Drag-resizable split: the handle on the panel's left edge resizes the
+  // panel and (being flex siblings) the editor column at once.
+  const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_WIDTH)
+  const [resizing, setResizing] = useState(false)
+  useEffect(() => {
+    setPanelWidth(readStoredPanelWidth())
+  }, [])
+
+  const onResizeStart = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      event.preventDefault()
+      const startX = event.clientX
+      const startWidth = panelWidth
+      const handle = event.currentTarget
+      handle.setPointerCapture(event.pointerId)
+      setResizing(true)
+
+      const onMove = (move: PointerEvent) => {
+        setPanelWidth(clampPanelWidth(startWidth + (startX - move.clientX)))
+      }
+      const onUp = (up: PointerEvent) => {
+        handle.releasePointerCapture(up.pointerId)
+        handle.removeEventListener('pointermove', onMove)
+        handle.removeEventListener('pointerup', onUp)
+        setResizing(false)
+        setPanelWidth((width) => {
+          persistPanelWidth(width)
+          return width
+        })
+      }
+      handle.addEventListener('pointermove', onMove)
+      handle.addEventListener('pointerup', onUp)
+    },
+    [panelWidth],
+  )
+
+  const onResizeKeyDown = useCallback((event: React.KeyboardEvent) => {
+    const step = event.key === 'ArrowLeft' ? 24 : event.key === 'ArrowRight' ? -24 : 0
+    if (!step) return
+    event.preventDefault()
+    setPanelWidth((width) => {
+      const next = clampPanelWidth(width + step)
+      persistPanelWidth(next)
+      return next
+    })
+  }, [])
 
   const deviceWidth = DEVICE_WIDTHS[device]
   const scale = stageSize.width > 0 ? Math.min(stageSize.width / deviceWidth, 1) : 1
@@ -219,8 +297,26 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
     <section
       aria-label="Live storefront preview"
       data-testid="admin-preview-panel"
-      className="flex h-full w-[24rem] shrink-0 flex-col border-l border-[var(--color-line)]/70 bg-[var(--color-surface)]/60 xl:w-[30rem] 2xl:w-[36rem]"
+      style={{ width: `${panelWidth}px` }}
+      className="relative flex h-full shrink-0 flex-col border-l border-[var(--color-line)]/70 bg-[var(--color-surface)]/60"
     >
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize preview panel"
+        tabIndex={0}
+        onPointerDown={onResizeStart}
+        onKeyDown={onResizeKeyDown}
+        className={cn(
+          'focus-ring absolute inset-y-0 left-0 z-20 w-1.5 cursor-col-resize touch-none',
+          'hover:bg-[var(--color-accent)]/40',
+          resizing && 'bg-[var(--color-accent)]/60',
+        )}
+      />
+      {resizing ? (
+        // Shield so the iframe never swallows pointer moves mid-drag.
+        <div aria-hidden className="absolute inset-0 z-10" />
+      ) : null}
       <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[var(--color-line)]/60 px-3 py-2">
         <h2 className="anvl-heading mr-auto text-sm font-normal text-[var(--color-heading)]">
           Live preview

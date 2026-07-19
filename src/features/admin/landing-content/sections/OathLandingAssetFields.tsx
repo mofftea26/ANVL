@@ -3,6 +3,7 @@ import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotField'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import {
+  slotPreviewTarget,
   type AssetSlotSection,
 } from '@/features/admin/site-assets/AssetSlotAssignmentPanel'
 import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
@@ -94,6 +95,7 @@ export function OathLandingAssetFields({
                   kind={slotKindToPickerKind(slot)}
                   assets={mediaAssets}
                   onMediaIdChange={(mediaId) => onAssignmentChange(slot.key, mediaId)}
+                  previewTarget={slotPreviewTarget('the-oath', slot.key) ?? undefined}
                 />
               ),
             )}

@@ -1,120 +1,151 @@
-import { useSyncExternalStore } from 'react'
-import type { LinkProps } from '@tanstack/react-router'
-import { Hourglass } from '@/shared/icons'
-import { AdminCard } from '@/features/admin/components/AdminCard'
-import {
-  readComingSoonConfigFromStorage,
-  subscribeComingSoonConfigChange,
-} from '@/features/cms/comingSoon/comingSoon.settings'
-import { ICON_SIZE } from '@/shared/lib/iconSize'
+import { Link, type LinkProps } from '@tanstack/react-router'
+
+import { ArrowUpRight, Hourglass } from '@/shared/icons'
 import { AdminForgedLink } from '@/features/admin/components/AdminForgedLink'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
-import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
-import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
-import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWorkspaceStatusPanel'
-import { AdminSetupChecklist } from '@/features/admin/components/AdminSetupChecklist'
 import { adminNavCategories } from '@/features/admin/components/adminNav'
-import { LandingPagePickerCard } from '@/features/admin/landing-picker/LandingPagePickerCard'
-import { Badge } from '@/shared/components/ui/Badge'
+import { ActiveDropTile } from '@/features/admin/setup/ActiveDropTile'
+import { SetupWizardHub } from '@/features/admin/setup/SetupWizardHub'
+import { useComingSoonEnabled } from '@/features/admin/setup/useSetupStatus'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
+import { cn } from '@/shared/lib/cn'
 
-/** Cards mirror the sidebar's IA — grouped by category, dashboard itself excluded. */
-const dashboardGroups = adminNavCategories()
+/** Sidebar IA minus the dashboard itself — the launcher mirrors the nav. */
+const launcherGroups = adminNavCategories()
   .map(({ category, items }) => ({
     category,
     items: items.filter((i) => i.href !== '/admin'),
   }))
   .filter((group) => group.items.length > 0)
 
+/**
+ * The Studio control room — a single non-scrolling screen (≥1280px): status
+ * strip (active drop, Coming Soon warning, storefront link), a dense category
+ * launcher covering every admin surface, and the guided setup-wizard row.
+ * Below `xl` the same content stacks and scrolls gracefully.
+ */
 export function AdminDashboardPageRoute() {
-  return <DashboardContent />
+  return (
+    <AdminLayout
+      title="Dashboard"
+      description="Every surface one strike away."
+      layout="workspace"
+    >
+      {/* Fixed height at xl = viewport minus topbar minus the workspace main
+          padding (lg:py-10 + pb-8 = 4.5rem) — the no-scroll contract. */}
+      <div className="flex min-h-0 flex-col gap-4 xl:h-[calc(100dvh-var(--admin-topbar-height)-4.5rem)]">
+        <StatusStrip />
+        <CategoryLauncher />
+        <SetupWizardHub />
+      </div>
+    </AdminLayout>
+  )
 }
 
-/** Warm warning band shown while Coming Soon mode hides the public site. */
-function ComingSoonLiveBanner() {
-  const comingSoonEnabled = useSyncExternalStore(
-    subscribeComingSoonConfigChange,
-    () => readComingSoonConfigFromStorage().enabled,
-    () => false,
-  )
-  if (!comingSoonEnabled) return null
+/** Compact top strip: live drop, Coming Soon state, storefront jump. */
+function StatusStrip() {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_oklab,var(--color-warning)_45%,transparent)] bg-[color-mix(in_oklab,var(--color-warning)_10%,transparent)] px-5 py-4">
-      <p className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-text)]">
-        <Hourglass size={ICON_SIZE.sm} aria-hidden="true" className="text-[var(--color-warning)]" />
-        Coming Soon mode is LIVE — visitors see the reveal page, not the storefront.
-      </p>
-      <AdminForgedLink to={'/admin/coming-soon' as LinkProps['to']}>
-        <span className="relative z-10">Manage</span>
-      </AdminForgedLink>
+    <div className="flex shrink-0 flex-wrap items-center gap-3">
+      <ActiveDropTile />
+      <ComingSoonLivePill />
+      <div className="ml-auto">
+        <AdminForgedLink variant="outline" href="/" target="_blank" rel="noreferrer">
+          View storefront
+          <ArrowUpRight size={ICON_SIZE.sm} aria-hidden="true" />
+        </AdminForgedLink>
+      </div>
     </div>
   )
 }
 
-function DashboardContent() {
-  const overviewRail = (
-    <>
-      <AdminWorkspaceStatusPanel />
-      <AdminRailPanel
-        title="Quick help"
-        description="Pick a surface to start editing."
-      >
-        <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">
-          <li>Set the live drop with the active page picker above.</li>
-          <li>
-            <span className="text-[var(--color-text)]">Theme</span> &amp;{' '}
-            <span className="text-[var(--color-text)]">Fonts</span> restyle the whole storefront.
-          </li>
-          <li>
-            <span className="text-[var(--color-text)]">Assets</span> and{' '}
-            <span className="text-[var(--color-text)]">Content</span> dress the active landing page.
-          </li>
-        </ul>
-      </AdminRailPanel>
-    </>
-  )
-
+/** Warm warning pill shown while Coming Soon mode hides the public site. */
+function ComingSoonLivePill() {
+  const comingSoonEnabled = useComingSoonEnabled()
+  if (!comingSoonEnabled) return null
   return (
-    <AdminLayout
-      title="Dashboard"
-      description="Active drop, theme, fonts, and assets."
-      layout="workspace"
+    <div className="flex items-center gap-2.5 rounded-xl border border-[color-mix(in_srgb,var(--color-warning)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-warning)_10%,transparent)] px-4 py-2.5">
+      <Hourglass
+        size={ICON_SIZE.sm}
+        aria-hidden="true"
+        className="shrink-0 text-[var(--color-warning)]"
+      />
+      <p className="text-xs font-medium text-[var(--color-text)]">
+        Coming Soon is LIVE — visitors see the reveal page.
+      </p>
+      <Link
+        to={'/admin/coming-soon' as LinkProps['to']}
+        className="focus-ring rounded text-xs font-semibold text-[var(--color-warning)] underline underline-offset-2"
+      >
+        Manage
+      </Link>
+    </div>
+  )
+}
+
+/**
+ * Dense launcher: every admin surface as a small icon+label tile, grouped by
+ * the sidebar's categories — the whole CMS reachable in one glance.
+ */
+function CategoryLauncher() {
+  return (
+    <section
+      aria-label="Studio surfaces"
+      className="grid min-h-0 flex-1 content-start gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:content-stretch"
     >
-      <AdminWorkspace asideLabel="Studio overview" aside={overviewRail}>
-        <div className="space-y-6">
-          <ComingSoonLiveBanner />
-          <LandingPagePickerCard />
-          <AdminSetupChecklist />
-          {dashboardGroups.map(({ category, items }) => (
-            <section key={category} aria-label={category} className="space-y-3">
-              <div className="flex items-center gap-3">
-                <h2 className="anvl-display text-[11px] tracking-[0.3em] text-[var(--color-text-muted)]">
-                  {category}
-                </h2>
-                <span aria-hidden className="h-px flex-1 bg-[var(--color-line)]/60" />
-              </div>
-              <div className="grid items-stretch gap-6 sm:grid-cols-2 2xl:grid-cols-3">
-                {items.map((card) => (
-                  <AdminCard
-                    key={card.href}
-                    className="min-h-[13rem]"
-                    title={card.label}
-                    description={card.description}
+      {launcherGroups.map(({ category, items }) => (
+        <div
+          key={category}
+          className={cn(
+            'relative flex min-h-0 flex-col gap-2 overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]/70 p-3',
+            'shadow-[inset_0_1px_0_rgba(255,255,255,0.05),inset_0_-1px_0_rgba(0,0,0,0.35)]',
+          )}
+        >
+          {/* Copper hairline — the plate's forged seam. */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--color-accent)_60%,transparent),transparent)]"
+          />
+          <h2 className="anvl-display px-1 text-[10px] tracking-[0.3em] text-[var(--color-text-muted)]">
+            {category}
+          </h2>
+          <ul className="flex min-h-0 flex-1 flex-col gap-1.5">
+            {items.map((item) => {
+              const IconComponent = item.icon
+              return (
+                <li key={item.href} className="min-h-0 flex-1">
+                  <Link
+                    to={item.href as LinkProps['to']}
+                    className={cn(
+                      'focus-ring group flex h-full items-center gap-2.5 rounded-lg border border-transparent px-2 py-1.5',
+                      'transition-colors hover:border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] hover:bg-[var(--color-surface-elevated)]',
+                    )}
                   >
-                    <div className="mt-auto flex w-full flex-wrap items-end justify-between gap-4 pt-0.5">
-                      <Badge tone="accent" className="px-3 py-1.5 tracking-[0.22em]">
-                        {card.badge}
-                      </Badge>
-                      <AdminForgedLink to={card.href as LinkProps['to']}>
-                        <span className="relative z-10">{card.cta}</span>
-                      </AdminForgedLink>
-                    </div>
-                  </AdminCard>
-                ))}
-              </div>
-            </section>
-          ))}
+                    <span
+                      aria-hidden="true"
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] text-[var(--color-highlight)]"
+                    >
+                      <IconComponent size={ICON_SIZE.md} aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-medium text-[var(--color-text)]">
+                        {item.label}
+                      </span>
+                      <span className="block truncate text-[11px] text-[var(--color-text-muted)]">
+                        {item.description}
+                      </span>
+                    </span>
+                    <ArrowUpRight
+                      size={ICON_SIZE.xs}
+                      aria-hidden="true"
+                      className="shrink-0 text-[var(--color-text-muted)] opacity-0 transition-opacity group-hover:opacity-100"
+                    />
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
         </div>
-      </AdminWorkspace>
-    </AdminLayout>
+      ))}
+    </section>
   )
 }

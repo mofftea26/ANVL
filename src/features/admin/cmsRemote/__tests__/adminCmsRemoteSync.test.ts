@@ -14,6 +14,7 @@ const allValues: Record<CmsSettingsFieldKey, unknown> = {
   pdp_content: { name: 'pdp' },
   passport_content: { name: 'passport' },
   coming_soon: { name: 'coming_soon' },
+  banner_config: { name: 'banner_config' },
 }
 
 describe('pickCmsSettingsFields', () => {
@@ -45,6 +46,13 @@ describe('pickCmsSettingsFields', () => {
     expect(Object.keys(result)).toEqual(['theme_config'])
     expect(result).not.toHaveProperty('shop_config')
     expect(result).not.toHaveProperty('pdp_content')
+  })
+
+  it('includes banner_config and scopes the banner save to it alone', () => {
+    expect(pickCmsSettingsFields(allValues)).toHaveProperty('banner_config')
+    expect(pickCmsSettingsFields(allValues, ['banner_config'])).toEqual({
+      banner_config: { name: 'banner_config' },
+    })
   })
 
   it('returns an empty object for an empty field list', () => {

@@ -8,6 +8,10 @@ import {
   type ComingSoonConfig,
 } from '@/features/cms/comingSoon/comingSoon.zod'
 import {
+  parseBannerConfig,
+  type BannerConfig,
+} from '@/features/cms/banner/bannerConfig.zod'
+import {
   parseLandingContentConfig,
   type LandingContentConfig,
 } from '@/features/cms/landingContent/landingContent.zod'
@@ -41,6 +45,7 @@ export interface PreviewDraftPayload {
   pdpContent?: PdpContentConfig
   passportContent?: PassportContentConfig
   comingSoon?: ComingSoonConfig
+  banner?: BannerConfig
 }
 
 export type PreviewDraftField = keyof PreviewDraftPayload
@@ -111,6 +116,7 @@ const DRAFT_FIELD_PARSERS: {
   pdpContent: parsePdpContent,
   passportContent: parsePassportContent,
   comingSoon: parseComingSoonConfig,
+  banner: parseBannerConfig,
 }
 
 export const PREVIEW_DRAFT_FIELDS = Object.keys(DRAFT_FIELD_PARSERS) as PreviewDraftField[]

@@ -8,6 +8,7 @@ import { readShopConfigFromStorage } from '@/features/cms/shop/shopExperience.se
 import { readPdpContentFromStorage } from '@/features/cms/pdpContent/pdpContent.settings'
 import { readPassportContentFromStorage } from '@/features/cms/passportContent/passportContent.settings'
 import { readComingSoonConfigFromStorage } from '@/features/cms/comingSoon/comingSoon.settings'
+import { readBannerConfigFromStorage } from '@/features/cms/banner/bannerConfig.settings'
 import {
   readAssetConfigFromStorage,
   readFontLibraryFromStorage,
@@ -44,6 +45,7 @@ export type CmsSettingsFieldKey =
   | 'pdp_content'
   | 'passport_content'
   | 'coming_soon'
+  | 'banner_config'
 
 /**
  * Pure helper, extracted so the field-scoping behavior is directly unit
@@ -99,6 +101,7 @@ export async function flushAdminCmsRemoteSync(
     pdp_content: readPdpContentFromStorage(),
     passport_content: readPassportContentFromStorage(),
     coming_soon: readComingSoonConfigFromStorage(),
+    banner_config: readBannerConfigFromStorage(),
   }
   // No `fields` given (the debounced auto-sync paths) keeps the previous
   // "sync everything from the local snapshot" behavior; an explicit list

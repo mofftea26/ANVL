@@ -54,6 +54,7 @@ import { PageBackdrop } from '@/shared/components/layout/PageBackdrop'
 import { SiteDustGate } from '@/shared/webgl/SiteDustGate'
 import { resolvePageBackdropSrc } from '@/features/cms/assets/pageBackdrop'
 import { useComingSoonConfig } from '@/features/cms/hooks/useComingSoonConfig'
+import { SiteBannerRail } from '@/features/cms/banner/SiteBannerRail'
 import {
   PreviewDraftProvider,
   usePreviewDraft,
@@ -100,6 +101,7 @@ export const Route = createRootRoute({
       assets: projection.assets,
       mediaIndex: projection.mediaIndex,
       comingSoon: projection.comingSoon,
+      banner: projection.bannerConfig,
     }
   },
   head: ({ loaderData, matches }) => ({
@@ -174,6 +176,7 @@ function StorefrontLayout() {
     activeLandingPageKey,
     assets,
     mediaIndex,
+    banner,
   } = Route.useLoaderData()
   const navigation = useWebsiteNavigation(ssrNavigation)
   const pathname = useRouterState({
@@ -211,6 +214,10 @@ function StorefrontLayout() {
             Skip to content
           </a>
         ) : null}
+        {/* Announcement banner — sticky IN FLOW at the very top, above the
+            fixed topbar. It writes `--anvl-banner-h` on :root and shifts the
+            fixed header down by it (see SiteBannerRail). */}
+        {showChrome ? <SiteBannerRail initial={banner} mediaIndex={mediaIndex} /> : null}
         {showChrome ? (
           <PremiumNav navigation={navigation} alwaysTransparent={isFullBleed} />
         ) : null}
