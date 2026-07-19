@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react'
 import { Container } from '@/shared/components/ui/Container'
+import { cn } from '@/shared/lib/cn'
 import type {
   OathResolvedHotspot,
   OathResolvedContent,
@@ -11,58 +13,204 @@ import { OathSceneSeam } from './OathSceneSeam'
  * showcases the three Drop 01 pieces one per slide. Each slide pans horizontally
  * into view with its own smokey background, the product staged as a CMS-assigned
  * 3D model (GLB) — or an intentional plate until one is assigned — its
- * warrior-voiced title/subtitle, and up to four annotated points (a dot, a leader
- * line, and a card with the material/tech and an optional bubble image). The
- * horizontal-on-scroll mechanic and `tenets.items[]` content key are unchanged.
+ * warrior-voiced title/subtitle, and up to four annotated callouts (a reticle
+ * marker, a horizontal leader line, and a spec card with the material/tech and
+ * an optional chip image). The horizontal-on-scroll mechanic and
+ * `tenets.items[]` content key are unchanged.
  */
-function Hotspot({ hotspot }: { hotspot: OathResolvedHotspot }) {
+
+/** Where the drawn media actually sits inside the stage box (px). */
+type ContentRect = { left: number; top: number; width: number; height: number }
+
+/**
+ * ACCURACY CORE. Hotspot x/y are authored in the admin as percent of the IMAGE
+ * itself, but the stage renders stills with `object-contain` — the drawn image
+ * occupies only a letterboxed sub-rect of the stage, so naive `left: x%` of the
+ * stage drifts whenever aspect ratios differ. This measures the contained rect
+ * (natural aspect vs. stage box) and re-measures on resize/late load. Without a
+ * still (GLB viewer / ember plate) the drawn media IS the stage → full box.
+ */
+function useContainedMediaRect(stageRef: React.RefObject<HTMLDivElement | null>) {
+  const [rect, setRect] = useState<ContentRect | null>(null)
+
+  useEffect(() => {
+    const stage = stageRef.current
+    if (!stage) return
+
+    const measure = () => {
+      const box = stage.getBoundingClientRect()
+      if (box.width < 2 || box.height < 2) return
+      const img = stage.querySelector<HTMLImageElement>('img[data-tenet-media]')
+      if (!img || !img.naturalWidth || !img.naturalHeight) {
+        setRect({ left: 0, top: 0, width: box.width, height: box.height })
+        return
+      }
+      const scale = Math.min(
+        box.width / img.naturalWidth,
+        box.height / img.naturalHeight,
+      )
+      const width = img.naturalWidth * scale
+      const height = img.naturalHeight * scale
+      setRect({
+        left: (box.width - width) / 2,
+        top: (box.height - height) / 2,
+        width,
+        height,
+      })
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(stage)
+    // Stills can finish decoding after mount — re-measure once natural size lands.
+    const img = stage.querySelector<HTMLImageElement>('img[data-tenet-media]')
+    img?.addEventListener('load', measure)
+    return () => {
+      observer.disconnect()
+      img?.removeEventListener('load', measure)
+    }
+  }, [stageRef])
+
+  return rect
+}
+
+/** Leader length between the reticle edge and the card (px). */
+const LEADER_LENGTH = 44
+
+/**
+ * One annotated callout: reticle centered EXACTLY on the point, a horizontal
+ * leader line, and the spec card on whichever side has room (right when the
+ * point sits in the left half, left otherwise), vertically centered on the
+ * point but clamped near the stage's top/bottom edges — deterministic from the
+ * authored position, so nothing ever hangs off the stage.
+ */
+function Hotspot({
+  hotspot,
+  rect,
+}: {
+  hotspot: OathResolvedHotspot
+  rect: ContentRect | null
+}) {
+  const side: 'right' | 'left' = hotspot.x < 55 ? 'right' : 'left'
+  const vAlign: 'top' | 'center' | 'bottom' =
+    hotspot.y < 18 ? 'top' : hotspot.y > 82 ? 'bottom' : 'center'
+
+  // Pre-measure fallback = naive percent of the stage (SSR + first paint);
+  // measured px against the drawn media rect replaces it immediately on mount.
+  const position = rect
+    ? {
+        left: `${rect.left + (hotspot.x / 100) * rect.width}px`,
+        top: `${rect.top + (hotspot.y / 100) * rect.height}px`,
+      }
+    : { left: `${hotspot.x}%`, top: `${hotspot.y}%` }
+
+  // Layout transforms (centering, edge clamping) live on WRAPPER elements;
+  // the `data-hotspot-*` children are the GSAP targets, so the timeline's
+  // scale/x/opacity writes never clobber the alignment transforms.
   return (
     <div
       data-hotspot={hotspot.id}
-      className="absolute z-20 -translate-x-1/2"
-      style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
+      className="absolute z-20 h-0 w-0"
+      style={{ ...position, '--oath-leader': `${LEADER_LENGTH}px` } as React.CSSProperties}
     >
-      {/* The point. */}
+      {/* Reticle — wrapper centers it EXACTLY on the authored point. */}
+      <span className="absolute left-0 top-0 block h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2">
+        <span
+          data-hotspot-dot
+          className="block h-full w-full rounded-full border border-[var(--color-highlight-bright)]/80 bg-[color-mix(in_srgb,var(--color-highlight)_14%,transparent)] shadow-[0_0_10px_color-mix(in_srgb,var(--color-highlight)_45%,transparent)]"
+        >
+          <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-highlight-bright)]" />
+        </span>
+      </span>
+
+      {/* Horizontal leader from the reticle edge toward the card. */}
       <span
-        data-hotspot-dot
-        className="relative block h-2.5 w-2.5 rounded-full bg-[var(--color-highlight-bright)] shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-highlight)_28%,transparent)]"
-      />
-      {/* Leader line down to the card. */}
-      <span
-        data-hotspot-line
         aria-hidden="true"
-        className="mx-auto block h-9 w-px origin-top bg-[var(--color-highlight)]"
-      />
-      {/* Callout card. */}
-      <div
-        data-hotspot-card
-        className="w-56 -translate-x-1/2 rounded-md border border-[var(--color-line)] bg-[color-mix(in_srgb,var(--color-bg)_82%,transparent)] p-3 backdrop-blur-sm"
+        className={cn(
+          'absolute top-0 block h-px w-[var(--oath-leader)] -translate-y-1/2',
+          side === 'right' ? 'left-[9px]' : 'right-[9px]',
+        )}
       >
-        <div className="flex items-start gap-2.5">
-          {hotspot.bubbleUrl ? (
-            <img
-              src={hotspot.bubbleUrl}
-              alt=""
-              className="h-11 w-11 shrink-0 rounded-full border border-[var(--color-line)] object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : (
-            <span
-              aria-hidden="true"
-              className="h-11 w-11 shrink-0 rounded-full border border-[var(--color-line)] bg-[var(--color-surface-elevated)]"
-            />
+        <span
+          data-hotspot-line
+          data-side={side}
+          className={cn(
+            'block h-full w-full',
+            side === 'right'
+              ? 'bg-[linear-gradient(90deg,var(--color-highlight-bright),color-mix(in_srgb,var(--color-highlight)_45%,transparent))]'
+              : 'bg-[linear-gradient(270deg,var(--color-highlight-bright),color-mix(in_srgb,var(--color-highlight)_45%,transparent))]',
           )}
-          <div className="min-w-0">
-            <p className="anvl-display text-[0.6rem] uppercase tracking-[0.22em] text-[var(--color-highlight-bright)]">
-              {hotspot.label}
-            </p>
-            <p className="mt-1 text-[0.74rem] leading-snug text-[var(--color-text-muted)]">
-              {hotspot.description}
-            </p>
+        />
+      </span>
+
+      {/* Spec card — meets the leader flush; copper seam on the joint edge. */}
+      <div
+        className={cn(
+          'absolute w-60',
+          side === 'right'
+            ? 'left-[calc(9px+var(--oath-leader))]'
+            : 'right-[calc(9px+var(--oath-leader))]',
+          vAlign === 'center' && '-translate-y-1/2',
+          vAlign === 'top' && '-translate-y-3',
+          vAlign === 'bottom' && '-translate-y-[calc(100%-0.75rem)]',
+        )}
+      >
+        <div
+          data-hotspot-card
+          data-side={side}
+          className={cn(
+            'rounded-md border border-[var(--color-line)] bg-[color-mix(in_srgb,var(--color-bg)_88%,transparent)] p-3 backdrop-blur-md',
+            'shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]',
+            side === 'right'
+              ? 'border-l-[1.5px] border-l-[var(--color-highlight-bright)]'
+              : 'border-r-[1.5px] border-r-[var(--color-highlight-bright)]',
+          )}
+        >
+          <div className="flex items-start gap-3">
+            {hotspot.bubbleUrl ? (
+              <img
+                src={hotspot.bubbleUrl}
+                alt=""
+                className="h-12 w-12 shrink-0 rounded-lg border border-[var(--color-line)] object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : null}
+            <div className="min-w-0">
+              <p className="anvl-display text-[0.6rem] uppercase leading-[1.35] tracking-[0.22em] text-[var(--color-highlight-bright)]">
+                {hotspot.label}
+              </p>
+              <p className="mt-1.5 text-[0.74rem] leading-[1.5] text-[var(--color-text-muted)]">
+                {hotspot.description}
+              </p>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+/** Product stage + measured, accurately-anchored callout layer. */
+function AnnotatedStage({
+  item,
+}: {
+  item: OathResolvedContent['tenets']['items'][number]
+}) {
+  const stageRef = useRef<HTMLDivElement | null>(null)
+  const rect = useContainedMediaRect(stageRef)
+
+  return (
+    <div ref={stageRef} className="relative mx-auto h-[78%] w-full max-w-2xl">
+      <OathProductViewer
+        modelUrl={item.modelUrl}
+        mediaUrl={item.mediaUrl}
+        tone={item.tone}
+        alt={item.title}
+      />
+      {item.hotspots.map((hotspot) => (
+        <Hotspot key={hotspot.id} hotspot={hotspot} rect={rect} />
+      ))}
     </div>
   )
 }
@@ -180,18 +328,8 @@ export function OathTenets({
                     </p>
                   </div>
 
-                  {/* Product stage + annotated hotspots. */}
-                  <div className="relative mx-auto h-[78%] w-full max-w-2xl">
-                    <OathProductViewer
-                      modelUrl={item.modelUrl}
-                      mediaUrl={item.mediaUrl}
-                      tone={item.tone}
-                      alt={item.title}
-                    />
-                    {item.hotspots.map((hotspot) => (
-                      <Hotspot key={hotspot.id} hotspot={hotspot} />
-                    ))}
-                  </div>
+                  {/* Product stage + annotated hotspots (measured anchoring). */}
+                  <AnnotatedStage item={item} />
                 </div>
               </Container>
             </article>

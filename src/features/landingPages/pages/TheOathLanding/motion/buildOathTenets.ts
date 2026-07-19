@@ -101,12 +101,23 @@ export function buildOathTenets(
       tl.to(dots, { scale: 1, ease: 'back.out(2)', duration: 0.26, stagger: 0.08 }, hsAt)
     }
     if (linesEls.length) {
-      gsap.set(linesEls, { scaleY: 0, transformOrigin: '50% 0%' })
-      tl.to(linesEls, { scaleY: 1, ease: 'power2.out', duration: 0.22, stagger: 0.08 }, hsAt + 0.06)
+      // Horizontal leaders draw OUT from the reticle: origin follows the card
+      // side (`data-side` set by the Hotspot component).
+      for (const line of linesEls) {
+        gsap.set(line, {
+          scaleX: 0,
+          transformOrigin: line.dataset.side === 'left' ? '100% 50%' : '0% 50%',
+        })
+      }
+      tl.to(linesEls, { scaleX: 1, ease: 'power2.out', duration: 0.22, stagger: 0.08 }, hsAt + 0.06)
     }
     if (cards.length) {
-      gsap.set(cards, { y: 12, opacity: 0 })
-      tl.to(cards, { y: 0, opacity: 1, ease: 'expo.out', duration: 0.3, stagger: 0.08 }, hsAt + 0.14)
+      // Cards slide in along the leader's direction (never `y` — vertical
+      // alignment lives on a wrapper the timeline must not touch).
+      for (const card of cards) {
+        gsap.set(card, { x: card.dataset.side === 'left' ? -14 : 14, opacity: 0 })
+      }
+      tl.to(cards, { x: 0, opacity: 1, ease: 'expo.out', duration: 0.3, stagger: 0.08 }, hsAt + 0.14)
     }
 
     at += DWELL_DUR

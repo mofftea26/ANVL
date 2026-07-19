@@ -1,10 +1,12 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { adminNavItems } from '@/features/admin/components/adminNav'
 import {
   readComingSoonConfigFromStorage,
   writeComingSoonConfigToStorage,
 } from '@/features/cms/comingSoon/comingSoon.settings'
+import { LANDING_CONTENT_STORAGE_KEY } from '@/features/cms/landingContent/landingContent.settings'
 
 import { AdminDashboardPageRoute } from '../-adminDashboard'
 
@@ -49,9 +51,22 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }))
 
+/** Setup wizards now run inline editors backed by React Query (media, catalog,
+ *  gamification rules), so the dashboard needs the same provider the app has. */
+function renderDashboard() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <AdminDashboardPageRoute />
+    </QueryClientProvider>,
+  )
+}
+
 describe('AdminDashboardPageRoute', () => {
   it('exposes every admin surface as a launcher link', () => {
-    render(<AdminDashboardPageRoute />)
+    renderDashboard()
 
     const hrefs = screen
       .getAllByRole('link')
@@ -63,7 +78,7 @@ describe('AdminDashboardPageRoute', () => {
   })
 
   it('labels launcher tiles with the nav item name', () => {
-    render(<AdminDashboardPageRoute />)
+    renderDashboard()
 
     for (const item of launcherItems) {
       const links = screen.getAllByRole('link', {
@@ -76,7 +91,7 @@ describe('AdminDashboardPageRoute', () => {
   })
 
   it('shows the active drop tile and a storefront link, but no Coming Soon warning by default', () => {
-    render(<AdminDashboardPageRoute />)
+    renderDashboard()
 
     expect(screen.getByText(/active drop/i)).toBeTruthy()
     const storefront = screen.getByRole('link', { name: /view storefront/i })
@@ -89,7 +104,7 @@ describe('AdminDashboardPageRoute', () => {
       ...readComingSoonConfigFromStorage(),
       enabled: true,
     })
-    render(<AdminDashboardPageRoute />)
+    renderDashboard()
 
     expect(screen.getByText(/coming soon is live/i)).toBeTruthy()
     const manage = screen.getByRole('link', { name: /manage/i })
@@ -97,7 +112,7 @@ describe('AdminDashboardPageRoute', () => {
   })
 
   it('renders one button per setup wizard', () => {
-    render(<AdminDashboardPageRoute />)
+    renderDashboard()
 
     for (const label of WIZARD_LABELS) {
       expect(
@@ -106,8 +121,8 @@ describe('AdminDashboardPageRoute', () => {
     }
   })
 
-  it('opens the Drop setup wizard modal with its steps and deep links', () => {
-    render(<AdminDashboardPageRoute />)
+  it('opens the Drop setup wizard modal with its steps and an inline activation form', () => {
+    renderDashboard()
 
     fireEvent.click(screen.getByRole('button', { name: /drop setup/i }))
 
@@ -120,17 +135,46 @@ describe('AdminDashboardPageRoute', () => {
         screen.getByRole('button', { name: new RegExp(step, 'i') }),
       ).toBeTruthy()
     }
+    // Step 1 embeds the real activation control, not just a deep link.
+    expect(screen.getByRole('button', { name: /^activate$/i })).toBeTruthy()
   })
 
-  it('deep-links a wizard step into its editor and closes on navigate', () => {
-    render(<AdminDashboardPageRoute />)
+  it('edits and persists landing copy inline from the Drop wizard', async () => {
+    window.localStorage.removeItem(LANDING_CONTENT_STORAGE_KEY)
+    renderDashboard()
+
+    fireEvent.click(screen.getByRole('button', { name: /drop setup/i }))
+    fireEvent.click(screen.getByRole('button', { name: /3\. landing copy/i }))
+
+    // The hero headline field shows the designed default as its placeholder.
+    const headline = screen.getByPlaceholderText('Forged Under Pressure')
+    fireEvent.change(headline, { target: { value: 'Struck From Iron' } })
+    fireEvent.click(screen.getByRole('button', { name: /save landing copy/i }))
+
+    // Saving writes the CMS working copy (the same blob the real editor saves).
+    await waitFor(() => {
+      const raw = window.localStorage.getItem(LANDING_CONTENT_STORAGE_KEY)
+      expect(raw).toBeTruthy()
+      const parsed = JSON.parse(raw as string) as {
+        'the-oath'?: { hero?: { headline?: string } }
+      }
+      expect(parsed['the-oath']?.hero?.headline).toBe('Struck From Iron')
+    })
+  })
+
+  it('embeds the About asset slots inline and keeps a fine-tune deep link', () => {
+    renderDashboard()
 
     fireEvent.click(screen.getByRole('button', { name: /^about page/i }))
     fireEvent.click(screen.getByRole('button', { name: /3\. assets/i }))
 
-    const assetsLink = screen.getByRole('link', { name: /open about assets/i })
-    expect(assetsLink.getAttribute('href')).toBe('/admin/assets?page=about')
+    // Real slot controls render inside the modal (About defines its slots in code).
+    expect(screen.getByText('Anvil 3D model (GLB)')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /save about assets/i })).toBeTruthy()
 
+    // The library deep link survives as a small secondary action and closes on navigate.
+    const assetsLink = screen.getByRole('link', { name: /library in assets/i })
+    expect(assetsLink.getAttribute('href')).toBe('/admin/assets?page=about')
     fireEvent.click(assetsLink)
     expect(screen.queryByRole('dialog')).toBeNull()
   })

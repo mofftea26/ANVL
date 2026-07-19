@@ -83,20 +83,23 @@ function ComingSoonLivePill() {
 }
 
 /**
- * Dense launcher: every admin surface as a small icon+label tile, grouped by
- * the sidebar's categories — the whole CMS reachable in one glance.
+ * Bento launcher: every admin surface as a small icon+label tile, grouped by
+ * the sidebar's categories. Each plate hugs its content (CSS multi-column
+ * masonry — one-item categories stay small, Content's four rows grow), so the
+ * board reads as bento cells rather than a uniform stretched grid.
  */
 function CategoryLauncher() {
   return (
     <section
       aria-label="Studio surfaces"
-      className="grid min-h-0 flex-1 content-start gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:content-stretch"
+      className="min-h-0 flex-1 gap-3 overflow-y-auto sm:columns-2 xl:columns-4 xl:overflow-visible"
     >
       {launcherGroups.map(({ category, items }) => (
         <div
           key={category}
           className={cn(
-            'relative flex min-h-0 flex-col gap-2 overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]/70 p-3',
+            'relative mb-3 break-inside-avoid overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]/70 p-3',
+            'flex flex-col gap-2',
             'shadow-[inset_0_1px_0_rgba(255,255,255,0.05),inset_0_-1px_0_rgba(0,0,0,0.35)]',
           )}
         >
@@ -108,15 +111,15 @@ function CategoryLauncher() {
           <h2 className="anvl-display px-1 text-[10px] tracking-[0.3em] text-[var(--color-text-muted)]">
             {category}
           </h2>
-          <ul className="flex min-h-0 flex-1 flex-col gap-1.5">
+          <ul className="flex flex-col gap-1.5">
             {items.map((item) => {
               const IconComponent = item.icon
               return (
-                <li key={item.href} className="min-h-0 flex-1">
+                <li key={item.href}>
                   <Link
                     to={item.href as LinkProps['to']}
                     className={cn(
-                      'focus-ring group flex h-full items-center gap-2.5 rounded-lg border border-transparent px-2 py-1.5',
+                      'focus-ring group flex items-center gap-2.5 rounded-lg border border-transparent px-2 py-1.5',
                       'transition-colors hover:border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] hover:bg-[var(--color-surface-elevated)]',
                     )}
                   >

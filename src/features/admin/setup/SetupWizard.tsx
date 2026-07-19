@@ -17,9 +17,11 @@ interface SetupWizardProps {
 }
 
 /**
- * Guided-launcher shell over the generic {@link AdminWizard}: no draft to
- * persist (each step reads live CMS state and deep-links into the real
- * editors), so "Save" becomes a plain "Done" that closes the wizard.
+ * Guided-setup shell over the generic {@link AdminWizard}: there is no wizard-
+ * level draft — every step owns its OWN working copy and per-step Save (the
+ * same `save*Async` / service writes the real editors use), so the footer
+ * "Save" becomes a plain "Done" that closes the wizard. Widened over the
+ * default wizard so slot grids and list editors fit.
  */
 export function SetupWizard({ open, onClose, title, steps }: SetupWizardProps) {
   const wizardSteps: Array<AdminWizardStep<null>> = steps.map((step) => ({
@@ -38,6 +40,7 @@ export function SetupWizard({ open, onClose, title, steps }: SetupWizardProps) {
       initial={null}
       saveLabel="Done"
       onSave={onClose}
+      className="max-w-4xl"
     />
   )
 }

@@ -41,6 +41,25 @@ describe('OathTenets', () => {
     expect(section.querySelectorAll('[data-hotspot]').length).toBeGreaterThanOrEqual(TENET_COUNT)
   })
 
+  it('places callouts on the roomy side of the point (data-side contract)', () => {
+    const tenets = structuredClone(OATH_DEFAULT_CONTENT.tenets)
+    const first = tenets.items[0]!
+    first.hotspots = [
+      { ...first.hotspots[0]!, id: 'hs-left-half', x: 20, y: 50 },
+      { ...first.hotspots[0]!, id: 'hs-right-half', x: 80, y: 50 },
+    ]
+    const { container } = render(<OathTenets tenets={tenets} />)
+
+    const leftHalf = container.querySelector('[data-hotspot="hs-left-half"]')!
+    const rightHalf = container.querySelector('[data-hotspot="hs-right-half"]')!
+    // Point in the LEFT half → card extends RIGHT (and vice versa); the line
+    // and card carry the side so the GSAP builder can set matching origins.
+    expect(leftHalf.querySelector('[data-hotspot-line]')!.getAttribute('data-side')).toBe('right')
+    expect(leftHalf.querySelector('[data-hotspot-card]')!.getAttribute('data-side')).toBe('right')
+    expect(rightHalf.querySelector('[data-hotspot-line]')!.getAttribute('data-side')).toBe('left')
+    expect(rightHalf.querySelector('[data-hotspot-card]')!.getAttribute('data-side')).toBe('left')
+  })
+
   it('is hidden below xl (desktop-only panorama)', () => {
     const { container } = render(
       <OathTenets tenets={OATH_DEFAULT_CONTENT.tenets} />,

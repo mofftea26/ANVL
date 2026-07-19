@@ -1,29 +1,57 @@
-import { SetupStepBody } from '../SetupStepParts'
+import { useState } from 'react'
+
+import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
+import {
+  readPdpContentFromStorage,
+  savePdpContentAsync,
+} from '@/features/cms/pdpContent/pdpContent.settings'
+import {
+  DEFAULT_PDP_PRODUCT_CONTENT,
+  type PdpProductContent,
+} from '@/features/cms/pdpContent/pdpContent.zod'
+import { FormField } from '@/shared/components/ui/FormField'
+import { Input } from '@/shared/components/ui/Input'
+import { Textarea } from '@/shared/components/ui/Textarea'
+import {
+  PassportEssentialsStep,
+  QrBatchStep,
+  SetupProductSelect,
+  type SetupProductStepProps,
+} from '../SetupPassportSteps'
+import { SetupSaveRow, SetupStepBody } from '../SetupStepParts'
 import { SetupWizard } from '../SetupWizard'
-import { usePassportContentCount, usePdpContentCount } from '../useSetupStatus'
+import { usePdpContentCount } from '../useSetupStatus'
+import { useSetupBlobStep } from '../useSetupBlobStep'
 
-interface StepProps {
-  onNavigate: () => void
-}
+/** Step 1 — pick the product the following steps author (shared selection). */
+function ProductPickStep({ slug, onSlugChange, onNavigate }: SetupProductStepProps) {
+  const productsQuery = useAdminProductCatalogQuery()
+  const count = productsQuery.data?.items.length ?? 0
 
-/** Step 1 — where the product catalog comes from (informational). */
-function CatalogSourceStep({ onNavigate }: StepProps) {
   return (
     <SetupStepBody
-      intro="Commerce data (names, prices, variants, stock) comes from the configured commerce adapter — Shopify when the VITE_SHOPIFY_* env vars are set, otherwise the seed/local catalog. The CMS never edits commerce data; it layers editorial content on top of it. The shop's layout, cards, and copy live in the Shop Experience editor."
-      status={{ state: 'info', label: 'Catalog source is environment-driven, not CMS-edited' }}
-      links={[{ label: 'Open Shop Experience', to: '/admin/shop' }]}
+      intro="Commerce data (names, prices, variants, stock) comes from the configured commerce adapter — Shopify when connected, otherwise the seed catalog. Pick the product to author; the next steps layer editorial content on top of it."
+      status={{
+        state: 'info',
+        label: productsQuery.isLoading
+          ? 'Loading catalog…'
+          : `${count} product${count === 1 ? '' : 's'} in the catalog`,
+      }}
+      links={[{ label: 'Shop layout & cards in Shop Experience', to: '/admin/shop' }]}
       onNavigate={onNavigate}
-    />
+    >
+      <SetupProductSelect slug={slug} onSlugChange={onSlugChange} />
+    </SetupStepBody>
   )
 }
 
-/** Step 2 — author per-product PDP editorial content. */
-function PdpContentStep({ onNavigate }: StepProps) {
+/** Step 2 — the product's PDP editorial essentials, edited inline. */
+function PdpContentStep({ slug, onSlugChange, onNavigate }: SetupProductStepProps) {
   const count = usePdpContentCount()
+
   return (
     <SetupStepBody
-      intro="Pick a product and author its detail-page editorial content — bento story, material, care, details, and per-product imagery. Products without authored content render the designed defaults."
+      intro="Author the product detail page's editorial essentials — story, material, and care. Blank fields fall back to the product's own data; the full editor adds design details and per-product imagery."
       status={{
         state: count > 0 ? 'done' : 'todo',
         label:
@@ -31,45 +59,111 @@ function PdpContentStep({ onNavigate }: StepProps) {
             ? `${count} product${count === 1 ? '' : 's'} authored`
             : 'No PDP content authored yet',
       }}
-      links={[{ label: 'Open Products', to: '/admin/products' }]}
+      links={[{ label: 'Fine-tune imagery & details in Products', to: '/admin/products' }]}
       onNavigate={onNavigate}
-    />
+    >
+      <SetupProductSelect slug={slug} onSlugChange={onSlugChange} />
+      {slug ? (
+        <PdpEssentialsForm key={slug} slug={slug} />
+      ) : (
+        <p className="text-xs text-[var(--color-text-muted)]">
+          Pick a product to author its PDP content.
+        </p>
+      )}
+    </SetupStepBody>
   )
 }
 
-/** Step 3 — author per-product passport sections. */
-function PassportContentStep({ onNavigate }: StepProps) {
-  const count = usePassportContentCount()
+function PdpEssentialsForm({ slug }: { slug: string }) {
+  const editor = useSetupBlobStep<PdpProductContent>({
+    read: () =>
+      readPdpContentFromStorage()[slug] ?? { ...DEFAULT_PDP_PRODUCT_CONTENT },
+    save: (content) =>
+      savePdpContentAsync({
+        ...readPdpContentFromStorage(),
+        // Blank care rows are an editing artifact — drop them from the blob.
+        [slug]: {
+          ...content,
+          care: content.care.map((line) => line.trim()).filter((line) => line.length > 0),
+        },
+      }),
+    successMessage: 'PDP content saved.',
+    errorFallbackMessage: 'Could not save PDP content.',
+  })
+
   return (
-    <SetupStepBody
-      intro="Each product's passport (the page a QR scan opens) has its own editorial sections — identity, piece, material, care, details, origin — authored in the passport content wizard."
-      status={{
-        state: count > 0 ? 'done' : 'todo',
-        label:
-          count > 0
-            ? `${count} product passport${count === 1 ? '' : 's'} authored`
-            : 'No passport content authored yet',
-      }}
-      links={[{ label: 'Open Passport content', to: '/admin/passports', search: { tab: 'content' } }]}
-      onNavigate={onNavigate}
-    />
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <FormField label="Story heading" labelStyle="stacked">
+          <Input
+            density="compact"
+            value={editor.value.storyHeading}
+            onChange={(e) =>
+              editor.patch((prev) => ({ ...prev, storyHeading: e.target.value }))
+            }
+          />
+        </FormField>
+        <FormField label="Material title" labelStyle="stacked">
+          <Input
+            density="compact"
+            value={editor.value.materialTitle}
+            onChange={(e) =>
+              editor.patch((prev) => ({ ...prev, materialTitle: e.target.value }))
+            }
+          />
+        </FormField>
+      </div>
+      <FormField label="Story body" labelStyle="stacked">
+        <Textarea
+          density="compact"
+          rows={3}
+          value={editor.value.storyBody}
+          onChange={(e) =>
+            editor.patch((prev) => ({ ...prev, storyBody: e.target.value }))
+          }
+        />
+      </FormField>
+      <div className="grid gap-4 md:grid-cols-2">
+        <FormField label="Material note" labelStyle="stacked">
+          <Textarea
+            density="compact"
+            rows={3}
+            value={editor.value.materialNote}
+            onChange={(e) =>
+              editor.patch((prev) => ({ ...prev, materialNote: e.target.value }))
+            }
+          />
+        </FormField>
+        <FormField label="Care" labelStyle="stacked" hint="One care instruction per line.">
+          <Textarea
+            density="compact"
+            rows={3}
+            value={editor.value.care.join('\n')}
+            onChange={(e) =>
+              editor.patch((prev) => ({
+                ...prev,
+                care: e.target.value.split('\n'),
+              }))
+            }
+          />
+        </FormField>
+      </div>
+      <SetupSaveRow
+        onSave={editor.save}
+        saving={editor.saving}
+        saved={editor.saved}
+        dirty={editor.dirty}
+        label="Save PDP content"
+      />
+    </div>
   )
 }
 
-/** Step 4 — generate the per-unit QR passports. */
-function QrPassportsStep({ onNavigate }: StepProps) {
-  return (
-    <SetupStepBody
-      intro="Generate per-unit QR passport batches for a product, track the claimed/unclaimed ledger, and print the QR sheet for production. The ledger lives in Supabase, so open the editor to see live counts."
-      status={{ state: 'info', label: 'Per-unit ledger lives in Supabase' }}
-      links={[{ label: 'Open QR codes', to: '/admin/passports', search: { tab: 'codes' } }]}
-      onNavigate={onNavigate}
-    />
-  )
-}
-
-/** Products — catalog source, PDP content, passport content, QR units. */
+/** Products — pick a product, author PDP + passport essentials, mint QR units. */
 export function ProductsSetupWizard({ open, onClose }: { open: boolean; onClose: () => void }) {
+  // Product selection is shared across the wizard's steps.
+  const [slug, setSlug] = useState('')
+
   return (
     <SetupWizard
       open={open}
@@ -78,27 +172,35 @@ export function ProductsSetupWizard({ open, onClose }: { open: boolean; onClose:
       steps={[
         {
           key: 'catalog',
-          title: 'Catalog',
-          blurb: 'Where product data comes from.',
-          render: () => <CatalogSourceStep onNavigate={onClose} />,
+          title: 'Product',
+          blurb: 'Where product data comes from — and which piece to author.',
+          render: () => (
+            <ProductPickStep slug={slug} onSlugChange={setSlug} onNavigate={onClose} />
+          ),
         },
         {
           key: 'pdp',
           title: 'PDP content',
           blurb: 'Per-product detail-page editorial.',
-          render: () => <PdpContentStep onNavigate={onClose} />,
+          render: () => (
+            <PdpContentStep slug={slug} onSlugChange={setSlug} onNavigate={onClose} />
+          ),
         },
         {
           key: 'passport-content',
           title: 'Passport content',
           blurb: 'The sections a scanned QR passport shows.',
-          render: () => <PassportContentStep onNavigate={onClose} />,
+          render: () => (
+            <PassportEssentialsStep slug={slug} onSlugChange={setSlug} onNavigate={onClose} />
+          ),
         },
         {
           key: 'qr',
           title: 'QR passports',
-          blurb: 'Per-unit batches, ledger, and print sheet.',
-          render: () => <QrPassportsStep onNavigate={onClose} />,
+          blurb: 'Per-unit batches for physical garments.',
+          render: () => (
+            <QrBatchStep slug={slug} onSlugChange={setSlug} onNavigate={onClose} />
+          ),
         },
       ]}
     />
