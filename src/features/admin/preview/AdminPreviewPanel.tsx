@@ -21,8 +21,10 @@ import { cn } from '@/shared/lib/cn'
 import {
   consumePreviewFocus,
   readPreviewDraftPayload,
+  readPreviewHover,
   subscribePreviewDraft,
   subscribePreviewFocus,
+  subscribePreviewHover,
 } from './adminPreviewStore'
 
 type PreviewDevice = 'desktop' | 'tablet' | 'mobile'
@@ -76,7 +78,18 @@ interface AdminPreviewPanelProps {
 export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
   const adminPath = useRouterState({ select: (s) => s.location.pathname })
   const [route, setRoute] = useState(() => defaultRouteForAdminPath(adminPath))
-  const [device, setDevice] = useState<PreviewDevice>('desktop')
+  // About defaults to tablet: the ≥1280px About is the 3D Forge Altar (canvas,
+  // nothing to highlight); tablet renders the normal sectioned page.
+  const [device, setDevice] = useState<PreviewDevice>(() =>
+    defaultRouteForAdminPath(adminPath) === '/about' ? 'tablet' : 'desktop',
+  )
+
+  const selectRoute = useCallback((next: string) => {
+    setRoute(next)
+    if (next === '/about') {
+      setDevice((current) => (current === 'desktop' ? 'tablet' : current))
+    }
+  }, [])
   const [reloadKey, setReloadKey] = useState(0)
   const [ready, setReady] = useState(false)
 
@@ -114,7 +127,11 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
     return () => observer.disconnect()
   }, [])
 
-  // Handshake: hello on load → storefront replies ready → seed current drafts.
+  // Handshake (either side may initiate — hydration inside the iframe finishes
+  // long after `load`, so a single hello would race the listener and be lost):
+  // the storefront announces `ready` once hydrated; we also retry `hello`
+  // until the first `ready` lands. On `ready`: reply hello (idempotent
+  // pairing), seed the current drafts, flush any pending locate.
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return
@@ -123,6 +140,7 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
       if (!message) return
       if (message.type === 'anvl-preview/ready') {
         setReady(true)
+        post({ type: 'anvl-preview/hello', v: PREVIEW_PROTOCOL_VERSION })
         sendDraft()
         const pending = consumePreviewFocus()
         if (pending) {
@@ -133,6 +151,15 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
   }, [post, sendDraft])
+
+  // Hello retry loop — stops as soon as the storefront reports ready.
+  useEffect(() => {
+    if (ready) return
+    const timer = setInterval(() => {
+      post({ type: 'anvl-preview/hello', v: PREVIEW_PROTOCOL_VERSION })
+    }, 700)
+    return () => clearInterval(timer)
+  }, [ready, post])
 
   // Debounced draft forwarding while editors type.
   useEffect(() => {
@@ -156,6 +183,21 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
       }
     })
     return () => unsubscribe()
+  }, [post])
+
+  // Inspection-style hover: mirror the hovered editor field as a live ring.
+  useEffect(() => {
+    const unsubscribe = subscribePreviewHover(() => {
+      post({
+        type: 'anvl-preview/hover',
+        v: PREVIEW_PROTOCOL_VERSION,
+        target: readPreviewHover(),
+      })
+    })
+    return () => {
+      post({ type: 'anvl-preview/hover', v: PREVIEW_PROTOCOL_VERSION, target: null })
+      unsubscribe()
+    }
   }, [post])
 
   const handleLoad = useCallback(() => {
@@ -241,7 +283,7 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
         </button>
 
         <div className="w-full">
-          <AdminFieldSelect label="Page" value={route} onChange={setRoute} options={ROUTE_OPTIONS} />
+          <AdminFieldSelect label="Page" value={route} onChange={selectRoute} options={ROUTE_OPTIONS} />
         </div>
       </header>
 

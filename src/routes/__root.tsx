@@ -17,6 +17,7 @@ import {
 } from 'react'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { AdminAuthProvider } from '@/features/admin/auth/AdminAuthProvider'
+import { AdminThemeProvider } from '@/features/admin/theme/AdminThemeProvider'
 import { SiteThemeProvider } from '@/app/providers/SiteThemeProvider'
 import { RouteAnalytics } from '@/app/providers/RouteAnalytics'
 import { AppErrorBoundary } from '@/app/components/AppErrorBoundary'
@@ -53,7 +54,11 @@ import { PageBackdrop } from '@/shared/components/layout/PageBackdrop'
 import { SiteDustGate } from '@/shared/webgl/SiteDustGate'
 import { resolvePageBackdropSrc } from '@/features/cms/assets/pageBackdrop'
 import { useComingSoonConfig } from '@/features/cms/hooks/useComingSoonConfig'
-import { PreviewDraftProvider, usePreviewDraft } from '@/features/cms/preview'
+import {
+  PreviewDraftProvider,
+  usePreviewDraft,
+  usePreviewTargetProps,
+} from '@/features/cms/preview'
 import {
   isComingSoonExemptPath,
   readComingSoonPreviewBypass,
@@ -174,6 +179,9 @@ function StorefrontLayout() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
+  // Page-level preview target — the fallback ring for editors whose changes
+  // affect the whole page (theme, fonts, editor-root hover scopes).
+  const pagePreviewTarget = usePreviewTargetProps('content-field', 'site:page')
   const isHome = pathname === '/'
   const isFullBleed = isFullBleedStorefrontPath(pathname)
   const backdropSrc =
@@ -216,6 +224,7 @@ function StorefrontLayout() {
         <main
           id="anvl-main"
           className={cn('relative z-10', getStorefrontMainClassName({ showChrome, isFullBleed }))}
+          {...pagePreviewTarget}
         >
           <AppErrorBoundary resetKey={pathname}>
             <Outlet />
@@ -288,8 +297,10 @@ function RootLayoutBody() {
   ) : null
 
   if (isAdminRoute) {
+    // The admin wears its own fixed Studio identity — never the storefront
+    // theme (that appears only inside the theme editor's scoped preview).
     return (
-      <SiteThemeProvider theme={theme} fonts={fonts} respectLocalDraft={false}>
+      <AdminThemeProvider>
         <AdminAuthProvider>
           <RouteAnalytics />
           <main>
@@ -299,7 +310,7 @@ function RootLayoutBody() {
           </main>
           {devtools}
         </AdminAuthProvider>
-      </SiteThemeProvider>
+      </AdminThemeProvider>
     )
   }
 

@@ -104,9 +104,9 @@ describe('AdminSidebar', () => {
 
 
 
-    expect(screen.getByText('ANVL Admin')).toBeInTheDocument()
+    expect(screen.getByText('ANVL Studio')).toBeInTheDocument()
 
-    expect(screen.getByText('Content studio')).toBeInTheDocument()
+    expect(screen.getByText('Forge control room')).toBeInTheDocument()
 
     expect(screen.getByRole('navigation', { name: 'Admin' })).toBeInTheDocument()
 
@@ -116,7 +116,7 @@ describe('AdminSidebar', () => {
 
     expect(dashboard).toHaveAttribute('aria-current', 'page')
 
-    expect(dashboard.className).toContain('rounded-xl')
+    expect(dashboard.className).toContain('rounded-lg')
 
     expect(dashboard.className).not.toContain('rounded-full')
 

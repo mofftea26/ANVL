@@ -53,19 +53,20 @@ function SidebarNavLink({
       aria-current={isActive ? 'page' : undefined}
       title={compact ? item.label : undefined}
       className={cn(
-        'focus-ring group relative flex items-center gap-3 rounded-xl no-underline transition-[background-color,box-shadow,color] duration-200',
+        'focus-ring group relative flex items-center gap-3 rounded-lg no-underline transition-[background-color,box-shadow,color] duration-200',
         compact ? 'justify-center px-2 py-2' : 'px-2.5 py-2',
         isActive
-          ? 'bg-[var(--color-surface-elevated)] text-[var(--color-heading)] shadow-[inset_0_0_0_1px_var(--color-line)]'
+          ? // Studio active state: an ink plate stamped on the paper rail.
+            'bg-[var(--color-heading)] text-[var(--color-bg)] shadow-[0_2px_8px_color-mix(in_srgb,var(--color-heading)_25%,transparent)]'
           : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-text)]',
       )}
     >
       <span
         className={cn(
-          'flex shrink-0 items-center justify-center rounded-lg transition-colors duration-200',
+          'flex shrink-0 items-center justify-center rounded-md transition-colors duration-200',
           compact ? 'h-9 w-9' : 'h-8 w-8',
           isActive
-            ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
+            ? 'bg-transparent text-[var(--color-bg)]'
             : 'bg-[var(--color-surface-soft)] text-[var(--color-text-muted)] group-hover:bg-[var(--color-surface-elevated)] group-hover:text-[var(--color-text)]',
         )}
       >
@@ -85,7 +86,7 @@ function SidebarNavLink({
       {isActive ? (
         <span
           aria-hidden
-          className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-[var(--color-accent)]"
+          className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-[var(--color-accent)]"
         />
       ) : null}
     </Link>
@@ -150,14 +151,14 @@ export function AdminSidebar({
             {!compact ? (
               <span className="min-w-0">
                 <span className="anvl-heading block text-[15px] font-normal leading-none tracking-wide text-[var(--color-heading)]">
-                  ANVL Admin
+                  ANVL Studio
                 </span>
-                <span className="mt-1 block text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-text-muted)]/90">
-                  Content studio
+                <span className="mt-1 block text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                  Forge control room
                 </span>
               </span>
             ) : (
-              <span className="sr-only">ANVL Admin</span>
+              <span className="sr-only">ANVL Studio</span>
             )}
           </Link>
 
@@ -201,11 +202,12 @@ export function AdminSidebar({
           .map(({ category, items }, categoryIndex) => (
             <section key={category} className="space-y-1">
               {!compact && category !== 'Dashboard' ? (
-                <div className="flex items-center gap-2 px-2 pt-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]/75">
+                <div className="flex items-center gap-2 px-2 pt-1.5">
+                  <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--color-accent)]" />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
                     {category}
                   </p>
-                  <span aria-hidden className="h-px flex-1 bg-[var(--color-line)]/50" />
+                  <span aria-hidden className="h-px flex-1 bg-[var(--color-line)]/60" />
                 </div>
               ) : compact && categoryIndex > 0 ? (
                 <div aria-hidden className="mx-1 border-t border-[var(--color-line)]/50" />

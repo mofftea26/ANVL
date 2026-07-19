@@ -60,7 +60,7 @@ describe('AdminLayout', () => {
     await user.click(screen.getByRole('button', { name: /open admin navigation/i }))
     const dialog = screen.getByRole('dialog', { name: 'Admin navigation' })
     expect(dialog).toBeInTheDocument()
-    expect(within(dialog).getByText('ANVL Admin')).toBeInTheDocument()
+    expect(within(dialog).getByText('ANVL Studio')).toBeInTheDocument()
   })
 
   it('closes the nav drawer when a sidebar link is activated', async () => {

@@ -12,6 +12,7 @@ import { AdminRangeField } from '@/features/admin/components/AdminRangeField'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
+import { usePreviewHoverProps } from '@/features/admin/preview/usePreviewHoverProps'
 import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import {
   readShopConfigFromStorage,
@@ -58,9 +59,21 @@ function useStoredShopConfig(): ShopConfig {
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+  previewId,
+}: {
+  title: string
+  children: React.ReactNode
+  /** Storefront element this section's fields change — rung on hover/focus. */
+  previewId?: string
+}) {
+  const hoverProps = usePreviewHoverProps(
+    previewId ? { kind: 'content-field', id: previewId } : null,
+  )
   return (
-    <section className="rounded-xl border border-[var(--color-line)] p-5">
+    <section className="rounded-xl border border-[var(--color-line)] p-5" {...hoverProps}>
       <h2 className="anvl-heading mb-4 text-base font-normal">{title}</h2>
       {children}
     </section>
@@ -138,7 +151,7 @@ export function ShopExperienceEditor() {
   return (
     <AdminWorkspace asideLabel="Shop settings help" aside={rail}>
       <div className="space-y-6" data-testid="shop-experience-editor">
-        <Section title="Introduction">
+        <Section title="Introduction" previewId="shop:hero">
           <div className="space-y-4">
             <Checkbox
               label="Show the shop hero"
@@ -161,7 +174,7 @@ export function ShopExperienceEditor() {
           </div>
         </Section>
 
-        <Section title="Grid & layout">
+        <Section title="Grid & layout" previewId="shop:grid">
           <div className="grid gap-4 sm:grid-cols-2">
             <AdminFieldSelect
               label="Grid density"
@@ -187,7 +200,7 @@ export function ShopExperienceEditor() {
           </div>
         </Section>
 
-        <Section title="Product cards">
+        <Section title="Product cards" previewId="shop:grid">
           <div className="grid gap-4 sm:grid-cols-2">
             <AdminFieldSelect
               label="Card style"
@@ -229,7 +242,7 @@ export function ShopExperienceEditor() {
             />
             <AdminRangeField label="Card radius" value={config.cardRadius} min={0} max={32} step={1} suffix="px" onChange={(n) => set('cardRadius', n)} />
             <AdminRangeField
-              label="Animation speed ×"
+              label="Animation speed Ã—"
               value={config.animationDurationMultiplier}
               min={0.5}
               max={2}
@@ -251,7 +264,7 @@ export function ShopExperienceEditor() {
           </div>
         </Section>
 
-        <Section title="What cards show">
+        <Section title="What cards show" previewId="shop:grid">
           <div className="grid gap-2 sm:grid-cols-2">
             <Checkbox label="Quick add" checked={config.quickAddEnabled} onChange={(e) => set('quickAddEnabled', e.target.checked)} />
             <Checkbox label="Quick view" checked={config.quickViewEnabled} onChange={(e) => set('quickViewEnabled', e.target.checked)} />
@@ -264,7 +277,7 @@ export function ShopExperienceEditor() {
           </div>
         </Section>
 
-        <Section title="Sorting">
+        <Section title="Sorting" previewId="shop:toolbar">
           <AdminFieldSelect
             label="Default sort"
             value={config.defaultSort}
@@ -284,7 +297,7 @@ export function ShopExperienceEditor() {
           </div>
         </Section>
 
-        <Section title="Filters">
+        <Section title="Filters" previewId="shop:toolbar">
           <Checkbox
             label="Sticky filter rail"
             description="Keeps the desktop filter rail pinned while scrolling."
@@ -306,7 +319,7 @@ export function ShopExperienceEditor() {
           </div>
         </Section>
 
-        <Section title="State copy">
+        <Section title="State copy" previewId="shop:grid">
           <div className="space-y-4">
             <Checkbox
               label="Show editorial banner above the grid"

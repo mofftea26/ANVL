@@ -53,7 +53,9 @@ function buildCspReportOnly(isDev: boolean): string {
     `connect-src 'self' blob: ${SUPABASE_ORIGIN} ${SHOPIFY_API_ORIGIN} ${SHOPIFY_CDN_ORIGIN}`,
     `media-src 'self' ${SUPABASE_ORIGIN}`,
     `worker-src 'self' blob:`,
-    `frame-ancestors 'none'`,
+    // 'self' (not 'none'): the admin live-preview embeds the storefront in a
+    // same-origin iframe. Third-party framing stays blocked.
+    `frame-ancestors 'self'`,
     `base-uri 'self'`,
     `form-action 'self'`,
     // Collected by src/routes/api/csp-report.ts — server-console logging only
@@ -107,7 +109,9 @@ const securityHeadersMiddleware = createMiddleware().server(
 
     headers.set('X-Content-Type-Options', 'nosniff')
     headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-    headers.set('X-Frame-Options', 'DENY')
+    // SAMEORIGIN (not DENY): the admin live-preview iframes the storefront on
+    // our own origin; cross-site framing stays blocked.
+    headers.set('X-Frame-Options', 'SAMEORIGIN')
     // Centralized cache policy for everything this Worker serves. Hashed static
     // assets are handled separately by Workers Assets + `public/_headers`.
     headers.set(

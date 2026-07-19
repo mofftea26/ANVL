@@ -13,11 +13,17 @@ import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWorkspaceStatusPanel'
 import { AdminSetupChecklist } from '@/features/admin/components/AdminSetupChecklist'
-import { adminNavItems } from '@/features/admin/components/adminNav'
+import { adminNavCategories } from '@/features/admin/components/adminNav'
 import { LandingPagePickerCard } from '@/features/admin/landing-picker/LandingPagePickerCard'
 import { Badge } from '@/shared/components/ui/Badge'
 
-const dashboardCards = adminNavItems.filter((i) => i.href !== '/admin')
+/** Cards mirror the sidebar's IA — grouped by category, dashboard itself excluded. */
+const dashboardGroups = adminNavCategories()
+  .map(({ category, items }) => ({
+    category,
+    items: items.filter((i) => i.href !== '/admin'),
+  }))
+  .filter((group) => group.items.length > 0)
 
 export function AdminDashboardPageRoute() {
   return <DashboardContent />
@@ -78,25 +84,35 @@ function DashboardContent() {
           <ComingSoonLiveBanner />
           <LandingPagePickerCard />
           <AdminSetupChecklist />
-          <div className="grid items-stretch gap-6 sm:grid-cols-2 2xl:grid-cols-3">
-            {dashboardCards.map((card) => (
-              <AdminCard
-                key={card.href}
-                className="min-h-[15.5rem] sm:min-h-[16rem]"
-                title={card.label}
-                description={card.description}
-              >
-                <div className="mt-auto flex w-full flex-wrap items-end justify-between gap-4 pt-0.5">
-                  <Badge tone="accent" className="px-3 py-1.5 tracking-[0.22em]">
-                    {card.badge}
-                  </Badge>
-                  <AdminForgedLink to={card.href as LinkProps['to']}>
-                    <span className="relative z-10">{card.cta}</span>
-                  </AdminForgedLink>
-                </div>
-              </AdminCard>
-            ))}
-          </div>
+          {dashboardGroups.map(({ category, items }) => (
+            <section key={category} aria-label={category} className="space-y-3">
+              <div className="flex items-center gap-3">
+                <h2 className="anvl-display text-[11px] tracking-[0.3em] text-[var(--color-text-muted)]">
+                  {category}
+                </h2>
+                <span aria-hidden className="h-px flex-1 bg-[var(--color-line)]/60" />
+              </div>
+              <div className="grid items-stretch gap-6 sm:grid-cols-2 2xl:grid-cols-3">
+                {items.map((card) => (
+                  <AdminCard
+                    key={card.href}
+                    className="min-h-[13rem]"
+                    title={card.label}
+                    description={card.description}
+                  >
+                    <div className="mt-auto flex w-full flex-wrap items-end justify-between gap-4 pt-0.5">
+                      <Badge tone="accent" className="px-3 py-1.5 tracking-[0.22em]">
+                        {card.badge}
+                      </Badge>
+                      <AdminForgedLink to={card.href as LinkProps['to']}>
+                        <span className="relative z-10">{card.cta}</span>
+                      </AdminForgedLink>
+                    </div>
+                  </AdminCard>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       </AdminWorkspace>
     </AdminLayout>

@@ -12,6 +12,7 @@ import { ADMIN_STORAGE_KEYS } from '@/features/admin/storageKeys'
 import { Drawer } from '@/shared/components/ui/Drawer'
 import { cn } from '@/shared/lib/cn'
 
+import { AdminPreviewOpenContext } from './AdminShellContext'
 import { AdminSidebar } from './AdminSidebar'
 import { AdminTopbar } from './AdminTopbar'
 
@@ -84,6 +85,7 @@ export function AdminShell({
   const isWorkspace = layout === 'workspace'
 
   return (
+    <AdminPreviewOpenContext.Provider value={previewOpen}>
     <div className="flex h-full min-h-0 min-w-0">
       <div
         className={cn(
@@ -98,7 +100,18 @@ export function AdminShell({
         />
       </div>
 
-      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Drafting-table grid — the Studio's paper texture. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              'linear-gradient(color-mix(in srgb, var(--color-line) 42%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--color-line) 42%, transparent) 1px, transparent 1px)',
+            backgroundSize: '36px 36px',
+          }}
+        />
+
         <AdminTopbar
           title={title}
           description={description}
@@ -107,7 +120,7 @@ export function AdminShell({
           onTogglePreview={() => setPreviewOpen((open) => !open)}
         />
 
-        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
           <main
             className={cn(
               'min-h-0 min-w-0 flex-1 overflow-hidden',
@@ -150,5 +163,6 @@ export function AdminShell({
         />
       </Drawer>
     </div>
+    </AdminPreviewOpenContext.Provider>
   )
 }

@@ -3,6 +3,8 @@ import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { matchesMediaKind } from '@/features/admin/media/filterMediaLibraryItems'
 import { hasDraggedMedia, readDraggedMediaId } from '@/features/admin/media/mediaDrag'
+import { setPreviewHover } from '@/features/admin/preview/adminPreviewStore'
+import type { PreviewTarget } from '@/features/cms/preview'
 import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
 import type { AssetSlotDefinition, AssetSlotKind } from '@/features/landingPages/assetSlots'
 import { cn } from '@/shared/lib/cn'
@@ -30,6 +32,31 @@ function slotMediaKind(kind: AssetSlotKind): MediaPickerKind {
   if (kind === 'svg') return 'image'
   if (kind === 'image' || kind === 'video' || kind === 'model') return kind
   return 'any'
+}
+
+/**
+ * Maps a slot to the storefront element the live preview can ring on hover —
+ * scene-level (the same targets the content editors use). Slots without a
+ * mapped scene (general textures, GLBs, SEO images) return null.
+ */
+function slotPreviewTarget(scope: string, slotKey: string): PreviewTarget | null {
+  const key = slotKey.toLowerCase()
+  if (scope === 'about') {
+    if (key.includes('hero') || key.includes('forge')) {
+      return { kind: 'asset-slot', id: 'about:hero' }
+    }
+    return null
+  }
+  if (scope === 'the-oath') {
+    if (key.includes('hero') || key === 'droplogo' || key === 'crestsvg') {
+      return { kind: 'asset-slot', id: 'the-oath:hero' }
+    }
+    if (key.includes('manifesto')) return { kind: 'asset-slot', id: 'the-oath:manifesto' }
+    if (key.startsWith('product')) return { kind: 'asset-slot', id: 'the-oath:products' }
+    if (key.includes('tenet')) return { kind: 'asset-slot', id: 'the-oath:tenets' }
+    if (key.includes('finale')) return { kind: 'asset-slot', id: 'the-oath:finale' }
+  }
+  return null
 }
 
 export interface AssetSlotAssignmentPanelProps {
@@ -107,11 +134,25 @@ export function AssetSlotAssignmentPanel({
 
                   const isFocused = focusSlotKey === slot.key
                   const acceptsDrop = slot.kind !== 'select'
+                  const hoverTarget = slotPreviewTarget(scope, slot.key)
 
                   return (
                   <div
                     key={slot.key}
                     ref={isFocused ? focusRef : undefined}
+                    onMouseOver={
+                      hoverTarget
+                        ? (e) => {
+                            e.stopPropagation()
+                            setPreviewHover(hoverTarget)
+                          }
+                        : undefined
+                    }
+                    onMouseLeave={hoverTarget ? () => setPreviewHover(null) : undefined}
+                    onFocusCapture={
+                      hoverTarget ? () => setPreviewHover(hoverTarget) : undefined
+                    }
+                    onBlurCapture={hoverTarget ? () => setPreviewHover(null) : undefined}
                     onDragOver={
                       acceptsDrop
                         ? (e) => {

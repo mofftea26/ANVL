@@ -6,6 +6,7 @@ import { useFieldArray, useWatch } from 'react-hook-form'
 import { Button } from '@/shared/components/ui/Button'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import { AdminPreviewLocateButton } from '@/features/admin/preview/AdminPreviewLocateButton'
+import { setPreviewHover } from '@/features/admin/preview/adminPreviewStore'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { Textarea } from '@/shared/components/ui/Textarea'
@@ -105,6 +106,15 @@ export function AboutOrbsFields({
           <fieldset
             key={field.id}
             {...sortable.getItemProps(i)}
+            onMouseOver={(e) => {
+              e.stopPropagation()
+              setPreviewHover({ kind: 'content-field', id: `about:orb-${i + 1}` })
+            }}
+            onMouseLeave={() => setPreviewHover(null)}
+            onFocusCapture={() =>
+              setPreviewHover({ kind: 'content-field', id: `about:orb-${i + 1}` })
+            }
+            onBlurCapture={() => setPreviewHover(null)}
             className="rounded-lg border border-[var(--color-line)] p-4 transition-shadow data-[drag-over]:shadow-[0_0_0_2px_var(--color-accent)] sm:col-span-2"
           >
             <legend className="anvl-display inline-flex items-center gap-2 px-1 text-[10px] tracking-[0.28em] text-[var(--color-highlight-bright)]">

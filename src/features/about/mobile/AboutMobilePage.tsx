@@ -15,10 +15,20 @@ import { AboutMarquee } from '../components/AboutMarquee'
  * sections on mobile. Renders whichever fields the orb carries (orbs are
  * free-form CMS sections) with the orb's own color as the section accent.
  */
-function OrbSection({ orb, image }: { orb: AboutResolvedOrb; image?: string }) {
+function OrbSection({
+  orb,
+  image,
+  index,
+}: {
+  orb: AboutResolvedOrb
+  image?: string
+  index: number
+}) {
   const anchorId = `about-orb-${orb.id}`
   useHighlightOnArrival(anchorId)
-  const previewTarget = usePreviewTargetProps('content-field', `about:${orb.id}`)
+  // Index-based target — matches the admin orbs editor, which only knows
+  // positions (resolved ids are semantic for the designed defaults).
+  const previewTarget = usePreviewTargetProps('content-field', `about:orb-${index + 1}`)
 
   return (
     <section
@@ -170,6 +180,7 @@ export function AboutMobilePage({
   assets: AboutPageAssets
 }) {
   const heroPreviewTarget = usePreviewTargetProps('content-field', 'about:hero')
+  const marqueePreviewTarget = usePreviewTargetProps('content-field', 'about:marquee')
 
   return (
     <div className="relative">
@@ -241,11 +252,13 @@ export function AboutMobilePage({
       </section>
 
       {/* The orbs — one section each. */}
-      {content.orbs.map((orb) => (
-        <OrbSection key={orb.id} orb={orb} image={orbImage(orb, assets)} />
+      {content.orbs.map((orb, i) => (
+        <OrbSection key={orb.id} orb={orb} image={orbImage(orb, assets)} index={i} />
       ))}
 
-      <AboutMarquee text={content.marquee.text} />
+      <div {...marqueePreviewTarget}>
+        <AboutMarquee text={content.marquee.text} />
+      </div>
 
       {/* Closing brand block. */}
       <section className="py-16 text-center md:py-20">

@@ -1,4 +1,5 @@
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
+import { AdminPreviewHoverScope } from '@/features/admin/preview/AdminPreviewHoverScope'
 import { ShopExperienceEditor } from '@/features/admin/shop-experience/ShopExperienceEditor'
 
 export function AdminShopPageRoute() {
@@ -8,7 +9,9 @@ export function AdminShopPageRoute() {
       description="Layout, behavior, and copy for the storefront shop."
       layout="workspace"
     >
-      <ShopExperienceEditor />
+      <AdminPreviewHoverScope target={{ kind: 'content-field', id: 'shop:grid' }}>
+        <ShopExperienceEditor />
+      </AdminPreviewHoverScope>
     </AdminLayout>
   )
 }

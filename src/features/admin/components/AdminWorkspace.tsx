@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useAdminPreviewOpen } from '@/features/admin/components/AdminShellContext'
 import { cn } from '@/shared/lib/cn'
 
 interface AdminWorkspaceProps {
@@ -12,6 +13,12 @@ interface AdminWorkspaceProps {
   aside?: ReactNode
   /** Accessible label for the rail landmark (defaults to "Workspace context"). */
   asideLabel?: string
+  /**
+   * What the rail holds. `tips` (default) — help/context panels, hidden while
+   * the live-preview panel is open so the preview gets the width. `tools` —
+   * functional controls (e.g. the Assets slot panel) that must stay.
+   */
+  asideKind?: 'tips' | 'tools'
   className?: string
   primaryClassName?: string
   asideClassName?: string
@@ -31,11 +38,15 @@ export function AdminWorkspace({
   children,
   aside,
   asideLabel = 'Workspace context',
+  asideKind = 'tips',
   className,
   primaryClassName,
   asideClassName,
 }: AdminWorkspaceProps) {
-  if (!aside) {
+  const previewOpen = useAdminPreviewOpen()
+  const hideAside = asideKind === 'tips' && previewOpen
+
+  if (!aside || hideAside) {
     return (
       <div className={cn('min-w-0', className)} data-testid="admin-workspace">
         {children}

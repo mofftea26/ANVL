@@ -20,6 +20,10 @@ The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing p
 
 Removed from CMS: website layout, SEO, drop-builder, campaigns, lookbook, global brand.
 
+## The ANVL Studio identity (admin's own design)
+
+The CMS does **not** wear the storefront theme. `/admin/*` applies a fixed, code-owned "**ANVL Studio**" identity (`src/features/admin/theme/adminStudioTheme.ts` + `AdminThemeProvider` in the root layout's admin branch): a dark graphite "forge control room" — warmer and one step lighter than the storefront's near-black (`background #15171A`), bone text, molten-copper actions (`--color-accent #D96C2C`), ember-bronze highlight, drafting-grid texture behind the workspace, plate-style active nav states, and a copper-hairline command bar. Built through `themeConfigToCssVars` (the same derivation the storefront uses) so every shared component/portal re-skins with zero per-component work; navigating back to the storefront remounts `SiteThemeProvider`, which rewrites the same var vocabulary. The storefront palette appears inside the admin only in the theme editor's scoped preview.
+
 ## Admin shell + IA (2026-07-18 rework)
 
 - **Persistent categorized sidebar** ≥1024px (collapsible to an icon rail; preference in `anvl.adminSidebar.v1`), drawer below `lg`. Categories — Dashboard · Design (theme, fonts) · Content (landing, about, story, coming-soon) · Commerce (shop, products) · Passports · Gamification · Media (assets) · Settings — are **nav-only**: `/admin/*` URLs are flat and unchanged. `adminNav.ts` is the single IA source (sidebar, breadcrumbs, dashboard cards all derive from it).
@@ -33,9 +37,12 @@ The topbar **Preview** toggle docks a panel embedding the REAL storefront in a s
 Protocol (v1, Zod-validated, `src/features/cms/preview/previewBridge.types.ts`):
 
 ```
-admin → iframe   anvl-preview/hello · anvl-preview/draft { payload } · anvl-preview/focus { target }
+admin → iframe   anvl-preview/hello · anvl-preview/draft { payload } · anvl-preview/focus { target } · anvl-preview/hover { target|null }
 iframe → admin   anvl-preview/ready · anvl-preview/located { target, found }
 ```
+
+- **Handshake is bidirectional** (hydration inside the iframe finishes long after `load`, so a single parent `hello` would be lost): the storefront announces `ready` once hydrated, the admin replies `hello` and also retries hello until the first `ready`. Requires same-origin framing — `X-Frame-Options: SAMEORIGIN` + `frame-ancestors 'self'` in `src/start.ts` (`DENY`/`'none'` would block the preview entirely; third-party framing stays blocked).
+- **Inspection-style hover** (`hover`): while the mouse/focus is on an editor field/section, the preview rings the matching storefront element (persistent ring, cleared on `target: null`) — wired via `usePreviewHoverProps` on `ContentSection`s, About orb fieldsets, and asset-slot panel rows (slot→scene mapping). Locate (`focus`) keeps the scroll-and-flash behavior. The `data-anvl-preview-target` attr carries the id only (kind is admin-side metadata); About orb targets are index-based (`about:orb-N`).
 
 - `payload` = the editors' UNSAVED in-memory working copies, keyed by the persisted slices (`themeLibrary`, `fontLibrary`, `assetConfig`, `landingContent`, `shopConfig`, `pdpContent`, `comingSoon`); each slice is re-parsed with its existing `parse*` on receipt. Editors push via `usePushPreviewDraft(field, config)` (debounced; draft dropped on unmount).
 - Storefront activation is **SSR-safe and visitor-safe**: `PreviewDraftProvider` (mounted once in `__root.tsx`) stays `null` on the server and first paint, and activates only when the query param is present AND the page runs inside an iframe AND a `hello` arrives from the **same origin** (re-checked per message). Consumers (`SiteThemeProvider`, home/about/PDP routes, `useShopConfig`, `useComingSoonConfig`) prefer a present draft slice, else published data.

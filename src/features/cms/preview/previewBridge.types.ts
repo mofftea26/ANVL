@@ -71,12 +71,19 @@ const adminMessageEnvelopeSchema = z.discriminatedUnion('type', [
     v: z.number(),
     target: previewTargetSchema,
   }),
+  z.object({
+    type: z.literal('anvl-preview/hover'),
+    v: z.number(),
+    target: previewTargetSchema.nullable(),
+  }),
 ])
 
 export type AdminPreviewMessage =
   | { type: 'anvl-preview/hello'; v: number }
   | { type: 'anvl-preview/draft'; v: number; payload: PreviewDraftPayload }
   | { type: 'anvl-preview/focus'; v: number; target: PreviewTarget }
+  /** Inspection-style highlight while an editor field is hovered; null clears. */
+  | { type: 'anvl-preview/hover'; v: number; target: PreviewTarget | null }
 
 export type StorefrontPreviewMessage =
   | { type: 'anvl-preview/ready'; v: number; path: string }

@@ -1,4 +1,5 @@
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
+import { AdminPreviewHoverScope } from '@/features/admin/preview/AdminPreviewHoverScope'
 import { SiteThemeEditor } from '@/features/admin/site-theme/SiteThemeEditor'
 
 export function AdminThemePageRoute() {
@@ -8,7 +9,10 @@ export function AdminThemePageRoute() {
       description="Site-wide palette and theme mode."
       layout="workspace"
     >
-      <SiteThemeEditor />
+      {/* Theme edits repaint the whole page — hover anywhere rings the page. */}
+      <AdminPreviewHoverScope target={{ kind: 'content-field', id: 'site:page' }}>
+        <SiteThemeEditor />
+      </AdminPreviewHoverScope>
     </AdminLayout>
   )
 }

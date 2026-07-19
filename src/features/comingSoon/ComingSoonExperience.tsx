@@ -1,6 +1,7 @@
 import { useMemo, type CSSProperties } from 'react'
 import type { ComingSoonConfig } from '@/features/cms/comingSoon/comingSoon.zod'
 import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
+import { usePreviewTargetProps } from '@/features/cms/preview'
 import { AnvlCrest } from '@/shared/assets/brand/AnvlCrest'
 import { AnvlWordmark } from '@/shared/assets/brand/AnvlWordmark'
 import { resolveComingSoonContent } from './content/resolveComingSoonContent'
@@ -52,6 +53,7 @@ export function ComingSoonExperience({
     [config, mediaIndex],
   )
   const scopeRef = useComingSoonEntrance()
+  const previewTarget = usePreviewTargetProps('content-field', 'coming-soon:page')
 
   const accentStyle = {
     '--cs-accent': ACCENT_BY_VARIANT[content.themeVariant],
@@ -66,6 +68,7 @@ export function ComingSoonExperience({
       ref={scopeRef}
       style={accentStyle}
       className="cs-anim-pending fixed inset-0 z-[80] overflow-hidden bg-[var(--color-bg)] text-[color:var(--color-text)]"
+      {...previewTarget}
     >
       {/* No-JS fallback: the entrance animation can never remove
           `.cs-anim-pending`, so force the pre-hidden copy back to visible. */}

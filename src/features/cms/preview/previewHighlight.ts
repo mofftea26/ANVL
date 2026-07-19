@@ -2,8 +2,13 @@ import type { PreviewTarget } from './previewBridge.types'
 
 export const PREVIEW_TARGET_ATTR = 'data-anvl-preview-target'
 
+/**
+ * The DOM attr carries only the id — `kind` is admin-side metadata. One
+ * element can then be rung by both its asset-slot and content-field editors
+ * (e.g. the About hero's image slot and its copy fields share `about:hero`).
+ */
 export function previewTargetValue(target: PreviewTarget): string {
-  return `${target.kind}:${target.id}`
+  return target.id
 }
 
 const RING_CLASS = 'anvl-preview-ring'
@@ -71,5 +76,31 @@ export function highlightPreviewTarget(target: PreviewTarget): boolean {
   el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' })
   el.classList.add(RING_CLASS)
   ringTimer = setTimeout(() => el.classList.remove(RING_CLASS), RING_DURATION_MS)
+  return true
+}
+
+let hoverEl: HTMLElement | null = null
+
+/**
+ * Inspection-style hover highlight: ring stays on while the admin hovers the
+ * matching editor field, clears on hover-out (`target: null`). Scrolls the
+ * element into view instantly (a small preview viewport rarely shows it
+ * otherwise) — like hovering a node in browser devtools.
+ */
+export function setPreviewHoverTarget(target: PreviewTarget | null): boolean {
+  if (hoverEl) {
+    hoverEl.classList.remove(RING_CLASS)
+    hoverEl = null
+  }
+  if (!target) return true
+
+  const el = findTargetElement(target)
+  if (!el) return false
+
+  ensureRingStyles()
+  if (ringTimer) clearTimeout(ringTimer)
+  el.scrollIntoView({ behavior: 'auto', block: 'center' })
+  el.classList.add(RING_CLASS)
+  hoverEl = el
   return true
 }

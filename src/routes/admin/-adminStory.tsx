@@ -1,4 +1,5 @@
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
+import { AdminPreviewHoverScope } from '@/features/admin/preview/AdminPreviewHoverScope'
 import { StoryEditor } from '@/features/admin/story/StoryEditor'
 
 export function AdminStoryPageRoute() {
@@ -8,7 +9,9 @@ export function AdminStoryPageRoute() {
       description="Author the saga — chapters (drops), acts, and the army cast."
       layout="workspace"
     >
-      <StoryEditor />
+      <AdminPreviewHoverScope target={{ kind: 'content-field', id: 'site:page' }}>
+        <StoryEditor />
+      </AdminPreviewHoverScope>
     </AdminLayout>
   )
 }

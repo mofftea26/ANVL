@@ -14,9 +14,11 @@ import type {
  */
 let payload: PreviewDraftPayload = {}
 let pendingFocus: PreviewTarget | null = null
+let hoverTarget: PreviewTarget | null = null
 
 const draftListeners = new Set<() => void>()
 const focusListeners = new Set<() => void>()
+const hoverListeners = new Set<() => void>()
 
 function emit(listeners: Set<() => void>) {
   for (const listener of listeners) listener()
@@ -66,4 +68,33 @@ export function hasPendingPreviewFocus(): boolean {
 export function subscribePreviewFocus(listener: () => void): () => void {
   focusListeners.add(listener)
   return () => focusListeners.delete(listener)
+}
+
+/**
+ * Inspection-style hover: editors report which field the mouse/focus is on
+ * (null on leave); the open preview panel mirrors it as a live highlight.
+ * Unlike focus requests, hovering never opens the panel. Same-target calls
+ * are dropped (page-level hover scopes re-report on every mouseover).
+ */
+export function setPreviewHover(target: PreviewTarget | null): void {
+  if (
+    (target === null && hoverTarget === null) ||
+    (target !== null &&
+      hoverTarget !== null &&
+      target.kind === hoverTarget.kind &&
+      target.id === hoverTarget.id)
+  ) {
+    return
+  }
+  hoverTarget = target
+  emit(hoverListeners)
+}
+
+export function readPreviewHover(): PreviewTarget | null {
+  return hoverTarget
+}
+
+export function subscribePreviewHover(listener: () => void): () => void {
+  hoverListeners.add(listener)
+  return () => hoverListeners.delete(listener)
 }

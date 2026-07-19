@@ -50,8 +50,10 @@ export function AdminTopbar({
   return (
     <header
       className={cn(
-        'z-30 shrink-0 border-b border-[var(--color-line)]/90',
-        'bg-[var(--color-bg)]/95 backdrop-blur-md supports-[backdrop-filter]:bg-[var(--color-bg)]/88',
+        'relative z-30 shrink-0',
+        'bg-[var(--color-surface)]/95 backdrop-blur-md supports-[backdrop-filter]:bg-[var(--color-surface)]/88',
+        // Studio command bar: a molten-copper hairline instead of a plain border.
+        'after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-[linear-gradient(90deg,var(--color-accent)_0%,color-mix(in_srgb,var(--color-accent)_35%,transparent)_45%,var(--color-line)_100%)]',
       )}
     >
       <div className="flex min-h-[3.5rem] w-full items-center gap-2.5 px-4 sm:px-5 lg:px-6">

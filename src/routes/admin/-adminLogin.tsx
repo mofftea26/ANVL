@@ -46,7 +46,7 @@ export function AdminLoginPageRoute() {
         toast.error(result.error)
         return
       }
-      toast.success('Signed in to ANVL Admin.')
+      toast.success('Signed in to ANVL Studio.')
       window.location.assign('/admin')
     } finally {
       setSigningIn(false)
@@ -64,7 +64,7 @@ export function AdminLoginPageRoute() {
             />
             <div>
               <p className="anvl-micro text-[10px] text-[var(--color-text-muted)]">
-                ANVL Admin
+                ANVL Studio
               </p>
               <h1 className="anvl-heading text-2xl font-normal leading-tight">
                 Sign in

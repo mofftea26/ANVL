@@ -9,6 +9,7 @@ import {
   type ColorwaySwatch,
   type ShopUrlSearch,
 } from '@/features/products/shop/shopUrlSearch'
+import { usePreviewTargetProps } from '@/features/cms/preview'
 import { useShopConfig } from '@/features/products/shop/hooks/useShopConfig'
 import { useShopFilters } from '@/features/products/shop/hooks/useShopFilters'
 import { ShopIntro } from '@/features/products/shop/ShopIntro'
@@ -75,6 +76,11 @@ export function ShopPage({
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null)
 
+  // Admin live-preview rings: shop editor fields highlight their surface.
+  const heroPreviewTarget = usePreviewTargetProps('content-field', 'shop:hero')
+  const toolbarPreviewTarget = usePreviewTargetProps('content-field', 'shop:toolbar')
+  const gridPreviewTarget = usePreviewTargetProps('content-field', 'shop:grid')
+
   const effectiveSort = search.sort ?? config.defaultSort
 
   const filtered = useMemo(
@@ -101,20 +107,24 @@ export function ShopPage({
 
   return (
     <>
-      <ShopIntro config={config} heroBg={heroBg} count={items.length} />
+      <div {...heroPreviewTarget}>
+        <ShopIntro config={config} heroBg={heroBg} count={items.length} />
+      </div>
 
       <Section className="pt-0">
         <Container className="pb-[var(--anvl-section-py,4rem)]">
-          <ShopToolbar
-            count={count}
-            query={draftQuery}
-            onQueryChange={setDraftQuery}
-            sort={effectiveSort}
-            enabledSorts={config.enabledSortOptions}
-            onSortChange={(next) => patchSearch({ sort: next })}
-            activeFilterCount={activeFilterCount}
-            onOpenFilters={() => setFiltersOpen(true)}
-          />
+          <div {...toolbarPreviewTarget}>
+            <ShopToolbar
+              count={count}
+              query={draftQuery}
+              onQueryChange={setDraftQuery}
+              sort={effectiveSort}
+              enabledSorts={config.enabledSortOptions}
+              onSortChange={(next) => patchSearch({ sort: next })}
+              activeFilterCount={activeFilterCount}
+              onOpenFilters={() => setFiltersOpen(true)}
+            />
+          </div>
 
           <ShopResultAnnouncement count={count} />
 
@@ -140,7 +150,7 @@ export function ShopPage({
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
             <ShopFilterRail sticky={config.stickyFilters} {...panelProps} />
 
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1" {...gridPreviewTarget}>
               {catalogEmpty ? (
                 <ShopEmptyState
                   title={config.emptyState.title}

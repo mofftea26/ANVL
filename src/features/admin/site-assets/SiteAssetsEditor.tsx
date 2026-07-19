@@ -211,7 +211,11 @@ export function SiteAssetsEditor({
   )
 
   return (
-    <AdminWorkspace asideLabel="Asset slot assignments" aside={slotAssignmentRail}>
+    <AdminWorkspace
+      asideLabel="Asset slot assignments"
+      aside={slotAssignmentRail}
+      asideKind="tools"
+    >
       <div data-testid="site-assets-editor">
         <MediaLibraryPage assignedIds={assignedIds} initialSearch={initialSearch} />
       </div>
