@@ -4,11 +4,7 @@ import { AdminPdpContentEditor } from '@/features/admin/products-content/AdminPd
 
 export function AdminProductsPageRoute() {
   return (
-    <AdminLayout
-      title="Products"
-      description="Per-product detail-page content and editorial assets."
-      layout="workspace"
-    >
+    <AdminLayout layout="workspace">
       <AdminPreviewHoverScope target={{ kind: 'content-field', id: 'site:page' }}>
         <AdminPdpContentEditor />
       </AdminPreviewHoverScope>

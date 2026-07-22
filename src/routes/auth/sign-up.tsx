@@ -55,7 +55,7 @@ function SignUpPage() {
     if (supabaseAuth) {
       setSupaPending(true)
       const fullName = `${values.firstName} ${values.lastName}`.trim()
-      const res = await signUpStorefront(values.email, values.password, fullName)
+      const res = await signUpStorefront(values.email, values.password, fullName, redirect)
       if (res.ok) {
         if (res.needsConfirmation) {
           window.location.assign(`/auth/verify-email?email=${encodeURIComponent(values.email)}`)
@@ -104,7 +104,7 @@ function SignUpPage() {
       title="Create account"
       subtitle="Optional — you can still check out as a guest."
     >
-      <SocialAuthButtons verb="Sign up with" />
+      <SocialAuthButtons verb="Sign up with" redirect={redirect} />
       <form className="space-y-4" onSubmit={onSubmit} noValidate>
         <FormField label="First name" error={form.formState.errors.firstName?.message} htmlFor="su-first">
           <Input id="su-first" autoComplete="given-name" {...form.register('firstName')} />

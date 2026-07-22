@@ -36,9 +36,24 @@ import {
   useDropSlotAssignedCount,
   useHasLandingContent,
 } from '../useSetupStatus'
-import { useSetupBlobStep } from '../useSetupBlobStep'
+import { setupPreviewBinding, useSetupBlobStep } from '../useSetupBlobStep'
 
 const OATH_KEY = 'the-oath'
+
+/** Unsaved slot assignments → live preview (identity — same blob shape). */
+const dropAssetPreviewBinding = setupPreviewBinding(
+  'assetConfig',
+  (value: ReturnType<typeof readAssetConfigFromStorage>) => value,
+)
+
+/** Unsaved Oath copy → live preview: envelope with the oath slice replaced. */
+const oathCopyPreviewBinding = setupPreviewBinding(
+  'landingContent',
+  (values: OathContentFormValues) => ({
+    ...readLandingContentFromStorage(),
+    [OATH_KEY]: toOathContentSlice(values, readLandingContentFromStorage()[OATH_KEY]),
+  }),
+)
 
 interface StepProps {
   onNavigate: () => void
@@ -122,6 +137,7 @@ function DropMediaStep({ onNavigate }: StepProps) {
     save: saveAssetConfigAsync,
     successMessage: 'Drop media saved.',
     errorFallbackMessage: 'Could not save drop media.',
+    preview: dropAssetPreviewBinding,
   })
 
   const assignments = editor.value.drops[activeKey] ?? {}
@@ -191,6 +207,7 @@ function LandingCopyStep({ onNavigate }: StepProps) {
       ),
     successMessage: 'Landing copy saved.',
     errorFallbackMessage: 'Could not save landing copy.',
+    preview: oathCopyPreviewBinding,
   })
 
   const supportsInlineCopy = activeKey === OATH_KEY
@@ -350,24 +367,28 @@ export function DropSetupWizard({ open, onClose }: { open: boolean; onClose: () 
           key: 'page',
           title: 'Active page',
           blurb: 'Pick the code-owned landing page the homepage renders.',
+          preview: { route: '/' },
           render: () => <ActivePageStep onNavigate={onClose} />,
         },
         {
           key: 'media',
           title: 'Drop media',
           blurb: 'Fill the drop’s code-defined asset slots from the media library.',
+          preview: { route: '/' },
           render: () => <DropMediaStep onNavigate={onClose} />,
         },
         {
           key: 'copy',
           title: 'Landing copy',
           blurb: 'The essential per-scene copy, with designed defaults.',
+          preview: { route: '/' },
           render: () => <LandingCopyStep onNavigate={onClose} />,
         },
         {
           key: 'publish',
           title: 'Review',
           blurb: 'Preview unsaved edits, then verify the live storefront.',
+          preview: { route: '/' },
           render: () => <ReviewPublishStep onNavigate={onClose} />,
         },
       ]}

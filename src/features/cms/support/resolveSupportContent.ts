@@ -1,10 +1,14 @@
 import { SUPPORT_CONTENT_DEFAULTS } from '@/features/cms/support/supportContent.defaults'
-import type {
-  CareProductEntry,
-  FaqItem,
-  SizeProductEntry,
-  SupportContentConfig,
-  SupportSection,
+import {
+  SIZE_TABLE_SIZES,
+  type CareIconKey,
+  type CareProductEntry,
+  type FaqItem,
+  type SizeProductEntry,
+  type SizeRow,
+  type SizeTableRow,
+  type SupportContentConfig,
+  type SupportSection,
 } from '@/features/cms/support/supportContent.zod'
 
 /**
@@ -42,6 +46,80 @@ export type ResolvedSupportContent = {
     note: string
     perProduct: Record<string, SizeProductEntry>
   }
+}
+
+/* --------------------------------------------------------------------------- *
+ * Per-product care/size resolution — structured-first, legacy fallback.
+ * Pure read-time mapping: stored entries are NEVER mutated.
+ * --------------------------------------------------------------------------- */
+
+export type ResolvedCareItem = {
+  id: string
+  icon: CareIconKey
+  name: string
+  value: string
+  note: string
+}
+
+/**
+ * Render-ready care items for one product entry: structured `items` win when
+ * any carry a name; otherwise legacy `lines` map to generic items (neutral
+ * icon) at resolve time.
+ */
+export function resolveCareItems(entry: CareProductEntry): ResolvedCareItem[] {
+  const structured = entry.items.filter((item) => item.name.trim().length > 0)
+  if (structured.length > 0) {
+    return structured.map((item, index) => ({
+      id: item.id.trim() || `care-item-${index}`,
+      icon: item.icon,
+      name: item.name.trim(),
+      value: item.value.trim(),
+      note: item.note.trim(),
+    }))
+  }
+  return entry.lines
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line, index) => ({
+      id: `care-line-${index}`,
+      icon: 'generic' as const,
+      name: line,
+      value: '',
+      note: '',
+    }))
+}
+
+export type ResolvedSizeTable =
+  | {
+      kind: 'structured'
+      /** Fixed size columns, XS–XXL. */
+      sizes: readonly string[]
+      /** Only rows with at least one filled cell. */
+      rows: SizeTableRow[]
+      halfMeasurement: boolean
+    }
+  | { kind: 'legacy'; columns: string[]; rows: SizeRow[] }
+
+/**
+ * Render-ready size table for one product entry: the structured fixed grid
+ * wins when any cell is filled; otherwise the legacy free-form table renders;
+ * `null` when neither holds data.
+ */
+export function resolveSizeTable(entry: SizeProductEntry): ResolvedSizeTable | null {
+  const structuredRows =
+    entry.table?.rows.filter((row) => row.values.some((v) => v.trim().length > 0)) ?? []
+  if (structuredRows.length > 0) {
+    return {
+      kind: 'structured',
+      sizes: SIZE_TABLE_SIZES,
+      rows: structuredRows,
+      halfMeasurement: entry.table?.halfMeasurement ?? true,
+    }
+  }
+  if (entry.rows.length > 0) {
+    return { kind: 'legacy', columns: entry.columns, rows: entry.rows }
+  }
+  return null
 }
 
 const D = SUPPORT_CONTENT_DEFAULTS

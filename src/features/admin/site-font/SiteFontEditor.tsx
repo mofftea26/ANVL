@@ -1,4 +1,4 @@
-import { Check, Info, Plus, Save, Type } from '@/shared/icons'
+import { Info, Plus, Type } from '@/shared/icons'
 import {
   type ChangeEvent,
   type DragEvent,
@@ -12,6 +12,7 @@ import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { toast } from 'sonner'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
+import { AdminSaveAction } from '@/features/admin/components/AdminSaveAction'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
@@ -41,23 +42,28 @@ function useFontLibrary(): FontLibraryConfig {
   )
 }
 
-function fontOptions(config: FontLibraryConfig) {
-  return config.library.map((f) => ({
-    value: f.id,
-    label: f.label,
-    description:
+function fontOptions(config: FontLibraryConfig, activeId?: string) {
+  return config.library.map((f) => {
+    const source =
       f.source.kind === 'google'
         ? 'Google Fonts'
         : f.source.kind === 'upload'
           ? 'Uploaded files'
-          : 'Built-in',
-  }))
+          : 'Built-in'
+    return {
+      value: f.id,
+      label: f.label,
+      // Marks the SAVED assignment inside the dropdown (same pattern as the
+      // theme editor's "Live on storefront" option description).
+      description: f.id === activeId ? `${source} — Active` : source,
+    }
+  })
 }
 
 export function SiteFontEditor() {
   const setPageActions = useAdminPageActions()
   const stored = useFontLibrary()
-  const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
+  const { config, setConfig, isDirty, saving, showSuccess, save } = useSingletonCmsEditor({
     id: 'fonts',
     stored,
     saveAsync: saveFontConfigAsync,
@@ -72,20 +78,15 @@ export function SiteFontEditor() {
 
   const toolbar = useMemo(
     () => (
-      <Button
-        type="button"
-        disabled={saving}
-        variant="primary"
-        size="md"
-        density="compact"
-        loading={saving}
-        onClick={save}
-      >
-        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
-        {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save fonts'}
-      </Button>
+      <AdminSaveAction
+        onSave={save}
+        saving={saving}
+        showSuccess={showSuccess}
+        dirty={isDirty}
+        label="Save fonts"
+      />
     ),
-    [save, saving, showSuccess],
+    [save, saving, showSuccess, isDirty],
   )
 
   useEffect(() => {
@@ -93,7 +94,31 @@ export function SiteFontEditor() {
     return () => setPageActions(null)
   }, [toolbar, setPageActions])
 
-  const options = fontOptions(config)
+  /**
+   * F1 — per-role "what is live" indication. `stored` is the SAVED assignment
+   * (updates after save/refresh); `config` is the working copy. The caption
+   * always reflects stored, and an "Unsaved change" chip appears the moment the
+   * two diverge for that role.
+   */
+  function roleCaption(role: 'sans' | 'heading' | 'display') {
+    const activeFamily = resolveFontFamilyName(stored, stored[role])
+    const changed = config[role] !== stored[role]
+    return (
+      <span className="flex flex-wrap items-center gap-1.5">
+        <span>
+          Active: <span className="text-[var(--color-text)]">{activeFamily}</span>
+        </span>
+        {changed ? (
+          <span className="rounded-full bg-[var(--color-accent)]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent)]">
+            Unsaved change
+          </span>
+        ) : null}
+      </span>
+    )
+  }
+
+  const roleOptions = (role: 'sans' | 'heading' | 'display') =>
+    fontOptions(config, stored[role])
 
   async function ingestFiles(files: FileList | File[]) {
     const list = Array.from(files).filter((f) =>
@@ -267,19 +292,22 @@ export function SiteFontEditor() {
           label="Body (sans)"
           value={config.sans}
           onChange={(sans) => setConfig((p) => ({ ...p, sans }))}
-          options={options}
+          options={roleOptions('sans')}
+          caption={roleCaption('sans')}
         />
         <AdminFieldSelect
           label="Headings"
           value={config.heading}
           onChange={(heading) => setConfig((p) => ({ ...p, heading }))}
-          options={options}
+          options={roleOptions('heading')}
+          caption={roleCaption('heading')}
         />
         <AdminFieldSelect
           label="Display accent"
           value={config.display}
           onChange={(display) => setConfig((p) => ({ ...p, display }))}
-          options={options}
+          options={roleOptions('display')}
+          caption={roleCaption('display')}
         />
       </section>
 

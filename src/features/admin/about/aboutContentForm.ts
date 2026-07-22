@@ -27,18 +27,36 @@ export interface AboutOrbStatFormValues {
   suffix: string
 }
 
+export interface AboutOrbMapPinFormValues {
+  /** Percent, 0–100, kept as strings for RHF inputs. */
+  x: string
+  y: string
+  label: string
+}
+
+export interface AboutOrbTimelineFormValues {
+  marker: string
+  title: string
+  body: string
+}
+
 export interface AboutOrbFormValues {
   label: string
   /** #RRGGBB (blank = designed default tint). */
   color: string
+  /** Layout preset ('' = classic, i.e. no stored override). */
+  layout: string
   eyebrow: string
   title: string
+  subhead: string
   body: string
   detail: string
   /** One oversized line per row (max 8). */
   linesText: string
   points: AboutOrbPointFormValues[]
   stats: AboutOrbStatFormValues[]
+  mapPins: AboutOrbMapPinFormValues[]
+  timeline: AboutOrbTimelineFormValues[]
   primaryCtaLabel: string
   primaryCtaHref: string
   secondaryCtaLabel: string
@@ -75,13 +93,17 @@ export function createBlankOrbFormValues(): AboutOrbFormValues {
   return {
     label: '',
     color: '',
+    layout: '',
     eyebrow: '',
     title: '',
+    subhead: '',
     body: '',
     detail: '',
     linesText: '',
     points: [],
     stats: [],
+    mapPins: [],
+    timeline: [],
     primaryCtaLabel: '',
     primaryCtaHref: '',
     secondaryCtaLabel: '',
@@ -99,12 +121,22 @@ export function createBlankStatFormValues(): AboutOrbStatFormValues {
   return { label: '', value: '', suffix: '' }
 }
 
+export function createBlankMapPinFormValues(): AboutOrbMapPinFormValues {
+  return { x: '', y: '', label: '' }
+}
+
+export function createBlankTimelineFormValues(): AboutOrbTimelineFormValues {
+  return { marker: '', title: '', body: '' }
+}
+
 function orbToFormValues(orb: AboutOrb | undefined): AboutOrbFormValues {
   return {
     label: s(orb?.label),
     color: s(orb?.color),
+    layout: s(orb?.layout),
     eyebrow: s(orb?.eyebrow),
     title: s(orb?.title),
+    subhead: s(orb?.subhead),
     body: s(orb?.body),
     detail: s(orb?.detail),
     linesText: (orb?.lines ?? []).join('\n'),
@@ -116,6 +148,16 @@ function orbToFormValues(orb: AboutOrb | undefined): AboutOrbFormValues {
       label: s(st.label),
       value: s(st.value),
       suffix: s(st.suffix),
+    })),
+    mapPins: (orb?.mapPins ?? []).map((pin) => ({
+      x: String(pin.x),
+      y: String(pin.y),
+      label: s(pin.label),
+    })),
+    timeline: (orb?.timeline ?? []).map((e) => ({
+      marker: s(e.marker),
+      title: s(e.title),
+      body: s(e.body),
     })),
     primaryCtaLabel: s(orb?.primaryCta?.label),
     primaryCtaHref: s(orb?.primaryCta?.href),
@@ -187,6 +229,37 @@ function statSliceItems(stats: AboutOrbStatFormValues[]) {
   return items.length > 0 ? items : undefined
 }
 
+/** Percent input → clamped number; blank/garbage lands the pin at centre. */
+function pinPercent(raw: string): number {
+  const n = Number(raw.trim())
+  if (raw.trim().length === 0 || !Number.isFinite(n)) return 50
+  return Math.min(100, Math.max(0, n))
+}
+
+function mapPinSliceItems(pins: AboutOrbMapPinFormValues[]) {
+  const items = pins
+    .filter((pin) => pin.x.trim() || pin.y.trim() || pin.label.trim())
+    .map((pin) => ({
+      x: pinPercent(pin.x),
+      y: pinPercent(pin.y),
+      ...(keep(pin.label) ? { label: keep(pin.label) } : {}),
+    }))
+  return items.length > 0 ? items : undefined
+}
+
+function timelineSliceItems(entries: AboutOrbTimelineFormValues[]) {
+  const items = entries
+    .map((e) => prune({ marker: keep(e.marker), title: keep(e.title), body: keep(e.body) }))
+    .filter((e): e is NonNullable<typeof e> => e !== undefined)
+  return items.length > 0 ? items : undefined
+}
+
+/** Layout override — only real presets are stored ('' / classic = default). */
+function keepLayout(raw: string): 'text' | 'stats' | 'map' | 'timeline' | undefined {
+  const t = raw.trim()
+  return t === 'text' || t === 'stats' || t === 'map' || t === 'timeline' ? t : undefined
+}
+
 function orbSliceItem(orb: AboutOrbFormValues): AboutOrb {
   const linesArr = orb.linesText
     .split('\n')
@@ -198,13 +271,17 @@ function orbSliceItem(orb: AboutOrbFormValues): AboutOrb {
     prune({
       label: keep(orb.label),
       color: keep(orb.color),
+      layout: keepLayout(orb.layout),
       eyebrow: keep(orb.eyebrow),
       title: keep(orb.title),
+      subhead: keep(orb.subhead),
       body: keep(orb.body),
       detail: keep(orb.detail),
       lines: linesArr.length > 0 ? linesArr : undefined,
       points: pointSliceItems(orb.points),
       stats: statSliceItems(orb.stats),
+      mapPins: mapPinSliceItems(orb.mapPins),
+      timeline: timelineSliceItems(orb.timeline),
       primaryCta: keepCta(orb.primaryCtaLabel, orb.primaryCtaHref),
       secondaryCta: keepCta(orb.secondaryCtaLabel, orb.secondaryCtaHref),
       tagline: keep(orb.tagline),

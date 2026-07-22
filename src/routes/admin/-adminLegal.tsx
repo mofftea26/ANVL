@@ -4,11 +4,7 @@ import { AdminPreviewHoverScope } from '@/features/admin/preview/AdminPreviewHov
 
 export function AdminLegalPageRoute() {
   return (
-    <AdminLayout
-      title="Legal"
-      description="Privacy, terms, cookies, and accessibility copy — every blank field falls back to the designed default."
-      layout="workspace"
-    >
+    <AdminLayout layout="workspace">
       <AdminPreviewHoverScope target={{ kind: 'content-field', id: 'site:page' }}>
         <LegalEditor />
       </AdminPreviewHoverScope>

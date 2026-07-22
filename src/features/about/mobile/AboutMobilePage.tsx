@@ -7,13 +7,14 @@ import type { AboutResolvedContent, AboutResolvedOrb } from '../content/aboutCon
 import { orbImage } from '../content/resolveAboutContent'
 import type { AboutPageAssets } from '../index'
 import { AboutCtaLink } from '../components/AboutCtaLink'
-import { AboutMediaFallback } from '../components/AboutMediaFallback'
+import { AboutOrbContent, AboutOrbHeroBand } from '../components/AboutOrbContent'
 import { AboutMarquee } from '../components/AboutMarquee'
 
 /**
  * One orb rendered as a normal page section — the orbs ARE the About
- * sections on mobile. Renders whichever fields the orb carries (orbs are
- * free-form CMS sections) with the orb's own color as the section accent.
+ * sections on mobile. Shares the orb content presentation with the desktop
+ * altar's strike modal ({@link AboutOrbContent} / {@link AboutOrbHeroBand}),
+ * with the orb's own color as the section accent.
  */
 function OrbSection({
   orb,
@@ -41,122 +42,23 @@ function OrbSection({
         <RevealOnScroll>
           <div className="overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]">
             {image ? (
-              <div className="relative aspect-[16/9]">
-                <AboutMediaFallback media={image} vignette={false} />
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      'linear-gradient(180deg, transparent 40%, color-mix(in srgb, var(--color-surface) 92%, transparent) 100%)',
-                  }}
-                />
-              </div>
-            ) : null}
-            {/* Orb-colored hairline — the section's identity, like its orb. */}
-            <span
-              aria-hidden="true"
-              className="block h-px w-full"
-              style={{
-                background: `linear-gradient(90deg, ${orb.color}, color-mix(in srgb, ${orb.color} 30%, transparent) 70%, transparent)`,
-              }}
-            />
+              <AboutOrbHeroBand orb={orb} image={image} />
+            ) : (
+              // No image — the orb-colored hairline alone carries its identity.
+              <span
+                aria-hidden="true"
+                className="block h-px w-full"
+                style={{
+                  background: `linear-gradient(90deg, ${orb.color}, color-mix(in srgb, ${orb.color} 30%, transparent) 70%, transparent)`,
+                }}
+              />
+            )}
             <div className="p-6 md:p-8">
-              <p className="anvl-display inline-flex items-center gap-2 text-[11px] tracking-[0.28em]" style={{ color: orb.color }}>
-                <span
-                  aria-hidden="true"
-                  className="h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: orb.color, boxShadow: `0 0 6px ${orb.color}` }}
-                />
-                {orb.eyebrow}
-              </p>
-              <h2
-                id={`about-orb-${orb.id}-title`}
-                className="anvl-heading mt-3 font-normal leading-[0.95] text-[clamp(1.6rem,5.5vw,2.4rem)] text-[var(--color-heading)]"
-              >
-                {orb.title}
-              </h2>
-
-              {orb.lines.length > 0 ? (
-                <div className="mt-5 space-y-2">
-                  {orb.lines.map((line, i) => (
-                    <p
-                      key={`${i}-${line}`}
-                      className="anvl-heading font-normal leading-[1.1] text-[clamp(1.2rem,4.5vw,1.75rem)] text-[var(--color-heading)]/90"
-                    >
-                      {line}
-                    </p>
-                  ))}
-                </div>
-              ) : null}
-
-              {orb.body ? (
-                <p className="mt-4 text-sm leading-relaxed text-[var(--color-text-muted)] md:text-base">{orb.body}</p>
-              ) : null}
-
-              {orb.detail ? (
-                <p
-                  className="mt-4 border-l-2 pl-3 font-sans text-[11px] uppercase tracking-[0.2em] text-[var(--color-heading)]/80"
-                  style={{ borderColor: orb.color }}
-                >
-                  {orb.detail}
-                </p>
-              ) : null}
-
-              {orb.points.length > 0 ? (
-                <ul className="mt-5 space-y-2.5">
-                  {orb.points.map((p) => (
-                    <li key={p.label} className="flex gap-3">
-                      <span
-                        aria-hidden="true"
-                        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: orb.color }}
-                      />
-                      <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-                        <span className="anvl-display mr-2 text-[11px] tracking-[0.18em] text-[var(--color-heading)]">
-                          {p.label}
-                        </span>
-                        {p.description}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-
-              {orb.stats.length > 0 ? (
-                <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
-                  {orb.stats.map((stat) => (
-                    <div key={stat.id} className="border-l border-[var(--color-line)] pl-4">
-                      <p className="anvl-heading font-normal leading-none text-[clamp(1.75rem,6vw,2.5rem)] text-[var(--color-heading)]">
-                        {stat.value}
-                        <span style={{ color: orb.color }}>{stat.suffix}</span>
-                      </p>
-                      <p className="mt-2 text-xs leading-snug text-[var(--color-text-muted)]">{stat.label}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
-              {orb.primaryCta || orb.secondaryCta ? (
-                <div className="mt-7 flex flex-wrap gap-3">
-                  {orb.primaryCta ? (
-                    <AboutCtaLink href={orb.primaryCta.href} variant="primary">
-                      {orb.primaryCta.label}
-                    </AboutCtaLink>
-                  ) : null}
-                  {orb.secondaryCta ? (
-                    <AboutCtaLink href={orb.secondaryCta.href} variant="secondary">
-                      {orb.secondaryCta.label}
-                    </AboutCtaLink>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {orb.tagline ? (
-                <p className="anvl-display mt-7 text-xs tracking-[0.3em]" style={{ color: orb.color }}>
-                  {orb.tagline}
-                </p>
-              ) : null}
+              <AboutOrbContent
+                orb={orb}
+                headingId={`${anchorId}-title`}
+                variant="section"
+              />
             </div>
           </div>
         </RevealOnScroll>

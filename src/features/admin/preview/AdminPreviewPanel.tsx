@@ -5,27 +5,43 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useRouterState } from '@tanstack/react-router'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
 
 import {
   PREVIEW_PROTOCOL_VERSION,
   PREVIEW_QUERY_PARAM,
   parseStorefrontPreviewMessage,
+  resolvePreviewTargetToEditor,
   type AdminPreviewMessage,
 } from '@/features/cms/preview'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { ADMIN_STORAGE_KEYS } from '@/features/admin/storageKeys'
-import { ExternalLink, Monitor, RefreshCw, Smartphone, Tablet, X } from '@/shared/icons'
+import {
+  Crosshair,
+  ExternalLink,
+  Monitor,
+  RefreshCw,
+  Smartphone,
+  Tablet,
+  X,
+} from '@/shared/icons'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { cn } from '@/shared/lib/cn'
 
 import {
+  clearEditorAnchorHighlights,
+  setEditorAnchorRing,
+} from './adminEditorHighlight'
+import { locatePreviewTargetInEditor } from './adminInspectLocate'
+import {
   consumePreviewFocus,
+  consumePreviewRoute,
   readPreviewDraftPayload,
   readPreviewHover,
   subscribePreviewDraft,
   subscribePreviewFocus,
   subscribePreviewHover,
+  subscribePreviewRoute,
 } from './adminPreviewStore'
 
 type PreviewDevice = 'desktop' | 'tablet' | 'mobile'
@@ -53,6 +69,16 @@ const ROUTE_OPTIONS = [
   { value: '/about', label: 'About' },
   { value: '/story', label: 'Story' },
   { value: '/cart', label: 'Cart' },
+  { value: '/faq', label: 'FAQ' },
+  { value: '/contact', label: 'Contact' },
+  { value: '/shipping', label: 'Shipping' },
+  { value: '/returns', label: 'Returns' },
+  { value: '/care-guide', label: 'Care guide' },
+  { value: '/size-guide', label: 'Size guide' },
+  { value: '/privacy', label: 'Privacy' },
+  { value: '/terms', label: 'Terms' },
+  { value: '/cookie-policy', label: 'Cookie policy' },
+  { value: '/accessibility', label: 'Accessibility' },
 ]
 
 /** Seed the preview route from the editor being used. */
@@ -65,6 +91,14 @@ function defaultRouteForAdminPath(pathname: string): string {
 }
 
 const DRAFT_SEND_DEBOUNCE_MS = 200
+
+/**
+ * SCOPE EXCEPTION: the Assets / Theme / Fonts editors keep their existing
+ * editor-hover highlighting but get no inspector toggle — their edits are
+ * page-wide (palette, fonts) or slot-based (assets), so element-level
+ * inspect-to-locate has no owning field to land on.
+ */
+const INSPECTOR_EXCLUDED_ADMIN_PATH = /^\/admin\/(assets|theme|fonts)(\/|$)/
 
 /** Preview panel width: drag-resizable, persisted, clamped to sane bounds. */
 const PANEL_WIDTH_KEY = ADMIN_STORAGE_KEYS.previewWidthPref
@@ -123,6 +157,17 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
   }, [])
   const [reloadKey, setReloadKey] = useState(0)
   const [ready, setReady] = useState(false)
+
+  // Inspector mode (protocol v2): click elements in the preview to locate
+  // their editor field. Hidden for the Assets/Theme/Fonts editors (see
+  // INSPECTOR_EXCLUDED_ADMIN_PATH).
+  const navigate = useNavigate()
+  const inspectAllowed = !INSPECTOR_EXCLUDED_ADMIN_PATH.test(adminPath)
+  const [inspecting, setInspecting] = useState(false)
+  const inspectingRef = useRef(false)
+  inspectingRef.current = inspecting
+  const adminPathRef = useRef(adminPath)
+  adminPathRef.current = adminPath
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const stageRef = useRef<HTMLDivElement | null>(null)
@@ -193,6 +238,15 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
     })
   }, [post])
 
+  const setInspectMode = useCallback(
+    (enabled: boolean) => {
+      setInspecting(enabled)
+      post({ type: 'anvl-preview/inspect-mode', v: PREVIEW_PROTOCOL_VERSION, enabled })
+      if (!enabled) clearEditorAnchorHighlights()
+    },
+    [post],
+  )
+
   // Track the stage box so the fixed-width device frame scale-fits it.
   useEffect(() => {
     const stage = stageRef.current
@@ -224,11 +278,45 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
         if (pending) {
           post({ type: 'anvl-preview/focus', v: PREVIEW_PROTOCOL_VERSION, target: pending })
         }
+        // Inspect mode is sticky across iframe reloads/route switches — a
+        // fresh storefront re-enters it until the user turns the toggle off.
+        if (inspectingRef.current) {
+          post({
+            type: 'anvl-preview/inspect-mode',
+            v: PREVIEW_PROTOCOL_VERSION,
+            enabled: true,
+          })
+        }
+        return
+      }
+      if (message.type === 'anvl-preview/inspect-mode') {
+        // Echo — Escape inside the iframe exited inspect mode there.
+        if (!message.enabled) {
+          setInspecting(false)
+          clearEditorAnchorHighlights()
+        }
+        return
+      }
+      if (message.type === 'anvl-preview/inspect-hover') {
+        const match = message.target
+          ? resolvePreviewTargetToEditor(message.target.id)
+          : null
+        setEditorAnchorRing(match ? match.anchorId : null)
+        return
+      }
+      if (message.type === 'anvl-preview/inspect-click') {
+        locatePreviewTargetInEditor({
+          targetId: message.target.id,
+          currentAdminPath: adminPathRef.current,
+          navigate: (to) => {
+            void navigate({ to })
+          },
+        })
       }
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [post, sendDraft])
+  }, [post, sendDraft, navigate])
 
   // Hello retry loop — stops as soon as the storefront reports ready.
   useEffect(() => {
@@ -251,6 +339,19 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
       unsubscribe()
     }
   }, [sendDraft])
+
+  // Route requests from wizards/editors — consume the pending request on
+  // mount (the panel may have been opened by the same signal) and on every
+  // emission. Same-route requests fall through `selectRoute` without
+  // remounting the iframe (its key only changes when the route changes).
+  useEffect(() => {
+    const applyPending = () => {
+      const next = consumePreviewRoute()
+      if (next) selectRoute(next)
+    }
+    applyPending()
+    return subscribePreviewRoute(applyPending)
+  }, [selectRoute])
 
   // Locate requests from editors (panel already open).
   useEffect(() => {
@@ -275,6 +376,31 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
     return () => {
       post({ type: 'anvl-preview/hover', v: PREVIEW_PROTOCOL_VERSION, target: null })
       unsubscribe()
+    }
+  }, [post])
+
+  // Escape in the ADMIN document also exits inspect mode. (When the iframe
+  // holds keyboard focus the storefront's own Escape handler fires instead
+  // and echoes `inspect-mode { enabled: false }` back — handled above.)
+  useEffect(() => {
+    if (!inspecting) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setInspectMode(false)
+    }
+    document.addEventListener('keydown', onKeyDown, true)
+    return () => document.removeEventListener('keydown', onKeyDown, true)
+  }, [inspecting, setInspectMode])
+
+  // Navigating into an inspector-excluded editor force-exits the mode.
+  useEffect(() => {
+    if (!inspectAllowed && inspecting) setInspectMode(false)
+  }, [inspectAllowed, inspecting, setInspectMode])
+
+  // Unmount: the iframe leaves inspect mode + editor-side rings clear.
+  useEffect(() => {
+    return () => {
+      post({ type: 'anvl-preview/inspect-mode', v: PREVIEW_PROTOCOL_VERSION, enabled: false })
+      clearEditorAnchorHighlights()
     }
   }, [post])
 
@@ -321,6 +447,29 @@ export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
         <h2 className="anvl-heading mr-auto text-sm font-normal text-[var(--color-heading)]">
           Live preview
         </h2>
+
+        {inspectAllowed ? (
+          <button
+            type="button"
+            aria-pressed={inspecting}
+            aria-label="Inspect storefront elements"
+            title={
+              inspecting
+                ? 'Inspecting — click an element in the preview to open its editor field (Esc to stop)'
+                : 'Inspect — click an element in the preview to open its editor field'
+            }
+            data-testid="preview-inspect-toggle"
+            onClick={() => setInspectMode(!inspecting)}
+            className={cn(
+              'focus-ring inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+              inspecting
+                ? 'bg-[var(--color-accent)] text-[var(--color-bg)]'
+                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]',
+            )}
+          >
+            <Crosshair size={ICON_SIZE.sm} aria-hidden />
+          </button>
+        ) : null}
 
         <div
           role="group"

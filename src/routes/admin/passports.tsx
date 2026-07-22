@@ -1,4 +1,5 @@
 import { createFileRoute, lazyRouteComponent } from '@tanstack/react-router'
+import { AdminEditorLoading } from '@/features/admin/components/AdminEditorLoading'
 
 export type AdminPassportsSearch = {
   /** Tab to open — QR code ledger or per-product passport content. */
@@ -16,4 +17,5 @@ export const Route = createFileRoute('/admin/passports')({
         : undefined,
   }),
   component: lazyRouteComponent(() => import('./-adminPassports'), 'AdminPassportsPageRoute'),
+  pendingComponent: AdminEditorLoading,
 })

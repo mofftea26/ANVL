@@ -1,7 +1,6 @@
 import { Link, type LinkProps } from '@tanstack/react-router'
 
 import { ArrowUpRight, Hourglass } from '@/shared/icons'
-import { AdminForgedLink } from '@/features/admin/components/AdminForgedLink'
 import { AdminLayout } from '@/features/admin/components/AdminLayout'
 import { adminNavCategories } from '@/features/admin/components/adminNav'
 import { ActiveDropTile } from '@/features/admin/setup/ActiveDropTile'
@@ -20,17 +19,13 @@ const launcherGroups = adminNavCategories()
 
 /**
  * The Studio control room — a single non-scrolling screen (≥1280px): status
- * strip (active drop, Coming Soon warning, storefront link), a dense category
- * launcher covering every admin surface, and the guided setup-wizard row.
- * Below `xl` the same content stacks and scrolls gracefully.
+ * strip (the clickable active-drop tile + Coming Soon warning), a dense
+ * category launcher covering every admin surface, and the guided setup-wizard
+ * row. Below `xl` the same content stacks and scrolls gracefully.
  */
 export function AdminDashboardPageRoute() {
   return (
-    <AdminLayout
-      title="Dashboard"
-      description="Every surface one strike away."
-      layout="workspace"
-    >
+    <AdminLayout layout="workspace">
       {/* Fixed height at xl = viewport minus topbar minus the workspace main
           padding (lg:py-10 + pb-8 = 4.5rem) — the no-scroll contract. */}
       <div className="flex min-h-0 flex-col gap-4 xl:h-[calc(100dvh-var(--admin-topbar-height)-4.5rem)]">
@@ -42,18 +37,12 @@ export function AdminDashboardPageRoute() {
   )
 }
 
-/** Compact top strip: live drop, Coming Soon state, storefront jump. */
+/** Compact top strip: the clickable live-drop tile + Coming Soon state. */
 function StatusStrip() {
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-3">
       <ActiveDropTile />
       <ComingSoonLivePill />
-      <div className="ml-auto">
-        <AdminForgedLink variant="outline" href="/" target="_blank" rel="noreferrer">
-          View storefront
-          <ArrowUpRight size={ICON_SIZE.sm} aria-hidden="true" />
-        </AdminForgedLink>
-      </div>
     </div>
   )
 }
@@ -92,14 +81,17 @@ function CategoryLauncher() {
   return (
     <section
       aria-label="Studio surfaces"
-      className="min-h-0 flex-1 gap-3 overflow-y-auto sm:columns-2 xl:columns-4 xl:overflow-visible"
+      // overflow-y-auto at EVERY size: on tall screens nothing scrolls (the
+      // board fits), on short desktops the launcher scrolls internally instead
+      // of the tallest masonry column bleeding into the wizard row below.
+      className="min-h-0 flex-1 gap-3 overflow-y-auto sm:columns-2 xl:columns-4"
     >
       {launcherGroups.map(({ category, items }) => (
         <div
           key={category}
           className={cn(
-            'relative mb-3 break-inside-avoid overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]/70 p-3',
-            'flex flex-col gap-2',
+            'relative mb-3 break-inside-avoid overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)]/70 p-2.5',
+            'flex flex-col gap-1.5',
             'shadow-[inset_0_1px_0_rgba(255,255,255,0.05),inset_0_-1px_0_rgba(0,0,0,0.35)]',
           )}
         >
@@ -111,7 +103,7 @@ function CategoryLauncher() {
           <h2 className="anvl-display px-1 text-[10px] tracking-[0.3em] text-[var(--color-text-muted)]">
             {category}
           </h2>
-          <ul className="flex flex-col gap-1.5">
+          <ul className="flex flex-col gap-1">
             {items.map((item) => {
               const IconComponent = item.icon
               return (
@@ -119,13 +111,13 @@ function CategoryLauncher() {
                   <Link
                     to={item.href as LinkProps['to']}
                     className={cn(
-                      'focus-ring group flex items-center gap-2.5 rounded-lg border border-transparent px-2 py-1.5',
+                      'focus-ring group flex items-center gap-2.5 rounded-lg border border-transparent px-2 py-1',
                       'transition-colors hover:border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] hover:bg-[var(--color-surface-elevated)]',
                     )}
                   >
                     <span
                       aria-hidden="true"
-                      className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] text-[var(--color-highlight)]"
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[var(--color-line)] bg-[var(--color-bg)] text-[var(--color-highlight)]"
                     >
                       <IconComponent size={ICON_SIZE.md} aria-hidden="true" />
                     </span>

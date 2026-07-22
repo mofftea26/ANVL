@@ -64,7 +64,12 @@ export interface StoryClient {
   /** Ordered, published chapters with their acts + cast. */
   getPublishedChapters(): Promise<StoryChapter[]>
   getChapterBySlug(slug: string): Promise<StoryChapter | null>
-  /** The book assigned to a product (by Shopify handle / slug), if any. */
+  /**
+   * The FIRST book assigned to a product (by Shopify handle / slug), if any.
+   * Multiple chapters may share a product_slug; ordered-first semantics apply
+   * (lowest sort_order / earliest seed entry wins) — PDP and passport embeds
+   * show that one book.
+   */
   getChapterByProductSlug(productSlug: string): Promise<StoryChapter | null>
 }
 

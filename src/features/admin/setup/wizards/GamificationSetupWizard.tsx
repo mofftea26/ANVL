@@ -4,12 +4,19 @@ import { toast } from 'sonner'
 
 import { ADMIN_GAMIFICATION_RULES_QUERY_KEY } from '@/features/admin/gamification/AdminGamificationPage'
 import {
+  createRank,
+  deleteRank,
   loadGamificationRules,
   saveRank,
   saveXpSettings,
   upsertBadge,
   upsertChallenge,
 } from '@/features/admin/gamification/gamification.service'
+import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
+import { MediaLibraryPickerModal } from '@/features/admin/media/MediaLibraryPickerModal'
+import { rankEmblemSrc } from '@/features/passport/lib/ranks'
+import { Trash2 } from '@/shared/icons'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { GAMIFICATION_RULES_QUERY_KEY } from '@/features/passport/hooks/useGamificationRules'
 import {
   GAMIFICATION_METRIC_LABELS,
@@ -281,20 +288,81 @@ function ChallengesStep({ rules, rulesError, refresh, onNavigate }: RulesStepPro
   )
 }
 
-/** Step 3 — per-rank copy (name + description), saved per rank. */
+/** Step 3 — the rank ladder: per-rank copy, plus create/delete inline. */
 function RanksStep({ rules, rulesError, refresh, onNavigate }: RulesStepProps) {
+  const [newName, setNewName] = useState('')
+  const [creating, setCreating] = useState(false)
+
+  const ranks = rules ? [...rules.ranks].sort((a, b) => a.sortOrder - b.sortOrder) : []
+
+  const create = async () => {
+    const clean = newName.trim()
+    if (!clean) {
+      toast.error('Give the rank a name.')
+      return
+    }
+    setCreating(true)
+    try {
+      const res = await createRank({ name: clean })
+      if (!res.ok) {
+        toast.error(res.error)
+        return
+      }
+      toast.success(
+        `Rank “${clean}” created at the top of the ladder — set its thresholds in the full editor.`,
+      )
+      setNewName('')
+      await refresh()
+    } finally {
+      setCreating(false)
+    }
+  }
+
   return (
     <SetupStepBody
-      intro="The Armory has four fixed ranks, each with three levels. Edit their names and descriptions here; per-level thresholds and emblem overrides live in the full editor."
-      status={rulesStatus(rules, rulesError, 'Four fixed rank identities — copy is yours')}
+      intro="The Armory's rank ladder — each rank has three levels. Edit names and descriptions or add/remove ranks here; per-level thresholds, reordering, and emblem overrides live in the full editor."
+      status={rulesStatus(
+        rules,
+        rulesError,
+        `${ranks.length} rank${ranks.length === 1 ? '' : 's'} on the ladder`,
+      )}
       links={GAMIFICATION_LINK}
       onNavigate={onNavigate}
     >
       {rules ? (
         <div className="space-y-3">
-          {rules.ranks.map((rank) => (
-            <RankRow key={rank.key} rank={rank} refresh={refresh} />
+          {ranks.map((rank) => (
+            <RankRow
+              key={rank.key}
+              rank={rank}
+              canDelete={ranks.length > 1}
+              refresh={refresh}
+            />
           ))}
+          <div className="flex flex-wrap items-end gap-3 border-t border-[var(--color-line)]/60 pt-3">
+            <FormField
+              label="New rank name"
+              hint="Joins the top of the ladder with empty thresholds."
+              labelStyle="stacked"
+              className="min-w-0 flex-1"
+            >
+              <Input
+                density="compact"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+              />
+            </FormField>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              density="compact"
+              loading={creating}
+              onClick={() => void create()}
+            >
+              Create rank
+            </Button>
+          </div>
         </div>
       ) : (
         <p className="text-xs text-[var(--color-text-muted)]">
@@ -307,15 +375,38 @@ function RanksStep({ rules, rulesError, refresh, onNavigate }: RulesStepProps) {
 
 function RankRow({
   rank,
+  canDelete,
   refresh,
 }: {
   rank: GamificationRankRule
+  canDelete: boolean
   refresh: () => Promise<void>
 }) {
   const [name, setName] = useState(rank.name)
   const [description, setDescription] = useState(rank.description)
+  const [emblemUrl, setEmblemUrl] = useState(rank.emblemUrl)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [saving, setSaving] = useState(false)
-  const dirty = name !== rank.name || description !== rank.description
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const dirty =
+    name !== rank.name || description !== rank.description || emblemUrl !== rank.emblemUrl
+
+  const remove = async () => {
+    setDeleting(true)
+    try {
+      const res = await deleteRank(rank.key)
+      if (!res.ok) {
+        toast.error(res.error)
+        return
+      }
+      toast.success(`Rank “${rank.name}” deleted.`)
+      setConfirmDelete(false)
+      await refresh()
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const save = async () => {
     if (!name.trim()) {
@@ -328,7 +419,7 @@ function RankRow({
         key: rank.key,
         name: name.trim(),
         description,
-        emblemUrl: rank.emblemUrl,
+        emblemUrl,
         levels: rank.levels.map((level) => ({
           level: level.level,
           unlockCopy: level.unlockCopy,
@@ -348,7 +439,24 @@ function RankRow({
   }
 
   return (
-    <div className="grid items-end gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)]/30 p-3 md:grid-cols-[10rem_1fr_auto]">
+    <div className="grid items-end gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)]/30 p-3 md:grid-cols-[auto_10rem_1fr_auto_auto]">
+      <button
+        type="button"
+        onClick={() => setPickerOpen(true)}
+        title={emblemUrl ? 'Change emblem' : 'Assign emblem'}
+        aria-label={`Emblem for ${rank.name} — ${emblemUrl ? 'change' : 'assign'}`}
+        className="focus-ring h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-[var(--color-line)] transition-colors hover:border-[var(--color-accent)]"
+      >
+        <img
+          src={rankEmblemSrc(rank.key, emblemUrl)}
+          alt=""
+          width={44}
+          height={44}
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-contain"
+        />
+      </button>
       <FormField label={`Rank — ${rank.key}`} labelStyle="micro">
         <Input density="compact" value={name} onChange={(e) => setName(e.target.value)} />
       </FormField>
@@ -370,6 +478,45 @@ function RankRow({
       >
         Save
       </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        density="compact"
+        disabled={!canDelete}
+        onClick={() => setConfirmDelete(true)}
+        aria-label={`Delete rank ${rank.name}`}
+      >
+        <Trash2 size={ICON_SIZE.sm} aria-hidden="true" />
+        Delete
+      </Button>
+
+      <AdminConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        title={`Delete rank “${rank.name}”?`}
+        confirmLabel="Delete rank"
+        confirmVariant="destructive"
+        confirmLoading={deleting}
+        onConfirm={() => void remove()}
+      >
+        Its three levels are deleted with it, and athletes currently deriving this rank
+        re-derive from the remaining ladder.
+      </AdminConfirmDialog>
+
+      {pickerOpen ? (
+        <MediaLibraryPickerModal
+          open
+          onClose={() => setPickerOpen(false)}
+          kind="image"
+          title={`Choose emblem — ${name || rank.name}`}
+          selectedMediaId={null}
+          onSelect={(pick) => {
+            if (pick?.publicUrl) setEmblemUrl(pick.publicUrl)
+            setPickerOpen(false)
+          }}
+        />
+      ) : null}
     </div>
   )
 }
@@ -550,7 +697,7 @@ export function GamificationSetupWizard({ open, onClose }: { open: boolean; onCl
         {
           key: 'ranks',
           title: 'Ranks',
-          blurb: 'Four fixed ranks, three levels each.',
+          blurb: 'The ladder — three levels per rank; add or remove ranks.',
           render: () => <RanksStep {...stepProps} />,
         },
         {

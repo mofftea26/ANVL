@@ -9,12 +9,12 @@ import { Input } from '@/shared/components/ui/Input'
 import { Textarea } from '@/shared/components/ui/Textarea'
 import {
   EMPTY_STORY_ASSET,
-  STORY_RANKS,
   formatChapterNumber,
   type StoryAct,
   type StoryAsset,
   type StoryCastMember,
 } from '@/features/story/schemas/story.schema'
+import { CastProfileNameField } from '@/features/admin/story/CastProfileNameField'
 import { StoryAssetField } from '@/features/admin/story/StoryAssetField'
 import { deleteCast, upsertCast } from '@/features/admin/story/story.service'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
@@ -44,6 +44,9 @@ function CastCard({
 }) {
   const [name, setName] = useState(member.name)
   const [rank, setRank] = useState(member.rank)
+  // Session-only: true after picking a real athlete — the rank becomes an
+  // informational snapshot until the editor returns to free-text mode.
+  const [fromProfile, setFromProfile] = useState(false)
   const [blurb, setBlurb] = useState(member.blurb)
   const [actId, setActId] = useState<string | null>(member.actId)
   const [avatar, setAvatar] = useState<StoryAsset>(member.avatar)
@@ -96,15 +99,35 @@ function CastCard({
     >
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label="Name" labelStyle="stacked">
-            <Input density="compact" value={name} onChange={(e) => setName(e.target.value)} />
-          </FormField>
-          <AdminFieldSelect
-            label="Rank"
-            value={rank}
-            onChange={setRank}
-            options={STORY_RANKS.map((r) => ({ value: r, label: r }))}
+          <CastProfileNameField
+            name={name}
+            onNameChange={(next) => {
+              setName(next)
+              setFromProfile(false)
+            }}
+            onProfileSelect={(snapshot) => {
+              setName(snapshot.name)
+              setRank(snapshot.rank)
+              setFromProfile(true)
+            }}
           />
+          <FormField
+            label="Rank"
+            hint={
+              fromProfile
+                ? 'Derived from the athlete’s armory (claims only) — a snapshot; it does not live-update.'
+                : 'Free text (e.g. General). Defaults to Recruit when blank.'
+            }
+            labelStyle="stacked"
+          >
+            <Input
+              density="compact"
+              value={rank}
+              readOnly={fromProfile}
+              aria-label="Rank"
+              onChange={(e) => setRank(e.target.value)}
+            />
+          </FormField>
         </div>
         <AdminFieldSelect
           label="Appears in"

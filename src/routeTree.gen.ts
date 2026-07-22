@@ -53,13 +53,13 @@ import { Route as AdminGamificationRouteImport } from './routes/admin/gamificati
 import { Route as AdminFontsRouteImport } from './routes/admin/fonts'
 import { Route as AdminContentRouteImport } from './routes/admin/content'
 import { Route as AdminComingSoonRouteImport } from './routes/admin/coming-soon'
-import { Route as AdminBannerRouteImport } from './routes/admin/banner'
 import { Route as AdminAssetsRouteImport } from './routes/admin/assets'
 import { Route as AdminAboutRouteImport } from './routes/admin/about'
 import { Route as AccountSettingsRouteImport } from './routes/account/settings'
 import { Route as AccountPersonalRouteImport } from './routes/account/personal'
 import { Route as AccountAddressesRouteImport } from './routes/account/addresses'
 import { Route as AccountOrdersIndexRouteImport } from './routes/account/orders/index'
+import { Route as AdminCategoryCategoryKeyRouteImport } from './routes/admin/category.$categoryKey'
 import { Route as AccountOrdersOrderIdRouteImport } from './routes/account/orders/$orderId'
 
 const TermsRoute = TermsRouteImport.update({
@@ -282,11 +282,6 @@ const AdminComingSoonRoute = AdminComingSoonRouteImport.update({
   path: '/coming-soon',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminBannerRoute = AdminBannerRouteImport.update({
-  id: '/banner',
-  path: '/banner',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
 const AdminAssetsRoute = AdminAssetsRouteImport.update({
   id: '/assets',
   path: '/assets',
@@ -317,6 +312,12 @@ const AccountOrdersIndexRoute = AccountOrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => AccountRouteRoute,
 } as any)
+const AdminCategoryCategoryKeyRoute =
+  AdminCategoryCategoryKeyRouteImport.update({
+    id: '/category/$categoryKey',
+    path: '/category/$categoryKey',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
 const AccountOrdersOrderIdRoute = AccountOrdersOrderIdRouteImport.update({
   id: '/orders/$orderId',
   path: '/orders/$orderId',
@@ -345,7 +346,6 @@ export interface FileRoutesByFullPath {
   '/account/settings': typeof AccountSettingsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/assets': typeof AdminAssetsRoute
-  '/admin/banner': typeof AdminBannerRoute
   '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
@@ -375,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/checkout/': typeof CheckoutIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
+  '/admin/category/$categoryKey': typeof AdminCategoryCategoryKeyRoute
   '/account/orders/': typeof AccountOrdersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -397,7 +398,6 @@ export interface FileRoutesByTo {
   '/account/settings': typeof AccountSettingsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/assets': typeof AdminAssetsRoute
-  '/admin/banner': typeof AdminBannerRoute
   '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
@@ -427,6 +427,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutIndexRoute
   '/shop': typeof ShopIndexRoute
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
+  '/admin/category/$categoryKey': typeof AdminCategoryCategoryKeyRoute
   '/account/orders': typeof AccountOrdersIndexRoute
 }
 export interface FileRoutesById {
@@ -452,7 +453,6 @@ export interface FileRoutesById {
   '/account/settings': typeof AccountSettingsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/assets': typeof AdminAssetsRoute
-  '/admin/banner': typeof AdminBannerRoute
   '/admin/coming-soon': typeof AdminComingSoonRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/fonts': typeof AdminFontsRoute
@@ -482,6 +482,7 @@ export interface FileRoutesById {
   '/checkout/': typeof CheckoutIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
+  '/admin/category/$categoryKey': typeof AdminCategoryCategoryKeyRoute
   '/account/orders/': typeof AccountOrdersIndexRoute
 }
 export interface FileRouteTypes {
@@ -508,7 +509,6 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/admin/about'
     | '/admin/assets'
-    | '/admin/banner'
     | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
@@ -538,6 +538,7 @@ export interface FileRouteTypes {
     | '/checkout/'
     | '/shop/'
     | '/account/orders/$orderId'
+    | '/admin/category/$categoryKey'
     | '/account/orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -560,7 +561,6 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/admin/about'
     | '/admin/assets'
-    | '/admin/banner'
     | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
@@ -590,6 +590,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/shop'
     | '/account/orders/$orderId'
+    | '/admin/category/$categoryKey'
     | '/account/orders'
   id:
     | '__root__'
@@ -614,7 +615,6 @@ export interface FileRouteTypes {
     | '/account/settings'
     | '/admin/about'
     | '/admin/assets'
-    | '/admin/banner'
     | '/admin/coming-soon'
     | '/admin/content'
     | '/admin/fonts'
@@ -644,6 +644,7 @@ export interface FileRouteTypes {
     | '/checkout/'
     | '/shop/'
     | '/account/orders/$orderId'
+    | '/admin/category/$categoryKey'
     | '/account/orders/'
   fileRoutesById: FileRoutesById
 }
@@ -989,13 +990,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminComingSoonRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/admin/banner': {
-      id: '/admin/banner'
-      path: '/banner'
-      fullPath: '/admin/banner'
-      preLoaderRoute: typeof AdminBannerRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
     '/admin/assets': {
       id: '/admin/assets'
       path: '/assets'
@@ -1038,6 +1032,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountOrdersIndexRouteImport
       parentRoute: typeof AccountRouteRoute
     }
+    '/admin/category/$categoryKey': {
+      id: '/admin/category/$categoryKey'
+      path: '/category/$categoryKey'
+      fullPath: '/admin/category/$categoryKey'
+      preLoaderRoute: typeof AdminCategoryCategoryKeyRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/account/orders/$orderId': {
       id: '/account/orders/$orderId'
       path: '/orders/$orderId'
@@ -1073,7 +1074,6 @@ const AccountRouteRouteWithChildren = AccountRouteRoute._addFileChildren(
 interface AdminRouteRouteChildren {
   AdminAboutRoute: typeof AdminAboutRoute
   AdminAssetsRoute: typeof AdminAssetsRoute
-  AdminBannerRoute: typeof AdminBannerRoute
   AdminComingSoonRoute: typeof AdminComingSoonRoute
   AdminContentRoute: typeof AdminContentRoute
   AdminFontsRoute: typeof AdminFontsRoute
@@ -1088,12 +1088,12 @@ interface AdminRouteRouteChildren {
   AdminSupportRoute: typeof AdminSupportRoute
   AdminThemeRoute: typeof AdminThemeRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminCategoryCategoryKeyRoute: typeof AdminCategoryCategoryKeyRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminAboutRoute: AdminAboutRoute,
   AdminAssetsRoute: AdminAssetsRoute,
-  AdminBannerRoute: AdminBannerRoute,
   AdminComingSoonRoute: AdminComingSoonRoute,
   AdminContentRoute: AdminContentRoute,
   AdminFontsRoute: AdminFontsRoute,
@@ -1108,6 +1108,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminSupportRoute: AdminSupportRoute,
   AdminThemeRoute: AdminThemeRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminCategoryCategoryKeyRoute: AdminCategoryCategoryKeyRoute,
 }
 
 const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(

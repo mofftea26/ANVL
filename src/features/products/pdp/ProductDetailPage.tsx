@@ -86,7 +86,7 @@ export function ProductDetailPage({ product, related, assets, content, shopConfi
 
       {/* Cinematic zone — a compact bento grid (the "second screen"). */}
       <div className="mt-2">
-        <PdpBento product={product} variant={variant} content={content} pdp={pdp} hasStoryBook={hasStoryBook} />
+        <PdpBento product={product} variant={variant} content={content} pdp={pdp} hasStoryBook={hasStoryBook} support={support} />
         <PdpReviews slug={product.slug} />
         {pdp.showRelated ? <PdpRelated products={related} count={pdp.relatedCount} /> : null}
       </div>

@@ -14,7 +14,7 @@ import { Input } from '@/shared/components/ui/Input'
 import { Textarea } from '@/shared/components/ui/Textarea'
 import { SetupSaveRow, SetupStepBody } from '../SetupStepParts'
 import { SetupWizard } from '../SetupWizard'
-import { useSetupBlobStep } from '../useSetupBlobStep'
+import { setupPreviewBinding, useSetupBlobStep } from '../useSetupBlobStep'
 
 const TAB_LABELS: Record<LegalPageKey, string> = {
   privacy: 'Privacy Policy',
@@ -22,6 +22,20 @@ const TAB_LABELS: Record<LegalPageKey, string> = {
   cookies: 'Cookie Policy',
   accessibility: 'Accessibility Statement',
 }
+
+/** Storefront route per legal page — drives the docked live preview. */
+const PAGE_ROUTES: Record<LegalPageKey, string> = {
+  privacy: '/privacy',
+  terms: '/terms',
+  cookies: '/cookie-policy',
+  accessibility: '/accessibility',
+}
+
+/** Unsaved legal edits → live preview (identity — same blob shape). */
+const legalPreviewBinding = setupPreviewBinding(
+  'legalContent',
+  (value: LegalContentConfig) => value,
+)
 
 const LEGAL_EDITOR_LINK = [
   { label: 'Fine-tune every field in the Legal editor', to: '/admin/legal' },
@@ -34,6 +48,7 @@ function LegalPageStep({ pageKey, onNavigate }: { pageKey: LegalPageKey; onNavig
     save: saveLegalContentAsync,
     successMessage: `${TAB_LABELS[pageKey]} saved.`,
     errorFallbackMessage: `Could not save the ${TAB_LABELS[pageKey]}.`,
+    preview: legalPreviewBinding,
   })
   const page = editor.value.pages[pageKey]
   const defaults = LEGAL_CONTENT_DEFAULTS[pageKey]
@@ -105,6 +120,7 @@ export function LegalSetupWizard({ open, onClose }: { open: boolean; onClose: ()
         key,
         title: TAB_LABELS[key],
         blurb: 'Title · intro · sections.',
+        preview: { route: PAGE_ROUTES[key] },
         render: () => <LegalPageStep pageKey={key} onNavigate={onClose} />,
       }))}
     />

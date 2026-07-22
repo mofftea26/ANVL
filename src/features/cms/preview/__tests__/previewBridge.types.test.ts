@@ -22,6 +22,42 @@ describe('parseAdminPreviewMessage', () => {
     expect(parseAdminPreviewMessage({ type: 'other-message' })).toBeNull()
     expect(parseAdminPreviewMessage({ type: 'anvl-preview/hello' })).toBeNull()
     expect(parseAdminPreviewMessage({ type: 'anvl-preview/hello', v: 99 })).toBeNull()
+    expect(parseAdminPreviewMessage({ type: 'anvl-preview/hello', v: 0 })).toBeNull()
+  })
+
+  it('stays tolerant of v1 senders (v <= current accepted)', () => {
+    expect(parseAdminPreviewMessage({ type: 'anvl-preview/hello', v: 1 })).toEqual({
+      type: 'anvl-preview/hello',
+      v: 1,
+    })
+    expect(
+      parseAdminPreviewMessage({
+        type: 'anvl-preview/hover',
+        v: 1,
+        target: { kind: 'content-field', id: 'shop:grid' },
+      }),
+    ).toMatchObject({ type: 'anvl-preview/hover' })
+  })
+
+  it('round-trips v2 inspect-mode', () => {
+    expect(
+      parseAdminPreviewMessage({
+        type: 'anvl-preview/inspect-mode',
+        v: PREVIEW_PROTOCOL_VERSION,
+        enabled: true,
+      }),
+    ).toEqual({
+      type: 'anvl-preview/inspect-mode',
+      v: PREVIEW_PROTOCOL_VERSION,
+      enabled: true,
+    })
+    expect(
+      parseAdminPreviewMessage({
+        type: 'anvl-preview/inspect-mode',
+        v: PREVIEW_PROTOCOL_VERSION,
+        enabled: 'yes',
+      }),
+    ).toBeNull()
   })
 
   it('parses draft payload slices and drops unknown fields', () => {
@@ -88,6 +124,62 @@ describe('parseStorefrontPreviewMessage', () => {
         found: true,
       }),
     ).toMatchObject({ found: true })
-    expect(parseStorefrontPreviewMessage({ type: 'anvl-preview/ready', v: 2, path: '/' })).toBeNull()
+    // v1 messages stay accepted; out-of-range versions are rejected.
+    expect(
+      parseStorefrontPreviewMessage({ type: 'anvl-preview/ready', v: 1, path: '/' }),
+    ).toMatchObject({ path: '/' })
+    expect(
+      parseStorefrontPreviewMessage({ type: 'anvl-preview/ready', v: 99, path: '/' }),
+    ).toBeNull()
+  })
+
+  it('round-trips v2 inspect-hover, inspect-click, and the inspect-mode echo', () => {
+    expect(
+      parseStorefrontPreviewMessage({
+        type: 'anvl-preview/inspect-hover',
+        v: PREVIEW_PROTOCOL_VERSION,
+        target: { kind: 'content-field', id: 'about:orb-2' },
+      }),
+    ).toEqual({
+      type: 'anvl-preview/inspect-hover',
+      v: PREVIEW_PROTOCOL_VERSION,
+      target: { kind: 'content-field', id: 'about:orb-2' },
+    })
+    expect(
+      parseStorefrontPreviewMessage({
+        type: 'anvl-preview/inspect-hover',
+        v: PREVIEW_PROTOCOL_VERSION,
+        target: null,
+      }),
+    ).toEqual({
+      type: 'anvl-preview/inspect-hover',
+      v: PREVIEW_PROTOCOL_VERSION,
+      target: null,
+    })
+    expect(
+      parseStorefrontPreviewMessage({
+        type: 'anvl-preview/inspect-click',
+        v: PREVIEW_PROTOCOL_VERSION,
+        target: { kind: 'content-field', id: 'banner:rail' },
+      }),
+    ).toMatchObject({ type: 'anvl-preview/inspect-click' })
+    expect(
+      parseStorefrontPreviewMessage({
+        type: 'anvl-preview/inspect-click',
+        v: PREVIEW_PROTOCOL_VERSION,
+        target: null,
+      }),
+    ).toBeNull()
+    expect(
+      parseStorefrontPreviewMessage({
+        type: 'anvl-preview/inspect-mode',
+        v: PREVIEW_PROTOCOL_VERSION,
+        enabled: false,
+      }),
+    ).toEqual({
+      type: 'anvl-preview/inspect-mode',
+      v: PREVIEW_PROTOCOL_VERSION,
+      enabled: false,
+    })
   })
 })

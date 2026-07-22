@@ -1,4 +1,4 @@
-import { Check, Info, Package, QrCode, Save } from '@/shared/icons'
+import { Info, Package, QrCode } from '@/shared/icons'
 import { Link } from '@tanstack/react-router'
 import {
   useCallback,
@@ -11,6 +11,7 @@ import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminLoadingState } from '@/features/admin/components/AdminLoadingState'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
+import { AdminSaveAction } from '@/features/admin/components/AdminSaveAction'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
@@ -29,7 +30,6 @@ import {
   type PdpProductContent,
 } from '@/features/cms/pdpContent/pdpContent.zod'
 import { Textarea } from '@/shared/components/ui'
-import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 
@@ -60,7 +60,7 @@ function sanitizeLines(value: string): string[] {
 export function AdminPdpContentEditor() {
   const setPageActions = useAdminPageActions()
   const stored = useStoredPdpContent()
-  const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
+  const { config, setConfig, isDirty, saving, showSuccess, save } = useSingletonCmsEditor({
     id: 'pdp-content',
     stored,
     saveAsync: savePdpContentAsync,
@@ -98,20 +98,15 @@ export function AdminPdpContentEditor() {
 
   const toolbar = useMemo(
     () => (
-      <Button
-        type="button"
-        disabled={saving}
-        variant="primary"
-        size="md"
-        density="compact"
-        loading={saving}
-        onClick={save}
-      >
-        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
-        {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save content'}
-      </Button>
+      <AdminSaveAction
+        onSave={save}
+        saving={saving}
+        showSuccess={showSuccess}
+        dirty={isDirty}
+        label="Save content"
+      />
     ),
-    [save, saving, showSuccess],
+    [save, saving, showSuccess, isDirty],
   )
 
   useEffect(() => {

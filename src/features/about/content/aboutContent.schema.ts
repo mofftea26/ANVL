@@ -37,13 +37,45 @@ export const aboutStatSchema = z.strictObject({
   suffix: trimmedOptional,
 })
 
+/**
+ * Per-orb layout preset. `classic` is today's free-form render and the default
+ * for every legacy orb (no migration — absent/invalid values resolve to it).
+ */
+export const aboutOrbLayoutSchema = z.enum(['classic', 'text', 'stats', 'map', 'timeline'])
+
+/** A pin on the world map ('map' preset) — percent coords of the map image. */
+export const aboutMapPinSchema = z.strictObject({
+  id: trimmedOptional,
+  /** Percent of the map image box — clamped to 0–100 by the resolver. */
+  x: z.number().catch(50),
+  y: z.number().catch(50),
+  label: trimmedOptional,
+})
+
+/** A milestone in the vertical timeline ('timeline' preset). */
+export const aboutTimelineEntrySchema = z.strictObject({
+  id: trimmedOptional,
+  /** Short marker riding the hairline (a year, a tag). */
+  marker: trimmedOptional,
+  title: trimmedOptional,
+  body: trimmedOptional,
+})
+
 export const aboutOrbSchema = z.strictObject({
   /** Short orb label shown under the orb / on its chip. */
   label: trimmedOptional,
   /** Orb color as #RRGGBB — drives the orb, its halo, and the burst. */
   color: trimmedOptional,
+  /**
+   * Layout preset — how the orb's fields compose in the modal/section.
+   * Optional + caught so legacy blobs and bad values fall back to `classic`
+   * at resolve time without failing the whole slice.
+   */
+  layout: aboutOrbLayoutSchema.optional().catch(undefined),
   eyebrow: trimmedOptional,
   title: trimmedOptional,
+  /** Editorial lead line under the title ('text' preset). */
+  subhead: trimmedOptional,
   body: trimmedOptional,
   /** Mono-tracked spec line. */
   detail: trimmedOptional,
@@ -51,6 +83,10 @@ export const aboutOrbSchema = z.strictObject({
   lines: z.array(z.string()).max(8).optional(),
   points: z.array(aboutPointSchema).max(6).optional(),
   stats: z.array(aboutStatSchema).max(8).optional(),
+  /** World-map pins ('map' preset). Caught so a malformed list never nukes the orb. */
+  mapPins: z.array(aboutMapPinSchema).max(12).optional().catch(undefined),
+  /** Vertical milestones ('timeline' preset). */
+  timeline: z.array(aboutTimelineEntrySchema).max(12).optional().catch(undefined),
   primaryCta: aboutCtaSchema.optional(),
   secondaryCta: aboutCtaSchema.optional(),
   tagline: trimmedOptional,
@@ -84,4 +120,7 @@ export type AboutLandingContent = z.infer<typeof aboutLandingContentSchema>
 export type AboutCta = z.infer<typeof aboutCtaSchema>
 export type AboutPoint = z.infer<typeof aboutPointSchema>
 export type AboutStat = z.infer<typeof aboutStatSchema>
+export type AboutOrbLayout = z.infer<typeof aboutOrbLayoutSchema>
+export type AboutMapPin = z.infer<typeof aboutMapPinSchema>
+export type AboutTimelineEntry = z.infer<typeof aboutTimelineEntrySchema>
 export type AboutOrb = z.infer<typeof aboutOrbSchema>

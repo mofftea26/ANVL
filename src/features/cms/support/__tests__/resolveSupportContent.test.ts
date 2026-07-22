@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { SUPPORT_CONTENT_DEFAULTS } from '@/features/cms/support/supportContent.defaults'
 import { parseSupportContent } from '@/features/cms/support/supportContent.zod'
-import { resolveSupportContent } from '@/features/cms/support/resolveSupportContent'
+import {
+  resolveCareItems,
+  resolveSizeTable,
+  resolveSupportContent,
+} from '@/features/cms/support/resolveSupportContent'
 
 function config(overrides: Record<string, unknown> = {}) {
   return parseSupportContent(overrides)
@@ -56,7 +60,81 @@ describe('resolveSupportContent', () => {
     expect(resolved.careGuide.perProduct['oversized-tee']).toEqual({
       note: 'n',
       lines: ['wash cold'],
+      items: [],
     })
     expect(resolved.sizeGuide.perProduct.stringer.rows[0].values).toEqual(['96'])
+  })
+})
+
+describe('resolveCareItems', () => {
+  it('maps legacy lines to generic items when no structured items exist', () => {
+    const items = resolveCareItems({
+      note: '',
+      lines: ['Wash cold', '  ', 'Hang dry'],
+      items: [],
+    })
+    expect(items).toEqual([
+      { id: 'care-line-0', icon: 'generic', name: 'Wash cold', value: '', note: '' },
+      { id: 'care-line-1', icon: 'generic', name: 'Hang dry', value: '', note: '' },
+    ])
+  })
+
+  it('prefers structured items over legacy lines without mutating the entry', () => {
+    const entry = {
+      note: '',
+      lines: ['legacy line'],
+      items: [
+        { id: 'i1', icon: 'washing-machine' as const, name: 'Machine wash', value: '30', note: 'inside out' },
+        { id: '', icon: 'generic' as const, name: '  ', value: '', note: '' },
+      ],
+    }
+    const items = resolveCareItems(entry)
+    expect(items).toEqual([
+      { id: 'i1', icon: 'washing-machine', name: 'Machine wash', value: '30', note: 'inside out' },
+    ])
+    // Stored data untouched.
+    expect(entry.lines).toEqual(['legacy line'])
+    expect(entry.items).toHaveLength(2)
+  })
+})
+
+describe('resolveSizeTable', () => {
+  const legacyRows = [{ id: 'r', size: 'M', values: ['96'] }]
+
+  it('returns null when nothing is authored', () => {
+    expect(resolveSizeTable({ note: '', columns: [], rows: [] })).toBeNull()
+  })
+
+  it('falls back to the legacy shape when the structured table is empty', () => {
+    const resolved = resolveSizeTable({
+      note: '',
+      columns: ['Chest'],
+      rows: legacyRows,
+      table: { rows: [{ key: 'chest', values: ['', '', '', '', '', ''] }], halfMeasurement: true },
+    })
+    expect(resolved).toEqual({ kind: 'legacy', columns: ['Chest'], rows: legacyRows })
+  })
+
+  it('prefers the structured table when any cell is filled', () => {
+    const resolved = resolveSizeTable({
+      note: '',
+      columns: ['Chest'],
+      rows: legacyRows,
+      table: {
+        rows: [
+          { key: 'chest', values: ['44', '46', '48', '50', '', ''] },
+          { key: 'cuff', values: ['', '', '', '', '', ''] },
+        ],
+        halfMeasurement: false,
+      },
+    })
+    expect(resolved?.kind).toBe('structured')
+    if (resolved?.kind === 'structured') {
+      // Empty structured rows are dropped from the render shape.
+      expect(resolved.rows).toHaveLength(1)
+      expect(resolved.rows[0].key).toBe('chest')
+      expect(resolved.sizes).toEqual(['XS', 'S', 'M', 'L', 'XL', 'XXL'])
+      expect(resolved.halfMeasurement).toBe(false)
+    }
   })
 })

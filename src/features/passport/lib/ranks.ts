@@ -1,5 +1,6 @@
 import type { OwnedPassport } from '../schemas/passport.schema'
 import {
+  ARMORY_RANK_KEYS,
   DEFAULT_GAMIFICATION_RULES,
   type ArmoryRankKey,
   type GamificationBadgeRule,
@@ -52,9 +53,16 @@ export interface CatalogProductRef {
 
 const ROMAN: Record<1 | 2 | 3, string> = { 1: 'I', 2: 'II', 3: 'III' }
 
-/** CMS emblem override wins; the code-owned artwork is the fallback. */
+/**
+ * CMS emblem override wins. Without one, only the four SEEDED keys have
+ * code-owned artwork (`/brand/ranks/{key}.png`); admin-created ranks fall
+ * back to the neutral ANVL mark (existing brand asset — no invented PNGs)
+ * until an emblem is assigned in `/admin/gamification`.
+ */
 export function rankEmblemSrc(key: ArmoryRankKey, emblemUrl: string | null): string {
-  return emblemUrl?.trim() ? emblemUrl : `/brand/ranks/${key}.png`
+  if (emblemUrl?.trim()) return emblemUrl
+  const isSeedKey = (ARMORY_RANK_KEYS as readonly string[]).includes(key)
+  return isSeedKey ? `/brand/ranks/${key}.png` : '/brand/mark.svg'
 }
 
 /**

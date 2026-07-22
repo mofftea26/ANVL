@@ -1,30 +1,40 @@
 import { useBlocker } from '@tanstack/react-router'
+import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import { useIsAnyAdminEditorDirty } from '@/features/admin/hooks/useAdminDirtyRegistry'
-
-const CONFIRM_MESSAGE =
-  'You have unsaved changes in this editor. Leave without saving?'
 
 /**
  * Mounted once at the admin layout level (`src/routes/admin/route.tsx`).
- * Warns before in-app navigation away from any editor with unsaved changes
- * (registered via `useRegisterAdminDirty`) and before closing/refreshing the
- * tab. Renders nothing — it's a behavior-only guard.
+ * Guards in-app navigation away from any editor with unsaved changes
+ * (registered via `useRegisterAdminDirty`) with the Studio's own
+ * {@link AdminConfirmDialog}: `withResolver` holds the blocked navigation
+ * while the dialog is open — "Leave" proceeds, "Stay" (or Escape/backdrop)
+ * resets it. The guard is generic across editors and cannot trigger their
+ * saves, so it stays a two-choice leave/stay decision.
  *
- * No custom resolver: `shouldBlockFn` handles the confirm itself via
- * `window.confirm` for in-app navigation (TanStack Router does not show any
- * prompt automatically without `withResolver`); the browser's own native
- * "leave site?" prompt covers the `beforeunload` (tab close/refresh) case.
+ * Tab close/refresh keeps the browser's NATIVE "leave site?" prompt via
+ * `enableBeforeUnload` — custom UI cannot intercept `beforeunload` (allowed
+ * native-dialog exception).
  */
 export function AdminUnsavedChangesGuard() {
   const isDirty = useIsAnyAdminEditorDirty()
 
-  useBlocker({
-    shouldBlockFn: () => {
-      if (!isDirty) return false
-      return !window.confirm(CONFIRM_MESSAGE)
-    },
+  const blocker = useBlocker({
+    shouldBlockFn: () => isDirty,
     enableBeforeUnload: isDirty,
+    withResolver: true,
   })
 
-  return null
+  return (
+    <AdminConfirmDialog
+      open={blocker.status === 'blocked'}
+      onClose={() => blocker.reset?.()}
+      title="Unsaved changes"
+      cancelLabel="Stay"
+      confirmLabel="Leave"
+      confirmVariant="destructive"
+      onConfirm={() => blocker.proceed?.()}
+    >
+      You have unsaved changes in this editor. Leave without saving?
+    </AdminConfirmDialog>
+  )
 }

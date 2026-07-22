@@ -8,6 +8,21 @@ import { AuthenticityPlate } from './AuthenticityPlate'
 import { PassportAtmosphere } from './PassportAtmosphere'
 
 /**
+ * sessionStorage marker set when the visitor leaves the teaser for auth, so
+ * the onboarding step can greet the *returning* signed-in athlete exactly once
+ * (see PassportOnboarding). Value = the passport token they left from.
+ */
+export const PASSPORT_AUTH_RETURN_KEY = 'anvl.passportAuthReturn.v1'
+
+function markPassportAuthReturn(token: string): void {
+  try {
+    window.sessionStorage.setItem(PASSPORT_AUTH_RETURN_KEY, token)
+  } catch {
+    /* non-fatal — the toast is a nicety */
+  }
+}
+
+/**
  * Signed-out gate: the cinematic hook for an unclaimed passport, or the
  * hand-over invitation when a live transfer code rides in the URL. Sign-in
  * redirects straight back here (transfer code preserved).
@@ -52,6 +67,7 @@ export function PassportTeaser({
           <Link
             to="/auth/sign-in"
             search={{ redirect }}
+            onClick={() => markPassportAuthReturn(token)}
             className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'no-underline')}
           >
             {isTransfer ? 'Sign in to accept' : 'Sign in to claim'}
@@ -61,6 +77,7 @@ export function PassportTeaser({
             <Link
               to="/auth/sign-up"
               search={{ redirect }}
+              onClick={() => markPassportAuthReturn(token)}
               className="focus-ring text-[var(--color-text)] underline underline-offset-4"
             >
               Create an account

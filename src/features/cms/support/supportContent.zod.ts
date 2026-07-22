@@ -75,11 +75,53 @@ export const supportSectionListSchema = z
 
 /* --------------------------------------------------------------------------- *
  * Care guide — global sections + per-product care notes (keyed by slug).
+ *
+ * Two authoring generations coexist (ADDITIVE — old blobs stay valid):
+ * - legacy `lines: string[]` (free text, one instruction per line)
+ * - structured `items: CareItem[]` (icon + name + optional value + note)
+ * `resolveCareItems` in `resolveSupportContent.ts` prefers `items` when any
+ * are authored and maps legacy lines to generic items at resolve time.
  * --------------------------------------------------------------------------- */
+
+/** Icon vocabulary for structured care items — keys map to the Phosphor-backed
+ * components in `@/features/support/components/careIcons`. */
+export const CARE_ICON_KEYS = [
+  'washing-machine',
+  'hand-soap',
+  'droplet',
+  'snowflake',
+  'thermometer',
+  'sun',
+  'wind',
+  'flame',
+  'prohibit',
+  'spray-bottle',
+  'coat-hanger',
+  'sparkle',
+  'shirt',
+  'generic',
+] as const
+export type CareIconKey = (typeof CARE_ICON_KEYS)[number]
+
+export const careItemSchema = z
+  .object({
+    id: z.string().catch(''),
+    icon: z.enum(CARE_ICON_KEYS).catch('generic'),
+    name: z.string().catch(''),
+    /** Optional contextual value (e.g. wash temperature "30", iron level "low"). */
+    value: z.string().catch(''),
+    note: z.string().catch(''),
+  })
+  .strict()
+export type CareItem = z.infer<typeof careItemSchema>
+
 export const careProductEntrySchema = z
   .object({
     note: z.string().catch(''),
+    /** Legacy free-text instructions — kept forever for backward compat. */
     lines: z.array(z.string()).catch([]),
+    /** Structured instructions — preferred at resolve time when non-empty. */
+    items: z.array(careItemSchema).catch([]),
   })
   .strict()
 export type CareProductEntry = z.infer<typeof careProductEntrySchema>
@@ -94,6 +136,12 @@ export const supportCareGuideSchema = z
 
 /* --------------------------------------------------------------------------- *
  * Size guide — global intro/note + per-product measurement tables (by slug).
+ *
+ * Two authoring generations coexist (ADDITIVE — old blobs stay valid):
+ * - legacy free-form `columns` + `rows` (row = one size, values per column)
+ * - structured `table` (fixed size columns XS–XXL, fixed measurement rows)
+ * `resolveSizeTable` in `resolveSupportContent.ts` prefers `table` when any
+ * cell is filled and falls back to the legacy shape otherwise.
  * --------------------------------------------------------------------------- */
 export const sizeRowSchema = z
   .object({
@@ -104,11 +152,58 @@ export const sizeRowSchema = z
   .strict()
 export type SizeRow = z.infer<typeof sizeRowSchema>
 
+/** Fixed size columns of the structured table — one value slot per size. */
+export const SIZE_TABLE_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
+export type SizeTableSize = (typeof SIZE_TABLE_SIZES)[number]
+
+/** Fixed measurement rows of the structured table, in display order. */
+export const SIZE_TABLE_ROW_KEYS = [
+  'length',
+  'chest',
+  'waist',
+  'bottom',
+  'collar',
+  'sleeve',
+  'cuff',
+] as const
+export type SizeTableRowKey = (typeof SIZE_TABLE_ROW_KEYS)[number]
+
+export const SIZE_TABLE_ROW_LABELS: Record<SizeTableRowKey, string> = {
+  length: 'Length',
+  chest: 'Chest width',
+  waist: 'Waist width',
+  bottom: 'Bottom width',
+  collar: 'Collar width',
+  sleeve: 'Sleeve width',
+  cuff: 'Cuff width',
+}
+
+export const sizeTableRowSchema = z
+  .object({
+    key: z.enum(SIZE_TABLE_ROW_KEYS),
+    /** One value per size in {@link SIZE_TABLE_SIZES}; '' = size not offered. */
+    values: z.array(z.string()).catch([]),
+  })
+  .strict()
+export type SizeTableRow = z.infer<typeof sizeTableRowSchema>
+
+export const sizeTableSchema = z
+  .object({
+    rows: z.array(sizeTableRowSchema).catch([]),
+    /** Widths are HALF measurements (garment laid flat) when true. */
+    halfMeasurement: z.boolean().catch(true),
+  })
+  .strict()
+export type SizeTable = z.infer<typeof sizeTableSchema>
+
 export const sizeProductEntrySchema = z
   .object({
     note: z.string().catch(''),
+    /** Legacy free-form table — kept forever for backward compat. */
     columns: z.array(z.string()).catch([]),
     rows: z.array(sizeRowSchema).catch([]),
+    /** Structured fixed-grid table — preferred at resolve time when filled. */
+    table: sizeTableSchema.optional(),
   })
   .strict()
 export type SizeProductEntry = z.infer<typeof sizeProductEntrySchema>
@@ -187,6 +282,18 @@ function pickStringArray(raw: unknown): string[] {
   return raw.map((v) => (typeof v === 'string' ? v : String(v ?? '')))
 }
 
+function pickCareItems(raw: unknown): Record<string, unknown>[] {
+  if (!Array.isArray(raw)) return []
+  return raw.map((item) => ({
+    id: '',
+    icon: 'generic',
+    name: '',
+    value: '',
+    note: '',
+    ...pickKeys(item, ['id', 'icon', 'name', 'value', 'note']),
+  }))
+}
+
 function pickCarePerProduct(raw: unknown): Record<string, unknown> {
   const r = obj(raw)
   const out: Record<string, unknown> = {}
@@ -196,9 +303,36 @@ function pickCarePerProduct(raw: unknown): Record<string, unknown> {
     out[slug] = {
       note: 'note' in v ? v.note : '',
       lines: pickStringArray(v.lines),
+      items: pickCareItems(v.items),
     }
   }
   return out
+}
+
+const SIZE_ROW_KEY_SET: ReadonlySet<string> = new Set(SIZE_TABLE_ROW_KEYS)
+
+/** Pick a structured size table (rows with invalid keys are dropped, values
+ * padded/truncated to one slot per fixed size column). `undefined` when absent. */
+function pickSizeTable(raw: unknown): Record<string, unknown> | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined
+  const v = raw as Record<string, unknown>
+  const rows = Array.isArray(v.rows)
+    ? v.rows
+        .filter((row) => {
+          const rowObj = obj(row)
+          return typeof rowObj.key === 'string' && SIZE_ROW_KEY_SET.has(rowObj.key)
+        })
+        .map((row) => {
+          const rowObj = obj(row)
+          const values = pickStringArray(rowObj.values).slice(0, SIZE_TABLE_SIZES.length)
+          while (values.length < SIZE_TABLE_SIZES.length) values.push('')
+          return { key: rowObj.key, values }
+        })
+    : []
+  return {
+    rows,
+    halfMeasurement: 'halfMeasurement' in v ? v.halfMeasurement : true,
+  }
 }
 
 function pickSizePerProduct(raw: unknown): Record<string, unknown> {
@@ -217,10 +351,12 @@ function pickSizePerProduct(raw: unknown): Record<string, unknown> {
           }
         })
       : []
+    const table = pickSizeTable(v.table)
     out[slug] = {
       note: 'note' in v ? v.note : '',
       columns: pickStringArray(v.columns),
       rows,
+      ...(table ? { table } : {}),
     }
   }
   return out

@@ -1,7 +1,10 @@
-import { Check, Copy, Plus, RotateCcw, Save, Sparkles, Trash2 } from '@/shared/icons'
+import { Copy, Plus, RotateCcw, Sparkles, Trash2 } from '@/shared/icons'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
+import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
+import { AdminPromptDialog } from '@/features/admin/components/AdminPromptDialog'
+import { AdminSaveAction } from '@/features/admin/components/AdminSaveAction'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
@@ -26,12 +29,9 @@ import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { ThemeColorField } from './ThemeColorField'
-import {
-  SiteThemePreviewRail,
-  type ThemePreviewMode,
-} from './SiteThemePreviewRail'
+import { SiteThemePreviewRail } from './SiteThemePreviewRail'
 
-type PreviewMode = ThemePreviewMode
+type ThemeDialog = 'new' | 'reset' | 'delete' | null
 
 function useThemeLibrary(): ThemeLibraryConfig {
   return useSyncExternalStore(
@@ -44,6 +44,8 @@ function useThemeLibrary(): ThemeLibraryConfig {
 export function SiteThemeEditor() {
   const setPageActions = useAdminPageActions()
   const stored = useThemeLibrary()
+  const [editingId, setEditingId] = useState(stored.activeThemeId)
+  const [dialog, setDialog] = useState<ThemeDialog>(null)
   const {
     config: library,
     setConfig: setLibrary,
@@ -55,11 +57,13 @@ export function SiteThemeEditor() {
     id: 'theme',
     stored,
     saveAsync: saveThemeConfigAsync,
-    successMessage: 'Theme saved to Supabase.',
+    // Says exactly what went live so "edited preset X but preset Y is live"
+    // can never read as a silent success (E4/E6).
+    successMessage: `Saved — live theme: ${
+      stored.themes.find((t) => t.id === stored.activeThemeId)?.name ?? 'unknown'
+    }.`,
     errorFallbackMessage: 'Could not save theme.',
   })
-  const [editingId, setEditingId] = useState(stored.activeThemeId)
-  const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop')
 
   // Live preview tracks the preset being edited, even before it's activated.
   const previewLibrary = useMemo(
@@ -74,21 +78,17 @@ export function SiteThemeEditor() {
 
   const editingPreset =
     library.themes.find((t) => t.id === editingId) ?? library.themes[0]
+  const editingIsLive = editingPreset?.id === library.activeThemeId
 
   const toolbar = useMemo(
     () => (
-      <Button
-        type="button"
-        disabled={saving}
-        variant="primary"
-        size="md"
-        density="compact"
-        loading={saving}
-        onClick={save}
-      >
-        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
-        {saving ? 'Saving…' : showSuccess ? 'Saved' : isDirty ? 'Save theme •' : 'Save theme'}
-      </Button>
+      <AdminSaveAction
+        onSave={save}
+        saving={saving}
+        showSuccess={showSuccess}
+        dirty={isDirty}
+        label="Save theme"
+      />
     ),
     [save, saving, showSuccess, isDirty],
   )
@@ -113,14 +113,15 @@ export function SiteThemeEditor() {
     }))
   }
 
-  function addTheme() {
-    const name = window.prompt('Theme name', 'New theme')
-    if (!name?.trim()) return
-    const appearance: ThemeAppearance =
-      window.confirm('Use light appearance? Cancel for dark.') ? 'light' : 'dark'
-    const preset = createThemePreset(name.trim(), appearance)
+  function confirmAddTheme(name: string, appearance?: string) {
+    const preset = createThemePreset(
+      name,
+      appearance === 'light' ? 'light' : 'dark',
+    )
     setLibrary((prev) => ({ ...prev, themes: [...prev.themes, preset] }))
     setEditingId(preset.id)
+    setDialog(null)
+    toast.success(`Created “${name}.” Save to keep it.`)
   }
 
   function duplicateTheme() {
@@ -136,25 +137,35 @@ export function SiteThemeEditor() {
     toast.success(`Duplicated “${editingPreset.name}.”`)
   }
 
-  function resetTheme() {
+  function requestResetTheme() {
     if (!editingPreset) return
-    const builtIn = ANVL_PRESETS.find((p) => p.id === editingPreset.id)
-    if (!builtIn) {
+    if (!ANVL_PRESETS.some((p) => p.id === editingPreset.id)) {
       toast.error('Only built-in presets can be reset.')
       return
     }
-    if (!window.confirm(`Reset “${editingPreset.name}” to its brand defaults?`)) return
+    setDialog('reset')
+  }
+
+  function confirmResetTheme() {
+    if (!editingPreset) return
+    const builtIn = ANVL_PRESETS.find((p) => p.id === editingPreset.id)
+    if (!builtIn) return
     updatePreset(() => ({ ...builtIn }))
+    setDialog(null)
     toast.success(`Reset “${editingPreset.name}.”`)
   }
 
-  function removeTheme() {
+  function requestRemoveTheme() {
     if (library.themes.length <= 1) {
       toast.error('Keep at least one theme.')
       return
     }
     if (!editingPreset) return
-    if (!window.confirm(`Delete “${editingPreset.name}”?`)) return
+    setDialog('delete')
+  }
+
+  function confirmRemoveTheme() {
+    if (!editingPreset) return
     setLibrary((prev) => {
       const themes = prev.themes.filter((t) => t.id !== editingPreset.id)
       const activeThemeId =
@@ -162,6 +173,8 @@ export function SiteThemeEditor() {
       return { ...prev, activeThemeId, themes }
     })
     setEditingId(library.themes.find((t) => t.id !== editingPreset.id)?.id ?? '')
+    setDialog(null)
+    toast.success(`Deleted “${editingPreset.name}.” Save to make it permanent.`)
   }
 
   function setLiveTheme(themeId: string) {
@@ -184,12 +197,7 @@ export function SiteThemeEditor() {
       <AdminWorkspace
         asideLabel="Theme preview and accessibility"
         aside={
-          <SiteThemePreviewRail
-            preset={editingPreset}
-            mode={previewMode}
-            onModeChange={setPreviewMode}
-            onApplyFix={setPaletteField}
-          />
+          <SiteThemePreviewRail preset={editingPreset} onApplyFix={setPaletteField} />
         }
       >
         <div className="space-y-6">
@@ -208,7 +216,7 @@ export function SiteThemeEditor() {
               />
             </div>
             <AdminFieldSelect
-              label="Live storefront theme"
+              label="Live on storefront"
               value={library.activeThemeId}
               onChange={setLiveTheme}
               options={library.themes.map((t) => ({ value: t.id, label: t.name }))}
@@ -219,7 +227,7 @@ export function SiteThemeEditor() {
                 size="icon"
                 variant="secondary"
                 density="compact"
-                onClick={addTheme}
+                onClick={() => setDialog('new')}
                 aria-label="New theme"
                 title="New theme"
               >
@@ -241,7 +249,7 @@ export function SiteThemeEditor() {
                 size="icon"
                 variant="secondary"
                 density="compact"
-                onClick={resetTheme}
+                onClick={requestResetTheme}
                 aria-label="Reset to preset"
                 title="Reset to brand preset"
               >
@@ -252,7 +260,7 @@ export function SiteThemeEditor() {
                 size="icon"
                 variant="destructive"
                 density="compact"
-                onClick={removeTheme}
+                onClick={requestRemoveTheme}
                 aria-label="Delete theme"
                 title="Delete theme"
               >
@@ -260,6 +268,29 @@ export function SiteThemeEditor() {
               </Button>
             </div>
           </div>
+
+          {/* E4/E6 — make the editing-vs-live mental model explicit. */}
+          {!editingIsLive ? (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-2">
+              <p className="text-xs text-[var(--color-text-muted)]" role="status">
+                Editing:{' '}
+                <span className="font-medium text-[var(--color-text)]">
+                  {editingPreset.name}
+                </span>{' '}
+                — not the live theme. Storefront visitors see “
+                {library.themes.find((t) => t.id === library.activeThemeId)?.name}.”
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                density="compact"
+                onClick={() => setLiveTheme(editingPreset.id)}
+              >
+                Make this the live theme
+              </Button>
+            </div>
+          ) : null}
 
           {editingPreset.recommended ? (
             <p className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-3 py-1 text-xs text-[var(--color-accent)]">
@@ -322,6 +353,49 @@ export function SiteThemeEditor() {
           ))}
         </div>
       </AdminWorkspace>
+
+      <AdminPromptDialog
+        open={dialog === 'new'}
+        onClose={() => setDialog(null)}
+        title="New theme"
+        description="Starts from the brand defaults for the chosen appearance."
+        inputLabel="Theme name"
+        placeholder="e.g. Midnight Bronze"
+        defaultValue="New theme"
+        extraLabel="Appearance"
+        extraOptions={[
+          { value: 'dark', label: 'Dark' },
+          { value: 'light', label: 'Light' },
+        ]}
+        confirmLabel="Create theme"
+        onConfirm={confirmAddTheme}
+      />
+
+      <AdminConfirmDialog
+        open={dialog === 'reset'}
+        onClose={() => setDialog(null)}
+        title="Reset theme?"
+        confirmLabel="Reset"
+        confirmVariant="destructive"
+        onConfirm={confirmResetTheme}
+      >
+        Reset “{editingPreset.name}” to its brand defaults? Your color edits on
+        this preset are discarded.
+      </AdminConfirmDialog>
+
+      <AdminConfirmDialog
+        open={dialog === 'delete'}
+        onClose={() => setDialog(null)}
+        title="Delete theme?"
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={confirmRemoveTheme}
+      >
+        Delete “{editingPreset.name}”?{' '}
+        {editingIsLive
+          ? 'It is the live storefront theme — the first remaining theme goes live instead.'
+          : 'This cannot be undone after you save.'}
+      </AdminConfirmDialog>
     </div>
   )
 }

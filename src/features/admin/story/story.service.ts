@@ -50,6 +50,27 @@ export type ChapterDraft = {
   isPublished: boolean
 }
 
+/**
+ * Maps raw Postgres unique-violation noise on chapter writes to actionable
+ * copy. Multiple chapters may share a product_slug (the one-per-product index
+ * was dropped in migration 20260720100000) — only the chapter slug stays unique.
+ */
+function friendlyChapterWriteError(message: string): string {
+  if (message.includes('story_chapters_product_slug_key')) {
+    return (
+      'The database still enforces one book per product — apply migration ' +
+      '20260720100000_story_chapters_many_per_product.sql to allow multiple chapters per product.'
+    )
+  }
+  if (
+    message.includes('story_chapters_slug_key') ||
+    message.toLowerCase().includes('duplicate key')
+  ) {
+    return 'A chapter with this slug already exists — pick a unique slug (several chapters may share a product).'
+  }
+  return message
+}
+
 export type ActDraft = {
   id?: string
   chapterId: string
@@ -127,7 +148,7 @@ export async function upsertChapter(
     ? c.data.from('story_chapters').update(row).eq('id', draft.id).select('id').single()
     : c.data.from('story_chapters').insert(row).select('id').single()
   const { data, error } = await query
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: friendlyChapterWriteError(error.message) }
   return { ok: true, data: (data as { id: string }).id }
 }
 

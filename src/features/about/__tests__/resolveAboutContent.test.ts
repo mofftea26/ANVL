@@ -83,6 +83,77 @@ describe('resolveAboutContent', () => {
   })
 })
 
+describe('resolveAboutContent — layout presets', () => {
+  it('defaults every legacy orb (no layout key) to classic', () => {
+    const resolved = resolveAboutContent({ orbs: [{ title: 'Legacy orb' }] })
+    expect(resolved.orbs[0]?.layout).toBe('classic')
+    expect(resolved.orbs[0]?.subhead).toBe('')
+    expect(resolved.orbs[0]?.mapPins).toEqual([])
+    expect(resolved.orbs[0]?.timeline).toEqual([])
+  })
+
+  it('keeps the orb and falls back to classic on an unknown layout value', () => {
+    const resolved = resolveAboutContent({ orbs: [{ layout: 'zigzag', title: 'Kept' }] })
+    expect(resolved.orbs[0]?.title).toBe('Kept')
+    expect(resolved.orbs[0]?.layout).toBe('classic')
+  })
+
+  it('passes text-preset fields through (layout + subhead)', () => {
+    const resolved = resolveAboutContent({
+      orbs: [{ layout: 'text', subhead: 'A lead line.' }],
+    })
+    expect(resolved.orbs[0]?.layout).toBe('text')
+    expect(resolved.orbs[0]?.subhead).toBe('A lead line.')
+  })
+
+  it('passes map pins through with clamped percents and stable ids', () => {
+    const resolved = resolveAboutContent({
+      orbs: [
+        {
+          layout: 'map',
+          mapPins: [
+            { x: 120, y: -4, label: '  Beirut ' },
+            { x: 35.5, y: 60 },
+          ],
+        },
+      ],
+    })
+    const orb = resolved.orbs[0]!
+    expect(orb.layout).toBe('map')
+    expect(orb.mapPins).toEqual([
+      { id: 'pin-1', x: 100, y: 0, label: 'Beirut' },
+      { id: 'pin-2', x: 35.5, y: 60, label: '' },
+    ])
+  })
+
+  it('passes timeline milestones through and drops fully-empty rows', () => {
+    const resolved = resolveAboutContent({
+      orbs: [
+        {
+          layout: 'timeline',
+          timeline: [
+            { marker: '2026', title: 'Drop 01', body: 'The Oath ships.' },
+            { marker: ' ', title: '', body: '' },
+          ],
+        },
+      ],
+    })
+    const orb = resolved.orbs[0]!
+    expect(orb.layout).toBe('timeline')
+    expect(orb.timeline).toEqual([
+      { id: 'milestone-1', marker: '2026', title: 'Drop 01', body: 'The Oath ships.' },
+    ])
+  })
+
+  it('passes the stats preset through with the existing stats contract', () => {
+    const resolved = resolveAboutContent({
+      orbs: [{ layout: 'stats', stats: [{ label: 'Hours', value: '500', suffix: '+' }] }],
+    })
+    expect(resolved.orbs[0]?.layout).toBe('stats')
+    expect(resolved.orbs[0]?.stats[0]).toMatchObject({ label: 'Hours', value: '500', suffix: '+' })
+  })
+})
+
 describe('orbImage', () => {
   it('prefers the orb-specific image, falls back to its page slot', () => {
     const assets = { heroImage: '/slot-hero.webp' }

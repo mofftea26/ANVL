@@ -69,16 +69,21 @@ export function createSupabaseStoryReadSlice(env: SupabasePublicEnv): StoryClien
     },
 
     async getChapterByProductSlug(productSlug: string): Promise<StoryChapter | null> {
+      // Multiple chapters may share a product_slug (the one-per-product unique
+      // index was dropped in 20260720100000). Ordered-first semantics: the
+      // lowest sort_order book represents the product — `.maybeSingle()` would
+      // error with >1 row.
       const supabase = getSupabasePublicationAnonClient(env)
       const { data, error } = await supabase
         .from('story_chapters')
         .select(CHAPTER_SELECT)
         .eq('product_slug', productSlug)
         .eq('is_published', true)
-        .maybeSingle()
+        .order('sort_order', { ascending: true })
+        .limit(1)
       if (error) throw error
-      if (!data) return null
-      const chapter = data as StoryChapterRow
+      const chapter = (data ?? [])[0] as StoryChapterRow | undefined
+      if (!chapter) return null
       const { acts, cast } = await fetchChildren([chapter.id])
       return assembleChapter(chapter, acts, cast)
     },

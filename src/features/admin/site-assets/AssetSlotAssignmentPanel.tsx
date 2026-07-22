@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { matchesMediaKind } from '@/features/admin/media/filterMediaLibraryItems'
 import { hasDraggedMedia, readDraggedMediaId } from '@/features/admin/media/mediaDrag'
 import { setPreviewHover } from '@/features/admin/preview/adminPreviewStore'
-import type { PreviewTarget } from '@/features/cms/preview'
+import { previewFieldAnchorId, type PreviewTarget } from '@/features/cms/preview'
 import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
 import type { AssetSlotDefinition, AssetSlotKind } from '@/features/landingPages/assetSlots'
 import { cn } from '@/shared/lib/cn'
@@ -104,6 +104,20 @@ export function AssetSlotAssignmentPanel({
     focusRef.current?.scrollIntoView({ block: 'center' })
   }, [focusSlotKey])
 
+  // Inspector anchors: many slots share a preview target (`shop:grid`,
+  // `site:page`…) — only the FIRST slot per target id carries the DOM id,
+  // keeping ids unique within the panel.
+  const anchorSlotByTargetId = useMemo(() => {
+    const first = new Map<string, string>()
+    for (const section of slotSections) {
+      for (const slot of section.slots) {
+        const target = slotPreviewTarget(scope, slot.key)
+        if (target && !first.has(target.id)) first.set(target.id, slot.key)
+      }
+    }
+    return first
+  }, [slotSections, scope])
+
   return (
     <AdminRailPanel
       title="Slot assignments"
@@ -148,6 +162,11 @@ export function AssetSlotAssignmentPanel({
                   return (
                   <div
                     key={slot.key}
+                    id={
+                      hoverTarget && anchorSlotByTargetId.get(hoverTarget.id) === slot.key
+                        ? previewFieldAnchorId(hoverTarget.id)
+                        : undefined
+                    }
                     ref={isFocused ? focusRef : undefined}
                     onMouseOver={
                       hoverTarget

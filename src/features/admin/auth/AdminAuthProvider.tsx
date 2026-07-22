@@ -21,6 +21,7 @@ import type {
 } from '@/features/admin/auth/adminAuth.types'
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { hydrateAdminCmsFromSupabase } from '@/features/admin/cmsRemote/adminCmsHydration'
+import { clearCmsProfileRoleCache } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
 
 export const AdminAuthContext = createContext<AdminAuthContextValue | null>(null)
 
@@ -177,6 +178,8 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
 
   const logout = useCallback(async () => {
     remotePullGenerationRef.current += 1
+    // A different admin may sign in next in this tab — drop the cached role.
+    clearCmsProfileRoleCache()
     await callLogout()
     const client = getAdminSupabaseBrowserClient()
     await client?.auth.signOut()

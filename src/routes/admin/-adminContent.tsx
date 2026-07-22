@@ -4,11 +4,7 @@ import { AdminPreviewHoverScope } from '@/features/admin/preview/AdminPreviewHov
 
 export function AdminContentPageRoute() {
   return (
-    <AdminLayout
-      title="Landing Content"
-      description="Per-scene copy overrides with designed defaults."
-      layout="workspace"
-    >
+    <AdminLayout layout="workspace">
       {/* Page-level fallback; each scene's ContentSection claims its own hover. */}
       <AdminPreviewHoverScope target={{ kind: 'content-field', id: 'site:page' }}>
         <AdminLandingContentEditor />

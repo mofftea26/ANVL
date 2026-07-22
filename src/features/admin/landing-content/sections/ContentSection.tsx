@@ -2,7 +2,7 @@ import type { PropsWithChildren } from 'react'
 
 import { AdminPreviewLocateButton } from '@/features/admin/preview/AdminPreviewLocateButton'
 import { usePreviewHoverProps } from '@/features/admin/preview/usePreviewHoverProps'
-import type { PreviewTarget } from '@/features/cms/preview'
+import { previewFieldAnchorId, type PreviewTarget } from '@/features/cms/preview'
 
 /** Scene-grouped card for the landing content editor. */
 export function ContentSection({
@@ -24,6 +24,8 @@ export function ContentSection({
 
   return (
     <section
+      // Inspector anchor — inspect-clicks in the live preview land here.
+      id={previewTarget ? previewFieldAnchorId(previewTarget.id) : undefined}
       className="rounded-xl border border-[var(--color-line)] p-5"
       {...hoverProps}
     >

@@ -15,10 +15,12 @@ import type {
 let payload: PreviewDraftPayload = {}
 let pendingFocus: PreviewTarget | null = null
 let hoverTarget: PreviewTarget | null = null
+let pendingRoute: string | null = null
 
 const draftListeners = new Set<() => void>()
 const focusListeners = new Set<() => void>()
 const hoverListeners = new Set<() => void>()
+const routeListeners = new Set<() => void>()
 
 function emit(listeners: Set<() => void>) {
   for (const listener of listeners) listener()
@@ -68,6 +70,39 @@ export function hasPendingPreviewFocus(): boolean {
 export function subscribePreviewFocus(listener: () => void): () => void {
   focusListeners.add(listener)
   return () => focusListeners.delete(listener)
+}
+
+/**
+ * Open the preview panel WITHOUT highlighting anything: emits on the focus
+ * channel with no pending target — the shell's "a locate request opens the
+ * panel" subscription fires (opening it), while the panel's own consumer
+ * finds no target and posts nothing. Used by the setup wizards' docked
+ * side-by-side mode.
+ */
+export function openAdminPreview(): void {
+  emit(focusListeners)
+}
+
+/**
+ * Ask the (possibly not-yet-mounted) preview panel to show a storefront
+ * route. Pending semantics mirror focus requests: the panel consumes the
+ * latest request on mount and on every emission; same-route requests are a
+ * no-op there (the iframe only remounts when the route actually changes).
+ */
+export function requestPreviewRoute(route: string): void {
+  pendingRoute = route
+  emit(routeListeners)
+}
+
+export function consumePreviewRoute(): string | null {
+  const route = pendingRoute
+  pendingRoute = null
+  return route
+}
+
+export function subscribePreviewRoute(listener: () => void): () => void {
+  routeListeners.add(listener)
+  return () => routeListeners.delete(listener)
 }
 
 /**

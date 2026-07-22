@@ -92,7 +92,7 @@ function SignInPage() {
           : `Demo: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`
       }
     >
-      <SocialAuthButtons verb="Sign in with" />
+      <SocialAuthButtons verb="Sign in with" redirect={redirect} />
       <form className="space-y-4" onSubmit={onSubmit} noValidate>
         <FormField label="Email" error={form.formState.errors.email?.message} htmlFor="auth-in-email">
           <Input id="auth-in-email" type="email" autoComplete="email" {...form.register('email')} />

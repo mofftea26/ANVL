@@ -64,10 +64,54 @@ describe('SizeTable', () => {
 })
 
 describe('CareLines', () => {
-  it('renders authored care lines', () => {
-    render(<CareLines entry={{ note: 'Cold wash.', lines: ['Hang dry', 'No bleach'] }} />)
+  it('renders legacy care lines as generic items', () => {
+    render(<CareLines entry={{ note: 'Cold wash.', lines: ['Hang dry', 'No bleach'], items: [] }} />)
     expect(screen.getByText('Hang dry')).toBeInTheDocument()
     expect(screen.getByText('No bleach')).toBeInTheDocument()
+  })
+
+  it('prefers structured items (with value + note) over legacy lines', () => {
+    render(
+      <CareLines
+        entry={{
+          note: '',
+          lines: ['legacy only'],
+          items: [
+            { id: 'i1', icon: 'washing-machine', name: 'Machine wash', value: '30', note: 'Inside out' },
+          ],
+        }}
+      />,
+    )
+    expect(screen.getByText('Machine wash')).toBeInTheDocument()
+    expect(screen.getByText(/30°C/)).toBeInTheDocument()
+    expect(screen.getByText('Inside out')).toBeInTheDocument()
+    expect(screen.queryByText('legacy only')).not.toBeInTheDocument()
+  })
+})
+
+describe('SizeTable (structured)', () => {
+  it('prefers the structured fixed grid with measurement labels and the half-measurement hint', () => {
+    render(
+      <SizeTable
+        entry={{
+          note: '',
+          columns: ['Chest (cm)'],
+          rows: [{ id: 'm', size: 'M', values: ['54'] }],
+          table: {
+            rows: [{ key: 'chest', values: ['50', '52', '54', '56', '', ''] }],
+            halfMeasurement: true,
+          },
+        }}
+      />,
+    )
+    const table = screen.getByRole('table')
+    expect(within(table).getByText('Measurement (cm)')).toBeInTheDocument()
+    expect(within(table).getByText('Chest width')).toBeInTheDocument()
+    expect(within(table).getByText('XXL')).toBeInTheDocument()
+    expect(within(table).getByText('52')).toBeInTheDocument()
+    expect(screen.getByText(/half measurements/i)).toBeInTheDocument()
+    // Legacy shape is not rendered when structured data exists.
+    expect(screen.queryByText('Chest (cm)')).not.toBeInTheDocument()
   })
 })
 

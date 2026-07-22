@@ -10,14 +10,21 @@ import { SUPPORT_CONTENT_DEFAULTS } from '@/features/cms/support/supportContent.
 import type { SupportContentConfig } from '@/features/cms/support/supportContent.zod'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
+import { PhoneInput } from '@/shared/components/ui/PhoneInput'
 import { Textarea } from '@/shared/components/ui/Textarea'
 import { SetupSaveRow, SetupStepBody } from '../SetupStepParts'
 import { SetupWizard } from '../SetupWizard'
-import { useSetupBlobStep } from '../useSetupBlobStep'
+import { setupPreviewBinding, useSetupBlobStep } from '../useSetupBlobStep'
 
 const SUPPORT_EDITOR_LINK = [
   { label: 'Fine-tune every field in the Support editor', to: '/admin/support' },
 ]
+
+/** Unsaved support edits → live preview (identity — same blob shape). */
+const supportPreviewBinding = setupPreviewBinding(
+  'supportContent',
+  (value: SupportContentConfig) => value,
+)
 
 function useSupportStep(messages: { success: string; error: string }) {
   return useSetupBlobStep<SupportContentConfig>({
@@ -25,6 +32,7 @@ function useSupportStep(messages: { success: string; error: string }) {
     save: saveSupportContentAsync,
     successMessage: messages.success,
     errorFallbackMessage: messages.error,
+    preview: supportPreviewBinding,
   })
 }
 
@@ -107,12 +115,14 @@ function ContactStep({ onNavigate }: StepProps) {
             onChange={(e) => setContact({ instagram: e.target.value })}
           />
         </FormField>
-        <FormField label="Phone" labelStyle="stacked">
-          <Input
-            density="compact"
-            placeholder={D.contact.phone || 'e.g. +961 …'}
+        <FormField
+          label="Phone"
+          hint="Country picker + national number — stored as one +dial string."
+          labelStyle="stacked"
+        >
+          <PhoneInput
             value={c.phone}
-            onChange={(e) => setContact({ phone: e.target.value })}
+            onChange={(phone) => setContact({ phone })}
           />
         </FormField>
         <FormField label="Address" labelStyle="stacked">
@@ -309,22 +319,24 @@ export function SupportSetupWizard({ open, onClose }: { open: boolean; onClose: 
       onClose={onClose}
       title="Support setup"
       steps={[
-        { key: 'faq', title: 'FAQ', blurb: 'Common questions.', render: () => <FaqStep onNavigate={onClose} /> },
-        { key: 'contact', title: 'Contact', blurb: 'How to reach you.', render: () => <ContactStep onNavigate={onClose} /> },
+        { key: 'faq', title: 'FAQ', blurb: 'Common questions.', preview: { route: '/faq' }, render: () => <FaqStep onNavigate={onClose} /> },
+        { key: 'contact', title: 'Contact', blurb: 'How to reach you.', preview: { route: '/contact' }, render: () => <ContactStep onNavigate={onClose} /> },
         {
           key: 'shipping',
           title: 'Shipping',
           blurb: 'Delivery info.',
+          preview: { route: '/shipping' },
           render: () => <SectionListStep field="shipping" label="Shipping" onNavigate={onClose} />,
         },
         {
           key: 'returns',
           title: 'Returns',
           blurb: 'Returns policy.',
+          preview: { route: '/returns' },
           render: () => <SectionListStep field="returns" label="Returns" onNavigate={onClose} />,
         },
-        { key: 'care', title: 'Care guide', blurb: 'Care + per-product.', render: () => <CareStep onNavigate={onClose} /> },
-        { key: 'size', title: 'Size guide', blurb: 'Sizing + per-product.', render: () => <SizeStep onNavigate={onClose} /> },
+        { key: 'care', title: 'Care guide', blurb: 'Care + per-product.', preview: { route: '/care-guide' }, render: () => <CareStep onNavigate={onClose} /> },
+        { key: 'size', title: 'Size guide', blurb: 'Sizing + per-product.', preview: { route: '/size-guide' }, render: () => <SizeStep onNavigate={onClose} /> },
       ]}
     />
   )

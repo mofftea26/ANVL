@@ -17,7 +17,9 @@ import {
   DOC_CTA_PRIMARY_CLASS,
   DOC_CTA_SECONDARY_CLASS,
   ProseBody,
+  SizeDiagram,
   SizeTable,
+  SIZE_MEASUREMENT_POINTS,
 } from '@/features/support/components'
 import type { SizeProductEntry } from '@/features/cms/support/supportContent.zod'
 import { orderPerProduct, type ProductNameEntry } from '@/features/support/lib/resolveProductNames'
@@ -82,6 +84,37 @@ function SizeGuidePage() {
           </Container>
         </Section>
       ) : null}
+
+      <Section>
+        <Container className="max-w-4xl">
+          <h2 className="anvl-heading text-2xl text-[var(--color-heading)] md:text-3xl">
+            Where we measure
+          </h2>
+          <hr className="anvl-highlight-rule mt-4 max-w-[6rem]" />
+          <div className="mt-6 grid items-start gap-8 md:grid-cols-2">
+            <SizeDiagram className="mx-auto" />
+            {/* Textual companion — the diagram is never the only source. */}
+            <dl className="space-y-3">
+              {SIZE_MEASUREMENT_POINTS.map((point) => (
+                <div key={point.key} className="flex items-baseline gap-3">
+                  <dt className="anvl-display shrink-0 text-xs tracking-[0.18em] text-[var(--color-highlight-bright)]">
+                    {point.letter}
+                  </dt>
+                  <dd className="text-sm text-[var(--color-text-muted)]">
+                    <span className="font-medium text-[var(--color-text)]">{point.label}</span>
+                    {' — '}
+                    {point.description}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+          <p className="mt-6 max-w-3xl text-xs text-[var(--color-text-muted)]">
+            All measurements are in centimetres. Widths are half measurements, taken with the
+            garment laid flat — double them for the full circumference.
+          </p>
+        </Container>
+      </Section>
 
       {perProduct.length > 0 ? (
         <Section className="border-t border-[var(--color-line)] bg-[var(--color-surface)]">

@@ -16,6 +16,8 @@ export const ADMIN_STORAGE_KEYS = {
   supportContent: 'anvl.supportContent.v1',
   /** UI preference: persistent sidebar expanded vs icon rail. */
   sidebarPref: 'anvl.adminSidebar.v1',
+  /** UI preference: which sidebar category sections are expanded. */
+  sidebarCats: 'anvl.adminSidebarCats.v1',
   /** UI preference: live-preview panel width (drag-resizable split). */
   previewWidthPref: 'anvl.adminPreviewWidth.v1',
 } as const

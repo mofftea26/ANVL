@@ -1,18 +1,17 @@
-import { Check, Save } from '@/shared/icons'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { AdminSaveAction } from '@/features/admin/components/AdminSaveAction'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
 import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import { MediaLibraryPage } from '@/features/admin/media/MediaLibraryPage'
-import { useAssignedMediaIds } from '@/features/admin/media/useAssignedMediaIds'
+import { useAssignedMedia } from '@/features/admin/media/useAssignedMediaIds'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import {
   readAssetConfigFromStorage,
   saveAssetConfigAsync,
   subscribeCmsSiteConfigChange,
 } from '@/features/cms/config/cmsSiteConfig.settings'
-import { ICON_SIZE } from '@/shared/lib/iconSize'
 import {
   DEFAULT_ASSET_CONFIG,
   type AssetConfig,
@@ -20,6 +19,7 @@ import {
 import {
   DROP_ASSET_SLOTS,
   GENERAL_ASSET_SLOTS,
+  type AssetSlotDefinition,
 } from '@/features/landingPages/assetSlots'
 import {
   getStorefrontPageSlots,
@@ -28,7 +28,6 @@ import {
 } from '@/features/cms/assets/storefrontPageSlots'
 import { fetchLandingPagePickerOptions } from '@/features/admin/landing-picker/fetchLandingPagePickerOptions'
 import { listLandingPages } from '@/features/landingPages/registry'
-import { Button } from '@/shared/components/ui/Button'
 import { AssetSlotAssignmentPanel } from './AssetSlotAssignmentPanel'
 
 function useAssetConfig(): AssetConfig {
@@ -37,6 +36,32 @@ function useAssetConfig(): AssetConfig {
     () => readAssetConfigFromStorage(),
     () => DEFAULT_ASSET_CONFIG,
   )
+}
+
+/**
+ * G4 — apply a slot assignment and prune stale hidden-slot leftovers: when a
+ * `visibleWhen` controller slot (e.g. `heroMediaMode`) changes, the now-hidden
+ * dependent slots' values are cleared in the same update so they can't linger
+ * invisibly and keep an asset badged "Assigned" with no visible control
+ * referencing it.
+ */
+export function pruneHiddenSlotValues(
+  slots: readonly AssetSlotDefinition[],
+  bucket: Record<string, string>,
+  slotKey: string,
+  value: string,
+): Record<string, string> {
+  const next = { ...bucket, [slotKey]: value }
+  for (const slot of slots) {
+    if (
+      slot.visibleWhen?.key === slotKey &&
+      slot.visibleWhen.equals !== value &&
+      next[slot.key]
+    ) {
+      delete next[slot.key]
+    }
+  }
+  return next
 }
 
 interface SiteAssetsEditorProps {
@@ -55,7 +80,7 @@ export function SiteAssetsEditor({
 }: SiteAssetsEditorProps = {}) {
   const setPageActions = useAdminPageActions()
   const stored = useAssetConfig()
-  const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
+  const { config, setConfig, isDirty, saving, showSuccess, save } = useSingletonCmsEditor({
     id: 'assets',
     stored,
     saveAsync: saveAssetConfigAsync,
@@ -79,20 +104,15 @@ export function SiteAssetsEditor({
 
   const toolbar = useMemo(
     () => (
-      <Button
-        type="button"
-        disabled={saving}
-        variant="primary"
-        size="md"
-        density="compact"
-        loading={saving}
-        onClick={save}
-      >
-        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
-        {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save assignments'}
-      </Button>
+      <AdminSaveAction
+        onSave={save}
+        saving={saving}
+        showSuccess={showSuccess}
+        dirty={isDirty}
+        label="Save assignments"
+      />
     ),
-    [save, saving, showSuccess],
+    [save, saving, showSuccess, isDirty],
   )
 
   useEffect(() => {
@@ -162,18 +182,19 @@ export function SiteAssetsEditor({
     [mediaQuery.data],
   )
 
-  // Assigned = referenced by ANY media-assigning editor (site-asset slots plus
-  // landing/About, PDP, passport, shop, coming-soon content), not only the slot
-  // map being edited here. The live `config` working copy reflects in-panel
-  // edits instantly; the hook re-reads when any other blob's store changes.
-  const assignedIds = useAssignedMediaIds(config)
+  // Assigned = referenced by a media-id field in ANY media-assigning editor
+  // (site-asset slots plus landing/About, PDP, passport, coming-soon, banner
+  // content), not only the slot map being edited here. The live `config`
+  // working copy reflects in-panel edits instantly; the hook re-reads when any
+  // other blob's store changes. `usage` carries where each id is referenced.
+  const { ids: assignedIds, usage: assignedUsage } = useAssignedMedia(config)
 
   function setSlot(slotKey: string, mediaId: string) {
     setConfig((prev) => {
       if (scope === 'general') {
         return {
           ...prev,
-          general: { ...prev.general, [slotKey]: mediaId },
+          general: pruneHiddenSlotValues(allSlots, prev.general, slotKey, mediaId),
         }
       }
       if (isStorefrontPageKey(scope)) {
@@ -181,7 +202,12 @@ export function SiteAssetsEditor({
           ...prev,
           pages: {
             ...(prev.pages ?? {}),
-            [scope]: { ...(prev.pages?.[scope] ?? {}), [slotKey]: mediaId },
+            [scope]: pruneHiddenSlotValues(
+              allSlots,
+              prev.pages?.[scope] ?? {},
+              slotKey,
+              mediaId,
+            ),
           },
         }
       }
@@ -189,7 +215,12 @@ export function SiteAssetsEditor({
         ...prev,
         drops: {
           ...prev.drops,
-          [scope]: { ...(prev.drops[scope] ?? {}), [slotKey]: mediaId },
+          [scope]: pruneHiddenSlotValues(
+            allSlots,
+            prev.drops[scope] ?? {},
+            slotKey,
+            mediaId,
+          ),
         },
       }
     })
@@ -216,7 +247,11 @@ export function SiteAssetsEditor({
       asideKind="tools"
     >
       <div data-testid="site-assets-editor">
-        <MediaLibraryPage assignedIds={assignedIds} initialSearch={initialSearch} />
+        <MediaLibraryPage
+          assignedIds={assignedIds}
+          assignedUsage={assignedUsage}
+          initialSearch={initialSearch}
+        />
       </div>
     </AdminWorkspace>
   )

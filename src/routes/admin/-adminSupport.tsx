@@ -4,11 +4,7 @@ import { AdminPreviewHoverScope } from '@/features/admin/preview/AdminPreviewHov
 
 export function AdminSupportPageRoute() {
   return (
-    <AdminLayout
-      title="Support"
-      description="FAQ, contact, shipping, returns, care, and size guides — every blank field falls back to the designed default."
-      layout="workspace"
-    >
+    <AdminLayout layout="workspace">
       <AdminPreviewHoverScope target={{ kind: 'content-field', id: 'site:page' }}>
         <SupportEditor />
       </AdminPreviewHoverScope>

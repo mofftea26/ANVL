@@ -4,11 +4,7 @@ import { ShopExperienceEditor } from '@/features/admin/shop-experience/ShopExper
 
 export function AdminShopPageRoute() {
   return (
-    <AdminLayout
-      title="Shop Experience"
-      description="Layout, behavior, and copy for the storefront shop."
-      layout="workspace"
-    >
+    <AdminLayout layout="workspace">
       <AdminPreviewHoverScope target={{ kind: 'content-field', id: 'shop:grid' }}>
         <ShopExperienceEditor />
       </AdminPreviewHoverScope>

@@ -3,22 +3,29 @@ import {
   Settings,
   LogOut,
   X,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
 } from '@/shared/icons'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
-import { Link, useRouterState } from '@tanstack/react-router'
-import { useState } from 'react'
+import { Link, type LinkProps, useRouterState } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
-import type { AdminNavItem } from '@/features/admin/components/adminNav'
-import { adminNavCategories } from '@/features/admin/components/adminNav'
+import type { AdminNavCategory, AdminNavItem } from '@/features/admin/components/adminNav'
+import {
+  ADMIN_NAV_CATEGORIES,
+  ADMIN_NAV_CATEGORY_ICONS,
+  adminCategoryHref,
+  adminNavCategories,
+} from '@/features/admin/components/adminNav'
 import {
   sessionInitial,
   sessionPrimaryLabel,
   sessionSecondaryLabel,
 } from '@/features/admin/components/adminSessionDisplay'
+import { ADMIN_STORAGE_KEYS } from '@/features/admin/storageKeys'
 import { cn } from '@/shared/lib/cn'
 
 interface AdminSidebarProps {
@@ -29,34 +36,79 @@ interface AdminSidebarProps {
   onToggleCollapse?: () => void
 }
 
+const SIDEBAR_CATS_KEY = ADMIN_STORAGE_KEYS.sidebarCats
+
+type ExpandedCats = Record<string, boolean>
+
+/** All categories expanded — the server/first-paint default. */
+function allExpanded(): ExpandedCats {
+  return Object.fromEntries(ADMIN_NAV_CATEGORIES.map((c) => [c, true]))
+}
+
+/** Stored expanded set (JSON array of category names) — null when unset/invalid. */
+function readExpandedCats(): ExpandedCats | null {
+  try {
+    const raw = window.localStorage.getItem(SIDEBAR_CATS_KEY)
+    if (!raw) return null
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return null
+    const expanded: ExpandedCats = Object.fromEntries(
+      ADMIN_NAV_CATEGORIES.map((c) => [c, false]),
+    )
+    for (const entry of parsed) {
+      if (typeof entry === 'string' && entry in expanded) expanded[entry] = true
+    }
+    return expanded
+  } catch {
+    return null
+  }
+}
+
+function persistExpandedCats(expanded: ExpandedCats) {
+  try {
+    window.localStorage.setItem(
+      SIDEBAR_CATS_KEY,
+      JSON.stringify(ADMIN_NAV_CATEGORIES.filter((c) => expanded[c])),
+    )
+  } catch {
+    // Preference only — safe to drop when storage is unavailable.
+  }
+}
+
 function pathIsActive(pathname: string, href: string) {
   return href === '/admin'
     ? pathname === '/admin'
     : pathname === href || pathname.startsWith(`${href}/`)
 }
 
+/** Whether the pathname belongs to a category (any of its editors or its landing page). */
+function categoryIsActive(
+  pathname: string,
+  category: AdminNavCategory,
+  items: AdminNavItem[],
+) {
+  if (pathIsActive(pathname, adminCategoryHref(category))) return true
+  return items.some((item) => pathIsActive(pathname, item.href))
+}
+
 function SidebarNavLink({
   item,
   isActive,
-  compact,
   onNavigate,
 }: {
   item: AdminNavItem
   isActive: boolean
-  compact: boolean
   onNavigate?: () => void
 }) {
   const Icon = item.icon
 
   return (
     <Link
-      to={item.href}
+      to={item.href as LinkProps['to']}
       onClick={onNavigate}
       aria-current={isActive ? 'page' : undefined}
-      title={compact ? item.label : undefined}
       className={cn(
-        'focus-ring group relative flex items-center gap-3 rounded-lg no-underline transition-[background-color,box-shadow,color] duration-200',
-        compact ? 'justify-center px-2 py-2' : 'px-2.5 py-2',
+        'focus-ring group relative flex items-center gap-3 rounded-lg px-2.5 py-2 no-underline transition-[background-color,box-shadow,color] duration-200',
         isActive
           ? // Studio active state: an ink plate stamped on the paper rail.
             'bg-[var(--color-heading)] text-[var(--color-bg)] shadow-[0_2px_8px_color-mix(in_srgb,var(--color-heading)_25%,transparent)]'
@@ -65,30 +117,69 @@ function SidebarNavLink({
     >
       <span
         className={cn(
-          'flex shrink-0 items-center justify-center rounded-md transition-colors duration-200',
-          compact ? 'h-9 w-9' : 'h-8 w-8',
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors duration-200',
           isActive
             ? 'bg-transparent text-[var(--color-bg)]'
             : 'bg-[var(--color-surface-soft)] text-[var(--color-text-muted)] group-hover:bg-[var(--color-surface-elevated)] group-hover:text-[var(--color-text)]',
         )}
       >
-        <Icon size={compact ? 17 : 15} aria-hidden />
+        <Icon size={15} aria-hidden />
       </span>
 
-      {!compact ? (
-        <span className="min-w-0 flex-1">
-          <span className="truncate text-[13px] font-medium leading-tight">
-            {item.label}
-          </span>
+      <span className="min-w-0 flex-1">
+        <span className="truncate text-[13px] font-medium leading-tight">
+          {item.label}
         </span>
-      ) : (
-        <span className="sr-only">{item.label}</span>
-      )}
+      </span>
 
       {isActive ? (
         <span
           aria-hidden
           className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-[var(--color-accent)]"
+        />
+      ) : null}
+    </Link>
+  )
+}
+
+/** Icon rail: ONE button per category — single-editor categories deep-link, the rest land on `/admin/category/…`. */
+function RailCategoryLink({
+  category,
+  items,
+  pathname,
+  onNavigate,
+}: {
+  category: AdminNavCategory
+  items: AdminNavItem[]
+  pathname: string
+  onNavigate?: () => void
+}) {
+  const single = items.length === 1
+  const href = single ? items[0].href : adminCategoryHref(category)
+  const label = single ? items[0].label : category
+  const Icon = ADMIN_NAV_CATEGORY_ICONS[category]
+  const isActive = categoryIsActive(pathname, category, items)
+
+  return (
+    <Link
+      to={href as LinkProps['to']}
+      onClick={onNavigate}
+      aria-label={label}
+      title={label}
+      aria-current={isActive ? 'page' : undefined}
+      className={cn(
+        'focus-ring relative mx-auto flex h-11 w-11 items-center justify-center rounded-lg no-underline transition-[background-color,box-shadow,color] duration-200',
+        isActive
+          ? 'bg-[var(--color-heading)] text-[var(--color-bg)] shadow-[0_2px_8px_color-mix(in_srgb,var(--color-heading)_25%,transparent)]'
+          : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-text)]',
+      )}
+    >
+      <Icon size={18} aria-hidden />
+      <span className="sr-only">{label}</span>
+      {isActive ? (
+        <span
+          aria-hidden
+          className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-[var(--color-accent)]"
         />
       ) : null}
     </Link>
@@ -105,13 +196,39 @@ export function AdminSidebar({
     select: (state) => state.location.pathname,
   })
   const { logout, session } = useAdminAuth()
-  const categories = adminNavCategories()
+  const categories = adminNavCategories().filter(
+    ({ category }) => category !== 'Settings',
+  )
   const isDrawer = density === 'drawer'
   const isRail = density === 'rail'
   const compact = isRail
 
   const [confirmSignOut, setConfirmSignOut] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+
+  // Collapsible category sections (expanded + drawer densities). Default all
+  // expanded on server + first paint; the stored preference applies post-mount
+  // with the active item's category force-expanded so it is never hidden.
+  const [expandedCats, setExpandedCats] = useState<ExpandedCats>(allExpanded)
+  useEffect(() => {
+    const stored = readExpandedCats()
+    if (!stored) return
+    const activeGroup = adminNavCategories().find(({ category, items }) =>
+      categoryIsActive(window.location.pathname, category, items),
+    )
+    if (activeGroup) stored[activeGroup.category] = true
+    setExpandedCats(stored)
+    // Mount-only (reads window.location directly): later navigation must not
+    // re-open sections the user deliberately closed.
+  }, [])
+
+  const toggleCategory = (category: AdminNavCategory) => {
+    setExpandedCats((prev) => {
+      const next = { ...prev, [category]: !prev[category] }
+      persistExpandedCats(next)
+      return next
+    })
+  }
 
   const handleSignOut = async () => {
     setSigningOut(true)
@@ -196,6 +313,7 @@ export function AdminSidebar({
               type="button"
               onClick={onToggleCollapse}
               aria-label={compact ? 'Expand navigation' : 'Collapse navigation'}
+              title={compact ? 'Expand navigation' : 'Collapse navigation'}
               className="focus-ring inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--color-line)]/70 bg-[var(--color-surface-soft)]/80 text-[var(--color-text-muted)] transition hover:border-[var(--color-line)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-text)]"
             >
               {compact ? (
@@ -212,39 +330,84 @@ export function AdminSidebar({
         aria-label="Admin"
         className={cn(
           'relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain',
-          compact ? 'gap-2 px-2 py-3' : 'gap-4 px-3 py-4',
+          compact ? 'gap-1.5 px-2 py-3' : 'gap-3 px-3 py-4',
         )}
       >
-        {categories
-          .filter(({ category }) => category !== 'Settings')
-          .map(({ category, items }, categoryIndex) => (
-            <section key={category} className="space-y-1">
-              {!compact && category !== 'Dashboard' ? (
-                <div className="flex items-center gap-2 px-2 pt-1.5">
-                  <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--color-accent)]" />
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
-                    {category}
-                  </p>
-                  <span aria-hidden className="h-px flex-1 bg-[var(--color-line)]/60" />
-                </div>
-              ) : compact && categoryIndex > 0 ? (
-                <div aria-hidden className="mx-1 border-t border-[var(--color-line)]/50" />
-              ) : null}
+        {compact
+          ? categories.map(({ category, items }) => (
+              <RailCategoryLink
+                key={category}
+                category={category}
+                items={items}
+                pathname={pathname}
+                onNavigate={onNavigate}
+              />
+            ))
+          : categories.map(({ category, items }) => {
+              const isDashboard = category === 'Dashboard'
+              const isOpen = isDashboard || expandedCats[category] !== false
+              const isActiveCategory = categoryIsActive(pathname, category, items)
+              const sectionId = `admin-nav-${category.toLowerCase().replace(/\s+/g, '-')}`
 
-              <ul className="space-y-1">
-                {items.map((item) => (
-                  <li key={item.href}>
-                    <SidebarNavLink
-                      item={item}
-                      isActive={pathIsActive(pathname, item.href)}
-                      compact={compact}
-                      onNavigate={onNavigate}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+              return (
+                <section key={category} className="space-y-1">
+                  {!isDashboard ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(category)}
+                      aria-expanded={isOpen}
+                      aria-controls={sectionId}
+                      className="focus-ring group flex w-full items-center gap-2 rounded-md px-2 pt-1.5 pb-1 text-left"
+                    >
+                      <span
+                        aria-hidden
+                        className={cn(
+                          'h-1 w-1 rounded-full transition-colors',
+                          isActiveCategory
+                            ? 'bg-[var(--color-accent)]'
+                            : 'bg-[var(--color-line)] group-hover:bg-[var(--color-accent)]/60',
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          'text-[10px] font-semibold uppercase tracking-[0.2em] transition-colors',
+                          isActiveCategory
+                            ? 'text-[var(--color-accent)]'
+                            : 'text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]',
+                        )}
+                      >
+                        {category}
+                      </span>
+                      <span aria-hidden className="h-px flex-1 bg-[var(--color-line)]/60" />
+                      <ChevronDown
+                        size={12}
+                        aria-hidden
+                        className={cn(
+                          'shrink-0 text-[var(--color-text-muted)] transition-transform duration-200',
+                          !isOpen && '-rotate-90',
+                        )}
+                      />
+                    </button>
+                  ) : null}
+
+                  {isOpen ? (
+                    <ul id={sectionId} className="space-y-1">
+                      {items.map((item) => (
+                        <li key={item.href}>
+                          <SidebarNavLink
+                            item={item}
+                            isActive={pathIsActive(pathname, item.href)}
+                            onNavigate={onNavigate}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div id={sectionId} hidden />
+                  )}
+                </section>
+              )
+            })}
       </nav>
 
       <footer
@@ -280,6 +443,7 @@ export function AdminSidebar({
             to="/"
             target="_blank"
             rel="noreferrer"
+            title="View storefront"
             className={cn(
               'focus-ring inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-line)]/75 bg-[var(--color-surface-soft)]/50 text-[var(--color-text-muted)] no-underline transition hover:border-[var(--color-line)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-heading)]',
               compact ? 'h-8 px-2 text-[11px]' : 'h-9 px-2.5 text-xs font-medium',
@@ -292,6 +456,7 @@ export function AdminSidebar({
 
           <Link
             to="/admin/settings"
+            title="Settings"
             className={cn(
               'focus-ring inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-line)]/75 bg-[var(--color-surface-soft)]/50 text-[var(--color-text-muted)] no-underline transition hover:border-[var(--color-line)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-heading)]',
               compact ? 'h-8 px-2 text-[11px]' : 'h-9 px-2.5 text-xs font-medium',
@@ -309,6 +474,7 @@ export function AdminSidebar({
             'focus-ring inline-flex w-full items-center justify-center gap-2 rounded-xl border border-transparent text-[var(--color-text-muted)] transition hover:border-[var(--color-line)]/60 hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-heading)]',
             compact ? 'h-8 px-2 text-[11px]' : 'h-9 px-2.5 text-xs font-medium',
           )}
+          title="Sign out"
           onClick={() => setConfirmSignOut(true)}
         >
           <LogOut size={ICON_SIZE.sm} aria-hidden className="shrink-0" />

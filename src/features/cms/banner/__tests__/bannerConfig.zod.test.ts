@@ -20,7 +20,13 @@ describe('parseBannerConfig', () => {
       href: '/shop',
       linkLabel: 'Shop now',
       imageMediaId: 'media-123',
-      colors: { background: '#0B0B0C', text: '#E7E4DF' },
+      colors: {
+        background: '#0B0B0C',
+        background2: '#34373A',
+        gradientAngle: 135,
+        text: '#E7E4DF',
+      },
+      animation: 'marquee',
       schedule: { startAt: '2026-07-19T10:00', endAt: '2026-07-26T10:00' },
     }
     const parsed = parseBannerConfig(full)
@@ -29,22 +35,78 @@ describe('parseBannerConfig', () => {
     expect(bannerConfigSchema.parse(parsed)).toEqual(full)
   })
 
+  it('upgrades a legacy blob without the gradient/animation keys unchanged', () => {
+    // Exactly the shape saved before background2/gradientAngle/animation existed.
+    const legacy = {
+      enabled: true,
+      message: 'Forged Under Pressure',
+      href: '/shop',
+      linkLabel: '',
+      imageMediaId: '',
+      colors: { background: '#1D1F21', text: '#E7E4DF' },
+      schedule: { startAt: '', endAt: '2026-08-01T00:00' },
+    }
+    const parsed = parseBannerConfig(legacy)
+    expect(parsed.enabled).toBe(true)
+    expect(parsed.message).toBe('Forged Under Pressure')
+    expect(parsed.colors).toEqual({
+      background: '#1D1F21',
+      background2: '',
+      gradientAngle: 90,
+      text: '#E7E4DF',
+    })
+    expect(parsed.animation).toBe('none')
+    expect(parsed.schedule).toEqual({ startAt: '', endAt: '2026-08-01T00:00' })
+  })
+
   it('fills missing keys with defaults (partial blobs upgrade silently)', () => {
     const parsed = parseBannerConfig({ enabled: true, message: 'Hi' })
     expect(parsed.enabled).toBe(true)
     expect(parsed.message).toBe('Hi')
     expect(parsed.href).toBe('')
-    expect(parsed.colors).toEqual({ background: '', text: '' })
+    expect(parsed.colors).toEqual({
+      background: '',
+      background2: '',
+      gradientAngle: 90,
+      text: '',
+    })
+    expect(parsed.animation).toBe('none')
     expect(parsed.schedule).toEqual({ startAt: '', endAt: '' })
   })
 
   it('fills missing nested keys without dropping the provided ones', () => {
     const parsed = parseBannerConfig({
-      colors: { background: '#123456' },
+      colors: { background: '#123456', background2: '#654321' },
       schedule: { endAt: '2026-08-01T00:00' },
     })
-    expect(parsed.colors).toEqual({ background: '#123456', text: '' })
+    expect(parsed.colors).toEqual({
+      background: '#123456',
+      background2: '#654321',
+      gradientAngle: 90,
+      text: '',
+    })
     expect(parsed.schedule).toEqual({ startAt: '', endAt: '2026-08-01T00:00' })
+  })
+
+  it('clamps the gradient angle to 0–360 and defaults invalid values to 90', () => {
+    expect(
+      parseBannerConfig({ colors: { gradientAngle: 720 } }).colors.gradientAngle,
+    ).toBe(360)
+    expect(
+      parseBannerConfig({ colors: { gradientAngle: -45 } }).colors.gradientAngle,
+    ).toBe(0)
+    expect(
+      parseBannerConfig({ colors: { gradientAngle: 'sideways' } }).colors
+        .gradientAngle,
+    ).toBe(90)
+  })
+
+  it('degrades unknown animation values to none', () => {
+    expect(parseBannerConfig({ animation: 'spin' }).animation).toBe('none')
+    expect(parseBannerConfig({ animation: 42 }).animation).toBe('none')
+    expect(parseBannerConfig({ animation: 'gradient-shift' }).animation).toBe(
+      'gradient-shift',
+    )
   })
 
   it('drops unknown keys (legacy blobs never throw despite strict schemas)', () => {
@@ -67,7 +129,7 @@ describe('parseBannerConfig', () => {
     })
     expect(parsed.enabled).toBe(DEFAULT_BANNER_CONFIG.enabled)
     expect(parsed.message).toBe('')
-    expect(parsed.colors).toEqual({ background: '', text: '' })
+    expect(parsed.colors).toEqual(DEFAULT_BANNER_CONFIG.colors)
     expect(parsed.schedule).toEqual({ startAt: '', endAt: '' })
   })
 

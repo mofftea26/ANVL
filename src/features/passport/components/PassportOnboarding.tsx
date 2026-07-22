@@ -12,13 +12,15 @@ import { Input } from '@/shared/components/ui/Input'
 import { Modal } from '@/shared/components/ui/Modal'
 import { SizeSelector } from '@/shared/components/ui/SizeSelector'
 import { gsap } from '@/shared/lib/gsap'
-import { useClaimPassportMutation } from '../hooks/usePassport'
+import { useQueryClient } from '@tanstack/react-query'
+import { passportQueryKeys, useClaimPassportMutation } from '../hooks/usePassport'
 import type {
   ClaimPassportError,
   PassportView,
 } from '../schemas/passport.schema'
 import { AuthenticityPlate } from './AuthenticityPlate'
 import { PassportAtmosphere } from './PassportAtmosphere'
+import { PASSPORT_AUTH_RETURN_KEY } from './PassportTeaser'
 
 const onboardingSchema = z.object({
   color: z.string().min(1, 'Pick your colorway').max(80),
@@ -52,7 +54,21 @@ export function PassportOnboarding({
 }) {
   const profileQuery = useCustomerProfileQuery()
   const claim = useClaimPassportMutation()
+  const queryClient = useQueryClient()
   const scopeRef = useRef<HTMLDivElement>(null)
+
+  // One-time greeting for athletes returning from the sign-in/sign-up leg the
+  // teaser sent them on (sessionStorage marker — cleared immediately, so a
+  // refresh or a second passport never re-toasts).
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem(PASSPORT_AUTH_RETURN_KEY) !== token) return
+      window.sessionStorage.removeItem(PASSPORT_AUTH_RETURN_KEY)
+      toast.info('Signed in — register this piece to your Armory.')
+    } catch {
+      /* sessionStorage unavailable — skip the nicety */
+    }
+  }, [token])
   // The claim is permanent — always confirm before forging.
   const [confirmOpen, setConfirmOpen] = useState(false)
   const colorways = product?.colorways ?? []
@@ -117,6 +133,14 @@ export function PassportOnboarding({
     setConfirmOpen(false)
     if (result.ok) {
       onClaimed(result.passport)
+      return
+    }
+    if (result.error === 'already_claimed') {
+      // Someone else won the race — refetch so the stage machine falls
+      // through to the public/guest authenticity view instead of stranding
+      // the visitor on a claim form that can never succeed.
+      toast.info('This piece is already registered to another athlete.')
+      void queryClient.invalidateQueries({ queryKey: passportQueryKeys.all })
       return
     }
     toast.error(CLAIM_ERROR_COPY[result.error])

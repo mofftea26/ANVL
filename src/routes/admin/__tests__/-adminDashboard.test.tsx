@@ -90,12 +90,13 @@ describe('AdminDashboardPageRoute', () => {
     }
   })
 
-  it('shows the active drop tile and a storefront link, but no Coming Soon warning by default', () => {
+  it('shows the clickable active drop tile without a storefront link or Coming Soon warning', () => {
     renderDashboard()
 
-    expect(screen.getByText(/active drop/i)).toBeTruthy()
-    const storefront = screen.getByRole('link', { name: /view storefront/i })
-    expect(storefront.getAttribute('href')).toBe('/')
+    // The tile is now a button that opens the drop status modal.
+    expect(screen.getByRole('button', { name: /active drop/i })).toBeTruthy()
+    // "View storefront" chrome moved to the sidebar footer only (D2).
+    expect(screen.queryByRole('link', { name: /view storefront/i })).toBeNull()
     expect(screen.queryByText(/coming soon is live/i)).toBeNull()
   })
 

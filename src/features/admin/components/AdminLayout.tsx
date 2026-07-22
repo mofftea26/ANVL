@@ -1,53 +1,39 @@
-import type { PropsWithChildren, ReactNode } from 'react'
+import type { PropsWithChildren } from 'react'
 
-import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
-import { AdminSyncIndicator } from '@/features/admin/components/AdminSyncIndicator'
-
-import { AdminShell } from './AdminShell'
+import { cn } from '@/shared/lib/cn'
 
 interface AdminLayoutProps {
-  title: string
-  description?: ReactNode
   /**
+   * Content-column mode inside the persistent shell's scroll area:
    * - `default` — centered single column (`max-w-5xl`).
-   * - `wide` — full-height flex shell (legacy split editors).
-   * - `workspace` — wide two-zone shell that fills ultra-wide screens; pair the
-   *   page content with {@link AdminWorkspace} to dock a contextual side rail.
+   * - `workspace` — wide two-zone column that fills ultra-wide screens; pair
+   *   the page content with {@link AdminWorkspace} to dock a contextual rail.
    */
-  layout?: 'default' | 'wide' | 'workspace'
+  layout?: 'default' | 'workspace'
 }
 
+/**
+ * Per-page content wrapper. The admin chrome (sidebar, topbar, preview panel,
+ * scroll container) lives ONCE in the route-level shell
+ * (`src/routes/admin/route.tsx` → `AdminShellLayout`) and persists across
+ * child navigation — this component only sets the content column width.
+ * Page title/description render in the persistent `AdminTopbar`, resolved
+ * from `adminNav.ts`.
+ */
 export function AdminLayout({
-  title,
-  description,
   layout = 'default',
   children,
 }: PropsWithChildren<AdminLayoutProps>) {
-  const { isRemoteCmsReady, remoteHydrateError } = useAdminAuth()
-
   return (
-    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden bg-[var(--color-bg)] text-[var(--color-text)]">
-      <AdminSyncIndicator />
-      {!isRemoteCmsReady ? (
-        <div
-          className="flex h-full items-center justify-center px-6"
-          role="status"
-          aria-live="polite"
-        >
-          <p className="text-sm text-[var(--color-text-muted)]">Loading CMS…</p>
-        </div>
-      ) : (
-        <>
-          {remoteHydrateError ? (
-            <p role="alert" className="sr-only">
-              {remoteHydrateError}
-            </p>
-          ) : null}
-          <AdminShell title={title} description={description} layout={layout}>
-            {children}
-          </AdminShell>
-        </>
+    <div
+      className={cn(
+        'mx-auto min-w-0 w-full',
+        layout === 'workspace'
+          ? 'max-w-[110rem] 2xl:max-w-[120rem]'
+          : 'max-w-5xl space-y-6',
       )}
+    >
+      {children}
     </div>
   )
 }

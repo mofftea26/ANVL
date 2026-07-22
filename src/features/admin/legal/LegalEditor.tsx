@@ -1,7 +1,7 @@
-import { Check, Info, Save } from '@/shared/icons'
+import { Info } from '@/shared/icons'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
+import { AdminSaveAction } from '@/features/admin/components/AdminSaveAction'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
@@ -19,7 +19,6 @@ import {
   type LegalPage,
   type LegalPageKey,
 } from '@/features/cms/legal/legalContent.zod'
-import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { Textarea } from '@/shared/components/ui/Textarea'
@@ -63,7 +62,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function LegalEditor() {
   const setPageActions = useAdminPageActions()
   const stored = useStoredLegalContent()
-  const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
+  const { config, setConfig, isDirty, saving, showSuccess, save } = useSingletonCmsEditor({
     id: 'legal',
     stored,
     saveAsync: saveLegalContentAsync,
@@ -87,20 +86,15 @@ export function LegalEditor() {
 
   const toolbar = useMemo(
     () => (
-      <Button
-        type="button"
-        disabled={saving}
-        variant="primary"
-        size="md"
-        density="compact"
-        loading={saving}
-        onClick={save}
-      >
-        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
-        {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save Legal'}
-      </Button>
+      <AdminSaveAction
+        onSave={save}
+        saving={saving}
+        showSuccess={showSuccess}
+        dirty={isDirty}
+        label="Save legal"
+      />
     ),
-    [save, saving, showSuccess],
+    [save, saving, showSuccess, isDirty],
   )
 
   useEffect(() => {

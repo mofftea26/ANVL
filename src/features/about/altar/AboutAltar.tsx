@@ -143,10 +143,11 @@ export default function AboutAltar({
       tl.to(state.focusT, { [index]: 1, duration: 1.15, ease: 'power2.inOut' }, 0)
       tl.to(state, { ringDim: 1, duration: 0.8, ease: 'power2.out' }, 0)
       tl.to(state, { orbitSpeed: 0.1, duration: 1.0, ease: 'power2.out' }, 0)
-      // Windup (anticipation) — the hammer draws past its cocked angle…
-      tl.to(state, { hammerT: -0.16, duration: 0.4, ease: 'power2.out' }, WINDUP_AT)
-      // …then drops hard.
-      tl.to(state, { hammerT: 1, duration: IMPACT_AT - DROP_AT, ease: 'power3.in' }, DROP_AT)
+      // Windup (anticipation) — the hammer draws deliberately past its cocked
+      // angle, gathering weight…
+      tl.to(state, { hammerT: -0.22, duration: 0.42, ease: 'power2.inOut' }, WINDUP_AT)
+      // …then drops in an accelerating arc — expo so the last frames whip.
+      tl.to(state, { hammerT: 1, duration: IMPACT_AT - DROP_AT, ease: 'expo.in' }, DROP_AT)
       // Impact: flash, shake, ember glint — and the orb explodes.
       tl.call(
         () => {
@@ -182,14 +183,19 @@ export default function AboutAltar({
           IMPACT_AT + 0.09,
         )
       }
-      // The orb dissolves fast (it BECOMES the particles), which fly out and
+      // The orb dissolves fast (it BECOMES the particles), which erupt
+      // radially FROM it — a legible point-source blast at the hit point —
       // then hold, drifting, until the modal's measure kicks off the gather.
+      // (power2 over 0.8s keeps the eruption phase readable; the gather's
+      // delay contract in handlePanelMeasure is untouched.)
       tl.to(state, { explodeT: 1, duration: 0.28, ease: 'power3.out' }, IMPACT_AT)
-      tl.to(state, { burstT: 1, duration: 0.7, ease: 'power3.out' }, IMPACT_AT)
+      tl.to(state, { burstT: 1, duration: 0.8, ease: 'power2.out' }, IMPACT_AT)
       // Hit-stop: the hammer stays buried in the impact for a few frames
-      // (anime freeze) before the recoil bounce, then lifts away.
+      // (anime freeze) before the recoil bounce, then lifts away with
+      // follow-through — a touch past the cocked rest, settling back.
       tl.to(state, { hammerT: 0.72, duration: 0.26, ease: 'power2.out' }, IMPACT_AT + 0.14)
-      tl.to(state, { hammerT: 0, duration: 0.55, ease: 'power2.inOut' }, IMPACT_AT + 0.46)
+      tl.to(state, { hammerT: -0.06, duration: 0.5, ease: 'power2.inOut' }, IMPACT_AT + 0.46)
+      tl.to(state, { hammerT: 0, duration: 0.4, ease: 'power2.out' }, IMPACT_AT + 0.96)
       // Mount the modal (hidden) once the embers are out — it measures itself
       // and hands the pool its formation targets; the measure starts the
       // (delayed) gather, so disperse reads first, then the swarm draws the

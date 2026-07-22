@@ -59,7 +59,51 @@ describe('aboutContentForm', () => {
     const values = toAboutFormValues(undefined)
     values.orbs[0]!.points = [{ label: '  ', description: '' }]
     values.orbs[0]!.stats = [{ label: '', value: ' ', suffix: '' }]
+    values.orbs[0]!.mapPins = [{ x: '', y: '', label: ' ' }]
+    values.orbs[0]!.timeline = [{ marker: '', title: ' ', body: '' }]
     const slice = toAboutContentSlice(values)
     expect(slice).toEqual({})
+  })
+
+  it('round-trips the layout presets and their fields', () => {
+    const values = toAboutFormValues(undefined)
+    values.orbs[0]!.layout = 'text'
+    values.orbs[0]!.subhead = 'A lead line.'
+    values.orbs[1]!.layout = 'map'
+    values.orbs[1]!.mapPins = [{ x: '35.5', y: '60', label: 'Beirut' }]
+    values.orbs[2]!.layout = 'timeline'
+    values.orbs[2]!.timeline = [{ marker: '2026', title: 'Drop 01', body: 'The Oath ships.' }]
+
+    const slice = toAboutContentSlice(values)
+    expect(slice.orbs?.[0]).toEqual({ layout: 'text', subhead: 'A lead line.' })
+    expect(slice.orbs?.[1]).toEqual({
+      layout: 'map',
+      mapPins: [{ x: 35.5, y: 60, label: 'Beirut' }],
+    })
+    expect(slice.orbs?.[2]).toEqual({
+      layout: 'timeline',
+      timeline: [{ marker: '2026', title: 'Drop 01', body: 'The Oath ships.' }],
+    })
+    expect(toAboutFormValues(slice)).toEqual(values)
+  })
+
+  it('never stores classic as a layout override', () => {
+    const values = toAboutFormValues(undefined)
+    values.orbs[0]!.layout = 'classic'
+    expect(toAboutContentSlice(values)).toEqual({})
+  })
+
+  it('clamps out-of-range pin percents and centres blank coords', () => {
+    const values = toAboutFormValues(undefined)
+    values.orbs[0]!.layout = 'map'
+    values.orbs[0]!.mapPins = [
+      { x: '140', y: '-3', label: '' },
+      { x: '', y: '', label: 'Somewhere' },
+    ]
+    const slice = toAboutContentSlice(values)
+    expect(slice.orbs?.[0]?.mapPins).toEqual([
+      { x: 100, y: 0 },
+      { x: 50, y: 50, label: 'Somewhere' },
+    ])
   })
 })

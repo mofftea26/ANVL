@@ -15,7 +15,7 @@ The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing p
 | Coming Soon | `/admin/coming-soon` | `cms_settings.coming_soon` — site-mode `enabled` toggle + reveal-page copy, countdown (wall-clock + IANA timezone), CTAs, email-capture config, media-id asset refs, SEO/OG overrides |
 | Passports | `/admin/passports` | `product_passports` — generate per-unit QR batches (product picker from the commerce catalog, manual quantity), claimed/unclaimed ledger with claimant snapshots, unassign/delete, printable QR sheet (see `docs/features/product-passport.md`) |
 | Story | `/admin/story` | `story_chapters` + `story_acts` + `story_cast` (+ `story-media` bucket) |
-| Gamification | `/admin/gamification` | `gamification_settings` + `gamification_ranks` + `gamification_rank_levels` + `gamification_challenges` + `gamification_badges` — the Armory's rules (Forge XP constants + curve, rank copy/emblem/thresholds, challenges + badges as declarative metric+target). Relational CRUD like Story; seeded == code defaults |
+| Gamification | `/admin/gamification` | `gamification_settings` + `gamification_ranks` + `gamification_rank_levels` + `gamification_challenges` + `gamification_badges` — the Armory's rules (Forge XP constants + curve, rank copy/emblem/thresholds, challenges + badges as declarative metric+target). Relational CRUD like Story; seeded == code defaults. Since `20260720120000_gamification_rank_keys.sql` rank KEYS are admin-managed (create/delete/reorder — the seed-keys CHECK is dropped; levels cascade on delete); non-seed ranks fall back to `/brand/mark.svg` until an emblem is assigned, and `deriveArmoryRank`/`buildRankLadder` are rank-count-agnostic |
 | Settings | `/admin/settings` | Session + local reset only |
 
 Removed from CMS: website layout, SEO, drop-builder, campaigns, lookbook, global brand.
@@ -31,6 +31,10 @@ A CMS-controlled announcement banner rendered ABOVE the storefront topbar. The b
 ## Dashboard + setup wizards (2026-07-19)
 
 `/admin` is a one-screen control room (≥1280px no-scroll): status strip (active drop, Coming Soon warning, storefront link), a dense all-surfaces category launcher, and six guided **setup wizards** (`src/features/admin/setup/`, built on the generic `AdminWizard` modal): Drop, Products, Story, About, Passports, Gamification. Wizard steps show live done/todo pills derived from the same localStorage working copies the editors write (`useSetupStatus`) and deep-link into the exact editor (`/admin/assets?page=&slot=`, `/admin/passports?tab=&product=`); only the Drop wizard carries an inline control (active-landing select + explicit Activate).
+
+**Wizard dirty guard + docked preview (2026-07-22):**
+- **Unsaved-changes guard (D6):** every `useSetupBlobStep` working copy registers `{dirty, save}` into a wizard-scoped registry (`components/wizard/wizardDirty.tsx`); `AdminWizard` intercepts close AND step changes while dirty with an `AdminChoiceDialog` (Save — runs the active step's save, proceeds only on success — / Discard / Continue editing). The aggregate is mirrored into `useRegisterAdminDirty('setup-wizard', …)` so route navigation and tab close are covered by the layout guard too. `PassportContentWizard` (draft-based) is unaffected — the guard props are optional.
+- **Docked per-step live preview (≥1280px):** setup wizards render as a LEFT-DOCKED full-height sheet (focus trap + Escape, no viewport backdrop) so the shell's `AdminPreviewPanel` stays visible/interactive beside them. Opening a wizard (and each step change) auto-opens the panel via `openAdminPreview()` (a target-less emission on the focus channel the shell already subscribes to), points it at the step's `preview.route` via `requestPreviewRoute()` (panel consumes pending routes; same-route requests never remount the iframe), and pushes the step's `preview.target` highlight. Step working copies mirror UNSAVED edits into the preview draft channel via `setupPreviewBinding(field, map)` on `useSetupBlobStep` (About/Oath slices merge into the `landingContent` envelope; assets/support/legal/pdp/passport push their blob shapes). Below `xl` the centered modal (no preview signals) is kept.
 
 ## Admin shell + IA (2026-07-18 rework)
 
@@ -164,10 +168,11 @@ published_at timestamptz
 Customer accounts (unchanged; not CMS).
 
 #### Story saga tables (`story_chapters` → `story_acts` → `story_cast`)
-Relational content for the `/story` page. Each **chapter** is a drop; each chapter has ordered **acts**; **cast** are CMS-authored characters attached to a chapter (or a specific act).
+Relational content for the `/story` page. Each **chapter** is a book on the shelf; each chapter has ordered **acts**; **cast** are CMS-authored characters attached to a chapter (or a specific act). Chapters may link to a product via `product_slug` (= Shopify handle) — **multiple chapters may share a product_slug** (the one-per-product unique index was dropped in `20260720100000_story_chapters_many_per_product.sql`); the PDP and passport embeds show the first book by `sort_order` (`StoryClient.getChapterByProductSlug`).
 
 ```sql
 story_chapters(id, slug UNIQUE, chapter_number, title, subtitle, description,
+               product_slug, drop_label, drop_slug,
                cover_asset jsonb, cover_logo jsonb, cover_colors jsonb,
                sort_order, is_published)
 story_acts(id, chapter_id FK→story_chapters, act_number, title, story,

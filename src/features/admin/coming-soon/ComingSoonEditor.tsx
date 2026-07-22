@@ -1,15 +1,9 @@
-import {
-  Check,
-  ExternalLink,
-  Hourglass,
-  ImagePlus,
-  Info,
-  Save,
-} from '@/shared/icons'
+import { ExternalLink, Hourglass, ImagePlus, Info } from '@/shared/icons'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
+import { AdminSaveAction } from '@/features/admin/components/AdminSaveAction'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
@@ -23,7 +17,6 @@ import {
 } from '@/features/cms/comingSoon/comingSoon.settings'
 import type { ComingSoonConfig } from '@/features/cms/comingSoon/comingSoon.zod'
 import { Textarea } from '@/shared/components/ui'
-import { Button } from '@/shared/components/ui/Button'
 import { Checkbox } from '@/shared/components/ui/Checkbox'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
@@ -82,7 +75,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function ComingSoonEditor() {
   const setPageActions = useAdminPageActions()
   const stored = useStoredComingSoonConfig()
-  const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
+  const { config, setConfig, isDirty, saving, showSuccess, save } = useSingletonCmsEditor({
     id: 'coming-soon',
     stored,
     saveAsync: saveComingSoonConfigAsync,
@@ -109,20 +102,15 @@ export function ComingSoonEditor() {
 
   const toolbar = useMemo(
     () => (
-      <Button
-        type="button"
-        disabled={saving}
-        variant="primary"
-        size="md"
-        density="compact"
-        loading={saving}
-        onClick={save}
-      >
-        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
-        {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save Coming Soon'}
-      </Button>
+      <AdminSaveAction
+        onSave={save}
+        saving={saving}
+        showSuccess={showSuccess}
+        dirty={isDirty}
+        label="Save Coming Soon"
+      />
     ),
-    [save, saving, showSuccess],
+    [save, saving, showSuccess, isDirty],
   )
 
   useEffect(() => {

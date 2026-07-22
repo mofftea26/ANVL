@@ -3,11 +3,7 @@ import { AdminGamificationPage } from '@/features/admin/gamification/AdminGamifi
 
 export function AdminGamificationPageRoute() {
   return (
-    <AdminLayout
-      title="Gamification"
-      description="Ranks, challenges, Forge XP, and badges — the Armory's progression rules."
-      layout="workspace"
-    >
+    <AdminLayout layout="workspace">
       <AdminGamificationPage />
     </AdminLayout>
   )

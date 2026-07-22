@@ -1,4 +1,5 @@
 import { createFileRoute, lazyRouteComponent } from '@tanstack/react-router'
+import { AdminEditorLoading } from '@/features/admin/components/AdminEditorLoading'
 
 export type AdminAssetsSearch = {
   /** Slot scope to open — 'general', a landing key, or a storefront page key. */
@@ -23,4 +24,5 @@ export const Route = createFileRoute('/admin/assets')({
     () => import('./-adminAssets'),
     'AdminAssetsPageRoute',
   ),
+  pendingComponent: AdminEditorLoading,
 })

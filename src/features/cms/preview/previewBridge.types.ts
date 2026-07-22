@@ -31,7 +31,7 @@ import {
 import { parseShopConfig, type ShopConfig } from '@/features/cms/shop/shopExperience.zod'
 
 /**
- * Admin live-preview wire protocol (v1).
+ * Admin live-preview wire protocol (v2).
  *
  * The admin embeds the real storefront in a same-origin iframe
  * (`/<route>?anvl-cms-preview=1`) and pushes the editors' UNSAVED in-memory
@@ -39,9 +39,22 @@ import { parseShopConfig, type ShopConfig } from '@/features/cms/shop/shopExperi
  * iframe, on the same origin, after a `hello` handshake — real visitors never
  * enter preview mode. Saved-local state needs no bridge (the storefront already
  * prefers this browser's saved CMS draft); only pre-save edits travel here.
+ *
+ * v2 adds INSPECTOR MODE (bidirectional inspection): the admin toggles
+ * `inspect-mode`; the storefront then reports `inspect-hover` (element under
+ * the cursor, null when unmapped) and `inspect-click` (locate-in-editor),
+ * and echoes `inspect-mode { enabled: false }` when the user exits with
+ * Escape inside the iframe. Parsers stay tolerant of v1 senders (v <= 2 is
+ * accepted; v1 peers simply never emit the new message types).
  */
 export const PREVIEW_QUERY_PARAM = 'anvl-cms-preview'
-export const PREVIEW_PROTOCOL_VERSION = 1
+export const PREVIEW_PROTOCOL_VERSION = 2
+/** Oldest wire version still accepted by both parsers. */
+export const PREVIEW_PROTOCOL_MIN_VERSION = 1
+
+function isSupportedProtocolVersion(v: number): boolean {
+  return v >= PREVIEW_PROTOCOL_MIN_VERSION && v <= PREVIEW_PROTOCOL_VERSION
+}
 
 /** Unsaved editor state, keyed by the same slices the CMS persists. */
 export interface PreviewDraftPayload {
@@ -91,6 +104,11 @@ const adminMessageEnvelopeSchema = z.discriminatedUnion('type', [
     v: z.number(),
     target: previewTargetSchema.nullable(),
   }),
+  z.object({
+    type: z.literal('anvl-preview/inspect-mode'),
+    v: z.number(),
+    enabled: z.boolean(),
+  }),
 ])
 
 export type AdminPreviewMessage =
@@ -99,10 +117,21 @@ export type AdminPreviewMessage =
   | { type: 'anvl-preview/focus'; v: number; target: PreviewTarget }
   /** Inspection-style highlight while an editor field is hovered; null clears. */
   | { type: 'anvl-preview/hover'; v: number; target: PreviewTarget | null }
+  /** v2: turn the storefront's inspector mode on/off. */
+  | { type: 'anvl-preview/inspect-mode'; v: number; enabled: boolean }
 
 export type StorefrontPreviewMessage =
   | { type: 'anvl-preview/ready'; v: number; path: string }
   | { type: 'anvl-preview/located'; v: number; target: PreviewTarget; found: boolean }
+  /** v2: element under the cursor while inspecting; null = no mapped target. */
+  | { type: 'anvl-preview/inspect-hover'; v: number; target: PreviewTarget | null }
+  /** v2: inspected element was clicked — the admin locates it in its editor. */
+  | { type: 'anvl-preview/inspect-click'; v: number; target: PreviewTarget }
+  /**
+   * v2: mode-change echo — the storefront announces it exited inspect mode
+   * itself (Escape pressed inside the iframe), so the admin toggle can follow.
+   */
+  | { type: 'anvl-preview/inspect-mode'; v: number; enabled: boolean }
 
 const storefrontMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('anvl-preview/ready'), v: z.number(), path: z.string() }),
@@ -111,6 +140,21 @@ const storefrontMessageSchema = z.discriminatedUnion('type', [
     v: z.number(),
     target: previewTargetSchema,
     found: z.boolean(),
+  }),
+  z.object({
+    type: z.literal('anvl-preview/inspect-hover'),
+    v: z.number(),
+    target: previewTargetSchema.nullable(),
+  }),
+  z.object({
+    type: z.literal('anvl-preview/inspect-click'),
+    v: z.number(),
+    target: previewTargetSchema,
+  }),
+  z.object({
+    type: z.literal('anvl-preview/inspect-mode'),
+    v: z.number(),
+    enabled: z.boolean(),
   }),
 ])
 
@@ -147,7 +191,7 @@ export function parsePreviewDraftPayload(raw: Record<string, unknown>): PreviewD
 /** Validate an inbound admin→storefront message; null for foreign/invalid data. */
 export function parseAdminPreviewMessage(data: unknown): AdminPreviewMessage | null {
   const parsed = adminMessageEnvelopeSchema.safeParse(data)
-  if (!parsed.success || parsed.data.v !== PREVIEW_PROTOCOL_VERSION) return null
+  if (!parsed.success || !isSupportedProtocolVersion(parsed.data.v)) return null
   if (parsed.data.type === 'anvl-preview/draft') {
     return {
       type: 'anvl-preview/draft',
@@ -161,6 +205,6 @@ export function parseAdminPreviewMessage(data: unknown): AdminPreviewMessage | n
 /** Validate an inbound storefront→admin message; null for foreign/invalid data. */
 export function parseStorefrontPreviewMessage(data: unknown): StorefrontPreviewMessage | null {
   const parsed = storefrontMessageSchema.safeParse(data)
-  if (!parsed.success || parsed.data.v !== PREVIEW_PROTOCOL_VERSION) return null
+  if (!parsed.success || !isSupportedProtocolVersion(parsed.data.v)) return null
   return parsed.data
 }

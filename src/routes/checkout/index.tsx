@@ -20,6 +20,7 @@ import {
   Container,
   FormField,
   Input,
+  PhoneInput,
   Section,
   Select,
   SelectItem,
@@ -144,13 +145,16 @@ function CheckoutPage() {
               />
             </FormField>
             <FormField label="Phone" error={form.formState.errors.phone?.message} htmlFor="checkout-phone">
-              <Input
-                id="checkout-phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="+961 …"
-                {...form.register('phone')}
+              <Controller
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <PhoneInput
+                    id="checkout-phone"
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                  />
+                )}
               />
             </FormField>
             <FormField

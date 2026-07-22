@@ -1,14 +1,12 @@
-import { Plus, Trash2 } from '@/shared/icons'
 import { useState } from 'react'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
+import { SizeGuideTable, EMPTY_SIZE_TABLE } from '@/features/admin/components/SizeGuideTable'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
-import { makeSectionId } from '@/features/admin/components/SectionListField'
-import type { SizeProductEntry, SizeRow } from '@/features/cms/support/supportContent.zod'
+import { convertLegacySizeEntry } from '@/features/cms/support/supportContent.convert'
+import type { SizeProductEntry, SizeTable } from '@/features/cms/support/supportContent.zod'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
-import { IconButton } from '@/shared/components/ui/IconButton'
 import { Input } from '@/shared/components/ui/Input'
-import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 interface PerProductSizeFieldProps {
   perProduct: Record<string, SizeProductEntry>
@@ -17,17 +15,14 @@ interface PerProductSizeFieldProps {
 
 const EMPTY_ENTRY: SizeProductEntry = { note: '', columns: [], rows: [] }
 
-/** Pad/truncate a row's value list to match the current column count. */
-function fitValues(values: string[], columnCount: number): string[] {
-  const out = values.slice(0, columnCount)
-  while (out.length < columnCount) out.push('')
-  return out
-}
-
 /**
- * Per-product size table editor — pick a commerce product, define the table
- * columns (comma-separated), then add rows (a size label + one value per
- * column). Entries are keyed by product slug (same convention as `pdp_content`).
+ * Per-product size-table editor — pick a commerce product, author a fit note
+ * plus the STRUCTURED fixed measurement grid ({@link SizeGuideTable}: 7
+ * measurement rows × XS–XXL, cm). Entries are keyed by product slug (same
+ * convention as `pdp_content`). Legacy free-form `columns`/`rows` are shown
+ * read-only with a conservative one-click "Convert" (legacy sizes map onto the
+ * fixed columns, measurement headings onto rows by name) — the stored legacy
+ * fields are never deleted.
  */
 export function PerProductSizeField({ perProduct, onChange }: PerProductSizeFieldProps) {
   const productsQuery = useAdminProductCatalogQuery()
@@ -36,61 +31,19 @@ export function PerProductSizeField({ perProduct, onChange }: PerProductSizeFiel
 
   const entry = slug ? (perProduct[slug] ?? EMPTY_ENTRY) : null
 
-  const setEntry = (next: SizeProductEntry) => {
+  const setEntry = (patch: Partial<SizeProductEntry>) => {
     if (!slug) return
-    onChange({ ...perProduct, [slug]: next })
+    const current: SizeProductEntry = perProduct[slug] ?? EMPTY_ENTRY
+    onChange({ ...perProduct, [slug]: { ...current, ...patch } })
   }
 
-  const setColumns = (raw: string) => {
-    if (!entry) return
-    const columns = raw
-      .split(',')
-      .map((c) => c.trim())
-      .filter((c) => c.length > 0)
-    setEntry({
-      ...entry,
-      columns,
-      rows: entry.rows.map((r) => ({ ...r, values: fitValues(r.values, columns.length) })),
-    })
-  }
-
-  const addRow = () => {
-    if (!entry) return
-    const row: SizeRow = {
-      id: makeSectionId('size'),
-      size: '',
-      values: fitValues([], entry.columns.length),
-    }
-    setEntry({ ...entry, rows: [...entry.rows, row] })
-  }
-
-  const patchRow = (index: number, patch: Partial<SizeRow>) => {
-    if (!entry) return
-    setEntry({
-      ...entry,
-      rows: entry.rows.map((r, i) => (i === index ? { ...r, ...patch } : r)),
-    })
-  }
-
-  const setRowValue = (rowIndex: number, colIndex: number, value: string) => {
-    if (!entry) return
-    setEntry({
-      ...entry,
-      rows: entry.rows.map((r, i) => {
-        if (i !== rowIndex) return r
-        const values = fitValues(r.values, entry.columns.length)
-        values[colIndex] = value
-        return { ...r, values }
-      }),
-    })
-  }
-
-  const removeRow = (index: number) => {
-    if (!entry) return
-    setEntry({ ...entry, rows: entry.rows.filter((_, i) => i !== index) })
-  }
+  const setTable = (table: SizeTable) => setEntry({ table })
 
   const authoredSlugs = Object.keys(perProduct)
+  const hasStructured = Boolean(
+    entry?.table?.rows.some((row) => row.values.some((v) => v.trim().length > 0)),
+  )
+  const showLegacy = entry !== null && entry.rows.length > 0 && !hasStructured
 
   return (
     <div className="space-y-4">
@@ -116,72 +69,75 @@ export function PerProductSizeField({ perProduct, onChange }: PerProductSizeFiel
             <Input
               density="compact"
               value={entry.note}
-              onChange={(e) => setEntry({ ...entry, note: e.target.value })}
+              onChange={(e) => setEntry({ note: e.target.value })}
             />
           </FormField>
+
+          {showLegacy ? (
+            <div className="space-y-2 rounded-lg border border-dashed border-[var(--color-line)] p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                Legacy size table (read-only)
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead>
+                    <tr>
+                      <th className="border-b border-[var(--color-line)] px-2 py-1.5 font-semibold text-[var(--color-text)]">
+                        Size
+                      </th>
+                      {entry.columns.map((column, i) => (
+                        <th
+                          key={`${column}-${i}`}
+                          className="border-b border-[var(--color-line)] px-2 py-1.5 font-semibold text-[var(--color-text)]"
+                        >
+                          {column}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entry.rows.map((row, rowIndex) => (
+                      <tr key={row.id || rowIndex}>
+                        <td className="border-b border-[var(--color-line)] px-2 py-1.5 font-medium text-[var(--color-text)]">
+                          {row.size}
+                        </td>
+                        {entry.columns.map((_, columnIndex) => (
+                          <td
+                            key={columnIndex}
+                            className="border-b border-[var(--color-line)] px-2 py-1.5 text-[var(--color-text-muted)]"
+                          >
+                            {row.values[columnIndex] ?? ''}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[11px] text-[var(--color-text-muted)]">
+                This legacy table renders on the storefront until the structured grid below
+                has values. Convert maps its sizes and measurement headings onto the fixed
+                grid — the original table is kept as a backup.
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                density="compact"
+                onClick={() => setTable(convertLegacySizeEntry(entry))}
+              >
+                Convert to structured
+              </Button>
+            </div>
+          ) : null}
+
           <FormField
-            label="Columns"
-            hint="Comma-separated table headers, e.g. Body chest (cm), Back length (cm)."
+            label="Measurements"
+            hint="The structured grid replaces the legacy table on the storefront once any cell is filled."
             labelStyle="micro"
           >
-            <Input
-              density="compact"
-              value={entry.columns.join(', ')}
-              onChange={(e) => setColumns(e.target.value)}
-            />
+            <SizeGuideTable value={entry.table ?? EMPTY_SIZE_TABLE} onChange={setTable} />
           </FormField>
-
-          <div className="space-y-3">
-            {entry.rows.map((row, rowIndex) => (
-              <div
-                key={row.id || rowIndex}
-                className="space-y-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] p-3"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
-                    Row {rowIndex + 1}
-                  </span>
-                  <IconButton
-                    type="button"
-                    size="sm"
-                    aria-label={`Remove row ${rowIndex + 1}`}
-                    onClick={() => removeRow(rowIndex)}
-                  >
-                    <Trash2 size={ICON_SIZE.sm} aria-hidden="true" />
-                  </IconButton>
-                </div>
-                <FormField label="Size" labelStyle="micro">
-                  <Input
-                    density="compact"
-                    value={row.size}
-                    onChange={(e) => patchRow(rowIndex, { size: e.target.value })}
-                  />
-                </FormField>
-                {entry.columns.length > 0 ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {entry.columns.map((col, colIndex) => (
-                      <FormField key={colIndex} label={col || `Column ${colIndex + 1}`} labelStyle="micro">
-                        <Input
-                          density="compact"
-                          value={fitValues(row.values, entry.columns.length)[colIndex]}
-                          onChange={(e) => setRowValue(rowIndex, colIndex, e.target.value)}
-                        />
-                      </FormField>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-[var(--color-text-muted)]">
-                    Add columns above to give this row values.
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <Button type="button" variant="secondary" size="sm" density="compact" onClick={addRow}>
-            <Plus size={ICON_SIZE.sm} aria-hidden="true" />
-            Add row
-          </Button>
         </div>
       ) : (
         <p className="text-xs text-[var(--color-text-muted)]">

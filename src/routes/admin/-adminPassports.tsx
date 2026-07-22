@@ -9,11 +9,7 @@ export function AdminPassportsPageRoute() {
   const { tab, product } = route.useSearch()
 
   return (
-    <AdminLayout
-      title="Passports"
-      description="Generate and track per-unit QR product passports."
-      layout="workspace"
-    >
+    <AdminLayout layout="workspace">
       <AdminPassportsEditor initialTab={tab} initialProductSlug={product} />
     </AdminLayout>
   )

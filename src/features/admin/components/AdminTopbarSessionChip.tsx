@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ChevronDown, ExternalLink, LogOut, Settings } from '@/shared/icons'
+import { ChevronDown, LogOut, Settings } from '@/shared/icons'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import {
   sessionInitial,
@@ -19,18 +19,14 @@ function AccountMenuLink({
   to,
   icon: Icon,
   label,
-  external,
 }: {
   to: string
   icon: typeof Settings
   label: string
-  external?: boolean
 }) {
   return (
     <Link
       to={to}
-      target={external ? '_blank' : undefined}
-      rel={external ? 'noreferrer' : undefined}
       className="focus-ring group flex items-center gap-3 rounded-xl px-2.5 py-2 text-[var(--color-text-muted)] no-underline transition hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-text)]"
     >
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--color-line)]/70 bg-[var(--color-surface-soft)] text-[var(--color-text-muted)] transition group-hover:border-[var(--color-line)] group-hover:bg-[var(--color-surface-elevated)] group-hover:text-[var(--color-text)]">
@@ -105,7 +101,6 @@ export function AdminTopbarSessionChip({ className }: { className?: string }) {
         </div>
 
         <div className="space-y-1 p-2">
-          <AccountMenuLink to="/" icon={ExternalLink} label="View storefront" external />
           <AccountMenuLink to="/admin/settings" icon={Settings} label="Settings" />
         </div>
 

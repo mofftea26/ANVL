@@ -12,6 +12,7 @@ export function AboutMarqueeFields({ register }: { register: UseFormRegister<Abo
     <ContentSection
       title="Marquee — Type Band"
       hint="The counter-scrolling type band on the mobile/tablet page (the desktop altar has no marquee). Repeats automatically; keep it short."
+      previewTarget={{ kind: 'content-field', id: 'about:marquee' }}
     >
       <FormField label="Marquee text" htmlFor="about-marquee-text" className="sm:col-span-2" labelStyle="stacked">
         <Input id="about-marquee-text" placeholder={d.text} {...register('marquee.text')} density="compact" />

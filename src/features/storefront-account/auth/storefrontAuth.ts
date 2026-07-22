@@ -34,6 +34,7 @@ export async function signUpStorefront(
   email: string,
   password: string,
   fullName?: string,
+  redirect?: string,
 ): Promise<AuthResult> {
   const client = getStorefrontSupabaseClient()
   if (!client) return { ok: false, error: 'Auth is not configured.' }
@@ -42,7 +43,10 @@ export async function signUpStorefront(
     password,
     options: {
       data: fullName ? { full_name: fullName } : undefined,
-      emailRedirectTo: originRedirect('/auth/callback'),
+      // The confirmation link lands on /auth/callback, which forwards to the
+      // (sanitized) redirect — so "scan QR → sign up → confirm email" returns
+      // to the passport instead of stranding on /account.
+      emailRedirectTo: originRedirect(buildOAuthCallbackPath(redirect)),
     },
   })
   if (error) return { ok: false, error: error.message }
@@ -77,18 +81,34 @@ export async function updatePasswordStorefront(
 }
 
 /**
+ * Builds the OAuth callback path, carrying the post-sign-in destination as a
+ * `?redirect=` param so it survives the provider round trip. `/auth/callback`
+ * sanitizes it via `sanitizeInternalRedirect` before navigating. Exported for
+ * unit tests.
+ */
+export function buildOAuthCallbackPath(redirect?: string): string {
+  if (!redirect) return '/auth/callback'
+  return `/auth/callback?redirect=${encodeURIComponent(redirect)}`
+}
+
+/**
  * Starts the OAuth flow — the browser redirects to the provider and returns to
- * `/account` with a session (parsed via `detectSessionInUrl`). The promise
+ * `/auth/callback` with a session (parsed via `detectSessionInUrl`), which then
+ * forwards to `redirect` (sanitized; defaults to /account). The promise
  * usually does not resolve in-page because navigation occurs first.
+ *
+ * Note: the Supabase Auth redirect allow-list must permit
+ * `<origin>/auth/callback` with query params (a `/auth/callback*` wildcard).
  */
 export async function signInWithOAuthStorefront(
   provider: StorefrontOAuthProvider,
+  redirect?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const client = getStorefrontSupabaseClient()
   if (!client) return { ok: false, error: 'Auth is not configured.' }
   const { error } = await client.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: originRedirect('/auth/callback') },
+    options: { redirectTo: originRedirect(buildOAuthCallbackPath(redirect)) },
   })
   if (error) return { ok: false, error: error.message }
   return { ok: true }

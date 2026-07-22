@@ -16,7 +16,7 @@ import {
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { AccountAvatar } from '@/features/storefront-account/account/AccountAvatar'
-import { PhoneField } from '@/features/storefront-account/account/PhoneField'
+import { PhoneInput } from '@/shared/components/ui/PhoneInput'
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
 import { useRegisterAccountSave } from '@/features/storefront-account/account/accountSave.store'
 
@@ -185,7 +185,7 @@ export function PersonalPanel({ customer }: { customer: Customer | undefined }) 
         {/* Contact */}
         <AccountBentoCard bg={accountCardBg('carbon')} eyebrow="Contact" icon={<PhoneIcon size={17} />}>
           <FormField label="Phone" htmlFor="pi-phone">
-            <PhoneField id="pi-phone" value={phone} onChange={(v) => form.setValue('phone', v, { shouldDirty: true })} />
+            <PhoneInput id="pi-phone" value={phone} onChange={(v) => form.setValue('phone', v, { shouldDirty: true })} />
           </FormField>
           <p className="anvl-micro mt-2 text-[var(--color-text-muted)]">Used for delivery updates only.</p>
         </AccountBentoCard>

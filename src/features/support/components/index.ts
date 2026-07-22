@@ -1,5 +1,7 @@
 export { CareLines } from './CareLines'
+export { CARE_ICON_COMPONENTS, formatCareValue } from './careIcons'
 export { ContactPanel } from './ContactPanel'
+export { SizeDiagram, SIZE_MEASUREMENT_POINTS } from './SizeDiagram'
 export { DocFooterCta, DOC_CTA_PRIMARY_CLASS, DOC_CTA_SECONDARY_CLASS } from './DocFooterCta'
 export { DocHero, formatDocDate } from './DocHero'
 export { FaqAccordion, faqPageJsonLd } from './FaqAccordion'

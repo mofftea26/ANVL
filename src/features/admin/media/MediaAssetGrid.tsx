@@ -57,18 +57,22 @@ type MediaAssetGridProps = {
   formatFilter?: string | null
   assignmentFilter?: MediaAssignmentFilter
   assignedIds?: ReadonlySet<string>
+  /** id → labels of where each asset is referenced (Assigned-badge tooltip). */
+  assignedUsage?: ReadonlyMap<string, string[]>
   columns?: number
 }
 
 function MediaAssetCard({
   asset,
   assigned,
+  usageLabels,
   selected,
   onToggleSelected,
   onDelete,
 }: {
   asset: CmsMediaAsset
   assigned: boolean | null
+  usageLabels?: string[]
   selected: boolean
   onToggleSelected: (id: string) => void
   onDelete: (asset: CmsMediaAsset) => void
@@ -156,6 +160,11 @@ function MediaAssetCard({
         </label>
         {assigned != null && (
           <span
+            title={
+              assigned && usageLabels?.length
+                ? `Used by:\n${usageLabels.join('\n')}`
+                : undefined
+            }
             className={cn(
               'absolute right-2 top-2 z-10 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider',
               assigned
@@ -279,6 +288,7 @@ export function MediaAssetGrid({
   formatFilter = null,
   assignmentFilter = 'all',
   assignedIds,
+  assignedUsage,
   columns = 3,
 }: MediaAssetGridProps) {
   const filtered = useMemo(
@@ -444,6 +454,7 @@ export function MediaAssetGrid({
               key={asset.id}
               asset={asset}
               assigned={assignedFor(asset.id)}
+              usageLabels={assignedUsage?.get(asset.id)}
               selected={selectedIds.has(asset.id)}
               onToggleSelected={toggleSelected}
               onDelete={setPendingDelete}
@@ -510,6 +521,7 @@ export function MediaAssetGrid({
                     key={asset.id}
                     asset={asset}
                     assigned={assignedFor(asset.id)}
+                    usageLabels={assignedUsage?.get(asset.id)}
                     selected={selectedIds.has(asset.id)}
                     onToggleSelected={toggleSelected}
                     onDelete={setPendingDelete}

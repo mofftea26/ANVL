@@ -57,6 +57,7 @@ export function Select({
   children,
   valueLabel,
   'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
 }: {
   value?: string
   defaultValue?: string
@@ -71,6 +72,8 @@ export function Select({
   /** Overrides the closed trigger's displayed content (default: Radix clones the selected item's own content, which can be too rich for a single-line trigger — e.g. an item with a description). */
   valueLabel?: ReactNode
   'aria-label'?: string
+  /** Links the trigger to caption/status copy rendered outside the field. */
+  'aria-describedby'?: string
 }) {
   return (
     <SelectPrimitive.Root
@@ -83,6 +86,7 @@ export function Select({
       <SelectPrimitive.Trigger
         id={id}
         aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
         className={cn(selectTriggerClass({ density }), className)}
       >
         <span className="min-w-0 truncate">

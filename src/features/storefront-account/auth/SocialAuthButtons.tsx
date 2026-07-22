@@ -43,14 +43,23 @@ const PROVIDERS: {
  * Premium social sign-in button (Google). Renders ONLY when Supabase is
  * configured — so the current mock app is unchanged. The provider itself must
  * be enabled in the Supabase dashboard (see docs).
+ *
+ * `redirect` — post-sign-in destination (e.g. a /p/$token passport). It rides
+ * the OAuth round trip via /auth/callback?redirect=…, which sanitizes it.
  */
-export function SocialAuthButtons({ verb = 'Continue with' }: { verb?: string }) {
+export function SocialAuthButtons({
+  verb = 'Continue with',
+  redirect,
+}: {
+  verb?: string
+  redirect?: string
+}) {
   const [pending, setPending] = useState<StorefrontOAuthProvider | null>(null)
   if (!isStorefrontAuthEnabled()) return null
 
   async function start(provider: StorefrontOAuthProvider) {
     setPending(provider)
-    const res = await signInWithOAuthStorefront(provider)
+    const res = await signInWithOAuthStorefront(provider, redirect)
     if (!res.ok) {
       toast.error(res.error ?? 'Could not start sign-in.')
       setPending(null)

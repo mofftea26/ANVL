@@ -120,6 +120,7 @@ export {
   MedalMilitary as Award,
   // b
   SealCheck as BadgeCheck,
+  Prohibit as Ban,
   Bell,
   BookOpen,
   BookOpenText,
@@ -128,10 +129,12 @@ export {
   Calendar,
   CalendarDots as CalendarDays,
   Circle,
+  CoatHanger,
   Crosshair,
   Crown,
   // d
   Database,
+  Drop as Droplet,
   // e
   ArrowsOutSimple as Expand,
   // f
@@ -142,6 +145,7 @@ export {
   Flame,
   // g–h
   Globe,
+  HandSoap,
   HardDrive,
   Heart,
   Hourglass,
@@ -185,12 +189,16 @@ export {
   TShirt as Shirt,
   ShoppingBag,
   DeviceMobile as Smartphone,
+  Snowflake,
   DeviceTablet as Tablet,
   Sparkle as Sparkles,
+  SprayBottle,
   Star,
+  Sun,
   Sword as Swords,
   // t
   Target,
+  Thermometer,
   Warning as TriangleAlert,
   Trophy,
   TextT as Type,
@@ -200,6 +208,8 @@ export {
   Users,
   // w–z
   MagicWand as Wand2,
+  WashingMachine,
+  Wind,
   XCircle,
   YoutubeLogo as Youtube,
 } from '@phosphor-icons/react'

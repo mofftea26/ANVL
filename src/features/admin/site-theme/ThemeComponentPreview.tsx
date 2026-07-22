@@ -1,12 +1,9 @@
-import { type CSSProperties, useId } from 'react'
+import { memo, type CSSProperties, useId, useMemo } from 'react'
 import { themeConfigToCssVars, type ThemeConfig } from '@/features/cms/config/cmsSiteConfig.zod'
 import { appearanceToDataTheme, type ThemePreset } from '@/features/cms/config/themeLibrary'
 
-type PreviewMode = 'desktop' | 'mobile'
-
 type ThemeComponentPreviewProps = {
   preset: ThemePreset
-  mode: PreviewMode
 }
 
 function presetVars(preset: ThemePreset): CSSProperties {
@@ -30,19 +27,24 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 }
 
 /**
- * Real-component preview (§12). Renders the actual interface surfaces a theme
- * touches — chrome, commerce, forms, overlays, effects — all consuming semantic
- * tokens inside a scoped CSS-variable container so editors see the full system,
- * not swatches.
+ * Real-component preview (§12) — the Palette Mockup. Renders the actual
+ * interface surfaces a theme touches — chrome, commerce, forms, overlays,
+ * effects — all consuming semantic tokens inside a scoped CSS-variable
+ * container so editors see the full system, not swatches. Internally
+ * responsive (fills its rail column); memoized so the mockup + its derived
+ * CSS-var map only recompute when the edited preset actually changes.
  */
-export function ThemeComponentPreview({ preset, mode }: ThemeComponentPreviewProps) {
+export const ThemeComponentPreview = memo(function ThemeComponentPreview({
+  preset,
+}: ThemeComponentPreviewProps) {
   const fieldId = useId()
+  const vars = useMemo(() => presetVars(preset), [preset])
   return (
     <div
       data-testid="theme-component-preview"
       data-theme={appearanceToDataTheme(preset.appearance)}
-      className="mx-auto overflow-hidden rounded-2xl border border-[var(--color-line)] transition-[max-width] duration-200"
-      style={{ ...presetVars(preset), maxWidth: mode === 'mobile' ? 390 : '100%' }}
+      className="mx-auto w-full overflow-hidden rounded-2xl border border-[var(--color-line)]"
+      style={vars}
     >
       <div
         className="space-y-6 p-5"
@@ -258,4 +260,4 @@ export function ThemeComponentPreview({ preset, mode }: ThemeComponentPreviewPro
       </div>
     </div>
   )
-}
+})

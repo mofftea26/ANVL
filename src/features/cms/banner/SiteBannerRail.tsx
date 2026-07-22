@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
 import { resolveMediaUrl } from '@/features/cms/assets/resolvePublishedAssets'
 import { usePreviewTargetProps } from '@/features/cms/preview'
+import { BannerStrip } from '@/features/cms/banner/BannerStrip'
 import { useBannerConfig } from '@/features/cms/banner/useBannerConfig'
 import { isBannerLive } from '@/features/cms/banner/isBannerLive'
 import type { BannerConfig } from '@/features/cms/banner/bannerConfig.zod'
@@ -83,54 +84,22 @@ export function SiteBannerRail({
   const safeHref = sanitizeHref(config.href)
   const linkLabel = config.linkLabel.trim()
 
-  const railStyle: CSSProperties = {
-    backgroundColor: config.colors.background.trim() || 'var(--color-accent)',
-    color: config.colors.text.trim() || 'var(--color-on-highlight)',
-  }
-
-  const image = imageUrl ? (
-    <img
-      src={imageUrl}
-      alt=""
-      className="h-5 w-auto shrink-0 object-contain"
-      loading="lazy"
-      decoding="async"
-      aria-hidden="true"
-    />
-  ) : null
-
   return (
     <div
       ref={railRef}
       data-anvl-banner
       className="sticky top-0 z-50 w-full"
-      style={railStyle}
       {...previewTarget}
     >
       <style>{NAV_OFFSET_CSS}</style>
-      <div className="mx-auto flex min-h-9 max-w-[var(--anvl-content-max)] flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-1.5 text-center text-xs font-medium tracking-[0.04em] sm:text-sm">
-        {image}
-        {safeHref && !linkLabel ? (
-          <a
-            href={safeHref}
-            className="focus-ring underline-offset-4 hover:underline"
-            style={{ color: 'inherit' }}
-          >
-            {message}
-          </a>
-        ) : (
-          <span>{message}</span>
-        )}
-        {safeHref && linkLabel ? (
-          <a
-            href={safeHref}
-            className="focus-ring shrink-0 font-semibold underline underline-offset-4"
-            style={{ color: 'inherit' }}
-          >
-            {linkLabel}
-          </a>
-        ) : null}
-      </div>
+      <BannerStrip
+        message={message}
+        href={safeHref}
+        linkLabel={linkLabel}
+        imageUrl={imageUrl ?? null}
+        colors={config.colors}
+        animation={config.animation}
+      />
     </div>
   )
 }

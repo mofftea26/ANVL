@@ -6,6 +6,9 @@ import type { ShopConfig } from '@/features/cms/shop/shopExperience.zod'
 import type { PdpVariant } from '@/features/products/pdp/hooks/usePdpVariant'
 import { colorHasNoStock } from '@/features/products/pdp/hooks/usePdpVariant'
 import type { ResolvedPdpContent } from '@/features/products/pdp/resolvePdpContent'
+import type { PdpProductSupport } from '@/features/products/pdp/PdpSupportDetails'
+import { resolveCareItems } from '@/features/cms/support/resolveSupportContent'
+import { CARE_ICON_COMPONENTS, formatCareValue } from '@/features/support/components'
 import { extractYoutubeVideoId } from '@/features/products/pdp/videoEmbed'
 import { Container } from '@/shared/components/ui'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
@@ -66,20 +69,29 @@ export function PdpBento({
   content,
   pdp,
   hasStoryBook,
+  support,
 }: {
   product: Product
   variant: PdpVariant
   content: ResolvedPdpContent
   pdp: ShopConfig['pdp']
   hasStoryBook?: boolean
+  /** This product's authored care from `support_content` — structured items win over `pdp_content` care lines. */
+  support?: PdpProductSupport
 }) {
   const { colorwayIndex, setColorwayIndex } = variant
   const youtube = extractYoutubeVideoId(product.shop?.videoUrl)
   const hasLifestyle = Boolean(content.lifestyleImage)
 
+  // Structured care from the support blob wins; legacy pdp_content lines fall back.
+  const structuredCare =
+    support?.care && support.care.items.some((item) => item.name.trim().length > 0)
+      ? resolveCareItems(support.care)
+      : []
+
   const showStory = pdp.showStory && (content.storyBody || hasLifestyle)
   const showMaterials = pdp.showMaterials && (content.materialTitle || content.materialNote || content.materialMacro)
-  const showCare = pdp.showMaterials && content.care.length > 0
+  const showCare = pdp.showMaterials && (structuredCare.length > 0 || content.care.length > 0)
   const showColorways = pdp.showColorways && product.colorways.length > 1
   const showDetails = pdp.showDesignDetails && content.designDetails.length > 0
   const showSizeGuide = pdp.showSizeGuide
@@ -141,12 +153,28 @@ export function PdpBento({
           {showCare ? (
             <Tile id="pdp-care" eyebrow="Care" className="md:col-span-1 md:row-span-1">
               <ul className="space-y-1 overflow-hidden text-xs text-[var(--shop-text-muted)]">
-                {content.care.slice(0, 4).map((c) => (
-                  <li key={c} className="flex gap-2">
-                    <span className="text-[var(--shop-accent)]">·</span>
-                    <span className="line-clamp-1">{c}</span>
-                  </li>
-                ))}
+                {structuredCare.length > 0
+                  ? structuredCare.slice(0, 4).map((item) => {
+                      const Icon = CARE_ICON_COMPONENTS[item.icon]
+                      const value = formatCareValue(item.value)
+                      return (
+                        <li key={item.id} className="flex items-center gap-2">
+                          <span className="shrink-0 text-[var(--shop-accent)]">
+                            <Icon size={14} aria-hidden="true" />
+                          </span>
+                          <span className="line-clamp-1">
+                            {item.name}
+                            {value ? ` — ${value}` : ''}
+                          </span>
+                        </li>
+                      )
+                    })
+                  : content.care.slice(0, 4).map((c) => (
+                      <li key={c} className="flex gap-2">
+                        <span className="text-[var(--shop-accent)]">·</span>
+                        <span className="line-clamp-1">{c}</span>
+                      </li>
+                    ))}
               </ul>
             </Tile>
           ) : null}

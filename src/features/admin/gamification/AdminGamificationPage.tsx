@@ -61,7 +61,7 @@ export function AdminGamificationPage() {
       >
         <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">
           <li>Saving is live immediately — athletes see new thresholds on their next visit.</li>
-          <li>The four rank identities are fixed; their copy, emblems, and thresholds are yours.</li>
+          <li>Ranks are fully yours — create, delete, reorder, and edit copy, emblems, and thresholds.</li>
           <li>Challenges and badges are metric + target — no code deploys needed.</li>
         </ul>
       </AdminRailPanel>

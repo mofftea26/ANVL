@@ -1,24 +1,30 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { collectAssignedMediaIds } from '@/features/cms/media/collectAssignedMediaIds'
+import { collectAssignedMediaUsage } from '@/features/cms/media/collectAssignedMediaIds'
+import { subscribeBannerConfigChange } from '@/features/cms/banner/bannerConfig.settings'
 import { subscribeComingSoonConfigChange } from '@/features/cms/comingSoon/comingSoon.settings'
 import { subscribeCmsSiteConfigChange } from '@/features/cms/config/cmsSiteConfig.settings'
 import { subscribeLandingContentChange } from '@/features/cms/landingContent/landingContent.settings'
 import { subscribePassportContentChange } from '@/features/cms/passportContent/passportContent.settings'
 import { subscribePdpContentChange } from '@/features/cms/pdpContent/pdpContent.settings'
-import { subscribeShopConfigChange } from '@/features/cms/shop/shopExperience.settings'
 import type { AssetConfig } from '@/features/cms/config/cmsSiteConfig.zod'
 
+export type AssignedMedia = {
+  /** Media ids referenced by any media-id field in any CMS blob. */
+  ids: Set<string>
+  /** id → labels of every place that references it (badge tooltip). */
+  usage: Map<string, string[]>
+}
+
 /**
- * Live "is this media asset assigned anywhere?" set for the library badge and
- * filter. `collectAssignedMediaIds` reads every media-assigning blob from its
- * persisted store, so the set must recompute when ANY of those stores change
- * (a PDP/passport/coming-soon save, a cross-tab edit) — not only when the
- * Assets editor's own working copy (`assetConfigOverride`) does. Previously
- * the memo depended on the working copy alone, so assignments made in other
- * editors never refreshed the badge until a remount.
+ * Live "is this media asset assigned anywhere — and where?" for the library
+ * badge, filter, and tooltip. `collectAssignedMediaUsage` reads every
+ * media-id-carrying blob from its persisted store, so the result must
+ * recompute when ANY of those stores change (a PDP/passport/coming-soon/banner
+ * save, a cross-tab edit) — not only when the Assets editor's own working copy
+ * (`assetConfigOverride`) does.
  */
-export function useAssignedMediaIds(assetConfigOverride?: AssetConfig): Set<string> {
+export function useAssignedMedia(assetConfigOverride?: AssetConfig): AssignedMedia {
   const [version, setVersion] = useState(0)
 
   useEffect(() => {
@@ -28,16 +34,23 @@ export function useAssignedMediaIds(assetConfigOverride?: AssetConfig): Set<stri
       subscribeLandingContentChange(bump),
       subscribePdpContentChange(bump),
       subscribePassportContentChange(bump),
-      subscribeShopConfigChange(bump),
       subscribeComingSoonConfigChange(bump),
+      subscribeBannerConfigChange(bump),
     ]
     return () => {
       for (const unsubscribe of unsubscribes) unsubscribe()
     }
   }, [])
 
-  return useMemo(
-    () => collectAssignedMediaIds(assetConfigOverride),
-    [assetConfigOverride, version],
-  )
+  return useMemo(() => {
+    const usage = collectAssignedMediaUsage(assetConfigOverride)
+    return { ids: new Set(usage.keys()), usage }
+    // `version` invalidates the persisted-store reads inside the collector.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetConfigOverride, version])
+}
+
+/** Set-only convenience wrapper (kept for callers that only need the badge). */
+export function useAssignedMediaIds(assetConfigOverride?: AssetConfig): Set<string> {
+  return useAssignedMedia(assetConfigOverride).ids
 }

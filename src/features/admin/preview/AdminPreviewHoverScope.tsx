@@ -13,8 +13,21 @@ import { usePreviewHoverProps } from './usePreviewHoverProps'
  */
 export function AdminPreviewHoverScope({
   target,
+  anchorId,
   children,
-}: PropsWithChildren<{ target: PreviewTarget }>) {
+}: PropsWithChildren<{
+  target: PreviewTarget
+  /**
+   * Optional inspector anchor (`previewFieldAnchorId(...)`) for page-level
+   * editors whose whole scope IS the target (e.g. coming-soon) — an
+   * inspect-click on their storefront element lands here.
+   */
+  anchorId?: string
+}>) {
   const hoverProps = usePreviewHoverProps(target)
-  return <div {...hoverProps}>{children}</div>
+  return (
+    <div id={anchorId} {...hoverProps}>
+      {children}
+    </div>
+  )
 }

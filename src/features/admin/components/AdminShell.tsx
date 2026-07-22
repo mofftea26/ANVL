@@ -1,11 +1,4 @@
-import {
-  Suspense,
-  lazy,
-  useEffect,
-  useState,
-  type PropsWithChildren,
-  type ReactNode,
-} from 'react'
+import { Suspense, lazy, useEffect, useState, type PropsWithChildren } from 'react'
 
 import { subscribePreviewFocus } from '@/features/admin/preview/adminPreviewStore'
 import { ADMIN_STORAGE_KEYS } from '@/features/admin/storageKeys'
@@ -41,25 +34,19 @@ function persistSidebarCollapsed(collapsed: boolean) {
   }
 }
 
-interface AdminShellProps {
-  title: string
-  description?: ReactNode
-  /** Content-area mode — see {@link AdminLayout}. */
-  layout?: 'default' | 'wide' | 'workspace'
-}
-
 /**
  * Admin chrome: persistent categorized sidebar (≥1024px, collapsible to an
  * icon rail with the preference persisted) beside topbar + main, plus the
  * toggleable live-preview panel docked on the right. Below `lg` the sidebar
  * becomes the existing overlay drawer, opened from the topbar menu button.
+ *
+ * Mounted ONCE at the admin route level around the child `<Outlet/>` — it
+ * survives navigation between admin pages, so sidebar collapse state, the
+ * open preview panel (and its iframe), and topbar chrome all persist. Page
+ * titles resolve inside {@link AdminTopbar} from the nav registry; the child
+ * pages wrap themselves in `AdminLayout` for content width.
  */
-export function AdminShell({
-  title,
-  description,
-  layout = 'default',
-  children,
-}: PropsWithChildren<AdminShellProps>) {
+export function AdminShell({ children }: PropsWithChildren) {
   const [navOpen, setNavOpen] = useState(false)
   // Default expanded on server + first paint; stored preference applies post-mount.
   const [collapsed, setCollapsed] = useState(false)
@@ -80,9 +67,6 @@ export function AdminShell({
       return !prev
     })
   }
-
-  const isWide = layout === 'wide'
-  const isWorkspace = layout === 'workspace'
 
   return (
     <AdminPreviewOpenContext.Provider value={previewOpen}>
@@ -113,32 +97,14 @@ export function AdminShell({
         />
 
         <AdminTopbar
-          title={title}
-          description={description}
           onOpenMenu={() => setNavOpen(true)}
           previewOpen={previewOpen}
           onTogglePreview={() => setPreviewOpen((open) => !open)}
         />
 
         <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
-          <main
-            className={cn(
-              'min-h-0 min-w-0 flex-1 overflow-hidden',
-              isWide
-                ? 'flex flex-col px-4 py-4 sm:px-5 lg:px-6 lg:py-5'
-                : 'overflow-y-auto px-4 py-6 pb-8 sm:px-6 lg:px-8 lg:py-10 lg:pb-8',
-            )}
-          >
-            <div
-              className={cn(
-                'mx-auto min-w-0 w-full',
-                isWide && 'flex min-h-0 flex-1 flex-col overflow-hidden max-w-[1600px]',
-                isWorkspace && 'max-w-[110rem] 2xl:max-w-[120rem]',
-                !isWide && !isWorkspace && 'max-w-5xl space-y-6',
-              )}
-            >
-              {children}
-            </div>
+          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 pb-8 sm:px-6 lg:px-8 lg:py-10 lg:pb-8">
+            {children}
           </main>
 
           {previewOpen ? (

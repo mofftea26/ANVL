@@ -1,19 +1,20 @@
-import { Check, Info, Save, ShoppingBag } from '@/shared/icons'
+import { Info, ShoppingBag } from '@/shared/icons'
 import {
   useCallback,
   useEffect,
   useMemo,
   useSyncExternalStore,
 } from 'react'
-import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminRangeField } from '@/features/admin/components/AdminRangeField'
+import { AdminSaveAction } from '@/features/admin/components/AdminSaveAction'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
 import { usePreviewHoverProps } from '@/features/admin/preview/usePreviewHoverProps'
 import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
+import { previewFieldAnchorId } from '@/features/cms/preview'
 import {
   readShopConfigFromStorage,
   saveShopConfigAsync,
@@ -27,7 +28,6 @@ import {
   type ShopSortValue,
 } from '@/features/cms/shop/shopExperience.zod'
 import { Textarea } from '@/shared/components/ui'
-import { Button } from '@/shared/components/ui/Button'
 import { Checkbox } from '@/shared/components/ui/Checkbox'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
@@ -63,17 +63,28 @@ function Section({
   title,
   children,
   previewId,
+  anchor = false,
 }: {
   title: string
   children: React.ReactNode
   /** Storefront element this section's fields change — rung on hover/focus. */
   previewId?: string
+  /**
+   * Inspector anchor. Several sections share a previewId (`shop:grid` spans
+   * four), so only the FIRST section per id opts in — keeps DOM ids unique
+   * and inspect-clicks landing on the section that leads that surface.
+   */
+  anchor?: boolean
 }) {
   const hoverProps = usePreviewHoverProps(
     previewId ? { kind: 'content-field', id: previewId } : null,
   )
   return (
-    <section className="rounded-xl border border-[var(--color-line)] p-5" {...hoverProps}>
+    <section
+      id={anchor && previewId ? previewFieldAnchorId(previewId) : undefined}
+      className="rounded-xl border border-[var(--color-line)] p-5"
+      {...hoverProps}
+    >
       <h2 className="anvl-heading mb-4 text-base font-normal">{title}</h2>
       {children}
     </section>
@@ -89,7 +100,7 @@ function Section({
 export function ShopExperienceEditor() {
   const setPageActions = useAdminPageActions()
   const stored = useStoredShopConfig()
-  const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
+  const { config, setConfig, isDirty, saving, showSuccess, save } = useSingletonCmsEditor({
     id: 'shop',
     stored,
     saveAsync: saveShopConfigAsync,
@@ -106,20 +117,15 @@ export function ShopExperienceEditor() {
 
   const toolbar = useMemo(
     () => (
-      <Button
-        type="button"
-        disabled={saving}
-        variant="primary"
-        size="md"
-        density="compact"
-        loading={saving}
-        onClick={save}
-      >
-        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
-        {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save shop'}
-      </Button>
+      <AdminSaveAction
+        onSave={save}
+        saving={saving}
+        showSuccess={showSuccess}
+        dirty={isDirty}
+        label="Save shop"
+      />
     ),
-    [save, saving, showSuccess],
+    [save, saving, showSuccess, isDirty],
   )
 
   useEffect(() => {
@@ -151,7 +157,7 @@ export function ShopExperienceEditor() {
   return (
     <AdminWorkspace asideLabel="Shop settings help" aside={rail}>
       <div className="space-y-6" data-testid="shop-experience-editor">
-        <Section title="Introduction" previewId="shop:hero">
+        <Section title="Introduction" previewId="shop:hero" anchor>
           <div className="space-y-4">
             <Checkbox
               label="Show the shop hero"
@@ -174,7 +180,7 @@ export function ShopExperienceEditor() {
           </div>
         </Section>
 
-        <Section title="Grid & layout" previewId="shop:grid">
+        <Section title="Grid & layout" previewId="shop:grid" anchor>
           <div className="grid gap-4 sm:grid-cols-2">
             <AdminFieldSelect
               label="Grid density"
@@ -277,7 +283,7 @@ export function ShopExperienceEditor() {
           </div>
         </Section>
 
-        <Section title="Sorting" previewId="shop:toolbar">
+        <Section title="Sorting" previewId="shop:toolbar" anchor>
           <AdminFieldSelect
             label="Default sort"
             value={config.defaultSort}

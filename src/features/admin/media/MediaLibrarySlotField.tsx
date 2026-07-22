@@ -2,7 +2,7 @@ import { ImagePlus } from '@/shared/icons'
 import { useMemo, useState } from 'react'
 import type { MediaPickerKind } from '@/features/admin/media/mediaPickerKind.types'
 import { usePreviewHoverProps } from '@/features/admin/preview/usePreviewHoverProps'
-import type { PreviewTarget } from '@/features/cms/preview'
+import { previewFieldAnchorId, type PreviewTarget } from '@/features/cms/preview'
 import { FormField } from '@/shared/components/ui/FormField'
 import { cn } from '@/shared/lib/cn'
 import { isLikelySafeMediaSrc } from '@/shared/lib/url'
@@ -53,6 +53,10 @@ export function MediaLibrarySlotField({
   return (
     <FormField label={label} className="space-y-2" labelStyle="stacked">
       <div
+        // Inspector anchor. When a coarser wrapper (orb fieldset, content
+        // section) carries the same anchor id, document order makes that
+        // earlier/outer element win getElementById — the desired granularity.
+        id={previewTarget ? previewFieldAnchorId(previewTarget.id) : undefined}
         {...hoverProps}
         onDragOver={(e) => {
           if (!hasDraggedMedia(e.dataTransfer)) return

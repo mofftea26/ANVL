@@ -21,7 +21,7 @@ import {
 import { SetupSaveRow, SetupStepBody } from '../SetupStepParts'
 import { SetupWizard } from '../SetupWizard'
 import { usePdpContentCount } from '../useSetupStatus'
-import { useSetupBlobStep } from '../useSetupBlobStep'
+import { setupPreviewBinding, useSetupBlobStep } from '../useSetupBlobStep'
 
 /** Step 1 — pick the product the following steps author (shared selection). */
 function ProductPickStep({ slug, onSlugChange, onNavigate }: SetupProductStepProps) {
@@ -89,6 +89,12 @@ function PdpEssentialsForm({ slug }: { slug: string }) {
       }),
     successMessage: 'PDP content saved.',
     errorFallbackMessage: 'Could not save PDP content.',
+    // Unsaved edits → live preview: whole pdp_content blob with this slug's
+    // entry replaced (binding closes over the slug; the hook tracks it).
+    preview: setupPreviewBinding('pdpContent', (content: PdpProductContent) => ({
+      ...readPdpContentFromStorage(),
+      [slug]: content,
+    })),
   })
 
   return (

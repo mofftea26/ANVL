@@ -1,3 +1,4 @@
+import { useId, type ReactNode } from 'react'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Select, SelectItem } from '@/shared/components/ui/Select'
 
@@ -11,6 +12,11 @@ type AdminFieldSelectProps = {
   hint?: string
   disabled?: boolean
   placeholder?: string
+  /**
+   * Status copy rendered directly under the select and linked to it via
+   * aria-describedby (e.g. the font editor's "Active: Sora" caption).
+   */
+  caption?: ReactNode
 }
 
 export function AdminFieldSelect({
@@ -21,7 +27,9 @@ export function AdminFieldSelect({
   hint,
   disabled,
   placeholder = 'Select…',
+  caption,
 }: AdminFieldSelectProps) {
+  const captionId = useId()
   const selected = options.find((o) => o.value === value)
 
   return (
@@ -34,6 +42,7 @@ export function AdminFieldSelect({
         valueLabel={selected?.label ?? placeholder}
         density="compact"
         aria-label={label}
+        aria-describedby={caption ? captionId : undefined}
       >
         {options.map((o) => (
           <SelectItem key={o.value} value={o.value} density="compact">
@@ -48,6 +57,11 @@ export function AdminFieldSelect({
           </SelectItem>
         ))}
       </Select>
+      {caption ? (
+        <div id={captionId} className="mt-1.5 text-xs text-[var(--color-text-muted)]">
+          {caption}
+        </div>
+      ) : null}
     </FormField>
   )
 }

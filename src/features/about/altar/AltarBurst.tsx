@@ -38,18 +38,24 @@ varying float vSeed;
 varying float vGlow;
 
 void main() {
-  // Disperse: the sphere the orb was breaks apart — each ember leaves its
-  // surface point along its own radial, sags a little, and hangs drifting.
-  float sb = smoothstep(0.0, 1.0, uBurst);
-  vec3 scattered = aFrom * (1.0 + sb * 1.5) + aDir * (sb * (0.9 + aSeed * 1.1));
-  scattered.y -= sb * sb * 0.45;
+  // Two-phase disperse, so the ORB-ORIGIN reads unmistakably:
+  // 1) ERUPTION — the first beats of uBurst are a tight, fast radial blast
+  //    straight off the seated orb's sphere (every ember is born ON it), a
+  //    clear point-source explosion at the hit point…
+  // 2) DRIFT — …which then relaxes into the slower outward spread + sag as
+  //    the hanging cloud settles around the anvil.
+  float erupt = smoothstep(0.0, 0.35, uBurst);
+  float spread = smoothstep(0.22, 1.0, uBurst);
+  vec3 scattered = aFrom * (1.0 + erupt * 0.5 + spread * 1.0)
+    + aDir * (erupt * erupt * (0.3 + aSeed * 0.25) + spread * (0.6 + aSeed * 0.85));
+  scattered.y -= spread * spread * 0.45;
 
   // The hanging cloud slowly revolves around the anvil — alive, not frozen.
-  float drift = uTime * 0.12 * sb;
+  float drift = uTime * 0.12 * spread;
   float dc = cos(drift);
   float ds = sin(drift);
   scattered = vec3(dc * scattered.x + ds * scattered.z, scattered.y, -ds * scattered.x + dc * scattered.z);
-  scattered += 0.04 * sb * vec3(
+  scattered += 0.04 * spread * vec3(
     sin(uTime * 1.3 + aSeed * 17.0),
     cos(uTime * 1.1 + aSeed * 23.0),
     sin(uTime * 0.9 + aSeed * 31.0)
@@ -66,11 +72,13 @@ void main() {
   vec3 dr = vec3(c * d.x - s * d.y, s * d.x + c * d.y, d.z);
   vec3 pos = aTo + dr * (1.0 - f);
 
-  // Heat life (the site's ember ramp): white-hot off the strike, cooling as
-  // the cloud drifts, re-heating as each ember lands on the forming plate.
+  // Heat life (the site's ember ramp): WHITE-HOT right at the orb as the
+  // eruption leaves it (ignition), cooling as the cloud spreads and drifts,
+  // re-heating as each ember lands on the forming plate.
+  float ignition = (1.0 - erupt) * step(0.0001, uBurst);
   float burstPulse = sin(clamp(uBurst, 0.0, 1.0) * 3.14159265);
   float breath = 0.5 + 0.5 * sin(uTime * (0.55 + aSeed) + aSeed * 12.0);
-  vGlow = clamp(burstPulse * 0.95 + f * 0.55 + breath * 0.12, 0.0, 1.0);
+  vGlow = clamp(ignition + burstPulse * 0.8 + f * 0.55 + breath * 0.12, 0.0, 1.0);
 
   // Alive for the whole flight; dissolved by uFormFade as the real panel
   // materializes inside the formed frame.

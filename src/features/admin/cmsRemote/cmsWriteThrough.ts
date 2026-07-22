@@ -1,8 +1,7 @@
-import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import { isAdminCmsRemoteHydrationLocked } from '@/features/admin/cmsRemote/adminCmsRemoteGate'
-import type { CmsSettingsFieldKey } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
-
-const isTestRunner = import.meta.env.MODE === 'test'
+import type {
+  AdminCmsFlushResult,
+  CmsSettingsFieldKey,
+} from '@/features/admin/cmsRemote/adminCmsRemoteSync'
 
 /**
  * Immediately flush local admin CMS state to Supabase (no debounce).
@@ -15,20 +14,26 @@ const isTestRunner = import.meta.env.MODE === 'test'
  */
 export async function flushAdminCmsWriteThrough(
   fields?: CmsSettingsFieldKey[],
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<AdminCmsFlushResult> {
   const { flushAdminCmsRemoteSync } = await import(
     '@/features/admin/cmsRemote/adminCmsRemoteSync'
   )
   return flushAdminCmsRemoteSync(fields)
 }
 
-/** After a local mutation: push to Supabase when configured and not hydrating. */
+/**
+ * After a local mutation: push to Supabase when configured and not hydrating.
+ *
+ * Legacy-shaped result for the `save*Async` callers: benign skips (tests, SSR,
+ * no Supabase env, hydration pull in progress) stay `ok: true`; everything the
+ * flush reports as an error — no session, non-writable role, failed/0-row
+ * writes — becomes `ok: false`, which every `save*Async` throws on, so editors
+ * toast the real failure instead of a false "Saved."
+ */
 export async function afterLocalCmsMutation(
   fields?: CmsSettingsFieldKey[],
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (isTestRunner) return { ok: true }
-  if (typeof window === 'undefined') return { ok: true }
-  if (!getSupabasePublicEnv()) return { ok: true }
-  if (isAdminCmsRemoteHydrationLocked()) return { ok: true }
-  return flushAdminCmsWriteThrough(fields)
+  const result = await flushAdminCmsWriteThrough(fields)
+  if (result.status === 'error') return { ok: false, error: result.message }
+  return { ok: true }
 }

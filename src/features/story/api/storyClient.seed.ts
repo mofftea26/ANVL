@@ -10,8 +10,12 @@ export const seedStoryClient: StoryClient = {
     return seedStory.find((c) => c.slug === slug && c.isPublished) ?? null
   },
   async getChapterByProductSlug(productSlug) {
-    return (
-      seedStory.find((c) => c.productSlug === productSlug && c.isPublished) ?? null
+    // Ordered-first twin of the Supabase client: several books may share a
+    // product; the first matching entry in seed order (= shelf sort order)
+    // represents it.
+    const matches = seedStory.filter(
+      (c) => c.productSlug === productSlug && c.isPublished,
     )
+    return matches[0] ?? null
   },
 }

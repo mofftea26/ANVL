@@ -4,18 +4,22 @@ import {
   aboutLandingContentSchema,
   type AboutCta,
   type AboutLandingContent,
+  type AboutMapPin,
   type AboutOrb,
   type AboutPoint,
   type AboutStat,
+  type AboutTimelineEntry,
 } from './aboutContent.schema'
 import {
   ABOUT_DEFAULT_CONTENT,
   ABOUT_ORB_FALLBACK_COLORS,
   type AboutResolvedContent,
   type AboutResolvedCta,
+  type AboutResolvedMapPin,
   type AboutResolvedOrb,
   type AboutResolvedPoint,
   type AboutResolvedStat,
+  type AboutResolvedTimelineEntry,
 } from './aboutContent.defaults'
 
 /**
@@ -85,6 +89,36 @@ function stats(cms: AboutStat[] | undefined, fallback: AboutResolvedStat[]): Abo
     .filter((s) => s.value.length > 0 || s.label.length > 0)
 }
 
+/** Map pins pass through with clamped percents; blank rows are dropped. */
+function mapPins(
+  cms: AboutMapPin[] | undefined,
+  fallback: AboutResolvedMapPin[],
+): AboutResolvedMapPin[] {
+  if (!cms || cms.length === 0) return fallback.map((p) => ({ ...p }))
+  return cms.map((pin, i) => ({
+    id: text(pin.id, `pin-${i + 1}`),
+    x: Math.min(100, Math.max(0, pin.x)),
+    y: Math.min(100, Math.max(0, pin.y)),
+    label: pin.label?.trim() ?? '',
+  }))
+}
+
+/** Timeline milestones pass through; fully-empty rows are dropped. */
+function timeline(
+  cms: AboutTimelineEntry[] | undefined,
+  fallback: AboutResolvedTimelineEntry[],
+): AboutResolvedTimelineEntry[] {
+  if (!cms || cms.length === 0) return fallback.map((e) => ({ ...e }))
+  return cms
+    .map((e, i) => ({
+      id: text(e.id, `milestone-${i + 1}`),
+      marker: e.marker?.trim() ?? '',
+      title: e.title?.trim() ?? '',
+      body: e.body?.trim() ?? '',
+    }))
+    .filter((e) => e.marker.length > 0 || e.title.length > 0 || e.body.length > 0)
+}
+
 function defaultOrbAt(index: number, fallback: AboutResolvedOrb[]): AboutResolvedOrb {
   const def = fallback[index]
   if (def) return def
@@ -92,13 +126,17 @@ function defaultOrbAt(index: number, fallback: AboutResolvedOrb[]): AboutResolve
     id: `orb-${index + 1}`,
     label: `Orb ${index + 1}`,
     color: ABOUT_ORB_FALLBACK_COLORS[index % ABOUT_ORB_FALLBACK_COLORS.length]!,
+    layout: 'classic',
     eyebrow: '',
     title: `Orb ${index + 1}`,
+    subhead: '',
     body: '',
     detail: '',
     lines: [],
     points: [],
     stats: [],
+    mapPins: [],
+    timeline: [],
     tagline: '',
   }
 }
@@ -114,6 +152,8 @@ function orbs(
       lines: [...def.lines],
       points: def.points.map((p) => ({ ...p })),
       stats: def.stats.map((s) => ({ ...s })),
+      mapPins: def.mapPins.map((p) => ({ ...p })),
+      timeline: def.timeline.map((e) => ({ ...e })),
       ...(def.primaryCta ? { primaryCta: { ...def.primaryCta } } : {}),
       ...(def.secondaryCta ? { secondaryCta: { ...def.secondaryCta } } : {}),
     }))
@@ -128,13 +168,19 @@ function orbs(
       id: def.id,
       label: text(o.label, def.label),
       color: color(o.color, def.color),
+      // Layout passes straight through — absent/invalid (schema-caught)
+      // values fall back to the orb's default preset (classic for legacy).
+      layout: o.layout ?? def.layout,
       eyebrow: text(o.eyebrow, def.eyebrow),
       title: text(o.title, def.title),
+      subhead: text(o.subhead, def.subhead),
       body: text(o.body, def.body),
       detail: text(o.detail, def.detail),
       lines: lines(o.lines, def.lines),
       points: points(o.points, def.points),
       stats: stats(o.stats, def.stats),
+      mapPins: mapPins(o.mapPins, def.mapPins),
+      timeline: timeline(o.timeline, def.timeline),
       ...(primaryCta ? { primaryCta } : {}),
       ...(secondaryCta ? { secondaryCta } : {}),
       tagline: text(o.tagline, def.tagline),

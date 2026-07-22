@@ -9,9 +9,6 @@ import {
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
 
-// Rank order for "have I passed this tier?" comparisons.
-const RANK_ORDER = ['initiate', 'forged', 'oathbound', 'warlord'] as const
-
 /**
  * The ranks ladder — every rank and its three levels with how to unlock them,
  * the current standing highlighted, plus the badge catalogue with earned ones
@@ -31,7 +28,9 @@ export function RankLadderModal({
   const rules = useGamificationRules()
   const ladder = buildRankLadder(rules)
   const badgeCatalog = buildBadgeCatalog(rules)
-  const currentRankIdx = RANK_ORDER.indexOf(rank.key)
+  // "Have I passed this tier?" — position within the RULES ladder itself, so
+  // admin-created (non-seed) ranks compare correctly too.
+  const currentRankIdx = ladder.findIndex((entry) => entry.key === rank.key)
   const earned = new Set(earnedBadges.map((b) => b.key))
 
   return (

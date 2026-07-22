@@ -273,8 +273,33 @@ export function parseFontConfig(raw: unknown): FontConfig {
 export function parseAssetConfig(raw: unknown): AssetConfig {
   const r = assetConfigSchema.safeParse(raw)
   if (r.success) return r.data
-  if (raw && typeof raw === 'object' && !('general' in raw)) {
-    return { general: raw as Record<string, string>, drops: {}, pages: {} }
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const record = raw as Record<string, unknown>
+    const hasStructuredKeys =
+      'general' in record || 'drops' in record || 'pages' in record
+    // True legacy shape: a flat `{ slotKey: mediaId }` map — no structured
+    // buckets AND every value a string. Anything else must NOT be
+    // reinterpreted as a flat general map (that used to silently discard
+    // `drops`/`pages` from a modern blob merely missing `general`).
+    if (
+      !hasStructuredKeys &&
+      Object.values(record).every((v) => typeof v === 'string')
+    ) {
+      return { general: record as Record<string, string>, drops: {}, pages: {} }
+    }
+    if (hasStructuredKeys) {
+      // Modern blob with missing/invalid buckets — keep every bucket that
+      // parses, default the rest.
+      const general = z.record(z.string(), z.string()).safeParse(record.general)
+      const bucketSchema = z.record(z.string(), z.record(z.string(), z.string()))
+      const drops = bucketSchema.safeParse(record.drops)
+      const pages = bucketSchema.safeParse(record.pages)
+      return {
+        general: general.success ? general.data : {},
+        drops: drops.success ? drops.data : {},
+        pages: pages.success ? pages.data : {},
+      }
+    }
   }
   return DEFAULT_ASSET_CONFIG
 }

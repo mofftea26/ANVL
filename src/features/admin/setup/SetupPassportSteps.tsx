@@ -21,7 +21,7 @@ import { Input } from '@/shared/components/ui/Input'
 
 import { SetupSaveRow, SetupStepBody } from './SetupStepParts'
 import { usePassportContentCount } from './useSetupStatus'
-import { useSetupBlobStep } from './useSetupBlobStep'
+import { setupPreviewBinding, useSetupBlobStep } from './useSetupBlobStep'
 
 export interface SetupProductStepProps {
   /** Selected product slug — shared across the hosting wizard's steps. */
@@ -114,6 +114,12 @@ function PassportEssentialsForm({
       }),
     successMessage: 'Passport content saved.',
     errorFallbackMessage: 'Could not save passport content.',
+    // Unsaved edits → live preview: whole passport_content blob with this
+    // slug's entry replaced (binding closes over the slug).
+    preview: setupPreviewBinding('passportContent', (content: PassportProductContent) => ({
+      ...readPassportContentFromStorage(),
+      [slug]: content,
+    })),
   })
 
   return (

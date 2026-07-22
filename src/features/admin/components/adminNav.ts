@@ -2,7 +2,6 @@ import type { ComponentType } from 'react'
 
 import {
   Anvil,
-  Bell,
   BookOpen,
   FileText,
   Hourglass,
@@ -43,6 +42,22 @@ export const ADMIN_NAV_CATEGORIES = [
 
 export type AdminNavCategory = (typeof ADMIN_NAV_CATEGORIES)[number]
 
+/**
+ * Category → representative icon for the collapsed icon rail and category
+ * landing pages. Kept next to {@link ADMIN_NAV_CATEGORIES} so the rail, the
+ * landing tiles, and any future surface share one source.
+ */
+export const ADMIN_NAV_CATEGORY_ICONS: Record<AdminNavCategory, AdminNavIcon> = {
+  Dashboard: LayoutDashboard,
+  Design: Palette,
+  Content: FileText,
+  Commerce: ShoppingBag,
+  Passports: QrCode,
+  Gamification: Trophy,
+  Media: Images,
+  Settings: Settings,
+}
+
 export interface AdminNavItem {
   label: string
   href: string
@@ -57,7 +72,7 @@ export const adminNavItems: AdminNavItem[] = [
   {
     label: 'Dashboard',
     href: '/admin',
-    description: 'Active drop and CMS shortcuts.',
+    description: 'Every surface one strike away.',
     category: 'Dashboard',
     icon: LayoutDashboard,
     cta: 'Open',
@@ -84,7 +99,7 @@ export const adminNavItems: AdminNavItem[] = [
   {
     label: 'Landing Content',
     href: '/admin/content',
-    description: 'Per-scene landing copy with designed defaults.',
+    description: 'Per-scene copy overrides with designed defaults.',
     category: 'Content',
     icon: FileText,
     cta: 'Edit',
@@ -93,7 +108,8 @@ export const adminNavItems: AdminNavItem[] = [
   {
     label: 'About Page',
     href: '/admin/about',
-    description: 'Hero, philosophy, forge process, and fun facts copy.',
+    description:
+      'Author the cinematic About page — hero, philosophy, forge process, fun facts, and finale.',
     category: 'Content',
     icon: Anvil,
     cta: 'Edit',
@@ -102,25 +118,17 @@ export const adminNavItems: AdminNavItem[] = [
   {
     label: 'Story',
     href: '/admin/story',
-    description: 'Author the saga — chapters, acts, and cast.',
+    description: 'Author the saga — chapters (drops), acts, and the army cast.',
     category: 'Content',
     icon: BookOpen,
     cta: 'Author',
     badge: 'Saga',
   },
   {
-    label: 'Banner',
-    href: '/admin/banner',
-    description: 'Storefront announcement strip above the topbar.',
-    category: 'Content',
-    icon: Bell,
-    cta: 'Edit',
-    badge: 'Banner',
-  },
-  {
     label: 'Coming Soon',
     href: '/admin/coming-soon',
-    description: 'Pre-launch site mode and reveal-page content.',
+    description:
+      'Pre-launch site mode — toggle the reveal page and author its copy, countdown, early-access capture, assets, and SEO.',
     category: 'Content',
     icon: Hourglass,
     cta: 'Edit',
@@ -129,7 +137,8 @@ export const adminNavItems: AdminNavItem[] = [
   {
     label: 'Legal',
     href: '/admin/legal',
-    description: 'Privacy, terms, cookies, and accessibility copy.',
+    description:
+      'Privacy, terms, cookies, and accessibility copy — every blank field falls back to the designed default.',
     category: 'Content',
     icon: ShieldCheck,
     cta: 'Edit',
@@ -138,7 +147,8 @@ export const adminNavItems: AdminNavItem[] = [
   {
     label: 'Support',
     href: '/admin/support',
-    description: 'FAQ, contact, shipping, returns, care, and size guides.',
+    description:
+      'FAQ, contact, shipping, returns, care, and size guides — every blank field falls back to the designed default.',
     category: 'Content',
     icon: Info,
     cta: 'Edit',
@@ -174,7 +184,8 @@ export const adminNavItems: AdminNavItem[] = [
   {
     label: 'Gamification',
     href: '/admin/gamification',
-    description: 'Ranks, challenges, Forge XP, and badges — the Armory rules.',
+    description:
+      "Ranks, challenges, Forge XP, and badges — the Armory's progression rules.",
     category: 'Gamification',
     icon: Trophy,
     cta: 'Tune',
@@ -183,7 +194,7 @@ export const adminNavItems: AdminNavItem[] = [
   {
     label: 'Assets',
     href: '/admin/assets',
-    description: 'Upload media and assign slots per drop and page.',
+    description: 'Media library and slot assignments for general and per-drop use.',
     category: 'Media',
     icon: Images,
     cta: 'Manage',
@@ -226,4 +237,35 @@ export function findAdminNavItem(pathname: string): AdminNavItem | undefined {
       ? pathname === '/admin'
       : pathname === item.href || pathname.startsWith(`${item.href}/`),
   )
+}
+
+/** URL slug for a category landing page (`'Coming Soon'`-style names kebab-case). */
+export function adminCategorySlug(category: AdminNavCategory): string {
+  return category.toLowerCase().replace(/\s+/g, '-')
+}
+
+/** Href of the `/admin/category/$categoryKey` landing page for a category. */
+export function adminCategoryHref(category: AdminNavCategory): string {
+  return `/admin/category/${adminCategorySlug(category)}`
+}
+
+/** Reverse slug lookup — undefined for unknown slugs (caller redirects to `/admin`). */
+export function findAdminCategoryBySlug(
+  slug: string,
+): AdminNavCategoryGroup | undefined {
+  const normalized = slug.toLowerCase()
+  return adminNavCategories().find(
+    (group) => adminCategorySlug(group.category) === normalized,
+  )
+}
+
+/** The category group owning a pathname — editor pages and category landing pages both resolve. */
+export function findAdminCategoryForPathname(
+  pathname: string,
+): AdminNavCategoryGroup | undefined {
+  const categoryMatch = pathname.match(/^\/admin\/category\/([^/]+)/)
+  if (categoryMatch) return findAdminCategoryBySlug(categoryMatch[1])
+  const item = findAdminNavItem(pathname)
+  if (!item) return undefined
+  return adminNavCategories().find((group) => group.category === item.category)
 }

@@ -1,13 +1,13 @@
-import { ExternalLink, Database, HardDrive } from '@/shared/icons'
+import { Database, HardDrive } from '@/shared/icons'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import { ICON_SIZE } from '@/shared/lib/iconSize'
 
 /**
  * Shared rail panel describing the live workspace target (Supabase vs. local
- * mock) with a storefront preview link. Reused across CMS pages that don't have
- * a richer contextual rail of their own, so ultra-wide side space always carries
- * something useful instead of dead margin.
+ * mock). Reused across CMS pages that don't have a richer contextual rail of
+ * their own, so ultra-wide side space always carries something useful instead
+ * of dead margin. (The storefront jump lives in the sidebar footer — chrome
+ * carries it once, not every rail.)
  */
 export function AdminWorkspaceStatusPanel() {
   const supabaseMode = Boolean(getSupabasePublicEnv())
@@ -43,18 +43,6 @@ export function AdminWorkspaceStatusPanel() {
             )}
           </span>
         </p>
-
-        {/* Plain anchor (not router Link): always opens the live storefront in a
-            new tab, so a full navigation is the intended behavior. */}
-        <a
-          href="/"
-          target="_blank"
-          rel="noreferrer"
-          className="focus-ring inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-soft)]/60 px-3 text-xs font-medium text-[var(--color-text)] no-underline transition hover:border-[var(--color-graphite)] hover:bg-[var(--color-surface-elevated)]"
-        >
-          <ExternalLink size={ICON_SIZE.sm} aria-hidden="true" className="shrink-0" />
-          View storefront
-        </a>
       </div>
     </AdminRailPanel>
   )

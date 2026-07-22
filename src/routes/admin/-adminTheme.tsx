@@ -4,11 +4,7 @@ import { SiteThemeEditor } from '@/features/admin/site-theme/SiteThemeEditor'
 
 export function AdminThemePageRoute() {
   return (
-    <AdminLayout
-      title="Theme & Colors"
-      description="Site-wide palette and theme mode."
-      layout="workspace"
-    >
+    <AdminLayout layout="workspace">
       {/* Theme edits repaint the whole page — hover anywhere rings the page. */}
       <AdminPreviewHoverScope target={{ kind: 'content-field', id: 'site:page' }}>
         <SiteThemeEditor />

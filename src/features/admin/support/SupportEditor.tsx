@@ -1,7 +1,7 @@
-import { Check, Info, Save } from '@/shared/icons'
+import { Info } from '@/shared/icons'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
+import { AdminSaveAction } from '@/features/admin/components/AdminSaveAction'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
@@ -17,9 +17,9 @@ import {
 } from '@/features/cms/support/supportContent.settings'
 import { SUPPORT_CONTENT_DEFAULTS } from '@/features/cms/support/supportContent.defaults'
 import type { SupportContentConfig } from '@/features/cms/support/supportContent.zod'
-import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
+import { PhoneInput } from '@/shared/components/ui/PhoneInput'
 import { Textarea } from '@/shared/components/ui/Textarea'
 import { cn } from '@/shared/lib/cn'
 
@@ -66,7 +66,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function SupportEditor() {
   const setPageActions = useAdminPageActions()
   const stored = useStoredSupportContent()
-  const { config, setConfig, saving, showSuccess, save } = useSingletonCmsEditor({
+  const { config, setConfig, isDirty, saving, showSuccess, save } = useSingletonCmsEditor({
     id: 'support',
     stored,
     saveAsync: saveSupportContentAsync,
@@ -86,20 +86,15 @@ export function SupportEditor() {
 
   const toolbar = useMemo(
     () => (
-      <Button
-        type="button"
-        disabled={saving}
-        variant="primary"
-        size="md"
-        density="compact"
-        loading={saving}
-        onClick={save}
-      >
-        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
-        {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save Support'}
-      </Button>
+      <AdminSaveAction
+        onSave={save}
+        saving={saving}
+        showSuccess={showSuccess}
+        dirty={isDirty}
+        label="Save support"
+      />
     ),
-    [save, saving, showSuccess],
+    [save, saving, showSuccess, isDirty],
   )
 
   useEffect(() => {
@@ -191,14 +186,11 @@ export function SupportEditor() {
                     }
                   />
                 </FormField>
-                <FormField label="Phone" labelStyle="stacked">
-                  <Input
-                    density="compact"
-                    placeholder={D.contact.phone || 'e.g. +961 …'}
+                <FormField label="Phone" labelStyle="stacked" htmlFor="support-contact-phone">
+                  <PhoneInput
+                    id="support-contact-phone"
                     value={config.contact.phone}
-                    onChange={(e) =>
-                      patch('contact', { ...config.contact, phone: e.target.value })
-                    }
+                    onChange={(phone) => patch('contact', { ...config.contact, phone })}
                   />
                 </FormField>
                 <FormField label="Instagram" labelStyle="stacked">

@@ -75,7 +75,7 @@ function SettingsPage() {
   )
 
   return (
-    <AdminLayout title="Settings" layout="workspace">
+    <AdminLayout layout="workspace">
       <AdminWorkspace asideLabel="Workspace settings context" aside={settingsRail}>
       <div className="space-y-8">
         <AdminCard title="Session">

@@ -14,6 +14,7 @@ import {
   type StorefrontPreviewMessage,
 } from './previewBridge.types'
 import { highlightPreviewTarget, setPreviewHoverTarget } from './previewHighlight'
+import { startPreviewInspect } from './previewInspect'
 
 /** `null` = preview inactive (every real visitor); `{}` = active, no drafts yet. */
 const PreviewDraftContext = createContext<PreviewDraftPayload | null>(null)
@@ -59,6 +60,7 @@ export function PreviewDraftProvider({
 
     let active = false
     let adminWindow: MessageEventSource | null = null
+    let stopInspect: (() => void) | null = null
 
     const announceReady = (target?: MessageEventSource | null) => {
       const message: StorefrontPreviewMessage = {
@@ -106,6 +108,41 @@ export function PreviewDraftProvider({
         return
       }
 
+      if (message.type === 'anvl-preview/inspect-mode') {
+        if (message.enabled && !stopInspect) {
+          stopInspect = startPreviewInspect({
+            onHover: (target) =>
+              reply({
+                type: 'anvl-preview/inspect-hover',
+                v: PREVIEW_PROTOCOL_VERSION,
+                target,
+              }),
+            onClick: (target) =>
+              reply({
+                type: 'anvl-preview/inspect-click',
+                v: PREVIEW_PROTOCOL_VERSION,
+                target,
+              }),
+            // Escape inside the iframe: tear down locally, then echo the
+            // mode change so the admin toggle follows (the iframe holds
+            // keyboard focus, so the admin can't see this Escape itself).
+            onExit: () => {
+              stopInspect?.()
+              stopInspect = null
+              reply({
+                type: 'anvl-preview/inspect-mode',
+                v: PREVIEW_PROTOCOL_VERSION,
+                enabled: false,
+              })
+            },
+          })
+        } else if (!message.enabled && stopInspect) {
+          stopInspect()
+          stopInspect = null
+        }
+        return
+      }
+
       if (message.type === 'anvl-preview/focus') {
         const found = highlightPreviewTarget(message.target)
         reply({
@@ -121,7 +158,11 @@ export function PreviewDraftProvider({
     // Storefront-initiated side of the handshake — we exist, come pair with us.
     announceReady()
 
-    return () => window.removeEventListener('message', onMessage)
+    return () => {
+      window.removeEventListener('message', onMessage)
+      stopInspect?.()
+      stopInspect = null
+    }
   }, [forceCandidate])
 
   return (

@@ -37,6 +37,15 @@ describe('storefront page asset registry', () => {
     expect(getStorefrontPageSlots('nope')).toEqual([])
   })
 
+  it('exposes the social share image slot only on pages whose routes read it (G6)', () => {
+    const pagesWithOgImage = STOREFRONT_PAGE_REGISTRY.filter((p) =>
+      p.slots.some((s) => s.key === 'ogImage'),
+    ).map((p) => p.key)
+    // Only /shop and /shop/$slug consume `ogImage`; every other page's route
+    // never read the assignment, so the editor must not offer the slot.
+    expect(pagesWithOgImage.sort()).toEqual(['pdp', 'shop'])
+  })
+
   it('lists picker metadata without slot bodies', () => {
     const pages = listStorefrontPages()
     expect(pages.length).toBe(STOREFRONT_PAGE_REGISTRY.length)

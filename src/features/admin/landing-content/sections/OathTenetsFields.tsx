@@ -1,5 +1,4 @@
-import { ChevronDown, ChevronUp, ImagePlus, Menu, Plus, Trash2 } from '@/shared/icons'
-import { useSortableList } from '@/features/admin/hooks/useSortableList'
+import { ChevronDown, ChevronUp, ImagePlus, Plus, Trash2 } from '@/shared/icons'
 import { useMemo, useState } from 'react'
 import type { Control, UseFormRegister, UseFormSetValue } from 'react-hook-form'
 import { useFieldArray, useWatch } from 'react-hook-form'
@@ -15,6 +14,7 @@ import { OATH_DEFAULT_CONTENT } from '@/features/landingPages/pages/TheOathLandi
 import { createBlankTenetFormValues, type OathContentFormValues } from '../landingContentForm'
 import { ContentSection } from './ContentSection'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
+import { cn } from '@/shared/lib/cn'
 
 const d = OATH_DEFAULT_CONTENT.tenets
 
@@ -48,10 +48,30 @@ export function OathTenetsFields({
   const [activeSpot, setActiveSpot] = useState<{ item: number; hotspot: number } | null>(
     null,
   )
-  const sortable = useSortableList({
-    length: products.fields.length,
-    onMove: products.move,
-  })
+  /** One product at a time — the picker keeps the section short. RHF keeps the
+   *  unrendered items' values (shouldUnregister is off), so switching never
+   *  loses edits. */
+  const [selected, setSelected] = useState(0)
+  const selectedIndex = Math.min(selected, Math.max(0, products.fields.length - 1))
+
+  const selectProduct = (index: number) => {
+    setSelected(index)
+    setActiveSpot(null)
+  }
+  const moveProduct = (from: number, to: number) => {
+    if (to < 0 || to >= products.fields.length) return
+    products.move(from, to)
+    selectProduct(to)
+  }
+
+  const productOptionLabel = (i: number): string => {
+    const title =
+      watched?.[i]?.title?.trim() ||
+      d.items[i]?.title ||
+      d.items[d.items.length - 1]?.title ||
+      'Untitled'
+    return `Product ${String(i + 1).padStart(2, '0')} — ${title}`
+  }
 
   const mediaById = useMemo(() => {
     const map = new Map<string, CmsMediaAsset>()
@@ -89,40 +109,70 @@ export function OathTenetsFields({
         <Input id="oath-tenets-eyebrow" placeholder={d.eyebrow} {...register('tenets.eyebrow')} density="compact" />
       </FormField>
 
+      {/* Product picker — edit one slide at a time (the full stack made the
+          section unusably long). A sideways-scrolling chip row; all products
+          stay in the form, so switching never loses unsaved edits. */}
+      <div className="sm:col-span-2">
+        <p className="mb-2 text-xs font-medium text-[var(--color-text-muted)]">
+          Product to edit
+        </p>
+        <div
+          role="tablist"
+          aria-label="Arsenal products"
+          className="flex gap-2 overflow-x-auto pb-1.5 [scrollbar-width:thin]"
+        >
+          {products.fields.map((field, i) => {
+            const active = i === selectedIndex
+            return (
+              <button
+                key={field.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => selectProduct(i)}
+                className={cn(
+                  'focus-ring shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-medium transition-colors',
+                  active
+                    ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-heading)]'
+                    : 'border-[var(--color-line)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]/40 hover:text-[var(--color-text)]',
+                )}
+              >
+                {productOptionLabel(i)}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {products.fields.map((field, i) => {
+        if (i !== selectedIndex) return null
         const def = d.items[i] ?? d.items[d.items.length - 1]
         const item = watched?.[i]
         const hotspots = item?.hotspots ?? []
         return (
           <fieldset
             key={field.id}
-            {...sortable.getItemProps(i)}
-            className="rounded-lg border border-[var(--color-line)] p-4 transition-shadow data-[drag-over]:shadow-[0_0_0_2px_var(--color-accent)] sm:col-span-2"
+            className="rounded-lg border border-[var(--color-line)] p-4 sm:col-span-2"
           >
             <legend className="anvl-display inline-flex items-center gap-2 px-1 text-[10px] tracking-[0.28em] text-[var(--color-highlight-bright)]">
-              <span
-                {...sortable.getHandleProps(i)}
-                title="Drag to reorder"
-                className="inline-flex cursor-grab items-center text-[var(--color-text-muted)] active:cursor-grabbing"
-              >
-                <Menu size={ICON_SIZE.sm} aria-hidden="true" />
-              </span>
-              Product {String(i + 1).padStart(2, '0')}
+              {productOptionLabel(i)}
               <span className="inline-flex gap-0.5">
                 <button
                   type="button"
-                  aria-label={`Move product ${i + 1} up`}
+                  aria-label={`Move product ${i + 1} earlier in the showcase`}
+                  title="Move earlier"
                   disabled={i === 0}
-                  onClick={() => sortable.moveUp(i)}
+                  onClick={() => moveProduct(i, i - 1)}
                   className="focus-ring inline-flex h-6 w-6 items-center justify-center rounded text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] disabled:opacity-30"
                 >
                   <ChevronUp size={ICON_SIZE.xs} aria-hidden="true" />
                 </button>
                 <button
                   type="button"
-                  aria-label={`Move product ${i + 1} down`}
+                  aria-label={`Move product ${i + 1} later in the showcase`}
+                  title="Move later"
                   disabled={i === products.fields.length - 1}
-                  onClick={() => sortable.moveDown(i)}
+                  onClick={() => moveProduct(i, i + 1)}
                   className="focus-ring inline-flex h-6 w-6 items-center justify-center rounded text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] disabled:opacity-30"
                 >
                   <ChevronDown size={ICON_SIZE.xs} aria-hidden="true" />
@@ -253,7 +303,10 @@ export function OathTenetsFields({
           <button
             type="button"
             className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-dashed border-[var(--color-line)] px-4 text-sm text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-text)] focus-ring"
-            onClick={() => products.append(createBlankTenetFormValues())}
+            onClick={() => {
+              products.append(createBlankTenetFormValues())
+              selectProduct(products.fields.length)
+            }}
           >
             <Plus size={ICON_SIZE.md} aria-hidden="true" />
             Add product
@@ -283,7 +336,10 @@ export function OathTenetsFields({
         confirmLabel="Remove product"
         confirmVariant="destructive"
         onConfirm={() => {
-          if (removeIndex !== null) products.remove(removeIndex)
+          if (removeIndex !== null) {
+            products.remove(removeIndex)
+            selectProduct(Math.max(0, Math.min(removeIndex, products.fields.length - 2)))
+          }
           setRemoveIndex(null)
         }}
       >

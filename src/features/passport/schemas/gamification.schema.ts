@@ -8,8 +8,15 @@ import { z } from 'zod'
  * the historical hardcoded rules.
  */
 
+/**
+ * The four SEEDED rank keys — these ship code-owned emblem PNGs
+ * (`/brand/ranks/{key}.png`). Since migration 20260720120000 the DB accepts
+ * any key (admin-created ranks), so the runtime rank-key type is a free
+ * string; the seed constants remain for emblem fallbacks and tests.
+ */
 export const ARMORY_RANK_KEYS = ['initiate', 'forged', 'oathbound', 'warlord'] as const
-export type ArmoryRankKey = (typeof ARMORY_RANK_KEYS)[number]
+export type ArmorySeedRankKey = (typeof ARMORY_RANK_KEYS)[number]
+export type ArmoryRankKey = string
 
 export const GAMIFICATION_METRICS = [
   'registrations',
@@ -35,7 +42,7 @@ export const CHALLENGE_CATEGORY_KEYS = ['forge', 'ritual', 'record', 'honor'] as
 export type ChallengeCategory = (typeof CHALLENGE_CATEGORY_KEYS)[number]
 
 const rankLevelSchema = z.object({
-  rankKey: z.enum(ARMORY_RANK_KEYS),
+  rankKey: z.string().min(1),
   level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
   unlockCopy: z.string(),
   minRegistrations: z.number().int().min(0).nullable(),
@@ -44,7 +51,7 @@ const rankLevelSchema = z.object({
 export type GamificationRankLevelRule = z.infer<typeof rankLevelSchema>
 
 const rankSchema = z.object({
-  key: z.enum(ARMORY_RANK_KEYS),
+  key: z.string().min(1),
   sortOrder: z.number().int(),
   name: z.string().min(1),
   description: z.string(),
@@ -103,14 +110,14 @@ export const gamificationDbRowSchemas = {
     level_curve_factor: z.number().int(),
   }),
   rank: z.object({
-    key: z.enum(ARMORY_RANK_KEYS),
+    key: z.string().min(1),
     sort_order: z.number().int(),
     name: z.string(),
     description: z.string(),
     emblem_url: z.string().nullable(),
   }),
   rankLevel: z.object({
-    rank_key: z.enum(ARMORY_RANK_KEYS),
+    rank_key: z.string().min(1),
     level: z.number().int().min(1).max(3),
     unlock_copy: z.string(),
     min_registrations: z.number().int().nullable(),

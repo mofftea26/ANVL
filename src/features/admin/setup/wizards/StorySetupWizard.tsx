@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
+import { CastProfileNameField } from '@/features/admin/story/CastProfileNameField'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
 import {
   listSaga,
@@ -87,7 +88,7 @@ function sagaStatus(saga: StorySagaState): { state: 'done' | 'todo' | 'info'; la
     : { state: 'todo', label: 'No chapters yet — create the first book' }
 }
 
-/** Step 1 — create a chapter (one book per product) inline. */
+/** Step 1 — create a chapter (a product may carry several books) inline. */
 function ChapterStep({ saga, onNavigate }: StoryStepProps) {
   const productsQuery = useAdminProductCatalogQuery()
   const products = productsQuery.data?.items ?? []
@@ -137,7 +138,7 @@ function ChapterStep({ saga, onNavigate }: StoryStepProps) {
 
   return (
     <SetupStepBody
-      intro="A chapter is one book on the Story shelf — one per product, grouped by drop. Create it here with the essentials; covers, colors, and art live in the full editor."
+      intro="A chapter is one book on the Story shelf, grouped by drop — a product may carry several chapters (the PDP and passport embed the first by sort order). Create it here with the essentials; covers, colors, and art live in the full editor."
       status={sagaStatus(saga)}
       links={STORY_LINK}
       onNavigate={onNavigate}
@@ -308,6 +309,8 @@ function CastStep({ saga, onNavigate }: StoryStepProps) {
   const chapter = saga.chapters.find((c) => c.id === saga.selectedId) ?? null
   const [name, setName] = useState('')
   const [rank, setRank] = useState('')
+  // True after picking a real athlete — rank becomes a read-only snapshot.
+  const [fromProfile, setFromProfile] = useState(false)
   const [blurb, setBlurb] = useState('')
   const [adding, setAdding] = useState(false)
 
@@ -336,6 +339,7 @@ function CastStep({ saga, onNavigate }: StoryStepProps) {
       toast.success(`“${cleanName}” joined the cast.`)
       setName('')
       setRank('')
+      setFromProfile(false)
       setBlurb('')
       await saga.reload()
     } finally {
@@ -370,11 +374,33 @@ function CastStep({ saga, onNavigate }: StoryStepProps) {
             </ul>
           ) : null}
           <div className="grid gap-4 md:grid-cols-2">
-            <FormField label="Name" labelStyle="stacked">
-              <Input density="compact" value={name} onChange={(e) => setName(e.target.value)} />
-            </FormField>
-            <FormField label="Rank" labelStyle="stacked" hint="Defaults to Recruit when blank.">
-              <Input density="compact" value={rank} onChange={(e) => setRank(e.target.value)} />
+            <CastProfileNameField
+              name={name}
+              onNameChange={(next) => {
+                setName(next)
+                setFromProfile(false)
+              }}
+              onProfileSelect={(snapshot) => {
+                setName(snapshot.name)
+                setRank(snapshot.rank)
+                setFromProfile(true)
+              }}
+            />
+            <FormField
+              label="Rank"
+              labelStyle="stacked"
+              hint={
+                fromProfile
+                  ? 'Derived from the athlete’s armory (claims only) — a snapshot; it does not live-update.'
+                  : 'Free text — defaults to Recruit when blank.'
+              }
+            >
+              <Input
+                density="compact"
+                value={rank}
+                readOnly={fromProfile}
+                onChange={(e) => setRank(e.target.value)}
+              />
             </FormField>
           </div>
           <FormField label="Blurb" labelStyle="stacked">
@@ -512,25 +538,29 @@ export function StorySetupWizard({ open, onClose }: { open: boolean; onClose: ()
         {
           key: 'chapter',
           title: 'Chapter',
-          blurb: 'One book per product on the Story shelf.',
+          blurb: 'A book on the Story shelf — products may carry several.',
+          preview: { route: '/story' },
           render: () => <ChapterStep saga={saga} onNavigate={onClose} />,
         },
         {
           key: 'acts',
           title: 'Acts',
           blurb: 'The ordered pages inside the book.',
+          preview: { route: '/story' },
           render: () => <ActsStep saga={saga} onNavigate={onClose} />,
         },
         {
           key: 'cast',
           title: 'Cast',
           blurb: 'The saga’s character roster.',
+          preview: { route: '/story' },
           render: () => <CastStep saga={saga} onNavigate={onClose} />,
         },
         {
           key: 'publish',
           title: 'Publish',
           blurb: 'Only published chapters reach the storefront.',
+          preview: { route: '/story' },
           render: () => <PublishStep saga={saga} onNavigate={onClose} />,
         },
       ]}

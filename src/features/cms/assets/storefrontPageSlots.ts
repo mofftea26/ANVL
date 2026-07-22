@@ -21,7 +21,15 @@ export type StorefrontPageDefinition = {
   slots: AssetSlotDefinition[]
 }
 
-/** Reusable "social share image" slot — Open Graph / Twitter card. */
+/**
+ * Reusable "social share image" slot — Open Graph / Twitter card.
+ *
+ * Only attached to pages whose routes actually read it (`/shop` and
+ * `/shop/$slug`) — it used to sit on every page, but the other routes never
+ * consumed the assignment, so the editor showed a dead "Social" control
+ * everywhere (G6). Saved `asset_config.pages.*.ogImage` leftovers on removed
+ * pages are harmless: they resolve to a key no route reads.
+ */
 const ogImageSlot: AssetSlotDefinition = {
   key: 'ogImage',
   label: 'Social share image',
@@ -134,14 +142,13 @@ const RAW_STOREFRONT_PAGES: StorefrontPageDefinition[] = [
         section: 'Empty state',
         hint: 'Square ~1000×1000. Transparent PNG/WebP, < 200 KB.',
       },
-      ogImageSlot,
     ],
   },
   {
     key: 'checkout',
     name: 'Checkout',
     route: '/checkout',
-    slots: [ogImageSlot],
+    slots: [],
   },
   {
     key: 'checkout-success',
@@ -155,7 +162,6 @@ const RAW_STOREFRONT_PAGES: StorefrontPageDefinition[] = [
         section: 'Hero',
         hint: '16:9 landscape, 1920×1080. WebP ~80q, 250–500 KB.',
       },
-      ogImageSlot,
     ],
   },
   {
@@ -227,7 +233,6 @@ const RAW_STOREFRONT_PAGES: StorefrontPageDefinition[] = [
         section: 'Finale',
         hint: '16:9 landscape, 2560×1440. Ember field / triumphant glow, WebP ~70q, < 400 KB.',
       },
-      ogImageSlot,
     ],
   },
   {
@@ -242,14 +247,13 @@ const RAW_STOREFRONT_PAGES: StorefrontPageDefinition[] = [
         section: 'Hero',
         hint: '16:9 landscape, 1920×1080. WebP ~80q, 250–500 KB.',
       },
-      ogImageSlot,
     ],
   },
   {
     key: 'story',
     name: 'Story / Saga',
     route: '/story',
-    slots: [ogImageSlot],
+    slots: [],
   },
   {
     key: 'auth',
@@ -263,14 +267,13 @@ const RAW_STOREFRONT_PAGES: StorefrontPageDefinition[] = [
         section: 'Layout',
         hint: 'Portrait/landscape side panel, ~1200×1600. WebP ~80q, < 400 KB.',
       },
-      ogImageSlot,
     ],
   },
   {
     key: 'account',
     name: 'Account',
     route: '/account',
-    slots: [ogImageSlot],
+    slots: [],
   },
   {
     key: 'size-guide',
@@ -291,7 +294,6 @@ const RAW_STOREFRONT_PAGES: StorefrontPageDefinition[] = [
         section: 'Reference',
         hint: 'Square/landscape, ~1400×1000. Transparent PNG/WebP, < 250 KB.',
       },
-      ogImageSlot,
     ],
   },
   {
@@ -306,26 +308,25 @@ const RAW_STOREFRONT_PAGES: StorefrontPageDefinition[] = [
         section: 'Hero',
         hint: '16:9 landscape, 1920×1080. WebP ~80q, 250–500 KB.',
       },
-      ogImageSlot,
     ],
   },
   {
     key: 'returns',
     name: 'Returns',
     route: '/returns',
-    slots: [ogImageSlot],
+    slots: [],
   },
   {
     key: 'privacy',
     name: 'Privacy policy',
     route: '/privacy',
-    slots: [ogImageSlot],
+    slots: [],
   },
   {
     key: 'terms',
     name: 'Terms of service',
     route: '/terms',
-    slots: [ogImageSlot],
+    slots: [],
   },
 ]
 

@@ -4,6 +4,7 @@ import { useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
+import { AdminSaveAction } from '@/features/admin/components/AdminSaveAction'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { AdminWorkspaceStatusPanel } from '@/features/admin/components/AdminWorkspaceStatusPanel'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
@@ -168,22 +169,18 @@ export function AdminLandingContentEditor() {
     return () => void persist()
   }, [selectedKey, oathForm, persist])
 
+  const isEditorDirty = oathForm.formState.isDirty || isAssetConfigDirty
   const toolbar = useMemo(
     () => (
-      <Button
-        type="button"
-        disabled={saving}
-        variant="primary"
-        size="md"
-        density="compact"
-        loading={saving}
-        onClick={() => void submit()}
-      >
-        {showSuccess ? <Check size={ICON_SIZE.sm} /> : <Save size={ICON_SIZE.sm} />}
-        {saving ? 'Saving…' : showSuccess ? 'Saved' : 'Save content'}
-      </Button>
+      <AdminSaveAction
+        onSave={() => void submit()}
+        saving={saving}
+        showSuccess={showSuccess}
+        dirty={isEditorDirty}
+        label="Save content"
+      />
     ),
-    [submit, saving, showSuccess],
+    [submit, saving, showSuccess, isEditorDirty],
   )
 
   useEffect(() => {
