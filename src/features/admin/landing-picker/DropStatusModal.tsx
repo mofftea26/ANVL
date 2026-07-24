@@ -113,6 +113,10 @@ export function DropStatusModal({ open, onClose, onActivated }: DropStatusModalP
   const [pendingKey, setPendingKey] = useState<string | null>(null)
   const [activating, setActivating] = useState(false)
   const [comingSoonSaving, setComingSoonSaving] = useState(false)
+  // The target the admin flipped the Coming Soon switch to, held pending a
+  // confirmation — the toggle publishes instantly (the whole public site goes
+  // dark / comes back), so it is confirm-gated exactly like drop activation.
+  const [pendingComingSoon, setPendingComingSoon] = useState<boolean | null>(null)
   const [bannerSaving, setBannerSaving] = useState(false)
   // Banner customize modal — flipping the switch ON opens it with
   // `enabled: true` pre-set (the enable persists only when the admin SAVES
@@ -165,7 +169,12 @@ export function DropStatusModal({ open, onClose, onActivated }: DropStatusModalP
     }
   }
 
-  const toggleComingSoon = async (next: boolean) => {
+  // Runs only after the admin confirms — persists the pending target. On
+  // failure the dialog stays open (pending is kept) so the toast'd error can be
+  // retried; on success it closes.
+  const confirmComingSoon = async () => {
+    if (pendingComingSoon === null) return
+    const next = pendingComingSoon
     setComingSoonSaving(true)
     try {
       await saveComingSoonConfigAsync({
@@ -173,6 +182,7 @@ export function DropStatusModal({ open, onClose, onActivated }: DropStatusModalP
         enabled: next,
       })
       toast.success(next ? 'Coming Soon is now LIVE.' : 'Coming Soon turned off.')
+      setPendingComingSoon(null)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not save Coming Soon.')
     } finally {
@@ -275,7 +285,7 @@ export function DropStatusModal({ open, onClose, onActivated }: DropStatusModalP
                 }
                 checked={comingSoonEnabled}
                 disabled={comingSoonSaving}
-                onChange={(next) => void toggleComingSoon(next)}
+                onChange={(next) => setPendingComingSoon(next)}
                 className="flex-1"
               />
             </div>
@@ -326,6 +336,22 @@ export function DropStatusModal({ open, onClose, onActivated }: DropStatusModalP
       >
         The live storefront home switches to this drop immediately — save is
         publish. Visitors see it on their next page load.
+      </AdminConfirmDialog>
+
+      <AdminConfirmDialog
+        open={pendingComingSoon !== null}
+        onClose={() =>
+          comingSoonSaving ? undefined : setPendingComingSoon(null)
+        }
+        title={pendingComingSoon ? 'Turn on Coming Soon?' : 'Turn off Coming Soon?'}
+        confirmLabel={pendingComingSoon ? 'Turn on Coming Soon' : 'Turn off Coming Soon'}
+        confirmVariant={pendingComingSoon ? 'destructive' : 'primary'}
+        confirmLoading={comingSoonSaving}
+        onConfirm={() => void confirmComingSoon()}
+      >
+        {pendingComingSoon
+          ? 'Every visitor to the public storefront will see the reveal page instead — shop, products, and every other page are hidden until you turn this back off. The admin stays reachable, and nothing is lost. This publishes immediately.'
+          : 'The full storefront becomes public again immediately. Nothing you configured on the reveal page is lost. This publishes immediately.'}
       </AdminConfirmDialog>
     </>
   )

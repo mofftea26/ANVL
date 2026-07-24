@@ -110,11 +110,18 @@ describe('ActiveDropTile → DropStatusModal', () => {
     expect(saveActiveLandingPageKeyAsync).not.toHaveBeenCalled()
   })
 
-  it('toggles Coming Soon by writing the real config blob', async () => {
+  it('toggling Coming Soon writes the config blob only after the confirm dialog', async () => {
     const user = userEvent.setup()
     render(<DropStatusModal open onClose={() => {}} />)
 
     await user.click(await screen.findByRole('switch', { name: /coming soon/i }))
+
+    // Flipping the switch opens a confirm — nothing is written yet.
+    expect(screen.getByText(/every visitor to the public storefront/i)).toBeInTheDocument()
+    expect(window.localStorage.getItem('anvl.comingSoon.v1')).toBeNull()
+    expect(afterLocalCmsMutation).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Turn on Coming Soon' }))
 
     await waitFor(() => {
       const raw = window.localStorage.getItem('anvl.comingSoon.v1')
@@ -122,6 +129,17 @@ describe('ActiveDropTile → DropStatusModal', () => {
       expect((JSON.parse(raw!) as { enabled: boolean }).enabled).toBe(true)
     })
     expect(afterLocalCmsMutation).toHaveBeenCalledWith(['coming_soon'])
+  })
+
+  it('cancelling the Coming Soon confirm writes nothing', async () => {
+    const user = userEvent.setup()
+    render(<DropStatusModal open onClose={() => {}} />)
+
+    await user.click(await screen.findByRole('switch', { name: /coming soon/i }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(window.localStorage.getItem('anvl.comingSoon.v1')).toBeNull()
+    expect(afterLocalCmsMutation).not.toHaveBeenCalled()
   })
 
   it('switching the banner ON opens the customize modal with enabled pre-set — nothing persists yet', async () => {
