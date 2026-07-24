@@ -272,7 +272,11 @@ export function AdminLandingContentEditor() {
               onAssignmentChange={setDropSlot}
             />
             <OathHeroFields register={oathForm.register} />
-            <OathManifestoFields register={oathForm.register} />
+            <OathManifestoFields
+              register={oathForm.register}
+              control={oathForm.control}
+              setValue={oathForm.setValue}
+            />
             <OathTenetsFields
               register={oathForm.register}
               control={oathForm.control}

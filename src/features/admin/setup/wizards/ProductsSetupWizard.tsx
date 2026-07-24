@@ -12,6 +12,7 @@ import {
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { Textarea } from '@/shared/components/ui/Textarea'
+import { StringListField } from '@/features/admin/components/StringListField'
 import {
   PassportEssentialsStep,
   QrBatchStep,
@@ -140,17 +141,13 @@ function PdpEssentialsForm({ slug }: { slug: string }) {
             }
           />
         </FormField>
-        <FormField label="Care" labelStyle="stacked" hint="One care instruction per line.">
-          <Textarea
-            density="compact"
-            rows={3}
-            value={editor.value.care.join('\n')}
-            onChange={(e) =>
-              editor.patch((prev) => ({
-                ...prev,
-                care: e.target.value.split('\n'),
-              }))
-            }
+        <FormField label="Care" labelStyle="stacked" hint="Add, edit, and reorder care instructions.">
+          <StringListField
+            items={editor.value.care}
+            onChange={(care) => editor.patch((prev) => ({ ...prev, care }))}
+            addLabel="Add care instruction"
+            itemLabel="care instruction"
+            placeholder="e.g. Machine wash cold"
           />
         </FormField>
       </div>

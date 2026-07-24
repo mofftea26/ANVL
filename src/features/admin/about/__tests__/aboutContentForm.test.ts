@@ -42,7 +42,7 @@ describe('aboutContentForm', () => {
 
   it('round-trips a stored slice back into the same form values', () => {
     const values = toAboutFormValues(undefined)
-    values.orbs[1]!.linesText = 'Line one\nLine two'
+    values.orbs[1]!.lines = ['Line one', 'Line two']
     values.orbs[1]!.points = [{ label: 'Seam', description: 'Flat against the skin.' }]
     values.orbs[1]!.stats = [{ label: 'Hours', value: '500', suffix: '+' }]
     values.orbs[1]!.primaryCtaLabel = 'Shop'

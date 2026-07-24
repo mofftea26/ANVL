@@ -5,6 +5,7 @@ import { useFieldArray, useWatch } from 'react-hook-form'
 import { Button } from '@/shared/components/ui/Button'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import { HotspotPositionField } from '@/features/admin/components/HotspotPositionField'
+import { StringListField } from '@/features/admin/components/StringListField'
 import { useSortableList } from '@/features/admin/hooks/useSortableList'
 import { AdminPreviewLocateButton } from '@/features/admin/preview/AdminPreviewLocateButton'
 import { setPreviewHover } from '@/features/admin/preview/adminPreviewStore'
@@ -382,18 +383,20 @@ export function AboutOrbsFields({
                     <Input id={`about-orb-${i}-tagline`} placeholder={def?.tagline} {...register(`orbs.${i}.tagline` as const)} density="compact" />
                   </FormField>
                   <FormField
-                    label="Big lines (one per row)"
-                    htmlFor={`about-orb-${i}-lines`}
-                    hint="Oversized stacked statements (e.g. the creed). Max 8."
+                    label="Big lines"
+                    hint="Oversized stacked statements (e.g. the creed). Add, edit, reorder. Max 8."
                     className="sm:col-span-2"
                     labelStyle="stacked"
                   >
-                    <Textarea
-                      id={`about-orb-${i}-lines`}
-                      rows={3}
-                      placeholder={def?.lines.join('\n')}
-                      {...register(`orbs.${i}.linesText` as const)}
-                      density="compact"
+                    <StringListField
+                      items={orb?.lines ?? []}
+                      onChange={(lines) =>
+                        setValue(`orbs.${i}.lines`, lines, { shouldDirty: true })
+                      }
+                      addLabel="Add line"
+                      itemLabel="line"
+                      placeholder={def?.lines[0] ?? 'Oversized statement'}
+                      maxItems={8}
                     />
                   </FormField>
                   <FormField label="Primary CTA label" htmlFor={`about-orb-${i}-cta1-label`} labelStyle="stacked">

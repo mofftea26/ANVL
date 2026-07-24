@@ -68,7 +68,8 @@ describe('AboutOrbsFields — layout presets', () => {
   it('classic shows the full free-form field set', () => {
     renderFields()
     expect(screen.getByLabelText('Tagline')).toBeInTheDocument()
-    expect(screen.getByLabelText('Big lines (one per row)')).toBeInTheDocument()
+    // Big lines is now a structured add/edit/reorder list (StringListField).
+    expect(screen.getByRole('button', { name: 'Add line' })).toBeInTheDocument()
     expect(screen.getByLabelText('Primary CTA label')).toBeInTheDocument()
     expect(screen.getByText('Callout points (label + description)')).toBeInTheDocument()
     expect(screen.getByText('Stats (numeric values count up on reveal)')).toBeInTheDocument()

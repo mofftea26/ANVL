@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { tolerantStringList } from '@/shared/schemas/stringList'
 
 /**
  * CMS content schema for Drop 01 — The Oath (key `the-oath`).
@@ -59,7 +60,8 @@ export const oathLandingContentSchema = z.strictObject({
   manifesto: z
     .strictObject({
       eyebrow: trimmedOptional,
-      lines: z.array(z.string()).max(6).optional(),
+      /** Masked manifesto lines. Tolerant of a legacy `\n`-joined string. */
+      lines: tolerantStringList(6),
     })
     .optional(),
   tenets: z

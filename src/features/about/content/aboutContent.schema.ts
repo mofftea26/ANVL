@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { tolerantStringList } from '@/shared/schemas/stringList'
 
 /**
  * CMS content schema for the About page (key `about`, `landing_content.about`).
@@ -79,8 +80,8 @@ export const aboutOrbSchema = z.strictObject({
   body: trimmedOptional,
   /** Mono-tracked spec line. */
   detail: trimmedOptional,
-  /** Oversized stacked lines (e.g. the creed). */
-  lines: z.array(z.string()).max(8).optional(),
+  /** Oversized stacked lines (e.g. the creed). Tolerant of a legacy `\n` string. */
+  lines: tolerantStringList(8),
   points: z.array(aboutPointSchema).max(6).optional(),
   stats: z.array(aboutStatSchema).max(8).optional(),
   /** World-map pins ('map' preset). Caught so a malformed list never nukes the orb. */

@@ -26,7 +26,7 @@ import { listLandingPages } from '@/features/landingPages/registry'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
-import { Textarea } from '@/shared/components/ui/Textarea'
+import { StringListField } from '@/features/admin/components/StringListField'
 import { SetupAssetSlotFields } from '../SetupAssetSlotFields'
 import { SetupSaveRow, SetupStepBody } from '../SetupStepParts'
 import { SetupWizard } from '../SetupWizard'
@@ -270,19 +270,20 @@ function LandingCopyStep({ onNavigate }: StepProps) {
             <FormField
               label="Creed lines"
               labelStyle="stacked"
-              hint="One manifesto line per row (max 6)."
+              hint="Add, edit, and reorder the manifesto lines (max 6)."
             >
-              <Textarea
-                density="compact"
-                rows={3}
-                placeholder={d.manifesto.lines.join('\n')}
-                value={editor.value.manifesto.linesText}
-                onChange={(e) =>
+              <StringListField
+                items={editor.value.manifesto.lines}
+                onChange={(lines) =>
                   editor.patch((prev) => ({
                     ...prev,
-                    manifesto: { ...prev.manifesto, linesText: e.target.value },
+                    manifesto: { ...prev.manifesto, lines },
                   }))
                 }
+                addLabel="Add line"
+                itemLabel="line"
+                placeholder={d.manifesto.lines[0] ?? 'A manifesto line'}
+                maxItems={6}
               />
             </FormField>
           </div>

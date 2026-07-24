@@ -5,7 +5,7 @@ describe('landingContentForm conversions', () => {
   it('maps an empty slice to all-blank form values', () => {
     const values = toOathFormValues(undefined)
     expect(values.hero.headline).toBe('')
-    expect(values.manifesto.linesText).toBe('')
+    expect(values.manifesto.lines).toEqual([])
     expect(values.tenets.items).toHaveLength(3)
     expect(values.tenets.items[0].title).toBe('')
     expect(values.tenets.items[0].subtitle).toBe('')
@@ -36,7 +36,7 @@ describe('landingContentForm conversions', () => {
       products: { taglines: { 'a-piece': 'A line.' } },
     }
     const values = toOathFormValues(original)
-    expect(values.manifesto.linesText).toBe('One.\nTwo.')
+    expect(values.manifesto.lines).toEqual(['One.', 'Two.'])
     expect(values.products.taglines).toEqual([{ slug: 'a-piece', line: 'A line.' }])
 
     const slice = toOathContentSlice(values)
@@ -90,7 +90,7 @@ describe('landingContentForm conversions', () => {
 
   it('clamps manifesto lines to six and skips incomplete taglines', () => {
     const values = toOathFormValues(undefined)
-    values.manifesto.linesText = ['1', '2', '3', '4', '5', '6', '7'].join('\n')
+    values.manifesto.lines = ['1', '2', '3', '4', '5', '6', '7']
     values.products.taglines = [
       { slug: 'only-slug', line: '' },
       { slug: '', line: 'only line' },

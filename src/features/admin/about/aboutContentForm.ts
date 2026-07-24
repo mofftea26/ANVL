@@ -51,8 +51,8 @@ export interface AboutOrbFormValues {
   subhead: string
   body: string
   detail: string
-  /** One oversized line per row (max 8). */
-  linesText: string
+  /** Oversized stacked lines (max 8), edited as a structured list. */
+  lines: string[]
   points: AboutOrbPointFormValues[]
   stats: AboutOrbStatFormValues[]
   mapPins: AboutOrbMapPinFormValues[]
@@ -99,7 +99,7 @@ export function createBlankOrbFormValues(): AboutOrbFormValues {
     subhead: '',
     body: '',
     detail: '',
-    linesText: '',
+    lines: [],
     points: [],
     stats: [],
     mapPins: [],
@@ -139,7 +139,7 @@ function orbToFormValues(orb: AboutOrb | undefined): AboutOrbFormValues {
     subhead: s(orb?.subhead),
     body: s(orb?.body),
     detail: s(orb?.detail),
-    linesText: (orb?.lines ?? []).join('\n'),
+    lines: [...(orb?.lines ?? [])],
     points: (orb?.points ?? []).map((p) => ({
       label: s(p.label),
       description: s(p.description),
@@ -261,8 +261,7 @@ function keepLayout(raw: string): 'text' | 'stats' | 'map' | 'timeline' | undefi
 }
 
 function orbSliceItem(orb: AboutOrbFormValues): AboutOrb {
-  const linesArr = orb.linesText
-    .split('\n')
+  const linesArr = orb.lines
     .map((l) => l.trim())
     .filter((l) => l.length > 0)
     .slice(0, 8)

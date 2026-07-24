@@ -53,8 +53,8 @@ export interface OathContentFormValues {
   }
   manifesto: {
     eyebrow: string
-    /** One manifesto line per row (max 6). */
-    linesText: string
+    /** Manifesto lines (max 6), edited as a structured list. */
+    lines: string[]
   }
   tenets: {
     eyebrow: string
@@ -124,7 +124,7 @@ export function toOathFormValues(raw: unknown): OathContentFormValues {
     },
     manifesto: {
       eyebrow: s(cms.manifesto?.eyebrow),
-      linesText: (cms.manifesto?.lines ?? []).join('\n'),
+      lines: [...(cms.manifesto?.lines ?? [])],
     },
     tenets: {
       eyebrow: s(cms.tenets?.eyebrow),
@@ -268,8 +268,7 @@ export function toOathContentSlice(
   const previous = oathLandingContentSchema.safeParse(previousRaw)
   const previousItems = previous.success ? previous.data.tenets?.items : undefined
 
-  const lines = values.manifesto.linesText
-    .split('\n')
+  const lines = values.manifesto.lines
     .map((l) => l.trim())
     .filter((l) => l.length > 0)
     .slice(0, 6)
