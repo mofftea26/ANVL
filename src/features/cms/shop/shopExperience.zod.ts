@@ -27,6 +27,7 @@ export type ShopSortValue = (typeof SHOP_SORT_VALUES)[number]
 export const SHOP_FILTER_KEYS = [
   'status',
   'category',
+  'fit',
   'drop',
   'source',
   'color',
@@ -67,13 +68,14 @@ export const DEFAULT_SHOP_CONFIG = {
   filterVisibility: {
     status: true,
     category: true,
+    fit: true,
     drop: true,
     source: true,
     color: true,
     size: true,
     price: true,
   } as Record<ShopFilterKey, boolean>,
-  stickyFilters: false,
+  stickyFilters: true,
   cardStyle: 'forged' as const,
   cardAnimationIntensity: 'full' as const,
   cardAspectRatio: 'portrait' as const,
@@ -212,8 +214,19 @@ export type ShopPdpConfig = ShopConfig['pdp']
  * Non-object input → full defaults. Object input → per-field `.catch` defaults
  * fill any missing/invalid keys, so old or partial blobs upgrade silently.
  */
-/** Nested config objects that must be deep-merged so partial blobs keep defaults. */
-const SHOP_NESTED_KEYS = ['editorialBanner', 'emptyState', 'noResults', 'pdp'] as const
+/**
+ * Nested config objects that must be deep-merged so partial blobs keep defaults.
+ * `filterVisibility` is included so a blob saved before a new filter key existed
+ * (e.g. `fit`) gains the new key's default instead of failing the exhaustive
+ * record schema and resetting the author's visibility choices.
+ */
+const SHOP_NESTED_KEYS = [
+  'editorialBanner',
+  'emptyState',
+  'noResults',
+  'pdp',
+  'filterVisibility',
+] as const
 
 export function parseShopConfig(raw: unknown): ShopConfig {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -230,5 +243,14 @@ export function parseShopConfig(raw: unknown): ShopConfig {
       merged[key] = { ...(DEFAULT_SHOP_CONFIG[key] as object), ...(incoming as object) }
     }
   }
-  return shopConfigSchema.parse(merged)
+  const cfg = shopConfigSchema.parse(merged)
+  // Additive filter-key migration: blobs saved before a new filter key existed
+  // (e.g. `fit`) carry a valid-but-incomplete `filterOrder`. Append any missing
+  // keys so new facets appear (default-visible) without resetting the author's
+  // ordering. `filterVisibility` needs no fix-up — missing keys read as visible.
+  const missingFilterKeys = SHOP_FILTER_KEYS.filter((k) => !cfg.filterOrder.includes(k))
+  if (missingFilterKeys.length > 0) {
+    cfg.filterOrder = [...cfg.filterOrder, ...missingFilterKeys]
+  }
+  return cfg
 }

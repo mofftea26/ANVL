@@ -1,5 +1,6 @@
 import { Suspense, lazy, useMemo, useState } from 'react'
 import { Container, Section } from '@/shared/components/ui'
+import { ForgeAtmosphere } from '@/shared/components/premium/ForgeAtmosphere'
 import type { ShopConfig } from '@/features/cms/shop/shopExperience.zod'
 import type { Product, ShopDropFilterOption } from '@/features/products/types/product.types'
 import {
@@ -13,6 +14,7 @@ import { usePreviewTargetProps } from '@/features/cms/preview'
 import { useShopConfig } from '@/features/products/shop/hooks/useShopConfig'
 import { useShopFilters } from '@/features/products/shop/hooks/useShopFilters'
 import { ShopIntro } from '@/features/products/shop/ShopIntro'
+import { ShopEditorialBanner } from '@/features/products/shop/ShopEditorialBanner'
 import { ShopToolbar } from '@/features/products/shop/ShopToolbar'
 import { ActiveFilterList } from '@/features/products/shop/ActiveFilterList'
 import { ShopFilterRail } from '@/features/products/shop/ShopFilterRail'
@@ -34,6 +36,7 @@ export type ShopPageData = {
   items: Product[]
   drops: ShopDropFilterOption[]
   categories: string[]
+  fits: string[]
   colorways: ColorwaySwatch[]
   sizes: string[]
   priceBounds: { min: number; max: number }
@@ -61,6 +64,7 @@ export function ShopPage({
   items,
   drops,
   categories,
+  fits,
   colorways,
   sizes,
   priceBounds,
@@ -96,7 +100,7 @@ export function ShopPage({
     search,
     onPatch: patchSearch,
     onReset: resetSearch,
-    facets: { drops, categories, colorways, sizes, priceBounds },
+    facets: { drops, categories, fits, colorways, sizes, priceBounds },
     counts,
     filterOrder: config.filterOrder,
     filterVisibility: config.filterVisibility,
@@ -107,13 +111,44 @@ export function ShopPage({
 
   return (
     <>
-      <div {...heroPreviewTarget}>
-        <ShopIntro config={config} heroBg={heroBg} count={items.length} />
-      </div>
+      {/* Hero shell — ONE continuous backdrop from the top of the hero down
+          BEHIND the toolbar, ending at the separator under the sort controls.
+          The grid below sits on the plain page background. */}
+      <section className="relative overflow-hidden border-b border-[var(--shop-card-border)]">
+        {config.heroVisible ? (
+          <>
+            <ForgeAtmosphere />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity"
+              style={{ backgroundImage: `url('${heroBg}')` }}
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(100deg, var(--shop-bg) 0%, color-mix(in srgb, var(--shop-bg) 78%, transparent) 42%, color-mix(in srgb, var(--shop-bg) 24%, transparent) 100%)',
+              }}
+            />
+            {/* Stronger scrim behind the toolbar zone so search/sort controls
+                keep AA contrast over the image. */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-32"
+              style={{
+                background:
+                  'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--shop-bg) 68%, transparent) 55%, color-mix(in srgb, var(--shop-bg) 92%, transparent) 100%)',
+              }}
+            />
+          </>
+        ) : null}
 
-      <Section className="pt-0">
-        <Container className="pb-[var(--anvl-section-py,4rem)]">
-          <div {...toolbarPreviewTarget}>
+        <Container className="relative z-10">
+          <div {...heroPreviewTarget}>
+            <ShopIntro config={config} count={items.length} />
+          </div>
+          <div className={config.heroVisible ? 'mt-6 md:mt-8' : 'mt-5'} {...toolbarPreviewTarget}>
             <ShopToolbar
               count={count}
               query={draftQuery}
@@ -125,7 +160,11 @@ export function ShopPage({
               onOpenFilters={() => setFiltersOpen(true)}
             />
           </div>
+        </Container>
+      </section>
 
+      <Section className="pt-0 md:pt-0">
+        <Container className="pb-[var(--anvl-section-py,4rem)] pt-4 md:pt-5">
           <ShopResultAnnouncement count={count} />
 
           {activeChips.length > 0 ? (
@@ -135,16 +174,11 @@ export function ShopPage({
           ) : null}
 
           {config.editorialBanner.visible && config.editorialBanner.title ? (
-            <div className="mb-6 rounded-xl border border-[var(--shop-card-border)] bg-[var(--shop-card-bg)] p-5">
-              <p className="anvl-display text-sm tracking-[0.2em] text-[var(--shop-accent)]">
-                {config.editorialBanner.title}
-              </p>
-              {config.editorialBanner.body ? (
-                <p className="mt-2 text-sm text-[var(--shop-text-muted)]">
-                  {config.editorialBanner.body}
-                </p>
-              ) : null}
-            </div>
+            <ShopEditorialBanner
+              eyebrow={config.eyebrow}
+              title={config.editorialBanner.title}
+              body={config.editorialBanner.body}
+            />
           ) : null}
 
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start">

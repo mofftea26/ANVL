@@ -9,6 +9,7 @@ import {
   uniqueCategories,
   uniqueColorwayNames,
   uniqueColorwaySwatches,
+  uniqueFitLabels,
   uniqueSizeLabels,
   validateShopUrlSearch,
 } from '@/features/products/shop/shopUrlSearch'
@@ -68,6 +69,12 @@ describe('validateShopUrlSearch', () => {
     expect(validateShopUrlSearch({ minPrice: -5 }).minPrice).toBeUndefined()
     expect(validateShopUrlSearch({ maxPrice: 'free' }).maxPrice).toBeUndefined()
     expect(validateShopUrlSearch({ minPrice: '79' }).minPrice).toBe(79)
+  })
+
+  it('carries the fit param through, defaulting to empty', () => {
+    expect(validateShopUrlSearch({}).fit).toBe('')
+    expect(validateShopUrlSearch({ fit: 'Oversized' }).fit).toBe('Oversized')
+    expect(validateShopUrlSearch({ fit: 42 }).fit).toBe('')
   })
 })
 
@@ -168,6 +175,47 @@ describe('category filtering + facets', () => {
   })
 })
 
+describe('fit facet', () => {
+  const items: Product[] = [
+    makeProduct({ id: 'a', shop: shopMeta({ fit: 'Oversized' }) }),
+    makeProduct({ id: 'b', shop: shopMeta({ fit: 'Compression' }) }),
+    makeProduct({ id: 'c', shop: shopMeta({ fit: 'Oversized' }) }),
+    makeProduct({ id: 'd' }), // no shop meta → no fit
+  ]
+
+  it('filters by fit label (case-insensitive) — URL round-trip', () => {
+    const search = validateShopUrlSearch({ fit: 'oversized' })
+    const r = filterShopListingProducts(items, search)
+    expect(r.map((p) => p.id)).toEqual(['a', 'c'])
+  })
+
+  it('uniqueFitLabels is sorted + de-duplicated', () => {
+    expect(uniqueFitLabels(items)).toEqual(['Compression', 'Oversized'])
+  })
+
+  it('counts the fit facet while holding other filters', () => {
+    const counts = computeShopFacetCounts(items, defaultShopUrlSearch)
+    expect(counts.fit).toEqual({ Oversized: 2, Compression: 1 })
+  })
+
+  it('matches fit and tags text in the free-text search', () => {
+    const tagged: Product[] = [
+      makeProduct({
+        id: 'tagged',
+        name: 'Plain Piece',
+        storytelling: '',
+        role: '',
+        shop: shopMeta({ tags: ['limited-run'] }),
+      }),
+    ]
+    const r = filterShopListingProducts(tagged, {
+      ...defaultShopUrlSearch,
+      q: 'limited-run',
+    })
+    expect(r.map((p) => p.id)).toEqual(['tagged'])
+  })
+})
+
 describe('uniqueColorwaySwatches', () => {
   it('returns the first-seen swatch per name, sorted', () => {
     const items: Product[] = [
@@ -246,11 +294,24 @@ describe('sortShopListingProducts', () => {
     expect(items.map((p) => p.id)).toEqual(['a', 'b', 'c'])
   })
 
-  it('newest reverses the curated order', () => {
+  it('newest reverses the curated order when no timestamps exist', () => {
     expect(sortShopListingProducts(items, 'newest').map((p) => p.id)).toEqual([
       'c',
       'b',
       'a',
+    ])
+  })
+
+  it('newest sorts by shop.createdAt when available (undated last)', () => {
+    const dated: Product[] = [
+      makeProduct({ id: 'old', shop: shopMeta({ createdAt: '2026-01-01T00:00:00Z' }) }),
+      makeProduct({ id: 'undated' }),
+      makeProduct({ id: 'new', shop: shopMeta({ createdAt: '2026-06-15T00:00:00Z' }) }),
+    ]
+    expect(sortShopListingProducts(dated, 'newest').map((p) => p.id)).toEqual([
+      'new',
+      'old',
+      'undated',
     ])
   })
 

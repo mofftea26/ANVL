@@ -43,6 +43,9 @@ export const SHOPIFY_PRODUCTS_LIST_QUERY = `
           handle
           title
           description
+          productType
+          tags
+          createdAt
           featuredImage {
             url
             altText
@@ -71,6 +74,10 @@ export const SHOPIFY_PRODUCTS_LIST_QUERY = `
                   amount
                   currencyCode
                 }
+                compareAtPrice {
+                  amount
+                  currencyCode
+                }
                 selectedOptions {
                   name
                   value
@@ -94,6 +101,9 @@ export const SHOPIFY_PRODUCT_BY_HANDLE_QUERY = `
       handle
       title
       description
+      productType
+      tags
+      createdAt
       featuredImage {
         url
         altText
@@ -119,6 +129,10 @@ export const SHOPIFY_PRODUCT_BY_HANDLE_QUERY = `
             title
             availableForSale
             price {
+              amount
+              currencyCode
+            }
+            compareAtPrice {
               amount
               currencyCode
             }

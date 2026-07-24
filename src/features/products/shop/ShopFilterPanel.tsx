@@ -28,6 +28,7 @@ const STATUS_LABELS: Record<StorefrontProductStatus, string> = {
 export type ShopFilterFacets = {
   drops: ShopDropFilterOption[]
   categories: string[]
+  fits: string[]
   colorways: ColorwaySwatch[]
   sizes: string[]
   priceBounds: { min: number; max: number }
@@ -165,6 +166,27 @@ export function ShopFilterPanel({
                   disabled={count === 0 && !selected}
                   count={count}
                   onClick={() => onPatch({ category: selected ? '' : c })}
+                />
+              )
+            })}
+          </div>
+        </ShopFilterGroup>
+      ) : null,
+    fit: () =>
+      facets.fits.length > 0 ? (
+        <ShopFilterGroup title="Fit">
+          <div className="flex flex-wrap gap-2" role="listbox" aria-label="Fit">
+            {facets.fits.map((f) => {
+              const selected = search.fit === f
+              const count = counts.fit[f] ?? 0
+              return (
+                <PillToggle
+                  key={f}
+                  label={f}
+                  selected={selected}
+                  disabled={count === 0 && !selected}
+                  count={count}
+                  onClick={() => onPatch({ fit: selected ? '' : f })}
                 />
               )
             })}

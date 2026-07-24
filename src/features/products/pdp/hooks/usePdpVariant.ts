@@ -71,8 +71,13 @@ export function usePdpVariant(product: Product) {
   const displayPrice = effectivePrice(product)
   const status = product.shop?.storefrontStatus ?? 'available'
   const compareAt = product.shop?.compareAtPrice ?? null
+  // Compare-at data is the source of truth for sale state — a discounted piece
+  // shows sale pricing whether its status is 'sale' or plain 'available'.
   const saleActive =
-    status === 'sale' && typeof compareAt === 'number' && compareAt > displayPrice
+    typeof compareAt === 'number' &&
+    compareAt > displayPrice &&
+    status !== 'outOfStock' &&
+    status !== 'comingSoon'
   const canPurchase =
     variantIsPurchasable(product, colorwayIndex, size) && !disabledSizes.has(size)
   const heroImageSrc = galleryImages[0]?.src ?? product.images[0]?.src ?? ''

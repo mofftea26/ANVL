@@ -1,7 +1,7 @@
 import type { Product } from '@/features/products/types/product.types'
 import { cn } from '@/shared/lib/cn'
 
-type BadgeTone = 'accent' | 'muted' | 'warning' | 'success'
+type BadgeTone = 'accent' | 'muted' | 'warning' | 'success' | 'sale'
 
 const TONE_CLASS: Record<BadgeTone, string> = {
   accent:
@@ -12,6 +12,16 @@ const TONE_CLASS: Record<BadgeTone, string> = {
     'border-[color-mix(in_srgb,var(--shop-warning)_55%,transparent)] bg-[color-mix(in_srgb,var(--shop-warning)_16%,transparent)] text-[var(--shop-warning)]',
   success:
     'border-[color-mix(in_srgb,var(--shop-success)_55%,transparent)] bg-[color-mix(in_srgb,var(--shop-success)_16%,transparent)] text-[var(--shop-success)]',
+  // Forged copper-filled chip — the loudest tone, reserved for active sales.
+  sale: 'border-[var(--shop-accent)] bg-[var(--shop-accent)] font-semibold text-[var(--shop-on-accent)] shadow-[0_0_18px_-4px_var(--shop-card-glow)]',
+}
+
+/** True when the piece is actively discounted (compare-at above the live price). */
+export function productIsOnSale(product: Product): boolean {
+  const shop = product.shop
+  if (!shop) return false
+  const price = shop.listPrice ?? product.price
+  return typeof shop.compareAtPrice === 'number' && shop.compareAtPrice > price
 }
 
 /** Resolve the single most relevant badge for a product, or null. */
@@ -26,11 +36,16 @@ export function resolveProductBadge(
     case 'comingSoon':
       return { label: 'Coming soon', tone: 'warning' }
     case 'sale':
-      return { label: 'Sale', tone: 'accent' }
+      return { label: 'Sale', tone: 'sale' }
     case 'limitedEdition':
       return { label: 'Limited', tone: 'accent' }
     default:
       break
+  }
+  // A discounted piece is on sale even when its status stayed `available`
+  // (compare-at data is the source of truth for sale state).
+  if (productIsOnSale(product)) {
+    return { label: 'Sale', tone: 'sale' }
   }
   // Real low-stock urgency, only when the CMS opts in and data supports it.
   if (showInventoryUrgency && isLowStock(product)) {

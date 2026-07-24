@@ -34,6 +34,8 @@ export type ShopUrlSearch = {
   source: 'all' | 'drop' | 'individual'
   color: string
   size: string
+  /** Fit facet label (e.g. "Oversized") — matches `Product.shop.fit` case-insensitively. */
+  fit: string
   /** Undefined when the URL carries no explicit sort — the CMS `defaultSort` then applies. */
   sort?: ShopSort
   minPrice?: number
@@ -48,6 +50,7 @@ export const defaultShopUrlSearch: ShopUrlSearch = {
   source: 'all',
   color: '',
   size: '',
+  fit: '',
   sort: undefined,
   minPrice: undefined,
   maxPrice: undefined,
@@ -67,6 +70,7 @@ export function validateShopUrlSearch(search: Record<string, unknown>): ShopUrlS
   const drop = typeof search.drop === 'string' ? search.drop : ''
   const color = typeof search.color === 'string' ? search.color : ''
   const size = typeof search.size === 'string' ? search.size : ''
+  const fit = typeof search.fit === 'string' ? search.fit : ''
   const sourceRaw = typeof search.source === 'string' ? search.source : 'all'
   const source: ShopUrlSearch['source'] =
     sourceRaw === 'drop' || sourceRaw === 'individual' ? sourceRaw : 'all'
@@ -83,6 +87,7 @@ export function validateShopUrlSearch(search: Record<string, unknown>): ShopUrlS
     source,
     color,
     size,
+    fit,
     sort,
     minPrice: parseOptionalPrice(search.minPrice),
     maxPrice: parseOptionalPrice(search.maxPrice),
@@ -138,6 +143,8 @@ export function filterShopListingProducts(
         p.storytelling,
         p.dropName,
         p.shop?.category ?? '',
+        p.shop?.fit ?? '',
+        ...(p.shop?.tags ?? []),
         ...p.colorways.map((c) => c.name),
       ]
         .join(' ')
@@ -164,6 +171,10 @@ export function filterShopListingProducts(
     if (search.size.trim()) {
       if (!productMatchesSizeFilter(p, search.size.trim())) return false
     }
+    if (search.fit.trim()) {
+      const fit = (p.shop?.fit ?? '').trim().toLowerCase()
+      if (fit !== search.fit.trim().toLowerCase()) return false
+    }
     const price = p.price
     if (typeof search.minPrice === 'number' && price < search.minPrice) return false
     if (typeof search.maxPrice === 'number' && price > search.maxPrice) return false
@@ -184,10 +195,23 @@ export function sortShopListingProducts(items: Product[], sort: ShopSort): Produ
       return [...items].sort((a, b) => b.price - a.price)
     case 'name-asc':
       return [...items].sort((a, b) => a.name.localeCompare(b.name))
-    case 'newest':
-      // No authored timestamp on the storefront `Product`; newest is a stable
-      // reverse of the curated catalog order (most recently appended first).
+    case 'newest': {
+      // Shopify-mapped products carry `shop.createdAt` — sort those by real
+      // creation date (newest first, undated last). Catalogs with no
+      // timestamps (seed/local) keep the stable reverse of curated order
+      // (most recently appended first).
+      if (items.some((p) => p.shop?.createdAt)) {
+        return [...items]
+          .map((p, i) => ({ p, i, t: Date.parse(p.shop?.createdAt ?? '') }))
+          .sort((a, b) => {
+            const at = Number.isFinite(a.t) ? a.t : Number.NEGATIVE_INFINITY
+            const bt = Number.isFinite(b.t) ? b.t : Number.NEGATIVE_INFINITY
+            return bt - at || a.i - b.i
+          })
+          .map((x) => x.p)
+      }
       return [...items].reverse()
+    }
     case 'availability':
       // Purchasable pieces first, sold-out / coming-soon last; stable otherwise.
       return [...items]
@@ -218,6 +242,7 @@ function availabilityRank(p: Product): number {
 export type ShopFacetCounts = {
   status: Record<string, number>
   category: Record<string, number>
+  fit: Record<string, number>
   color: Record<string, number>
   size: Record<string, number>
   drop: Record<string, number>
@@ -235,6 +260,7 @@ export function computeShopFacetCounts(
 ): ShopFacetCounts {
   const status: Record<string, number> = {}
   const category: Record<string, number> = {}
+  const fit: Record<string, number> = {}
   const color: Record<string, number> = {}
   const size: Record<string, number> = {}
   const drop: Record<string, number> = {}
@@ -250,6 +276,10 @@ export function computeShopFacetCounts(
     const c = p.shop?.category?.trim()
     if (c) category[c] = (category[c] ?? 0) + 1
   }
+  for (const p of without({ fit: '' })) {
+    const f = p.shop?.fit?.trim()
+    if (f) fit[f] = (fit[f] ?? 0) + 1
+  }
   for (const p of without({ color: '' })) {
     for (const c of p.colorways) color[c.name] = (color[c.name] ?? 0) + 1
   }
@@ -263,7 +293,7 @@ export function computeShopFacetCounts(
     if (slug) drop[slug] = (drop[slug] ?? 0) + 1
   }
 
-  return { status, category, color, size, drop }
+  return { status, category, fit, color, size, drop }
 }
 
 export function catalogPriceBounds(items: Product[]): { min: number; max: number } {
@@ -282,6 +312,16 @@ export function uniqueCategories(items: Product[]): string[] {
   for (const p of items) {
     const c = p.shop?.category?.trim()
     if (c) set.add(c)
+  }
+  return [...set].sort((a, b) => a.localeCompare(b))
+}
+
+/** Distinct fit labels across the catalog, sorted — drives the Fit facet. */
+export function uniqueFitLabels(items: Product[]): string[] {
+  const set = new Set<string>()
+  for (const p of items) {
+    const f = p.shop?.fit?.trim()
+    if (f) set.add(f)
   }
   return [...set].sort((a, b) => a.localeCompare(b))
 }

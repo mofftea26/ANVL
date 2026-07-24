@@ -1,12 +1,14 @@
 import { SlidersHorizontal } from '@/shared/icons'
+import { cn } from '@/shared/lib/cn'
 import { ShopSearch } from '@/features/products/shop/ShopSearch'
 import { ShopSort } from '@/features/products/shop/ShopSort'
 import type { ShopSort as ShopSortValue } from '@/features/products/shop/shopUrlSearch'
 
 /**
- * Sticky command bar: live result count, search, sort, and a mobile Filters
- * trigger badged with the active-filter count. Stays lightweight and out of the
- * way of the products; sticks to the top of the listing on scroll.
+ * Shop command bar: live result count, search, sort, and a mobile Filters
+ * trigger badged with the active-filter count. Renders inside the hero shell
+ * (`ShopPage`), which owns the separator line under it — so the toolbar itself
+ * draws no border and the hero backdrop runs continuously behind it.
  */
 export function ShopToolbar({
   count,
@@ -17,6 +19,7 @@ export function ShopToolbar({
   onSortChange,
   activeFilterCount,
   onOpenFilters,
+  className,
 }: {
   count: number
   query: string
@@ -26,9 +29,10 @@ export function ShopToolbar({
   onSortChange: (next: ShopSortValue) => void
   activeFilterCount: number
   onOpenFilters: () => void
+  className?: string
 }) {
   return (
-    <div className="mb-6 border-b border-[var(--shop-card-border)] py-3">
+    <div className={cn('py-3', className)}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="anvl-display shrink-0 text-sm tracking-[0.18em] text-[var(--shop-text)]">
           <span className="text-[var(--shop-accent)]">{String(count).padStart(2, '0')}</span>{' '}

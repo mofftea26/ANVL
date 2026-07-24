@@ -44,6 +44,7 @@ const SORT_LABELS: Record<ShopSortValue, string> = {
 const FILTER_LABELS: Record<ShopFilterKey, string> = {
   status: 'Status',
   category: 'Category',
+  fit: 'Fit',
   drop: 'Drop',
   source: 'Listing source',
   color: 'Colorway',

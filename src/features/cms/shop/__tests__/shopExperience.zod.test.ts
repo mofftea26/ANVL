@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_SHOP_CONFIG,
+  SHOP_FILTER_KEYS,
   parseShopConfig,
 } from '@/features/cms/shop/shopExperience.zod'
 
@@ -41,6 +42,28 @@ describe('parseShopConfig', () => {
       emptyState: { title: 'Empty', body: 'Nothing here' },
     })
     expect(cfg.emptyState).toEqual({ title: 'Empty', body: 'Nothing here' })
+  })
+
+  it('includes the fit filter key by default (order + visible)', () => {
+    expect(SHOP_FILTER_KEYS).toContain('fit')
+    const cfg = parseShopConfig({})
+    expect(cfg.filterOrder).toContain('fit')
+    expect(cfg.filterVisibility.fit).toBe(true)
+  })
+
+  it('appends missing filter keys to a legacy filterOrder without reordering it', () => {
+    // Blob saved before the `fit` facet existed.
+    const legacyOrder = ['price', 'status', 'category', 'drop', 'source', 'color', 'size']
+    const cfg = parseShopConfig({ filterOrder: legacyOrder })
+    expect(cfg.filterOrder).toEqual([...legacyOrder, 'fit'])
+    // A legacy visibility record without `fit` deep-merges over defaults: the
+    // author's choices survive and the new facet arrives default-visible.
+    const cfg2 = parseShopConfig({
+      filterOrder: legacyOrder,
+      filterVisibility: { status: true, category: false },
+    })
+    expect(cfg2.filterVisibility.category).toBe(false)
+    expect(cfg2.filterVisibility.fit).toBe(true)
   })
 
   it('fills full pdp defaults when absent', () => {

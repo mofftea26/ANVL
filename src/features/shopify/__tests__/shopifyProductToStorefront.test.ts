@@ -9,6 +9,9 @@ const sampleNode = {
   handle: 'oversized-tee-oath',
   title: 'Oversized Tee',
   description: 'Heavy cotton.',
+  productType: 'Tees',
+  tags: ['fit:oversized', 'drop-01'],
+  createdAt: '2026-06-01T12:00:00Z',
   featuredImage: { url: 'https://cdn.shopify.com/x.jpg', altText: 'Tee' },
   images: {
     edges: [
@@ -26,6 +29,7 @@ const sampleNode = {
           title: 'Black / M',
           availableForSale: true,
           price: { amount: '49.00', currencyCode: 'USD' },
+          compareAtPrice: { amount: '69.00', currencyCode: 'USD' },
           selectedOptions: [
             { name: 'Color', value: 'Black' },
             { name: 'Size', value: 'M' },
@@ -64,6 +68,97 @@ describe('shopifyProductToStorefront', () => {
     expect(p.shop?.variantIdByColorAndSize?.['Black']?.['M']).toBe(
       'gid://shopify/ProductVariant/1',
     )
+  })
+
+  it('maps productType to shop.category, falling back to Apparel', () => {
+    const p = mapShopifyProductNodeToStorefront(
+      sampleNode as Parameters<typeof mapShopifyProductNodeToStorefront>[0],
+    )
+    expect(p.shop?.category).toBe('Tees')
+
+    const noType = { ...sampleNode, productType: '' }
+    const q = mapShopifyProductNodeToStorefront(
+      noType as Parameters<typeof mapShopifyProductNodeToStorefront>[0],
+    )
+    expect(q.shop?.category).toBe('Apparel')
+  })
+
+  it('parses the fit facet from a fit: tag (case-insensitive, title-cased)', () => {
+    const p = mapShopifyProductNodeToStorefront(
+      sampleNode as Parameters<typeof mapShopifyProductNodeToStorefront>[0],
+    )
+    expect(p.shop?.fit).toBe('Oversized')
+
+    const upper = { ...sampleNode, tags: ['FIT:Compression'] }
+    expect(
+      mapShopifyProductNodeToStorefront(
+        upper as Parameters<typeof mapShopifyProductNodeToStorefront>[0],
+      ).shop?.fit,
+    ).toBe('Compression')
+
+    const none = { ...sampleNode, tags: ['drop-01'] }
+    expect(
+      mapShopifyProductNodeToStorefront(
+        none as Parameters<typeof mapShopifyProductNodeToStorefront>[0],
+      ).shop?.fit,
+    ).toBeUndefined()
+  })
+
+  it('carries tags and createdAt for search + newest sort', () => {
+    const p = mapShopifyProductNodeToStorefront(
+      sampleNode as Parameters<typeof mapShopifyProductNodeToStorefront>[0],
+    )
+    expect(p.shop?.tags).toEqual(['fit:oversized', 'drop-01'])
+    expect(p.shop?.createdAt).toBe('2026-06-01T12:00:00Z')
+  })
+
+  it('emits compareAtPrice and marks the product on sale', () => {
+    const p = mapShopifyProductNodeToStorefront(
+      sampleNode as Parameters<typeof mapShopifyProductNodeToStorefront>[0],
+    )
+    expect(p.shop?.compareAtPrice).toBe(69)
+    expect(p.shop?.storefrontStatus).toBe('sale')
+  })
+
+  it('ignores compare-at prices at or below the display price', () => {
+    const notReallyOnSale = {
+      ...sampleNode,
+      variants: {
+        edges: [
+          {
+            node: {
+              ...sampleNode.variants.edges[0]!.node,
+              compareAtPrice: { amount: '49.00', currencyCode: 'USD' },
+            },
+          },
+        ],
+      },
+    }
+    const p = mapShopifyProductNodeToStorefront(
+      notReallyOnSale as Parameters<typeof mapShopifyProductNodeToStorefront>[0],
+    )
+    expect(p.shop?.compareAtPrice).toBeNull()
+    expect(p.shop?.storefrontStatus).toBe('available')
+  })
+
+  it('keeps outOfStock precedence over sale', () => {
+    const soldOut = {
+      ...sampleNode,
+      variants: {
+        edges: [
+          {
+            node: {
+              ...sampleNode.variants.edges[0]!.node,
+              availableForSale: false,
+            },
+          },
+        ],
+      },
+    }
+    const p = mapShopifyProductNodeToStorefront(
+      soldOut as Parameters<typeof mapShopifyProductNodeToStorefront>[0],
+    )
+    expect(p.shop?.storefrontStatus).toBe('outOfStock')
   })
 
   it('productMatchesDropId checks dropIds array', () => {

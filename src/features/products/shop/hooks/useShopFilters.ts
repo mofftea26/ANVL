@@ -146,6 +146,13 @@ export function useShopFilters({
         onRemove: () => patchSearch({ size: '' }),
       })
     }
+    if (search.fit.trim()) {
+      chips.push({
+        key: 'fit',
+        label: `${search.fit} fit`,
+        onRemove: () => patchSearch({ fit: '' }),
+      })
+    }
     if (typeof search.minPrice === 'number') {
       chips.push({
         key: 'minPrice',

@@ -33,6 +33,16 @@ export interface ProductShopMeta {
   videoUrl?: string
   model3dUrl?: string
   category: string
+  /**
+   * Normalized fit facet label (e.g. "Oversized", "Compression", "Classic").
+   * Shopify: parsed from a `fit:<value>` tag; seed/local: authored directly.
+   * Distinct from `Product.fit`, which is long-form descriptive copy.
+   */
+  fit?: string
+  /** Raw Shopify product tags — searchable, and the source of tag-driven facets. */
+  tags?: string[]
+  /** ISO timestamp of product creation (Shopify `createdAt`) — drives "newest" sort. */
+  createdAt?: string
   availabilityByColorAndSize: Record<string, Record<string, number>>
   /**
    * Shopify variant GID per colorway → size — used to build hosted-checkout cart

@@ -11,6 +11,7 @@ const variantNodeSchema = z.object({
   title: z.string(),
   availableForSale: z.boolean(),
   price: moneySchema,
+  compareAtPrice: moneySchema.nullable().optional(),
   selectedOptions: z.array(
     z.object({
       name: z.string(),
@@ -24,6 +25,9 @@ const productNodeSchema = z.object({
   handle: z.string(),
   title: z.string(),
   description: z.string().optional().default(''),
+  productType: z.string().optional().default(''),
+  tags: z.array(z.string()).optional().default([]),
+  createdAt: z.string().optional(),
   featuredImage: z
     .object({
       url: z.string(),
@@ -68,6 +72,50 @@ function parseDropIdsFromMetafield(raw: string | undefined): string[] {
       .filter(Boolean)
   }
   return []
+}
+
+/**
+ * Fit facet convention: a Shopify product tag `fit:<value>` (case-insensitive,
+ * e.g. `fit:oversized`, `fit:compression`, `fit:classic`) marks the piece's fit.
+ * The value is title-cased for display ("oversized" → "Oversized").
+ */
+function parseFitFromTags(tags: string[]): string | undefined {
+  for (const raw of tags) {
+    const m = /^fit:(.+)$/i.exec(raw.trim())
+    if (!m) continue
+    const value = m[1]!.trim()
+    if (!value) continue
+    return value
+      .split(/\s+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ')
+  }
+  return undefined
+}
+
+/**
+ * Product-level compare-at price: the compare-at of the cheapest variant (the
+ * variant whose price backs the displayed `price`). Only meaningful when it is
+ * strictly greater than the display price — otherwise treated as no sale.
+ */
+function resolveCompareAtPrice(
+  variants: z.infer<typeof variantNodeSchema>[],
+  displayPrice: number,
+): number | null {
+  let cheapest: z.infer<typeof variantNodeSchema> | null = null
+  let cheapestPrice = Number.POSITIVE_INFINITY
+  for (const v of variants) {
+    const p = Number.parseFloat(v.price.amount)
+    if (Number.isFinite(p) && p < cheapestPrice) {
+      cheapest = v
+      cheapestPrice = p
+    }
+  }
+  const raw = cheapest?.compareAtPrice?.amount
+  if (!raw) return null
+  const compareAt = Number.parseFloat(raw)
+  if (!Number.isFinite(compareAt) || compareAt <= displayPrice) return null
+  return compareAt
 }
 
 function buildAvailabilityMatrix(
@@ -181,17 +229,22 @@ export function mapShopifyProductNodeToStorefront(
   const anyAvailable = variants.some((v) => v.availableForSale)
   const images = collectImages(node)
   const colorways = collectColorways(variants)
+  const compareAtPrice = resolveCompareAtPrice(variants, price)
+  const onSale = compareAtPrice !== null
 
   const shop: ProductShopMeta = {
-    storefrontStatus: anyAvailable ? 'available' : 'outOfStock',
+    storefrontStatus: !anyAvailable ? 'outOfStock' : onSale ? 'sale' : 'available',
     sourceType: dropIds.length > 0 ? 'drop' : 'individual',
     dropId: dropIds[0] ?? null,
     dropIds,
     dropSlug: null,
-    compareAtPrice: null,
+    compareAtPrice,
     listPrice: price,
     currency,
-    category: 'Apparel',
+    category: node.productType.trim() || 'Apparel',
+    fit: parseFitFromTags(node.tags),
+    tags: node.tags,
+    createdAt: node.createdAt,
     availabilityByColorAndSize: buildAvailabilityMatrix(variants),
     variantIdByColorAndSize: buildVariantIdMatrix(variants),
     imagesByColorName: buildImagesByColorName(

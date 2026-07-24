@@ -35,6 +35,24 @@ export const productsMock: Product[] = [
       { src: '/brand/placeholder-product.svg', alt: 'ANVL Oversized Tee front view in black' },
       { src: '/brand/placeholder-product.svg', alt: 'ANVL Oversized Tee back graphic for The Oath' },
     ],
+    shop: {
+      // On sale: compare-at above the live price drives the SALE badge +
+      // strikethrough without needing Shopify connected.
+      storefrontStatus: 'sale',
+      sourceType: 'drop',
+      dropId: null,
+      dropSlug: null,
+      compareAtPrice: 74,
+      listPrice: 59,
+      currency: 'USD',
+      category: 'Tees',
+      fit: 'Oversized',
+      availabilityByColorAndSize: {
+        'Black / Dark Steel Grey': { S: 6, M: 8, L: 8, XL: 6, '2XL': 4 },
+        'Washed Charcoal / Black': { S: 6, M: 8, L: 8, XL: 6, '2XL': 4 },
+      },
+      imagesByColorName: {},
+    },
   },
   {
     id: 'anvl-stringer',
@@ -69,6 +87,22 @@ export const productsMock: Product[] = [
       { src: '/brand/placeholder-product.svg', alt: 'ANVL Stringer front view in black graphite' },
       { src: '/brand/placeholder-product.svg', alt: 'ANVL Stringer back view with crest and spine symbol' },
     ],
+    shop: {
+      storefrontStatus: 'available',
+      sourceType: 'drop',
+      dropId: null,
+      dropSlug: null,
+      compareAtPrice: null,
+      listPrice: 49,
+      currency: 'USD',
+      category: 'Stringers',
+      fit: 'Classic',
+      availabilityByColorAndSize: {
+        'Black / Graphite': { S: 7, M: 9, L: 9, XL: 6 },
+        'Charcoal / Bone': { S: 7, M: 9, L: 9, XL: 6 },
+      },
+      imagesByColorName: {},
+    },
   },
   {
     id: 'anvl-compression-tee',
@@ -103,5 +137,23 @@ export const productsMock: Product[] = [
       { src: '/brand/placeholder-product.svg', alt: 'ANVL Compression Tee front view in black graphite' },
       { src: '/brand/placeholder-product.svg', alt: 'ANVL Compression Tee back view with contour seams' },
     ],
+    shop: {
+      // Second discounted seed piece — keeps the sale treatment visible in the
+      // grid even when one sale product is filtered out.
+      storefrontStatus: 'sale',
+      sourceType: 'drop',
+      dropId: null,
+      dropSlug: null,
+      compareAtPrice: 79,
+      listPrice: 69,
+      currency: 'USD',
+      category: 'Tees',
+      fit: 'Compression',
+      availabilityByColorAndSize: {
+        'Black / Graphite': { S: 6, M: 8, L: 8, XL: 6 },
+        'Dark Steel Grey / Black': { S: 6, M: 8, L: 8, XL: 6 },
+      },
+      imagesByColorName: {},
+    },
   },
 ]

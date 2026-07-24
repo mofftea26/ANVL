@@ -1655,135 +1655,194 @@ html[data-landing-entry='active'] body {
 }
 
 /* ------------------------------------------------------------------------- */
-/* ANVL toasts — "the forged plate" (mounted once via AnvlToaster).          */
-/* A beveled, edge-lit obsidian slab: a type-colored HEAT EDGE that glows    */
-/* hot on arrival then cools, a stamped maker's-mark icon cell, and a one-   */
-/* time light sweep as the plate lands. ToastForgeEffect crowns each arrival */
-/* with a converging ember swarm (canvas). All colors are theme tokens, so   */
-/* CMS palettes + oath-dark / bone-light stay legible. Reduced motion drops  */
-/* the cool + sweep (sonner's own entrance already respects it).             */
+/* ANVL toasts — "the mill-stamped billet" (mounted once via AnvlToaster).   */
+/* A slab of dark billet steel with ONE aggressive corner shear (the         */
+/* passport-plate cut): a molten seam runs the full top edge — it IGNITES    */
+/* on arrival and cools to a resting hairline (the arrival flare), its heat  */
+/* bleeding a short distance down the face. The maker's mark is struck       */
+/* directly into the metal (no cell) behind a milled joint seam, and the     */
+/* toast TYPE is stamped as an Anton eyebrow — ANVL / FORGED / NOTICE /      */
+/* WARNING / FAILED / WORKING — above the Sora message. ToastForgeEffect     */
+/* crowns each arrival with its converging ember swarm (canvas), landing on  */
+/* the hot seam. All colors are theme tokens (oath-dark, bone-light + CMS    */
+/* palettes stay legible). Reduced motion: static plate, no ignition.        */
 /* ------------------------------------------------------------------------- */
 
 .anvl-toast[data-sonner-toast] {
-  /* Ember by default; per-type overrides below. */
+  /* Ember copper by default; per-type overrides below. The stamp tone mixes
+     the type color toward the heading tone — raising text contrast in BOTH
+     dark and light themes. */
   --anvl-toast-edge: var(--color-highlight-bright);
+  --anvl-toast-stamp: color-mix(in oklab, var(--anvl-toast-edge) 72%, var(--color-heading));
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.9rem;
   width: var(--width);
-  padding: 0.85rem 2.4rem 0.85rem 1rem !important;
-  /* Brushed dark steel: top light catching the bevel, cooling into the base. */
-  background:
-    linear-gradient(
-      158deg,
-      color-mix(in oklab, var(--color-surface-elevated) 88%, var(--anvl-toast-edge) 8%) 0%,
-      var(--color-surface) 46%,
-      color-mix(in oklab, var(--color-bg) 88%, black) 100%
-    ) !important;
-  border: 1px solid color-mix(in oklab, var(--anvl-toast-edge) 30%, var(--color-line)) !important;
-  border-left: 0 !important;
-  border-radius: 3px !important;
-  /* The forge bevel — two clipped corners, like a stamped metal plate. */
-  clip-path: polygon(
-    13px 0,
-    100% 0,
-    100% calc(100% - 13px),
-    calc(100% - 13px) 100%,
-    0 100%,
-    0 13px
-  );
-  /* Outer depth follows the bevel (drop-shadow does; box-shadow can't); the
-     inset lines give the slab its edge-lit, milled top + base. */
-  filter: drop-shadow(0 20px 34px rgba(0, 0, 0, 0.58));
+  padding: 0.85rem 3rem 0.9rem 1.05rem !important;
+  /* Cold billet steel: the top face catches the seam light, cooling to base. */
+  background: linear-gradient(
+    172deg,
+    color-mix(in oklab, var(--color-surface-elevated) 90%, var(--anvl-toast-edge) 7%) 0%,
+    var(--color-surface) 42%,
+    color-mix(in oklab, var(--color-bg) 86%, black) 100%
+  ) !important;
+  border: 1px solid color-mix(in oklab, var(--anvl-toast-edge) 26%, var(--color-line)) !important;
+  border-top: 0 !important; /* the molten seam owns the top edge */
+  border-radius: 2px !important;
+  /* One aggressive corner shear — the plate was cut from stock, not molded. */
+  clip-path: polygon(16px 0, 100% 0, 100% 100%, 0 100%, 0 16px);
+  /* Depth follows the shear (drop-shadow does; box-shadow can't) + a faint
+     type-colored ember underlight beneath the plate. */
+  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.52))
+    drop-shadow(0 5px 16px color-mix(in oklab, var(--anvl-toast-edge) 20%, transparent));
+  /* Milled texture — layered inset lines only, no images. */
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--color-heading) 9%, transparent),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.4) !important;
+    inset 0 1px 0 color-mix(in oklab, var(--anvl-toast-edge) 16%, transparent),
+    inset 1px 0 0 color-mix(in oklab, var(--color-heading) 5%, transparent),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45) !important;
   font-family: var(--font-sans) !important;
   color: var(--color-text) !important;
   overflow: hidden;
 }
 
-/* The heat edge — the plate's leading side, glowing hot on arrival then
-   cooling as the embers fuse in (mirrors the modal forge handshake). */
+/* The molten seam — a type-colored hairline along the full top edge, hottest
+   just past the shear, falling off to the right (the topbar seam language).
+   It is present from frame one, so the ember swarm lands on live heat. */
 .anvl-toast[data-sonner-toast]::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 13px;
-  bottom: 0;
-  width: 3px;
+  right: 0;
+  top: 0;
+  height: 2px;
   background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--anvl-toast-edge) 92%, white) 0%,
-    var(--anvl-toast-edge) 40%,
-    color-mix(in oklab, var(--anvl-toast-edge) 50%, transparent) 100%
+    90deg,
+    transparent 0px,
+    color-mix(in oklab, var(--anvl-toast-edge) 90%, white) 18px,
+    var(--anvl-toast-edge) 34%,
+    color-mix(in oklab, var(--anvl-toast-edge) 45%, transparent) 72%,
+    color-mix(in oklab, var(--anvl-toast-edge) 18%, transparent) 100%
   );
-  box-shadow: 0 0 14px 1px color-mix(in oklab, var(--anvl-toast-edge) 55%, transparent);
-  animation: anvl-toast-cool 0.85s ease-out 1;
+  box-shadow: 0 1px 10px color-mix(in oklab, var(--anvl-toast-edge) 50%, transparent);
+  animation: anvl-toast-strike 0.9s ease-out 1;
 }
 
-/* One light sweep as the plate lands — milled metal catching the forge light. */
+/* Heat bleed — the seam's glow radiating a short way down the plate face.
+   Flares with the strike, then settles. */
 .anvl-toast[data-sonner-toast]::after {
   content: '';
   position: absolute;
-  inset: -20% auto -20% 0;
-  width: 34%;
+  inset: 0 0 auto 0;
+  height: 2.6rem;
   background: linear-gradient(
-    115deg,
-    transparent 0%,
-    color-mix(in oklab, var(--color-heading) 11%, transparent) 50%,
+    180deg,
+    color-mix(in oklab, var(--anvl-toast-edge) 12%, transparent) 0%,
     transparent 100%
   );
-  transform: translateX(-160%) skewX(-18deg);
-  animation: anvl-toast-sweep 0.85s ease-out 0.12s 1 forwards;
+  opacity: 0.6;
   pointer-events: none;
+  animation: anvl-toast-bleed 0.9s ease-out 1;
 }
 
-@keyframes anvl-toast-cool {
+/* The arrival flare — the seam runs white-hot as the plate lands, then cools
+   to its resting hairline while the embers fuse in. */
+@keyframes anvl-toast-strike {
   0% {
-    box-shadow: 0 0 30px 5px color-mix(in oklab, var(--anvl-toast-edge) 90%, transparent);
-    filter: brightness(1.5);
+    box-shadow: 0 2px 22px 2px color-mix(in oklab, var(--anvl-toast-edge) 85%, transparent);
+    filter: brightness(1.75);
   }
   100% {
-    box-shadow: 0 0 14px 1px color-mix(in oklab, var(--anvl-toast-edge) 55%, transparent);
+    box-shadow: 0 1px 10px color-mix(in oklab, var(--anvl-toast-edge) 50%, transparent);
     filter: brightness(1);
   }
 }
-@keyframes anvl-toast-sweep {
-  to {
-    transform: translateX(420%) skewX(-18deg);
+@keyframes anvl-toast-bleed {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
   }
 }
 
-/* Stamped maker's-mark icon cell. */
+/* Maker's mark — struck directly into the steel (no boxed cell): a small
+   type-colored glyph with a faint heat halo, spanning the plate height so
+   its milled joint seam reads as a true machined join. */
 .anvl-toast[data-sonner-toast] .anvl-toast-icon[data-icon] {
+  position: relative;
+  align-self: stretch;
   display: grid;
   place-items: center;
-  width: 2.15rem !important;
-  height: 2.15rem !important;
-  margin: 0;
+  width: 1.6rem !important;
+  height: auto !important;
+  margin: 0 !important;
   flex-shrink: 0;
-  color: var(--anvl-toast-edge);
+  color: var(--anvl-toast-stamp);
+  filter: drop-shadow(0 0 7px color-mix(in oklab, var(--anvl-toast-edge) 45%, transparent));
+}
+/* The joint seam — a vertical hairline with gradient falloff in the gap
+   between the mark and the message (the Arsenal spec-card joint). */
+.anvl-toast[data-sonner-toast] .anvl-toast-icon[data-icon]::after {
+  content: '';
+  position: absolute;
+  top: 16%;
+  bottom: 16%;
+  right: -0.45rem;
+  width: 1px;
   background: linear-gradient(
-    160deg,
-    color-mix(in oklab, var(--anvl-toast-edge) 20%, transparent) 0%,
-    color-mix(in oklab, var(--anvl-toast-edge) 8%, transparent) 100%
+    180deg,
+    transparent 0%,
+    color-mix(in oklab, var(--anvl-toast-edge) 40%, var(--color-line)) 45%,
+    transparent 100%
   );
-  border: 1px solid color-mix(in oklab, var(--anvl-toast-edge) 42%, transparent);
-  box-shadow: inset 0 0 10px color-mix(in oklab, var(--anvl-toast-edge) 22%, transparent);
-  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
 }
 .anvl-toast[data-sonner-toast] .anvl-toast-icon[data-icon] svg {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1.05rem;
+  height: 1.05rem;
 }
 
 .anvl-toast .anvl-toast-content {
-  gap: 3px;
+  gap: 2px;
+  min-width: 0;
 }
+/* The type stamp — an Anton condensed uppercase eyebrow struck above the
+   message, in the type's heat color. The `/ ''` alt keeps it silent to
+   screen readers (sonner already announces the message itself). */
+.anvl-toast .anvl-toast-content::before {
+  content: 'ANVL';
+  content: 'ANVL' / '';
+  font-family: var(--font-heading);
+  font-size: 0.58rem;
+  line-height: 1;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--anvl-toast-stamp);
+  margin-bottom: 2px;
+}
+.anvl-toast[data-type='success'] .anvl-toast-content::before {
+  content: 'FORGED';
+  content: 'FORGED' / '';
+}
+.anvl-toast[data-type='error'] .anvl-toast-content::before {
+  content: 'FAILED';
+  content: 'FAILED' / '';
+}
+.anvl-toast[data-type='warning'] .anvl-toast-content::before {
+  content: 'WARNING';
+  content: 'WARNING' / '';
+}
+.anvl-toast[data-type='info'] .anvl-toast-content::before {
+  content: 'NOTICE';
+  content: 'NOTICE' / '';
+}
+.anvl-toast[data-type='loading'] .anvl-toast-content::before {
+  content: 'WORKING';
+  content: 'WORKING' / '';
+}
+
 .anvl-toast .anvl-toast-title {
-  font-size: 0.84rem;
+  font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.005em;
   line-height: 1.35;
@@ -1791,25 +1850,30 @@ html[data-landing-entry='active'] body {
 }
 .anvl-toast .anvl-toast-description {
   font-size: 0.76rem;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--color-text-muted) !important;
 }
 
-/* Dismiss — a quiet corner control INSIDE the plate (sonner's default sits
-   half-outside top-left, which the bevel would clip). */
+/* Dismiss — a full 44px touch target riding the plate's right column (the
+   plate's right padding reserves the lane, so action chips never collide).
+   Revealed on hover/focus; always faintly present on touch devices. */
 .anvl-toast .anvl-toast-close {
   position: absolute;
   left: auto !important;
-  right: 6px !important;
-  top: 6px !important;
-  transform: none !important;
-  width: 1.5rem;
-  height: 1.5rem;
+  right: 0 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  display: grid;
+  place-items: center;
   border: 0 !important;
+  border-radius: 0 !important;
   background: transparent !important;
   color: var(--color-text-muted) !important;
   opacity: 0;
   transition: opacity 160ms ease, color 160ms ease;
+  z-index: 2;
 }
 .anvl-toast:hover .anvl-toast-close,
 .anvl-toast .anvl-toast-close:focus-visible {
@@ -1818,8 +1882,14 @@ html[data-landing-entry='active'] body {
 .anvl-toast .anvl-toast-close:hover {
   color: var(--color-heading) !important;
 }
+@media (hover: none) {
+  .anvl-toast .anvl-toast-close {
+    opacity: 0.7;
+  }
+}
 
-/* Action / cancel (rare) — forged chip + quiet ghost. */
+/* Action / cancel (rare) — forged chips cut with the plate's shear: molten
+   copper for the action, a quiet hairline ghost for cancel. */
 .anvl-toast .anvl-toast-action {
   background: linear-gradient(
     180deg,
@@ -1827,22 +1897,29 @@ html[data-landing-entry='active'] body {
     var(--color-highlight) 100%
   ) !important;
   color: var(--color-on-highlight, var(--color-bg)) !important;
-  border-radius: 999px !important;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%);
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  font-size: 0.62rem !important;
-  padding: 0.45rem 0.85rem !important;
+  font-size: 0.6rem !important;
+  padding: 0.5rem 0.9rem !important;
 }
 .anvl-toast .anvl-toast-cancel {
   background: transparent !important;
+  border: 1px solid color-mix(in oklab, var(--color-heading) 22%, transparent) !important;
   color: var(--color-text-muted) !important;
-  border-radius: 999px !important;
-  font-size: 0.66rem !important;
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.6rem !important;
+  padding: 0.45rem 0.8rem !important;
 }
 
-/* Type accents — the heat edge + stamp take the semantic color; the slab
-   itself stays obsidian so the system reads as one forged family. */
+/* Type heat — the seam, bleed, stamp, mark, and underlight all take the
+   semantic color; the billet itself stays cold steel so the system reads as
+   one forged family. */
 .anvl-toast[data-type='success'] {
   --anvl-toast-edge: var(--color-success);
 }
@@ -1860,12 +1937,9 @@ html[data-landing-entry='active'] body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .anvl-toast[data-sonner-toast]::before {
-    animation: none;
-  }
+  .anvl-toast[data-sonner-toast]::before,
   .anvl-toast[data-sonner-toast]::after {
     animation: none;
-    opacity: 0;
   }
 }
 

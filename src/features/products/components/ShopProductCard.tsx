@@ -169,9 +169,19 @@ export const ShopProductCard = memo(function ShopProductCard({
             {config.showPrices ? (
               <div className="shrink-0 text-right text-sm">
                 {showCompare && shop ? (
-                  <p className="text-[var(--shop-text-muted)] line-through">${shop.compareAtPrice}</p>
+                  <p className="text-[var(--shop-text-muted)] line-through">
+                    ${shop.compareAtPrice}
+                    <span className="sr-only"> original price</span>
+                  </p>
                 ) : null}
-                <p className="anvl-display text-[var(--shop-text)]">${price}</p>
+                <p
+                  className={cn(
+                    'anvl-display',
+                    showCompare ? 'text-[var(--shop-accent)]' : 'text-[var(--shop-text)]',
+                  )}
+                >
+                  ${price}
+                </p>
               </div>
             ) : null}
           </div>
