@@ -1,56 +1,51 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Plus } from '@/shared/icons'
+import { ExternalLink, Plus, User } from '@/shared/icons'
 import { Button } from '@/shared/components/ui/Button'
 import { AdminEntityCard } from '@/features/admin/components/AdminEntityCard'
-import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { FormField } from '@/shared/components/ui/FormField'
-import { Input } from '@/shared/components/ui/Input'
-import { Textarea } from '@/shared/components/ui/Textarea'
 import {
   EMPTY_STORY_ASSET,
-  formatChapterNumber,
-  type StoryAct,
   type StoryAsset,
   type StoryCastMember,
 } from '@/features/story/schemas/story.schema'
+import { resolveStoryAsset } from '@/features/story/lib/resolveStoryAsset'
 import { CastProfileNameField } from '@/features/admin/story/CastProfileNameField'
-import { StoryAssetField } from '@/features/admin/story/StoryAssetField'
 import { deleteCast, upsertCast } from '@/features/admin/story/story.service'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 
-const CHAPTER_SCOPE = '__chapter__'
-
 interface CastListEditorProps {
   chapterId: string
-  chapterSlug: string
-  acts: StoryAct[]
   cast: StoryCastMember[]
   onChanged: () => Promise<void> | void
+}
+
+/** Build an image StoryAsset from a profile picture URL (empty → cleared). */
+function avatarFromUrl(url: string): StoryAsset {
+  const clean = url.trim()
+  if (!clean) return EMPTY_STORY_ASSET
+  return { ...EMPTY_STORY_ASSET, kind: 'image', url: clean }
 }
 
 function CastCard({
   member,
   chapterId,
-  chapterSlug,
-  acts,
   onChanged,
 }: {
   member: StoryCastMember
   chapterId: string
-  chapterSlug: string
-  acts: StoryAct[]
   onChanged: () => Promise<void> | void
 }) {
   const [name, setName] = useState(member.name)
+  // Rank + avatar are athlete snapshots — never author-entered.
   const [rank, setRank] = useState(member.rank)
-  // Session-only: true after picking a real athlete — the rank becomes an
-  // informational snapshot until the editor returns to free-text mode.
-  const [fromProfile, setFromProfile] = useState(false)
-  const [blurb, setBlurb] = useState(member.blurb)
-  const [actId, setActId] = useState<string | null>(member.actId)
   const [avatar, setAvatar] = useState<StoryAsset>(member.avatar)
+  const [profileUserId, setProfileUserId] = useState<string | null>(member.profileUserId)
+  const [armoryHandle, setArmoryHandle] = useState<string | null>(member.armoryHandle)
   const [saving, setSaving] = useState(false)
+
+  const preview = resolveStoryAsset(avatar)
+  const linked = profileUserId !== null
 
   async function save() {
     setSaving(true)
@@ -58,11 +53,11 @@ function CastCard({
       const res = await upsertCast({
         id: member.id,
         chapterId,
-        actId,
         name,
         rank,
-        blurb,
         avatar,
+        profileUserId,
+        armoryHandle,
         sortOrder: member.sortOrder,
       })
       if (!res.ok) {
@@ -98,60 +93,85 @@ function CastCard({
       deleteConfirmBody="This removes the character from the roster."
     >
       <div className="space-y-4">
+        <div className="flex items-start gap-4">
+          {/* Avatar = the athlete's profile picture (auto). Monogram fallback. */}
+          <div
+            className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--color-line)] bg-[var(--color-bg)] text-[var(--color-text-muted)]"
+            aria-hidden="true"
+          >
+            {preview.type === 'image' ? (
+              <img src={preview.src} alt="" className="h-full w-full object-cover" />
+            ) : name.trim() ? (
+              <span className="anvl-heading text-lg text-[var(--color-heading)]">
+                {name.trim().charAt(0).toUpperCase()}
+              </span>
+            ) : (
+              <User size={ICON_SIZE.md} />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <CastProfileNameField
+              name={name}
+              onNameChange={(next) => {
+                setName(next)
+                // Typing over a linked athlete breaks the verified link.
+                setProfileUserId(null)
+                setArmoryHandle(null)
+              }}
+              onProfileSelect={(snapshot) => {
+                setName(snapshot.name)
+                setRank(snapshot.rank)
+                setAvatar(avatarFromUrl(snapshot.avatarUrl))
+                setProfileUserId(snapshot.userId)
+                setArmoryHandle(snapshot.armoryHandle)
+              }}
+            />
+          </div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
-          <CastProfileNameField
-            name={name}
-            onNameChange={(next) => {
-              setName(next)
-              setFromProfile(false)
-            }}
-            onProfileSelect={(snapshot) => {
-              setName(snapshot.name)
-              setRank(snapshot.rank)
-              setFromProfile(true)
-            }}
-          />
+          {/* Rank is derived from the athlete's armory — read-only. */}
           <FormField
             label="Rank"
             hint={
-              fromProfile
-                ? 'Derived from the athlete’s armory (claims only) — a snapshot; it does not live-update.'
-                : 'Free text (e.g. General). Defaults to Recruit when blank.'
+              linked
+                ? 'Derived from the athlete’s armory — a snapshot; it does not live-update.'
+                : 'Set automatically when you pick a real athlete above.'
             }
             labelStyle="stacked"
           >
-            <Input
-              density="compact"
-              value={rank}
-              readOnly={fromProfile}
-              aria-label="Rank"
-              onChange={(e) => setRank(e.target.value)}
-            />
+            <div className="inline-flex min-h-[2.25rem] items-center rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] px-3 text-sm text-[var(--color-text)]">
+              {rank || 'Recruit'}
+            </div>
+          </FormField>
+
+          {/* Guest-armory link status. */}
+          <FormField
+            label="Guest armory"
+            hint="A public, minted armory links the name in the story to their guest armory."
+            labelStyle="stacked"
+          >
+            <div className="inline-flex min-h-[2.25rem] items-center gap-1.5 rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)] px-3 text-sm text-[var(--color-text-muted)]">
+              {armoryHandle ? (
+                <>
+                  <ExternalLink size={ICON_SIZE.sm} aria-hidden="true" />
+                  <span className="text-[var(--color-text)]">@{armoryHandle}</span>
+                </>
+              ) : linked ? (
+                'Armory not public — name shown, not linked.'
+              ) : (
+                'Lore character — no link.'
+              )}
+            </div>
           </FormField>
         </div>
-        <AdminFieldSelect
-          label="Appears in"
-          value={actId ?? CHAPTER_SCOPE}
-          onChange={(v) => setActId(v === CHAPTER_SCOPE ? null : v)}
-          options={[
-            { value: CHAPTER_SCOPE, label: 'Whole chapter' },
-            ...acts.map((a) => ({
-              value: a.id,
-              label: `Act ${formatChapterNumber(a.actNumber)} — ${a.title}`,
-            })),
-          ]}
-        />
-        <FormField label="Blurb" labelStyle="stacked">
-          <Textarea density="compact" rows={3} value={blurb} onChange={(e) => setBlurb(e.target.value)} />
-        </FormField>
-        <StoryAssetField label="Avatar" asset={avatar} scope={`${chapterSlug}-cast`} onChange={setAvatar} />
       </div>
     </AdminEntityCard>
   )
 }
 
 /** Manage the CMS-authored cast (generals, recruits, loyal members) of a chapter. */
-export function CastListEditor({ chapterId, chapterSlug, acts, cast, onChanged }: CastListEditorProps) {
+export function CastListEditor({ chapterId, cast, onChanged }: CastListEditorProps) {
   const [adding, setAdding] = useState(false)
 
   async function addMember() {
@@ -159,10 +179,8 @@ export function CastListEditor({ chapterId, chapterSlug, acts, cast, onChanged }
     try {
       const res = await upsertCast({
         chapterId,
-        actId: null,
         name: 'New recruit',
         rank: 'Recruit',
-        blurb: '',
         avatar: EMPTY_STORY_ASSET,
         sortOrder: cast.length,
       })
@@ -185,12 +203,17 @@ export function CastListEditor({ chapterId, chapterSlug, acts, cast, onChanged }
           Add character
         </Button>
       </div>
+      <p className="text-xs text-[var(--color-text-muted)]">
+        Search a real athlete to enlist them — their rank and avatar come straight from their
+        armory, and their name becomes clickable wherever the story mentions it. Everyone enlisted
+        here appears in the whole chapter.
+      </p>
       {cast.length === 0 ? (
         <p className="text-sm text-[var(--color-text-muted)]">No characters yet. Enlist the first soldier of this chapter.</p>
       ) : (
         <div className="space-y-4">
           {cast.map((member) => (
-            <CastCard key={member.id} member={member} chapterId={chapterId} chapterSlug={chapterSlug} acts={acts} onChanged={onChanged} />
+            <CastCard key={member.id} member={member} chapterId={chapterId} onChanged={onChanged} />
           ))}
         </div>
       )}

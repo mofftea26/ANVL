@@ -8,17 +8,19 @@ import {
   useSyncExternalStore,
 } from 'react'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
-import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { AdminLoadingState } from '@/features/admin/components/AdminLoadingState'
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminSaveAction } from '@/features/admin/components/AdminSaveAction'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
+import { CareSelector } from '@/features/admin/components/CareSelector'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
 import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
+import { usePreviewHoverProps } from '@/features/admin/preview/usePreviewHoverProps'
 import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotField'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
+import { previewFieldAnchorId } from '@/features/cms/preview'
 import {
   readPdpContentFromStorage,
   savePdpContentAsync,
@@ -29,9 +31,19 @@ import {
   type PdpContentConfig,
   type PdpProductContent,
 } from '@/features/cms/pdpContent/pdpContent.zod'
+import {
+  convertLegacyPdpCare,
+  convertLegacyPdpDetails,
+  convertLegacyPdpMaterials,
+} from '@/features/cms/pdpContent/pdpContent.convert'
 import { Textarea } from '@/shared/components/ui'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
+import { PdpDetailsField } from './PdpDetailsField'
+import { PdpMaterialsField } from './PdpMaterialsField'
+import { ProductPickerModal } from './ProductPickerModal'
+import { ProductSummaryCard } from './ProductSummaryCard'
+import { LegacyConvertNotice } from './LegacyConvertNotice'
 
 function useStoredPdpContent(): PdpContentConfig {
   return useSyncExternalStore(
@@ -41,21 +53,14 @@ function useStoredPdpContent(): PdpContentConfig {
   )
 }
 
-/** Drop blank lines so empty textarea rows never render as empty bullets. */
-function sanitizeLines(value: string): string[] {
-  return value
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-}
-
 /**
- * Per-product PDP editor. Pick a product (from the commerce catalog — Shopify
- * later) and author the non-commerce bento content for it: story, material,
- * care, forged details, and the editorial assets (material macro, lifestyle,
- * ambient backdrop, size-guide diagram). Blank fields fall back to the product's
- * own data / global slots on the storefront. Saved to `pdp_content` via the
- * shared CMS sync.
+ * Per-product PDP editor. Pick a product from the product-card modal and author
+ * its non-commerce bento content: story, structured materials, structured care
+ * (the shared CareSelector), forged-detail cards, and the editorial assets.
+ * Blank fields fall back to the product's own data / global slots on the
+ * storefront. Legacy free-text material/care/detail blobs still render and can
+ * be converted to the structured editors in one click (originals kept). Saved
+ * to `pdp_content` via the shared CMS sync.
  */
 export function AdminPdpContentEditor() {
   const setPageActions = useAdminPageActions()
@@ -69,6 +74,7 @@ export function AdminPdpContentEditor() {
   })
   usePushPreviewDraft('pdpContent', config)
   const [slug, setSlug] = useState<string>('')
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   const productsQuery = useAdminProductCatalogQuery()
   const mediaQuery = useMediaAssetsQuery()
@@ -84,6 +90,10 @@ export function AdminPdpContentEditor() {
     () => config[slug] ?? { ...DEFAULT_PDP_PRODUCT_CONTENT },
     [config, slug],
   )
+  const selectedProduct = useMemo(
+    () => products.find((p) => p.slug === slug) ?? null,
+    [products, slug],
+  )
 
   const patch = useCallback(
     (next: Partial<PdpProductContent>) => {
@@ -95,6 +105,10 @@ export function AdminPdpContentEditor() {
     },
     [slug, setConfig],
   )
+
+  const materialsHover = usePreviewHoverProps({ kind: 'content-field', id: 'pdp:materials' })
+  const careHover = usePreviewHoverProps({ kind: 'content-field', id: 'pdp:care' })
+  const detailsHover = usePreviewHoverProps({ kind: 'content-field', id: 'pdp:details' })
 
   const toolbar = useMemo(
     () => (
@@ -122,7 +136,8 @@ export function AdminPdpContentEditor() {
     >
       <ul className="space-y-2 text-xs text-[var(--color-text-muted)]">
         <li>Products come from the commerce catalog (Shopify when connected).</li>
-        <li>Blank fields fall back to the product's own data, then the global PDP slots.</li>
+        <li>Materials, care, and forged details render as bento cards on the PDP.</li>
+        <li>Blank fields fall back to the product&rsquo;s own data, then the global slots.</li>
         <li>Price, sizes, colors, and gallery images stay on the product — not here.</li>
       </ul>
     </AdminRailPanel>
@@ -136,15 +151,32 @@ export function AdminPdpContentEditor() {
     )
   }
 
+  if (products.length === 0) {
+    return (
+      <AdminWorkspace asideLabel="Product content help" aside={rail}>
+        <p className="text-sm text-[var(--color-text-muted)]">
+          No products available yet. Connect Shopify or seed the catalog to author PDP content.
+        </p>
+      </AdminWorkspace>
+    )
+  }
+
+  const hasLegacyMaterial =
+    current.materials.length === 0 &&
+    (current.materialTitle.trim().length > 0 || current.materialNote.trim().length > 0)
+  const hasLegacyCare =
+    current.careItems.length === 0 && current.care.some((l) => l.trim().length > 0)
+  const hasLegacyDetails =
+    current.details.length === 0 && current.designDetails.some((l) => l.trim().length > 0)
+
   return (
     <AdminWorkspace asideLabel="Product content help" aside={rail}>
       <div className="space-y-6" data-testid="pdp-content-editor">
-        <AdminFieldSelect
-          label="Product"
-          value={slug}
-          onChange={setSlug}
-          options={products.map((p) => ({ value: p.slug, label: p.name }))}
-          placeholder={products.length === 0 ? 'No products found' : 'Select a product…'}
+        <ProductSummaryCard
+          product={selectedProduct}
+          slug={slug}
+          authored={current}
+          onChangeProduct={() => setPickerOpen(true)}
         />
 
         {slug ? (
@@ -159,34 +191,78 @@ export function AdminPdpContentEditor() {
               </FormField>
             </section>
 
-            <section className="space-y-4 rounded-xl border border-[var(--color-line)] p-5">
-              <h2 className="anvl-heading text-base font-normal">Material & care</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField label="Material title" hint="Blank → product fabric." labelStyle="stacked">
-                  <Input density="compact" value={current.materialTitle} onChange={(e) => patch({ materialTitle: e.target.value })} />
-                </FormField>
-                <FormField label="Material note" hint="Blank → product GSM." labelStyle="stacked">
-                  <Input density="compact" value={current.materialNote} onChange={(e) => patch({ materialNote: e.target.value })} />
-                </FormField>
+            <section
+              id={previewFieldAnchorId('pdp:materials')}
+              {...materialsHover}
+              className="space-y-4 rounded-xl border border-[var(--color-line)] p-5"
+            >
+              <div>
+                <h2 className="anvl-heading text-base font-normal">Materials</h2>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  Each entry is a bento card (name, percentage, GSM, optional image). Blank → the
+                  product&rsquo;s own fabric.
+                </p>
               </div>
-              <FormField label="Care (one per line)" hint="Blank → product care instructions." labelStyle="stacked">
-                <Textarea
-                  rows={3}
-                  value={current.care.join('\n')}
-                  onChange={(e) => patch({ care: sanitizeLines(e.target.value) })}
+              {hasLegacyMaterial ? (
+                <LegacyConvertNotice
+                  label="Legacy material copy"
+                  lines={[current.materialTitle, current.materialNote].filter((l) => l.trim())}
+                  onConvert={() => patch({ materials: convertLegacyPdpMaterials(current) })}
                 />
-              </FormField>
+              ) : null}
+              <PdpMaterialsField
+                materials={current.materials}
+                onChange={(materials) => patch({ materials })}
+                assets={mediaAssets}
+              />
             </section>
 
-            <section className="space-y-4 rounded-xl border border-[var(--color-line)] p-5">
-              <h2 className="anvl-heading text-base font-normal">Forged details</h2>
-              <FormField label="Design details (one per line)" hint="Blank → product design details." labelStyle="stacked">
-                <Textarea
-                  rows={4}
-                  value={current.designDetails.join('\n')}
-                  onChange={(e) => patch({ designDetails: sanitizeLines(e.target.value) })}
+            <section
+              id={previewFieldAnchorId('pdp:care')}
+              {...careHover}
+              className="space-y-4 rounded-xl border border-[var(--color-line)] p-5"
+            >
+              <div>
+                <h2 className="anvl-heading text-base font-normal">Care</h2>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  Structured instructions (same editor as the care guide). Blank → the product&rsquo;s
+                  own care.
+                </p>
+              </div>
+              {hasLegacyCare ? (
+                <LegacyConvertNotice
+                  label="Legacy care lines"
+                  lines={current.care.filter((l) => l.trim())}
+                  onConvert={() => patch({ careItems: convertLegacyPdpCare(current) })}
                 />
-              </FormField>
+              ) : null}
+              <CareSelector items={current.careItems} onChange={(careItems) => patch({ careItems })} />
+            </section>
+
+            <section
+              id={previewFieldAnchorId('pdp:details')}
+              {...detailsHover}
+              className="space-y-4 rounded-xl border border-[var(--color-line)] p-5"
+            >
+              <div>
+                <h2 className="anvl-heading text-base font-normal">Forged details</h2>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  Each entry is a card (title, description, optional image). Blank → the
+                  product&rsquo;s own design details.
+                </p>
+              </div>
+              {hasLegacyDetails ? (
+                <LegacyConvertNotice
+                  label="Legacy detail lines"
+                  lines={current.designDetails.filter((l) => l.trim())}
+                  onConvert={() => patch({ details: convertLegacyPdpDetails(current) })}
+                />
+              ) : null}
+              <PdpDetailsField
+                details={current.details}
+                onChange={(details) => patch({ details })}
+                assets={mediaAssets}
+              />
             </section>
 
             <section className="space-y-4 rounded-xl border border-[var(--color-line)] p-5">
@@ -205,7 +281,7 @@ export function AdminPdpContentEditor() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
                 <Package size={15} aria-hidden="true" />
-                Editing content for <span className="text-[var(--color-text)]">{products.find((p) => p.slug === slug)?.name ?? slug}</span>.
+                Editing content for <span className="text-[var(--color-text)]">{selectedProduct?.name ?? slug}</span>.
               </p>
               <Link
                 to="/admin/passports"
@@ -217,12 +293,17 @@ export function AdminPdpContentEditor() {
               </Link>
             </div>
           </>
-        ) : (
-          <p className="text-sm text-[var(--color-text-muted)]">
-            No products available yet. Connect Shopify or seed the catalog to author PDP content.
-          </p>
-        )}
+        ) : null}
       </div>
+
+      <ProductPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        products={products}
+        pdpContent={config}
+        selectedSlug={slug}
+        onSelect={setSlug}
+      />
     </AdminWorkspace>
   )
 }

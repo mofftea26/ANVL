@@ -18,6 +18,8 @@ const adminProfileSearchRowSchema = z.object({
   user_id: z.uuid(),
   full_name: z.string().nullable().default(''),
   armory_handle: z.string().nullable().default(null),
+  armory_public: z.boolean().nullable().default(false),
+  avatar_url: z.string().nullable().default(''),
   claim_count: z.number().int().nonnegative().default(0),
 })
 
@@ -25,6 +27,10 @@ export interface AdminProfileSearchHit {
   userId: string
   fullName: string
   armoryHandle: string | null
+  /** Whether the athlete's armory is shared publicly (gate for the guest link). */
+  armoryPublic: boolean
+  /** Profile picture URL (empty string when none set). */
+  avatarUrl: string
   /** Number of product passports registered to this athlete. */
   claimCount: number
 }
@@ -58,6 +64,8 @@ export async function searchAdminProfiles(
       userId: row.user_id,
       fullName: (row.full_name ?? '').trim(),
       armoryHandle: row.armory_handle,
+      armoryPublic: row.armory_public ?? false,
+      avatarUrl: (row.avatar_url ?? '').trim(),
       claimCount: row.claim_count,
     })),
   }

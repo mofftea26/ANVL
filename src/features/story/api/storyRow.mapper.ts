@@ -44,6 +44,8 @@ export type StoryCastRow = {
   blurb: string | null
   avatar_asset: unknown
   sort_order: number | null
+  profile_user_id?: string | null
+  armory_handle?: string | null
 }
 
 export function mapActRow(row: StoryActRow): StoryAct {
@@ -65,6 +67,8 @@ export function mapCastRow(row: StoryCastRow): StoryCastMember {
     blurb: row.blurb ?? '',
     avatar: parseStoryAsset(row.avatar_asset),
     sortOrder: row.sort_order ?? 0,
+    profileUserId: row.profile_user_id ?? null,
+    armoryHandle: row.armory_handle ?? null,
   })
 }
 

@@ -14,6 +14,7 @@ import {
   DEFAULT_BOOK_COLORS,
   EMPTY_STORY_ASSET,
   formatChapterNumber,
+  type StoryAsset,
   type StoryChapter,
 } from '@/features/story/schemas/story.schema'
 import { Button } from '@/shared/components/ui/Button'
@@ -309,10 +310,22 @@ function CastStep({ saga, onNavigate }: StoryStepProps) {
   const chapter = saga.chapters.find((c) => c.id === saga.selectedId) ?? null
   const [name, setName] = useState('')
   const [rank, setRank] = useState('')
-  // True after picking a real athlete — rank becomes a read-only snapshot.
+  // True after picking a real athlete — rank + avatar become a read-only
+  // snapshot pulled from their armory profile.
   const [fromProfile, setFromProfile] = useState(false)
-  const [blurb, setBlurb] = useState('')
+  const [avatar, setAvatar] = useState<StoryAsset>(EMPTY_STORY_ASSET)
+  const [profileUserId, setProfileUserId] = useState<string | null>(null)
+  const [armoryHandle, setArmoryHandle] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
+
+  const resetForm = () => {
+    setName('')
+    setRank('')
+    setFromProfile(false)
+    setAvatar(EMPTY_STORY_ASSET)
+    setProfileUserId(null)
+    setArmoryHandle(null)
+  }
 
   const add = async () => {
     if (!chapter) return
@@ -325,11 +338,11 @@ function CastStep({ saga, onNavigate }: StoryStepProps) {
     try {
       const res = await upsertCast({
         chapterId: chapter.id,
-        actId: null,
         name: cleanName,
         rank,
-        blurb,
-        avatar: EMPTY_STORY_ASSET,
+        avatar,
+        profileUserId,
+        armoryHandle,
         sortOrder: chapter.cast.length + 1,
       })
       if (!res.ok) {
@@ -337,10 +350,7 @@ function CastStep({ saga, onNavigate }: StoryStepProps) {
         return
       }
       toast.success(`“${cleanName}” joined the cast.`)
-      setName('')
-      setRank('')
-      setFromProfile(false)
-      setBlurb('')
+      resetForm()
       await saga.reload()
     } finally {
       setAdding(false)
@@ -349,7 +359,7 @@ function CastStep({ saga, onNavigate }: StoryStepProps) {
 
   return (
     <SetupStepBody
-      intro="The cast is the saga's character roster — CMS-authored warriors that appear alongside the chapter. Optional, but it gives the drop its army. Avatars are added in the full editor."
+      intro="The cast is the saga's character roster — search a real athlete to enlist them (their rank and profile picture come across automatically), or type a name for a lore character. Full avatars + reorder live in the full editor."
       status={
         chapter
           ? {
@@ -378,12 +388,23 @@ function CastStep({ saga, onNavigate }: StoryStepProps) {
               name={name}
               onNameChange={(next) => {
                 setName(next)
+                // Re-entering free text drops the athlete link + snapshot.
                 setFromProfile(false)
+                setProfileUserId(null)
+                setArmoryHandle(null)
+                setAvatar(EMPTY_STORY_ASSET)
               }}
               onProfileSelect={(snapshot) => {
                 setName(snapshot.name)
                 setRank(snapshot.rank)
                 setFromProfile(true)
+                setProfileUserId(snapshot.userId)
+                setArmoryHandle(snapshot.armoryHandle)
+                setAvatar(
+                  snapshot.avatarUrl.trim()
+                    ? { ...EMPTY_STORY_ASSET, kind: 'image', url: snapshot.avatarUrl.trim() }
+                    : EMPTY_STORY_ASSET,
+                )
               }}
             />
             <FormField
@@ -391,8 +412,8 @@ function CastStep({ saga, onNavigate }: StoryStepProps) {
               labelStyle="stacked"
               hint={
                 fromProfile
-                  ? 'Derived from the athlete’s armory (claims only) — a snapshot; it does not live-update.'
-                  : 'Free text — defaults to Recruit when blank.'
+                  ? 'Set automatically from the athlete’s armory — a snapshot; it does not live-update.'
+                  : 'Free text for lore characters — defaults to Recruit when blank.'
               }
             >
               <Input
@@ -403,14 +424,6 @@ function CastStep({ saga, onNavigate }: StoryStepProps) {
               />
             </FormField>
           </div>
-          <FormField label="Blurb" labelStyle="stacked">
-            <Textarea
-              density="compact"
-              rows={2}
-              value={blurb}
-              onChange={(e) => setBlurb(e.target.value)}
-            />
-          </FormField>
           <Button
             type="button"
             variant="primary"

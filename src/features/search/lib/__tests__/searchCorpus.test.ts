@@ -54,7 +54,7 @@ const mockChapter: StoryChapter = {
   colors: { cover: '#26211d', foil: '#c8a45a', pageEdge: '#efe4c6', heading: '#221b10', text: '#4c4030' },
   isPublished: true,
   acts: [{ id: 'act-1', actNumber: 1, title: 'The First Strike', story: 'The hammer fell at dawn.', asset: { kind: 'none', mediaId: null, storagePath: null, url: null, alt: '', width: null, height: null, poster: null } }],
-  cast: [{ id: 'cast-1', actId: null, name: 'The General', rank: 'General', blurb: 'Leads the army.', avatar: { kind: 'none', mediaId: null, storagePath: null, url: null, alt: '', width: null, height: null, poster: null }, sortOrder: 0 }],
+  cast: [{ id: 'cast-1', actId: null, name: 'The General', rank: 'General', blurb: 'Leads the army.', profileUserId: null, armoryHandle: null, avatar: { kind: 'none', mediaId: null, storagePath: null, url: null, alt: '', width: null, height: null, poster: null }, sortOrder: 0 }],
 }
 
 vi.mock('@/app/config/runtime', () => ({

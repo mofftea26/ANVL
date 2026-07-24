@@ -49,12 +49,29 @@ export function parseStoryAsset(raw: unknown): StoryAsset {
 
 export const storyCastMemberSchema = z.object({
   id: z.string(),
-  actId: z.string().nullable().default(null),
   name: z.string(),
+  /**
+   * Rank title (e.g. "Oathbound II"). Auto-derived from the linked athlete's
+   * armory at pick time — a snapshot, not author-entered.
+   */
   rank: z.string().default('Recruit'),
-  blurb: z.string().default(''),
   avatar: storyAssetSchema.default(EMPTY_STORY_ASSET),
   sortOrder: z.number().default(0),
+  /** Linked athlete's profile id (null for lore characters). */
+  profileUserId: z.string().nullable().default(null),
+  /**
+   * Snapshot of the athlete's minted armory handle — present only when the
+   * armory was public at pick time, so the storefront mention links to their
+   * guest armory. Null → the name renders highlighted but not linked.
+   */
+  armoryHandle: z.string().nullable().default(null),
+  /**
+   * Legacy fields, kept OPTIONAL so pre-rework rows still parse. No longer
+   * surfaced in the editor or storefront (every cast member now appears in the
+   * whole chapter); dropped to their defaults on the next save.
+   */
+  actId: z.string().nullable().default(null),
+  blurb: z.string().default(''),
 })
 export type StoryCastMember = z.infer<typeof storyCastMemberSchema>
 

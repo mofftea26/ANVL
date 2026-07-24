@@ -172,8 +172,6 @@ export function StoryEditor() {
             />
             <CastListEditor
               chapterId={selected.id}
-              chapterSlug={selected.slug}
-              acts={selected.acts}
               cast={selected.cast}
               onChanged={reload}
             />

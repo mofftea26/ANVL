@@ -2,7 +2,9 @@ import { AnvlCrest } from '@/shared/assets/brand'
 import { formatChapterNumber, type StoryChapter } from '@/features/story/schemas/story.schema'
 import { StoryMedia } from '@/features/story/components/StoryMedia'
 import { CastRoster } from '@/features/story/components/CastRoster'
+import { CastText } from '@/features/story/components/CastMention'
 import { chapterCastMembers } from '@/features/story/lib/chapterPages'
+import type { StoryCastMember } from '@/features/story/schemas/story.schema'
 import type { BookSpread } from '@/features/story/lib/bookSpreads'
 
 type Spread = Extract<BookSpread, { kind: 'spread' }>
@@ -58,7 +60,11 @@ export function BookRightPage({ spread, chapter, pageNo, total }: PageProps) {
       />
 
       <div className="absolute inset-x-[34px] bottom-[52px] top-[54px] overflow-hidden">
-        {spread.roster ? <RosterBody chapter={chapter} /> : <ActBody spread={spread} />}
+        {spread.roster ? (
+          <RosterBody chapter={chapter} />
+        ) : (
+          <ActBody spread={spread} cast={chapter.cast} />
+        )}
       </div>
 
       <PageFooter pageNo={pageNo} total={total} side="right" />
@@ -66,7 +72,7 @@ export function BookRightPage({ spread, chapter, pageNo, total }: PageProps) {
   )
 }
 
-function ActBody({ spread }: { spread: Spread }) {
+function ActBody({ spread, cast }: { spread: Spread; cast: readonly StoryCastMember[] }) {
   return (
     <div className="space-y-3.5">
       {spread.part === 1 ? (
@@ -87,7 +93,7 @@ function ActBody({ spread }: { spread: Spread }) {
 
       {spread.paras.map((text, i) => (
         <p key={i} className="text-[15.5px] leading-[1.6] text-[var(--color-text-muted)]">
-          {text}
+          <CastText text={text} cast={cast} />
         </p>
       ))}
     </div>

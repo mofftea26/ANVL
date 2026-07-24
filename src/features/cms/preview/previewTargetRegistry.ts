@@ -14,6 +14,7 @@
 export type PreviewEditorRoute =
   | '/admin'
   | '/admin/shop'
+  | '/admin/products'
   | '/admin/content'
   | '/admin/about'
   | '/admin/coming-soon'
@@ -42,6 +43,7 @@ const PREVIEW_TARGET_REGISTRY: PreviewTargetRegistryEntry[] = [
   // Whole-page marker — every editor rings it, none owns it.
   { pattern: /^site:page$/, adminRoute: null },
   { pattern: /^shop:(hero|toolbar|grid)$/, adminRoute: '/admin/shop' },
+  { pattern: /^pdp:(materials|care|details)$/, adminRoute: '/admin/products' },
   { pattern: /^the-oath:(hero|manifesto|tenets|products|finale)$/, adminRoute: '/admin/content' },
   { pattern: /^about:(hero|marquee)$/, adminRoute: '/admin/about' },
   { pattern: /^about:orb-\d+$/, adminRoute: '/admin/about' },

@@ -67,7 +67,14 @@ describe('CastProfileNameField', () => {
     search.mockResolvedValue({
       ok: true,
       hits: [
-        { userId: 'u1', fullName: 'Jad Haddad', armoryHandle: 'jad', claimCount: 6 },
+        {
+          userId: 'u1',
+          fullName: 'Jad Haddad',
+          armoryHandle: 'jad',
+          armoryPublic: true,
+          avatarUrl: 'https://cdn.example.com/jad.jpg',
+          claimCount: 6,
+        },
       ],
     })
     const user = userEvent.setup()
@@ -82,7 +89,13 @@ describe('CastProfileNameField', () => {
 
     await user.pointer({ keys: '[MouseLeft]', target: option })
     await waitFor(() =>
-      expect(onProfileSelect).toHaveBeenCalledWith({ name: 'Jad Haddad', rank: 'Oathbound I' }),
+      expect(onProfileSelect).toHaveBeenCalledWith({
+        name: 'Jad Haddad',
+        rank: 'Oathbound I',
+        userId: 'u1',
+        avatarUrl: 'https://cdn.example.com/jad.jpg',
+        armoryHandle: 'jad',
+      }),
     )
   })
 

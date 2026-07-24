@@ -5,10 +5,10 @@ import type { Product } from '@/features/products/types/product.types'
 import type { ShopConfig } from '@/features/cms/shop/shopExperience.zod'
 import type { PdpVariant } from '@/features/products/pdp/hooks/usePdpVariant'
 import { colorHasNoStock } from '@/features/products/pdp/hooks/usePdpVariant'
-import type { ResolvedPdpContent } from '@/features/products/pdp/resolvePdpContent'
+import type { ResolvedPdpContent, ResolvedPdpCareItem } from '@/features/products/pdp/resolvePdpContent'
 import type { PdpProductSupport } from '@/features/products/pdp/PdpSupportDetails'
 import { resolveCareItems } from '@/features/cms/support/resolveSupportContent'
-import { CARE_ICON_COMPONENTS, formatCareValue } from '@/features/support/components'
+import { PdpMaterialCard, PdpCareCards, PdpDetailCard } from '@/features/products/pdp/PdpBentoCards'
 import { extractYoutubeVideoId } from '@/features/products/pdp/videoEmbed'
 import { Container } from '@/shared/components/ui'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
@@ -83,17 +83,25 @@ export function PdpBento({
   const youtube = extractYoutubeVideoId(product.shop?.videoUrl)
   const hasLifestyle = Boolean(content.lifestyleImage)
 
-  // Structured care from the support blob wins; legacy pdp_content lines fall back.
-  const structuredCare =
+  // Care resolution across two authoring surfaces: the products editor
+  // (`content.careItems`, flagged by `careAuthored`) wins; then the support
+  // care guide's structured items; then the product/legacy fallback that
+  // `resolvePdpContent` already folded into `content.careItems`.
+  const supportCare: ResolvedPdpCareItem[] =
     support?.care && support.care.items.some((item) => item.name.trim().length > 0)
       ? resolveCareItems(support.care)
       : []
+  const careCards: ResolvedPdpCareItem[] = content.careAuthored
+    ? content.careItems
+    : supportCare.length > 0
+      ? supportCare
+      : content.careItems
 
   const showStory = pdp.showStory && (content.storyBody || hasLifestyle)
-  const showMaterials = pdp.showMaterials && (content.materialTitle || content.materialNote || content.materialMacro)
-  const showCare = pdp.showMaterials && (structuredCare.length > 0 || content.care.length > 0)
+  const showMaterials = pdp.showMaterials && content.materials.length > 0
+  const showCare = pdp.showMaterials && careCards.length > 0
   const showColorways = pdp.showColorways && product.colorways.length > 1
-  const showDetails = pdp.showDesignDetails && content.designDetails.length > 0
+  const showDetails = pdp.showDesignDetails && content.details.length > 0
   const showSizeGuide = pdp.showSizeGuide
   const showStoryBook = pdp.showStoryBook && Boolean(hasStoryBook)
 
@@ -131,52 +139,19 @@ export function PdpBento({
             </Tile>
           ) : null}
 
-          {showMaterials ? (
-            <Tile id="pdp-materials" className="justify-end md:col-span-1 md:row-span-2" bg={content.materialMacro}>
-              {!content.materialMacro ? (
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0"
-                  style={{ background: 'repeating-linear-gradient(125deg, var(--shop-card-bg) 0 2px, var(--shop-image-bg) 2px 9px)' }}
+          {showMaterials
+            ? content.materials.map((material, i) => (
+                <PdpMaterialCard
+                  key={material.id}
+                  material={material}
+                  anchorId={i === 0 ? 'pdp-materials' : undefined}
+                  previewTarget={i === 0 ? 'pdp:materials' : undefined}
                 />
-              ) : (
-                <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[var(--shop-bg)]/90 to-transparent" />
-              )}
-              <div className="relative z-10">
-                <p className="anvl-display mb-1 text-[10px] tracking-[0.26em] text-[var(--shop-accent)]">Material</p>
-                <p className="text-sm font-medium text-[var(--shop-text)]">{content.materialTitle || 'Premium fabric'}</p>
-                {content.materialNote ? <p className="anvl-micro mt-0.5 text-[var(--shop-text-muted)]">{content.materialNote}</p> : null}
-              </div>
-            </Tile>
-          ) : null}
+              ))
+            : null}
 
           {showCare ? (
-            <Tile id="pdp-care" eyebrow="Care" className="md:col-span-1 md:row-span-1">
-              <ul className="space-y-1 overflow-hidden text-xs text-[var(--shop-text-muted)]">
-                {structuredCare.length > 0
-                  ? structuredCare.slice(0, 4).map((item) => {
-                      const Icon = CARE_ICON_COMPONENTS[item.icon]
-                      const value = formatCareValue(item.value)
-                      return (
-                        <li key={item.id} className="flex items-center gap-2">
-                          <span className="shrink-0 text-[var(--shop-accent)]">
-                            <Icon size={14} aria-hidden="true" />
-                          </span>
-                          <span className="line-clamp-1">
-                            {item.name}
-                            {value ? ` — ${value}` : ''}
-                          </span>
-                        </li>
-                      )
-                    })
-                  : content.care.slice(0, 4).map((c) => (
-                      <li key={c} className="flex gap-2">
-                        <span className="text-[var(--shop-accent)]">·</span>
-                        <span className="line-clamp-1">{c}</span>
-                      </li>
-                    ))}
-              </ul>
-            </Tile>
+            <PdpCareCards items={careCards} anchorId="pdp-care" previewTarget="pdp:care" />
           ) : null}
 
           {showSizeGuide ? (
@@ -227,20 +202,17 @@ export function PdpBento({
             </Tile>
           ) : null}
 
-          {showDetails ? (
-            <Tile id="pdp-details" eyebrow="Forged details" className="md:col-span-2 md:row-span-1">
-              <ul className="grid grid-cols-1 gap-x-4 gap-y-1 overflow-hidden sm:grid-cols-2">
-                {content.designDetails.slice(0, 6).map((detail, i) => (
-                  <li key={detail} className="flex gap-2 text-xs text-[var(--shop-text-muted)]">
-                    <span className="anvl-display shrink-0 text-[var(--shop-accent)]">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <span className="line-clamp-1">{detail}</span>
-                  </li>
-                ))}
-              </ul>
-            </Tile>
-          ) : null}
+          {showDetails
+            ? content.details.slice(0, 6).map((detail, i) => (
+                <PdpDetailCard
+                  key={detail.id}
+                  detail={detail}
+                  index={i}
+                  anchorId={i === 0 ? 'pdp-details' : undefined}
+                  previewTarget={i === 0 ? 'pdp:details' : undefined}
+                />
+              ))
+            : null}
 
           {showStoryBook ? (
             <Tile className="justify-between md:col-span-2 md:row-span-1">

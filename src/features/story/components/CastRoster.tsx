@@ -2,6 +2,7 @@ import { Crown, Shield, Star, Swords, type LucideIcon } from '@/shared/icons'
 import { cn } from '@/shared/lib/cn'
 import type { StoryCastMember } from '@/features/story/schemas/story.schema'
 import { resolveStoryAsset } from '@/features/story/lib/resolveStoryAsset'
+import { CastMention } from '@/features/story/components/CastMention'
 
 /** Icon per known rank — color is never the sole signal (a11y). */
 const RANK_ICON: Record<string, LucideIcon> = {
@@ -61,17 +62,12 @@ export function CastRoster({ cast, title = 'The Roster', className }: CastRoster
               </div>
               <div className="min-w-0">
                 <p className="anvl-heading truncate text-lg leading-tight text-[var(--color-heading)]">
-                  {member.name}
+                  <CastMention member={member} label={member.name} />
                 </p>
                 <p className="mt-0.5 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-[var(--color-highlight-bright)]">
                   <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                   {member.rank}
                 </p>
-                {member.blurb ? (
-                  <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
-                    {member.blurb}
-                  </p>
-                ) : null}
               </div>
             </li>
           )

@@ -3,6 +3,7 @@ import { AnvlCrest } from '@/shared/assets/brand'
 import { formatChapterNumber, type StoryChapter } from '@/features/story/schemas/story.schema'
 import { StoryMedia } from '@/features/story/components/StoryMedia'
 import { CastRoster } from '@/features/story/components/CastRoster'
+import { CastText } from '@/features/story/components/CastMention'
 import { chapterCastMembers } from '@/features/story/lib/chapterPages'
 import { spreadPageNumbers, type BookSpread } from '@/features/story/lib/bookSpreads'
 import { resolveBookCover } from '@/features/story/components/book3d/bookConfig'
@@ -81,7 +82,7 @@ export function ChapterBookFlat({ chapter, spreads, current }: ChapterBookFlatPr
                 <div className="space-y-3.5">
                   {spread.paras.map((text, i) => (
                     <p key={i} className="text-[15px] leading-[1.65] text-[var(--color-text-muted)]">
-                      {text}
+                      <CastText text={text} cast={chapter.cast} />
                     </p>
                   ))}
                 </div>

@@ -4,6 +4,7 @@ import type { Control, UseFormRegister, UseFormSetValue } from 'react-hook-form'
 import { useFieldArray, useWatch } from 'react-hook-form'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import { HotspotPositionField } from '@/features/admin/components/HotspotPositionField'
+import { useSortableList } from '@/features/admin/hooks/useSortableList'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { MediaLibraryPickerModal } from '@/features/admin/media/MediaLibraryPickerModal'
@@ -63,6 +64,7 @@ export function OathTenetsFields({
     products.move(from, to)
     selectProduct(to)
   }
+  const sortable = useSortableList({ length: products.fields.length, onMove: moveProduct })
 
   const productOptionLabel = (i: number): string => {
     const title =
@@ -130,8 +132,11 @@ export function OathTenetsFields({
                 role="tab"
                 aria-selected={active}
                 onClick={() => selectProduct(i)}
+                title="Click to edit · drag to reorder"
+                {...sortable.getHandleProps(i)}
+                {...sortable.getItemProps(i)}
                 className={cn(
-                  'focus-ring shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-medium transition-colors',
+                  'focus-ring shrink-0 cursor-grab whitespace-nowrap rounded-full border px-4 py-2 text-xs font-medium transition-colors active:cursor-grabbing data-[drag-over]:border-[var(--color-accent)] data-[drag-over]:ring-2 data-[drag-over]:ring-[var(--color-accent)]',
                   active
                     ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-heading)]'
                     : 'border-[var(--color-line)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]/40 hover:text-[var(--color-text)]',

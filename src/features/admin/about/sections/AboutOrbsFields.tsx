@@ -5,6 +5,7 @@ import { useFieldArray, useWatch } from 'react-hook-form'
 import { Button } from '@/shared/components/ui/Button'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import { HotspotPositionField } from '@/features/admin/components/HotspotPositionField'
+import { useSortableList } from '@/features/admin/hooks/useSortableList'
 import { AdminPreviewLocateButton } from '@/features/admin/preview/AdminPreviewLocateButton'
 import { setPreviewHover } from '@/features/admin/preview/adminPreviewStore'
 import { previewFieldAnchorId } from '@/features/cms/preview'
@@ -97,6 +98,7 @@ export function AboutOrbsFields({
     orbs.move(from, to)
     selectOrb(to)
   }
+  const sortable = useSortableList({ length: orbs.fields.length, onMove: moveOrb })
 
   const swatchColor = (i: number): string => {
     const current = watched?.[i]?.color?.trim()
@@ -211,9 +213,12 @@ export function AboutOrbsFields({
                 // Inspector anchor — ALWAYS in the DOM (unlike the fieldset).
                 id={previewFieldAnchorId(`about:orb-${i + 1}`)}
                 onClick={() => selectOrb(i)}
+                title="Click to edit · drag to reorder"
                 {...hoverProps(i)}
+                {...sortable.getHandleProps(i)}
+                {...sortable.getItemProps(i)}
                 className={cn(
-                  'focus-ring inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-medium transition-colors',
+                  'focus-ring inline-flex shrink-0 cursor-grab items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-medium transition-colors active:cursor-grabbing data-[drag-over]:border-[var(--color-accent)] data-[drag-over]:ring-2 data-[drag-over]:ring-[var(--color-accent)]',
                   active
                     ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-heading)]'
                     : 'border-[var(--color-line)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]/40 hover:text-[var(--color-text)]',

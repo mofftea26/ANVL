@@ -30,6 +30,15 @@ function deriveSnapshotRank(claimCount: number, rules: GamificationRules | undef
 export interface CastProfileSnapshot {
   name: string
   rank: string
+  /** Linked athlete profile id. */
+  userId: string
+  /** Profile picture URL ('' when none). */
+  avatarUrl: string
+  /**
+   * Minted armory handle IFF the armory is public — the storefront links the
+   * mention to /armory/<handle> only when this is set.
+   */
+  armoryHandle: string | null
 }
 
 interface CastProfileNameFieldProps {
@@ -136,6 +145,10 @@ export function CastProfileNameField({
     onProfileSelect({
       name: hit.fullName || (hit.armoryHandle ? `@${hit.armoryHandle}` : 'Athlete'),
       rank: deriveSnapshotRank(hit.claimCount, rules),
+      userId: hit.userId,
+      avatarUrl: hit.avatarUrl,
+      // Only a public, minted handle becomes a live guest-armory link.
+      armoryHandle: hit.armoryPublic && hit.armoryHandle ? hit.armoryHandle : null,
     })
   }
 

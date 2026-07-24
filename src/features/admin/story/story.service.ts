@@ -20,7 +20,7 @@ const CHAPTER_SELECT =
   'id, slug, chapter_number, title, subtitle, description, product_slug, drop_label, drop_slug, cover_asset, cover_logo, cover_colors, sort_order, is_published'
 const ACT_SELECT = 'id, chapter_id, act_number, title, story, asset, sort_order'
 const CAST_SELECT =
-  'id, chapter_id, act_id, name, rank, blurb, avatar_asset, sort_order'
+  'id, chapter_id, act_id, name, rank, blurb, avatar_asset, sort_order, profile_user_id, armory_handle'
 
 function client(): StoryResult<SupabaseClient> {
   const c = getAdminSupabaseBrowserClient()
@@ -84,12 +84,19 @@ export type ActDraft = {
 export type CastDraft = {
   id?: string
   chapterId: string
-  actId: string | null
   name: string
   rank: string
-  blurb: string
   avatar: StoryAsset
   sortOrder: number
+  /** Linked athlete snapshot (null for lore characters). */
+  profileUserId?: string | null
+  armoryHandle?: string | null
+  /**
+   * Legacy fields — accepted for back-compat with existing callers but no
+   * longer authored. `blurb` defaults to '' and `act_id` to null on write.
+   */
+  actId?: string | null
+  blurb?: string
 }
 
 /** Load the full saga (including unpublished) for the admin editor. */
@@ -194,12 +201,14 @@ export async function upsertCast(draft: CastDraft): Promise<StoryResult<string>>
   if (!c.ok) return c
   const row = {
     chapter_id: draft.chapterId,
-    act_id: draft.actId,
+    act_id: draft.actId ?? null,
     name: draft.name.trim(),
     rank: draft.rank.trim() || 'Recruit',
-    blurb: draft.blurb.trim(),
+    blurb: (draft.blurb ?? '').trim(),
     avatar_asset: asset(draft.avatar),
     sort_order: draft.sortOrder,
+    profile_user_id: draft.profileUserId ?? null,
+    armory_handle: draft.armoryHandle?.trim() || null,
   }
   if (!row.name) return { ok: false, error: 'Character needs a name.' }
 

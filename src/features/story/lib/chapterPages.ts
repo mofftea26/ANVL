@@ -8,9 +8,12 @@ import {
  * (Spread assembly itself lives in `bookSpreads.ts`.)
  */
 
-/** Cast attached to the chapter as a whole (not a specific act). */
+/**
+ * The chapter's cast. Every enlisted member appears in the whole chapter — the
+ * old per-act "appears in" scoping was removed, so this is the full roster.
+ */
 export function chapterCastMembers(chapter: StoryChapter) {
-  return chapter.cast.filter((m) => m.actId === null)
+  return chapter.cast
 }
 
 export function chapterDropLabel(chapter: StoryChapter): string {
