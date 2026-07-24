@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { careItemSchema } from '@/features/cms/support/supportContent.zod'
+import { pdpMaterialSchema } from '@/features/cms/pdpContent/pdpContent.zod'
 
 /**
  * Per-product PASSPORT content — the editorial layer of the /p/$token passport
@@ -32,6 +34,12 @@ export const passportMaterialSectionSchema = z.object({
   note: z.string().catch(''),
   /** Macro fabric shot (media id). */
   macroAsset: z.string().catch(''),
+  /**
+   * Structured fabric composition (name + % + gsm + image) — the same shape
+   * the PDP authors, rendered as bento cards. Preferred at resolve time when
+   * non-empty; the legacy `title`/`note` are kept for backward compatibility.
+   */
+  materials: z.array(pdpMaterialSchema).catch([]),
 })
 
 export const passportCareSectionSchema = z.object({
@@ -39,10 +47,17 @@ export const passportCareSectionSchema = z.object({
   steps: z.array(z.string()).catch([]),
   /** Optional care illustration (media id). */
   asset: z.string().catch(''),
-  /** Care-symbol preset keys (see careSymbols.tsx) — rendered as icons. */
+  /** Legacy care-symbol preset keys (passport careSymbols.tsx) — kept forever;
+   * superseded by `careItems` for new authoring. */
   symbols: z.array(z.string()).catch([]),
   /** Longer "why" notes shown when a care step is expanded. */
   notes: z.array(z.string()).catch([]),
+  /**
+   * Structured care instructions authored with the SHARED CareSelector (same
+   * as the PDP): icon + name + optional value + note. Preferred at resolve
+   * time when non-empty; renders the real textile care symbols.
+   */
+  careItems: z.array(careItemSchema).catch([]),
 })
 
 /** Technical specifications — the CRAFT tab's data panel. */
@@ -117,7 +132,12 @@ export const passportOriginSectionSchema = z.object({
 export const passportProductContentSchema = z.object({
   identity: passportIdentitySectionSchema.catch({ tagline: '', authenticityNote: '' }),
   piece: passportPieceSectionSchema.catch({ heroRender: '', gallery: [] }),
-  material: passportMaterialSectionSchema.catch({ title: '', note: '', macroAsset: '' }),
+  material: passportMaterialSectionSchema.catch({
+    title: '',
+    note: '',
+    macroAsset: '',
+    materials: [],
+  }),
   specs: passportSpecsSectionSchema.catch({
     construction: '',
     fitType: '',
@@ -143,6 +163,7 @@ export const passportProductContentSchema = z.object({
     asset: '',
     symbols: [],
     notes: [],
+    careItems: [],
   }),
   details: passportDetailsSectionSchema.catch({
     heading: '',
@@ -166,7 +187,7 @@ export type PassportProductContent = z.infer<typeof passportProductContentSchema
 export const DEFAULT_PASSPORT_PRODUCT_CONTENT: PassportProductContent = {
   identity: { tagline: '', authenticityNote: '' },
   piece: { heroRender: '', gallery: [] },
-  material: { title: '', note: '', macroAsset: '' },
+  material: { title: '', note: '', macroAsset: '', materials: [] },
   specs: {
     construction: '',
     fitType: '',
@@ -186,7 +207,7 @@ export const DEFAULT_PASSPORT_PRODUCT_CONTENT: PassportProductContent = {
   },
   forgeNotes: [],
   hotspots: [],
-  care: { intro: '', steps: [], asset: '', symbols: [], notes: [] },
+  care: { intro: '', steps: [], asset: '', symbols: [], notes: [], careItems: [] },
   details: { heading: '', story: '', facts: [], funFact: '', asset: '' },
   origin: { label: '', place: '', story: '', asset: '', madeIn: '', designedIn: '' },
 }

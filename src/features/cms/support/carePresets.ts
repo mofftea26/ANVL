@@ -19,24 +19,44 @@ export interface CareInstructionPreset {
 }
 
 export const CARE_INSTRUCTION_PRESETS: readonly CareInstructionPreset[] = [
-  { key: 'machine-wash', icon: 'washing-machine', name: 'Machine wash', needsValue: 'temperature', defaultValue: '30' },
-  { key: 'machine-wash-cold', icon: 'snowflake', name: 'Machine wash cold' },
-  { key: 'gentle-cycle', icon: 'washing-machine', name: 'Gentle cycle' },
-  { key: 'hand-wash', icon: 'hand-soap', name: 'Hand wash' },
-  { key: 'wash-inside-out', icon: 'shirt', name: 'Wash inside out' },
+  // Wash — the tub. `machine-wash` keeps its free temperature input; discrete
+  // temperature presets give the recognisable numbered-tub symbols to pick.
+  { key: 'machine-wash', icon: 'wash', name: 'Machine wash', needsValue: 'temperature', defaultValue: '30' },
+  { key: 'machine-wash-30', icon: 'wash-30', name: 'Machine wash 30°C' },
+  { key: 'machine-wash-40', icon: 'wash-40', name: 'Machine wash 40°C' },
+  { key: 'machine-wash-50', icon: 'wash-50', name: 'Machine wash 50°C' },
+  { key: 'machine-wash-60', icon: 'wash-60', name: 'Machine wash 60°C' },
+  { key: 'machine-wash-cold', icon: 'wash-cold', name: 'Machine wash cold' },
+  { key: 'gentle-cycle', icon: 'wash-gentle', name: 'Gentle cycle' },
+  { key: 'hand-wash', icon: 'wash-hand', name: 'Hand wash' },
+  { key: 'wash-inside-out', icon: 'wash-inside-out', name: 'Wash inside out' },
   { key: 'wash-like-colors', icon: 'droplet', name: 'Wash with like colors' },
-  { key: 'do-not-bleach', icon: 'prohibit', name: 'Do not bleach' },
+  { key: 'do-not-wash', icon: 'do-not-wash', name: 'Do not wash' },
+  // Bleach — the triangle.
+  { key: 'bleach-when-needed', icon: 'bleach', name: 'Bleach when needed' },
+  { key: 'do-not-bleach', icon: 'do-not-bleach', name: 'Do not bleach' },
   { key: 'no-fabric-softener', icon: 'spray-bottle', name: 'No fabric softener' },
-  { key: 'tumble-dry-low', icon: 'wind', name: 'Tumble dry low' },
-  { key: 'do-not-tumble-dry', icon: 'prohibit', name: 'Do not tumble dry' },
-  { key: 'hang-dry', icon: 'coat-hanger', name: 'Hang dry' },
-  { key: 'dry-flat', icon: 'shirt', name: 'Lay flat to dry' },
+  // Tumble dry — the circle in the square.
+  { key: 'tumble-dry', icon: 'tumble-dry', name: 'Tumble dry' },
+  { key: 'tumble-dry-low', icon: 'tumble-dry-low', name: 'Tumble dry low' },
+  { key: 'tumble-dry-high', icon: 'tumble-dry-high', name: 'Tumble dry high' },
+  { key: 'do-not-tumble-dry', icon: 'do-not-tumble-dry', name: 'Do not tumble dry' },
+  // Natural dry — the square.
+  { key: 'hang-dry', icon: 'line-dry', name: 'Line dry' },
+  { key: 'dry-flat', icon: 'dry-flat', name: 'Lay flat to dry' },
+  { key: 'drip-dry', icon: 'drip-dry', name: 'Drip dry' },
   { key: 'dry-in-shade', icon: 'sun', name: 'Dry away from direct sun' },
-  { key: 'iron', icon: 'thermometer', name: 'Iron', needsValue: 'level', defaultValue: 'low' },
-  { key: 'do-not-iron', icon: 'prohibit', name: 'Do not iron' },
+  // Iron — the iron. `iron` keeps its free level input; discrete heat presets
+  // give the recognisable one/two/three-dot symbols.
+  { key: 'iron', icon: 'iron', name: 'Iron', needsValue: 'level', defaultValue: 'low' },
+  { key: 'iron-low', icon: 'iron-low', name: 'Iron low' },
+  { key: 'iron-medium', icon: 'iron-medium', name: 'Iron medium' },
+  { key: 'iron-high', icon: 'iron-high', name: 'Iron high' },
+  { key: 'do-not-iron', icon: 'do-not-iron', name: 'Do not iron' },
   { key: 'avoid-high-heat', icon: 'flame', name: 'Keep away from high heat' },
-  { key: 'dry-clean', icon: 'sparkle', name: 'Dry clean' },
-  { key: 'do-not-dry-clean', icon: 'prohibit', name: 'Do not dry clean' },
+  // Dry clean — the circle.
+  { key: 'dry-clean', icon: 'dry-clean', name: 'Dry clean' },
+  { key: 'do-not-dry-clean', icon: 'do-not-dry-clean', name: 'Do not dry clean' },
 ]
 
 /** Look up a preset by its stable key. */

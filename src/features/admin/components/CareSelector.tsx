@@ -10,7 +10,7 @@ import {
   type CareInstructionPreset,
 } from '@/features/cms/support/carePresets'
 import type { CareItem } from '@/features/cms/support/supportContent.zod'
-import { CARE_ICON_COMPONENTS } from '@/features/support/components/careIcons'
+import { CARE_ICON_COMPONENTS, careIconMeaning } from '@/features/support/components/careIcons'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { IconButton } from '@/shared/components/ui/IconButton'
@@ -109,6 +109,8 @@ export function CareSelector({ items, onChange }: CareSelectorProps) {
         const preset = presetForItem(item)
         const selectValue = preset?.key ?? (item.name.trim() ? CUSTOM_KEY : '')
         const Icon = CARE_ICON_COMPONENTS[item.icon]
+        const meaning = careIconMeaning(item.icon)
+        const displayName = preset?.name ?? (item.name.trim() || 'No instruction chosen yet')
         return (
           <div
             key={item.id || index}
@@ -156,6 +158,22 @@ export function CareSelector({ items, onChange }: CareSelectorProps) {
               </div>
             </div>
 
+            {/* Prominent symbol preview — the customer-facing mark at a legible
+                size, so the author sees exactly how it reads, not just a title. */}
+            <div className="flex items-center gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)]/40 px-3 py-2">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-heading)]">
+                <Icon size={28} aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium text-[var(--color-text)]">
+                  {displayName}
+                </span>
+                <span className="block truncate text-xs text-[var(--color-text-muted)]">
+                  {meaning ?? 'The symbol shown next to this instruction on the product.'}
+                </span>
+              </span>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-2">
               <FormField label="Instruction" labelStyle="micro">
                 <Select
@@ -170,8 +188,10 @@ export function CareSelector({ items, onChange }: CareSelectorProps) {
                     const PresetIcon = CARE_ICON_COMPONENTS[p.icon]
                     return (
                       <SelectItem key={p.key} value={p.key} density="compact">
-                        <span className="flex items-center gap-2">
-                          <PresetIcon size={ICON_SIZE.sm} aria-hidden="true" />
+                        <span className="flex items-center gap-2.5">
+                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded border border-[var(--color-line)] text-[var(--color-heading)]">
+                            <PresetIcon size={20} aria-hidden="true" />
+                          </span>
                           {p.name}
                         </span>
                       </SelectItem>

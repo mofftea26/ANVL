@@ -4,6 +4,7 @@ import type { ResolvedPassportContent } from '../../lib/resolvePassportContent'
 import type { PassportRelated } from '../../lib/relatedProducts'
 import { recommendSizes, type PassportSizeGuide } from '../../lib/sizeRecommendation'
 import type { PassportView } from '../../schemas/passport.schema'
+import { PdpMaterialCard } from '@/features/products/pdp/PdpBentoCards'
 import { CareGuide } from '../CareGuide'
 import { ForgeNotes } from '../ForgeNotes'
 import { PassportStoryChapter } from '../PassportStoryChapter'
@@ -72,17 +73,30 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
     title: 'Material dossier',
     eyebrow: 'Fabric',
     available: ({ content, product }) =>
-      Boolean(content.material.title || content.material.note || product?.fabric),
+      Boolean(
+        content.material.title ||
+          content.material.note ||
+          content.material.materials.length ||
+          product?.fabric,
+      ),
     teaser: ({ content, product }) =>
       content.material.title || product?.fabric || 'The cloth this piece is cut from.',
     cardImage: ({ content }) => content.material.macroUrl,
     Detail: ({ ctx }) => (
       <div className="space-y-6">
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {ctx.product?.fabric ? <DetailStat term="Fabric" detail={ctx.product.fabric} /> : null}
-          {ctx.product?.gsm ? <DetailStat term="Weight" detail={ctx.product.gsm} /> : null}
-          {ctx.product?.fit ? <DetailStat term="Fit" detail={ctx.product.fit} /> : null}
-        </dl>
+        {ctx.content.material.materials.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {ctx.content.material.materials.map((m) => (
+              <PdpMaterialCard key={m.id} material={m} />
+            ))}
+          </div>
+        ) : (
+          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {ctx.product?.fabric ? <DetailStat term="Fabric" detail={ctx.product.fabric} /> : null}
+            {ctx.product?.gsm ? <DetailStat term="Weight" detail={ctx.product.gsm} /> : null}
+            {ctx.product?.fit ? <DetailStat term="Fit" detail={ctx.product.fit} /> : null}
+          </dl>
+        )}
         {ctx.content.material.note ? (
           <p className="max-w-xl text-sm leading-relaxed text-[var(--color-text-muted)]">
             {ctx.content.material.note}
@@ -171,7 +185,9 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
     title: 'Care ritual',
     eyebrow: 'Preserve',
     available: ({ content }) =>
-      content.care.steps.length > 0 || content.care.symbols.length > 0,
+      content.care.steps.length > 0 ||
+      content.care.symbols.length > 0 ||
+      content.care.careItems.length > 0,
     teaser: ({ content }) =>
       content.care.intro || `${content.care.steps.length} steps to keep the forge sharp.`,
     Detail: ({ ctx }) => <CareGuide care={ctx.content.care} />,

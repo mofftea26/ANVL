@@ -3,13 +3,13 @@ import { mediaAssetPublicUrl } from '@/features/admin/media/mediaAssets.service'
 import type { CmsMediaAsset } from '@/features/admin/media/mediaAssets.types'
 import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotField'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
-import { CARE_SYMBOLS } from '@/features/passport/components/careSymbols'
+import { CareSelector } from '@/features/admin/components/CareSelector'
+import { MaterialsField } from '@/features/admin/components/MaterialsField'
 import { PASSPORT_COUNTRIES } from '@/features/passport/lib/passportCountries'
 import type { PassportProductContent } from '@/features/cms/passportContent/passportContent.zod'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { Textarea } from '@/shared/components/ui'
-import { cn } from '@/shared/lib/cn'
 import { HotspotPlacer } from './HotspotPlacer'
 
 export type PassportPatch = <K extends keyof PassportProductContent>(
@@ -107,6 +107,17 @@ export function MaterialStep({ draft, patch, mediaAssets }: PassportStepProps) {
         mediaId={draft.material.macroAsset}
         onMediaIdChange={(id) => patch('material', { macroAsset: id })}
       />
+      <FormField
+        label="Composition"
+        hint="Structured fabric cards (same editor as products). Blank → the title/note above, then product data."
+        labelStyle="stacked"
+      >
+        <MaterialsField
+          materials={draft.material.materials}
+          onChange={(materials) => patch('material', { materials })}
+          assets={mediaAssets}
+        />
+      </FormField>
     </>
   )
 }
@@ -151,37 +162,14 @@ export function CareStep({ draft, patch, mediaAssets }: PassportStepProps) {
         />
       </FormField>
       <FormField
-        label="Care symbols"
-        hint="Tap to toggle — shown as icons the customer can tap for the meaning."
+        label="Care instructions"
+        hint="The real textile care symbols (same editor as products) — pick each instruction and see its mark."
         labelStyle="stacked"
       >
-        <div className="flex flex-wrap gap-1.5">
-          {CARE_SYMBOLS.map((symbol) => {
-            const on = draft.care.symbols.includes(symbol.key)
-            return (
-              <button
-                key={symbol.key}
-                type="button"
-                aria-pressed={on}
-                onClick={() =>
-                  patch('care', {
-                    symbols: on
-                      ? draft.care.symbols.filter((s) => s !== symbol.key)
-                      : [...draft.care.symbols, symbol.key],
-                  })
-                }
-                className={cn(
-                  'focus-ring rounded-md border px-2 py-1 text-[10px] transition-colors',
-                  on
-                    ? 'border-[var(--color-highlight)] bg-[color-mix(in_oklab,var(--color-highlight)_14%,transparent)] text-[var(--color-heading)]'
-                    : 'border-[var(--color-line)] text-[var(--color-text-muted)]',
-                )}
-              >
-                {symbol.label}
-              </button>
-            )
-          })}
-        </div>
+        <CareSelector
+          items={draft.care.careItems}
+          onChange={(careItems) => patch('care', { careItems })}
+        />
       </FormField>
       <FormField
         label="Steps (one per line)"

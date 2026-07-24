@@ -56,13 +56,14 @@ describe('resolvePassportContent', () => {
       passportContent: {
         'seamless-tee': {
           ...DEFAULT_PASSPORT_PRODUCT_CONTENT,
-          material: { title: 'Wizard fabric', note: '', macroAsset: 'asset-1' },
+          material: { title: 'Wizard fabric', note: '', macroAsset: 'asset-1', materials: [] },
           care: {
             intro: 'Treat it well.',
             steps: ['Authored step'],
             asset: '',
             symbols: ['no-bleach'],
             notes: ['Bleach eats elastane.'],
+            careItems: [],
           },
           details: {
             heading: 'From the wizard',
@@ -106,6 +107,60 @@ describe('resolvePassportContent', () => {
     // Unauthored fields still layer down to pdp content.
     expect(resolved.material.note).toBe('PDP note')
     expect(resolved.details.story).toBe('PDP story')
+  })
+
+  it('resolves structured materials + care items, else falls back to the PDP', () => {
+    const authored = resolvePassportContent({
+      product,
+      passportContent: {
+        'seamless-tee': {
+          ...DEFAULT_PASSPORT_PRODUCT_CONTENT,
+          material: {
+            title: '',
+            note: '',
+            macroAsset: '',
+            materials: [{ id: 'm1', name: 'Merino', percentage: 100, gsm: 210, image: '' }],
+          },
+          care: {
+            intro: '',
+            steps: [],
+            asset: '',
+            symbols: [],
+            notes: [],
+            careItems: [
+              { id: 'c1', icon: 'do-not-bleach', name: 'Do not bleach', value: '', note: '' },
+            ],
+          },
+        },
+      },
+      pdpContent: null,
+      mediaIndex: [],
+      productSlug: 'seamless-tee',
+    })
+    expect(authored.material.materials[0]?.name).toBe('Merino')
+    expect(authored.care.careItems[0]?.icon).toBe('do-not-bleach')
+
+    // Nothing authored on the passport → inherit the PDP's structured lists.
+    const inherited = resolvePassportContent({
+      product,
+      passportContent: {},
+      pdpContent: {
+        storyHeading: '',
+        storyBody: '',
+        materialTitle: '',
+        materialNote: '',
+        care: [],
+        designDetails: [],
+        materials: [{ id: 'pm', name: 'PDP cotton', percentage: 90, gsm: 240 }],
+        careItems: [{ id: 'pc', icon: 'iron-low', name: 'Iron low', value: '', note: '' }],
+        careAuthored: true,
+        details: [],
+      },
+      mediaIndex: [],
+      productSlug: 'seamless-tee',
+    })
+    expect(inherited.material.materials[0]?.name).toBe('PDP cotton')
+    expect(inherited.care.careItems[0]?.icon).toBe('iron-low')
   })
 
   it('handles a missing product entirely (deleted from the catalog)', () => {

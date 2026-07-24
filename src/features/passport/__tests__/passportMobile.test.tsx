@@ -32,7 +32,7 @@ const view: PassportView = {
 const content: ResolvedPassportContent = {
   identity: { tagline: 'Forged for the off-day.', authenticityNote: '' },
   piece: { heroRenderUrl: undefined, gallery: [] },
-  material: { title: 'Heavyweight cotton', note: '240 GSM', macroUrl: undefined },
+  material: { title: 'Heavyweight cotton', note: '240 GSM', macroUrl: undefined, materials: [] },
   specs: {
     construction: 'Seamless knit',
     fitType: 'Relaxed',
@@ -51,7 +51,7 @@ const content: ResolvedPassportContent = {
   },
   forgeNotes: [],
   hotspots: [{ x: 50, y: 30, title: 'Shoulder knit', body: 'Ribbed for load.' }],
-  care: { intro: '', steps: ['Cold wash', 'Hang dry'], symbols: [], notes: [] },
+  care: { intro: '', steps: ['Cold wash', 'Hang dry'], symbols: [], careItems: [], notes: [] },
   details: { heading: 'Forged details', story: 'A story.', facts: ['Fact'], funFact: '' },
   origin: {
     label: 'Forged in Lebanon',

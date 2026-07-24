@@ -1,8 +1,55 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ChevronDown } from '@/shared/icons'
 import { cn } from '@/shared/lib/cn'
+import {
+  CARE_ICON_COMPONENTS,
+  careIconMeaning,
+  formatCareValue,
+} from '@/features/support/components'
 import type { ResolvedPassportContent } from '../lib/resolvePassportContent'
 import { getCareSymbol } from './careSymbols'
+
+/** One care mark on the ritual — unified across the structured (real symbols)
+ * and the legacy symbol-key paths so the chip row renders identically. */
+interface CareChip {
+  key: string
+  label: string
+  meaning: string
+  render: () => ReactNode
+}
+
+/**
+ * Structured care items win (real textile care symbols, authored with the
+ * shared CareSelector); otherwise legacy symbol keys resolve through the
+ * passport's own symbol set. Either way we render one uniform chip row.
+ */
+function buildChips(care: ResolvedPassportContent['care']): CareChip[] {
+  if (care.careItems.length > 0) {
+    return care.careItems.map((item) => {
+      const Icon = CARE_ICON_COMPONENTS[item.icon]
+      const value = formatCareValue(item.value)
+      return {
+        key: item.id,
+        label: value ? `${item.name} · ${value}` : item.name,
+        meaning: item.note || careIconMeaning(item.icon) || item.name,
+        render: () => <Icon size={24} aria-hidden="true" />,
+      }
+    })
+  }
+  return care.symbols
+    .map((key) => getCareSymbol(key))
+    .filter((s): s is NonNullable<typeof s> => s !== null)
+    .map((symbol) => ({
+      key: symbol.key,
+      label: symbol.label,
+      meaning: symbol.meaning,
+      render: () => (
+        <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+          <symbol.Icon />
+        </svg>
+      ),
+    }))
+}
 
 /**
  * The interactive care ritual: the garment's care symbols (tap for the plain
@@ -14,7 +61,7 @@ export function CareGuide({ care }: { care: ResolvedPassportContent['care'] }) {
   const [openStep, setOpenStep] = useState<number | null>(null)
   const [openSymbol, setOpenSymbol] = useState<string | null>(null)
 
-  const symbols = care.symbols.map((key) => getCareSymbol(key)).filter((s) => s !== null)
+  const symbols = buildChips(care)
   const activeSymbol = symbols.find((s) => s.key === openSymbol) ?? null
 
   return (
@@ -45,9 +92,7 @@ export function CareGuide({ care }: { care: ResolvedPassportContent['care'] }) {
                       : 'border-[var(--color-line)] text-[var(--color-text-muted)] hover:border-[color-mix(in_oklab,var(--color-highlight)_45%,var(--color-line))] hover:text-[var(--color-text)]',
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
-                    <symbol.Icon />
-                  </svg>
+                  {symbol.render()}
                 </button>
               )
             })}

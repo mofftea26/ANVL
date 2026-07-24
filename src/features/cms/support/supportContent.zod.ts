@@ -83,9 +83,12 @@ export const supportSectionListSchema = z
  * are authored and maps legacy lines to generic items at resolve time.
  * --------------------------------------------------------------------------- */
 
-/** Icon vocabulary for structured care items — keys map to the Phosphor-backed
- * components in `@/features/support/components/careIcons`. */
+/** Icon vocabulary for structured care items — keys map to the real textile
+ * care symbols in `@/features/support/components/careSymbols`. The list is
+ * ADDITIVE: the original decorative keys stay valid (old stored items parse and
+ * render), and the standard care marks are appended below. */
 export const CARE_ICON_KEYS = [
+  // Legacy decorative keys — kept forever for backward compatibility.
   'washing-machine',
   'hand-soap',
   'droplet',
@@ -100,6 +103,33 @@ export const CARE_ICON_KEYS = [
   'sparkle',
   'shirt',
   'generic',
+  // Standard textile care symbols.
+  'wash',
+  'wash-30',
+  'wash-40',
+  'wash-50',
+  'wash-60',
+  'wash-cold',
+  'wash-gentle',
+  'wash-hand',
+  'wash-inside-out',
+  'do-not-wash',
+  'bleach',
+  'do-not-bleach',
+  'tumble-dry',
+  'tumble-dry-low',
+  'tumble-dry-high',
+  'do-not-tumble-dry',
+  'line-dry',
+  'dry-flat',
+  'drip-dry',
+  'iron',
+  'iron-low',
+  'iron-medium',
+  'iron-high',
+  'do-not-iron',
+  'dry-clean',
+  'do-not-dry-clean',
 ] as const
 export type CareIconKey = (typeof CARE_ICON_KEYS)[number]
 

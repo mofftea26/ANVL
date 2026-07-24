@@ -56,7 +56,7 @@ describe('CareSelector', () => {
     await user.click(screen.getByRole('option', { name: 'Machine wash' }))
 
     let items = onChange.mock.calls.at(-1)?.[0] as CareItem[]
-    expect(items[0]).toMatchObject({ icon: 'washing-machine', name: 'Machine wash', value: '30' })
+    expect(items[0]).toMatchObject({ icon: 'wash', name: 'Machine wash', value: '30' })
     // Temperature input visible with the °C label.
     expect(
       screen.getByRole('textbox', { name: /temperature in degrees celsius/i }),
@@ -64,9 +64,9 @@ describe('CareSelector', () => {
 
     // Switch to a preset without a value — the value input disappears and value clears.
     await user.click(screen.getByRole('combobox', { name: /instruction 1 preset/i }))
-    await user.click(screen.getByRole('option', { name: 'Hang dry' }))
+    await user.click(screen.getByRole('option', { name: 'Line dry' }))
     items = onChange.mock.calls.at(-1)?.[0] as CareItem[]
-    expect(items[0]).toMatchObject({ icon: 'coat-hanger', name: 'Hang dry', value: '' })
+    expect(items[0]).toMatchObject({ icon: 'line-dry', name: 'Line dry', value: '' })
     expect(
       screen.queryByRole('textbox', { name: /temperature in degrees celsius/i }),
     ).not.toBeInTheDocument()
@@ -112,5 +112,19 @@ describe('CareSelector', () => {
 
     await user.click(screen.getByRole('button', { name: /remove instruction 1/i }))
     expect(onChange.mock.calls.at(-1)?.[0]).toEqual([])
+  })
+
+  it('shows a legible symbol preview with the instruction name and its meaning', () => {
+    render(
+      <Harness
+        initial={[{ id: 'i1', icon: 'wash-30', name: 'Machine wash 30°C', value: '', note: '' }]}
+      />,
+    )
+    // The instruction name shows in the prominent preview (and the select label)…
+    expect(screen.getAllByText('Machine wash 30°C').length).toBeGreaterThan(0)
+    // …with its plain-language meaning caption…
+    expect(screen.getByText(/wash at 30°C/i)).toBeInTheDocument()
+    // …and an actual rendered SVG symbol.
+    expect(document.querySelector('svg')).not.toBeNull()
   })
 })

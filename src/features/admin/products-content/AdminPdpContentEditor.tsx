@@ -39,8 +39,8 @@ import {
 import { Textarea } from '@/shared/components/ui'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
+import { MaterialsField } from '@/features/admin/components/MaterialsField'
 import { PdpDetailsField } from './PdpDetailsField'
-import { PdpMaterialsField } from './PdpMaterialsField'
 import { ProductPickerModal } from './ProductPickerModal'
 import { ProductSummaryCard } from './ProductSummaryCard'
 import { LegacyConvertNotice } from './LegacyConvertNotice'
@@ -210,7 +210,7 @@ export function AdminPdpContentEditor() {
                   onConvert={() => patch({ materials: convertLegacyPdpMaterials(current) })}
                 />
               ) : null}
-              <PdpMaterialsField
+              <MaterialsField
                 materials={current.materials}
                 onChange={(materials) => patch({ materials })}
                 assets={mediaAssets}

@@ -4,7 +4,11 @@ import {
   getPassportProductContent,
   type PassportContentConfig,
 } from '@/features/cms/passportContent/passportContent.zod'
-import type { ResolvedPdpContent } from '@/features/products/pdp/resolvePdpContent'
+import type {
+  ResolvedPdpCareItem,
+  ResolvedPdpContent,
+  ResolvedPdpMaterial,
+} from '@/features/products/pdp/resolvePdpContent'
 import type { Product } from '@/features/products/types/product.types'
 
 /**
@@ -20,7 +24,13 @@ export interface ResolvedPassportContent {
     heroRenderUrl?: string
     gallery: Array<{ src: string; alt: string }>
   }
-  material: { title: string; note: string; macroUrl?: string }
+  material: {
+    title: string
+    note: string
+    macroUrl?: string
+    /** Structured fabric cards (PDP bento shape) — empty when unauthored. */
+    materials: ResolvedPdpMaterial[]
+  }
   specs: {
     construction: string
     fitType: string
@@ -44,8 +54,10 @@ export interface ResolvedPassportContent {
   care: {
     intro: string
     steps: string[]
-    /** Care-symbol preset keys (careSymbols.tsx). */
+    /** Legacy care-symbol preset keys (passport careSymbols.tsx). */
     symbols: string[]
+    /** Structured care instructions (real care symbols) — empty when unauthored. */
+    careItems: ResolvedPdpCareItem[]
     /** Optional per-step "why" note (index-aligned with `steps`). */
     notes: string[]
     assetUrl?: string
@@ -101,6 +113,32 @@ export function resolvePassportContent(input: {
     .map((s) => s.trim())
     .filter(Boolean)
 
+  // Structured fabric cards — authored passport materials win, else the PDP's.
+  const structuredMaterials = c.material.materials.filter((m) => m.name.trim().length > 0)
+  const materials: ResolvedPdpMaterial[] =
+    structuredMaterials.length > 0
+      ? structuredMaterials.map((m, i) => ({
+          id: m.id.trim() || `passport-material-${i}`,
+          name: m.name.trim(),
+          percentage: m.percentage,
+          gsm: m.gsm,
+          image: media(m.image),
+        }))
+      : (pdpContent?.materials ?? [])
+
+  // Structured care instructions — authored passport items win, else the PDP's.
+  const structuredCareItems = c.care.careItems.filter((item) => item.name.trim().length > 0)
+  const careItems: ResolvedPdpCareItem[] =
+    structuredCareItems.length > 0
+      ? structuredCareItems.map((item, i) => ({
+          id: item.id.trim() || `passport-care-${i}`,
+          icon: item.icon,
+          name: item.name.trim(),
+          value: item.value.trim(),
+          note: item.note.trim(),
+        }))
+      : (pdpContent?.careItems ?? [])
+
   return {
     identity: {
       tagline: c.identity.tagline.trim(),
@@ -116,6 +154,7 @@ export function resolvePassportContent(input: {
       title: firstNonEmpty(c.material.title, pdpContent?.materialTitle, product?.fabric),
       note: firstNonEmpty(c.material.note, pdpContent?.materialNote, product?.gsm),
       macroUrl: media(c.material.macroAsset) ?? pdpContent?.materialMacro,
+      materials,
     },
     specs: {
       construction: c.specs.construction.trim(),
@@ -154,6 +193,7 @@ export function resolvePassportContent(input: {
       intro: c.care.intro.trim(),
       steps: careSteps,
       symbols: c.care.symbols.map((s) => s.trim()).filter(Boolean),
+      careItems,
       notes: c.care.notes.map((n) => n.trim()),
       assetUrl: media(c.care.asset),
     },

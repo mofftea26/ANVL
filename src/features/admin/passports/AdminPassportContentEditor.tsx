@@ -33,8 +33,9 @@ function authoredSectionCount(c: PassportProductContent): number {
   let n = 0
   if (c.identity.tagline || c.identity.authenticityNote) n += 1
   if (c.piece.heroRender || c.piece.gallery.length) n += 1
-  if (c.material.title || c.material.note || c.material.macroAsset) n += 1
-  if (c.care.intro || c.care.steps.length || c.care.asset) n += 1
+  if (c.material.title || c.material.note || c.material.macroAsset || c.material.materials.length)
+    n += 1
+  if (c.care.intro || c.care.steps.length || c.care.asset || c.care.careItems.length) n += 1
   if (c.details.heading || c.details.story || c.details.facts.length || c.details.funFact) n += 1
   if (c.origin.label || c.origin.place || c.origin.story || c.origin.asset) n += 1
   return n

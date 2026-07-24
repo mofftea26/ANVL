@@ -1,43 +1,24 @@
-import {
-  Ban,
-  Check,
-  CoatHanger,
-  Droplet,
-  Flame,
-  HandSoap,
-  Shirt,
-  Snowflake,
-  Sparkles,
-  SprayBottle,
-  Sun,
-  Thermometer,
-  WashingMachine,
-  Wind,
-  type LucideIcon,
-} from '@/shared/icons'
 import type { CareIconKey } from '@/features/cms/support/supportContent.zod'
+import {
+  CARE_SYMBOL_COMPONENTS,
+  CARE_SYMBOL_META,
+  type CareGlyphComponent,
+} from './careSymbols'
 
 /**
  * Icon components for structured care items — the render side of the
- * `CareIconKey` vocabulary defined in `supportContent.zod.ts`. Shared by the
- * storefront (CareLines, PDP) and the admin CareSelector so the editor
- * preview always matches what customers see.
+ * `CareIconKey` vocabulary defined in `supportContent.zod.ts`. Every key now
+ * resolves to a REAL textile care symbol (see `careSymbols.tsx`), shared by the
+ * storefront (CareLines, PDP bento), the admin CareSelector, and the passport
+ * care ritual so the editor preview always matches what customers see.
  */
-export const CARE_ICON_COMPONENTS: Record<CareIconKey, LucideIcon> = {
-  'washing-machine': WashingMachine,
-  'hand-soap': HandSoap,
-  droplet: Droplet,
-  snowflake: Snowflake,
-  thermometer: Thermometer,
-  sun: Sun,
-  wind: Wind,
-  flame: Flame,
-  prohibit: Ban,
-  'spray-bottle': SprayBottle,
-  'coat-hanger': CoatHanger,
-  sparkle: Sparkles,
-  shirt: Shirt,
-  generic: Check,
+export const CARE_ICON_COMPONENTS: Record<CareIconKey, CareGlyphComponent> = CARE_SYMBOL_COMPONENTS
+
+export type { CareGlyphComponent }
+
+/** Plain-language meaning for a care icon key, when it maps to a standard symbol. */
+export function careIconMeaning(icon: CareIconKey): string | undefined {
+  return CARE_SYMBOL_META[icon]?.meaning
 }
 
 /** Display text for a care value: bare numbers read as wash temperatures. */
