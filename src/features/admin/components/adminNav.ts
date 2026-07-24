@@ -14,6 +14,7 @@ import {
   Settings,
   ShieldCheck,
   ShoppingBag,
+  Target,
   Trophy,
   Type,
 } from '@/shared/icons'
@@ -199,6 +200,16 @@ export const adminNavItems: AdminNavItem[] = [
     icon: Images,
     cta: 'Manage',
     badge: 'Media',
+  },
+  {
+    label: 'Analytics & SEO',
+    href: '/admin/analytics',
+    description:
+      'Analytics/marketing tags (GA4, GTM, Meta Pixel, Hotjar), search-engine visibility, and global SEO defaults.',
+    category: 'Settings',
+    icon: Target,
+    cta: 'Edit',
+    badge: 'Tags',
   },
   {
     label: 'Settings',

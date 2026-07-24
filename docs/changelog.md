@@ -1,4 +1,13 @@
-﻿## 2026-07-24 — Passport editor = tabbed page + bidirectional preview + guest/owner toggle; CMS-wide line-input sweep
+﻿## 2026-07-25 — CMS-editable analytics/SEO + backend-wiring audit cleanups
+
+Audit of Supabase ↔ CMS ↔ storefront found the wiring solid; three loose ends addressed:
+- **New `/admin/analytics` editor (Analytics & SEO).** The `site_seo` blob was modeled but never persisted or editable (no column, not in the sync/projection, no editor) — so analytics tags and per-site SEO were code-default only. Now fully wired end-to-end: migration `site_seo_column` adds a `jsonb` column to `cms_settings` + `storefront_publication` (additive, existing RLS covers it); `site_seo` joins `CmsSettingsFieldKey` + the sync read + admin hydration (tolerant) + the storefront projection (with a progressive-fallback select for older DBs) + the Supabase SEO reader. A new admin editor (`src/features/admin/analytics/AdminAnalyticsEditor.tsx`, Settings category) manages the analytics/marketing tags (GA4, GTM, Meta Pixel, Hotjar, Google site verification, custom script — provider + ID + on/off), search-engine visibility (robots/sitemap), and global SEO defaults (title/description/share image). `MarketingToolsHead` now injects the **SSR-published** tags for real visitors (it reads the root-loader `siteSeo` prop; localStorage only wins inside the admin/preview via a `hasStoredSiteSeo()` discriminator so an empty visitor blob can't override the published tags).
+- **Cleanup: deleted dead marketing home sections** (`CampaignCardsSection`, `LookbookStripSection` + test) — prop-driven components imported nowhere.
+- **Cleanup: the orphaned `siteSeo` save code is no longer orphaned** — the new editor uses `saveSiteSeoContentAsync`, and the `site_seo` column the comments referenced now exists.
+
+pnpm verify green (typecheck + 187 files / 1093 tests + build).
+
+## 2026-07-24 — Passport editor = tabbed page + bidirectional preview + guest/owner toggle; CMS-wide line-input sweep
 
 **Passport content editor — modal wizard → dedicated tabbed page:**
 - Per-product passport content now edits on its own route `/admin/passports/content/$slug` (lazy `passports_.content.$slug.tsx`, trailing-underscore opt-out from the leaf `passports.tsx`), not a modal. The 10 former wizard steps are now **tabs** (`role=tablist`/`tab`/`tabpanel`, arrow-key nav, roving tabindex) you switch freely — no forced next/back. Reuses the step bodies (incl. the shared `CareSelector`/`MaterialsField`); save publishes via `useSingletonCmsEditor` → `savePassportContentAsync`. The product picker deep-links into the page; `PassportContentWizard.tsx` deleted (no remaining imports). QR-codes tab untouched.

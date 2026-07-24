@@ -28,6 +28,7 @@ const EXPECTED_HREFS = [
   '/admin/passports',
   '/admin/gamification',
   '/admin/assets',
+  '/admin/analytics',
   '/admin/settings',
 ]
 

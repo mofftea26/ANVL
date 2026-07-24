@@ -199,6 +199,21 @@ export function getSiteSeoContent(): SiteSeoContent {
   }
 }
 
+/**
+ * Whether THIS browser has a stored `site_seo` blob. The admin app hydrates it
+ * on login; a public storefront visitor never does. Consumers use this to
+ * decide whether local edits should win over the SSR-published blob (they
+ * should only inside the admin/preview context).
+ */
+export function hasStoredSiteSeo(): boolean {
+  if (!isBrowser()) return false
+  try {
+    return window.localStorage.getItem(SITE_SEO_STORAGE_KEY) != null
+  } catch {
+    return false
+  }
+}
+
 function stampSiteSeoForPersist(next: SiteSeoContent): SiteSeoContent {
   const parsed = siteSeoSchema.parse({
     globalDefaults: next.globalDefaults,
@@ -216,6 +231,16 @@ function writeSiteSeoRaw(json: string): void {
   if (!isBrowser()) return
   window.localStorage.setItem(SITE_SEO_STORAGE_KEY, json)
   notifySiteSeoChange()
+}
+
+/**
+ * Raw local write with change notification but NO remote sync — for admin
+ * hydration (pulling the published `site_seo` blob into localStorage on login)
+ * where scheduling a write-back would be a redundant round trip.
+ */
+export function writeSiteSeoContentToStorage(next: SiteSeoContent): void {
+  const safe = stampSiteSeoForPersist(next)
+  writeSiteSeoRaw(JSON.stringify(safe))
 }
 
 export function saveSiteSeoContent(next: SiteSeoContent): SiteSeoContent {

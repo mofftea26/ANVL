@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import {
   getSiteSeoContent,
+  hasStoredSiteSeo,
   subscribeSiteSeoChange,
   type MarketingToolEntry,
+  type SiteSeoContent,
 } from '@/features/cms/siteSeo.local'
 
 function injectTool(tool: MarketingToolEntry): void {
@@ -68,20 +70,34 @@ function injectTool(tool: MarketingToolEntry): void {
   }
 }
 
-export function MarketingToolsHead() {
-  const [tools, setTools] = useState(() => getSiteSeoContent().marketingTools ?? [])
+/**
+ * Injects the CMS-configured analytics/marketing tags into <head>.
+ *
+ * `siteSeo` is the SSR-published blob passed from the root loader — this is
+ * what real visitors get (their localStorage is empty). Inside the admin live
+ * preview (and on client-only re-reads) we also subscribe to the localStorage
+ * `site_seo` blob so unsaved/just-saved edits reflect without a reload; the
+ * prop is the source of truth when present.
+ */
+export function MarketingToolsHead({ siteSeo }: { siteSeo?: SiteSeoContent }) {
+  // `local` is populated ONLY when a `site_seo` blob is actually stored in this
+  // browser (i.e. the admin app has hydrated it). A real storefront visitor has
+  // no such key, so `local` stays null and the SSR `siteSeo` prop wins — its
+  // empty default must never override the published tags.
+  const [local, setLocal] = useState<SiteSeoContent | null>(null)
 
   useEffect(() => {
-    const sync = () => setTools(getSiteSeoContent().marketingTools ?? [])
+    const sync = () => setLocal(hasStoredSiteSeo() ? getSiteSeoContent() : null)
     const unsub = subscribeSiteSeoChange(sync)
     sync()
     return unsub
   }, [])
 
+  const active = local ?? siteSeo
+
   useEffect(() => {
-    for (const tool of tools) injectTool(tool)
-    const technical = getSiteSeoContent().technical
-    if (technical?.robotsIndex === false) {
+    for (const tool of active?.marketingTools ?? []) injectTool(tool)
+    if (active?.technical?.robotsIndex === false) {
       let meta = document.querySelector('meta[name="robots"]')
       if (!meta) {
         meta = document.createElement('meta')
@@ -90,7 +106,7 @@ export function MarketingToolsHead() {
       }
       meta.setAttribute('content', 'noindex,nofollow')
     }
-  }, [tools])
+  }, [active])
 
   return null
 }

@@ -16,6 +16,7 @@ import { parseComingSoonConfig } from '@/features/cms/comingSoon/comingSoon.zod'
 import { parseBannerConfig } from '@/features/cms/banner/bannerConfig.zod'
 import { parseLegalContent } from '@/features/cms/legal/legalContent.zod'
 import { parseSupportContent } from '@/features/cms/support/supportContent.zod'
+import { defaultSiteSeoContent } from '@/features/cms/siteSeo.local'
 import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
 
 /** Last-resort projection when Supabase is unconfigured or the publication row is missing. */
@@ -34,6 +35,7 @@ export function defaultStorefrontProjection(): PublishedStorefrontProjection {
     bannerConfig: parseBannerConfig(undefined),
     legalContent: parseLegalContent(undefined),
     supportContent: parseSupportContent(undefined),
+    siteSeo: defaultSiteSeoContent(),
     revision: 0,
     publishedAt: null,
   }

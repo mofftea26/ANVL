@@ -102,6 +102,8 @@ export const Route = createRootRoute({
       mediaIndex: projection.mediaIndex,
       comingSoon: projection.comingSoon,
       banner: projection.bannerConfig,
+      // SEO defaults + analytics/marketing tags — injected via MarketingToolsHead.
+      siteSeo: projection.siteSeo,
     }
   },
   head: ({ loaderData, matches }) => ({
@@ -177,6 +179,7 @@ function StorefrontLayout() {
     assets,
     mediaIndex,
     banner,
+    siteSeo,
   } = Route.useLoaderData()
   const navigation = useWebsiteNavigation(ssrNavigation)
   const pathname = useRouterState({
@@ -204,7 +207,7 @@ function StorefrontLayout() {
     <SiteThemeProvider theme={theme} fonts={fonts}>
       <ExperienceProvider activeLandingPageKey={activeLandingPageKey}>
         <ExperiencePageTransition />
-        <MarketingToolsHead />
+        <MarketingToolsHead siteSeo={siteSeo} />
         <RouteAnalytics />
         {showChrome ? (
           <a

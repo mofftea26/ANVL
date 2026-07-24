@@ -3,6 +3,7 @@ import { cmsMockData } from '@/features/cms/data/cms.mock'
 import { resolveSeoByPath } from '@/features/cms/api/resolveSeoByPath'
 import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { defaultSiteSeoContent } from '@/features/cms/siteSeo.local'
+import { fetchPublishedStorefrontProjection } from '@/features/cms/api/publicStorefrontPublication'
 import { DEFAULT_SITE_HOMEPAGE } from '@/features/cms/siteHomepage.settings'
 import {
   buildStaticWebsiteNavigation,
@@ -63,15 +64,23 @@ export function createSupabaseSiteSettingsReadSlice(
 }
 
 export function createSupabaseSeoReadSlice(
-  _env: SupabasePublicEnv,
+  env: SupabasePublicEnv,
 ): Pick<SeoClient, 'getSeoByPath' | 'getSiteSeo'> {
   return {
     async getSeoByPath(path: string) {
       return resolveSeoByPath(path)
     },
 
+    // Read the published `site_seo` blob (SEO defaults + analytics tags) from
+    // the coalesced publication fetch; fall back to code defaults if the row or
+    // column is unavailable (older DB / read failure).
     async getSiteSeo() {
-      return defaultSiteSeoContent()
+      try {
+        const projection = await fetchPublishedStorefrontProjection(env)
+        return projection?.siteSeo ?? defaultSiteSeoContent()
+      } catch {
+        return defaultSiteSeoContent()
+      }
     },
   }
 }

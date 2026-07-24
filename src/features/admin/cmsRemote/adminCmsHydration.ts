@@ -20,6 +20,10 @@ import { writeSupportContentToStorage } from '@/features/cms/support/supportCont
 import { parseSupportContent } from '@/features/cms/support/supportContent.zod'
 import { writePassportContentToStorage } from '@/features/cms/passportContent/passportContent.settings'
 import { parsePassportContent } from '@/features/cms/passportContent/passportContent.zod'
+import {
+  parseSiteSeoUnknown,
+  writeSiteSeoContentToStorage,
+} from '@/features/cms/siteSeo.local'
 import { migrateOathTenetAssetsFromSlots } from '@/features/cms/landingContent/migrateOathTenetAssets'
 import {
   beginAdminCmsRemoteHydration,
@@ -126,6 +130,16 @@ export async function hydrateAdminCmsFromSupabase(
       writeSupportContentToStorage(
         parseSupportContent(supportRes.data.support_content),
       )
+    }
+
+    // Same tolerant treatment for `site_seo` (SEO defaults + analytics tags).
+    const siteSeoRes = await client
+      .from('cms_settings')
+      .select('site_seo')
+      .eq('id', 1)
+      .maybeSingle()
+    if (!siteSeoRes.error && siteSeoRes.data) {
+      writeSiteSeoContentToStorage(parseSiteSeoUnknown(siteSeoRes.data.site_seo))
     }
   } finally {
     endAdminCmsRemoteHydration()

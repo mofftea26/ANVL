@@ -16,6 +16,7 @@ import { readComingSoonConfigFromStorage } from '@/features/cms/comingSoon/comin
 import { readBannerConfigFromStorage } from '@/features/cms/banner/bannerConfig.settings'
 import { readLegalContentFromStorage } from '@/features/cms/legal/legalContent.settings'
 import { readSupportContentFromStorage } from '@/features/cms/support/supportContent.settings'
+import { getSiteSeoContent } from '@/features/cms/siteSeo.local'
 import {
   readAssetConfigFromStorage,
   readFontLibraryFromStorage,
@@ -55,6 +56,7 @@ export type CmsSettingsFieldKey =
   | 'banner_config'
   | 'legal_content'
   | 'support_content'
+  | 'site_seo'
 
 /**
  * Discriminated flush outcome. The old `{ ok: true }` shape hid SEVEN early
@@ -145,6 +147,7 @@ function readAllCmsSettingsValues(): Record<CmsSettingsFieldKey, unknown> {
     banner_config: readBannerConfigFromStorage(),
     legal_content: readLegalContentFromStorage(),
     support_content: readSupportContentFromStorage(),
+    site_seo: getSiteSeoContent(),
   }
 }
 

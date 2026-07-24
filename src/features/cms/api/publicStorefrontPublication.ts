@@ -42,6 +42,10 @@ import {
   parseSupportContent,
   type SupportContentConfig,
 } from '@/features/cms/support/supportContent.zod'
+import {
+  parseSiteSeoUnknown,
+  type SiteSeoContent,
+} from '@/features/cms/siteSeo.local'
 import { DEFAULT_LANDING_PAGE_KEY } from '@/features/landingPages/registry'
 
 const mediaIndexEntrySchema = z.object({
@@ -77,6 +81,8 @@ export type PublishedStorefrontProjection = {
   legalContent: LegalContentConfig
   /** Support pages copy (faq/contact/shipping/returns/care/size); code defaults fill gaps. */
   supportContent: SupportContentConfig
+  /** Global SEO defaults + per-page SEO + analytics/marketing tags (GA4/GTM/Pixel/…). */
+  siteSeo: SiteSeoContent
   revision: number
   publishedAt: string | null
 }
@@ -97,9 +103,14 @@ export type StorefrontPublicationRow = {
   banner_config?: unknown
   legal_content?: unknown
   support_content?: unknown
+  site_seo?: unknown
 }
 
 const PUBLICATION_SELECT =
+  'revision, published_at, active_landing_page_key, theme_config, font_config, asset_config, media_index, landing_content, shop_config, pdp_content, passport_content, coming_soon, banner_config, legal_content, support_content, site_seo'
+
+/** Pre-`site_seo` column list — retry path while that migration is pending. */
+const PUBLICATION_SELECT_NO_SITE_SEO =
   'revision, published_at, active_landing_page_key, theme_config, font_config, asset_config, media_index, landing_content, shop_config, pdp_content, passport_content, coming_soon, banner_config, legal_content, support_content'
 
 /** Pre-`support_content` column list — retry path while that migration is pending. */
@@ -179,6 +190,7 @@ export function normalizeStorefrontPublicationRow(
     bannerConfig: parseBannerConfig(data.banner_config),
     legalContent: parseLegalContent(data.legal_content),
     supportContent: parseSupportContent(data.support_content),
+    siteSeo: parseSiteSeoUnknown(data.site_seo),
     revision,
     publishedAt: data.published_at,
   }
@@ -203,6 +215,11 @@ async function fetchPublishedStorefrontProjectionOnce(
   env: SupabasePublicEnv,
 ): Promise<PublishedStorefrontProjection | null> {
   let { data, error } = await selectPublicationRow(env, PUBLICATION_SELECT)
+
+  // Newest column first: an older DB without `site_seo` drops it and keeps the rest.
+  if (error && isPostgrestMissingColumnError(error, 'site_seo')) {
+    ;({ data, error } = await selectPublicationRow(env, PUBLICATION_SELECT_NO_SITE_SEO))
+  }
 
   // Progressive fallback while migrations are pending: drop `support_content`,
   // then `legal_content`, then `banner_config`, then `passport_content`, then

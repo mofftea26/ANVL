@@ -29,6 +29,7 @@ const allValues: Record<CmsSettingsFieldKey, unknown> = {
   banner_config: { name: 'banner_config' },
   legal_content: { name: 'legal_content' },
   support_content: { name: 'support_content' },
+  site_seo: { name: 'site_seo' },
 }
 
 describe('pickCmsSettingsFields', () => {
