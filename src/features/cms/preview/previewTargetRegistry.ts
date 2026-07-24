@@ -15,6 +15,7 @@ export type PreviewEditorRoute =
   | '/admin'
   | '/admin/shop'
   | '/admin/products'
+  | '/admin/passports'
   | '/admin/content'
   | '/admin/about'
   | '/admin/coming-soon'
@@ -44,6 +45,15 @@ const PREVIEW_TARGET_REGISTRY: PreviewTargetRegistryEntry[] = [
   { pattern: /^site:page$/, adminRoute: null },
   { pattern: /^shop:(hero|toolbar|grid)$/, adminRoute: '/admin/shop' },
   { pattern: /^pdp:(materials|care|details)$/, adminRoute: '/admin/products' },
+  // The passport editor is the per-product content page; the prefix
+  // `/admin/passports/content/$slug` still resolves to this route (same-page
+  // locate rings the owning tab). authenticity/story have no distinct tab —
+  // recognized so inspect-click degrades gracefully rather than as "unmapped".
+  {
+    pattern:
+      /^passport:(identity|piece|material|specs|care|fit|details|forge-notes|origin|authenticity|story)$/,
+    adminRoute: '/admin/passports',
+  },
   { pattern: /^the-oath:(hero|manifesto|tenets|products|finale)$/, adminRoute: '/admin/content' },
   { pattern: /^about:(hero|marquee)$/, adminRoute: '/admin/about' },
   { pattern: /^about:orb-\d+$/, adminRoute: '/admin/about' },

@@ -143,10 +143,14 @@ interface AdminPreviewPanelProps {
 export function AdminPreviewPanel({ onClose }: AdminPreviewPanelProps) {
   const adminPath = useRouterState({ select: (s) => s.location.pathname })
   const [route, setRoute] = useState(() => defaultRouteForAdminPath(adminPath))
-  // About defaults to tablet: the ≥1280px About is the 3D Forge Altar (canvas,
-  // nothing to highlight); tablet renders the normal sectioned page.
+  // About + Passports default to tablet: the ≥1280px About is the 3D Forge
+  // Altar and the ≥1280px owner passport is the WebGL console (both canvas,
+  // nothing to highlight); tablet renders the inspectable sectioned layout.
   const [device, setDevice] = useState<PreviewDevice>(() =>
-    defaultRouteForAdminPath(adminPath) === '/about' ? 'tablet' : 'desktop',
+    defaultRouteForAdminPath(adminPath) === '/about' ||
+    adminPath.startsWith('/admin/passports')
+      ? 'tablet'
+      : 'desktop',
   )
 
   const selectRoute = useCallback((next: string) => {

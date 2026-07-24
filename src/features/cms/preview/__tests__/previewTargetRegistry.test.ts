@@ -30,6 +30,18 @@ const EMITTED_TARGET_IDS: Array<{ id: string; adminRoute: string | null }> = [
   // Banner is a dashboard modal now — locate lands on the dashboard.
   { id: 'banner:rail', adminRoute: '/admin' },
   { id: 'coming-soon:page', adminRoute: '/admin/coming-soon' },
+  // Passport content sections — owned by the per-product passport editor page.
+  { id: 'passport:identity', adminRoute: '/admin/passports' },
+  { id: 'passport:piece', adminRoute: '/admin/passports' },
+  { id: 'passport:material', adminRoute: '/admin/passports' },
+  { id: 'passport:specs', adminRoute: '/admin/passports' },
+  { id: 'passport:care', adminRoute: '/admin/passports' },
+  { id: 'passport:fit', adminRoute: '/admin/passports' },
+  { id: 'passport:details', adminRoute: '/admin/passports' },
+  { id: 'passport:forge-notes', adminRoute: '/admin/passports' },
+  { id: 'passport:origin', adminRoute: '/admin/passports' },
+  { id: 'passport:authenticity', adminRoute: '/admin/passports' },
+  { id: 'passport:story', adminRoute: '/admin/passports' },
 ]
 
 describe('resolvePreviewTargetToEditor', () => {
@@ -58,6 +70,8 @@ describe('resolvePreviewTargetToEditor', () => {
     expect(resolvePreviewTargetToEditor('mystery:thing')).toBeNull()
     expect(resolvePreviewTargetToEditor('shop:heroic')).toBeNull()
     expect(resolvePreviewTargetToEditor('the-oath:credits')).toBeNull()
+    expect(resolvePreviewTargetToEditor('passport:mystery')).toBeNull()
+    expect(resolvePreviewTargetToEditor('passport:')).toBeNull()
   })
 })
 

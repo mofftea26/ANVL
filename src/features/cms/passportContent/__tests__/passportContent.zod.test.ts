@@ -61,3 +61,46 @@ describe('passportContent schema — structured care/material migration', () => 
     expect(parsed.care.careItems).toEqual([])
   })
 })
+
+/**
+ * The care steps/notes, fit measurements + size map, forge notes, and design
+ * facts moved from newline textareas to structured add/edit/delete list
+ * editors. The STORED shape (arrays/records) is unchanged, so these guard that
+ * stored blobs round-trip and malformed/pre-section blobs degrade to defaults.
+ */
+describe('passportContent schema — tolerant structured lists', () => {
+  it('preserves list fields verbatim', () => {
+    const parsed = parsePassportContent({
+      tee: {
+        care: { steps: ['Rinse', 'Air dry'], notes: ['Cold water', ''] },
+        fit: { measurements: ['Chest|52 cm'], sizeEquivalence: { M: 'S' } },
+        forgeNotes: [{ title: 'Eleven revisions', body: 'The collar took four.' }],
+        details: { facts: ['Bonded seams', 'Laser-cut hem'] },
+      },
+    })
+    const entry = parsed.tee!
+    expect(entry.care.steps).toEqual(['Rinse', 'Air dry'])
+    expect(entry.care.notes).toEqual(['Cold water', ''])
+    expect(entry.fit.measurements).toEqual(['Chest|52 cm'])
+    expect(entry.fit.sizeEquivalence).toEqual({ M: 'S' })
+    expect(entry.forgeNotes).toEqual([{ title: 'Eleven revisions', body: 'The collar took four.' }])
+    expect(entry.details.facts).toEqual(['Bonded seams', 'Laser-cut hem'])
+  })
+
+  it('degrades malformed list fields to defaults instead of throwing', () => {
+    const parsed = parsePassportContent({
+      tee: {
+        care: { steps: 'not-an-array' },
+        forgeNotes: 'nope',
+        fit: { sizeEquivalence: 'bad', measurements: 42 },
+        details: { facts: { 0: 'x' } },
+      },
+    })
+    const entry = parsed.tee!
+    expect(entry.care.steps).toEqual([])
+    expect(entry.forgeNotes).toEqual([])
+    expect(entry.fit.sizeEquivalence).toEqual({})
+    expect(entry.fit.measurements).toEqual([])
+    expect(entry.details.facts).toEqual([])
+  })
+})

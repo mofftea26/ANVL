@@ -61,6 +61,7 @@ import { Route as AccountAddressesRouteImport } from './routes/account/addresses
 import { Route as AccountOrdersIndexRouteImport } from './routes/account/orders/index'
 import { Route as AdminCategoryCategoryKeyRouteImport } from './routes/admin/category.$categoryKey'
 import { Route as AccountOrdersOrderIdRouteImport } from './routes/account/orders/$orderId'
+import { Route as AdminPassportsContentSlugRouteImport } from './routes/admin/passports_.content.$slug'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -323,6 +324,12 @@ const AccountOrdersOrderIdRoute = AccountOrdersOrderIdRouteImport.update({
   path: '/orders/$orderId',
   getParentRoute: () => AccountRouteRoute,
 } as any)
+const AdminPassportsContentSlugRoute =
+  AdminPassportsContentSlugRouteImport.update({
+    id: '/passports_/content/$slug',
+    path: '/passports/content/$slug',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -377,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
   '/admin/category/$categoryKey': typeof AdminCategoryCategoryKeyRoute
   '/account/orders/': typeof AccountOrdersIndexRoute
+  '/admin/passports/content/$slug': typeof AdminPassportsContentSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -429,6 +437,7 @@ export interface FileRoutesByTo {
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
   '/admin/category/$categoryKey': typeof AdminCategoryCategoryKeyRoute
   '/account/orders': typeof AccountOrdersIndexRoute
+  '/admin/passports/content/$slug': typeof AdminPassportsContentSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -484,6 +493,7 @@ export interface FileRoutesById {
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
   '/admin/category/$categoryKey': typeof AdminCategoryCategoryKeyRoute
   '/account/orders/': typeof AccountOrdersIndexRoute
+  '/admin/passports_/content/$slug': typeof AdminPassportsContentSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -540,6 +550,7 @@ export interface FileRouteTypes {
     | '/account/orders/$orderId'
     | '/admin/category/$categoryKey'
     | '/account/orders/'
+    | '/admin/passports/content/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -592,6 +603,7 @@ export interface FileRouteTypes {
     | '/account/orders/$orderId'
     | '/admin/category/$categoryKey'
     | '/account/orders'
+    | '/admin/passports/content/$slug'
   id:
     | '__root__'
     | '/'
@@ -646,6 +658,7 @@ export interface FileRouteTypes {
     | '/account/orders/$orderId'
     | '/admin/category/$categoryKey'
     | '/account/orders/'
+    | '/admin/passports_/content/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1046,6 +1059,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountOrdersOrderIdRouteImport
       parentRoute: typeof AccountRouteRoute
     }
+    '/admin/passports_/content/$slug': {
+      id: '/admin/passports_/content/$slug'
+      path: '/passports/content/$slug'
+      fullPath: '/admin/passports/content/$slug'
+      preLoaderRoute: typeof AdminPassportsContentSlugRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
   }
 }
 
@@ -1089,6 +1109,7 @@ interface AdminRouteRouteChildren {
   AdminThemeRoute: typeof AdminThemeRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminCategoryCategoryKeyRoute: typeof AdminCategoryCategoryKeyRoute
+  AdminPassportsContentSlugRoute: typeof AdminPassportsContentSlugRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
@@ -1109,6 +1130,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminThemeRoute: AdminThemeRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminCategoryCategoryKeyRoute: AdminCategoryCategoryKeyRoute,
+  AdminPassportsContentSlugRoute: AdminPassportsContentSlugRoute,
 }
 
 const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(

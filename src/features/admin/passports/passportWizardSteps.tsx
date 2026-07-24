@@ -5,12 +5,22 @@ import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotFi
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { CareSelector } from '@/features/admin/components/CareSelector'
 import { MaterialsField } from '@/features/admin/components/MaterialsField'
+import {
+  SectionListField,
+  type EditableSection,
+} from '@/features/admin/components/SectionListField'
 import { PASSPORT_COUNTRIES } from '@/features/passport/lib/passportCountries'
 import type { PassportProductContent } from '@/features/cms/passportContent/passportContent.zod'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { Textarea } from '@/shared/components/ui'
 import { HotspotPlacer } from './HotspotPlacer'
+import {
+  CareStepsField,
+  LabelValueRowsField,
+  SizeMapRowsField,
+  StringRowsField,
+} from './passportListFields'
 
 export type PassportPatch = <K extends keyof PassportProductContent>(
   key: K,
@@ -22,14 +32,8 @@ export interface PassportStepProps {
   patch: PassportPatch
   setDraft: Dispatch<SetStateAction<PassportProductContent>>
   mediaAssets: CmsMediaAsset[]
-}
-
-/** Drop blank lines so empty textarea rows never render as empty bullets. */
-function lines(value: string): string[] {
-  return value
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
+  /** Selected product slug — reseeds order-less list editors on product change. */
+  productSlug?: string
 }
 
 export function IdentityStep({ draft, patch }: PassportStepProps) {
@@ -172,27 +176,14 @@ export function CareStep({ draft, patch, mediaAssets }: PassportStepProps) {
         />
       </FormField>
       <FormField
-        label="Steps (one per line)"
-        hint="Blank → PDP care / product care instructions."
+        label="Steps"
+        hint="Each step with an optional “why” note (revealed when a customer expands it). Blank list → PDP care / product care instructions."
         labelStyle="stacked"
       >
-        <Textarea
-          rows={4}
-          value={draft.care.steps.join('\n')}
-          onChange={(e) => patch('care', { steps: lines(e.target.value) })}
-        />
-      </FormField>
-      <FormField
-        label="Step notes (one per line, aligned to the steps above)"
-        hint="The “why” revealed when a customer expands that step. Leave a line blank to skip."
-        labelStyle="stacked"
-      >
-        <Textarea
-          rows={4}
-          value={draft.care.notes.join('\n')}
-          onChange={(e) =>
-            patch('care', { notes: e.target.value.split('\n').map((l) => l.trim()) })
-          }
+        <CareStepsField
+          steps={draft.care.steps}
+          notes={draft.care.notes}
+          onChange={({ steps, notes }) => patch('care', { steps, notes })}
         />
       </FormField>
       <MediaLibrarySlotField
@@ -206,7 +197,7 @@ export function CareStep({ draft, patch, mediaAssets }: PassportStepProps) {
   )
 }
 
-export function FitStep({ draft, patch }: PassportStepProps) {
+export function FitStep({ draft, patch, productSlug }: PassportStepProps) {
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -240,14 +231,17 @@ export function FitStep({ draft, patch }: PassportStepProps) {
         </FormField>
       </div>
       <FormField
-        label="Measurements (one per line — Label|Value)"
-        hint="e.g. Chest|52 cm"
+        label="Measurements"
+        hint="A label and value per row, e.g. Chest / 52 cm."
         labelStyle="stacked"
       >
-        <Textarea
-          rows={4}
-          value={draft.fit.measurements.join('\n')}
-          onChange={(e) => patch('fit', { measurements: lines(e.target.value) })}
+        <LabelValueRowsField
+          values={draft.fit.measurements}
+          onChange={(measurements) => patch('fit', { measurements })}
+          label="Measurement"
+          addLabel="Add measurement"
+          labelPlaceholder="Label (e.g. Chest)"
+          valuePlaceholder="Value (e.g. 52 cm)"
         />
       </FormField>
       <FormField label="Sizing advice" labelStyle="stacked">
@@ -258,25 +252,14 @@ export function FitStep({ draft, patch }: PassportStepProps) {
         />
       </FormField>
       <FormField
-        label="Size map (one per line — ThisSize|CanonicalSize)"
-        hint="Powers cross-product size advice: map each of THIS product's sizes to a canonical body size (e.g. an oversized cut's M|S). Products sharing a canonical fit the same body. Leave blank to keep this product out of size advice entirely."
+        label="Size map"
+        hint="Powers cross-product size advice: map each of THIS product's sizes to a canonical body size (e.g. an oversized cut's M → S). Products sharing a canonical fit the same body. Leave empty to keep this product out of size advice entirely."
         labelStyle="stacked"
       >
-        <Textarea
-          rows={4}
-          value={Object.entries(draft.fit.sizeEquivalence)
-            .map(([size, canonical]) => `${size}|${canonical}`)
-            .join('\n')}
-          onChange={(e) => {
-            const next: Record<string, string> = {}
-            for (const line of lines(e.target.value)) {
-              const [size, canonical] = line.split('|')
-              if (size?.trim() && canonical?.trim()) {
-                next[size.trim()] = canonical.trim()
-              }
-            }
-            patch('fit', { sizeEquivalence: next })
-          }}
+        <SizeMapRowsField
+          value={draft.fit.sizeEquivalence}
+          onChange={(sizeEquivalence) => patch('fit', { sizeEquivalence })}
+          resetKey={productSlug ?? ''}
         />
       </FormField>
     </>
@@ -302,24 +285,30 @@ export function HotspotsStep({ draft, setDraft, mediaAssets }: PassportStepProps
 }
 
 export function ForgeNotesStep({ draft, setDraft }: PassportStepProps) {
+  // Reuse the shared heading+body list editor: title → heading, body → body.
+  const sections: EditableSection[] = draft.forgeNotes.map((n, i) => ({
+    id: `forge-note-${i}`,
+    heading: n.title,
+    body: n.body,
+  }))
   return (
     <FormField
-      label="Forge notes (one per line — Title|Body)"
-      hint="Development facts shown as expandable cards, e.g. Eleven revisions|The collar alone took four."
+      label="Forge notes"
+      hint="Development facts shown as expandable cards — a title and a note each."
       labelStyle="stacked"
     >
-      <Textarea
-        rows={6}
-        value={draft.forgeNotes.map((n) => `${n.title}|${n.body}`).join('\n')}
-        onChange={(e) =>
+      <SectionListField
+        sections={sections}
+        onChange={(next) =>
           setDraft((prev) => ({
             ...prev,
-            forgeNotes: lines(e.target.value).map((line) => {
-              const [title, ...rest] = line.split('|')
-              return { title: (title ?? '').trim(), body: rest.join('|').trim() }
-            }),
+            forgeNotes: next.map((s) => ({ title: s.heading, body: s.body })),
           }))
         }
+        addLabel="Add forge note"
+        headingPlaceholder="Title (e.g. Eleven revisions)"
+        bodyPlaceholder="The note (e.g. The collar alone took four)."
+        idPrefix="forge-note"
       />
     </FormField>
   )
@@ -342,11 +331,13 @@ export function DetailsStep({ draft, patch, mediaAssets }: PassportStepProps) {
           onChange={(e) => patch('details', { story: e.target.value })}
         />
       </FormField>
-      <FormField label="Facts (one per line)" hint="Blank → product design details." labelStyle="stacked">
-        <Textarea
-          rows={3}
-          value={draft.details.facts.join('\n')}
-          onChange={(e) => patch('details', { facts: lines(e.target.value) })}
+      <FormField label="Facts" hint="Blank list → product design details." labelStyle="stacked">
+        <StringRowsField
+          values={draft.details.facts}
+          onChange={(facts) => patch('details', { facts })}
+          label="Fact"
+          addLabel="Add fact"
+          placeholder="A design fact"
         />
       </FormField>
       <FormField label="Forge fact" hint="One fun fact, shown as a highlighted plate." labelStyle="stacked">

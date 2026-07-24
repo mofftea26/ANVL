@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
+import { Link, Navigate } from '@tanstack/react-router'
 import { BookOpenText, Pencil, Plus, Trash2 } from '@/shared/icons'
 import { toast } from 'sonner'
 import { AdminCard } from '@/features/admin/components/AdminCard'
@@ -7,18 +8,14 @@ import { AdminLoadingState } from '@/features/admin/components/AdminLoadingState
 import { AdminRailPanel } from '@/features/admin/components/AdminRailPanel'
 import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
-import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import {
   readPassportContentFromStorage,
   savePassportContentAsync,
   subscribePassportContentChange,
 } from '@/features/cms/passportContent/passportContent.settings'
-import {
-  DEFAULT_PASSPORT_PRODUCT_CONTENT,
-  type PassportProductContent,
-} from '@/features/cms/passportContent/passportContent.zod'
-import { Button } from '@/shared/components/ui/Button'
-import { PassportContentWizard } from './PassportContentWizard'
+import type { PassportProductContent } from '@/features/cms/passportContent/passportContent.zod'
+import { Button, buttonVariants } from '@/shared/components/ui/Button'
+import { cn } from '@/shared/lib/cn'
 
 function useStoredPassportContent() {
   return useSyncExternalStore(
@@ -42,35 +39,23 @@ function authoredSectionCount(c: PassportProductContent): number {
 }
 
 /**
- * /admin/passports · "Passport content" tab — the editorial layer of every
- * product's passport, authored per product through the multi-step wizard
- * (one step per passport section). Saved to `passport_content` via the
- * shared CMS sync; blank fields fall back to PDP content / product data.
+ * /admin/passports · "Passport content" tab — the product PICKER for the
+ * editorial passport layer. Selecting a product opens its dedicated editing
+ * PAGE (`/admin/passports/content/$slug`), where the passport sections are
+ * authored as tabs. Deep-linking with `?product=` jumps straight there.
  */
 export function AdminPassportContentEditor({
   initialProductSlug,
 }: {
-  /** Deep-link: opens this product's wizard once the catalog loads. */
+  /** Deep-link: jump straight to this product's editing page once loaded. */
   initialProductSlug?: string
 } = {}) {
   const stored = useStoredPassportContent()
   const productsQuery = useAdminProductCatalogQuery()
-  const mediaQuery = useMediaAssetsQuery()
   const products = productsQuery.data?.items ?? []
-  const mediaAssets = mediaQuery.data ?? []
 
-  const [wizardSlug, setWizardSlug] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
   const [removeSlug, setRemoveSlug] = useState<string | null>(null)
-  const [consumedDeepLink, setConsumedDeepLink] = useState(false)
-
-  useEffect(() => {
-    if (consumedDeepLink || !initialProductSlug || products.length === 0) return
-    if (products.some((p) => p.slug === initialProductSlug)) {
-      setWizardSlug(initialProductSlug)
-    }
-    setConsumedDeepLink(true)
-  }, [consumedDeepLink, initialProductSlug, products])
+  const [removing, setRemoving] = useState(false)
 
   const authored = useMemo(
     () =>
@@ -84,25 +69,9 @@ export function AdminPassportContentEditor({
   )
   const unauthored = products.filter((p) => !stored[p.slug])
 
-  const wizardProduct = products.find((p) => p.slug === wizardSlug)
-
-  const saveWizard = async (content: PassportProductContent) => {
-    if (!wizardSlug) return
-    setSaving(true)
-    try {
-      await savePassportContentAsync({ ...stored, [wizardSlug]: content })
-      toast.success('Passport content saved.')
-      setWizardSlug(null)
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not save passport content.')
-    } finally {
-      setSaving(false)
-    }
-  }
-
   const removeContent = async () => {
     if (!removeSlug) return
-    setSaving(true)
+    setRemoving(true)
     try {
       const next = { ...stored }
       delete next[removeSlug]
@@ -111,7 +80,7 @@ export function AdminPassportContentEditor({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not remove passport content.')
     } finally {
-      setSaving(false)
+      setRemoving(false)
       setRemoveSlug(null)
     }
   }
@@ -120,7 +89,7 @@ export function AdminPassportContentEditor({
     <AdminRailPanel
       title="How passport content works"
       icon={<BookOpenText size={16} aria-hidden="true" />}
-      description="Each product's passport is authored section by section — the wizard steps match the passport page's cards exactly."
+      description="Each product's passport is authored section by section — the tabs match the passport page's cards exactly."
     >
       <ul className="mt-2 space-y-2 text-xs text-[var(--color-text-muted)]">
         <li>The hero render (transparent PNG) drives the ember particle silhouette.</li>
@@ -138,13 +107,24 @@ export function AdminPassportContentEditor({
     )
   }
 
+  // Deep-link straight into a product's editing page.
+  if (initialProductSlug && products.some((p) => p.slug === initialProductSlug)) {
+    return (
+      <Navigate
+        to="/admin/passports/content/$slug"
+        params={{ slug: initialProductSlug }}
+        replace
+      />
+    )
+  }
+
   return (
     <AdminWorkspace asideLabel="Passport content help" aside={rail}>
       <div className="space-y-6">
         {authored.length > 0 ? (
           <AdminCard
             title="Authored passports"
-            description="Products with passport content. Edit re-opens the wizard; remove clears the content (QR codes are untouched)."
+            description="Products with passport content. Edit opens its page; remove clears the content (QR codes are untouched)."
           >
             <ul className="divide-y divide-[var(--color-line)]">
               {authored.map((row) => (
@@ -159,16 +139,17 @@ export function AdminPassportContentEditor({
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      density="compact"
-                      onClick={() => setWizardSlug(row.slug)}
+                    <Link
+                      to="/admin/passports/content/$slug"
+                      params={{ slug: row.slug }}
+                      className={cn(
+                        buttonVariants({ variant: 'secondary', size: 'sm', density: 'compact' }),
+                        'no-underline',
+                      )}
                     >
                       <Pencil size={15} aria-hidden="true" />
                       Edit
-                    </Button>
+                    </Link>
                     <Button
                       type="button"
                       variant="destructive"
@@ -203,16 +184,17 @@ export function AdminPassportContentEditor({
                   <p className="min-w-0 flex-1 truncate text-sm text-[var(--color-text)]">
                     {p.name}
                   </p>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    density="compact"
-                    onClick={() => setWizardSlug(p.slug)}
+                  <Link
+                    to="/admin/passports/content/$slug"
+                    params={{ slug: p.slug }}
+                    className={cn(
+                      buttonVariants({ variant: 'primary', size: 'sm', density: 'compact' }),
+                      'no-underline',
+                    )}
                   >
                     <Plus size={15} aria-hidden="true" />
                     Author passport
-                  </Button>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -220,25 +202,13 @@ export function AdminPassportContentEditor({
         </AdminCard>
       </div>
 
-      {wizardSlug ? (
-        <PassportContentWizard
-          open
-          onClose={() => setWizardSlug(null)}
-          productName={wizardProduct?.name ?? wizardSlug}
-          initial={stored[wizardSlug] ?? structuredClone(DEFAULT_PASSPORT_PRODUCT_CONTENT)}
-          mediaAssets={mediaAssets}
-          saving={saving}
-          onSave={(content) => void saveWizard(content)}
-        />
-      ) : null}
-
       <AdminConfirmDialog
         open={removeSlug !== null}
         onClose={() => setRemoveSlug(null)}
         title="Remove passport content?"
         confirmLabel="Remove"
         confirmVariant="destructive"
-        confirmLoading={saving}
+        confirmLoading={removing}
         onConfirm={() => void removeContent()}
       >
         The authored sections for{' '}

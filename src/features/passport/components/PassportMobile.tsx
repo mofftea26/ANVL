@@ -8,6 +8,12 @@ import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import { buttonVariants } from '@/shared/components/ui/Button'
 import { cn } from '@/shared/lib/cn'
 import { gsap } from '@/shared/lib/gsap'
+import {
+  PREVIEW_TARGET_ATTR,
+  previewTargetValue,
+  usePreviewDraft,
+  usePreviewTargetProps,
+} from '@/features/cms/preview'
 import { usePassportSectionNav } from '../hooks/usePassportSectionNav'
 import type { ResolvedPassportContent } from '../lib/resolvePassportContent'
 import type { PassportRelated } from '../lib/relatedProducts'
@@ -60,6 +66,16 @@ export function PassportMobile({
 }) {
   const scopeRef = useRef<HTMLDivElement>(null)
   const [hotspot, setHotspot] = useState<number | null>(null)
+
+  // Admin live-preview inspect targets. Single calls for the header/piece; the
+  // bento cards build their attr inline (a hook can't run inside `.map`).
+  const identityTarget = usePreviewTargetProps('content-field', 'passport:identity')
+  const pieceTarget = usePreviewTargetProps('content-field', 'passport:piece')
+  const previewActive = usePreviewDraft() !== null
+  const sectionTarget = (key: string): Record<string, string> =>
+    previewActive
+      ? { [PREVIEW_TARGET_ATTR]: previewTargetValue({ kind: 'content-field', id: `passport:${key}` }) }
+      : {}
   // Group tabs keep the soft swap; sections open instantly as a bottom sheet.
   const { group, panelVisible, transitionTo } = usePassportSectionNav({
     swapDelayMs: SWAP_MS,
@@ -130,7 +146,7 @@ export function PassportMobile({
 
       <div className="relative mx-auto max-w-3xl px-5">
         {/* 1 — Header + title */}
-        <header data-pm-in className="text-center">
+        <header data-pm-in className="text-center" {...identityTarget}>
           <p className="anvl-micro text-[var(--color-highlight-bright)]">
             Product passport{product?.dropName ? ` · ${product.dropName}` : ''}
           </p>
@@ -146,7 +162,11 @@ export function PassportMobile({
 
         {/* 2 — The piece (small), with its design-detail markers */}
         {heroImage ? (
-          <div data-pm-in className="mx-auto mt-6 w-full max-w-[11rem] sm:max-w-[13rem]">
+          <div
+            data-pm-in
+            className="mx-auto mt-6 w-full max-w-[11rem] sm:max-w-[13rem]"
+            {...pieceTarget}
+          >
             <div className="relative aspect-[4/5] overflow-hidden rounded-xl border border-[var(--color-line)]">
               <ProductForgeImage
                 src={heroImage.src}
@@ -289,6 +309,7 @@ export function PassportMobile({
                     key={s.key}
                     type="button"
                     data-pm-panel-item
+                    {...sectionTarget(s.key)}
                     onClick={() => setOpenSection(s.key)}
                     className="focus-ring group relative isolate overflow-hidden rounded-xl border border-[var(--color-line)] bg-[color-mix(in_oklab,var(--color-surface)_82%,transparent)] p-3.5 text-left transition-colors active:border-[color-mix(in_oklab,var(--color-highlight)_50%,var(--color-line))]"
                   >
