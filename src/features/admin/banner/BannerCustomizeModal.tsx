@@ -32,7 +32,7 @@ import { Checkbox } from '@/shared/components/ui/Checkbox'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { Modal } from '@/shared/components/ui/Modal'
-import { isLikelySafeMediaSrc, sanitizeHref } from '@/shared/lib/url'
+import { isLikelySafeMediaSrc, normalizeLinkHref, sanitizeHref } from '@/shared/lib/url'
 
 /** Status-chip refresh cadence so "scheduled" flips to "live" without edits. */
 const STATUS_CLOCK_MS = 30_000
@@ -207,7 +207,11 @@ function BannerCustomizeModalContent({
   const save = async () => {
     setSaving(true)
     try {
-      await saveBannerConfigAsync(config)
+      // Defensive: normalize the href so a scheme-less "shop.com" the admin
+      // typed without blurring the field still persists as a usable link.
+      const normalizedHref = normalizeLinkHref(config.href)
+      const toSave = normalizedHref === config.href ? config : { ...config, href: normalizedHref }
+      await saveBannerConfigAsync(toSave)
       toast.success('Banner saved.')
       onClose()
     } catch (err) {
@@ -232,6 +236,12 @@ function BannerCustomizeModalContent({
   const previewImageUrl =
     rawImageUrl && isLikelySafeMediaSrc(rawImageUrl) ? rawImageUrl : null
   const hasPreviewContent = message.length > 0 || Boolean(previewImageUrl)
+
+  // The href exactly as the storefront will resolve it AFTER normalization, so
+  // the preview + these warnings reflect what actually saves.
+  const resolvedHref = sanitizeHref(normalizeLinkHref(config.href))
+  const linkLabelNeedsHref = config.linkLabel.trim().length > 0 && !resolvedHref
+  const hrefUnusable = config.href.trim().length > 0 && !resolvedHref
 
   const hasGradient = config.colors.background2.trim().length > 0
 
@@ -284,7 +294,7 @@ function BannerCustomizeModalContent({
                 <BannerStrip
                   compact
                   message={message}
-                  href={sanitizeHref(config.href)}
+                  href={resolvedHref}
                   linkLabel={config.linkLabel.trim()}
                   imageUrl={previewImageUrl}
                   colors={config.colors}
@@ -334,7 +344,7 @@ function BannerCustomizeModalContent({
               <FormField
                 label="Link URL"
                 htmlFor={hrefId}
-                hint="Optional. https:// or a site path like /shop."
+                hint="Optional. A full address (https://…) or a site path like /shop — the protocol is added for you if you omit it."
                 labelStyle="stacked"
               >
                 <Input
@@ -342,6 +352,12 @@ function BannerCustomizeModalContent({
                   density="compact"
                   value={config.href}
                   onChange={(e) => set('href', e.target.value)}
+                  // Fill in a missing protocol as soon as the field is left, so
+                  // "shop.com" becomes a usable "https://shop.com" link.
+                  onBlur={() => {
+                    const normalized = normalizeLinkHref(config.href)
+                    if (normalized !== config.href) set('href', normalized)
+                  }}
                 />
               </FormField>
               <FormField
@@ -358,6 +374,23 @@ function BannerCustomizeModalContent({
                 />
               </FormField>
             </div>
+            {linkLabelNeedsHref ? (
+              <p
+                role="alert"
+                className="text-xs text-[var(--color-warning)]"
+              >
+                The link label won’t appear until you add a valid Link URL
+                (a full address like https://… or a site path like /shop).
+              </p>
+            ) : hrefUnusable ? (
+              <p
+                role="alert"
+                className="text-xs text-[var(--color-warning)]"
+              >
+                This Link URL can’t be used, so the banner won’t link anywhere.
+                Use a full address like https://… or a site path like /shop.
+              </p>
+            ) : null}
             <MediaLibrarySlotField
               label="Leading image"
               hint="Optional small icon before the message (rendered ~20px tall)."

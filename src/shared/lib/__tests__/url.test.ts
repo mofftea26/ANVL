@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   isExternalHref,
   isLikelySafeMediaSrc,
+  normalizeLinkHref,
   sanitizeHref,
   upgradeHttpToHttps,
 } from '@/shared/lib/url'
@@ -69,6 +70,31 @@ describe('sanitizeHref (SEC-04)', () => {
     expect(
       sanitizeHref('https://anvl.lb', { allowRelative: false }),
     ).toBe('https://anvl.lb')
+  })
+})
+
+describe('normalizeLinkHref', () => {
+  it('prepends https:// to a scheme-less host so sanitizeHref accepts it', () => {
+    expect(normalizeLinkHref('shop.com/sale')).toBe('https://shop.com/sale')
+    // Regression: this bare value silently produced no banner link before.
+    expect(sanitizeHref(normalizeLinkHref('shop.com/sale'))).toBe('https://shop.com/sale')
+  })
+
+  it('leaves relative paths, hashes, and queries untouched', () => {
+    expect(normalizeLinkHref('/shop')).toBe('/shop')
+    expect(normalizeLinkHref('#section')).toBe('#section')
+    expect(normalizeLinkHref('?q=1')).toBe('?q=1')
+  })
+
+  it('leaves already-schemed URLs untouched', () => {
+    expect(normalizeLinkHref('https://x.com')).toBe('https://x.com')
+    expect(normalizeLinkHref('mailto:hi@anvl.lb')).toBe('mailto:hi@anvl.lb')
+    expect(normalizeLinkHref('tel:+9611234567')).toBe('tel:+9611234567')
+  })
+
+  it('trims and maps empty to empty', () => {
+    expect(normalizeLinkHref('   ')).toBe('')
+    expect(normalizeLinkHref('  example.com  ')).toBe('https://example.com')
   })
 })
 

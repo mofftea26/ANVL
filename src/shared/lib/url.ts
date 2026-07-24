@@ -77,6 +77,24 @@ function isRelative(value: string): boolean {
 }
 
 /**
+ * Normalizes a human-entered link URL into a form {@link sanitizeHref} accepts.
+ * Empty stays empty; relative paths (`/`, `#`, `?`) and already-schemed URLs
+ * pass through unchanged; a scheme-less value like `shop.com/sale` gets
+ * `https://` prepended — the common case where someone omits the protocol,
+ * which `sanitizeHref` otherwise rejects as ambiguous (so the link silently
+ * never renders). The result STILL must pass `sanitizeHref` before hitting the
+ * DOM — this only rescues the frequent "forgot https://" input; it is not
+ * itself a security boundary.
+ */
+export function normalizeLinkHref(raw: string): string {
+  const trimmed = raw.trim()
+  if (!trimmed) return ''
+  if (isRelative(trimmed)) return trimmed
+  if (SCHEME_PATTERN.test(trimmed)) return trimmed
+  return `https://${trimmed}`
+}
+
+/**
  * Returns true when {@link sanitizeHref}-shaped input is an absolute URL
  * (http(s)/mailto/tel) rather than a relative path. Use this to decide
  * between `<a href>` (external) and TanStack `<Link to>` (internal) at
