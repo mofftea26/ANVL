@@ -1,7 +1,8 @@
 /**
  * Mutable GSAP ⇄ R3F bridge for the altar stage — the same zero-re-render
  * pattern as the landing pages' motion state: GSAP timelines (orb focus,
- * hammer strike, explosion) tween these numbers; the scene's `useFrame` reads
+ * hammer strike, disintegration → modal formation) tween these numbers; the
+ * scene's `useFrame` reads
  * them every frame. Held in a ref at the stage root and rebuilt if the orb
  * count changes.
  */
@@ -15,11 +16,13 @@ export interface AltarState {
   /** Hammer swing progress: 0 = holstered/raised, 1 = impact. The strike
    *  timeline pushes it slightly negative for the windup. */
   hammerT: number
-  /** 0..1 — the active orb's burst-apart progress (explosion). */
+  /** 0..1 — the active orb's disintegration (stone dissolves into embers). */
   explodeT: number
-  /** 0..1 — the shared burst-particle/shockwave playhead. */
-  burstT: number
-  /** 0..1 — burst shards converge onto the modal rectangle (they FORM it). */
+  /** 0..1 — the freed embers' loosen/hover progress off the stone's surface;
+   *  the modal-forge pool lives while this is > 0 (no explosion — the embers
+   *  just let go into a hovering shroud, then stream to the modal). */
+  scatterT: number
+  /** 0..1 — the ember pool converges onto the modal rectangle (FORMS it). */
   formT: number
   /** 0..1 — the formed rectangle dissolves as the real panel materializes. */
   formFade: number
@@ -48,7 +51,7 @@ export function createAltarState(orbCount: number): AltarState {
     ringDim: 0,
     hammerT: 0,
     explodeT: 0,
-    burstT: 0,
+    scatterT: 0,
     formT: 0,
     formFade: 0,
     formSeq: 0,

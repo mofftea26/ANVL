@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
-import { Html, useCursor } from '@react-three/drei'
+import { useCursor } from '@react-three/drei'
+import { readThemeCssColor } from '@/shared/lib/themeColor'
 import type { AboutResolvedOrb } from '../content/aboutContent.defaults'
 import type { AltarOrbitParams } from './altarOrbs'
 import type { AltarState } from './altarState'
@@ -9,6 +10,24 @@ import { ANVIL_FACE_Y } from './AltarAnvil'
 import { PALANTIR_FRAGMENT, PALANTIR_VERTEX } from './shaders/palantir'
 
 export const ORB_RADIUS = 0.17
+/**
+ * OCCLUSION CONTRACT with the hammer (see AltarHammer's HAMMER_RENDER_ORDER):
+ * the orbit's near point (z = +ORBIT_RZ = 1.15) passes CLOSER to the camera
+ * than the hammer's swing plane (seat z 0.28 + 0.5 forward = 0.78), so with
+ * default depth writes an orbiting stone would legitimately depth-occlude the
+ * hammer no matter who draws last. Two rules keep the hammer the undisputed
+ * foreground actor:
+ *  1. Every orb mesh takes this explicit LOW render order — strictly below
+ *     the hammer's — so orbs always paint first in the transparent pass
+ *     (both stone and halo share it; three.js falls back to back-to-front z
+ *     sorting between orbs, which keeps orb-over-orb blending correct).
+ *  2. The stone's material sets `depthWrite: false` (it previously used the
+ *     three.js default `true`): the stone still depth-TESTS against the
+ *     opaque anvil (hidden on the orbit's far side, as before) but no longer
+ *     stamps the depth buffer, so the hammer — drawn after — can never be
+ *     depth-rejected by a nearer stone.
+ */
+export const ORB_RENDER_ORDER = 1
 /** Orbit ellipse around the anvil (x wide, z shallow for perspective depth). */
 const ORBIT_RX = 2.75
 const ORBIT_RZ = 1.15
@@ -24,6 +43,99 @@ export const ORB_SEAT = new THREE.Vector3(
   ANVIL_FACE_Y + ORB_RADIUS * ORB_SEAT_SCALE + 0.02,
   0.28,
 )
+
+/**
+ * THE CHIP FIX — the orb's name chip is now an IN-CANVAS sprite, not DOM.
+ *
+ * It used to be a drei `<Html>` element: real DOM floating in an overlay div
+ * ABOVE the entire WebGL canvas. No renderOrder / depthWrite / depthTest
+ * change inside the canvas can ever draw a 3D object over composited DOM —
+ * which is exactly why the hammer kept rendering "behind the chips" no matter
+ * what the scene did. Rasterizing the label into a CanvasTexture on a
+ * `<sprite>` puts the chip INSIDE the scene graph, where the hammer's higher
+ * render order (and the DOM-free compositing) guarantees it passes in front.
+ *
+ * Typography is matched to the old DOM chip (`anvl-display text-[10px]
+ * tracking-[0.28em] text-[var(--color-heading)]/90`): the document's
+ * `--font-display` family, weight 600, uppercase, manual per-glyph tracking
+ * (2D-canvas `letterSpacing` support is uneven), heading color via theme
+ * token. Drawn at 64px and scaled down in world units for crisp glyphs; the
+ * draw re-runs once `document.fonts` settles so the brand font (not the
+ * fallback serif) is what ships to the GPU.
+ */
+const LABEL_FONT_PX = 64
+const LABEL_TRACKING_EM = 0.28
+const LABEL_PAD_PX = 24
+/** Sprite world height ≈ the old 10px DOM chip at the altar camera distance. */
+const LABEL_WORLD_H = 0.11
+
+function createLabelTexture(
+  label: string,
+): { texture: THREE.CanvasTexture; aspect: number } | null {
+  if (typeof document === 'undefined') return null
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  const family =
+    getComputedStyle(document.documentElement).getPropertyValue('--font-display').trim() ||
+    'Cinzel'
+  const font = `600 ${LABEL_FONT_PX}px ${family}, serif`
+  const text = label.toUpperCase()
+  const tracking = LABEL_FONT_PX * LABEL_TRACKING_EM
+  ctx.font = font
+  let width = 0
+  for (const ch of text) width += ctx.measureText(ch).width + tracking
+  width = Math.max(1, width - tracking)
+  canvas.width = Math.ceil(width) + LABEL_PAD_PX * 2
+  canvas.height = LABEL_FONT_PX * 2
+  // Resizing a canvas resets its 2D context state — set text state again.
+  ctx.font = font
+  ctx.textBaseline = 'middle'
+  ctx.fillStyle = readThemeCssColor('--color-heading', '#E7E4DF')
+  let x = LABEL_PAD_PX
+  for (const ch of text) {
+    ctx.fillText(ch, x, canvas.height / 2)
+    x += ctx.measureText(ch).width + tracking
+  }
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.anisotropy = 4
+  return { texture, aspect: canvas.width / canvas.height }
+}
+
+function useLabelSprite(
+  label: string,
+): { texture: THREE.CanvasTexture; aspect: number } | null {
+  const [sprite, setSprite] = useState<{ texture: THREE.CanvasTexture; aspect: number } | null>(
+    null,
+  )
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    let disposed = false
+    const textures: THREE.CanvasTexture[] = []
+    const build = () => {
+      const built = createLabelTexture(label)
+      if (!built) return
+      if (disposed) {
+        built.texture.dispose()
+        return
+      }
+      textures.push(built.texture)
+      setSprite(built)
+    }
+    build()
+    // Redraw once the webfonts settle — the first draw may have used the
+    // serif fallback if Cinzel wasn't loaded yet.
+    document.fonts?.ready.then(() => {
+      if (!disposed) build()
+    })
+    return () => {
+      disposed = true
+      for (const t of textures) t.dispose()
+    }
+  }, [label])
+  return sprite
+}
 
 const FRESNEL_VERTEX = /* glsl */ `
 varying vec3 vNormal;
@@ -53,9 +165,11 @@ void main() {
  * of smoke and fire swirling in its depths, tinted by the orb's own CMS
  * color, wrapped in a faint fresnel aura, with a DOM label. Hovering wakes
  * the stone (the storm quickens and brightens); when focused it glides onto
- * the anvil seat, shrinking like a workpiece; at impact it blooms and
- * **bursts apart** (`explodeT` — the burst particles take over), then
- * re-materializes in orbit on release. Clicks raycast on the stone.
+ * the anvil seat, shrinking like a workpiece; at impact it **disintegrates**
+ * (`explodeT` — its matter hands over 1:1 to the modal-forge embers, which
+ * then stream out to FORM the modal), then re-materializes in orbit on
+ * release. Clicks raycast on the stone. The name chip is an in-canvas sprite,
+ * never DOM (see createLabelTexture).
  */
 export function AltarOrb({
   orb,
@@ -73,7 +187,8 @@ export function AltarOrb({
   const group = useRef<THREE.Group>(null)
   const stone = useRef<THREE.ShaderMaterial | null>(null)
   const halo = useRef<THREE.ShaderMaterial | null>(null)
-  const label = useRef<HTMLSpanElement | null>(null)
+  const labelMat = useRef<THREE.SpriteMaterial | null>(null)
+  const labelSprite = useLabelSprite(orb.label)
   const angle = useRef(orbit.phase)
   const hoverLift = useRef(0)
   const swirlClock = useRef(Math.random() * 20)
@@ -122,13 +237,14 @@ export function AltarOrb({
       oz + (ORB_SEAT.z - oz) * focus,
     )
 
-    // Seated orbs shrink onto the face like a workpiece; at impact they bloom
-    // out and dissolve — the burst particles carry the energy on.
+    // Seated orbs shrink onto the face like a workpiece; at impact the stone
+    // DISINTEGRATES in place — a bare swell as it lets go (no explosion
+    // bloom), its matter handing over 1:1 to the modal-forge embers.
     const squash = isActive ? state.flash * 0.3 : 0
     const grow =
       (1 + hoverLift.current * 0.12) *
       (1 - focus * (1 - ORB_SEAT_SCALE)) *
-      (1 + explode * 1.15)
+      (1 + explode * 0.12)
     g.scale.set(grow * (1 + squash * 0.5), grow * (1 - squash), grow * (1 + squash * 0.5))
     g.visible = explode < 0.985
 
@@ -141,21 +257,22 @@ export function AltarOrb({
       const u = stone.current.uniforms
       u.uTime.value = swirlClock.current
       u.uIntensity.value =
-        dim * (0.85 + hoverLift.current * 0.5 + (isActive ? state.flash * 2.6 + explode * 1.6 : 0))
+        dim * (0.85 + hoverLift.current * 0.5 + (isActive ? state.flash * 2.6 + explode * 0.9 : 0))
       u.uDissolve.value = dissolve
     }
     if (halo.current) {
       halo.current.uniforms.uStrength.value =
-        (0.5 + hoverLift.current * 0.4 + explode * 1.6) * dim * dissolve
+        (0.5 + hoverLift.current * 0.4 + explode * 0.6) * dim * dissolve
     }
-    if (label.current) {
-      label.current.style.opacity = String(0.9 * dim * (1 - focus))
+    if (labelMat.current) {
+      labelMat.current.opacity = 0.9 * dim * (1 - focus)
     }
   })
 
   return (
     <group ref={group}>
       <mesh
+        renderOrder={ORB_RENDER_ORDER}
         onClick={(e) => {
           e.stopPropagation()
           onSelect(index)
@@ -164,16 +281,21 @@ export function AltarOrb({
         onPointerOut={() => setHovered(false)}
       >
         <sphereGeometry args={[ORB_RADIUS, 48, 48]} />
+        {/* depthWrite=false: see ORB_RENDER_ORDER — a near-orbit stone must
+            never stamp depth over the hammer's swing plane. */}
         <shaderMaterial
           ref={stone}
           vertexShader={PALANTIR_VERTEX}
           fragmentShader={PALANTIR_FRAGMENT}
           uniforms={stoneUniforms}
           transparent
+          depthWrite={false}
         />
       </mesh>
-      {/* Faint mystical aura around the stone. */}
-      <mesh scale={1.45}>
+      {/* Faint mystical aura around the stone. Shares the stone's render order
+          so same-orb draw order (stone → halo, by object id) and inter-orb
+          z-sorting both stay intact. */}
+      <mesh scale={1.45} renderOrder={ORB_RENDER_ORDER}>
         <sphereGeometry args={[ORB_RADIUS, 24, 24]} />
         <shaderMaterial
           ref={halo}
@@ -185,14 +307,25 @@ export function AltarOrb({
           blending={THREE.AdditiveBlending}
         />
       </mesh>
-      <Html center position={[0, -0.42, 0]} style={{ pointerEvents: 'none' }} zIndexRange={[10, 0]}>
-        <span
-          ref={label}
-          className="anvl-display select-none whitespace-nowrap text-[10px] tracking-[0.28em] text-[var(--color-heading)]/90"
+      {/* The name chip — an IN-CANVAS sprite (see the chip-fix comment at
+          createLabelTexture): it lives in the scene graph at the orbs' render
+          order, so the hammer (higher order) genuinely passes in front of it,
+          which DOM (drei Html) made impossible. */}
+      {labelSprite ? (
+        <sprite
+          position={[0, -0.42, 0]}
+          scale={[LABEL_WORLD_H * labelSprite.aspect, LABEL_WORLD_H, 1]}
+          renderOrder={ORB_RENDER_ORDER}
         >
-          {orb.label}
-        </span>
-      </Html>
+          <spriteMaterial
+            ref={labelMat}
+            map={labelSprite.texture}
+            transparent
+            depthWrite={false}
+            opacity={0.9}
+          />
+        </sprite>
+      ) : null}
     </group>
   )
 }

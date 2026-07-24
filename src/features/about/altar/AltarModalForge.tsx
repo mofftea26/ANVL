@@ -2,23 +2,29 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { readThemeCssColor } from '@/shared/lib/themeColor'
-import type { AboutResolvedOrb } from '../content/aboutContent.defaults'
+import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import type { AltarState } from './altarState'
 import { ORB_RADIUS, ORB_SEAT, ORB_SEAT_SCALE } from './AltarOrb'
 
 /**
- * The site's particle standard (aFrom→aTo + per-seed stagger): enough embers
- * to read as the orb's own matter AND to draw a legible plate when they land.
+ * The site's particle-forge standard (fixed pool, aFrom→aTo vertex morph,
+ * per-seed stagger): enough embers to read as the orb's own matter AND to
+ * draw a legible plate when they land on the modal's rectangle.
  */
 const PARTICLE_COUNT = 2400
 /** Share of embers assigned to the rect's perimeter (the rest fill it). */
 const EDGE_SHARE = 0.6
 /** The seated (shrunken) orb's radius — the embers are born ON this sphere. */
 const SPHERE_R = ORB_RADIUS * ORB_SEAT_SCALE * 1.1
-/** Molten debris chunks that fly with the embers and die before the gather. */
-const SHARD_COUNT = 22
+/**
+ * Paints after the orbs (ORB_RENDER_ORDER = 1) so the glowing stream is never
+ * dimmed by a passing stone, and before the hammer (10) — the hammer stays
+ * the top actor even through the formation. depthTest is off (the stream
+ * crosses the whole stage), so paint order alone decides.
+ */
+const FORGE_RENDER_ORDER = 5
 
-const BURST_VERTEX = /* glsl */ `
+const FORGE_VERTEX = /* glsl */ `
 precision highp float;
 
 attribute vec3 aFrom;
@@ -27,7 +33,7 @@ attribute vec3 aTo;
 attribute float aSeed;
 attribute float aSize;
 
-uniform float uBurst;
+uniform float uScatter;
 uniform float uForm;
 uniform float uFormFade;
 uniform float uTime;
@@ -38,51 +44,42 @@ varying float vSeed;
 varying float vGlow;
 
 void main() {
-  // Two-phase disperse, so the ORB-ORIGIN reads unmistakably:
-  // 1) ERUPTION — the first beats of uBurst are a tight, fast radial blast
-  //    straight off the seated orb's sphere (every ember is born ON it), a
-  //    clear point-source explosion at the hit point…
-  // 2) DRIFT — …which then relaxes into the slower outward spread + sag as
-  //    the hanging cloud settles around the anvil.
-  float erupt = smoothstep(0.0, 0.35, uBurst);
-  float spread = smoothstep(0.22, 1.0, uBurst);
-  vec3 scattered = aFrom * (1.0 + erupt * 0.5 + spread * 1.0)
-    + aDir * (erupt * erupt * (0.3 + aSeed * 0.25) + spread * (0.6 + aSeed * 0.85));
-  scattered.y -= spread * spread * 0.45;
-
-  // The hanging cloud slowly revolves around the anvil — alive, not frozen.
-  float drift = uTime * 0.12 * spread;
-  float dc = cos(drift);
-  float ds = sin(drift);
-  scattered = vec3(dc * scattered.x + ds * scattered.z, scattered.y, -ds * scattered.x + dc * scattered.z);
-  scattered += 0.04 * spread * vec3(
-    sin(uTime * 1.3 + aSeed * 17.0),
-    cos(uTime * 1.1 + aSeed * 23.0),
-    sin(uTime * 0.9 + aSeed * 31.0)
+  // DISINTEGRATION (deliberately NOT an explosion): per-seed staggered
+  // release — the stone's surface lets go a few embers at a time. Each ember
+  // eases a short way outward along its surface normal into a loose hovering
+  // shroud around the seat. No radial blast, no shockwave, no gravity sag —
+  // the stone quietly comes apart into the app's embers.
+  float release = smoothstep(aSeed * 0.5, aSeed * 0.5 + 0.5, uScatter);
+  vec3 hover = aFrom + aDir * release * (0.10 + aSeed * 0.22);
+  // Gentle living drift while the shroud hangs — embers, not smoke.
+  hover += release * 0.03 * vec3(
+    sin(uTime * 1.1 + aSeed * 17.0),
+    cos(uTime * 0.9 + aSeed * 23.0),
+    sin(uTime * 0.7 + aSeed * 31.0)
   );
 
-  // …then, per-seed staggered, the swarm turns and SPIRALS IN to form the
-  // modal plate: each ember unwinds its own arc as its radius collapses.
+  // FORMATION: per-seed staggered spiral onto the modal plate (the same
+  // aFrom→aTo morph vocabulary as the passport/Coming Soon forges) — each
+  // ember unwinds its own arc as its radius collapses onto its plate target.
   float f = smoothstep(aSeed * 0.35, aSeed * 0.35 + 0.65, uForm);
   float spiralOn = smoothstep(0.0, 0.18, uForm);
-  vec3 d = scattered - aTo;
+  vec3 d = hover - aTo;
   float ang = (1.0 - f) * spiralOn * (1.2 + aSeed * 2.6) * (aSeed > 0.5 ? 1.0 : -1.0);
   float c = cos(ang);
   float s = sin(ang);
   vec3 dr = vec3(c * d.x - s * d.y, s * d.x + c * d.y, d.z);
   vec3 pos = aTo + dr * (1.0 - f);
 
-  // Heat life (the site's ember ramp): WHITE-HOT right at the orb as the
-  // eruption leaves it (ignition), cooling as the cloud spreads and drifts,
-  // re-heating as each ember lands on the forming plate.
-  float ignition = (1.0 - erupt) * step(0.0001, uBurst);
-  float burstPulse = sin(clamp(uBurst, 0.0, 1.0) * 3.14159265);
+  // Heat life (the site's ember ramp): each ember IGNITES as it tears off the
+  // stone, the shroud cools as the disintegration completes, and embers
+  // re-heat as they land on the forming plate.
+  float ignite = release * (1.0 - uScatter * 0.65);
   float breath = 0.5 + 0.5 * sin(uTime * (0.55 + aSeed) + aSeed * 12.0);
-  vGlow = clamp(ignition + burstPulse * 0.8 + f * 0.55 + breath * 0.12, 0.0, 1.0);
+  vGlow = clamp(ignite * 0.9 + f * 0.6 + breath * 0.15, 0.0, 1.0);
 
-  // Alive for the whole flight; dissolved by uFormFade as the real panel
-  // materializes inside the formed frame.
-  vAlpha = mix(1.0, 0.92, f) * (1.0 - uFormFade);
+  // Embers exist only once released — a 1:1 hand-off from the dissolving
+  // stone — and dissolve away as the real panel materializes over the plate.
+  vAlpha = release * (1.0 - uFormFade);
   vSeed = aSeed;
 
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
@@ -95,7 +92,7 @@ void main() {
 
 /** The armory / Coming Soon ember look — cold steel → ember → white-hot ramp
  *  with a hot core and per-seed twinkle (the particle-forge standard). */
-const BURST_FRAGMENT = /* glsl */ `
+const FORGE_FRAGMENT = /* glsl */ `
 precision highp float;
 
 uniform float uTime;
@@ -120,7 +117,7 @@ void main() {
 }
 `
 
-function buildBurstGeometry(): THREE.BufferGeometry {
+function buildForgeGeometry(): THREE.BufferGeometry {
   const geo = new THREE.BufferGeometry()
   const positions = new Float32Array(PARTICLE_COUNT * 3)
   const from = new Float32Array(PARTICLE_COUNT * 3)
@@ -143,9 +140,10 @@ function buildBurstGeometry(): THREE.BufferGeometry {
     from[i * 3 + 1] = ny * r
     from[i * 3 + 2] = nz * r
 
-    // Explosion radial = the surface normal, biased upward — sparks off an anvil.
+    // Loosen direction = the surface normal, slightly buoyant — the freed
+    // embers drift a touch upward off the stone, never blasting outward.
     const bx = nx
-    const by = ny + 0.35
+    const by = ny + 0.15
     const bz = nz
     const bl = Math.hypot(bx, by, bz) || 1
     dirs[i * 3] = bx / bl
@@ -240,110 +238,29 @@ function buildFormTargets(
   attr.needsUpdate = true
 }
 
-interface ShardSpec {
-  dir: THREE.Vector3
-  speed: number
-  axis: THREE.Vector3
-  rate: number
-  size: number
-  phase: number
-}
-
-function buildShardSpecs(): ShardSpec[] {
-  return Array.from({ length: SHARD_COUNT }, () => {
-    const theta = Math.random() * Math.PI * 2
-    const up = 0.15 + Math.random() * 0.75
-    const dir = new THREE.Vector3(Math.cos(theta), up, Math.sin(theta) * 0.7).normalize()
-    return {
-      dir,
-      speed: 0.9 + Math.random() * 1.5,
-      axis: new THREE.Vector3(
-        Math.random() - 0.5,
-        Math.random() - 0.5,
-        Math.random() - 0.5,
-      ).normalize(),
-      rate: 3 + Math.random() * 7,
-      size: 0.028 + Math.random() * 0.05,
-      phase: Math.random() * Math.PI * 2,
-    }
-  })
-}
-
 /**
- * Molten debris — a handful of tumbling tetrahedron chunks flung with the
- * embers (the anime "heavy matter" of the explosion). They arc under gravity,
- * tumble, and burn out as the swarm turns toward the plate — only the light
- * embers make the journey.
+ * The orb → modal formation — the app's particle-forge standard applied to
+ * the About modal (replacing the old explosion/shockwave burst). At hammer
+ * impact the seated palantír DISINTEGRATES into this fixed pool (each ember
+ * is born on the orb's sphere, so the stone hands its matter over 1:1);
+ * `state.scatterT` releases them, per-seed staggered, into a hovering shroud;
+ * once the modal has measured itself (`state.modalNdc` + `formSeq`),
+ * `state.formT` spirals the SAME embers in to FORM the modal's plate, and
+ * `state.formFade` dissolves them as the real panel materializes. Brand-token
+ * ember colors only. Idle frames render nothing; reduced motion renders the
+ * pool not at all (the modal simply fades — see AboutAltar's measure branch).
  */
-function BurstShards({ state }: { state: AltarState }) {
-  const mesh = useRef<THREE.InstancedMesh>(null)
-  const material = useRef<THREE.MeshBasicMaterial>(null)
-  const specs = useMemo(buildShardSpecs, [])
-  const dummy = useMemo(() => new THREE.Object3D(), [])
-
-  useFrame(({ clock }) => {
-    const m = mesh.current
-    if (!m || !material.current) return
-    // Shards live from the impact until the gather takes over.
-    const die = Math.min(1, Math.max(0, (state.formT - 0.05) / 0.45))
-    const active = state.burstT > 0.001 && die < 0.999
-    m.visible = active
-    if (!active) return
-    const b = state.burstT
-    const flight = 1 - Math.pow(1 - b, 3)
-    for (let i = 0; i < SHARD_COUNT; i++) {
-      const spec = specs[i]!
-      dummy.position
-        .copy(spec.dir)
-        .multiplyScalar(flight * spec.speed)
-      dummy.position.y -= b * b * 0.55
-      dummy.quaternion.setFromAxisAngle(spec.axis, spec.phase + clock.elapsedTime * spec.rate)
-      dummy.scale.setScalar(spec.size * (1 - 0.35 * b) * (1 - die))
-      dummy.updateMatrix()
-      m.setMatrixAt(i, dummy.matrix)
-    }
-    m.instanceMatrix.needsUpdate = true
-    material.current.opacity = (0.9 - 0.4 * b) * (1 - die)
-  })
-
-  return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, SHARD_COUNT]} frustumCulled={false} visible={false}>
-      <tetrahedronGeometry args={[1, 0]} />
-      <meshBasicMaterial
-        ref={material}
-        color={readThemeCssColor('--color-highlight-bright', '#e08a4a')}
-        transparent
-        opacity={0}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </instancedMesh>
-  )
-}
-
-/**
- * The strike's particle life — the site's disperse-and-rearrange embers. At
- * impact the seated palantír EXPLODES INTO this pool (each ember is born on
- * the orb's sphere, so the stone hands its matter over 1:1); `state.burstT`
- * flings them out with molten shard debris, the hanging cloud slowly revolves,
- * and once the modal has measured itself (`state.modalNdc` + `formSeq`),
- * `state.formT` spirals the swarm back in to FORM the modal's plate;
- * `state.formFade` dissolves it as the real panel materializes. A shockwave
- * ring marks the impact. Idle frames render nothing.
- */
-export function AltarBurst({ orbs, state }: { orbs: AboutResolvedOrb[]; state: AltarState }) {
+export function AltarModalForge({ state }: { state: AltarState }) {
   const points = useRef<THREE.Points>(null)
-  const ring = useRef<THREE.Mesh>(null)
-  const ringMaterial = useRef<THREE.MeshBasicMaterial>(null)
-  const lastColored = useRef(-1)
   const builtSeq = useRef(0)
+  const reducedMotion = useReducedMotion()
 
-  const geometry = useMemo(() => buildBurstGeometry(), [])
+  const geometry = useMemo(() => buildForgeGeometry(), [])
   useEffect(() => () => geometry.dispose(), [geometry])
 
   const uniforms = useMemo(
     () => ({
-      uBurst: { value: 0 },
+      uScatter: { value: 0 },
       uForm: { value: 0 },
       uFormFade: { value: 0 },
       uTime: { value: 0 },
@@ -373,41 +290,33 @@ export function AltarBurst({ orbs, state }: { orbs: AboutResolvedOrb[]; state: A
       builtSeq.current = state.formSeq
     }
 
-    // The pool lives from the moment the orb bursts until the formed plate
-    // has fully dissolved into the real panel (or the stage resets).
-    const active = state.burstT > 0.001 && state.formFade < 0.999
-
-    // The embers stay in the site's heat ramp; only the shockwave ring takes
-    // the struck orb's color (the orb's identity survives in the impact).
-    if (state.activeIndex >= 0 && state.activeIndex !== lastColored.current) {
-      const color = orbs[state.activeIndex]?.color
-      if (color) ringMaterial.current?.color.set(color)
-      lastColored.current = state.activeIndex
-    }
-    if (state.activeIndex === -1) lastColored.current = -1
+    // The pool lives from the disintegration until the formed plate has fully
+    // dissolved into the real panel (or the stage resets on release).
+    const active = !reducedMotion && state.scatterT > 0.001 && state.formFade < 0.999
 
     if (points.current) {
       points.current.visible = active
-      uniforms.uBurst.value = state.burstT
+      uniforms.uScatter.value = state.scatterT
       uniforms.uForm.value = state.formT
       uniforms.uFormFade.value = state.formFade
       uniforms.uTime.value = clock.elapsedTime
     }
-    if (ring.current && ringMaterial.current) {
-      const bursting = state.burstT > 0.001 && state.burstT < 0.999
-      ring.current.visible = bursting
-      const s = 0.25 + state.burstT * 3.4
-      ring.current.scale.setScalar(s)
-      ringMaterial.current.opacity = (1 - state.burstT) * 0.85
-    }
   })
+
+  if (reducedMotion) return null
 
   return (
     <group position={ORB_SEAT.toArray()}>
-      <points ref={points} geometry={geometry} frustumCulled={false} visible={false}>
+      <points
+        ref={points}
+        geometry={geometry}
+        frustumCulled={false}
+        visible={false}
+        renderOrder={FORGE_RENDER_ORDER}
+      >
         <shaderMaterial
-          vertexShader={BURST_VERTEX}
-          fragmentShader={BURST_FRAGMENT}
+          vertexShader={FORGE_VERTEX}
+          fragmentShader={FORGE_FRAGMENT}
           uniforms={uniforms}
           transparent
           depthWrite={false}
@@ -415,19 +324,6 @@ export function AltarBurst({ orbs, state }: { orbs: AboutResolvedOrb[]; state: A
           blending={THREE.AdditiveBlending}
         />
       </points>
-      <BurstShards state={state} />
-      {/* Shockwave ring — expands flat toward the camera. */}
-      <mesh ref={ring} visible={false}>
-        <ringGeometry args={[0.32, 0.4, 48]} />
-        <meshBasicMaterial
-          ref={ringMaterial}
-          transparent
-          opacity={0}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
     </group>
   )
 }

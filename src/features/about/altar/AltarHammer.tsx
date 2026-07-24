@@ -36,14 +36,35 @@ const PIVOT = new THREE.Vector3(ORB_SEAT.x + ARM, ORB_SEAT.y + 0.1, ORB_SEAT.z +
  * it (hammerT < 0) for the windup.
  */
 const RAISED_ANGLE = -1.5
-/** Draws after the seated stone/halo — settles the transparent-pass sort. */
+/**
+ * OCCLUSION FIX, part 2 (part 1 lives in AltarOrb's ORB_RENDER_ORDER): the
+ * orbit's near point (z ≈ 1.15) passes CLOSER to the camera than this swing
+ * plane (z ≈ 0.78), so render order alone could not fix the "hammer behind
+ * the orbs" bug — the palantír stones also WROTE depth, and the depth test
+ * rejected hammer fragments no matter how late they drew. Now the stones no
+ * longer write depth and every orb mesh sits at ORB_RENDER_ORDER (1), so this
+ * strictly-higher order guarantees the hammer paints AFTER (i.e. over) every
+ * orb, the burst embers (order 0), and the aurora (−1). Depth testing stays
+ * ON on purpose: the only depth left in the buffer is the opaque anvil (which
+ * the swing plane clears) and the hammer's own meshes — keeping the test
+ * preserves correct head/handle self-occlusion, which `depthTest: false`
+ * would break every frame just to guard the rare spun-anvil-horn case.
+ */
 const HAMMER_RENDER_ORDER = 10
 
-/** Idle sway amplitudes — layered sinusoids, tuned faint (weighty, magical). */
-const SWAY_Z = 0.045
-const SWAY_Z_WOBBLE = 0.016
-const SWAY_X = 0.03
-const BOB_Y = 0.028
+/**
+ * Idle drift amplitudes — a slow figure-8 (lissajous) plus a vertical bob,
+ * deliberately PERCEPTIBLE at a glance (the head sweeps ~0.11 world units,
+ * a few percent of the frame): the hovering hammer must read as a live,
+ * weighty presence, not a parked prop. rotation.x runs near double the
+ * rotation.z rate (0.53 vs 1.07 — incommensurate, so the loop never repeats
+ * exactly) which traces the figure-8; the faster low-amplitude wobble breaks
+ * any residual metronome feel.
+ */
+const SWAY_Z = 0.085
+const SWAY_Z_WOBBLE = 0.022
+const SWAY_X = 0.06
+const BOB_Y = 0.05
 
 /**
  * The hammer — holstered invisibly until a strike runs. `state.hammerT`
@@ -54,11 +75,11 @@ const BOB_Y = 0.028
  * so the visual impact and the explosion stay locked together.
  *
  * On top of the timeline-driven arc:
- * - **Idle sway** while the hammer hovers cocked (the glide/hold before the
- *   windup): three layered clock-offset sinusoids — a slow drift, a subtle
- *   faster wobble, and a faint vertical bob — irregular on purpose (no single
- *   sin), fading out entirely as the windup/drop takes over and under
- *   reduced motion.
+ * - **Idle drift** while the hammer hovers cocked (the glide/hold before the
+ *   windup): a clearly visible slow figure-8 — rotation.x at roughly double
+ *   the rotation.z rate (incommensurate, never exactly repeating) — plus a
+ *   faster low wobble and a vertical bob, fading out entirely as the
+ *   windup/drop takes over and under reduced motion.
  * - **Follow-through**: the wrist lags the swing — a small x-axis lean driven
  *   by the arc's angular velocity, so the drop reads as accelerating mass and
  *   the recoil settles with a dying wobble instead of stopping dead.
@@ -110,11 +131,11 @@ export function AltarHammer({ url, state }: { url: string; state: AltarState }) 
       ? 0
       : Math.max(0, 1 - Math.abs(state.hammerT) * 3) * fade.current
 
-    // Layered, clock-offset sinusoids — deliberately incommensurate rates so
-    // the drift never reads as a metronome.
+    // Figure-8 drift: rotation.x at ~2× the rotation.z rate (incommensurate)
+    // traces a lissajous loop; the 1.31-rate wobble keeps it organic.
     const swayZ =
       (Math.sin(t * 0.53 + 1.7) * SWAY_Z + Math.sin(t * 1.31 + 0.4) * SWAY_Z_WOBBLE) * restWeight
-    const swayX = Math.sin(t * 0.83 + 2.9) * SWAY_X * restWeight
+    const swayX = Math.sin(t * 1.07 + 2.9) * SWAY_X * restWeight
     const bobY =
       (Math.sin(t * 0.71 + 0.9) * BOB_Y + Math.sin(t * 1.93 + 4.2) * BOB_Y * 0.3) * restWeight
 

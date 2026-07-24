@@ -10,7 +10,7 @@ import { AltarAurora } from './AltarAurora'
 import { AltarAnvil, ANVIL_FACE_Y } from './AltarAnvil'
 import { AltarHammer } from './AltarHammer'
 import { AltarOrb } from './AltarOrb'
-import { AltarBurst } from './AltarBurst'
+import { AltarModalForge } from './AltarModalForge'
 
 /** Camera drifts with the pointer and rattles on impact — always looking at
  *  the altar. */
@@ -52,7 +52,8 @@ function StrikeFlash({ state, colors }: { state: AltarState; colors: AboutBrandC
 /**
  * Everything inside the altar canvas: the aurora void, the grabbable anvil +
  * strike hammer (normalized GLBs), the CMS-driven orb ring (each orb its own
- * color), the strike burst, the shared cursor dust, and the lighting rig. All
+ * color), the orb→modal ember forge, the shared cursor dust, and the lighting
+ * rig. All
  * per-frame motion reads the mutable {@link AltarState} written by the GSAP
  * strike timelines — zero React state in the loop.
  */
@@ -100,7 +101,7 @@ export function AltarScene({
           onSelect={onSelect}
         />
       ))}
-      <AltarBurst orbs={orbs} state={state} />
+      <AltarModalForge state={state} />
 
       <DustField drive={drive} count={500} />
     </>

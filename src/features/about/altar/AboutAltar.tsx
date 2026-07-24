@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
+import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import { createDustDrive } from '@/shared/webgl/DustField'
 import { useCanvasTeardownMark } from '@/shared/webgl/canvasTeardownGuard'
 import type { AboutResolvedContent } from '../content/aboutContent.defaults'
@@ -16,19 +17,38 @@ const DEFAULT_ANVIL_GLB = '/about/anvil.glb'
 const DEFAULT_HAMMER_GLB = '/about/hammer.glb'
 const DEFAULT_FORGE_BACKDROP = '/about/forge-backdrop.webp'
 
-/** Strike beats (timeline seconds): glide → windup → drop → impact. */
+/**
+ * Strike beats (timeline seconds): glide → windup → pause → drop → impact →
+ * hit-stop → ring-out. Every impact-locked effect (flash, shake, DOM impact
+ * frames, explode/burst, modal mount) keys off {@link IMPACT_AT}, so the
+ * hammer hitting `hammerT = 1` and the orb exploding are the SAME beat.
+ */
 const WINDUP_AT = 0.9
-const DROP_AT = 1.35
-const IMPACT_AT = 1.65
+/** Backswing — decelerates into the top (power3.out), gathering weight. */
+const WINDUP_D = 0.45
+/** Held breath at the top of the backswing — the anticipation pause. */
+const WINDUP_PAUSE = 0.15
+const DROP_AT = WINDUP_AT + WINDUP_D + WINDUP_PAUSE
+/** The violent expo.in drop — nearly all the arc happens in the last frames. */
+const DROP_D = 0.28
+const IMPACT_AT = DROP_AT + DROP_D
+/** Hit-stop: the hammer stays frozen, buried in the impact (anime hold). */
+const HIT_STOP = 0.08
+/** Reduced motion: one quick, gentle arc — impact beat for the soft strike. */
+const RM_IMPACT_AT = 0.85
 
 /**
  * The Forge Altar — the desktop About experience. One non-scrollable 100svh
  * stage: the grabbable 3D anvil at centre under an aurora, the CMS-defined
  * orbs (each its own color) in slow orbit, the picker chips along the top.
  * Choosing an orb glides it onto the anvil, the hammer winds up and strikes —
- * the orb **explodes** into shards and a shockwave, and the modal forges open
- * out of the burst. Closing re-materializes the orb in orbit. GSAP owns every
+ * the orb **disintegrates into the app's forge embers**, and those SAME
+ * embers stream out to FORM the modal (the particle-forge standard; no
+ * explosion). Closing re-materializes the orb in orbit. GSAP owns every
  * transition; the R3F scene reads the mutable {@link AltarState} per frame.
+ * During a strike the DOM picker chips fade out — DOM composites ABOVE the
+ * canvas, so the only way the hammer reads in front of them is for them not
+ * to be there while it swings.
  */
 export default function AboutAltar({
   content,
@@ -44,6 +64,7 @@ export default function AboutAltar({
   const timelineRef = useRef<gsap.core.Timeline | null>(null)
   const formTweenRef = useRef<gsap.core.Tween | null>(null)
   const colors = useMemo(() => readAboutBrandColors(), [])
+  const reducedMotion = useReducedMotion()
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   useCanvasTeardownMark()
 
@@ -107,9 +128,21 @@ export default function AboutAltar({
       formTweenRef.current?.kill()
       state.formT = 0
       state.formFade = 0
-      // Hold first — the embers must be seen dispersing and drifting BEFORE
-      // they gather. Then converge into the plate; then dissolve into the
-      // real panel (whose own reveal is timed to this fade).
+      // Reduced motion: no ember stream — snap the formation done and fade
+      // quickly so everything keyed off this contract still completes.
+      if (reducedMotion) {
+        state.formT = 1
+        formTweenRef.current = gsap.to(state, {
+          formFade: 1,
+          duration: 0.4,
+          ease: 'power2.out',
+        })
+        return
+      }
+      // Hold first — the freed embers must be seen hovering as the stone
+      // finishes coming apart BEFORE they gather. Then converge into the
+      // plate; then dissolve into the real panel (whose own reveal is timed
+      // to this fade).
       formTweenRef.current = gsap.to(state, {
         formT: 1,
         duration: 0.85,
@@ -125,7 +158,7 @@ export default function AboutAltar({
         },
       })
     },
-    [state],
+    [state, reducedMotion],
   )
 
   const strike = useCallback(
@@ -133,36 +166,62 @@ export default function AboutAltar({
       if (state.activeIndex !== -1) return
       state.activeIndex = index
       state.explodeT = 0
-      state.burstT = 0
+      state.scatterT = 0
 
       timelineRef.current?.kill()
       const tl = gsap.timeline()
       timelineRef.current = tl
 
+      // Reduced motion (the altar only mounts without the preference, but it
+      // can flip mid-session): near-static — quick gentle arc, no violence.
+      const impactAt = reducedMotion ? RM_IMPACT_AT : IMPACT_AT
+
+      // The DOM picker chips sit ABOVE the canvas (they're DOM — nothing
+      // in-canvas can ever draw over them), and the raised hammer head swings
+      // right through their screen band. Fade them out for the strike; the
+      // release timeline brings them back.
+      if (root.current) {
+        const q = gsap.utils.selector(root.current)
+        tl.to(q('[data-altar-picker]'), { autoAlpha: 0, duration: 0.35, ease: 'power2.out' }, 0)
+      }
+
       // The chosen orb glides to the anvil while the ring dims and stills.
-      tl.to(state.focusT, { [index]: 1, duration: 1.15, ease: 'power2.inOut' }, 0)
+      tl.to(
+        state.focusT,
+        { [index]: 1, duration: reducedMotion ? 0.7 : 1.15, ease: 'power2.inOut' },
+        0,
+      )
       tl.to(state, { ringDim: 1, duration: 0.8, ease: 'power2.out' }, 0)
       tl.to(state, { orbitSpeed: 0.1, duration: 1.0, ease: 'power2.out' }, 0)
-      // Windup (anticipation) — the hammer draws deliberately past its cocked
-      // angle, gathering weight…
-      tl.to(state, { hammerT: -0.22, duration: 0.42, ease: 'power2.inOut' }, WINDUP_AT)
-      // …then drops in an accelerating arc — expo so the last frames whip.
-      tl.to(state, { hammerT: 1, duration: IMPACT_AT - DROP_AT, ease: 'expo.in' }, DROP_AT)
-      // Impact: flash, shake, ember glint — and the orb explodes.
+      if (reducedMotion) {
+        // One calm arc onto the seat — no overshoot, no hit-stop, no ring-out.
+        tl.to(state, { hammerT: 1, duration: 0.4, ease: 'power2.inOut' }, RM_IMPACT_AT - 0.4)
+      } else {
+        // Windup (anticipation) — the hammer draws well past its cocked angle,
+        // DECELERATING into the top of the backswing (power3.out), then HOLDS
+        // there for WINDUP_PAUSE — the held breath before the blow…
+        tl.to(state, { hammerT: -0.3, duration: WINDUP_D, ease: 'power3.out' }, WINDUP_AT)
+        // …then the drop: expo.in, so the head hangs, then whips — nearly the
+        // entire arc lands in the final frames before impact.
+        tl.to(state, { hammerT: 1, duration: DROP_D, ease: 'expo.in' }, DROP_AT)
+      }
+      // Impact: flash, ember glint — and (full-motion only) the camera shake.
       tl.call(
         () => {
           state.flash = 1
-          state.shake = 1
           driveRef.current.glint = 1
           gsap.to(state, { flash: 0, duration: 0.5, ease: 'power2.out' })
-          gsap.to(state, { shake: 0, duration: 0.9, ease: 'power3.out' })
+          if (!reducedMotion) {
+            state.shake = 1
+            gsap.to(state, { shake: 0, duration: 0.9, ease: 'power3.out' })
+          }
         },
         [],
-        IMPACT_AT,
+        impactAt,
       )
       // Impact frames (anime staging): a white-hot screen flash and a ring of
       // radial speed-lines snap in on the hit and burn off fast.
-      if (root.current) {
+      if (root.current && !reducedMotion) {
         const q = gsap.utils.selector(root.current)
         tl.fromTo(
           q('[data-strike-flash]'),
@@ -183,26 +242,36 @@ export default function AboutAltar({
           IMPACT_AT + 0.09,
         )
       }
-      // The orb dissolves fast (it BECOMES the particles), which erupt
-      // radially FROM it — a legible point-source blast at the hit point —
-      // then hold, drifting, until the modal's measure kicks off the gather.
-      // (power2 over 0.8s keeps the eruption phase readable; the gather's
-      // delay contract in handlePanelMeasure is untouched.)
-      tl.to(state, { explodeT: 1, duration: 0.28, ease: 'power3.out' }, IMPACT_AT)
-      tl.to(state, { burstT: 1, duration: 0.8, ease: 'power2.out' }, IMPACT_AT)
-      // Hit-stop: the hammer stays buried in the impact for a few frames
-      // (anime freeze) before the recoil bounce, then lifts away with
-      // follow-through — a touch past the cocked rest, settling back.
-      tl.to(state, { hammerT: 0.72, duration: 0.26, ease: 'power2.out' }, IMPACT_AT + 0.14)
-      tl.to(state, { hammerT: -0.06, duration: 0.5, ease: 'power2.inOut' }, IMPACT_AT + 0.46)
-      tl.to(state, { hammerT: 0, duration: 0.4, ease: 'power2.out' }, IMPACT_AT + 0.96)
+      // DISINTEGRATION (no explosion): the stone dissolves fast — it BECOMES
+      // the forge embers 1:1 — while scatterT releases those embers, per-seed
+      // staggered, into a hovering shroud off the stone's surface. They hang
+      // there until the modal's measure kicks off the gather (the delay
+      // contract in handlePanelMeasure), then the SAME embers stream in to
+      // FORM the modal's plate.
+      tl.to(state, { explodeT: 1, duration: 0.28, ease: 'power3.out' }, impactAt)
+      tl.to(state, { scatterT: 1, duration: 0.6, ease: 'power2.out' }, impactAt)
+      if (reducedMotion) {
+        tl.to(state, { hammerT: 0, duration: 0.5, ease: 'power2.out' }, RM_IMPACT_AT + 0.2)
+      } else {
+        // HIT-STOP: hammerT is untouched for HIT_STOP seconds — the hammer
+        // stays frozen, buried in the impact (the anime frame-hold), then…
+        // RING-OUT: a violent rebound that OVERSHOOTS the cocked rest and
+        // rings down through four diminishing swings (-0.26 → +0.14 → -0.10 →
+        // +0.05 → 0), pendulum-eased, before melting into the idle figure-8
+        // (the hammer's sway weight fades back in as |hammerT| shrinks).
+        tl.to(state, { hammerT: -0.26, duration: 0.34, ease: 'power3.out' }, IMPACT_AT + HIT_STOP)
+        tl.to(state, { hammerT: 0.14, duration: 0.28, ease: 'power2.inOut' }, IMPACT_AT + HIT_STOP + 0.34)
+        tl.to(state, { hammerT: -0.1, duration: 0.24, ease: 'power2.inOut' }, IMPACT_AT + HIT_STOP + 0.62)
+        tl.to(state, { hammerT: 0.05, duration: 0.22, ease: 'power2.inOut' }, IMPACT_AT + HIT_STOP + 0.86)
+        tl.to(state, { hammerT: 0, duration: 0.34, ease: 'sine.out' }, IMPACT_AT + HIT_STOP + 1.08)
+      }
       // Mount the modal (hidden) once the embers are out — it measures itself
       // and hands the pool its formation targets; the measure starts the
       // (delayed) gather, so disperse reads first, then the swarm draws the
       // panel's rectangle.
-      tl.call(() => setOpenIndex(index), [], IMPACT_AT + 0.2)
+      tl.call(() => setOpenIndex(index), [], impactAt + 0.2)
     },
-    [state],
+    [state, reducedMotion],
   )
 
   const release = useCallback(() => {
@@ -218,12 +287,20 @@ export default function AboutAltar({
       },
     })
     timelineRef.current = tl
-    // The orb is still burst apart — snap it home invisibly, then let it
-    // re-materialize in its orbit slot as the ring wakes back up.
+    // The orb is still disintegrated — snap it home invisibly, then let it
+    // re-materialize in its orbit slot as the ring wakes back up. scatterT: 0
+    // retires the ember pool instantly (its life gate), while explodeT eases
+    // back so the stone re-forms.
     tl.set(state.focusT, { [index]: 0 }, 0)
-    tl.set(state, { burstT: 0, hammerT: 0, formT: 0, formFade: 0 }, 0)
+    tl.set(state, { scatterT: 0, hammerT: 0, formT: 0, formFade: 0 }, 0)
     tl.to(state, { ringDim: 0, orbitSpeed: 1, duration: 0.9, ease: 'power2.inOut' }, 0)
     tl.to(state, { explodeT: 0, duration: 0.6, ease: 'power2.out' }, 0.25)
+    // The picker chips return as the hammer fades off the stage (cross-fade —
+    // by the time they're fully back the hammer is gone).
+    if (root.current) {
+      const q = gsap.utils.selector(root.current)
+      tl.to(q('[data-altar-picker]'), { autoAlpha: 1, duration: 0.6, ease: 'power2.out' }, 0.55)
+    }
   }, [state])
 
   // Stage entrance: the canvas breathes in from black, the chrome rises.
@@ -317,8 +394,16 @@ export default function AboutAltar({
       </div>
 
       {/* Orb picker — top of the stage; also the keyboard/AT path. Sits below
-          the small AboutHeader pill (rendered by the parent). */}
-      <div className="absolute inset-x-0 top-[calc(var(--anvl-header-h)+4.5rem)] z-10 flex flex-col items-center gap-3 px-6">
+          the small AboutHeader pill (rendered by the parent). data-altar-picker:
+          the strike timeline fades this row out (autoAlpha, so it also stops
+          catching clicks) — it is DOM composited ABOVE the canvas, and the
+          raised hammer head swings through exactly this screen band, so
+          removing it during the strike is the only way the hammer can read
+          in front of the chips. */}
+      <div
+        data-altar-picker
+        className="absolute inset-x-0 top-[calc(var(--anvl-header-h)+4.5rem)] z-10 flex flex-col items-center gap-3 px-6"
+      >
         <p data-altar-reveal className="anvl-display text-[10px] tracking-[0.32em] text-[var(--color-heading)]/70">
           Choose an orb — the hammer does the rest
         </p>

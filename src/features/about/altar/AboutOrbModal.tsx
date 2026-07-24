@@ -26,8 +26,9 @@ export function AboutOrbModal({
   orb: AboutResolvedOrb | null
   image?: string
   onClose: () => void
-  /** Reports the panel's laid-out rect (pre-animation) — the burst shards
-   *  use it to converge into the panel's shape before it materializes. */
+  /** Reports the panel's laid-out rect (pre-animation) — the disintegrated
+   *  orb's embers use it to converge and FORM the panel's shape before it
+   *  materializes (AltarModalForge). */
   onMeasure?: (rect: DOMRect) => void
 }) {
   const root = useRef<HTMLDivElement | null>(null)
