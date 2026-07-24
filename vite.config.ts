@@ -89,6 +89,13 @@ const config = defineConfig(({ isSsrBuild }) => ({
     rollupOptions: {
       output: {
         manualChunks(id: string) {
+          // Admin CMS write/publish path (cmsWriteThrough + adminCmsRemoteSync).
+          // It is only ever reached via `await import(...)` from the save
+          // functions, so pin it to its own chunk: this keeps the admin runtime
+          // out of the storefront entry (PERF-01) AND gives the bundler a stable
+          // static reference so it can't be tree-shaken away (the cause of the
+          // "n is not a function" save failure in production).
+          if (id.includes('/features/admin/cmsRemote/')) return 'admin-cms-remote'
           if (id.includes('node_modules/gsap')) return 'vendor-gsap'
           if (id.includes('node_modules/lenis')) return 'vendor-lenis'
           if (

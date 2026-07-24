@@ -1,6 +1,7 @@
-import type {
-  AdminCmsFlushResult,
-  CmsSettingsFieldKey,
+import {
+  flushAdminCmsRemoteSync,
+  type AdminCmsFlushResult,
+  type CmsSettingsFieldKey,
 } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
 
 /**
@@ -15,9 +16,15 @@ import type {
 export async function flushAdminCmsWriteThrough(
   fields?: CmsSettingsFieldKey[],
 ): Promise<AdminCmsFlushResult> {
-  const { flushAdminCmsRemoteSync } = await import(
-    '@/features/admin/cmsRemote/adminCmsRemoteSync'
-  )
+  // NOTE: this MUST be a static import (not `await import(...)`). Reaching
+  // `adminCmsRemoteSync` only through a dynamic import nested inside this
+  // (already dynamically-imported) module made Rolldown/Vite tree-shake the
+  // whole module out of the CLIENT build — the emitted dynamic import then
+  // resolved `flushAdminCmsRemoteSync` to `undefined`, so every admin Save
+  // threw "n is not a function" in production. `cmsWriteThrough` is itself
+  // only ever `await import()`-ed by the `save*Async` functions, so a static
+  // edge here keeps the admin write code in that same lazy chunk (never the
+  // storefront entry) while giving the bundler a reference it won't drop.
   return flushAdminCmsRemoteSync(fields)
 }
 
