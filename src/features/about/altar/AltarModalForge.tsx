@@ -50,9 +50,11 @@ void main() {
   // shroud around the seat. No radial blast, no shockwave, no gravity sag —
   // the stone quietly comes apart into the app's embers.
   float release = smoothstep(aSeed * 0.5, aSeed * 0.5 + 0.5, uScatter);
-  vec3 hover = aFrom + aDir * release * (0.10 + aSeed * 0.22);
-  // Gentle living drift while the shroud hangs — embers, not smoke.
-  hover += release * 0.03 * vec3(
+  // A WIDE shroud — the freed embers must read across the whole stage, not
+  // hug the stone (user-verified: the tight 0.1-0.3 cloud was invisible).
+  vec3 hover = aFrom + aDir * release * (0.45 + aSeed * 0.85);
+  // Living drift while the shroud hangs — embers, not smoke.
+  hover += release * 0.07 * vec3(
     sin(uTime * 1.1 + aSeed * 17.0),
     cos(uTime * 0.9 + aSeed * 23.0),
     sin(uTime * 0.7 + aSeed * 31.0)
@@ -73,9 +75,9 @@ void main() {
   // Heat life (the site's ember ramp): each ember IGNITES as it tears off the
   // stone, the shroud cools as the disintegration completes, and embers
   // re-heat as they land on the forming plate.
-  float ignite = release * (1.0 - uScatter * 0.65);
+  float ignite = release * (1.0 - uScatter * 0.3);
   float breath = 0.5 + 0.5 * sin(uTime * (0.55 + aSeed) + aSeed * 12.0);
-  vGlow = clamp(ignite * 0.9 + f * 0.6 + breath * 0.15, 0.0, 1.0);
+  vGlow = clamp(ignite * 1.0 + f * 0.9 + breath * 0.15, 0.0, 1.0);
 
   // Embers exist only once released — a 1:1 hand-off from the dissolving
   // stone — and dissolve away as the real panel materializes over the plate.
@@ -85,8 +87,8 @@ void main() {
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
   gl_Position = projectionMatrix * mv;
   // Hard cap — a near-camera additive point would rasterize screen-sized.
-  float sizePx = aSize * uPixelRatio * mix(1.0, 0.6, f) * (1.0 + vGlow * 0.9) * (300.0 / -mv.z);
-  gl_PointSize = min(sizePx, 15.0 * uPixelRatio);
+  float sizePx = aSize * uPixelRatio * mix(1.0, 0.7, f) * (1.0 + vGlow * 0.9) * (300.0 / -mv.z);
+  gl_PointSize = min(sizePx, 18.0 * uPixelRatio);
 }
 `
 
@@ -151,7 +153,7 @@ function buildForgeGeometry(): THREE.BufferGeometry {
     dirs[i * 3 + 2] = bz / bl
 
     seed[i] = Math.random()
-    size[i] = 2.4 + Math.random() * 4.2
+    size[i] = 3.4 + Math.random() * 5.2
   }
 
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))

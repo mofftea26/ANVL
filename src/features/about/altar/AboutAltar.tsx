@@ -141,19 +141,20 @@ export default function AboutAltar({
       }
       // Hold first — the freed embers must be seen hovering as the stone
       // finishes coming apart BEFORE they gather. Then converge into the
-      // plate; then dissolve into the real panel (whose own reveal is timed
-      // to this fade).
+      // plate (done ~1.25s after measure), HOLD the drawn plate for a beat,
+      // and only then dissolve — overlapping the real panel's reveal (mount
+      // +1.5s in AboutOrbModal) so the embers visibly fuse INTO the panel.
       formTweenRef.current = gsap.to(state, {
         formT: 1,
-        duration: 0.85,
-        delay: 0.55,
+        duration: 0.9,
+        delay: 0.35,
         ease: 'power2.inOut',
         onComplete: () => {
           formTweenRef.current = gsap.to(state, {
             formFade: 1,
-            duration: 0.5,
+            duration: 0.55,
             ease: 'power2.out',
-            delay: 0.12,
+            delay: 0.3,
           })
         },
       })

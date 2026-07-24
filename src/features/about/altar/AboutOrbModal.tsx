@@ -42,10 +42,12 @@ export function AboutOrbModal({
       // formation targets match where the panel will actually stand.
       if (panelRef.current) onMeasure?.(panelRef.current.getBoundingClientRect())
       const q = gsap.utils.selector(root.current)
-      // Timed to the altar's ember choreography (measure → 0.55s drift hold →
-      // 0.85s gather → 0.12s → 0.5s dissolve): the backdrop dims under the
-      // drifting embers, and the panel only materializes as the formed swarm
-      // dissolves into it (~1.5s after this mounts/measures).
+      // Timed to the altar's ember choreography (measure → 0.35s drift hold →
+      // 0.9s gather → 0.3s plate HOLD → 0.55s dissolve): the stage stays
+      // completely clear until the drawn plate has held its beat (~1.55s),
+      // then the backdrop dims and the panel materializes exactly as the
+      // swarm dissolves into it — the embers must never play behind the
+      // backdrop's blur or the opaque panel.
       // CRITICAL: the backdrop's blur must be animated as `backdropFilter`,
       // not hidden via opacity — `backdrop-filter` keeps blurring the canvas
       // even at opacity 0 (Chromium), which smeared the embers into nothing.
@@ -58,7 +60,7 @@ export function AboutOrbModal({
           webkitBackdropFilter: 'blur(10px)',
           duration: 0.6,
           ease: 'power2.out',
-          delay: 1.35,
+          delay: 1.6,
         },
       )
       // The panel forges in with a touch of depth — tilting up out of the
@@ -73,7 +75,7 @@ export function AboutOrbModal({
           rotateX: 0,
           duration: 0.6,
           ease: 'expo.out',
-          delay: 1.5,
+          delay: 1.7,
         },
       )
       // Ignition — the panel's edge flashes in the orb's color as the embers
@@ -85,7 +87,7 @@ export function AboutOrbModal({
           opacity: 1,
           duration: 0.16,
           ease: 'power4.out',
-          delay: 1.48,
+          delay: 1.68,
           onComplete: () => {
             gsap.to(q('[data-modal-ignite]'), { opacity: 0, duration: 0.7, ease: 'power2.out' })
           },
@@ -94,7 +96,7 @@ export function AboutOrbModal({
       gsap.fromTo(
         q('[data-modal-reveal]'),
         { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.06, delay: 1.72 },
+        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.06, delay: 1.92 },
       )
       for (const el of q('[data-modal-stat-value]')) {
         const target = Number((el as HTMLElement).dataset.statTarget)
@@ -105,7 +107,7 @@ export function AboutOrbModal({
           n: target,
           duration: 1.1,
           ease: 'power2.out',
-          delay: 1.9,
+          delay: 2.1,
           onUpdate: () => {
             el.textContent = String(Math.round(counter.n))
           },
