@@ -23,8 +23,8 @@ describe('SizeGuideTable', () => {
   it('renders the fixed 7×6 grid with labelled cells', () => {
     render(<Harness />)
     expect(screen.getAllByRole('textbox')).toHaveLength(42)
-    expect(screen.getByRole('textbox', { name: /chest width, size m/i })).toBeInTheDocument()
-    expect(screen.getByRole('textbox', { name: /cuff width, size xxl/i })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: /^chest, size m/i })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: /cuff opening, size xxl/i })).toBeInTheDocument()
   })
 
   it('accepts decimal values and rejects non-numeric input', async () => {
@@ -32,7 +32,7 @@ describe('SizeGuideTable', () => {
     const onChange = vi.fn()
     render(<Harness onChange={onChange} />)
 
-    const cell = screen.getByRole('textbox', { name: /chest width, size m/i })
+    const cell = screen.getByRole('textbox', { name: /^chest, size m/i })
     await user.type(cell, '48.5')
     expect(cell).toHaveValue('48.5')
 
@@ -48,19 +48,19 @@ describe('SizeGuideTable', () => {
     const user = userEvent.setup()
     render(<Harness />)
 
-    const lengthXs = screen.getByRole('textbox', { name: /^length, size xs/i })
+    const lengthXs = screen.getByRole('textbox', { name: /^body length, size xs/i })
     await user.click(lengthXs)
     await user.keyboard('{ArrowDown}')
-    expect(screen.getByRole('textbox', { name: /chest width, size xs/i })).toHaveFocus()
+    expect(screen.getByRole('textbox', { name: /^chest, size xs/i })).toHaveFocus()
 
     await user.keyboard('{ArrowRight}')
-    expect(screen.getByRole('textbox', { name: /chest width, size s,/i })).toHaveFocus()
+    expect(screen.getByRole('textbox', { name: /^chest, size s,/i })).toHaveFocus()
 
     await user.keyboard('{ArrowUp}')
-    expect(screen.getByRole('textbox', { name: /^length, size s,/i })).toHaveFocus()
+    expect(screen.getByRole('textbox', { name: /^body length, size s,/i })).toHaveFocus()
 
     await user.keyboard('{ArrowLeft}')
-    expect(screen.getByRole('textbox', { name: /^length, size xs/i })).toHaveFocus()
+    expect(screen.getByRole('textbox', { name: /^body length, size xs/i })).toHaveFocus()
   })
 
   it('toggles the half-measurement flag', async () => {

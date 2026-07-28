@@ -5,10 +5,11 @@ import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 import type { AboutResolvedOrb } from '../content/aboutContent.defaults'
 import { AboutOrbContent, AboutOrbHeroBand } from '../components/AboutOrbContent'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
+import { ALTAR_MODAL } from './altarForgeTiming'
 
 /**
- * The strike modal — forged open out of the orb's explosion. A dark glass
- * panel whose hairline and bloom carry the struck orb's own color; the panel
+ * The strike modal — forged open out of the struck orb's own embers. A dark
+ * glass panel whose hairline and bloom carry the orb's color; the panel
  * rises, its content staggers in, and numeric stats count up on open.
  * Focus-trapped (`useDialogFocusTrap`), Escape and backdrop close it, and
  * closing hands control back to the stage (the orb re-materializes in orbit).
@@ -26,9 +27,10 @@ export function AboutOrbModal({
   orb: AboutResolvedOrb | null
   image?: string
   onClose: () => void
-  /** Reports the panel's laid-out rect (pre-animation) — the disintegrated
-   *  orb's embers use it to converge and FORM the panel's shape before it
-   *  materializes (AltarModalForge). */
+  /** Reports the panel's laid-out rect (pre-animation, so BEFORE the reveal
+   *  transform below shrinks and offsets it) — the shared ember swarm
+   *  converges on exactly this rectangle to FORM the panel (see
+   *  `AboutAltar`'s `handlePanelMeasure` → `ForgeEmberCanvas`). */
   onMeasure?: (rect: DOMRect) => void
 }) {
   const root = useRef<HTMLDivElement | null>(null)
@@ -38,19 +40,32 @@ export function AboutOrbModal({
   useGSAP(
     () => {
       if (!orb || !root.current) return
-      // Measure at natural layout, BEFORE any transform, so the particle
-      // formation targets match where the panel will actually stand.
+      // Measure at natural layout, BEFORE the reveal transform below is
+      // applied (gsap.fromTo sets its from-state immediately), so the ember
+      // swarm's target rect matches where the panel will actually stand. This
+      // runs in a layout effect, ahead of ForgeEmberCanvas's own measure.
       if (panelRef.current) onMeasure?.(panelRef.current.getBoundingClientRect())
       const q = gsap.utils.selector(root.current)
-      // Timed to the altar's ember choreography (measure → 0.35s drift hold →
-      // 0.9s gather → 0.3s plate HOLD → 0.55s dissolve): the stage stays
-      // completely clear until the drawn plate has held its beat (~1.55s),
-      // then the backdrop dims and the panel materializes exactly as the
-      // swarm dissolves into it — the embers must never play behind the
-      // backdrop's blur or the opaque panel.
+      // EVERY delay below comes from the altar's one choreography clock
+      // (`altarForgeTiming.ts`) — this component mounts AT the hand-off beat,
+      // so `ALTAR_MODAL`'s numbers are already in this timeline's frame. They
+      // used to be hand-copied magic numbers (1.6 / 1.68 / 1.7 / 1.92 / 2.1)
+      // that had to be re-derived by hand whenever AboutAltar's ember chain
+      // moved.
+      //
       // CRITICAL: the backdrop's blur must be animated as `backdropFilter`,
       // not hidden via opacity — `backdrop-filter` keeps blurring the canvas
       // even at opacity 0 (Chromium), which smeared the embers into nothing.
+      // Its delay is therefore pinned to the 3D shroud's cross-fade: it may
+      // only start once the in-canvas embers are gone.
+      //
+      // `immediateRender: false` is load-bearing for the same reason, one step
+      // further: a `fromTo` normally applies its from-state on creation, so the
+      // element would carry `backdrop-filter: blur(0px)` from the hand-off frame
+      // — visually a no-op, but it makes the compositor snapshot and re-filter
+      // the whole viewport behind it (a live WebGL canvas plus the ember swarm)
+      // every frame of the delay. Deferring the from-state means no
+      // backdrop-filter root exists at all until the blur genuinely starts.
       gsap.fromTo(
         q('[data-modal-backdrop]'),
         { opacity: 0, backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' },
@@ -58,13 +73,14 @@ export function AboutOrbModal({
           opacity: 1,
           backdropFilter: 'blur(10px)',
           webkitBackdropFilter: 'blur(10px)',
-          duration: 0.6,
+          duration: ALTAR_MODAL.backdropDuration,
           ease: 'power2.out',
-          delay: 1.6,
+          delay: ALTAR_MODAL.backdropDelay,
+          immediateRender: false,
         },
       )
       // The panel forges in with a touch of depth — tilting up out of the
-      // ember plate the swarm just drew.
+      // ember plate the swarm is landing on, so the two fuse.
       gsap.fromTo(
         q('[data-modal-panel]'),
         { opacity: 0, scale: 0.94, y: 16, rotateX: 7, transformPerspective: 900 },
@@ -73,9 +89,9 @@ export function AboutOrbModal({
           scale: 1,
           y: 0,
           rotateX: 0,
-          duration: 0.6,
+          duration: ALTAR_MODAL.panelDuration,
           ease: 'expo.out',
-          delay: 1.7,
+          delay: ALTAR_MODAL.panelDelay,
         },
       )
       // Ignition — the panel's edge flashes in the orb's color as the embers
@@ -85,18 +101,29 @@ export function AboutOrbModal({
         { opacity: 0 },
         {
           opacity: 1,
-          duration: 0.16,
+          duration: ALTAR_MODAL.igniteDuration,
           ease: 'power4.out',
-          delay: 1.68,
+          delay: ALTAR_MODAL.igniteDelay,
           onComplete: () => {
-            gsap.to(q('[data-modal-ignite]'), { opacity: 0, duration: 0.7, ease: 'power2.out' })
+            gsap.to(q('[data-modal-ignite]'), {
+              opacity: 0,
+              duration: ALTAR_MODAL.igniteFadeDuration,
+              ease: 'power2.out',
+            })
           },
         },
       )
       gsap.fromTo(
         q('[data-modal-reveal]'),
         { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.06, delay: 1.92 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: ALTAR_MODAL.contentDuration,
+          ease: 'power3.out',
+          stagger: ALTAR_MODAL.contentStagger,
+          delay: ALTAR_MODAL.contentDelay,
+        },
       )
       for (const el of q('[data-modal-stat-value]')) {
         const target = Number((el as HTMLElement).dataset.statTarget)
@@ -105,9 +132,9 @@ export function AboutOrbModal({
         el.textContent = '0'
         gsap.to(counter, {
           n: target,
-          duration: 1.1,
+          duration: ALTAR_MODAL.statsDuration,
           ease: 'power2.out',
-          delay: 2.1,
+          delay: ALTAR_MODAL.statsDelay,
           onUpdate: () => {
             el.textContent = String(Math.round(counter.n))
           },
@@ -144,7 +171,16 @@ export function AboutOrbModal({
           aria-modal="true"
           aria-labelledby="about-orb-modal-title"
           className="pointer-events-auto relative w-full max-w-2xl overflow-hidden rounded-xl border bg-[color-mix(in_srgb,var(--color-surface)_92%,var(--color-bg))] shadow-[0_30px_90px_rgba(0,0,0,0.7)] will-change-transform"
-          style={{ borderColor: `color-mix(in srgb, ${orb.color} 38%, var(--color-line))` }}
+          // The orb's colour as a custom property so descendants (the close
+          // control) can tint themselves through `color-mix` in a class and
+          // still keep their `:hover` states — an inline `color` would win over
+          // any hover utility.
+          style={
+            {
+              borderColor: `color-mix(in srgb, ${orb.color} 38%, var(--color-line))`,
+              '--about-orb-tint': orb.color,
+            } as React.CSSProperties
+          }
         >
           {/* Hairline in the orb's color across the top of the panel. */}
           <span
@@ -165,11 +201,30 @@ export function AboutOrbModal({
             }}
           />
           {/* Close — anchored to the PANEL (not the scroller), so it stays put
-              while the content scrolls beneath it. */}
+              while the content scrolls beneath it. Wears the orb's colour like
+              the rest of the panel's hardware: its ring matches the panel's own
+              border mix, and the glyph is the orb mixed 40% into
+              `--color-heading` — the same "pull the tint toward the foreground"
+              move `resolveForgeRamp` makes for the swarm's cold stop.
+
+              40% is a contrast floor, not a taste call, and orb colours are
+              CMS-authored so it has to hold for ANY colour, not just the
+              shipped set. `--color-heading` is the anchor because it is the
+              token the theme already guarantees is legible on `--color-surface`;
+              at 60% of the way there the glyph inherits most of that guarantee.
+              Verified by brute force over the whole RGB cube against the real
+              button background in both themes: worst case 6.02:1 (oath-dark,
+              pure black tint) and 4.89:1 (bone-light, pure white tint), both
+              past WCAG AA. At the 45% this shipped as, bone-light + a white
+              tint fell to 4.13:1 and failed. Do not raise it without re-running
+              that sweep. (Mixing toward whichever of heading/bg is *further*
+              from the tint — an obvious-looking alternative — is much worse:
+              `--color-bg` is near the panel, so it drives the glyph toward
+              invisibility, 1.6–2.4:1.) */}
           <button
             type="button"
             onClick={onClose}
-            className="focus-ring absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-line)] bg-[color-mix(in_srgb,var(--color-surface)_72%,transparent)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-highlight)] hover:text-[var(--color-heading)]"
+            className="focus-ring absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--about-orb-tint)_38%,var(--color-line))] bg-[color-mix(in_srgb,var(--color-surface)_72%,transparent)] text-[color-mix(in_srgb,var(--about-orb-tint)_40%,var(--color-heading))] transition-colors hover:border-[var(--about-orb-tint)] hover:bg-[color-mix(in_srgb,var(--about-orb-tint)_16%,var(--color-surface))] hover:text-[var(--color-heading)]"
             aria-label="Close dialog"
           >
             <X size={ICON_SIZE.md} aria-hidden="true" />

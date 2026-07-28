@@ -9,11 +9,14 @@ import {
 } from 'react'
 import { useServerFn } from '@tanstack/react-start'
 import {
-  getAdminSessionServerFn,
   loginAdminServerFn,
   logoutAdminServerFn,
   type AdminAuthUser,
 } from '@/features/admin/auth/adminAuth'
+import {
+  getCachedAdminSession,
+  invalidateAdminSessionCache,
+} from '@/features/admin/auth/adminAuthCache'
 import type {
   AdminAuthContextValue,
   AdminCredentials,
@@ -52,7 +55,6 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
   const hasCompletedInitialRemotePullRef = useRef(false)
   const lastBackgroundPullAtRef = useRef(0)
 
-  const callGetSession = useServerFn(getAdminSessionServerFn)
   const callLogin = useServerFn(loginAdminServerFn)
   const callLogout = useServerFn(logoutAdminServerFn)
 
@@ -117,11 +119,26 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
     }
   }, [])
 
+  /**
+   * The heartbeat is the only caller that forces a real network round trip
+   * (`{ force: true }`) — everything else, including the mount-time
+   * bootstrap check below, shares whatever the cache already has in flight
+   * or resolved. That sharing is what collapses the old "cold `/admin` load
+   * fires this chain twice" bug: `route.tsx`'s `beforeLoad` guard and this
+   * provider's mount effect both call `getCachedAdminSession()` around the
+   * same tick, so they settle onto a single request instead of each racing
+   * Supabase's refresh-token rotation independently.
+   */
   const refreshSession = useCallback(
     async (opts?: { background?: boolean }) => {
       try {
-        const result = await callGetSession()
+        const result = await getCachedAdminSession(
+          opts?.background ? { force: true } : undefined,
+        )
         if (!result.authenticated) {
+          // The session died server-side — do not let a stale cached
+          // "authenticated" value linger for later callers.
+          invalidateAdminSessionCache()
           setSession(null)
           return
         }
@@ -131,18 +148,20 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
         // Network/timeout — keep existing state, next heartbeat retries.
       }
     },
-    [applyAuthenticatedResult, callGetSession, startRemoteCmsPull],
+    [applyAuthenticatedResult, startRemoteCmsPull],
   )
 
   useEffect(() => {
     let cancelled = false
     void (async () => {
       try {
-        const result = await callGetSession()
+        const result = await getCachedAdminSession()
         if (cancelled) return
         if (result.authenticated) {
           applyAuthenticatedResult(result)
           startRemoteCmsPull()
+        } else {
+          invalidateAdminSessionCache()
         }
       } finally {
         if (!cancelled) setIsBootstrapping(false)
@@ -180,6 +199,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
     remotePullGenerationRef.current += 1
     // A different admin may sign in next in this tab — drop the cached role.
     clearCmsProfileRoleCache()
+    invalidateAdminSessionCache()
     await callLogout()
     const client = getAdminSupabaseBrowserClient()
     await client?.auth.signOut()

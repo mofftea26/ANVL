@@ -8,21 +8,30 @@ import {
 import { runtimeClients } from '@/app/config/runtime'
 import { loadStorefrontProjection } from '@/features/cms/api/loadStorefrontProjection'
 import { usePreviewDraft } from '@/features/cms/preview'
-import { resolveSupportContent } from '@/features/cms/support/resolveSupportContent'
-import { Container, Section } from '@/shared/components/ui'
+import {
+  resolveMeasurePoints,
+  resolveSupportContent,
+} from '@/features/cms/support/resolveSupportContent'
+import { AccordionDisclosure, Container, Section } from '@/shared/components/ui'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 import {
   DocFooterCta,
   DocHero,
   DOC_CTA_PRIMARY_CLASS,
   DOC_CTA_SECONDARY_CLASS,
-  ProseBody,
-  SizeDiagram,
+  GuideSectionHeader,
+  MeasureExplorer,
   SizeTable,
-  SIZE_MEASUREMENT_POINTS,
 } from '@/features/support/components'
 import type { SizeProductEntry } from '@/features/cms/support/supportContent.zod'
-import { orderPerProduct, type ProductNameEntry } from '@/features/support/lib/resolveProductNames'
+import { resolveGarmentTypeKeys } from '@/features/support/lib/garmentTypes'
+import {
+  formatPieceCount,
+  orderPerProduct,
+  type ProductNameEntry,
+} from '@/features/support/lib/resolveProductNames'
+
+const MEASURE_HEADING_ID = 'size-guide-measure'
 
 export const Route = createFileRoute('/size-guide')({
   loader: async () => {
@@ -65,77 +74,75 @@ export const Route = createFileRoute('/size-guide')({
 function SizeGuidePage() {
   const { supportContent, productNames } = Route.useLoaderData()
   const previewDraft = usePreviewDraft()
-  const content = resolveSupportContent(previewDraft?.supportContent ?? supportContent)
+  const config = previewDraft?.supportContent ?? supportContent
+  const content = resolveSupportContent(config)
 
   const perProduct = orderPerProduct<SizeProductEntry>(content.sizeGuide.perProduct, productNames)
 
+  // One resolved point set per garment type the catalogue actually uses. Never
+  // empty — the tee is always offered — so `measures[0]` carries the section's
+  // heading, intro and footnote (all three are section-level, not per type).
+  const measures = resolveGarmentTypeKeys(content.sizeGuide.perProduct).map((key) =>
+    resolveMeasurePoints(config, key),
+  )
+  const measure = measures[0]
+
   return (
     <>
-      <DocHero eyebrow="Fit & sizing" title="Size guide" intro={content.sizeGuide.intro} />
+      <DocHero
+        eyebrow="Fit & sizing"
+        title="Size guide"
+        intro={content.sizeGuide.intro}
+        updatedAt={content.sizeGuide.updatedAt}
+      />
 
       {content.sizeGuide.note.trim() ? (
         <Section>
           <Container className="max-w-3xl">
-            <h2 className="anvl-heading text-2xl text-[var(--color-heading)] md:text-3xl">
-              How to measure
-            </h2>
-            <hr className="anvl-highlight-rule mt-4 max-w-[6rem]" />
-            <ProseBody body={content.sizeGuide.note} className="mt-5" />
+            {/* Directly under DocHero's own border-b — no second rule here. */}
+            <GuideSectionHeader title="How to measure" intro={content.sizeGuide.note} rule={false} />
           </Container>
         </Section>
       ) : null}
 
-      <Section>
-        <Container className="max-w-4xl">
-          <h2 className="anvl-heading text-2xl text-[var(--color-heading)] md:text-3xl">
-            Where we measure
-          </h2>
-          <hr className="anvl-highlight-rule mt-4 max-w-[6rem]" />
-          <div className="mt-6 grid items-start gap-8 md:grid-cols-2">
-            <SizeDiagram className="mx-auto" />
-            {/* Textual companion — the diagram is never the only source. */}
-            <dl className="space-y-3">
-              {SIZE_MEASUREMENT_POINTS.map((point) => (
-                <div key={point.key} className="flex items-baseline gap-3">
-                  <dt className="anvl-display shrink-0 text-xs tracking-[0.18em] text-[var(--color-highlight-bright)]">
-                    {point.letter}
-                  </dt>
-                  <dd className="text-sm text-[var(--color-text-muted)]">
-                    <span className="font-medium text-[var(--color-text)]">{point.label}</span>
-                    {' — '}
-                    {point.description}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-          <p className="mt-6 max-w-3xl text-xs text-[var(--color-text-muted)]">
-            All measurements are in centimetres. Widths are half measurements, taken with the
-            garment laid flat — double them for the full circumference.
-          </p>
-        </Container>
-      </Section>
-
-      {perProduct.length > 0 ? (
-        <Section className="border-t border-[var(--color-line)] bg-[var(--color-surface)]">
-          <Container className="max-w-4xl space-y-14">
-            {perProduct.map(({ slug, name, entry }) => (
-              <section key={slug} id={`size-${slug}`} className="scroll-mt-[var(--anvl-header-h)] space-y-5">
-                <div>
-                  <h2 className="anvl-heading text-2xl text-[var(--color-heading)] md:text-3xl">
-                    {name}
-                  </h2>
-                  <hr className="anvl-highlight-rule mt-4 max-w-[6rem]" />
-                </div>
-                <SizeTable entry={entry} />
-              </section>
-            ))}
+      {measure ? (
+        <Section>
+          <Container className="max-w-5xl">
+            <GuideSectionHeader
+              title={measure.heading}
+              titleId={MEASURE_HEADING_ID}
+              meta="centimetres · laid flat"
+              intro={measure.intro}
+            />
+            <MeasureExplorer
+              measures={measures}
+              labelledBy={MEASURE_HEADING_ID}
+              className="mt-8"
+            />
           </Container>
         </Section>
-      ) : (
-        <Section className="border-t border-[var(--color-line)] bg-[var(--color-surface)]">
-          <Container className="max-w-3xl">
-            <div className="rounded-xl border border-dashed border-[var(--color-line)] p-8 text-center">
+      ) : null}
+
+      <Section className="border-t border-[var(--color-line)] bg-[var(--color-surface)]">
+        <Container className="max-w-4xl">
+          {/* The Section above already carries the border-t. */}
+          <GuideSectionHeader
+            title="Measurements by piece"
+            meta={perProduct.length > 0 ? formatPieceCount(perProduct.length) : undefined}
+            rule={false}
+          />
+          {perProduct.length > 0 ? (
+            <div className="mt-8 space-y-3">
+              {perProduct.map(({ slug, name, entry }, index) => (
+                <div key={slug} id={`size-${slug}`} className="scroll-mt-[var(--anvl-header-h)]">
+                  <AccordionDisclosure title={name} defaultOpen={index === 0}>
+                    <SizeTable entry={entry} />
+                  </AccordionDisclosure>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-8 rounded-xl border border-dashed border-[var(--color-line)] p-8 text-center">
               <p className="anvl-heading text-xl text-[var(--color-heading)]">
                 Per-piece measurements coming soon
               </p>
@@ -149,9 +156,9 @@ function SizeGuidePage() {
                 </SafeLink>
               </div>
             </div>
-          </Container>
-        </Section>
-      )}
+          )}
+        </Container>
+      </Section>
 
       <DocFooterCta message="Ready to match size to fabric? Browse Drop 01.">
         <SafeLink href="/shop" className={DOC_CTA_PRIMARY_CLASS}>

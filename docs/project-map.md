@@ -134,7 +134,7 @@ Slim CMS admin, split into subfolders. Every page renders inside the wide-screen
 |---|---|
 | `auth/` | Supabase auth flow, admin session, `ProtectedAdminRoute`, role gate |
 | `cmsRemote/` | Supabase write-through (`adminCmsRemoteSync`, `cmsWriteThrough`) → `cms_settings` + `storefront_publication`; media upload |
-| `components/` | Admin UI primitives + layout: `AdminLayout`, `AdminWorkspace`, `AdminRailPanel`, `AdminWorkspaceStatusPanel`, `AdminSidebar`, `AdminTopbar`, `AdminButton`, `AdminCard`, etc. |
+| `components/` | Admin UI primitives + layout: `AdminLayout`, `AdminWorkspace`, `AdminRailPanel`, `AdminWorkspaceStatusPanel`, `AdminSidebar` (+ `AdminSidebarNavLink.tsx`, `adminSidebarActive.ts`, `useAdminSidebarExpandedCats.ts` — extracted from `AdminSidebar.tsx` to stay under the 500-line hard limit), `AdminTopbar`, `AdminButton`, `AdminCard`, etc. |
 | `hooks/` | Admin-specific hooks (e.g. `useSaveSuccessFlash`) |
 | `landing-picker/` | Dashboard control to pick the active code-owned landing page (Supabase `landing_pages` ∩ registry) |
 | `landing-content/` | Landing Content editor (`/admin/content`): RHF form over The Oath's content schema, code defaults as placeholders (`sections/Oath*Fields`) |
@@ -144,6 +144,7 @@ Slim CMS admin, split into subfolders. Every page renders inside the wide-screen
 | `site-font/` | Fonts editor + font families service |
 | `site-assets/` | Assets editor (media library + general/per-drop slot assignment) |
 | `story/` | Story saga editor: chapters, acts, cast, book colors, story media service |
+| `support/` | `/admin/support` editor (`SupportEditor.tsx`, tabbed: FAQ, contact, shipping, returns, care guide, size guide, **Measurements**, **Care symbols**): `FaqListField`, `PerProductCareField`, `PerProductSizeField` (garment-type select per product slug), `MeasurementsField` (per-garment-type reorderable measurement-point list, honors CMS order via `resolveGarmentPoints`), `CareLegendField` (26 care-symbol `{label, meaning}` overrides) |
 
 #### `landingPages/` — code-owned landing pages (current architecture)
 
@@ -181,6 +182,7 @@ Storefront-safe CMS reads:
 | `navigation/` | `staticWebsiteNavigation.ts`, `navigation.types.ts` — storefront nav/footer code defaults |
 | `seoMeta.ts` / `siteSeo.local.ts` / `siteHomepage.settings.ts` | SEO meta builders + storefront SEO/homepage defaults (read models; editor UIs removed) |
 | `types/` | `cms.types.ts` |
+| `support/` | `support_content` read model, split into an acyclic module family (each under the 300/500-line limits): `supportContent.shared.zod.ts` (FAQ/contact/shipping/returns primitives), `supportContent.care.zod.ts` (care-guide sections + `legend` — 26 `CareIconKey` overrides + per-product care entries), `supportContent.size.zod.ts` (size-guide `note` + `measure` "Where we measure" garment-type point sets + per-product size entries, incl. `GARMENT_TYPE_KEYS`/`GarmentTypeKey`), `supportContent.zod.ts` (root `SupportContentConfig`, composes the three above), `parseUtils.ts` (shared tolerant deep-pick helpers), `supportContent.defaults.ts` (the full designed copy, incl. the 26 legend entries and all 5 garment types' point sets), `supportContent.convert.ts`, `supportContent.settings.ts` (local store + Supabase write-through), `carePresets.ts`, `resolveSupportContent.ts` (`resolveSupportContent`/`resolveCareLegend`/`resolveMeasurePoints` — CMS-over-defaults merge, per field) |
 
 > The standalone `drops/` feature, `cms/landing`, `cms/read`, `cms/runtime`, and `cms/theme/dropPaletteStyle.ts` were removed — there is one global CMS theme and no per-drop palette/acts.
 
@@ -239,6 +241,26 @@ Storefront global search — nav-owned, covers products, story, About, PDP edito
 | `components/GlobalSearchOverlay.tsx` | Full-screen cinematic overlay (lazy-loaded) |
 | `components/SearchResultRow.tsx` | One result row with highlighted match spans |
 
+#### `support/`
+
+Storefront support-page UI, consumed by `/size-guide`, `/care-guide`, `/faq`, `/contact`, `/shipping`, `/returns` (each thin route delegates to these components):
+
+| File / Folder | Purpose |
+|---|---|
+| `components/DocHero.tsx`, `GuideSectionHeader.tsx`, `SupportSectionList.tsx`, `ProseBody.tsx`, `DocFooterCta.tsx`, `FaqAccordion.tsx`, `ContactPanel.tsx` | Shared doc-page chrome (masthead, sections, FAQ, contact) |
+| `components/MeasureExplorer.tsx` | "Where we measure" garment-type tab strip + the active type's `MeasurementFigure` — one tab per garment type the catalogue's `sizeGuide.perProduct[slug].garmentType` values actually use (`tee` always included as the fallback) |
+| `components/GarmentTypeTabs.tsx` | The tab strip itself — one `GarmentSilhouette` per type, framed to that type's outline bounds |
+| `components/MeasurementFigure.tsx` | The lettered measurement schematic for one garment type (badges keyed by `SizeTableRowKey`, not list position) |
+| `components/garments/` | Per-garment-type schematic geometry: `tee.ts`, `stringer.ts`, `hoodie.ts`, `joggers.ts`, `shorts.ts` (outline + detail paths + badge anchors), `registry.ts` (`getGarmentSchematic`), `outlineBounds.ts` (`getGarmentOutlineViewBox`), `types.ts` |
+| `components/GarmentSchematicSvg.tsx` | Renders one schematic's outline/detail/dimension strokes + badges |
+| `components/SizeDiagram.tsx`, `SizeTable.tsx` | Per-product size table rendering (structured fixed grid, legacy free-form fallback) |
+| `components/CareSymbolGrid.tsx`, `CareSymbolTable.tsx`, `CareSymbolLegend.tsx`, `CareSymbolPopover.tsx`, `careSymbols.tsx`, `careIcons.ts` | The 26-symbol care legend: searchable grid/table + hover/pinned popover detail |
+| `components/CareLines.tsx` | Per-product care notes (structured items, legacy line fallback) |
+| `hooks/useCareSymbolSearch.ts` | Debounced (≥250ms) search/filter over the 26 legend entries |
+| `hooks/useSchematicDrawIn.ts` | GSAP stroke draw-in for the active schematic (`≥768px` + no reduced motion; `gsap.matchMedia` dual gate; see the `contextSafe` gotcha in `docs/animation-guidelines.md`) |
+| `lib/garmentTypes.ts` | `resolveGarmentTypeKeys()` — which tabs `MeasureExplorer` shows, derived from the catalogue's actually-used garment types |
+| `lib/resolveProductNames.ts` | Orders/labels per-product entries by real commerce product name |
+
 #### `cart/`
 
 | File | Purpose |
@@ -287,6 +309,8 @@ Framework-agnostic primitives — no feature imports allowed here.
 | `hooks/useStickyHeader.ts` | Sticky header scroll state |
 | `lib/cn.ts` | `cn()` = clsx + tailwind-merge |
 | `lib/gsap.ts` | Registers GSAP + ScrollTrigger + useGSAP (SSR-safe) |
+| `lib/forge/emberForge.ts`, `lib/forge/forgeSurface.ts` | The shared canvas-2D ember-forge engine (maths + surface sizing) backing `Modal`, the toast layer, and the About altar's ember hand-off — see `docs/animation-guidelines.md` |
+| `components/ui/ForgeEmberCanvas.tsx` | React shell for `lib/forge/emberForge.ts` — sizes/positions the canvas to the swarm's own bounding box, rAF loop, reduced-motion gate |
 | `lib/url.ts` | `sanitizeHref()` — validates CMS-driven hrefs |
 | `lib/stripAngleBracketTags.ts` | Strips HTML tags from plain text fields |
 | `lib/color.ts` | Color manipulation utilities |

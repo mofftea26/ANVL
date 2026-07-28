@@ -1,21 +1,42 @@
 import { useEffect, useRef, useState } from 'react'
-import { readThemeCssColor } from '@/shared/lib/themeColor'
+import {
+  buildEmbers,
+  drawForgeFrame,
+  projectEmber,
+  resolveForgeRamp,
+  TOAST_FORGE_TUNING,
+  type Ember,
+  type ForgeRamp,
+} from '@/shared/lib/forge/emberForge'
+import { FORGE_MAX_DPR } from '@/shared/lib/forge/forgeSurface'
 
 /**
  * The toast forge layer — every sonner toast materializes out of embers the
  * way the shared Modal does (see {@link ModalForgeEffect} + `.anvl-modal-forge`).
  * A single fixed, full-viewport canvas watches the DOM for freshly-mounted
  * `[data-sonner-toast]` plates; each new plate spawns an independent, short
- * ember pass — a swarm converges from a scattered ring onto the plate's live
- * rectangle (perimeter-biased so the forged edge draws in first), lands, and
- * dissolves as the plate settles. Scaled down from the modal: far fewer embers,
- * ~0.7s, and the plate is never held back (sonner owns its own entrance), so
- * the embers simply crown the arrival.
+ * ember pass built from the shared engine (`src/shared/lib/forge/emberForge.ts`)
+ * — a swarm converges from a scattered ring onto the plate's live rectangle
+ * (perimeter-biased so the forged edge draws in first), lands, and dissolves
+ * as the plate settles. Scaled down from the modal: far fewer embers, ~0.7s,
+ * and the plate is never held back (sonner owns its own entrance), so the
+ * embers simply crown the arrival.
+ *
+ * This stays a hand-rolled multi-pass loop over one persistent canvas — not
+ * a `ForgeEmberCanvas` per toast — because several toasts can be forging
+ * concurrently on one shared, long-lived layer (`ForgeEmberCanvas` models a
+ * single target's single pass, mounted only while it runs; the toaster is
+ * mounted once for the app's life and must juggle N independent passes).
+ * The motion maths itself (`buildEmbers`/`projectEmber`/`drawForgeFrame`) is
+ * the exact same shared engine `ModalForgeEffect` draws from, tuned with
+ * `TOAST_FORGE_TUNING` — the toast's own dissolve/stagger/alpha/hot-core/
+ * jitter numbers, which were never identical to the modal's and are kept
+ * that way on purpose (see `emberForge.ts`'s `ForgeMotionTuning`).
  *
  * Deliberately canvas-2D, not three.js — toasts live in the shared UI chunk
- * that both admin and storefront load, and a handful of ~130-arc passes is far
- * below canvas-2D's budget. Keeping three.js out of the shared path mirrors
- * ModalForgeEffect's rationale exactly.
+ * that both admin and storefront load. Keeping three.js out of the shared
+ * path mirrors `ModalForgeEffect`'s rationale exactly (see `emberForge.ts`'s
+ * header comment).
  *
  * Robustness:
  *  - One canvas + one RAF for every stacked toast; the loop idles (stops) the
@@ -29,78 +50,16 @@ import { readThemeCssColor } from '@/shared/lib/themeColor'
  *  - jsdom has no `getContext` — the effect no-ops cleanly there.
  */
 
-const DURATION_MS = 720
 const COUNT = 130
 /** Share of embers tracing the plate's border (the rest dust its face). */
 const EDGE_SHARE = 0.68
-
-function smoothstep(a: number, b: number, x: number): number {
-  const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
-  return t * t * (3 - 2 * t)
-}
-
-interface ForgeEmber {
-  /** Perimeter fraction (edge embers) — resolved to xy against the live rect. */
-  edge: boolean
-  d01: number
-  /** Face fractions (non-edge embers). */
-  fx01: number
-  fy01: number
-  /** Scattered launch offset, expressed relative to the plate so it tracks. */
-  ang: number
-  spread: number
-  seed: number
-  r: number
-  color: string
-}
-
-interface ForgeColors {
-  cold: string
-  ember: string
-  hot: string
-}
+const DURATION_MS = 720
 
 interface ForgePass {
   node: Element
   start: number
-  embers: ForgeEmber[]
-  colors: ForgeColors
-}
-
-function buildEmbers(colors: ForgeColors): ForgeEmber[] {
-  const edgeCount = Math.floor(COUNT * EDGE_SHARE)
-  return Array.from({ length: COUNT }, (_, i): ForgeEmber => {
-    const edge = i < edgeCount
-    const heat = Math.random()
-    return {
-      edge,
-      d01: edge ? (i + Math.random()) / edgeCount : 0,
-      fx01: Math.random(),
-      fy01: Math.random(),
-      ang: Math.random() * Math.PI * 2,
-      spread: 0.5 + Math.random() * 0.7,
-      seed: Math.random(),
-      r: 0.7 + Math.random() * 1.4,
-      color: heat < 0.22 ? colors.cold : heat < 0.82 ? colors.ember : colors.hot,
-    }
-  })
-}
-
-/** Resolve an ember's landing point against the plate's live rectangle. */
-function targetOf(e: ForgeEmber, rect: DOMRect): { tx: number; ty: number } {
-  if (!e.edge) {
-    return { tx: rect.left + e.fx01 * rect.width, ty: rect.top + e.fy01 * rect.height }
-  }
-  const perimeter = 2 * (rect.width + rect.height)
-  let d = e.d01 * perimeter
-  if (d < rect.width) return { tx: rect.left + d, ty: rect.top }
-  if (d < rect.width + rect.height) return { tx: rect.right, ty: rect.top + (d - rect.width) }
-  if (d < rect.width * 2 + rect.height) {
-    d -= rect.width + rect.height
-    return { tx: rect.right - d, ty: rect.bottom }
-  }
-  d -= rect.width * 2 + rect.height
-  return { tx: rect.left, ty: rect.bottom - d }
+  embers: Ember[]
+  ramp: ForgeRamp
 }
 
 export function ToastForgeEffect() {
@@ -125,8 +84,12 @@ export function ToastForgeEffect() {
     if (!ctx) return // jsdom / unsupported — bail cleanly.
 
     let dpr = 1
+    // Full-viewport, unlike `ForgeEmberCanvas`'s per-pass bounding box: this one
+    // surface is shared by every concurrent pass and lives for the app's whole
+    // session, so it cannot be sized to any single plate. It shares the forge's
+    // DPR ceiling so a toast and a dialog never read as different resolutions.
     const sizeCanvas = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2)
+      dpr = Math.min(window.devicePixelRatio || 1, FORGE_MAX_DPR)
       canvas.width = Math.floor(window.innerWidth * dpr)
       canvas.height = Math.floor(window.innerHeight * dpr)
     }
@@ -141,7 +104,6 @@ export function ToastForgeEffect() {
       const vh = window.innerHeight
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.clearRect(0, 0, vw, vh)
-      ctx.globalCompositeOperation = 'lighter'
 
       for (let i = passes.length - 1; i >= 0; i -= 1) {
         const pass = passes[i]
@@ -152,34 +114,10 @@ export function ToastForgeEffect() {
         }
         const rect = pass.node.getBoundingClientRect()
         if (rect.width < 1 || rect.height < 1) continue
-        const cx = rect.left + rect.width / 2
-        const cy = rect.top + rect.height / 2
-        const reach = Math.max(rect.width, rect.height)
-        const dissolve = smoothstep(0.58, 0.98, t)
-
-        for (const e of pass.embers) {
-          const p = smoothstep(0, 1, Math.min(1, Math.max(0, t * 1.6 - e.seed * 0.42)))
-          const flicker = 0.7 + 0.3 * Math.sin(now * 0.02 + e.seed * 40)
-          const alpha = (0.28 + 0.72 * p) * (1 - dissolve) * flicker
-          if (alpha <= 0.015) continue
-          const { tx, ty } = targetOf(e, rect)
-          const fx = cx + Math.cos(e.ang) * reach * e.spread
-          const fy = cy + Math.sin(e.ang) * reach * e.spread * 0.8
-          const x = fx + (tx - fx) * p
-          const y = fy + (ty - fy) * p
-          ctx.globalAlpha = Math.min(1, alpha)
-          ctx.fillStyle = e.color
-          ctx.beginPath()
-          ctx.arc(x, y, e.r * (1 + (1 - p) * 0.8), 0, Math.PI * 2)
-          ctx.fill()
-          if (p > 0.85) {
-            ctx.globalAlpha = Math.min(1, alpha * 0.9)
-            ctx.fillStyle = pass.colors.hot
-            ctx.beginPath()
-            ctx.arc(x, y, e.r * 0.42, 0, Math.PI * 2)
-            ctx.fill()
-          }
-        }
+        // Re-resolve every ember's launch/landing point against the plate's
+        // CURRENT rect so the swarm tracks sonner restacking it mid-pass.
+        for (const ember of pass.embers) projectEmber(ember, rect)
+        drawForgeFrame(ctx, pass.embers, { t, now, ramp: pass.ramp, tuning: TOAST_FORGE_TUNING })
       }
 
       ctx.globalAlpha = 1
@@ -198,12 +136,16 @@ export function ToastForgeEffect() {
     const forge = (node: Element) => {
       if (seen.has(node)) return
       seen.add(node)
-      const colors: ForgeColors = {
-        cold: readThemeCssColor('--color-heading', '#E7E4DF'),
-        ember: readThemeCssColor('--color-highlight', '#c2703d'),
-        hot: readThemeCssColor('--color-highlight-bright', '#e08a4a'),
-      }
-      passes.push({ node, start: performance.now(), embers: buildEmbers(colors), colors })
+      const rect = node.getBoundingClientRect()
+      const ramp = resolveForgeRamp()
+      const embers = buildEmbers({
+        rect,
+        ramp,
+        count: COUNT,
+        edgeShare: EDGE_SHARE,
+        tuning: TOAST_FORGE_TUNING,
+      })
+      passes.push({ node, start: performance.now(), embers, ramp })
       ensureRunning()
     }
 

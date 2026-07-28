@@ -4,7 +4,7 @@ import { AdminPageActionsProvider } from '@/features/admin/components/AdminPageA
 import { AdminErrorBoundary } from '@/app/components/AdminErrorBoundary'
 import { AdminLoadingState } from '@/features/admin/components/AdminLoadingState'
 import { AdminUnsavedChangesGuard } from '@/features/admin/components/AdminUnsavedChangesGuard'
-import { getAdminSessionServerFn } from '@/features/admin/auth/adminAuth'
+import { getCachedAdminSession } from '@/features/admin/auth/adminAuthCache'
 
 const ADMIN_LOGIN_PATH = '/admin/login'
 
@@ -30,7 +30,7 @@ const AdminShellLayout = lazy(() =>
  */
 export const Route = createFileRoute('/admin')({
   beforeLoad: async ({ location }) => {
-    const result = await getAdminSessionServerFn()
+    const result = await getCachedAdminSession()
     if (location.pathname === ADMIN_LOGIN_PATH) {
       if (result.authenticated) {
         throw redirect({ to: '/admin', replace: true })

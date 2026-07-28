@@ -51,6 +51,7 @@ import {
   getStorefrontMainClassName,
 } from '@/routes/storefrontMainLayout'
 import { PageBackdrop } from '@/shared/components/layout/PageBackdrop'
+import { RouteProgressBar } from '@/shared/components/layout/RouteProgressBar'
 import { SiteDustGate } from '@/shared/webgl/SiteDustGate'
 import { resolvePageBackdropSrc } from '@/features/cms/assets/pageBackdrop'
 import { useComingSoonConfig } from '@/features/cms/hooks/useComingSoonConfig'
@@ -254,6 +255,9 @@ function StorefrontLayout() {
 function RootLayout() {
   return (
     <PreviewDraftProvider>
+      {/* Covers every route (storefront + admin) — mounted once here rather
+          than per-branch inside RootLayoutBody. */}
+      <RouteProgressBar />
       <RootLayoutBody />
     </PreviewDraftProvider>
   )

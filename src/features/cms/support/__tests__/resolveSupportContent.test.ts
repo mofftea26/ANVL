@@ -4,6 +4,8 @@ import { SUPPORT_CONTENT_DEFAULTS } from '@/features/cms/support/supportContent.
 import { parseSupportContent } from '@/features/cms/support/supportContent.zod'
 import {
   resolveCareItems,
+  resolveCareLegend,
+  resolveMeasurePoints,
   resolveSizeTable,
   resolveSupportContent,
 } from '@/features/cms/support/resolveSupportContent'
@@ -136,5 +138,231 @@ describe('resolveSizeTable', () => {
       expect(resolved.sizes).toEqual(['XS', 'S', 'M', 'L', 'XL', 'XXL'])
       expect(resolved.halfMeasurement).toBe(false)
     }
+  })
+})
+
+describe('resolveMeasurePoints', () => {
+  it('renders the full designed points for a garment type from an empty blob', () => {
+    const resolved = resolveMeasurePoints(config(), 'joggers')
+    const defaultJoggers = SUPPORT_CONTENT_DEFAULTS.sizeGuide.measure.garmentTypes.find(
+      (g) => g.key === 'joggers',
+    )!
+    expect(resolved.garmentTypeKey).toBe('joggers')
+    expect(resolved.garmentTypeLabel).toBe(defaultJoggers.label)
+    expect(resolved.points).toEqual(defaultJoggers.points)
+    expect(resolved.heading).toBe(SUPPORT_CONTENT_DEFAULTS.sizeGuide.measure.heading)
+  })
+
+  it('falls back to tee for an unknown or blank garment type key', () => {
+    const defaultTee = SUPPORT_CONTENT_DEFAULTS.sizeGuide.measure.garmentTypes.find(
+      (g) => g.key === 'tee',
+    )!
+    const resolved = resolveMeasurePoints(config(), 'not-a-real-garment')
+    expect(resolved.garmentTypeKey).toBe('tee')
+    expect(resolved.points).toEqual(defaultTee.points)
+    expect(resolveMeasurePoints(config(), '').garmentTypeKey).toBe('tee')
+  })
+
+  it('merges a CMS point override per field, blank fields falling back to the default', () => {
+    const resolved = resolveMeasurePoints(
+      config({
+        sizeGuide: {
+          measure: {
+            garmentTypes: [
+              {
+                key: 'tee',
+                label: '',
+                points: [{ key: 'chest', letter: '', label: 'Bust', description: '' }],
+              },
+            ],
+          },
+        },
+      }),
+      'tee',
+    )
+    const defaultTee = SUPPORT_CONTENT_DEFAULTS.sizeGuide.measure.garmentTypes.find(
+      (g) => g.key === 'tee',
+    )!
+    const defaultChestPoint = defaultTee.points.find((p) => p.key === 'chest')!
+    const resolvedChest = resolved.points.find((p) => p.key === 'chest')!
+    // Overridden field wins...
+    expect(resolvedChest.label).toBe('Bust')
+    // ...blank fields fall back to the code default per field, not wholesale.
+    expect(resolvedChest.letter).toBe(defaultChestPoint.letter)
+    expect(resolvedChest.description).toBe(defaultChestPoint.description)
+    // The SET of keys (which measurements exist for this garment type) is
+    // unchanged by a partial override — still exactly the 7 tee keys.
+    expect(resolved.points.map((p) => p.key).slice().sort()).toEqual(
+      defaultTee.points.map((p) => p.key).slice().sort(),
+    )
+    // ORDER, however, is CMS-authored: the one key present in the CMS array
+    // (`chest`) sorts first, and every key the CMS array never mentions is
+    // appended afterward in the code-owned default order — see
+    // `resolveGarmentPoints`.
+    expect(resolved.points.map((p) => p.key)).toEqual([
+      'chest',
+      'length',
+      'waist',
+      'bottom',
+      'collar',
+      'sleeve',
+      'cuff',
+    ])
+  })
+
+  it('renders the description list in the CMS-authored order, not the code-owned default order', () => {
+    const resolved = resolveMeasurePoints(
+      config({
+        sizeGuide: {
+          measure: {
+            garmentTypes: [
+              {
+                key: 'tee',
+                label: '',
+                points: [
+                  { key: 'cuff', letter: '', label: '', description: '' },
+                  { key: 'length', letter: '', label: '', description: '' },
+                  { key: 'chest', letter: '', label: '', description: '' },
+                ],
+              },
+            ],
+          },
+        },
+      }),
+      'tee',
+    )
+    // The 3 explicitly-ordered keys come first, in the CMS's order; the 4
+    // keys the CMS array never mentions (waist/bottom/collar/sleeve) follow
+    // in the code-owned default order.
+    expect(resolved.points.map((p) => p.key)).toEqual([
+      'cuff',
+      'length',
+      'chest',
+      'waist',
+      'bottom',
+      'collar',
+      'sleeve',
+    ])
+  })
+
+  it('a letter travels WITH its point when reordered, never re-labelled by position', () => {
+    const resolved = resolveMeasurePoints(
+      config({
+        sizeGuide: {
+          measure: {
+            garmentTypes: [
+              {
+                key: 'tee',
+                label: '',
+                points: [
+                  { key: 'cuff', letter: 'Z', label: '', description: '' },
+                  { key: 'chest', letter: '', label: '', description: '' },
+                ],
+              },
+            ],
+          },
+        },
+      }),
+      'tee',
+    )
+    // `cuff` now renders first, but it keeps its own authored letter ('Z')
+    // rather than inheriting the letter a fixed first slot would carry.
+    expect(resolved.points[0]).toMatchObject({ key: 'cuff', letter: 'Z' })
+    // `chest`'s letter is untouched — still the code default for that key.
+    const defaultTee = SUPPORT_CONTENT_DEFAULTS.sizeGuide.measure.garmentTypes.find(
+      (g) => g.key === 'tee',
+    )!
+    const defaultChestLetter = defaultTee.points.find((p) => p.key === 'chest')!.letter
+    expect(resolved.points.find((p) => p.key === 'chest')?.letter).toBe(defaultChestLetter)
+  })
+
+  it('ignores a duplicate key in the CMS array — first occurrence wins, one point per key', () => {
+    const resolved = resolveMeasurePoints(
+      config({
+        sizeGuide: {
+          measure: {
+            garmentTypes: [
+              {
+                key: 'tee',
+                label: '',
+                points: [
+                  { key: 'chest', letter: '', label: 'First', description: '' },
+                  { key: 'chest', letter: '', label: 'Second', description: '' },
+                ],
+              },
+            ],
+          },
+        },
+      }),
+      'tee',
+    )
+    const chestPoints = resolved.points.filter((p) => p.key === 'chest')
+    expect(chestPoints).toHaveLength(1)
+    expect(chestPoints[0].label).toBe('First')
+  })
+
+  it('ignores a CMS point key that is not valid for this garment type', () => {
+    // Shorts have no 'sleeve' point — a stray 'sleeve' entry (e.g. left over
+    // from switching garment types in the CMS) must not surface or reorder.
+    const resolved = resolveMeasurePoints(
+      config({
+        sizeGuide: {
+          measure: {
+            garmentTypes: [
+              {
+                key: 'shorts',
+                label: '',
+                points: [{ key: 'sleeve', letter: 'X', label: 'Should not appear', description: '' }],
+              },
+            ],
+          },
+        },
+      }),
+      'shorts',
+    )
+    const defaultShorts = SUPPORT_CONTENT_DEFAULTS.sizeGuide.measure.garmentTypes.find(
+      (g) => g.key === 'shorts',
+    )!
+    expect(resolved.points.map((p) => p.key)).toEqual(defaultShorts.points.map((p) => p.key))
+    expect(resolved.points.some((p) => p.label === 'Should not appear')).toBe(false)
+  })
+
+  it('falls through to the code-owned default order when the CMS array is empty or absent', () => {
+    const defaultShorts = SUPPORT_CONTENT_DEFAULTS.sizeGuide.measure.garmentTypes.find(
+      (g) => g.key === 'shorts',
+    )!
+    // A garment type with fewer points than tee still resolves correctly.
+    expect(resolveMeasurePoints(config(), 'shorts').points).toEqual(defaultShorts.points)
+  })
+})
+
+describe('resolveCareLegend', () => {
+  it('renders the full designed 26-entry legend from an empty blob', () => {
+    const resolved = resolveCareLegend(config())
+    expect(resolved.heading).toBe(SUPPORT_CONTENT_DEFAULTS.careGuide.legend.heading)
+    expect(Object.keys(resolved.entries)).toHaveLength(26)
+    expect(resolved.entries.wash).toEqual(SUPPORT_CONTENT_DEFAULTS.careGuide.legend.entries.wash)
+  })
+
+  it('merges a partial entries override per key and per field', () => {
+    const resolved = resolveCareLegend(
+      config({
+        careGuide: {
+          legend: {
+            entries: {
+              wash: { label: 'Wash it', meaning: '' },
+              'do-not-bleach': { label: '', meaning: '' },
+            },
+          },
+        },
+      }),
+    )
+    const defaults = SUPPORT_CONTENT_DEFAULTS.careGuide.legend.entries
+    // Overridden label wins; blank meaning falls back to the default.
+    expect(resolved.entries.wash).toEqual({ label: 'Wash it', meaning: defaults.wash.meaning })
+    // A present-but-fully-blank override entry is a no-op — default stands.
+    expect(resolved.entries['do-not-bleach']).toEqual(defaults['do-not-bleach'])
+    // Every other key is untouched, still exactly the default.
+    expect(resolved.entries['do-not-iron']).toEqual(defaults['do-not-iron'])
   })
 })

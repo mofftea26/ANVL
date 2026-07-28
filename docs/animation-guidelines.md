@@ -115,6 +115,39 @@ mm.add(OATH_DESKTOP_CINEMATIC_MQ, () => { /* pinned cinematic */ })
 mm.add(OATH_STATIC_MQ, () => { /* buildOathStatic — no pins */ })
 ```
 
+### Gotcha: `ctx.contextSafe()` inside `matchMedia().add()` type-checks but throws at runtime
+
+`gsap.matchMedia().add(queries, (ctx) => { ... })` passes each callback a
+`Context`-shaped first argument. Calling `ctx.contextSafe()` on it **compiles
+cleanly** — GSAP's `Context` type carries an index signature alongside its
+declared `add`/`ignore`/`kill`/`revert`/`clear` methods, so TypeScript accepts
+any property name off it, `contextSafe` included. It is not actually there:
+`mm.add()` invokes the callback with `contextSafe` as its **second**
+parameter, not a method on the first. The call throws at runtime —
+`ctx.contextSafe is not a function`.
+
+```tsx
+// Wrong — type-checks, throws when the media query first matches:
+mm.add(queries, (ctx) => {
+  const safe = ctx.contextSafe() // TypeError at runtime
+})
+
+// Right — contextSafe is the callback's second argument:
+mm.add(queries, (ctx, contextSafe) => {
+  const safe = contextSafe!(() => { /* ... */ })
+})
+```
+
+**No test in this codebase catches this.** jsdom has no layout engine, so a
+`ScrollTrigger`-gated callback (`onEnter`, etc.) that would exercise the code
+path calling `contextSafe()` never actually fires under Vitest — the test
+suite stays green while the real browser throws. This cost real debugging
+time once (`src/features/support/hooks/useSchematicDrawIn.ts`, guide
+schematic draw-in, 2026-07-28) — if a `matchMedia` callback needs a
+GSAP-context-scoped async handler, hold the timeline in a closure variable
+and `revert()`/`kill()` it from the outer cleanup instead of reaching for
+`contextSafe()`.
+
 ### ScrollTrigger
 
 - Refresh after content changes: `ScrollTrigger.refresh()`
@@ -172,6 +205,7 @@ Mobile / tablet / reduced motion: `buildOathStatic.ts` — no pins, no WebGL; st
 `src/features/about/` is a standalone feature (not in `landingPages/registry.ts` — About is a fixed page, never swapped like a drop) and deliberately **does not** reuse The Oath's scroll-film language. Two experiences behind one CMS contract:
 
 - **Desktop altar** (`altar/AboutAltar.tsx`, ≥1280px + no reduced motion + WebGL, lazy chunk): a **non-scrollable** 100svh stage — a normalized, **grabbable** anvil GLB (`altar/useFittedGltf.ts`, drag to spin with inertia; bundled default `public/about/anvil.glb`, CMS-overridable) under a shader **aurora** (`altar/shaders/aurora.ts`), with the CMS-defined orbs in slow orbit (`altar/AltarOrb.tsx` — per-orb CMS color, fresnel halo + ember heart, drei `Html` labels; orbit params derived from index/count in `altar/altarOrbs.ts`). Selecting an orb (click, or its top picker chip for keyboard/AT) runs a GSAP strike timeline against the mutable `altar/altarState.ts` bridge: the orb glides to the anvil face, the hammer GLB **winds up, drops, and recoils** on a handle-end pivot constructed one arm-length from the orb seat (so the head lands on the orb), and the impact **explodes** the orb — shard burst + shockwave ring in the orb's color (`altar/AltarBurst.tsx`) plus flash light spike, camera shake, and a dust glint — then a focus-trapped modal (`altar/AboutOrbModal.tsx`) forges open out of the burst, tinted by the orb. Closing re-materializes the orb in orbit. No ScrollTrigger anywhere — event-driven GSAP timelines + `useFrame` reads only. The footer is CSS-hidden at `xl+` on `/about` so nothing scrolls.
+- **`altar/altarForgeTiming.ts` is the altar's choreography clock — rule 5 of the particle-forge standard, below.** `AboutAltar` (strike timeline, 3D disintegration, the DOM ember hand-off) and `AboutOrbModal` (backdrop, panel, ignition, content stagger, stat counters) never call each other; both schedule GSAP against this module's exported `ALTAR_STRIKE` / `ALTAR_FORGE` / `ALTAR_MODAL` constants instead. Before this module existed, `AboutOrbModal` hardcoded five delays (`1.6 / 1.68 / 1.7 / 1.92 / 2.1`) that had to be hand-kept in sync with `AboutAltar`'s own tween chain — the exact drift rule 5 exists to prevent. The hand-off itself (impact → the DOM ember swarm launching from the orb's seat toward the opening modal panel) runs on the **shared canvas-2D ember-forge engine** (`src/shared/lib/forge/emberForge.ts` + `<ForgeEmberCanvas>` — see below), the same engine backing `Modal` and the toast layer, via `useAltarEmberHandoff`; the WebGL shroud burst in `altar/AltarModalForge.tsx` reads the struck orb's color through the engine's own `resolveForgeRamp(tint)`, so the 3D shroud and the DOM swarm cross-fade in the exact same color.
 - **Normal page** (`mobile/AboutMobilePage.tsx`): mobile/tablet, reduced-motion, no-WebGL, and SSR/first-paint all render a clean scrolling About page (framer-motion `RevealOnScroll` only — no GSAP, no pins). **The orbs render as stacked sections** in order, each accented by its orb color.
 - `content/aboutContent.schema.ts` + `resolveAboutContent.ts` — the CMS-override-with-code-defaults contract. The **orbs array is the content model** (add/edit/remove in `/admin/about`, tenets-style list ownership); per-orb images resolve from `mediaId` via the media index, falling back to the orb's page asset slot (`orbImage()`); the anvil/hammer GLBs stay asset-slot based via `resolveStorefrontPageAssets` (`asset_config.pages.about`).
 
@@ -259,6 +293,58 @@ Any landing motion that uses GSAP must:
 1. Import from `src/shared/lib/gsap.ts`
 2. Gate animations with `gsap.matchMedia` (viewport + reduced motion)
 3. Clean up with `mm.revert()` (and any SplitText `revert()`) on unmount
+
+---
+
+## The shared canvas-2D ember-forge engine (`src/shared/lib/forge/`)
+
+A smaller, sibling system to the WebGL particle-forge standard below — a
+lightweight canvas-2D ember burst for **UI chrome**, not full cinematic
+scenes. One engine now backs three call sites:
+
+- `Modal` (via `ModalForgeEffect` → `<ForgeEmberCanvas>`) — the forge burst
+  that plays under every modal panel materializing.
+- The toast layer (`ToastForgeEffect`, `AnvlToaster`) — a persistent
+  full-viewport canvas juggling several concurrent per-toast passes; it calls
+  the engine's functions directly rather than mounting `<ForgeEmberCanvas>`
+  (toasts can restack and forge concurrently, which doesn't fit a
+  single-target-single-pass component).
+- The About altar's ember hand-off (`useAltarEmberHandoff`,
+  `altar/altarEmberHandoff.ts`) — the DOM swarm that launches from the struck
+  orb's seat toward the opening modal panel, cross-fading with the WebGL
+  shroud burst inside `altar/AltarModalForge.tsx`.
+
+Architecture:
+
+- `src/shared/lib/forge/emberForge.ts` — the framework-agnostic maths. No
+  React, no DOM mounting. Exports `ForgeRect`, `ForgeRamp`, `Ember`,
+  `ForgeMotionTuning`, `walkRectPerimeter`, `resolveForgeRamp`, `buildEmbers`,
+  `drawForgeFrame`, `projectEmber`, `FORGE_DURATION_MS` (950 — the one
+  canonical pass length every dialog/toast/hand-off shares), and two tuning
+  presets, `MODAL_FORGE_TUNING` / `TOAST_FORGE_TUNING` — each surface's
+  dissolve curve, stagger rate, alpha weighting, spread/radius ranges and
+  landing jitter are independently pinned by a regression test, so the two
+  presets can never silently re-converge or drift apart.
+- `src/shared/lib/forge/forgeSurface.ts` — the surface-sizing maths split out
+  once `emberForge.ts` hit the 500-line hard limit: `FORGE_MAX_DPR` (1.5 — a
+  measured no-op for raster cost but a real win for compositor surface size),
+  `forgeSwarmBounds`, `clampBoxToViewport`, `containsBox`, `unionBox`.
+- `src/shared/components/ui/ForgeEmberCanvas.tsx` — the React shell: sizes and
+  positions the `<canvas>` to the swarm's own bounding box (not the whole
+  viewport) when it can, the rAF loop, DPR-clamped sizing, teardown, and a
+  self-contained reduced-motion gate (renders `null`).
+- `resolveForgeRamp(tint?)` derives a `{ cold, ember, hot }` ramp from any
+  brand or CMS color (near-white hot stop via `color-mix`), so a tinted burst
+  (the About altar) and the untinted site-default burst (a plain modal or
+  toast) share one formula.
+
+**Performance note (measured, not assumed):** on this engine, pre-rendered
+sprite blits measured 2.3–2.5× **slower** than the current `arc` + `fill`
+path at the sizes it draws (per-draw-call bound, not fill-rate bound — see
+`emberForge.ts`'s header comment for the numbers). Do not "optimize" this
+engine toward sprites without re-measuring; batching `fillStyle` writes by
+ramp tier and shrinking the canvas to the swarm's actual bounding box are the
+two changes that measured real wins.
 
 ---
 

@@ -7,7 +7,11 @@ import { loadStorefrontProjection } from '@/features/cms/api/loadStorefrontProje
 import { resolveStorefrontPageAssets } from '@/features/cms/assets/resolvePublishedAssets'
 import { ProductDetailPage } from '@/features/products/pdp/ProductDetailPage'
 import { resolvePdpContent } from '@/features/products/pdp/resolvePdpContent'
-import { resolveSupportContent } from '@/features/cms/support/resolveSupportContent'
+import {
+  resolveCareLegend,
+  resolveMeasurePoints,
+  resolveSupportContent,
+} from '@/features/cms/support/resolveSupportContent'
 import type { PdpProductSupport } from '@/features/products/pdp/PdpSupportDetails'
 import type { SupportContentConfig } from '@/features/cms/support/supportContent.zod'
 
@@ -62,9 +66,13 @@ function ProductRoute() {
   const support = useMemo<PdpProductSupport>(() => {
     const effective: SupportContentConfig = previewDraft?.supportContent ?? supportContent
     const resolved = resolveSupportContent(effective)
+    const size = resolved.sizeGuide.perProduct[data.product.slug] ?? null
     return {
-      size: resolved.sizeGuide.perProduct[data.product.slug] ?? null,
+      size,
       care: resolved.careGuide.perProduct[data.product.slug] ?? null,
+      // An unset garment type falls back to the tee inside the resolver.
+      measure: resolveMeasurePoints(effective, size?.garmentType ?? ''),
+      careLegend: resolveCareLegend(effective),
     }
   }, [previewDraft?.supportContent, supportContent, data.product.slug])
 

@@ -1,9 +1,6 @@
 import type { CareIconKey } from '@/features/cms/support/supportContent.zod'
-import {
-  CARE_SYMBOL_COMPONENTS,
-  CARE_SYMBOL_META,
-  type CareGlyphComponent,
-} from './careSymbols'
+import { SUPPORT_CONTENT_DEFAULTS } from '@/features/cms/support/supportContent.defaults'
+import { CARE_SYMBOL_COMPONENTS, type CareGlyphComponent } from './careSymbols'
 
 /**
  * Icon components for structured care items — the render side of the
@@ -16,9 +13,16 @@ export const CARE_ICON_COMPONENTS: Record<CareIconKey, CareGlyphComponent> = CAR
 
 export type { CareGlyphComponent }
 
-/** Plain-language meaning for a care icon key, when it maps to a standard symbol. */
+/**
+ * Plain-language meaning for a care icon key, when it maps to a standard
+ * symbol. Sourced from `SUPPORT_CONTENT_DEFAULTS.careGuide.legend.entries` —
+ * the same code-owned copy `resolveCareLegend` merges CMS overrides over for
+ * the storefront `/care-guide` legend — so this (the admin `CareSelector`
+ * preview, and the passport `CareGuide`) never quotes different wording than
+ * the guide's designed defaults. Legacy/decorative keys have no entry.
+ */
 export function careIconMeaning(icon: CareIconKey): string | undefined {
-  return CARE_SYMBOL_META[icon]?.meaning
+  return SUPPORT_CONTENT_DEFAULTS.careGuide.legend.entries[icon]?.meaning
 }
 
 /** Display text for a care value: bare numbers read as wash temperatures. */

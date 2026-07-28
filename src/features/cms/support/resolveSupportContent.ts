@@ -1,12 +1,17 @@
 import { SUPPORT_CONTENT_DEFAULTS } from '@/features/cms/support/supportContent.defaults'
 import {
+  GARMENT_TYPE_KEYS,
   SIZE_TABLE_SIZES,
   type CareIconKey,
   type CareProductEntry,
   type FaqItem,
+  type GarmentTypeContent,
+  type GarmentTypeKey,
+  type MeasurePoint,
   type SizeProductEntry,
   type SizeRow,
   type SizeTableRow,
+  type SizeTableRowKey,
   type SupportContentConfig,
   type SupportSection,
 } from '@/features/cms/support/supportContent.zod'
@@ -38,11 +43,15 @@ export type ResolvedSupportContent = {
   returns: { intro: string; sections: ResolvedSupportSection[] }
   careGuide: {
     intro: string
+    /** ISO `YYYY-MM-DD` for the "Last updated" stamp. */
+    updatedAt: string
     sections: ResolvedSupportSection[]
     perProduct: Record<string, CareProductEntry>
   }
   sizeGuide: {
     intro: string
+    /** ISO `YYYY-MM-DD` for the "Last updated" stamp. */
+    updatedAt: string
     note: string
     perProduct: Record<string, SizeProductEntry>
   }
@@ -186,15 +195,180 @@ export function resolveSupportContent(
     },
     careGuide: {
       intro: text(config.careGuide.intro, D.careGuide.intro),
+      updatedAt: text(config.careGuide.updatedAt, D.careGuide.updatedAt),
       sections: resolveSections(config.careGuide.sections, D.careGuide.sections),
       // Per-product care notes have no code default — pass authored entries through.
       perProduct: config.careGuide.perProduct,
     },
     sizeGuide: {
       intro: text(config.sizeGuide.intro, D.sizeGuide.intro),
+      updatedAt: text(config.sizeGuide.updatedAt, D.sizeGuide.updatedAt),
       note: text(config.sizeGuide.note, D.sizeGuide.note),
       // Per-product size tables have no code default — pass authored entries through.
       perProduct: config.sizeGuide.perProduct,
     },
+  }
+}
+
+/* --------------------------------------------------------------------------- *
+ * "Where we measure" — per-garment-type measurement points. Point KEYS (which
+ * measurements exist for a garment type) and their schematic ANCHOR geometry
+ * are always the code default's — the CMS can only edit copy (letter/label/
+ * description) for points that already exist there, never add or remove one.
+ * Display ORDER, however, is CMS-authored: the admin's reorderable point list
+ * (`MeasurementsField.tsx`) is meaningful, not decorative — the description
+ * list (and the letter shown next to each point) render in whatever order the
+ * CMS array carries. A point's `letter` travels WITH it when reordered (it is
+ * a field stored on that point, resolved independently of position, exactly
+ * like `label`/`description`) — reordering never re-labels a point with a
+ * different letter, it only changes where it appears in the list. The
+ * schematic's badge anchors are keyed by `SizeTableRowKey`, never by list
+ * position, so this ordering has no effect on where a badge is drawn.
+ * --------------------------------------------------------------------------- */
+
+export type ResolvedMeasurePoint = {
+  key: SizeTableRowKey
+  letter: string
+  label: string
+  description: string
+}
+
+export type ResolvedSizeMeasure = {
+  heading: string
+  intro: string
+  footnote: string
+  /** The garment type actually resolved to (after the unknown-key fallback). */
+  garmentTypeKey: GarmentTypeKey
+  garmentTypeLabel: string
+  points: ResolvedMeasurePoint[]
+}
+
+function findGarmentType(
+  list: readonly GarmentTypeContent[],
+  key: GarmentTypeKey,
+): GarmentTypeContent | undefined {
+  return list.find((g) => g.key === key)
+}
+
+function resolveMeasurePoint(cms: MeasurePoint | undefined, fallback: MeasurePoint): ResolvedMeasurePoint {
+  return {
+    key: fallback.key,
+    letter: text(cms?.letter ?? '', fallback.letter),
+    label: text(cms?.label ?? '', fallback.label),
+    description: text(cms?.description ?? '', fallback.description),
+  }
+}
+
+/**
+ * Merge a CMS-authored point list over this garment type's fixed set of
+ * default points, honouring the CMS array's ORDER (not just its per-field
+ * values). Each `fallbackPoints` entry defines a valid point `key` for this
+ * garment type — the only keys that can ever appear in the result — plus its
+ * code-owned "no CMS override at all" order. `cmsPoints` supplies the
+ * authored order and per-field overrides:
+ *
+ * - A `cmsPoints` entry whose `key` is not one of `fallbackPoints`' keys (not
+ *   valid for this garment type, or a typo/leftover from a different type) is
+ *   ignored entirely.
+ * - A `cmsPoints` entry whose `key` repeats one already placed is ignored
+ *   (first occurrence wins) — one resolved point per key, always.
+ * - Every valid key from `cmsPoints`, in the order it appears there, is
+ *   placed first; any of `fallbackPoints`' keys the CMS array never mentions
+ *   are appended afterward in the code-owned default order. An empty or
+ *   absent `cmsPoints` therefore falls through to exactly the code default's
+ *   order, with every field defaulted.
+ */
+function resolveGarmentPoints(
+  cmsPoints: readonly MeasurePoint[],
+  fallbackPoints: readonly MeasurePoint[],
+): ResolvedMeasurePoint[] {
+  const fallbackByKey = new Map(fallbackPoints.map((p) => [p.key, p]))
+  const seen = new Set<SizeTableRowKey>()
+  const ordered: ResolvedMeasurePoint[] = []
+
+  for (const cmsPoint of cmsPoints) {
+    if (seen.has(cmsPoint.key)) continue
+    const fallback = fallbackByKey.get(cmsPoint.key)
+    if (!fallback) continue
+    seen.add(cmsPoint.key)
+    ordered.push(resolveMeasurePoint(cmsPoint, fallback))
+  }
+  for (const fallback of fallbackPoints) {
+    if (seen.has(fallback.key)) continue
+    ordered.push(resolveMeasurePoint(undefined, fallback))
+  }
+  return ordered
+}
+
+/**
+ * Render-ready "Where we measure" content for one garment type: the CMS
+ * `sizeGuide.measure` blob merged over the designed per-garment-type point
+ * defaults (blank field = use default, per field), in the CMS-authored order
+ * (see {@link resolveGarmentPoints}). An unknown or blank `garmentTypeKey`
+ * falls back to `'tee'`.
+ */
+export function resolveMeasurePoints(
+  config: SupportContentConfig,
+  garmentTypeKey: string,
+): ResolvedSizeMeasure {
+  const key: GarmentTypeKey = (GARMENT_TYPE_KEYS as readonly string[]).includes(garmentTypeKey)
+    ? (garmentTypeKey as GarmentTypeKey)
+    : 'tee'
+  const measure = config.sizeGuide.measure
+  const defaultMeasure = D.sizeGuide.measure
+  const fallbackGarment =
+    findGarmentType(defaultMeasure.garmentTypes, key) ??
+    findGarmentType(defaultMeasure.garmentTypes, 'tee')
+  const cmsGarment = findGarmentType(measure.garmentTypes, key)
+
+  const points = resolveGarmentPoints(cmsGarment?.points ?? [], fallbackGarment?.points ?? [])
+
+  return {
+    heading: text(measure.heading, defaultMeasure.heading),
+    intro: text(measure.intro, defaultMeasure.intro),
+    footnote: text(measure.footnote, defaultMeasure.footnote),
+    garmentTypeKey: key,
+    garmentTypeLabel: text(cmsGarment?.label ?? '', fallbackGarment?.label ?? ''),
+    points,
+  }
+}
+
+/* --------------------------------------------------------------------------- *
+ * Care legend — the 26 standard care-symbol meanings, CMS-overridable.
+ * --------------------------------------------------------------------------- */
+
+export type ResolvedCareLegendEntry = { label: string; meaning: string }
+
+export type ResolvedCareLegend = {
+  heading: string
+  intro: string
+  /** Exactly the keys present in the code defaults (the 26 legend symbols). */
+  entries: Record<string, ResolvedCareLegendEntry>
+}
+
+/**
+ * Render-ready care-symbol legend: `careGuide.legend.entries` overrides
+ * merged over the 26 designed `{ label, meaning }` pairs, per field (a blank
+ * override field falls back to that field's default, not the whole entry).
+ * An override keyed to something outside the 26 defaults is inert — the
+ * returned `entries` always has exactly the default's key set. Category
+ * grouping for display is `CARE_SYMBOL_CATEGORIES` (`careSymbols.tsx`), not
+ * this resolver's concern.
+ */
+export function resolveCareLegend(config: SupportContentConfig): ResolvedCareLegend {
+  const legend = config.careGuide.legend
+  const defaultLegend = D.careGuide.legend
+  const entries: Record<string, ResolvedCareLegendEntry> = {}
+  for (const [iconKey, fallback] of Object.entries(defaultLegend.entries)) {
+    const override = legend.entries[iconKey]
+    entries[iconKey] = {
+      label: text(override?.label ?? '', fallback.label),
+      meaning: text(override?.meaning ?? '', fallback.meaning),
+    }
+  }
+  return {
+    heading: text(legend.heading, defaultLegend.heading),
+    intro: text(legend.intro, defaultLegend.intro),
+    entries,
   }
 }

@@ -6,6 +6,11 @@
 
 export type ProductNameEntry = { slug: string; name: string }
 
+/** "1 piece" / "4 pieces" — the guide section headers' count meta. */
+export function formatPieceCount(count: number): string {
+  return `${count} ${count === 1 ? 'piece' : 'pieces'}`
+}
+
 export type OrderedPerProduct<T> = { slug: string; name: string; entry: T }
 
 /**
