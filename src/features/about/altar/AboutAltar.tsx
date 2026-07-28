@@ -58,11 +58,6 @@ export default function AboutAltar({
   const colors = useMemo(() => readAboutBrandColors(), [])
   const reducedMotion = useReducedMotion()
   const [openIndex, setOpenIndex] = useState<number | null>(null)
-  // The R3F loop is parked (`'demand'` — R3F still redraws on resize, unlike
-  // `'never'`) from the beat the stage stops animating until the modal closes.
-  // Nothing visible is lost: by then the hammer has rung out, the 3D shroud has
-  // crossfaded away, and the ring is dimmed to a crawl behind a blurred scrim.
-  const [frameloop, setFrameloop] = useState<'always' | 'demand'>('always')
   // The DOM half of the ember hand-off: armed at the hand-off beat, launched by
   // the panel's own measure, retired when the pass lands or the modal closes.
   const { swarm, armSwarm, handlePanelMeasure, swarmRect, retireSwarm, resetSwarm } =
@@ -256,20 +251,11 @@ export default function AboutAltar({
           handoffAt,
         )
       }
-      // Park the 3D loop once the stage has nothing left to animate (see
-      // `ALTAR_FORGE.stageSettleAfterImpact`): the DOM swarm's last frames and
-      // the open dialog get the GPU to themselves. `release` wakes it.
-      tl.call(
-        () => setFrameloop('demand'),
-        [],
-        impactAt + ALTAR_FORGE.stageSettleAfterImpact,
-      )
     },
     [state, reducedMotion, armSwarm],
   )
 
   const release = useCallback(() => {
-    setFrameloop('always')
     setOpenIndex(null)
     // Closing mid-forge (or after it) retires the DOM swarm — nothing left to
     // form once the panel is gone.
@@ -376,7 +362,6 @@ export default function AboutAltar({
           camera={{ position: [0, 0.6, 6.4], fov: 38 }}
           gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
           dpr={[1, 2]}
-          frameloop={frameloop}
         >
           <AltarScene
             state={state}

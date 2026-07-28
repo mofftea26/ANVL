@@ -203,19 +203,28 @@ export function AboutOrbModal({
           {/* Close — anchored to the PANEL (not the scroller), so it stays put
               while the content scrolls beneath it. Wears the orb's colour like
               the rest of the panel's hardware: its ring matches the panel's own
-              border mix, and the glyph is the orb mixed 45% into
-              `--color-heading` — the same "lighten the tint toward the
-              foreground" move `resolveForgeRamp` makes for the swarm's cold
-              stop. 45% is the contrast floor, not a taste call: it clears WCAG
-              AA (≥4.5:1) against the panel for every orb colour in the shipped
-              set in BOTH themes (worst case 4.9:1, bone on bone-light), where
-              the raw orb colour manages only 1.3:1. Mixing toward the theme's
-              own foreground token is what keeps that true for CMS colours the
-              set does not contain. */}
+              border mix, and the glyph is the orb mixed 40% into
+              `--color-heading` — the same "pull the tint toward the foreground"
+              move `resolveForgeRamp` makes for the swarm's cold stop.
+
+              40% is a contrast floor, not a taste call, and orb colours are
+              CMS-authored so it has to hold for ANY colour, not just the
+              shipped set. `--color-heading` is the anchor because it is the
+              token the theme already guarantees is legible on `--color-surface`;
+              at 60% of the way there the glyph inherits most of that guarantee.
+              Verified by brute force over the whole RGB cube against the real
+              button background in both themes: worst case 6.02:1 (oath-dark,
+              pure black tint) and 4.89:1 (bone-light, pure white tint), both
+              past WCAG AA. At the 45% this shipped as, bone-light + a white
+              tint fell to 4.13:1 and failed. Do not raise it without re-running
+              that sweep. (Mixing toward whichever of heading/bg is *further*
+              from the tint — an obvious-looking alternative — is much worse:
+              `--color-bg` is near the panel, so it drives the glyph toward
+              invisibility, 1.6–2.4:1.) */}
           <button
             type="button"
             onClick={onClose}
-            className="focus-ring absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--about-orb-tint)_38%,var(--color-line))] bg-[color-mix(in_srgb,var(--color-surface)_72%,transparent)] text-[color-mix(in_srgb,var(--about-orb-tint)_45%,var(--color-heading))] transition-colors hover:border-[var(--about-orb-tint)] hover:bg-[color-mix(in_srgb,var(--about-orb-tint)_16%,var(--color-surface))] hover:text-[var(--color-heading)]"
+            className="focus-ring absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--about-orb-tint)_38%,var(--color-line))] bg-[color-mix(in_srgb,var(--color-surface)_72%,transparent)] text-[color-mix(in_srgb,var(--about-orb-tint)_40%,var(--color-heading))] transition-colors hover:border-[var(--about-orb-tint)] hover:bg-[color-mix(in_srgb,var(--about-orb-tint)_16%,var(--color-surface))] hover:text-[var(--color-heading)]"
             aria-label="Close dialog"
           >
             <X size={ICON_SIZE.md} aria-hidden="true" />

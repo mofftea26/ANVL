@@ -38,8 +38,7 @@ import { FORGE_DURATION_MS } from '@/shared/lib/forge/emberForge'
  * 3.08  the 3D shroud is gone; the backdrop may now blur (it would otherwise
  *       smear the live 3D embers — see AboutOrbModal's blur note)
  * 3.23  the panel materializes as the swarm's hot cores land and dissolve
- * 3.28  the hammer's ring-out ends — the stage has nothing left to animate, so
- *       the R3F render loop parks until the modal closes
+ * 3.28  the hammer's ring-out ends
  * 3.68  the DOM swarm's pass ends
  * ```
  */
@@ -56,9 +55,11 @@ const HIT_STOP = 0.08
  * The rebound after the hit-stop: a violent overshoot past the cocked rest,
  * ringing down through four diminishing swings (pendulum-eased) before melting
  * into the idle figure-8 — the hammer's sway weight fades back in as |hammerT|
- * shrinks. A table rather than five hand-placed tweens in `AboutAltar` so
- * {@link ALTAR_FORGE.stageSettleAfterImpact} can be *derived* from the chain
- * instead of re-counted by hand every time a swing is retuned.
+ * shrinks. A table rather than five hand-placed tweens in `AboutAltar`, whose
+ * start times were hand-computed running totals (`+0.34`, `+0.62`, `+0.86`,
+ * `+1.08`) that had to be re-added by hand whenever a swing was retuned — the
+ * exact class of drift this module exists to remove. The loop that plays it
+ * accumulates the offsets instead.
  */
 const RING_OUT = [
   { to: -0.26, duration: 0.34, ease: 'power3.out' },
@@ -67,7 +68,6 @@ const RING_OUT = [
   { to: 0.05, duration: 0.22, ease: 'power2.inOut' },
   { to: 0, duration: 0.34, ease: 'sine.out' },
 ] as const
-const RING_OUT_DURATION = RING_OUT.reduce((total, swing) => total + swing.duration, 0)
 
 /** The hammer's strike beats — seconds on the strike timeline. */
 export const ALTAR_STRIKE = {
@@ -90,15 +90,12 @@ export const ALTAR_STRIKE = {
   hitStop: HIT_STOP,
   /** The rebound swing chain, played in order from `impact + hitStop`. */
   ringOut: RING_OUT,
-  /** Impact → the hammer is fully at rest: the hit-stop plus every rebound swing. */
-  ringOutEndAfterImpact: HIT_STOP + RING_OUT_DURATION,
   /** Reduced motion: one quick, gentle arc — the impact beat for the soft strike. */
   reducedMotionImpactAt: 0.85,
 } as const
 
 const SCATTER_DURATION = 0.6
 const SHROUD_HOLD = 0.35
-const EMBER_FADE_DURATION = 0.35
 
 /** The ember phases — seconds relative to {@link ALTAR_STRIKE.impactAt}. */
 export const ALTAR_FORGE = {
@@ -129,27 +126,13 @@ export const ALTAR_FORGE = {
    * (It used to be longer and back-loaded to cover for a DOM ring that started
    * ~3× further out than the shroud; that gap is gone.)
    */
-  emberFadeDuration: EMBER_FADE_DURATION,
+  emberFadeDuration: 0.35,
   /**
    * The DOM swarm's pass — the shared engine's canonical modal duration, so
    * the altar's modal forges out of embers on exactly the same clock as every
    * other dialog and toast in the app.
    */
   swarmDuration: FORGE_DURATION_MS / 1000,
-  /**
-   * Impact → nothing in the canvas has anything left to animate: the hammer has
-   * rung out AND the 3D shroud has fully crossfaded away. `AboutAltar` parks the
-   * R3F render loop at this beat (`frameloop: 'demand'`) and wakes it when the
-   * modal closes, so the last ~0.4s of the DOM swarm — and the whole time the
-   * dialog is open — no longer share the GPU with a full-viewport WebGL scene
-   * that is redrawing a dimmed, blurred, scrimmed stage for nobody.
-   *
-   * Derived from both chains, so retuning either moves it automatically.
-   */
-  stageSettleAfterImpact: Math.max(
-    ALTAR_STRIKE.ringOutEndAfterImpact,
-    SCATTER_DURATION + SHROUD_HOLD + EMBER_FADE_DURATION,
-  ),
 } as const
 
 const PANEL_DELAY = 0.5
