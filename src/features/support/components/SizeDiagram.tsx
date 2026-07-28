@@ -15,31 +15,31 @@ export const SIZE_MEASUREMENT_POINTS: readonly {
   {
     key: 'length',
     letter: 'A',
-    label: 'Length',
+    label: 'Body length',
     description: 'From the highest point of the shoulder straight down to the hem.',
   },
   {
     key: 'chest',
     letter: 'B',
-    label: 'Chest width',
+    label: 'Chest',
     description: 'Across the chest from armpit to armpit, garment laid flat.',
   },
   {
     key: 'waist',
     letter: 'C',
-    label: 'Waist width',
+    label: 'Waist',
     description: 'Across the midpoint of the body, garment laid flat.',
   },
   {
     key: 'bottom',
     letter: 'D',
-    label: 'Bottom width',
+    label: 'Hem',
     description: 'Across the hem opening, garment laid flat.',
   },
   {
     key: 'collar',
     letter: 'E',
-    label: 'Collar width',
+    label: 'Neck opening',
     description: 'Across the neck opening, seam to seam.',
   },
   {
@@ -51,13 +51,13 @@ export const SIZE_MEASUREMENT_POINTS: readonly {
   {
     key: 'cuff',
     letter: 'G',
-    label: 'Cuff width',
+    label: 'Cuff opening',
     description: 'Across the sleeve opening, garment laid flat.',
   },
 ]
 
 const DIAGRAM_ALT =
-  'Flat garment diagram of a tee with lettered measurement arrows: A length from shoulder to hem, B chest width, C waist width, D bottom width at the hem, E collar width, F sleeve length, G cuff width. Widths are measured with the garment laid flat.'
+  'Flat garment diagram of a tee with lettered measurement arrows: A body length from shoulder to hem, B chest, C waist, D hem opening, E neck opening, F sleeve length, G cuff opening. Widths are measured with the garment laid flat.'
 
 /**
  * Brand-toned flat-tee measurement diagram — the same line drawing shipped as
@@ -101,19 +101,19 @@ export function SizeDiagram({ className }: { className?: string }) {
       <path d="M382 100 L 500 100" strokeDasharray="4 5" opacity={0.45} />
       <path d="M372 380 L 500 380" strokeDasharray="4 5" opacity={0.45} />
 
-      {/* A — Length */}
+      {/* A — Body length */}
       <line x1={500} y1={104} x2={500} y2={376} markerStart="url(#anvl-size-arrow)" markerEnd="url(#anvl-size-arrow)" />
-      {/* B — Chest width */}
+      {/* B — Chest */}
       <line x1={156} y1={190} x2={364} y2={190} markerStart="url(#anvl-size-arrow)" markerEnd="url(#anvl-size-arrow)" />
-      {/* C — Waist width */}
+      {/* C — Waist */}
       <line x1={156} y1={275} x2={364} y2={275} markerStart="url(#anvl-size-arrow)" markerEnd="url(#anvl-size-arrow)" />
-      {/* D — Bottom width */}
+      {/* D — Hem */}
       <line x1={156} y1={358} x2={364} y2={358} markerStart="url(#anvl-size-arrow)" markerEnd="url(#anvl-size-arrow)" />
-      {/* E — Collar width */}
+      {/* E — Neck opening */}
       <line x1={230} y1={88} x2={290} y2={88} markerStart="url(#anvl-size-arrow)" markerEnd="url(#anvl-size-arrow)" />
       {/* F — Sleeve length */}
       <line x1={398} y1={118} x2={442} y2={168} markerStart="url(#anvl-size-arrow)" markerEnd="url(#anvl-size-arrow)" />
-      {/* G — Cuff width */}
+      {/* G — Cuff opening */}
       <line x1={53} y1={158} x2={76} y2={206} markerStart="url(#anvl-size-arrow)" markerEnd="url(#anvl-size-arrow)" />
 
       {/* Letter markers */}

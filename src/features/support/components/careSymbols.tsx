@@ -331,6 +331,67 @@ export const CARE_SYMBOL_COMPONENTS: Record<CareIconKey, CareGlyphComponent> = {
 }
 
 /**
+ * ISO-grouped legend categories — the five families the Care guide's symbol
+ * legend renders under. Code-owned: membership is fixed and NOT
+ * CMS-editable (only each symbol's `label`/`meaning`, via `CARE_SYMBOL_META`
+ * defaults + `resolveCareLegend` overrides, are). Exactly the 26 distinct
+ * symbols — the 14 legacy alias keys in {@link CARE_SYMBOL_COMPONENTS} are
+ * never legend members.
+ */
+export interface CareSymbolCategory {
+  id: string
+  label: string
+  keys: readonly CareIconKey[]
+}
+
+export const CARE_SYMBOL_CATEGORIES: readonly CareSymbolCategory[] = [
+  {
+    id: 'washing',
+    label: 'Washing',
+    keys: [
+      'wash',
+      'wash-30',
+      'wash-40',
+      'wash-50',
+      'wash-60',
+      'wash-cold',
+      'wash-gentle',
+      'wash-hand',
+      'wash-inside-out',
+      'do-not-wash',
+    ],
+  },
+  {
+    id: 'bleaching',
+    label: 'Bleaching',
+    keys: ['bleach', 'do-not-bleach'],
+  },
+  {
+    id: 'drying',
+    label: 'Drying',
+    keys: [
+      'tumble-dry',
+      'tumble-dry-low',
+      'tumble-dry-high',
+      'do-not-tumble-dry',
+      'line-dry',
+      'dry-flat',
+      'drip-dry',
+    ],
+  },
+  {
+    id: 'ironing',
+    label: 'Ironing',
+    keys: ['iron', 'iron-low', 'iron-medium', 'iron-high', 'do-not-iron'],
+  },
+  {
+    id: 'professional-care',
+    label: 'Professional care',
+    keys: ['dry-clean', 'do-not-dry-clean'],
+  },
+] as const
+
+/**
  * Plain-language meaning for the standard symbols — surfaced as the caption
  * under the picker preview and the "what it means" line in the passport care
  * ritual. Legacy/decorative keys have no entry (their instruction text stands

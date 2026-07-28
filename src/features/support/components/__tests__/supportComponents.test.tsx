@@ -106,7 +106,7 @@ describe('SizeTable (structured)', () => {
     )
     const table = screen.getByRole('table')
     expect(within(table).getByText('Measurement (cm)')).toBeInTheDocument()
-    expect(within(table).getByText('Chest width')).toBeInTheDocument()
+    expect(within(table).getByText('Chest')).toBeInTheDocument()
     expect(within(table).getByText('XXL')).toBeInTheDocument()
     expect(within(table).getByText('52')).toBeInTheDocument()
     expect(screen.getByText(/half measurements/i)).toBeInTheDocument()

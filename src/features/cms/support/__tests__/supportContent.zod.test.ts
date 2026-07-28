@@ -30,6 +30,11 @@ describe('parseSupportContent', () => {
       careGuide: {
         intro: 'Care',
         sections: [{ id: 'c1', heading: 'H', body: 'B' }],
+        legend: {
+          heading: 'Legend',
+          intro: 'What the marks mean',
+          entries: { wash: { label: 'Wash', meaning: 'Machine wash cold.' } },
+        },
         perProduct: {
           'oversized-tee': {
             note: 'n',
@@ -43,6 +48,20 @@ describe('parseSupportContent', () => {
       sizeGuide: {
         intro: 'Size',
         note: 'Measure',
+        measure: {
+          heading: 'Where we measure',
+          intro: 'Match your own tape',
+          footnote: 'Widths are half measurements.',
+          garmentTypes: [
+            {
+              key: 'tee',
+              label: 'Tee',
+              points: [
+                { key: 'chest', letter: 'B', label: 'Chest', description: 'Across the chest.' },
+              ],
+            },
+          ],
+        },
         perProduct: {
           stringer: {
             note: 'fit',
@@ -52,6 +71,7 @@ describe('parseSupportContent', () => {
               rows: [{ key: 'chest', values: ['44', '46', '48', '50', '52', '54'] }],
               halfMeasurement: true,
             },
+            garmentType: 'stringer',
           },
         },
       },
@@ -59,6 +79,109 @@ describe('parseSupportContent', () => {
     const parsed = parseSupportContent(full)
     expect(parsed).toEqual(full)
     expect(supportContentSchema.parse(parsed)).toEqual(full)
+  })
+
+  it('round-trips the measurement-point and care-legend blocks on their own', () => {
+    const parsed = parseSupportContent({
+      careGuide: {
+        legend: {
+          heading: 'Legend',
+          intro: '',
+          entries: {
+            wash: { label: 'Wash', meaning: 'Cold only.' },
+            'do-not-iron': { label: '', meaning: 'Never iron.' },
+          },
+        },
+      },
+      sizeGuide: {
+        measure: {
+          heading: 'Where we measure',
+          intro: '',
+          footnote: '',
+          garmentTypes: [
+            {
+              key: 'joggers',
+              label: 'Joggers',
+              points: [
+                { key: 'waist', letter: 'B', label: 'Waist', description: 'Around the band.' },
+                { key: 'bottom', letter: 'C', label: 'Leg opening', description: 'Across the hem.' },
+              ],
+            },
+          ],
+        },
+        perProduct: { joggers: { note: '', columns: [], rows: [], garmentType: 'joggers' } },
+      },
+    })
+    expect(parsed.careGuide.legend).toEqual({
+      heading: 'Legend',
+      intro: '',
+      entries: {
+        wash: { label: 'Wash', meaning: 'Cold only.' },
+        'do-not-iron': { label: '', meaning: 'Never iron.' },
+      },
+    })
+    expect(parsed.sizeGuide.measure.garmentTypes).toEqual([
+      {
+        key: 'joggers',
+        label: 'Joggers',
+        points: [
+          { key: 'waist', letter: 'B', label: 'Waist', description: 'Around the band.' },
+          { key: 'bottom', letter: 'C', label: 'Leg opening', description: 'Across the hem.' },
+        ],
+      },
+    ])
+    expect(parsed.sizeGuide.perProduct.joggers.garmentType).toBe('joggers')
+  })
+
+  it('drops measure points/garment types with an invalid or missing key, and unknown legend/garmentType keys degrade harmlessly', () => {
+    const parsed = parseSupportContent({
+      careGuide: {
+        legend: { entries: { wash: { label: 'Wash', meaning: 'ok' }, 'not-a-real-icon': { label: 'x', meaning: 'y' } } },
+      },
+      sizeGuide: {
+        measure: {
+          garmentTypes: [
+            { key: 'not-a-real-garment', label: 'Ghost', points: [] },
+            {
+              key: 'tee',
+              label: 'Tee',
+              points: [
+                { key: 'chest', letter: 'B', label: 'Chest', description: 'ok' },
+                { key: 'not-a-real-row', letter: 'Z', label: 'bad', description: 'bad' },
+              ],
+            },
+          ],
+        },
+        perProduct: { tee: { note: '', columns: [], rows: [], garmentType: 'not-a-real-garment' } },
+      },
+    })
+    // Unknown legend key is stored (entries is a free-form record) but is
+    // inert at resolve time — resolveCareLegend only reads known keys.
+    expect(Object.keys(parsed.careGuide.legend.entries)).toEqual(['wash', 'not-a-real-icon'])
+    // Garment type blocks with an unrecognised key are dropped entirely.
+    expect(parsed.sizeGuide.measure.garmentTypes).toHaveLength(1)
+    expect(parsed.sizeGuide.measure.garmentTypes[0].key).toBe('tee')
+    // Points with an unrecognised key are dropped, valid ones kept.
+    expect(parsed.sizeGuide.measure.garmentTypes[0].points).toEqual([
+      { key: 'chest', letter: 'B', label: 'Chest', description: 'ok' },
+    ])
+    // A per-product garmentType that isn't a real key is dropped (undefined),
+    // not stored as-is — resolveMeasurePoints falls back to 'tee' at read time.
+    expect(parsed.sizeGuide.perProduct.tee.garmentType).toBeUndefined()
+  })
+
+  it('malformed measure/legend blobs degrade to blank defaults', () => {
+    const parsed = parseSupportContent({
+      careGuide: { legend: 'not-an-object' },
+      sizeGuide: { measure: { garmentTypes: 'not-an-array' } },
+    })
+    expect(parsed.careGuide.legend).toEqual({ heading: '', intro: '', entries: {} })
+    expect(parsed.sizeGuide.measure).toEqual({
+      heading: '',
+      intro: '',
+      footnote: '',
+      garmentTypes: [],
+    })
   })
 
   it('upgrades legacy-shape entries (no items / no table) without touching legacy data', () => {
