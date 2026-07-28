@@ -5,10 +5,11 @@ import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 import type { AboutResolvedOrb } from '../content/aboutContent.defaults'
 import { AboutOrbContent, AboutOrbHeroBand } from '../components/AboutOrbContent'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
+import { ALTAR_MODAL } from './altarForgeTiming'
 
 /**
- * The strike modal — forged open out of the orb's explosion. A dark glass
- * panel whose hairline and bloom carry the struck orb's own color; the panel
+ * The strike modal — forged open out of the struck orb's own embers. A dark
+ * glass panel whose hairline and bloom carry the orb's color; the panel
  * rises, its content staggers in, and numeric stats count up on open.
  * Focus-trapped (`useDialogFocusTrap`), Escape and backdrop close it, and
  * closing hands control back to the stage (the orb re-materializes in orbit).
@@ -26,9 +27,10 @@ export function AboutOrbModal({
   orb: AboutResolvedOrb | null
   image?: string
   onClose: () => void
-  /** Reports the panel's laid-out rect (pre-animation) — the disintegrated
-   *  orb's embers use it to converge and FORM the panel's shape before it
-   *  materializes (AltarModalForge). */
+  /** Reports the panel's laid-out rect (pre-animation, so BEFORE the reveal
+   *  transform below shrinks and offsets it) — the shared ember swarm
+   *  converges on exactly this rectangle to FORM the panel (see
+   *  `AboutAltar`'s `handlePanelMeasure` → `ForgeEmberCanvas`). */
   onMeasure?: (rect: DOMRect) => void
 }) {
   const root = useRef<HTMLDivElement | null>(null)
@@ -38,19 +40,24 @@ export function AboutOrbModal({
   useGSAP(
     () => {
       if (!orb || !root.current) return
-      // Measure at natural layout, BEFORE any transform, so the particle
-      // formation targets match where the panel will actually stand.
+      // Measure at natural layout, BEFORE the reveal transform below is
+      // applied (gsap.fromTo sets its from-state immediately), so the ember
+      // swarm's target rect matches where the panel will actually stand. This
+      // runs in a layout effect, ahead of ForgeEmberCanvas's own measure.
       if (panelRef.current) onMeasure?.(panelRef.current.getBoundingClientRect())
       const q = gsap.utils.selector(root.current)
-      // Timed to the altar's ember choreography (measure → 0.35s drift hold →
-      // 0.9s gather → 0.3s plate HOLD → 0.55s dissolve): the stage stays
-      // completely clear until the drawn plate has held its beat (~1.55s),
-      // then the backdrop dims and the panel materializes exactly as the
-      // swarm dissolves into it — the embers must never play behind the
-      // backdrop's blur or the opaque panel.
+      // EVERY delay below comes from the altar's one choreography clock
+      // (`altarForgeTiming.ts`) — this component mounts AT the hand-off beat,
+      // so `ALTAR_MODAL`'s numbers are already in this timeline's frame. They
+      // used to be hand-copied magic numbers (1.6 / 1.68 / 1.7 / 1.92 / 2.1)
+      // that had to be re-derived by hand whenever AboutAltar's ember chain
+      // moved.
+      //
       // CRITICAL: the backdrop's blur must be animated as `backdropFilter`,
       // not hidden via opacity — `backdrop-filter` keeps blurring the canvas
       // even at opacity 0 (Chromium), which smeared the embers into nothing.
+      // Its delay is therefore pinned to the 3D shroud's cross-fade: it may
+      // only start once the in-canvas embers are gone.
       gsap.fromTo(
         q('[data-modal-backdrop]'),
         { opacity: 0, backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' },
@@ -58,13 +65,13 @@ export function AboutOrbModal({
           opacity: 1,
           backdropFilter: 'blur(10px)',
           webkitBackdropFilter: 'blur(10px)',
-          duration: 0.6,
+          duration: ALTAR_MODAL.backdropDuration,
           ease: 'power2.out',
-          delay: 1.6,
+          delay: ALTAR_MODAL.backdropDelay,
         },
       )
       // The panel forges in with a touch of depth — tilting up out of the
-      // ember plate the swarm just drew.
+      // ember plate the swarm is landing on, so the two fuse.
       gsap.fromTo(
         q('[data-modal-panel]'),
         { opacity: 0, scale: 0.94, y: 16, rotateX: 7, transformPerspective: 900 },
@@ -73,9 +80,9 @@ export function AboutOrbModal({
           scale: 1,
           y: 0,
           rotateX: 0,
-          duration: 0.6,
+          duration: ALTAR_MODAL.panelDuration,
           ease: 'expo.out',
-          delay: 1.7,
+          delay: ALTAR_MODAL.panelDelay,
         },
       )
       // Ignition — the panel's edge flashes in the orb's color as the embers
@@ -85,18 +92,29 @@ export function AboutOrbModal({
         { opacity: 0 },
         {
           opacity: 1,
-          duration: 0.16,
+          duration: ALTAR_MODAL.igniteDuration,
           ease: 'power4.out',
-          delay: 1.68,
+          delay: ALTAR_MODAL.igniteDelay,
           onComplete: () => {
-            gsap.to(q('[data-modal-ignite]'), { opacity: 0, duration: 0.7, ease: 'power2.out' })
+            gsap.to(q('[data-modal-ignite]'), {
+              opacity: 0,
+              duration: ALTAR_MODAL.igniteFadeDuration,
+              ease: 'power2.out',
+            })
           },
         },
       )
       gsap.fromTo(
         q('[data-modal-reveal]'),
         { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', stagger: 0.06, delay: 1.92 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: ALTAR_MODAL.contentDuration,
+          ease: 'power3.out',
+          stagger: ALTAR_MODAL.contentStagger,
+          delay: ALTAR_MODAL.contentDelay,
+        },
       )
       for (const el of q('[data-modal-stat-value]')) {
         const target = Number((el as HTMLElement).dataset.statTarget)
@@ -105,9 +123,9 @@ export function AboutOrbModal({
         el.textContent = '0'
         gsap.to(counter, {
           n: target,
-          duration: 1.1,
+          duration: ALTAR_MODAL.statsDuration,
           ease: 'power2.out',
-          delay: 2.1,
+          delay: ALTAR_MODAL.statsDelay,
           onUpdate: () => {
             el.textContent = String(Math.round(counter.n))
           },

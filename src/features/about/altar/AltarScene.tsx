@@ -9,7 +9,7 @@ import type { AltarState } from './altarState'
 import { AltarAurora } from './AltarAurora'
 import { AltarAnvil, ANVIL_FACE_Y } from './AltarAnvil'
 import { AltarHammer } from './AltarHammer'
-import { AltarOrb } from './AltarOrb'
+import { AltarOrb, ORB_SEAT } from './AltarOrb'
 import { AltarModalForge } from './AltarModalForge'
 
 /** Camera drifts with the pointer and rattles on impact — always looking at
@@ -27,6 +27,25 @@ function CameraRig({ state }: { state: AltarState }) {
     camera.position.y += (0.6 + state.pointerY * -0.28 - camera.position.y) * k
     camera.position.y += jitterY
     camera.lookAt(look.current)
+  })
+  return null
+}
+
+/**
+ * The ONE piece of in-canvas → DOM plumbing: the orb seat projected to NDC by
+ * the live scene camera (which drifts with the pointer and rattles on impact),
+ * written into the mutable altar state every frame. At the hand-off beat the
+ * DOM side turns this into viewport pixels — the origin the shared ember swarm
+ * scatters from — using the canvas element's own box. Kept camera-only here
+ * (no `getBoundingClientRect`) so nothing in the render loop forces layout.
+ * Mounted after {@link CameraRig} so it reads the camera the rig just moved.
+ */
+function SeatProjector({ state }: { state: AltarState }) {
+  const ndc = useRef(new THREE.Vector3())
+  useFrame(({ camera }) => {
+    ndc.current.copy(ORB_SEAT).project(camera)
+    state.seatNdc.x = ndc.current.x
+    state.seatNdc.y = ndc.current.y
   })
   return null
 }
@@ -52,7 +71,8 @@ function StrikeFlash({ state, colors }: { state: AltarState; colors: AboutBrandC
 /**
  * Everything inside the altar canvas: the aurora void, the grabbable anvil +
  * strike hammer (normalized GLBs), the CMS-driven orb ring (each orb its own
- * color), the orb→modal ember forge, the shared cursor dust, and the lighting
+ * color), the struck orb's ember disintegration, the seat→DOM projector that
+ * places the modal's ember swarm, the shared cursor dust, and the lighting
  * rig. All
  * per-frame motion reads the mutable {@link AltarState} written by the GSAP
  * strike timelines — zero React state in the loop.
@@ -77,6 +97,7 @@ export function AltarScene({
   return (
     <>
       <CameraRig state={state} />
+      <SeatProjector state={state} />
       <AltarAurora colors={colors} />
 
       {/* Warm-bone key + fills (no environment map — keep metalness legible). */}
