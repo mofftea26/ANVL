@@ -52,6 +52,14 @@ export function RouteProgressBar() {
   // ever fires. The effect only needs to react to the router's loading state
   // and the reduced-motion preference, never to its own visibility output.
   const visibleRef = useRef(false)
+  // Mirrors `leaving` for the same reason `visibleRef` mirrors `visible`: a
+  // new navigation that interrupts an in-progress fade-out needs to know,
+  // synchronously inside this same effect run, that it is interrupting one —
+  // otherwise `scale` is left stranded at COMPLETE_SCALE (the fade-out's
+  // cleanup only cancels `leaveTimer`; it never runs the reset that timer
+  // was going to do) and the bar freezes at full width through the new
+  // navigation's entire entry delay before visibly snapping back down.
+  const leavingRef = useRef(false)
   const entryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const creepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -61,6 +69,16 @@ export function RouteProgressBar() {
       if (leaveTimerRef.current) {
         clearTimeout(leaveTimerRef.current)
         leaveTimerRef.current = null
+      }
+      if (leavingRef.current) {
+        // Interrupting an in-progress fade-out — go back to the same hidden
+        // baseline a first-ever navigation starts from, so this navigation's
+        // entry delay behaves identically (no leftover scaleX(1) to freeze
+        // on, no leftover `leaving` opacity/transform override).
+        setVisible(false)
+        visibleRef.current = false
+        setScale(CREEP_START_SCALE)
+        leavingRef.current = false
       }
       setLeaving(false)
 
@@ -111,14 +129,17 @@ export function RouteProgressBar() {
     if (reducedMotion) {
       setVisible(false)
       visibleRef.current = false
+      leavingRef.current = false
       return undefined
     }
     setScale(COMPLETE_SCALE)
     setLeaving(true)
+    leavingRef.current = true
     leaveTimerRef.current = setTimeout(() => {
       setVisible(false)
       visibleRef.current = false
       setLeaving(false)
+      leavingRef.current = false
       setScale(CREEP_START_SCALE)
     }, FADE_OUT_MS)
     return () => {

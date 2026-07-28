@@ -100,6 +100,109 @@ describe('RouteProgressBar', () => {
     expect(screen.queryByTestId('route-progress-bar')).not.toBeInTheDocument()
   })
 
+  it('does not freeze at full width when a new navigation interrupts the fade-out', async () => {
+    const { rerender } = render(<RouteProgressBar />)
+
+    // Nav A: reach the creep target.
+    routerState.isLoading = true
+    rerender(<RouteProgressBar />)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120 + 16)
+    })
+    expect(screen.getByTestId('route-progress-bar-fill')).toHaveStyle({ transform: 'scaleX(0.72)' })
+
+    // Nav A finishes — enters the leaving/fade-out phase.
+    routerState.isLoading = false
+    rerender(<RouteProgressBar />)
+    expect(screen.getByTestId('route-progress-bar-fill')).toHaveStyle({
+      transform: 'scaleX(1)',
+      opacity: '0',
+    })
+
+    // Nav B starts before the 200ms fade-out completes.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50)
+    })
+    routerState.isLoading = true
+    rerender(<RouteProgressBar />)
+
+    // The bar must not be stuck showing nav A's completed state through nav
+    // B's own entry delay — a fresh navigation starts from the same hidden
+    // baseline as a first-ever one, not from a stale scaleX(1).
+    expect(screen.queryByTestId('route-progress-bar')).not.toBeInTheDocument()
+
+    // Nav B's entry delay elapses — it must creep in from the small start
+    // value, not jump from (or ever render at) the leftover scaleX(1).
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120)
+    })
+    const fill = screen.getByTestId('route-progress-bar-fill')
+    expect(fill).not.toHaveStyle({ transform: 'scaleX(1)' })
+    expect(fill).toHaveStyle({ transform: 'scaleX(0.08)' })
+  })
+
+  it('restarts cleanly when a new navigation begins before the previous one ever became visible', async () => {
+    const { rerender } = render(<RouteProgressBar />)
+
+    // Nav A starts, but resolves inside its own 120ms entry delay — it never
+    // became visible.
+    routerState.isLoading = true
+    rerender(<RouteProgressBar />)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50)
+    })
+    expect(screen.queryByTestId('route-progress-bar')).not.toBeInTheDocument()
+
+    routerState.isLoading = false
+    rerender(<RouteProgressBar />)
+    routerState.isLoading = true
+    rerender(<RouteProgressBar />)
+
+    // Nav B needs its own full, uninterrupted entry delay.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100)
+    })
+    expect(screen.queryByTestId('route-progress-bar')).not.toBeInTheDocument()
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20)
+    })
+    expect(screen.getByTestId('route-progress-bar-fill')).toHaveStyle({ transform: 'scaleX(0.08)' })
+  })
+
+  it('leaves no pending timer behind when unmounted mid-creep', async () => {
+    const { rerender, unmount } = render(<RouteProgressBar />)
+
+    routerState.isLoading = true
+    rerender(<RouteProgressBar />)
+    // Past the entry delay but inside the 16ms creep-start window.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120)
+    })
+
+    expect(() => unmount()).not.toThrow()
+    // The creep timer (and any other) must have been cleared on unmount —
+    // otherwise it would fire and call setState on an unmounted component.
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('leaves no pending timer behind when unmounted mid-fade-out', async () => {
+    const { rerender, unmount } = render(<RouteProgressBar />)
+
+    routerState.isLoading = true
+    rerender(<RouteProgressBar />)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120 + 16)
+    })
+
+    routerState.isLoading = false
+    rerender(<RouteProgressBar />)
+    // Inside the 200ms fade-out window.
+
+    expect(() => unmount()).not.toThrow()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
   it('shows immediately, with no transition, under reduced motion', () => {
     reducedMotionState.reduced = true
     routerState.isLoading = true
