@@ -242,3 +242,66 @@ describe('CareSymbolGrid popover precedence', () => {
     expect(openPopoverLabel()).toBe('Bleach allowed')
   })
 })
+
+describe('CareSymbolGrid pinned-popover dismissal', () => {
+  it('dismisses on Escape after focus has left the grid', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <CareSymbolGrid groups={[bleaching]} />
+        <input aria-label="Search symbols" />
+      </>,
+    )
+    const tile = screen.getByRole('button', { name: 'Bleach allowed' })
+    await user.click(tile)
+    expect(openPopoverLabel()).toBe('Bleach allowed')
+
+    // Focus moves out of the grid; the wrapper's own onKeyDown no longer fires.
+    const search = screen.getByLabelText('Search symbols')
+    search.focus()
+    expect(search).toHaveFocus()
+    await user.keyboard('{Escape}')
+
+    expect(openPopoverLabel()).toBeNull()
+    expect(tile).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('dismisses on a pointer press outside the grid', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <CareSymbolGrid groups={[bleaching]} />
+        <button type="button">Elsewhere</button>
+      </>,
+    )
+    const tile = screen.getByRole('button', { name: 'Bleach allowed' })
+    await user.click(tile)
+    expect(openPopoverLabel()).toBe('Bleach allowed')
+
+    await user.click(screen.getByRole('button', { name: 'Elsewhere' }))
+    expect(openPopoverLabel()).toBeNull()
+    expect(tile).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('keeps the pin when the press lands on another tile in the same grid', async () => {
+    const user = userEvent.setup()
+    render(<CareSymbolGrid groups={[bleaching]} />)
+    await user.click(screen.getByRole('button', { name: 'Bleach allowed' }))
+    await user.click(screen.getByRole('button', { name: 'Do not bleach' }))
+    expect(screen.getByRole('button', { name: 'Do not bleach' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(openPopoverLabel()).toBe('Do not bleach')
+  })
+})
+
+describe('useCareSymbolSearch identity', () => {
+  it('keeps reset stable across renders so it is dep-array safe', () => {
+    const { result, rerender } = renderHook(() => useCareSymbolSearch(legend))
+    const first = result.current.reset
+    act(() => result.current.setCategoryId('ironing'))
+    rerender()
+    expect(result.current.reset).toBe(first)
+  })
+})

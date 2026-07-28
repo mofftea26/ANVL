@@ -49,6 +49,41 @@ describe('garment schematic registry', () => {
     expect(Object.keys(GARMENT_SCHEMATICS.shorts.anchors)).toHaveLength(3)
   })
 
+  it('keeps every viewBox in one aspect-ratio family so tabs do not resize the frame', () => {
+    // All five render into the same `w-full max-h-[26rem]` box under
+    // preserveAspectRatio="meet". A ratio below ~0.86 letterboxes the drawing
+    // narrower than the panel around it, which reads as broken layout.
+    for (const key of GARMENT_TYPE_KEYS) {
+      const { width, height } = GARMENT_SCHEMATICS[key].viewBox
+      expect(width / height).toBeGreaterThanOrEqual(0.85)
+    }
+  })
+
+  it('keeps every badge disc inside its own viewBox at the active radius', () => {
+    const ACTIVE_RADIUS = 15
+    for (const key of GARMENT_TYPE_KEYS) {
+      const { viewBox, anchors } = GARMENT_SCHEMATICS[key]
+      for (const [measureKey, anchor] of Object.entries(anchors)) {
+        if (!anchor) continue
+        const badge = anchorBadgePoint(anchor)
+        const where = `${key}.${measureKey}`
+        expect(badge.x - ACTIVE_RADIUS, where).toBeGreaterThanOrEqual(viewBox.x)
+        expect(badge.x + ACTIVE_RADIUS, where).toBeLessThanOrEqual(viewBox.x + viewBox.width)
+        expect(badge.y - ACTIVE_RADIUS, where).toBeGreaterThanOrEqual(viewBox.y)
+        expect(badge.y + ACTIVE_RADIUS, where).toBeLessThanOrEqual(viewBox.y + viewBox.height)
+      }
+    }
+  })
+
+  it('keeps the joggers cuff badge clear of the hem', () => {
+    // Regression: the default midpoint badge straddled the rib band, so at the
+    // active radius the disc overhung the silhouette and blanked the band line.
+    const JOGGERS_HEM_Y = 460
+    const cuff = GARMENT_SCHEMATICS.joggers.anchors.cuff
+    expect(cuff).toBeDefined()
+    expect(anchorBadgePoint(cuff!).y + 15).toBeLessThan(JOGGERS_HEM_Y)
+  })
+
   it('falls back to the tee for unknown keys, matching the resolver', () => {
     expect(getGarmentSchematic('not-a-garment').key).toBe('tee')
     expect(getGarmentSchematic('').key).toBe('tee')

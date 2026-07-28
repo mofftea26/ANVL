@@ -15,8 +15,11 @@ export function CareSymbolTable({
   groups: readonly CareSymbolGroup[]
   className?: string
 }) {
+  // `overflow-clip` rather than `overflow-hidden`: it still clips to the
+  // rounded corners, but it does NOT establish a scroll container, so the
+  // sticky category headers below keep sticking to the viewport.
   return (
-    <div className={cn('overflow-hidden rounded-lg border border-[var(--color-line)]', className)}>
+    <div className={cn('overflow-clip rounded-lg border border-[var(--color-line)]', className)}>
       <table className="w-full border-collapse text-left text-sm">
         <caption className="sr-only">
           Garment care symbols, grouped by category, with their meaning.
@@ -24,7 +27,7 @@ export function CareSymbolTable({
         <thead className="sr-only">
           <tr>
             <th scope="col">Symbol</th>
-            <th scope="col">Meaning</th>
+            <th scope="col">Instruction</th>
           </tr>
         </thead>
         {groups.map((group) => (
@@ -33,7 +36,10 @@ export function CareSymbolTable({
               <th
                 scope="colgroup"
                 colSpan={2}
-                className="sticky top-[var(--anvl-header-h)] z-10 border-y border-[var(--color-line)] bg-[var(--color-surface-elevated)] px-4 py-2.5 text-xs font-semibold tracking-[0.22em] text-[var(--color-text)] uppercase"
+                /* Rules via inset shadow, not `border-y`: with
+                   `border-collapse: collapse` a sticky cell's own borders stay
+                   behind when it detaches, but its box-shadow travels with it. */
+                className="sticky top-[var(--anvl-header-h)] z-10 bg-[var(--color-surface-elevated)] px-4 py-2.5 text-xs font-semibold tracking-[0.22em] text-[var(--color-text)] uppercase shadow-[inset_0_1px_0_var(--color-line),inset_0_-1px_0_var(--color-line)]"
               >
                 {group.label}
               </th>

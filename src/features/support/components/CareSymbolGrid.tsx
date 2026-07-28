@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { cn } from '@/shared/lib/cn'
 import type { CareIconKey } from '@/features/cms/support/supportContent.zod'
 import type { CareSymbolGroup } from '../hooks/useCareSymbolSearch'
@@ -56,6 +56,7 @@ export function CareSymbolGrid({
   className,
 }: CareSymbolGridProps) {
   const baseId = useId()
+  const rootRef = useRef<HTMLDivElement>(null)
   const [hovered, setHovered] = useState<OpenTile | null>(null)
   const [pinned, setPinned] = useState<OpenTile | null>(null)
   // Transient hover/focus wins over a pin, so moving across the grid always
@@ -75,11 +76,34 @@ export function CareSymbolGrid({
     dismiss()
   }, [signature, dismiss])
 
+  // A PINNED popover outlives focus — the user can tab on to the search field
+  // or click elsewhere on the page. The wrapper's own `onKeyDown` stops firing
+  // the moment focus leaves the grid, so escape-to-dismiss and click-away have
+  // to be document-level. Only mounted while something is actually pinned.
+  useEffect(() => {
+    if (!pinned) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') dismiss()
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target
+      if (target instanceof Node && rootRef.current?.contains(target)) return
+      dismiss()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('pointerdown', onPointerDown)
+    }
+  }, [pinned, dismiss])
+
   const Heading = (['h2', 'h3', 'h4'] as const)[headingLevel - 2]
   const isEdit = mode === 'edit'
 
   return (
     <div
+      ref={rootRef}
       className={cn('space-y-10', className)}
       onKeyDown={(event) => {
         if (event.key === 'Escape') dismiss()

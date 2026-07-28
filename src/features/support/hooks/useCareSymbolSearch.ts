@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CareIconKey } from '@/features/cms/support/supportContent.zod'
 import type { ResolvedCareLegend } from '@/features/cms/support/resolveSupportContent'
 import { CARE_SYMBOL_CATEGORIES } from '../components/careSymbols'
@@ -111,6 +111,13 @@ export function useCareSymbolSearch(legend: ResolvedCareLegend): UseCareSymbolSe
 
   const resultCount = groups.reduce((total, group) => total + group.entries.length, 0)
 
+  // Stable so a consumer can safely put it in a dependency array.
+  const reset = useCallback(() => {
+    setQuery('')
+    setDebouncedQuery('')
+    setCategoryId(null)
+  }, [])
+
   return {
     query,
     setQuery,
@@ -120,10 +127,6 @@ export function useCareSymbolSearch(legend: ResolvedCareLegend): UseCareSymbolSe
     groups,
     resultCount,
     isFiltered: needle.length > 0 || categoryId !== null,
-    reset: () => {
-      setQuery('')
-      setDebouncedQuery('')
-      setCategoryId(null)
-    },
+    reset,
   }
 }

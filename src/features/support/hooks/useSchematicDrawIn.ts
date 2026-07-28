@@ -1,10 +1,17 @@
 import type { RefObject } from 'react'
-import { gsap, useGSAP } from '@/shared/lib/gsap'
+import { gsap, ScrollTrigger, useGSAP } from '@/shared/lib/gsap'
 
 /**
  * Draws the measurement schematic on screen the way a pattern cutter marks a
  * spec sheet: outline first, then seams, then the dimension lines, then the
  * lettered badges fade in behind them.
+ *
+ * **Fail-open.** Nothing is hidden until the ScrollTrigger actually fires —
+ * the `fromTo` and the badge hide both live inside `onEnter`, mirroring
+ * `usePdpReveal`. If the trigger never fires (a figure mounted inside a
+ * `display: none` tab panel measures at zero height and can be missed
+ * entirely), the drawing is simply already visible. A figure that animates
+ * late is recoverable; one that never appears is not.
  *
  * `strokeDashoffset` is the one property here that is neither transform nor
  * opacity. That is deliberate and spec-mandated — a stroke draw-in has no
@@ -23,11 +30,20 @@ export function useSchematicDrawIn(
 ): void {
   useGSAP(
     () => {
-      const el = scope.current
-      if (!el) return
+      const root = scope.current
+      if (!root) return
 
-      const strokes = Array.from(el.querySelectorAll<SVGGeometryElement>('[data-draw]'))
-      const badges = Array.from(el.querySelectorAll<SVGGElement>('[data-badge]'))
+      // Ordered by construction, not by document order — the detail seams sit
+      // BELOW the outline in the DOM so they paint underneath it, which is the
+      // reverse of the order they should be drawn in.
+      const strokes = [
+        ...root.querySelectorAll<SVGGeometryElement>('[data-draw="outline"]'),
+        ...root.querySelectorAll<SVGGeometryElement>('[data-draw="detail"]'),
+        ...root.querySelectorAll<SVGGeometryElement>(
+          '[data-draw="witness"], [data-draw="dimension"]',
+        ),
+      ]
+      const badges = Array.from(root.querySelectorAll<SVGGElement>('[data-badge]'))
       if (strokes.length === 0) return
 
       const mm = gsap.matchMedia()
@@ -43,26 +59,40 @@ export function useSchematicDrawIn(
             return
           }
 
-          const lengths = strokes.map(measureLength)
-          const drawable = strokes.filter((_, i) => lengths[i] > 0)
-          const drawableLengths = lengths.filter((length) => length > 0)
-          if (drawable.length === 0) return
+          const measured = strokes
+            .map((el) => ({ el, length: measureLength(el) }))
+            .filter((item) => item.length > 0)
+          if (measured.length === 0) return
 
-          gsap.set(drawable, {
-            strokeDasharray: (i: number) => drawableLengths[i],
-            strokeDashoffset: (i: number) => drawableLengths[i],
+          const drawable = measured.map((item) => item.el)
+          const lengths = measured.map((item) => item.length)
+
+          ScrollTrigger.create({
+            trigger: root,
+            start: DRAW_START,
+            once: true,
+            onEnter: () => {
+              gsap
+                .timeline()
+                .set(badges, { opacity: 0 })
+                .fromTo(
+                  drawable,
+                  {
+                    strokeDasharray: (i: number) => lengths[i],
+                    strokeDashoffset: (i: number) => lengths[i],
+                  },
+                  {
+                    strokeDashoffset: 0,
+                    duration: 0.9,
+                    ease: 'power2.out',
+                    stagger: 0.05,
+                    clearProps: 'strokeDasharray',
+                  },
+                  0,
+                )
+                .to(badges, { opacity: 1, duration: 0.35, stagger: 0.05 }, '-=0.45')
+            },
           })
-          gsap.set(badges, { opacity: 0 })
-
-          gsap
-            .timeline({ scrollTrigger: { trigger: el, start: DRAW_START, once: true } })
-            .to(drawable, {
-              strokeDashoffset: 0,
-              duration: 0.9,
-              ease: 'power2.out',
-              stagger: 0.05,
-            })
-            .to(badges, { opacity: 1, duration: 0.35, stagger: 0.05 }, '-=0.45')
         },
       )
 
