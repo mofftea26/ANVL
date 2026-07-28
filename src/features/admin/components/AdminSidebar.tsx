@@ -8,24 +8,23 @@ import {
   ChevronRight,
 } from '@/shared/icons'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
-import { Link, type LinkProps, useRouterState } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { Link, useRouterState } from '@tanstack/react-router'
+import { useState } from 'react'
 import { AnvlCompactMark } from '@/shared/assets/brand'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
-import type { AdminNavCategory, AdminNavItem } from '@/features/admin/components/adminNav'
+import { adminNavCategories } from '@/features/admin/components/adminNav'
+import { categoryIsActive, pathIsActive } from '@/features/admin/components/adminSidebarActive'
 import {
-  ADMIN_NAV_CATEGORIES,
-  ADMIN_NAV_CATEGORY_ICONS,
-  adminCategoryHref,
-  adminNavCategories,
-} from '@/features/admin/components/adminNav'
+  RailCategoryLink,
+  SidebarNavLink,
+} from '@/features/admin/components/AdminSidebarNavLink'
 import {
   sessionInitial,
   sessionPrimaryLabel,
   sessionSecondaryLabel,
 } from '@/features/admin/components/adminSessionDisplay'
-import { ADMIN_STORAGE_KEYS } from '@/features/admin/storageKeys'
+import { useAdminSidebarExpandedCats } from '@/features/admin/components/useAdminSidebarExpandedCats'
 import { cn } from '@/shared/lib/cn'
 
 interface AdminSidebarProps {
@@ -34,163 +33,6 @@ interface AdminSidebarProps {
   density?: 'default' | 'drawer' | 'rail'
   /** Rendered as a collapse/expand chevron in the header (persistent shell only). */
   onToggleCollapse?: () => void
-}
-
-const SIDEBAR_CATS_KEY = ADMIN_STORAGE_KEYS.sidebarCats
-
-type ExpandedCats = Record<string, boolean>
-
-/** All categories expanded — the server/first-paint default. */
-function allExpanded(): ExpandedCats {
-  return Object.fromEntries(ADMIN_NAV_CATEGORIES.map((c) => [c, true]))
-}
-
-/** Stored expanded set (JSON array of category names) — null when unset/invalid. */
-function readExpandedCats(): ExpandedCats | null {
-  try {
-    const raw = window.localStorage.getItem(SIDEBAR_CATS_KEY)
-    if (!raw) return null
-    const parsed: unknown = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return null
-    const expanded: ExpandedCats = Object.fromEntries(
-      ADMIN_NAV_CATEGORIES.map((c) => [c, false]),
-    )
-    for (const entry of parsed) {
-      if (typeof entry === 'string' && entry in expanded) expanded[entry] = true
-    }
-    return expanded
-  } catch {
-    return null
-  }
-}
-
-function persistExpandedCats(expanded: ExpandedCats) {
-  try {
-    window.localStorage.setItem(
-      SIDEBAR_CATS_KEY,
-      JSON.stringify(ADMIN_NAV_CATEGORIES.filter((c) => expanded[c])),
-    )
-  } catch {
-    // Preference only — safe to drop when storage is unavailable.
-  }
-}
-
-function pathIsActive(pathname: string, href: string) {
-  return href === '/admin'
-    ? pathname === '/admin'
-    : pathname === href || pathname.startsWith(`${href}/`)
-}
-
-/** Whether the pathname belongs to a category (any of its editors or its landing page). */
-function categoryIsActive(
-  pathname: string,
-  category: AdminNavCategory,
-  items: AdminNavItem[],
-) {
-  if (pathIsActive(pathname, adminCategoryHref(category))) return true
-  return items.some((item) => pathIsActive(pathname, item.href))
-}
-
-function SidebarNavLink({
-  item,
-  isActive,
-  onNavigate,
-}: {
-  item: AdminNavItem
-  isActive: boolean
-  onNavigate?: () => void
-}) {
-  const Icon = item.icon
-
-  return (
-    <Link
-      to={item.href as LinkProps['to']}
-      // Hovering any admin nav item fires the intent-preload machinery,
-      // which re-runs the `/admin` `beforeLoad` auth chain. The shared
-      // `getCachedAdminSession` cache absorbs that now, but there's still no
-      // useful data to preload here (the target is another admin editor
-      // behind the same already-mounted shell) — skip it outright.
-      preload={false}
-      onClick={onNavigate}
-      aria-current={isActive ? 'page' : undefined}
-      className={cn(
-        'focus-ring group relative flex items-center gap-3 rounded-lg px-2.5 py-2 no-underline transition-[background-color,box-shadow,color] duration-200',
-        isActive
-          ? // Studio active state: an ink plate stamped on the paper rail.
-            'bg-[var(--color-heading)] text-[var(--color-bg)] shadow-[0_2px_8px_color-mix(in_srgb,var(--color-heading)_25%,transparent)]'
-          : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-text)]',
-      )}
-    >
-      <span
-        className={cn(
-          'flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors duration-200',
-          isActive
-            ? 'bg-transparent text-[var(--color-bg)]'
-            : 'bg-[var(--color-surface-soft)] text-[var(--color-text-muted)] group-hover:bg-[var(--color-surface-elevated)] group-hover:text-[var(--color-text)]',
-        )}
-      >
-        <Icon size={15} aria-hidden />
-      </span>
-
-      <span className="min-w-0 flex-1">
-        <span className="truncate text-[13px] font-medium leading-tight">
-          {item.label}
-        </span>
-      </span>
-
-      {isActive ? (
-        <span
-          aria-hidden
-          className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-[var(--color-accent)]"
-        />
-      ) : null}
-    </Link>
-  )
-}
-
-/** Icon rail: ONE button per category — single-editor categories deep-link, the rest land on `/admin/category/…`. */
-function RailCategoryLink({
-  category,
-  items,
-  pathname,
-  onNavigate,
-}: {
-  category: AdminNavCategory
-  items: AdminNavItem[]
-  pathname: string
-  onNavigate?: () => void
-}) {
-  const single = items.length === 1
-  const href = single ? items[0].href : adminCategoryHref(category)
-  const label = single ? items[0].label : category
-  const Icon = ADMIN_NAV_CATEGORY_ICONS[category]
-  const isActive = categoryIsActive(pathname, category, items)
-
-  return (
-    <Link
-      to={href as LinkProps['to']}
-      preload={false}
-      onClick={onNavigate}
-      aria-label={label}
-      title={label}
-      aria-current={isActive ? 'page' : undefined}
-      className={cn(
-        'focus-ring relative mx-auto flex h-11 w-11 items-center justify-center rounded-lg no-underline transition-[background-color,box-shadow,color] duration-200',
-        isActive
-          ? 'bg-[var(--color-heading)] text-[var(--color-bg)] shadow-[0_2px_8px_color-mix(in_srgb,var(--color-heading)_25%,transparent)]'
-          : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-text)]',
-      )}
-    >
-      <Icon size={18} aria-hidden />
-      <span className="sr-only">{label}</span>
-      {isActive ? (
-        <span
-          aria-hidden
-          className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-[var(--color-accent)]"
-        />
-      ) : null}
-    </Link>
-  )
 }
 
 export function AdminSidebar({
@@ -213,29 +55,7 @@ export function AdminSidebar({
   const [confirmSignOut, setConfirmSignOut] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
 
-  // Collapsible category sections (expanded + drawer densities). Default all
-  // expanded on server + first paint; the stored preference applies post-mount
-  // with the active item's category force-expanded so it is never hidden.
-  const [expandedCats, setExpandedCats] = useState<ExpandedCats>(allExpanded)
-  useEffect(() => {
-    const stored = readExpandedCats()
-    if (!stored) return
-    const activeGroup = adminNavCategories().find(({ category, items }) =>
-      categoryIsActive(window.location.pathname, category, items),
-    )
-    if (activeGroup) stored[activeGroup.category] = true
-    setExpandedCats(stored)
-    // Mount-only (reads window.location directly): later navigation must not
-    // re-open sections the user deliberately closed.
-  }, [])
-
-  const toggleCategory = (category: AdminNavCategory) => {
-    setExpandedCats((prev) => {
-      const next = { ...prev, [category]: !prev[category] }
-      persistExpandedCats(next)
-      return next
-    })
-  }
+  const { expandedCats, toggleCategory } = useAdminSidebarExpandedCats()
 
   const handleSignOut = async () => {
     setSigningOut(true)
