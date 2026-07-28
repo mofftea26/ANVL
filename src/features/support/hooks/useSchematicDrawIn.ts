@@ -46,6 +46,22 @@ export function useSchematicDrawIn(
       const badges = Array.from(root.querySelectorAll<SVGGElement>('[data-badge]'))
       if (strokes.length === 0) return
 
+      // `onEnter` fires long after the matchMedia callback below has finished
+      // executing, so a timeline built inside it is never collected by any
+      // context: `mm.revert()` would kill the ScrollTrigger and leave an
+      // in-flight tween running against detached nodes. Switching garment-type
+      // tabs mid-draw is a routine action, so hold the timeline and tear it
+      // down here. `revert()` rather than `kill()` — it also restores the
+      // pre-animation inline styles, which (fail-open: nothing is set before
+      // `onEnter`) means the drawing lands fully drawn. That matters when the
+      // media query stops matching while the figure stays mounted; `kill()`
+      // alone would freeze it half-drawn.
+      //
+      // `ctx.contextSafe()` is the idiomatic GSAP answer but is NOT present on
+      // the context a `matchMedia().add()` callback receives in this build —
+      // it type-checks and then throws at runtime.
+      let drawIn: ReturnType<typeof gsap.timeline> | null = null
+
       const mm = gsap.matchMedia()
       mm.add(
         {
@@ -67,36 +83,42 @@ export function useSchematicDrawIn(
           const drawable = measured.map((item) => item.el)
           const lengths = measured.map((item) => item.length)
 
+          const onEnter = () => {
+            drawIn = gsap
+              .timeline()
+              .set(badges, { opacity: 0 })
+              .fromTo(
+                drawable,
+                {
+                  strokeDasharray: (i: number) => lengths[i],
+                  strokeDashoffset: (i: number) => lengths[i],
+                },
+                {
+                  strokeDashoffset: 0,
+                  duration: 0.9,
+                  ease: 'power2.out',
+                  stagger: 0.05,
+                  clearProps: 'strokeDasharray',
+                },
+                0,
+              )
+              .to(badges, { opacity: 1, duration: 0.35, stagger: 0.05 }, '-=0.45')
+          }
+
           ScrollTrigger.create({
             trigger: root,
             start: DRAW_START,
             once: true,
-            onEnter: () => {
-              gsap
-                .timeline()
-                .set(badges, { opacity: 0 })
-                .fromTo(
-                  drawable,
-                  {
-                    strokeDasharray: (i: number) => lengths[i],
-                    strokeDashoffset: (i: number) => lengths[i],
-                  },
-                  {
-                    strokeDashoffset: 0,
-                    duration: 0.9,
-                    ease: 'power2.out',
-                    stagger: 0.05,
-                    clearProps: 'strokeDasharray',
-                  },
-                  0,
-                )
-                .to(badges, { opacity: 1, duration: 0.35, stagger: 0.05 }, '-=0.45')
-            },
+            onEnter,
           })
         },
       )
 
-      return () => mm.revert()
+      return () => {
+        drawIn?.revert()
+        drawIn = null
+        mm.revert()
+      }
     },
     { scope, dependencies: [...dependencies] },
   )

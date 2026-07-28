@@ -9,9 +9,11 @@ import {
 } from '@/features/cms/support/supportContent.zod'
 import { resolveMeasurePoints } from '@/features/cms/support/resolveSupportContent'
 import {
+  GARMENT_OUTLINE_VIEW_BOXES,
   GARMENT_SCHEMATICS,
   MeasurementFigure,
   SizeDiagram,
+  computeOutlineViewBox,
   anchorBadgePoint,
   getGarmentSchematic,
   isGarmentTypeKey,
@@ -46,6 +48,69 @@ describe('garment schematic registry', () => {
     expect(Object.keys(GARMENT_SCHEMATICS.stringer.anchors)).toHaveLength(5)
     expect(Object.keys(GARMENT_SCHEMATICS.joggers.anchors)).toHaveLength(4)
     expect(Object.keys(GARMENT_SCHEMATICS.shorts.anchors)).toHaveLength(3)
+  })
+
+  it('draws its outlines with absolute M/L/C/Z only, which the bounds parser assumes', () => {
+    for (const key of GARMENT_TYPE_KEYS) {
+      const commands = GARMENT_SCHEMATICS[key].outline.match(/[A-Za-z]/g) ?? []
+      expect(commands.length).toBeGreaterThan(0)
+      for (const command of commands) {
+        expect(['M', 'L', 'C', 'Z']).toContain(command)
+      }
+    }
+  })
+
+  it('frames each outline tighter than the spec-sheet box it is drawn on', () => {
+    for (const key of GARMENT_TYPE_KEYS) {
+      const sheet = GARMENT_SCHEMATICS[key].viewBox
+      const tight = GARMENT_OUTLINE_VIEW_BOXES[key]
+      expect(tight.width).toBeLessThan(sheet.width)
+      expect(tight.height).toBeLessThan(sheet.height)
+      // The garment itself must sit inside the sheet it is drawn on. Measured
+      // unpadded: the tab's breathing room is decorative and may overhang the
+      // sheet, which is harmless because the tab renders this box standalone.
+      const raw = computeOutlineViewBox(GARMENT_SCHEMATICS[key].outline, 0)
+      expect(raw.x).toBeGreaterThanOrEqual(sheet.x)
+      expect(raw.y).toBeGreaterThanOrEqual(sheet.y)
+      expect(raw.x + raw.width).toBeLessThanOrEqual(sheet.x + sheet.width)
+      expect(raw.y + raw.height).toBeLessThanOrEqual(sheet.y + sheet.height)
+    }
+  })
+
+  it('renders every silhouette centred and filling its dominant axis in a square tab', () => {
+    // Replicates preserveAspectRatio="xMidYMid meet" into the tab's 36px box.
+    // This is the regression guard for pointing the tab back at the spec-sheet
+    // viewBox, which lands each garment at a different scale and centre.
+    const BOX = 36
+    for (const key of GARMENT_TYPE_KEYS) {
+      const box = GARMENT_OUTLINE_VIEW_BOXES[key]
+      const scale = Math.min(BOX / box.width, BOX / box.height)
+      const width = box.width * scale
+      const height = box.height * scale
+      expect(width / 2 + (BOX - width) / 2).toBeCloseTo(BOX / 2, 6)
+      expect(height / 2 + (BOX - height) / 2).toBeCloseTo(BOX / 2, 6)
+      expect(Math.max(width, height)).toBeCloseTo(BOX, 6)
+    }
+  })
+
+  it('takes a cubic segment true extremum, not its control hull', () => {
+    // The tee's neckline: endpoints at y=94, control points at y=118, and the
+    // curve itself only reaches y=112. A control-hull box would read 118.
+    const box = computeOutlineViewBox('M252 94 C258 118 302 118 308 94 Z')
+    const padding = box.x + box.width - 308
+    expect(padding).toBeGreaterThan(0)
+    expect(box.x + padding).toBeCloseTo(252, 6)
+    expect(box.y + padding).toBeCloseTo(94, 6)
+    expect(box.y + box.height - padding).toBeCloseTo(112, 6)
+  })
+
+  it('pads a plain rectangle symmetrically', () => {
+    const box = computeOutlineViewBox('M0 0 L100 0 L100 50 L0 50 Z')
+    const padding = (box.width - 100) / 2
+    expect(padding).toBeGreaterThan(0)
+    expect(box.x).toBeCloseTo(-padding, 6)
+    expect(box.y).toBeCloseTo(-padding, 6)
+    expect(box.height).toBeCloseTo(50 + padding * 2, 6)
   })
 
   it('keeps every viewBox in one aspect-ratio family so tabs do not resize the frame', () => {

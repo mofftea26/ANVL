@@ -1,7 +1,7 @@
 import { useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { cn } from '@/shared/lib/cn'
 import type { GarmentTypeKey } from '@/features/cms/support/supportContent.zod'
-import { getGarmentSchematic } from './garments'
+import { getGarmentOutlineViewBox, getGarmentSchematic } from './garments'
 
 /**
  * Pick the pattern piece, not the word: each tab is the garment's own
@@ -153,7 +153,14 @@ export function GarmentTypeTabs({
   )
 }
 
-/** The garment's outline path, filled — a pattern piece laid on the table. */
+/**
+ * The garment's outline path, filled — a pattern piece laid on the table.
+ *
+ * Framed by the OUTLINE's own bounds, never `schematic.viewBox`: that box is
+ * sized to hold dimension lines, witness leaders and badges the tab never
+ * draws, so reusing it renders each garment at a different scale and off its
+ * own centre, and the row reads ragged.
+ */
 function GarmentSilhouette({
   garmentTypeKey,
   active,
@@ -161,7 +168,8 @@ function GarmentSilhouette({
   garmentTypeKey: GarmentTypeKey
   active: boolean
 }) {
-  const { viewBox, outline } = getGarmentSchematic(garmentTypeKey)
+  const { outline } = getGarmentSchematic(garmentTypeKey)
+  const viewBox = getGarmentOutlineViewBox(garmentTypeKey)
   return (
     <svg
       aria-hidden="true"

@@ -30,8 +30,11 @@ export {
   type GarmentSchematicSvgProps,
 } from './GarmentSchematicSvg'
 export {
+  GARMENT_OUTLINE_VIEW_BOXES,
   GARMENT_SCHEMATICS,
   anchorBadgePoint,
+  computeOutlineViewBox,
+  getGarmentOutlineViewBox,
   getGarmentSchematic,
   isGarmentTypeKey,
   type GarmentAnchor,

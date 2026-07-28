@@ -8,10 +8,12 @@ import {
 } from '@/features/cms/support/resolveSupportContent'
 import {
   DEFAULT_SUPPORT_CONTENT,
+  GARMENT_TYPE_KEYS,
   type SizeProductEntry,
 } from '@/features/cms/support/supportContent.zod'
 import {
   CareLines,
+  GARMENT_OUTLINE_VIEW_BOXES,
   CareSymbolLegend,
   ContactPanel,
   FaqAccordion,
@@ -191,6 +193,50 @@ describe('MeasureExplorer', () => {
 
     await user.keyboard('{ArrowRight}')
     expect(screen.getAllByRole('tab')[0]).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('wraps and jumps across the full five-type strip', async () => {
+    const user = userEvent.setup()
+    const all = GARMENT_TYPE_KEYS.map((key) => resolveMeasurePoints(DEFAULT_SUPPORT_CONTENT, key))
+    render(<MeasureExplorer measures={all} />)
+
+    const selectedIndex = () =>
+      screen.getAllByRole('tab').findIndex((tab) => tab.getAttribute('aria-selected') === 'true')
+
+    expect(screen.getAllByRole('tab')).toHaveLength(GARMENT_TYPE_KEYS.length)
+    expect(selectedIndex()).toBe(0)
+    ;(screen.getAllByRole('tab')[0] as HTMLElement).focus()
+
+    // Wrapping backwards off the first tab lands on the last.
+    await user.keyboard('{ArrowLeft}')
+    expect(selectedIndex()).toBe(GARMENT_TYPE_KEYS.length - 1)
+
+    // ...and forwards off the last lands back on the first.
+    await user.keyboard('{ArrowRight}')
+    expect(selectedIndex()).toBe(0)
+
+    await user.keyboard('{End}')
+    expect(selectedIndex()).toBe(GARMENT_TYPE_KEYS.length - 1)
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
+
+    await user.keyboard('{Home}')
+    expect(selectedIndex()).toBe(0)
+    expect(document.activeElement).toBe(screen.getAllByRole('tab')[0])
+  })
+
+  it('frames each tab silhouette by the outline bounds, not the spec-sheet box', () => {
+    const all = GARMENT_TYPE_KEYS.map((key) => resolveMeasurePoints(DEFAULT_SUPPORT_CONTENT, key))
+    const { container } = render(<MeasureExplorer measures={all} />)
+
+    const tabSvgs = Array.from(container.querySelectorAll('[role="tab"] svg'))
+    expect(tabSvgs).toHaveLength(GARMENT_TYPE_KEYS.length)
+    tabSvgs.forEach((svg, index) => {
+      const key = GARMENT_TYPE_KEYS[index] as (typeof GARMENT_TYPE_KEYS)[number]
+      const box = GARMENT_OUTLINE_VIEW_BOXES[key]
+      expect(svg.getAttribute('viewBox')).toBe(
+        `${box.x} ${box.y} ${box.width} ${box.height}`,
+      )
+    })
   })
 
   it('omits the strip when there is nothing to switch between', () => {
