@@ -1,4 +1,6 @@
+import { useCallback, useRef, useState } from 'react'
 import { MODAL_FORGE_TUNING, type ForgeRect } from '@/shared/lib/forge/emberForge'
+import type { AltarState } from './altarState'
 
 /**
  * THE CANVAS → DOM EMBER HAND-OFF CONTRACT.
@@ -90,11 +92,130 @@ const MIN_SPREAD_SCALE = 0.15
  * baking in a magic number. The ring's inner edge follows proportionally
  * (`spreadBase / (spreadBase + spreadRange)` = 44% of the outer), close to the
  * shroud's own ~38% inner/outer ratio, so the whole band matches, not just its
- * rim. Returns `1` — the canonical modal ring — when either input is unusable.
+ * rim.
+ *
+ * HORIZONTAL match, deliberately. `shroudOuterPx` is an x-offset, and the
+ * engine's launch ring is an ellipse — `projectEmber` squashes y by `0.8` — so
+ * the ring meets the shroud's rim left and right while its top and bottom sit
+ * ~20% inside it. Dividing the vertical case out is not possible through a
+ * single scalar, and compensating by widening the whole ring `/0.8` would push
+ * the horizontal 25% OUTSIDE the shroud. Erring inside the shroud is safe (the
+ * embers simply start among the ones they're replacing); erring outside is the
+ * seam this exists to prevent. So: inside on the short axis, on the rim on the
+ * long one. Returns `1` — the canonical modal ring — when an input is unusable.
  */
 export function deriveSwarmSpreadScale(shroudOuterPx: number, rect: ForgeRect): number {
   const reach = Math.max(rect.width, rect.height)
   const engineOuter = MODAL_FORGE_TUNING.spreadBase + MODAL_FORGE_TUNING.spreadRange
   if (!(shroudOuterPx > 0) || !(reach > 0) || !(engineOuter > 0)) return 1
   return Math.max(MIN_SPREAD_SCALE, Math.min(1, shroudOuterPx / (engineOuter * reach)))
+}
+
+/** Everything the hand-off captures at the strike, before the panel exists. */
+type ArmedSwarm = {
+  key: number
+  tint?: string
+  seat?: AltarSeatProjection
+}
+
+export interface AltarEmberHandoff {
+  /** The pass to render, or `null` when nothing is forging. */
+  swarm: AltarEmberSwarm | null
+  /** Call at the hand-off beat: capture the orb's colour and its seat NOW,
+   *  through the live camera, before the modal's backdrop covers the stage. */
+  armSwarm: (index: number) => void
+  /** The modal panel's pre-transform rect. Stores it, and launches an armed
+   *  swarm against it (the rect is the launch ring's missing input). */
+  handlePanelMeasure: (rect: DOMRect) => void
+  /** Live rect getter for `ForgeEmberCanvas` — `null` ends the pass. */
+  swarmRect: () => ForgeRect | null
+  /** The pass landed (`onComplete`). */
+  retireSwarm: () => void
+  /** The modal closed — drop the pass, the armed capture and the rect. */
+  resetSwarm: () => void
+}
+
+export interface AltarEmberHandoffOptions {
+  /** Only `seatNdc` is read — the in-canvas projector's per-frame output. */
+  state: Pick<AltarState, 'seatNdc'>
+  /** Only each orb's colour is read; structurally typed so this module stays
+   *  independent of the About content schema (and trivial to test). */
+  orbs: readonly { color?: string }[]
+  reducedMotion: boolean
+  /** The altar's WebGL canvas host — the box NDC is resolved against. */
+  canvasBox: React.RefObject<HTMLElement | null>
+}
+
+/**
+ * The DOM half of the hand-off, as one hook: **arm** at the hand-off beat,
+ * **launch** when the panel reports its rect, **retire** when the pass lands or
+ * the modal closes.
+ *
+ * Arming and launching are separate because they need different things at
+ * different moments. The seat has to be projected at the hand-off beat, while
+ * the camera is still live and unobscured; the launch ring's scale needs the
+ * panel's rect, which does not exist until the modal mounts one commit later.
+ * The modal reports that rect from a LAYOUT effect, so the `setSwarm` here is
+ * flushed synchronously before the browser paints — the swarm still appears on
+ * the hand-off frame, and it can never mount without a rect to aim at.
+ *
+ * Under reduced motion nothing is ever armed, so nothing is ever launched.
+ */
+export function useAltarEmberHandoff({
+  state,
+  orbs,
+  reducedMotion,
+  canvasBox,
+}: AltarEmberHandoffOptions): AltarEmberHandoff {
+  const [swarm, setSwarm] = useState<AltarEmberSwarm | null>(null)
+  const swarmKey = useRef(0)
+  const armed = useRef<ArmedSwarm | null>(null)
+  const panelRect = useRef<ForgeRect | null>(null)
+
+  const armSwarm = useCallback(
+    (index: number) => {
+      if (reducedMotion) {
+        armed.current = null
+        return
+      }
+      swarmKey.current += 1
+      armed.current = {
+        key: swarmKey.current,
+        tint: orbs[index]?.color?.trim() || undefined,
+        seat: projectSeatToViewport(canvasBox.current, state.seatNdc),
+      }
+    },
+    [canvasBox, orbs, reducedMotion, state],
+  )
+
+  const handlePanelMeasure = useCallback((rect: DOMRect) => {
+    const forgeRect: ForgeRect = {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    }
+    panelRect.current = forgeRect
+    const pending = armed.current
+    if (!pending) return
+    armed.current = null
+    setSwarm({
+      key: pending.key,
+      tint: pending.tint,
+      origin: pending.seat?.origin,
+      spreadScale: pending.seat
+        ? deriveSwarmSpreadScale(pending.seat.shroudOuterPx, forgeRect)
+        : undefined,
+    })
+  }, [])
+
+  const swarmRect = useCallback(() => panelRect.current, [])
+  const retireSwarm = useCallback(() => setSwarm(null), [])
+  const resetSwarm = useCallback(() => {
+    setSwarm(null)
+    armed.current = null
+    panelRect.current = null
+  }, [])
+
+  return { swarm, armSwarm, handlePanelMeasure, swarmRect, retireSwarm, resetSwarm }
 }

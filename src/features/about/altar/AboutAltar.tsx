@@ -5,19 +5,13 @@ import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import { createDustDrive } from '@/shared/webgl/DustField'
 import { useCanvasTeardownMark } from '@/shared/webgl/canvasTeardownGuard'
 import { ForgeEmberCanvas } from '@/shared/components/ui/ForgeEmberCanvas'
-import type { ForgeRect } from '@/shared/lib/forge/emberForge'
 import type { AboutResolvedContent } from '../content/aboutContent.defaults'
 import { orbImage } from '../content/resolveAboutContent'
 import type { AboutPageAssets } from '../index'
 import { readAboutBrandColors } from '../webgl/aboutBrandColors'
 import { createAltarState } from './altarState'
 import { ALTAR_FORGE, ALTAR_STRIKE } from './altarForgeTiming'
-import {
-  deriveSwarmSpreadScale,
-  projectSeatToViewport,
-  type AltarEmberSwarm,
-  type AltarSeatProjection,
-} from './altarEmberHandoff'
+import { useAltarEmberHandoff } from './altarEmberHandoff'
 import { AltarScene } from './AltarScene'
 import { AboutOrbModal } from './AboutOrbModal'
 
@@ -64,16 +58,10 @@ export default function AboutAltar({
   const colors = useMemo(() => readAboutBrandColors(), [])
   const reducedMotion = useReducedMotion()
   const [openIndex, setOpenIndex] = useState<number | null>(null)
-  const [swarm, setSwarm] = useState<AltarEmberSwarm | null>(null)
-  const swarmKey = useRef(0)
-  /** Captured at the hand-off beat, launched by the panel's measure below. */
-  const pendingSwarm = useRef<{
-    key: number
-    tint?: string
-    seat?: AltarSeatProjection
-  } | null>(null)
-  /** The panel's rect at natural layout — see {@link handlePanelMeasure}. */
-  const panelRect = useRef<ForgeRect | null>(null)
+  // The DOM half of the ember hand-off: armed at the hand-off beat, launched by
+  // the panel's own measure, retired when the pass lands or the modal closes.
+  const { swarm, armSwarm, handlePanelMeasure, swarmRect, retireSwarm, resetSwarm } =
+    useAltarEmberHandoff({ state, orbs, reducedMotion, canvasBox })
   useCanvasTeardownMark()
 
   const openOrb = openIndex !== null ? (orbs[openIndex] ?? null) : null
@@ -114,65 +102,6 @@ export default function AboutAltar({
       timelineRef.current?.kill()
     }
   }, [])
-
-  /**
-   * The mounted (still-invisible) modal panel reports its rect at NATURAL
-   * layout, before its own reveal transform — that is the rectangle the ember
-   * swarm must draw, so the plate lands exactly where the panel will stand.
-   *
-   * This is also where a pending swarm is launched, because the panel's rect is
-   * the one input the launch ring's scale needs (see
-   * {@link deriveSwarmSpreadScale}). The modal reports it from a LAYOUT effect,
-   * so this `setSwarm` is flushed synchronously before the browser paints — the
-   * swarm still appears on the hand-off frame, and it can never mount without a
-   * rect to aim at.
-   */
-  const handlePanelMeasure = useCallback((rect: DOMRect) => {
-    const forgeRect: ForgeRect = {
-      left: rect.left,
-      top: rect.top,
-      width: rect.width,
-      height: rect.height,
-    }
-    panelRect.current = forgeRect
-    const pending = pendingSwarm.current
-    if (!pending) return
-    pendingSwarm.current = null
-    setSwarm({
-      key: pending.key,
-      tint: pending.tint,
-      origin: pending.seat?.origin,
-      spreadScale: pending.seat
-        ? deriveSwarmSpreadScale(pending.seat.shroudOuterPx, forgeRect)
-        : undefined,
-    })
-  }, [])
-
-  const swarmRect = useCallback(() => panelRect.current, [])
-  const retireSwarm = useCallback(() => setSwarm(null), [])
-
-  /**
-   * The hand-off beat: mount the (still invisible) modal and arm the DOM ember
-   * swarm with the orb's colour and its seat — projected NOW, through the live
-   * camera, before the modal's backdrop covers the stage. The panel's measure
-   * (above) fires it on the same frame.
-   */
-  const openPanel = useCallback(
-    (index: number) => {
-      setOpenIndex(index)
-      if (reducedMotion) {
-        pendingSwarm.current = null
-        return
-      }
-      swarmKey.current += 1
-      pendingSwarm.current = {
-        key: swarmKey.current,
-        tint: orbs[index]?.color?.trim() || undefined,
-        seat: projectSeatToViewport(canvasBox.current, state.seatNdc),
-      }
-    },
-    [orbs, reducedMotion, state],
-  )
 
   const strike = useCallback(
     (index: number) => {
@@ -311,7 +240,14 @@ export default function AboutAltar({
       //     band: the 3D should decay as the DOM embers' alpha ramps, rather
       //     than holding bright (`power2.in`) to cover a spatial gap that the
       //     matched launch ring removed.
-      tl.call(() => openPanel(index), [], handoffAt)
+      tl.call(
+        () => {
+          setOpenIndex(index)
+          armSwarm(index)
+        },
+        [],
+        handoffAt,
+      )
       if (!reducedMotion) {
         tl.to(
           state,
@@ -320,16 +256,14 @@ export default function AboutAltar({
         )
       }
     },
-    [state, reducedMotion, openPanel],
+    [state, reducedMotion, armSwarm],
   )
 
   const release = useCallback(() => {
     setOpenIndex(null)
     // Closing mid-forge (or after it) retires the DOM swarm — nothing left to
     // form once the panel is gone.
-    setSwarm(null)
-    pendingSwarm.current = null
-    panelRect.current = null
+    resetSwarm()
     const index = state.activeIndex
     if (index === -1) return
     timelineRef.current?.kill()
@@ -353,7 +287,7 @@ export default function AboutAltar({
       const q = gsap.utils.selector(root.current)
       tl.to(q('[data-altar-picker]'), { autoAlpha: 1, duration: 0.6, ease: 'power2.out' }, 0.55)
     }
-  }, [state])
+  }, [state, resetSwarm])
 
   // Stage entrance: the canvas breathes in from black, the chrome rises.
   useGSAP(
