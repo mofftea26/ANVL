@@ -328,12 +328,90 @@ should be needed. Verify live preview still works.
 
 ---
 
+## Task 9 — Forge performance, and orb colour through the explosion and modal chrome
+
+**Added 2026-07-28 from user feedback after Task 3.** **Depends on:** Task 3.
+
+Three related changes. All are user-requested, and where they conflict with
+an earlier task's constraint, this task governs — say so explicitly rather
+than silently regressing the earlier guarantee.
+
+### 9a. Make the ember animation smooth and cheap
+
+The modal particle animation stutters. The engine currently issues, per
+frame, one `beginPath()` + `arc()` + `fill()` per ember plus a `fillStyle`
+and `globalAlpha` assignment each — 520 path fills and 1040 canvas state
+changes at the modal's count, doubling to ~1040 fills once embers pass the
+`p > 0.85` hot-core threshold. That is the bottleneck.
+
+Required optimisations, in rough order of payoff:
+
+1. **Pre-rendered sprites instead of path fills.** Build a small offscreen
+   canvas per ramp colour once (a radial-gradient ember), then `drawImage`
+   it per ember. Blitting is far cheaper than path construction plus fill.
+2. **Batch by colour.** Group embers into their three ramp buckets and draw
+   each bucket together, so `fillStyle` / sprite switches happen three times
+   per frame instead of 520.
+3. **Quantise alpha.** Per-ember `globalAlpha` assignment is a state change.
+   Pre-render a small number of alpha tiers per colour and pick the nearest,
+   or otherwise avoid a per-ember state write.
+4. **Stop clearing and sizing the whole viewport.** The swarm occupies a
+   known bounding box (launch ring around the origin, union the target rect).
+   Size the canvas to that box, position it absolutely, and clear only it.
+5. **Drop the per-ember `Math.sin` per frame.** Precompute a flicker lookup
+   table, or derive per-ember flicker from one shared per-frame sin plus a
+   cheap per-seed offset.
+6. **Cap DPR lower for this effect** — it is a sub-second transient glow;
+   full 2× on a full-viewport canvas is wasted fill rate. Justify whatever
+   cap you pick in a comment.
+
+On the About page specifically, the R3F altar scene's render loop runs
+concurrently with this DOM canvas. Investigate whether that contention is
+part of the stutter, and if so throttle or pause the 3D loop across the
+handoff window. Measure before and after — report frame timings or draw-call
+counts, not adjectives.
+
+**Constraint change, stated deliberately:** Task 2 required modal and toast
+output to be pixel-identical to the pre-refactor implementation. Sprite
+blitting anti-aliases differently from path filling, so that guarantee is
+**relaxed to "visually equivalent, and intentionally smoother"** for this
+task only. What still binds: the two tuning presets keep their distinct
+per-surface values, the regression test pinning those differences stays
+green, and the modal and toast must not visibly diverge *from each other*
+in feel. Do not use this relaxation as licence to retune motion.
+
+### 9b. Orb colour through the 3D explosion
+
+`AltarModalForge.tsx:269-270` deliberately reads the site ember palette and
+comments that it is "never a per-orb neon". The user has now asked for the
+opposite: the explosion itself should carry the struck orb's colour, as the
+DOM swarm already does after Task 3.
+
+Feed `orb.color` into the shader's `uColdColor` / `uEmberColor` / `uHotColor`
+ramp, deriving the three stops the same way `resolveForgeRamp(tint)` derives
+them for the DOM engine, so the in-canvas embers and the DOM swarm are the
+same colour through the handoff. Keep a near-white hot stop so it still
+reads as forged metal rather than flat neon. Update that stale comment.
+
+### 9c. Orb colour on the modal's close button
+
+The modal's X / close control should be tinted to match the orb and the rest
+of the modal's accents. `AboutOrbModal.tsx` already derives orb-coloured
+accents via `color-mix()` at lines 135, 147, 154 and 163-164 — follow that
+existing pattern rather than inventing a second mechanism. Keep the
+`focus-ring`, keep the ≥44×44px touch target, and keep contrast at WCAG AA
+against the panel for every orb colour in the CMS-authored set, not just the
+default one.
+
+---
+
 ## Sequencing
 
 ```
 Task 1  (admin nav)        independent
 Task 2  (forge engine)     independent
 Task 3  (altar)            after 2
+Task 9  (forge perf, tint) after 3
 Task 4  (CMS schema)       independent, blocks 5/6/7
 Task 5  (components)       after 4
 Task 6  (pages)            after 5
