@@ -18,10 +18,16 @@ import { readThemeCssColor } from '@/shared/lib/themeColor'
  * loop built on top of these functions.
  *
  * The deep motion maths below (dissolve curve, per-seed stagger, flicker,
- * hot-core threshold, launch spread/radius jitter) is intentionally a single
- * canonical formula shared by every surface — this is the "unify the maths"
- * half of the refactor. Only the surface-facing knobs (ember count, edge
- * share, duration, tint, target rect) vary per caller.
+ * hot-core pass, launch spread/radius jitter) is one shared *shape* — every
+ * surface draws through the same `drawForgeFrame`/`buildEmbers` — but the
+ * exact numbers feeding it are a {@link ForgeMotionTuning} preset, not a
+ * single hardcoded set. `ModalForgeEffect` and `ToastForgeEffect` were
+ * independently tuned (dissolve start, stagger rate, alpha weights, hot-core
+ * radius fraction, and landing jitter all differ slightly between them) and
+ * both presets preserve those numbers exactly — see `MODAL_FORGE_TUNING` /
+ * `TOAST_FORGE_TUNING` below. Only the truly-identical formulas (flicker,
+ * hot-core threshold/alpha factor, dissolve end, spread range) are shared
+ * without a knob.
  */
 
 export interface ForgeRect {
@@ -73,6 +79,86 @@ function smoothstep(a: number, b: number, x: number): number {
 
 /** One exported duration constant — kills the 950ms/1000ms `Modal`/`ModalForgeEffect` drift. */
 export const FORGE_DURATION_MS = 950
+
+/**
+ * Every number that made `ModalForgeEffect` and `ToastForgeEffect`'s output
+ * subtly different before this refactor. Two presets below carry each
+ * surface's own original values so unifying the *code* never means
+ * unifying the *numbers* — with `tuning` unset, `buildEmbers`/`drawForgeFrame`
+ * default to {@link MODAL_FORGE_TUNING}.
+ */
+export interface ForgeMotionTuning {
+  /** `smoothstep(dissolveStart, dissolveEnd, t)` — the swarm's fade-out window. */
+  dissolveStart: number
+  dissolveEnd: number
+  /** Per-seed progress: `p = smoothstep(0, 1, t * staggerRate - seed * staggerOffset)`. */
+  staggerRate: number
+  staggerOffset: number
+  /** `alpha = (alphaBase + alphaWeight * p) * (1 - dissolve) * flicker`. */
+  alphaBase: number
+  alphaWeight: number
+  /** `flicker = flickerBase + flickerAmplitude * sin(now * flickerTimeScale + seed * flickerSeedScale)`. */
+  flickerBase: number
+  flickerAmplitude: number
+  flickerTimeScale: number
+  flickerSeedScale: number
+  /** Hot-core pass fires once `p` exceeds this, drawn at `r * hotCoreRadiusFraction`, `alpha * hotCoreAlphaFactor`. */
+  hotCoreThreshold: number
+  hotCoreRadiusFraction: number
+  hotCoreAlphaFactor: number
+  /** Launch spread distance factor: `reach * (spreadBase + Math.random() * spreadRange)`. */
+  spreadBase: number
+  spreadRange: number
+  /** Base radius: `radiusBase + Math.random() * radiusRange`. */
+  radiusBase: number
+  radiusRange: number
+  /** Final landing-point jitter magnitude in px (`0` disables it entirely). */
+  landingJitterPx: number
+}
+
+/** `ModalForgeEffect`'s original numbers, verbatim. */
+export const MODAL_FORGE_TUNING: ForgeMotionTuning = {
+  dissolveStart: 0.62,
+  dissolveEnd: 0.98,
+  staggerRate: 1.55,
+  staggerOffset: 0.45,
+  alphaBase: 0.25,
+  alphaWeight: 0.75,
+  flickerBase: 0.7,
+  flickerAmplitude: 0.3,
+  flickerTimeScale: 0.02,
+  flickerSeedScale: 40,
+  hotCoreThreshold: 0.85,
+  hotCoreRadiusFraction: 0.45,
+  hotCoreAlphaFactor: 0.9,
+  spreadBase: 0.55,
+  spreadRange: 0.7,
+  radiusBase: 0.8,
+  radiusRange: 1.6,
+  landingJitterPx: 1,
+}
+
+/** `ToastForgeEffect`'s original numbers, verbatim. */
+export const TOAST_FORGE_TUNING: ForgeMotionTuning = {
+  dissolveStart: 0.58,
+  dissolveEnd: 0.98,
+  staggerRate: 1.6,
+  staggerOffset: 0.42,
+  alphaBase: 0.28,
+  alphaWeight: 0.72,
+  flickerBase: 0.7,
+  flickerAmplitude: 0.3,
+  flickerTimeScale: 0.02,
+  flickerSeedScale: 40,
+  hotCoreThreshold: 0.85,
+  hotCoreRadiusFraction: 0.42,
+  hotCoreAlphaFactor: 0.9,
+  spreadBase: 0.5,
+  spreadRange: 0.7,
+  radiusBase: 0.7,
+  radiusRange: 1.4,
+  landingJitterPx: 0,
+}
 
 /**
  * Even-paced walk of a rect's perimeter. `index / count` is the fraction of
@@ -173,10 +259,20 @@ export function buildEmbers(options: {
   ramp: ForgeRamp
   count: number
   edgeShare: number
-  /** Scales the launch spread distance. Default 1 reproduces today's swarms. */
+  /** Extra multiplier on top of the tuning's launch spread. Default 1 (no change). */
   spreadScale?: number
+  /** Which surface's numbers to build with. Default {@link MODAL_FORGE_TUNING}. */
+  tuning?: ForgeMotionTuning
 }): Ember[] {
-  const { rect, origin, ramp, count, edgeShare, spreadScale = 1 } = options
+  const {
+    rect,
+    origin,
+    ramp,
+    count,
+    edgeShare,
+    spreadScale = 1,
+    tuning = MODAL_FORGE_TUNING,
+  } = options
   const edgeCount = count > 0 ? Math.max(1, Math.floor(count * edgeShare)) : 0
 
   const embers: Ember[] = Array.from({ length: count }, (_, i) => {
@@ -188,12 +284,12 @@ export function buildEmbers(options: {
       fx01: Math.random(),
       fy01: Math.random(),
       ang: Math.random() * Math.PI * 2,
-      spreadFactor: (0.55 + Math.random() * 0.7) * spreadScale,
+      spreadFactor: (tuning.spreadBase + Math.random() * tuning.spreadRange) * spreadScale,
       seed: Math.random(),
-      r: 0.8 + Math.random() * 1.6,
+      r: tuning.radiusBase + Math.random() * tuning.radiusRange,
       color: heat < COLD_HEAT_CEILING ? ramp.cold : heat < HOT_HEAT_FLOOR ? ramp.ember : ramp.hot,
-      jitterX: (Math.random() - 0.5) * 2,
-      jitterY: (Math.random() - 0.5) * 2,
+      jitterX: (Math.random() - 0.5) * 2 * tuning.landingJitterPx,
+      jitterY: (Math.random() - 0.5) * 2 * tuning.landingJitterPx,
       fx: 0,
       fy: 0,
       tx: 0,
@@ -216,16 +312,23 @@ export function buildEmbers(options: {
 export function drawForgeFrame(
   ctx: CanvasRenderingContext2D,
   embers: Ember[],
-  state: { t: number; now: number; ramp: ForgeRamp },
+  state: { t: number; now: number; ramp: ForgeRamp; tuning?: ForgeMotionTuning },
 ): void {
   const { t, now, ramp } = state
+  const tuning = state.tuning ?? MODAL_FORGE_TUNING
   ctx.globalCompositeOperation = 'lighter'
-  const dissolve = smoothstep(0.62, 0.98, t)
+  const dissolve = smoothstep(tuning.dissolveStart, tuning.dissolveEnd, t)
 
   for (const e of embers) {
-    const p = smoothstep(0, 1, Math.min(1, Math.max(0, t * 1.55 - e.seed * 0.45)))
-    const flicker = 0.7 + 0.3 * Math.sin(now * 0.02 + e.seed * 40)
-    const alpha = (0.25 + 0.75 * p) * (1 - dissolve) * flicker
+    const p = smoothstep(
+      0,
+      1,
+      Math.min(1, Math.max(0, t * tuning.staggerRate - e.seed * tuning.staggerOffset)),
+    )
+    const flicker =
+      tuning.flickerBase +
+      tuning.flickerAmplitude * Math.sin(now * tuning.flickerTimeScale + e.seed * tuning.flickerSeedScale)
+    const alpha = (tuning.alphaBase + tuning.alphaWeight * p) * (1 - dissolve) * flicker
     if (alpha <= 0.015) continue
 
     const x = e.fx + (e.tx - e.fx) * p
@@ -237,11 +340,11 @@ export function drawForgeFrame(
     ctx.fill()
 
     // Landed embers burn a hot core just before fusing into the target.
-    if (p > 0.85) {
-      ctx.globalAlpha = Math.min(1, alpha * 0.9)
+    if (p > tuning.hotCoreThreshold) {
+      ctx.globalAlpha = Math.min(1, alpha * tuning.hotCoreAlphaFactor)
       ctx.fillStyle = ramp.hot
       ctx.beginPath()
-      ctx.arc(x, y, e.r * 0.45, 0, Math.PI * 2)
+      ctx.arc(x, y, e.r * tuning.hotCoreRadiusFraction, 0, Math.PI * 2)
       ctx.fill()
     }
   }

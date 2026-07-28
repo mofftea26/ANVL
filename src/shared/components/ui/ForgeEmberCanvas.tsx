@@ -6,6 +6,7 @@ import {
   FORGE_DURATION_MS,
   projectEmber,
   resolveForgeRamp,
+  type ForgeMotionTuning,
   type ForgeRect,
 } from '@/shared/lib/forge/emberForge'
 
@@ -35,6 +36,8 @@ export interface ForgeEmberCanvasProps {
   origin?: { x: number; y: number }
   /** Rebuilds the ramp around this colour. Unset = today's exact theme ramp. */
   tint?: string
+  /** Which surface's motion numbers to use. Default: the modal's (`MODAL_FORGE_TUNING`). */
+  tuning?: ForgeMotionTuning
   durationMs?: number
   count?: number
   edgeShare?: number
@@ -51,6 +54,7 @@ export function ForgeEmberCanvas({
   getRect,
   origin,
   tint,
+  tuning,
   durationMs = FORGE_DURATION_MS,
   count = DEFAULT_COUNT,
   edgeShare = DEFAULT_EDGE_SHARE,
@@ -90,7 +94,7 @@ export function ForgeEmberCanvas({
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
     const ramp = resolveForgeRamp(tint)
-    const embers = buildEmbers({ rect: initialRect, origin, ramp, count, edgeShare })
+    const embers = buildEmbers({ rect: initialRect, origin, ramp, count, edgeShare, tuning })
 
     let raf = 0
     const start = performance.now()
@@ -109,7 +113,7 @@ export function ForgeEmberCanvas({
 
       const t = Math.min(1, (now - start) / durationMs)
       ctx.clearRect(0, 0, vw, vh)
-      drawForgeFrame(ctx, embers, { t, now, ramp })
+      drawForgeFrame(ctx, embers, { t, now, ramp, tuning })
 
       if (t < 1) {
         raf = requestAnimationFrame(draw)
@@ -124,7 +128,7 @@ export function ForgeEmberCanvas({
     // fresh `{ x, y }` literal every render, and restarting the whole swarm
     // just because of that (rather than an actual position change) would
     // visibly reset the animation mid-flight.
-  }, [reducedMotion, targetRef, tint, durationMs, count, edgeShare, origin?.x, origin?.y])
+  }, [reducedMotion, targetRef, tint, tuning, durationMs, count, edgeShare, origin?.x, origin?.y])
 
   if (reducedMotion) return null
 

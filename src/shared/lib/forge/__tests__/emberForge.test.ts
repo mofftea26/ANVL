@@ -5,7 +5,9 @@ import { describe, expect, it } from 'vitest'
 import {
   buildEmbers,
   drawForgeFrame,
+  MODAL_FORGE_TUNING,
   resolveForgeRamp,
+  TOAST_FORGE_TUNING,
   walkRectPerimeter,
   type ForgeRect,
 } from '@/shared/lib/forge/emberForge'
@@ -84,6 +86,68 @@ describe('buildEmbers', () => {
 
   it('returns an empty swarm for a zero count', () => {
     expect(buildEmbers({ rect, ramp, count: 0, edgeShare: 0.5 })).toEqual([])
+  })
+})
+
+describe('MODAL_FORGE_TUNING vs TOAST_FORGE_TUNING', () => {
+  // Recovered from git history (pre-refactor ModalForgeEffect.tsx /
+  // ToastForgeEffect.tsx) — these five numbers genuinely differed between
+  // the two surfaces before this refactor and must keep differing, or the
+  // "pixel-identical to today" requirement silently regresses for toast.
+  it('preserves each surface on every value that originally differed', () => {
+    expect(MODAL_FORGE_TUNING.dissolveStart).toBe(0.62)
+    expect(TOAST_FORGE_TUNING.dissolveStart).toBe(0.58)
+
+    expect(MODAL_FORGE_TUNING.staggerRate).toBe(1.55)
+    expect(TOAST_FORGE_TUNING.staggerRate).toBe(1.6)
+
+    expect(MODAL_FORGE_TUNING.staggerOffset).toBe(0.45)
+    expect(TOAST_FORGE_TUNING.staggerOffset).toBe(0.42)
+
+    expect(MODAL_FORGE_TUNING.alphaBase).toBe(0.25)
+    expect(TOAST_FORGE_TUNING.alphaBase).toBe(0.28)
+
+    expect(MODAL_FORGE_TUNING.alphaWeight).toBe(0.75)
+    expect(TOAST_FORGE_TUNING.alphaWeight).toBe(0.72)
+
+    expect(MODAL_FORGE_TUNING.hotCoreRadiusFraction).toBe(0.45)
+    expect(TOAST_FORGE_TUNING.hotCoreRadiusFraction).toBe(0.42)
+
+    expect(MODAL_FORGE_TUNING.spreadBase).toBe(0.55)
+    expect(TOAST_FORGE_TUNING.spreadBase).toBe(0.5)
+
+    expect(MODAL_FORGE_TUNING.radiusBase).toBe(0.8)
+    expect(TOAST_FORGE_TUNING.radiusBase).toBe(0.7)
+
+    expect(MODAL_FORGE_TUNING.radiusRange).toBe(1.6)
+    expect(TOAST_FORGE_TUNING.radiusRange).toBe(1.4)
+
+    expect(MODAL_FORGE_TUNING.landingJitterPx).toBeGreaterThan(0)
+    expect(TOAST_FORGE_TUNING.landingJitterPx).toBe(0)
+  })
+
+  it('still shares the formulas that were genuinely identical before the refactor', () => {
+    expect(MODAL_FORGE_TUNING.dissolveEnd).toBe(TOAST_FORGE_TUNING.dissolveEnd)
+    expect(MODAL_FORGE_TUNING.flickerBase).toBe(TOAST_FORGE_TUNING.flickerBase)
+    expect(MODAL_FORGE_TUNING.flickerAmplitude).toBe(TOAST_FORGE_TUNING.flickerAmplitude)
+    expect(MODAL_FORGE_TUNING.flickerTimeScale).toBe(TOAST_FORGE_TUNING.flickerTimeScale)
+    expect(MODAL_FORGE_TUNING.flickerSeedScale).toBe(TOAST_FORGE_TUNING.flickerSeedScale)
+    expect(MODAL_FORGE_TUNING.hotCoreThreshold).toBe(TOAST_FORGE_TUNING.hotCoreThreshold)
+    expect(MODAL_FORGE_TUNING.hotCoreAlphaFactor).toBe(TOAST_FORGE_TUNING.hotCoreAlphaFactor)
+    expect(MODAL_FORGE_TUNING.spreadRange).toBe(TOAST_FORGE_TUNING.spreadRange)
+  })
+
+  it('buildEmbers/drawForgeFrame default to the modal preset when tuning is unset', () => {
+    const rect: ForgeRect = { left: 0, top: 0, width: 100, height: 100 }
+    const ramp = { cold: '#fff', ember: '#f80', hot: '#fff8f0' }
+    const embers = buildEmbers({ rect, ramp, count: 200, edgeShare: 0.6 })
+    // radiusRange/radiusBase match MODAL_FORGE_TUNING's bounds exactly.
+    for (const e of embers) {
+      expect(e.r).toBeGreaterThanOrEqual(MODAL_FORGE_TUNING.radiusBase)
+      expect(e.r).toBeLessThanOrEqual(
+        MODAL_FORGE_TUNING.radiusBase + MODAL_FORGE_TUNING.radiusRange,
+      )
+    }
   })
 })
 

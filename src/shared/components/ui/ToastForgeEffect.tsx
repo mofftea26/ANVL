@@ -4,6 +4,7 @@ import {
   drawForgeFrame,
   projectEmber,
   resolveForgeRamp,
+  TOAST_FORGE_TUNING,
   type Ember,
   type ForgeRamp,
 } from '@/shared/lib/forge/emberForge'
@@ -26,7 +27,10 @@ import {
  * single target's single pass, mounted only while it runs; the toaster is
  * mounted once for the app's life and must juggle N independent passes).
  * The motion maths itself (`buildEmbers`/`projectEmber`/`drawForgeFrame`) is
- * the exact same shared engine `ModalForgeEffect` draws from.
+ * the exact same shared engine `ModalForgeEffect` draws from, tuned with
+ * `TOAST_FORGE_TUNING` — the toast's own dissolve/stagger/alpha/hot-core/
+ * jitter numbers, which were never identical to the modal's and are kept
+ * that way on purpose (see `emberForge.ts`'s `ForgeMotionTuning`).
  *
  * Deliberately canvas-2D, not three.js — toasts live in the shared UI chunk
  * that both admin and storefront load. Keeping three.js out of the shared
@@ -108,7 +112,7 @@ export function ToastForgeEffect() {
         // Re-resolve every ember's launch/landing point against the plate's
         // CURRENT rect so the swarm tracks sonner restacking it mid-pass.
         for (const ember of pass.embers) projectEmber(ember, rect)
-        drawForgeFrame(ctx, pass.embers, { t, now, ramp: pass.ramp })
+        drawForgeFrame(ctx, pass.embers, { t, now, ramp: pass.ramp, tuning: TOAST_FORGE_TUNING })
       }
 
       ctx.globalAlpha = 1
@@ -129,7 +133,13 @@ export function ToastForgeEffect() {
       seen.add(node)
       const rect = node.getBoundingClientRect()
       const ramp = resolveForgeRamp()
-      const embers = buildEmbers({ rect, ramp, count: COUNT, edgeShare: EDGE_SHARE })
+      const embers = buildEmbers({
+        rect,
+        ramp,
+        count: COUNT,
+        edgeShare: EDGE_SHARE,
+        tuning: TOAST_FORGE_TUNING,
+      })
       passes.push({ node, start: performance.now(), embers, ramp })
       ensureRunning()
     }
