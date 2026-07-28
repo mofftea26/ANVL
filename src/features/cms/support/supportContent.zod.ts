@@ -1,5 +1,10 @@
 import { z } from 'zod'
 
+import { obj, pickKeys } from './parseUtils'
+import { pickSectionArray, supportSectionSchema } from './supportContent.shared.zod'
+import { pickCareGuide, supportCareGuideSchema } from './supportContent.care.zod'
+import { pickSizeGuide, supportSizeGuideSchema } from './supportContent.size.zod'
+
 /**
  * Support content blob — the CMS-controlled copy for the customer-help pages
  * (FAQ, Contact, Shipping, Returns, Care guide, Size guide). Mirrors how
@@ -17,34 +22,59 @@ import { z } from 'zod'
  * known keys first, so legacy/tampered blobs degrade to defaults instead of
  * throwing. `body`/`answer` are plain text; a blank line separates paragraphs.
  *
- * FILE SIZE: this file exceeds the 500-line hard limit (2026-07-28, Task 4 of
- * the guides-cms-nav-particles plan added the measurement-point and
- * care-legend schemas). It stays a single file deliberately: every schema
- * here composes into one `.strict()` root (`supportContentSchema`), and
- * `parseSupportContent`'s deep-pick must stay next to the schemas it feeds so
- * the two can't drift. The size-guide and care-guide schema groups also
- * share the `SIZE_TABLE_ROW_KEYS` enum and the `obj`/`pickKeys` parse
- * primitives — splitting by page (size vs. care) would require those two
- * files to import from each other (or from a root that re-exports them),
- * which creates a circular ES-module dependency. That pattern has already
- * caused a production bundling bug on this codebase once (tree-shaken
- * `flush` module, see `docs/changelog.md` 2026-07-2x "repair CMS publish");
- * it is not worth repeating to satisfy a line count. Prefer splitting on a
- * future pass that also moves `obj`/`pickKeys`/`pickStringArray` into a
- * standalone zero-dependency parse-utils module first.
+ * This is the ROOT of a small module family, all in this folder: the care
+ * guide and size guide schemas + their deep-pick helpers live in
+ * `supportContent.care.zod.ts` / `supportContent.size.zod.ts` (split out
+ * purely to keep files under the size limits), the section shape they both
+ * reuse lives in `supportContent.shared.zod.ts`, and the parsing primitives
+ * (`obj`/`pickKeys`/`pickStringArray`) live in `parseUtils.ts`. This file
+ * re-exports everything from those modules, so every existing import of
+ * `@/features/cms/support/supportContent.zod` continues to work unchanged.
  */
 
-/* --------------------------------------------------------------------------- *
- * Shared section shape (heading + plain-text body), reused across pages.
- * --------------------------------------------------------------------------- */
-export const supportSectionSchema = z
-  .object({
-    id: z.string().catch(''),
-    heading: z.string().catch(''),
-    body: z.string().catch(''),
-  })
-  .strict()
-export type SupportSection = z.infer<typeof supportSectionSchema>
+export {
+  supportSectionSchema,
+  type SupportSection,
+} from './supportContent.shared.zod'
+
+export {
+  CARE_ICON_KEYS,
+  type CareIconKey,
+  careItemSchema,
+  type CareItem,
+  careProductEntrySchema,
+  type CareProductEntry,
+  careLegendEntrySchema,
+  type CareLegendEntry,
+  careLegendSchema,
+  type CareLegend,
+  supportCareGuideSchema,
+} from './supportContent.care.zod'
+
+export {
+  sizeRowSchema,
+  type SizeRow,
+  SIZE_TABLE_SIZES,
+  type SizeTableSize,
+  SIZE_TABLE_ROW_KEYS,
+  type SizeTableRowKey,
+  SIZE_TABLE_ROW_LABELS,
+  GARMENT_TYPE_KEYS,
+  type GarmentTypeKey,
+  measurePointSchema,
+  type MeasurePoint,
+  garmentTypeContentSchema,
+  type GarmentTypeContent,
+  sizeMeasureSchema,
+  type SizeMeasure,
+  sizeTableRowSchema,
+  type SizeTableRow,
+  sizeTableSchema,
+  type SizeTable,
+  sizeProductEntrySchema,
+  type SizeProductEntry,
+  supportSizeGuideSchema,
+} from './supportContent.size.zod'
 
 /* --------------------------------------------------------------------------- *
  * FAQ
@@ -90,243 +120,6 @@ export const supportSectionListSchema = z
   .strict()
 
 /* --------------------------------------------------------------------------- *
- * Care guide — global sections + per-product care notes (keyed by slug).
- *
- * Two authoring generations coexist (ADDITIVE — old blobs stay valid):
- * - legacy `lines: string[]` (free text, one instruction per line)
- * - structured `items: CareItem[]` (icon + name + optional value + note)
- * `resolveCareItems` in `resolveSupportContent.ts` prefers `items` when any
- * are authored and maps legacy lines to generic items at resolve time.
- * --------------------------------------------------------------------------- */
-
-/** Icon vocabulary for structured care items — keys map to the real textile
- * care symbols in `@/features/support/components/careSymbols`. The list is
- * ADDITIVE: the original decorative keys stay valid (old stored items parse and
- * render), and the standard care marks are appended below. */
-export const CARE_ICON_KEYS = [
-  // Legacy decorative keys — kept forever for backward compatibility.
-  'washing-machine',
-  'hand-soap',
-  'droplet',
-  'snowflake',
-  'thermometer',
-  'sun',
-  'wind',
-  'flame',
-  'prohibit',
-  'spray-bottle',
-  'coat-hanger',
-  'sparkle',
-  'shirt',
-  'generic',
-  // Standard textile care symbols.
-  'wash',
-  'wash-30',
-  'wash-40',
-  'wash-50',
-  'wash-60',
-  'wash-cold',
-  'wash-gentle',
-  'wash-hand',
-  'wash-inside-out',
-  'do-not-wash',
-  'bleach',
-  'do-not-bleach',
-  'tumble-dry',
-  'tumble-dry-low',
-  'tumble-dry-high',
-  'do-not-tumble-dry',
-  'line-dry',
-  'dry-flat',
-  'drip-dry',
-  'iron',
-  'iron-low',
-  'iron-medium',
-  'iron-high',
-  'do-not-iron',
-  'dry-clean',
-  'do-not-dry-clean',
-] as const
-export type CareIconKey = (typeof CARE_ICON_KEYS)[number]
-
-export const careItemSchema = z
-  .object({
-    id: z.string().catch(''),
-    icon: z.enum(CARE_ICON_KEYS).catch('generic'),
-    name: z.string().catch(''),
-    /** Optional contextual value (e.g. wash temperature "30", iron level "low"). */
-    value: z.string().catch(''),
-    note: z.string().catch(''),
-  })
-  .strict()
-export type CareItem = z.infer<typeof careItemSchema>
-
-export const careProductEntrySchema = z
-  .object({
-    note: z.string().catch(''),
-    /** Legacy free-text instructions — kept forever for backward compat. */
-    lines: z.array(z.string()).catch([]),
-    /** Structured instructions — preferred at resolve time when non-empty. */
-    items: z.array(careItemSchema).catch([]),
-  })
-  .strict()
-export type CareProductEntry = z.infer<typeof careProductEntrySchema>
-
-/* --------------------------------------------------------------------------- *
- * Care legend — editable copy for the standard care-symbol meanings.
- * `entries` is OVERRIDES-ONLY, keyed by `CareIconKey`: absent = code default
- * (`supportContent.defaults.ts`); present-but-blank falls back per field —
- * see `resolveCareLegend`. Category grouping is code-owned (`careSymbols.tsx`).
- * --------------------------------------------------------------------------- */
-export const careLegendEntrySchema = z
-  .object({
-    label: z.string().catch(''),
-    meaning: z.string().catch(''),
-  })
-  .strict()
-export type CareLegendEntry = z.infer<typeof careLegendEntrySchema>
-
-export const careLegendSchema = z
-  .object({
-    heading: z.string().catch(''),
-    intro: z.string().catch(''),
-    entries: z.record(z.string(), careLegendEntrySchema).catch({}),
-  })
-  .strict()
-export type CareLegend = z.infer<typeof careLegendSchema>
-
-export const supportCareGuideSchema = z
-  .object({
-    intro: z.string().catch(''),
-    sections: z.array(supportSectionSchema).catch([]),
-    legend: careLegendSchema,
-    perProduct: z.record(z.string(), careProductEntrySchema).catch({}),
-  })
-  .strict()
-
-/* --------------------------------------------------------------------------- *
- * Size guide — global intro/note + per-product measurement tables (by slug).
- *
- * Two authoring generations coexist (ADDITIVE — old blobs stay valid):
- * - legacy free-form `columns` + `rows` (row = one size, values per column)
- * - structured `table` (fixed size columns XS–XXL, fixed measurement rows)
- * `resolveSizeTable` in `resolveSupportContent.ts` prefers `table` when any
- * cell is filled and falls back to the legacy shape otherwise.
- * --------------------------------------------------------------------------- */
-export const sizeRowSchema = z
-  .object({
-    id: z.string().catch(''),
-    size: z.string().catch(''),
-    values: z.array(z.string()).catch([]),
-  })
-  .strict()
-export type SizeRow = z.infer<typeof sizeRowSchema>
-
-/** Fixed size columns of the structured table — one value slot per size. */
-export const SIZE_TABLE_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
-export type SizeTableSize = (typeof SIZE_TABLE_SIZES)[number]
-
-/** Fixed measurement rows of the structured table, in display order. */
-export const SIZE_TABLE_ROW_KEYS = [
-  'length',
-  'chest',
-  'waist',
-  'bottom',
-  'collar',
-  'sleeve',
-  'cuff',
-] as const
-export type SizeTableRowKey = (typeof SIZE_TABLE_ROW_KEYS)[number]
-
-export const SIZE_TABLE_ROW_LABELS: Record<SizeTableRowKey, string> = {
-  length: 'Body length',
-  chest: 'Chest',
-  waist: 'Waist',
-  bottom: 'Hem',
-  collar: 'Neck opening',
-  sleeve: 'Sleeve length',
-  cuff: 'Cuff opening',
-}
-
-/* --------------------------------------------------------------------------- *
- * "Where we measure" — CMS-editable measurement points, grouped per garment
- * type (a stringer has no sleeve/cuff; joggers have no chest/collar). Point
- * geometry is code-owned (`supportContent.defaults.ts`) — CMS edits copy only.
- * --------------------------------------------------------------------------- */
-export const GARMENT_TYPE_KEYS = ['tee', 'stringer', 'hoodie', 'joggers', 'shorts'] as const
-export type GarmentTypeKey = (typeof GARMENT_TYPE_KEYS)[number]
-
-export const measurePointSchema = z
-  .object({
-    key: z.enum(SIZE_TABLE_ROW_KEYS),
-    letter: z.string().catch(''),
-    label: z.string().catch(''),
-    description: z.string().catch(''),
-  })
-  .strict()
-export type MeasurePoint = z.infer<typeof measurePointSchema>
-
-export const garmentTypeContentSchema = z
-  .object({
-    key: z.enum(GARMENT_TYPE_KEYS),
-    label: z.string().catch(''),
-    points: z.array(measurePointSchema).catch([]),
-  })
-  .strict()
-export type GarmentTypeContent = z.infer<typeof garmentTypeContentSchema>
-
-export const sizeMeasureSchema = z
-  .object({
-    heading: z.string().catch(''),
-    intro: z.string().catch(''),
-    footnote: z.string().catch(''),
-    garmentTypes: z.array(garmentTypeContentSchema).catch([]),
-  })
-  .strict()
-export type SizeMeasure = z.infer<typeof sizeMeasureSchema>
-
-export const sizeTableRowSchema = z
-  .object({
-    key: z.enum(SIZE_TABLE_ROW_KEYS),
-    /** One value per size in {@link SIZE_TABLE_SIZES}; '' = size not offered. */
-    values: z.array(z.string()).catch([]),
-  })
-  .strict()
-export type SizeTableRow = z.infer<typeof sizeTableRowSchema>
-
-export const sizeTableSchema = z
-  .object({
-    rows: z.array(sizeTableRowSchema).catch([]),
-    /** Widths are HALF measurements (garment laid flat) when true. */
-    halfMeasurement: z.boolean().catch(true),
-  })
-  .strict()
-export type SizeTable = z.infer<typeof sizeTableSchema>
-
-export const sizeProductEntrySchema = z
-  .object({
-    note: z.string().catch(''),
-    /** Legacy free-form table — kept forever for backward compat. */
-    columns: z.array(z.string()).catch([]),
-    rows: z.array(sizeRowSchema).catch([]),
-    /** Structured fixed-grid table — preferred at resolve time when filled. */
-    table: sizeTableSchema.optional(),
-    /** Which garment type's "Where we measure" point set applies. Absent/invalid → 'tee'. */
-    garmentType: z.enum(GARMENT_TYPE_KEYS).optional(),
-  })
-  .strict()
-export type SizeProductEntry = z.infer<typeof sizeProductEntrySchema>
-
-export const supportSizeGuideSchema = z
-  .object({
-    intro: z.string().catch(''),
-    note: z.string().catch(''),
-    measure: sizeMeasureSchema,
-    perProduct: z.record(z.string(), sizeProductEntrySchema).catch({}),
-  })
-  .strict()
-
-/* --------------------------------------------------------------------------- *
  * Root
  * --------------------------------------------------------------------------- */
 export const supportContentSchema = z
@@ -364,29 +157,6 @@ export const DEFAULT_SUPPORT_CONTENT: SupportContentConfig = {
   },
 }
 
-/* --------------------------------------------------------------------------- *
- * Tolerant deep-pick parse
- * --------------------------------------------------------------------------- */
-function obj(raw: unknown): Record<string, unknown> {
-  return raw && typeof raw === 'object' && !Array.isArray(raw)
-    ? (raw as Record<string, unknown>)
-    : {}
-}
-
-function pickKeys(raw: unknown, keys: readonly string[]): Record<string, unknown> {
-  const r = obj(raw)
-  const out: Record<string, unknown> = {}
-  for (const key of keys) if (key in r) out[key] = r[key]
-  return out
-}
-
-// Each row starts from a full blank so every key is present before parse
-// (a `.catch` default only fires on a *wrong type*, not a *missing* key).
-function pickSectionArray(raw: unknown): Record<string, unknown>[] {
-  if (!Array.isArray(raw)) return []
-  return raw.map((s) => ({ id: '', heading: '', body: '', ...pickKeys(s, ['id', 'heading', 'body']) }))
-}
-
 function pickFaqItems(raw: unknown): Record<string, unknown>[] {
   if (!Array.isArray(raw)) return []
   return raw.map((s) => ({
@@ -395,170 +165,6 @@ function pickFaqItems(raw: unknown): Record<string, unknown>[] {
     answer: '',
     ...pickKeys(s, ['id', 'question', 'answer']),
   }))
-}
-
-function pickStringArray(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return []
-  return raw.map((v) => (typeof v === 'string' ? v : String(v ?? '')))
-}
-
-function pickCareItems(raw: unknown): Record<string, unknown>[] {
-  if (!Array.isArray(raw)) return []
-  return raw.map((item) => ({
-    id: '',
-    icon: 'generic',
-    name: '',
-    value: '',
-    note: '',
-    ...pickKeys(item, ['id', 'icon', 'name', 'value', 'note']),
-  }))
-}
-
-function pickCarePerProduct(raw: unknown): Record<string, unknown> {
-  const r = obj(raw)
-  const out: Record<string, unknown> = {}
-  for (const [slug, value] of Object.entries(r)) {
-    if (!slug.trim()) continue
-    const v = obj(value)
-    out[slug] = {
-      note: 'note' in v ? v.note : '',
-      lines: pickStringArray(v.lines),
-      items: pickCareItems(v.items),
-    }
-  }
-  return out
-}
-
-/** One care-legend override entry, keyed by (nominally) `CareIconKey`. */
-function pickCareLegendEntry(raw: unknown): Record<string, unknown> {
-  return { label: '', meaning: '', ...pickKeys(raw, ['label', 'meaning']) }
-}
-
-function pickCareLegendEntries(raw: unknown): Record<string, unknown> {
-  const r = obj(raw)
-  const out: Record<string, unknown> = {}
-  for (const [key, value] of Object.entries(r)) {
-    if (!key.trim()) continue
-    out[key] = pickCareLegendEntry(value)
-  }
-  return out
-}
-
-function pickCareLegend(raw: unknown): Record<string, unknown> {
-  const v = obj(raw)
-  return {
-    heading: '',
-    intro: '',
-    ...pickKeys(v, ['heading', 'intro']),
-    entries: pickCareLegendEntries(v.entries),
-  }
-}
-
-const SIZE_ROW_KEY_SET: ReadonlySet<string> = new Set(SIZE_TABLE_ROW_KEYS)
-const GARMENT_TYPE_KEY_SET: ReadonlySet<string> = new Set(GARMENT_TYPE_KEYS)
-
-/** Pick one measurement point; a point with an invalid/missing `key` is dropped
- * entirely (its key is what makes it addressable at resolve time). */
-function pickMeasurePoint(raw: unknown): Record<string, unknown> | null {
-  const v = obj(raw)
-  if (typeof v.key !== 'string' || !SIZE_ROW_KEY_SET.has(v.key)) return null
-  return {
-    key: v.key,
-    letter: '',
-    label: '',
-    description: '',
-    ...pickKeys(v, ['letter', 'label', 'description']),
-  }
-}
-
-function pickMeasurePoints(raw: unknown): Record<string, unknown>[] {
-  if (!Array.isArray(raw)) return []
-  return raw.map(pickMeasurePoint).filter((p): p is Record<string, unknown> => p !== null)
-}
-
-/** Pick one garment-type content block; a block with an invalid/missing `key`
- * is dropped entirely (mirrors `pickMeasurePoint`). */
-function pickGarmentType(raw: unknown): Record<string, unknown> | null {
-  const v = obj(raw)
-  if (typeof v.key !== 'string' || !GARMENT_TYPE_KEY_SET.has(v.key)) return null
-  return {
-    key: v.key,
-    label: '',
-    ...pickKeys(v, ['label']),
-    points: pickMeasurePoints(v.points),
-  }
-}
-
-function pickGarmentTypes(raw: unknown): Record<string, unknown>[] {
-  if (!Array.isArray(raw)) return []
-  return raw.map(pickGarmentType).filter((g): g is Record<string, unknown> => g !== null)
-}
-
-function pickSizeMeasure(raw: unknown): Record<string, unknown> {
-  const v = obj(raw)
-  return {
-    heading: '',
-    intro: '',
-    footnote: '',
-    ...pickKeys(v, ['heading', 'intro', 'footnote']),
-    garmentTypes: pickGarmentTypes(v.garmentTypes),
-  }
-}
-
-/** Pick a structured size table (rows with invalid keys are dropped, values
- * padded/truncated to one slot per fixed size column). `undefined` when absent. */
-function pickSizeTable(raw: unknown): Record<string, unknown> | undefined {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined
-  const v = raw as Record<string, unknown>
-  const rows = Array.isArray(v.rows)
-    ? v.rows
-        .filter((row) => {
-          const rowObj = obj(row)
-          return typeof rowObj.key === 'string' && SIZE_ROW_KEY_SET.has(rowObj.key)
-        })
-        .map((row) => {
-          const rowObj = obj(row)
-          const values = pickStringArray(rowObj.values).slice(0, SIZE_TABLE_SIZES.length)
-          while (values.length < SIZE_TABLE_SIZES.length) values.push('')
-          return { key: rowObj.key, values }
-        })
-    : []
-  return {
-    rows,
-    halfMeasurement: 'halfMeasurement' in v ? v.halfMeasurement : true,
-  }
-}
-
-function pickSizePerProduct(raw: unknown): Record<string, unknown> {
-  const r = obj(raw)
-  const out: Record<string, unknown> = {}
-  for (const [slug, value] of Object.entries(r)) {
-    if (!slug.trim()) continue
-    const v = obj(value)
-    const rows = Array.isArray(v.rows)
-      ? v.rows.map((row) => {
-          const rowObj = obj(row)
-          return {
-            id: 'id' in rowObj ? rowObj.id : '',
-            size: 'size' in rowObj ? rowObj.size : '',
-            values: pickStringArray(rowObj.values),
-          }
-        })
-      : []
-    const table = pickSizeTable(v.table)
-    const garmentType =
-      typeof v.garmentType === 'string' && GARMENT_TYPE_KEY_SET.has(v.garmentType)
-        ? v.garmentType
-        : undefined
-    out[slug] = {
-      note: 'note' in v ? v.note : '',
-      columns: pickStringArray(v.columns),
-      rows,
-      ...(table ? { table } : {}),
-      ...(garmentType ? { garmentType } : {}),
-    }
-  }
-  return out
 }
 
 /**
@@ -575,8 +181,6 @@ export function parseSupportContent(raw: unknown): SupportContentConfig {
   const faqRaw = obj(r.faq)
   const shippingRaw = obj(r.shipping)
   const returnsRaw = obj(r.returns)
-  const careRaw = obj(r.careGuide)
-  const sizeRaw = obj(r.sizeGuide)
 
   // Spread the blank defaults under each picked sub-object so every scalar key
   // is present (a `.catch` default only fires on a *wrong type*, not a *missing*
@@ -604,16 +208,11 @@ export function parseSupportContent(raw: unknown): SupportContentConfig {
     },
     careGuide: {
       ...B.careGuide,
-      ...pickKeys(careRaw, ['intro']),
-      sections: pickSectionArray(careRaw.sections),
-      legend: pickCareLegend(careRaw.legend),
-      perProduct: pickCarePerProduct(careRaw.perProduct),
+      ...pickCareGuide(r.careGuide),
     },
     sizeGuide: {
       ...B.sizeGuide,
-      ...pickKeys(sizeRaw, ['intro', 'note']),
-      measure: pickSizeMeasure(sizeRaw.measure),
-      perProduct: pickSizePerProduct(sizeRaw.perProduct),
+      ...pickSizeGuide(r.sizeGuide),
     },
   })
 }
