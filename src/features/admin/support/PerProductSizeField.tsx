@@ -3,7 +3,13 @@ import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { SizeGuideTable, EMPTY_SIZE_TABLE } from '@/features/admin/components/SizeGuideTable'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
 import { convertLegacySizeEntry } from '@/features/cms/support/supportContent.convert'
-import type { SizeProductEntry, SizeTable } from '@/features/cms/support/supportContent.zod'
+import { SUPPORT_CONTENT_DEFAULTS } from '@/features/cms/support/supportContent.defaults'
+import {
+  GARMENT_TYPE_KEYS,
+  type GarmentTypeKey,
+  type SizeProductEntry,
+  type SizeTable,
+} from '@/features/cms/support/supportContent.zod'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
@@ -14,6 +20,13 @@ interface PerProductSizeFieldProps {
 }
 
 const EMPTY_ENTRY: SizeProductEntry = { note: '', columns: [], rows: [] }
+
+const DEFAULT_GARMENT_TYPES = SUPPORT_CONTENT_DEFAULTS.sizeGuide.measure.garmentTypes
+const UNSET_GARMENT_TYPE = ''
+
+function garmentTypeLabel(key: GarmentTypeKey): string {
+  return DEFAULT_GARMENT_TYPES.find((g) => g.key === key)?.label ?? key
+}
 
 /**
  * Per-product size-table editor — pick a commerce product, author a fit note
@@ -72,6 +85,21 @@ export function PerProductSizeField({ perProduct, onChange }: PerProductSizeFiel
               onChange={(e) => setEntry({ note: e.target.value })}
             />
           </FormField>
+
+          <AdminFieldSelect
+            label="Garment type"
+            hint="Which 'Where we measure' schematic and point set this product uses."
+            value={entry.garmentType ?? UNSET_GARMENT_TYPE}
+            onChange={(value) =>
+              setEntry({
+                garmentType: value === UNSET_GARMENT_TYPE ? undefined : (value as GarmentTypeKey),
+              })
+            }
+            options={[
+              { value: UNSET_GARMENT_TYPE, label: `Default (${garmentTypeLabel('tee')})` },
+              ...GARMENT_TYPE_KEYS.map((key) => ({ value: key, label: garmentTypeLabel(key) })),
+            ]}
+          />
 
           {showLegacy ? (
             <div className="space-y-2 rounded-lg border border-dashed border-[var(--color-line)] p-3">

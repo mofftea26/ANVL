@@ -7,7 +7,9 @@ import { useAdminPageActions } from '@/features/admin/components/AdminPageAction
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
 import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
 import { SectionListField } from '@/features/admin/components/SectionListField'
+import { CareLegendField } from '@/features/admin/support/CareLegendField'
 import { FaqListField } from '@/features/admin/support/FaqListField'
+import { MeasurementsField } from '@/features/admin/support/MeasurementsField'
 import { PerProductCareField } from '@/features/admin/support/PerProductCareField'
 import { PerProductSizeField } from '@/features/admin/support/PerProductSizeField'
 import {
@@ -30,6 +32,8 @@ const SUPPORT_TABS = [
   { key: 'returns', label: 'Returns' },
   { key: 'careGuide', label: 'Care guide' },
   { key: 'sizeGuide', label: 'Size guide' },
+  { key: 'measurements', label: 'Measurements' },
+  { key: 'careSymbols', label: 'Care symbols' },
 ] as const
 
 type SupportTab = (typeof SUPPORT_TABS)[number]['key']
@@ -54,12 +58,16 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 /**
- * Support content editor — a tabbed editor over the six help pages
- * (FAQ · Contact · Shipping · Returns · Care guide · Size guide). FAQ items and
- * the shipping/returns/care section lists are reorderable; care/size also carry
- * per-product entries keyed by commerce slug. Every blank field falls back to
- * the designed default at render (shown here as the placeholder). Writes a local
- * working copy and pushes to Supabase (`cms_settings.support_content` +
+ * Support content editor — a tabbed editor over the eight help pages
+ * (FAQ · Contact · Shipping · Returns · Care guide · Size guide ·
+ * Measurements · Care symbols). FAQ items and the shipping/returns/care
+ * section lists are reorderable; care/size also carry per-product entries
+ * keyed by commerce slug. Measurements edits the "Where we measure" points
+ * per garment type; Care symbols edits the standard care-mark legend by
+ * reusing the storefront's own searchable, category-grouped grid in
+ * `mode="edit"`. Every blank field falls back to the designed default at
+ * render (shown here as the placeholder). Writes a local working copy and
+ * pushes to Supabase (`cms_settings.support_content` +
  * `storefront_publication.support_content`) on save; the live-preview iframe
  * tracks unsaved edits via the draft bridge.
  */
@@ -113,6 +121,8 @@ export function SupportEditor() {
         <li>Leave a field blank to keep the designed default (shown as the placeholder).</li>
         <li>Care and Size carry per-product entries picked by product.</li>
         <li>Drag headers (or use the arrows) to reorder FAQ items and sections.</li>
+        <li>Measurements edits the diagram's lettered points, per garment type.</li>
+        <li>Care symbols edits the standard care-mark legend shown on the Care guide.</li>
       </ul>
     </AdminRailPanel>
   )
@@ -289,6 +299,20 @@ export function SupportEditor() {
                     }
                   />
                 </FormField>
+                <FormField
+                  label="Last updated"
+                  hint="Shown as a date stamp on the Care guide page. Blank uses the default."
+                  labelStyle="stacked"
+                >
+                  <Input
+                    density="compact"
+                    type="date"
+                    value={config.careGuide.updatedAt}
+                    onChange={(e) =>
+                      patch('careGuide', { ...config.careGuide, updatedAt: e.target.value })
+                    }
+                  />
+                </FormField>
                 <SectionListField
                   sections={config.careGuide.sections}
                   onChange={(sections) =>
@@ -340,6 +364,20 @@ export function SupportEditor() {
                     }
                   />
                 </FormField>
+                <FormField
+                  label="Last updated"
+                  hint="Shown as a date stamp on the Size guide page. Blank uses the default."
+                  labelStyle="stacked"
+                >
+                  <Input
+                    density="compact"
+                    type="date"
+                    value={config.sizeGuide.updatedAt}
+                    onChange={(e) =>
+                      patch('sizeGuide', { ...config.sizeGuide, updatedAt: e.target.value })
+                    }
+                  />
+                </FormField>
               </div>
             </Section>
             <Section title="Per-product size tables">
@@ -351,6 +389,24 @@ export function SupportEditor() {
               />
             </Section>
           </>
+        ) : null}
+
+        {tab === 'measurements' ? (
+          <Section title="Where we measure">
+            <MeasurementsField
+              measure={config.sizeGuide.measure}
+              onChange={(measure) => patch('sizeGuide', { ...config.sizeGuide, measure })}
+            />
+          </Section>
+        ) : null}
+
+        {tab === 'careSymbols' ? (
+          <Section title="Care symbols">
+            <CareLegendField
+              config={config}
+              onChange={(legend) => patch('careGuide', { ...config.careGuide, legend })}
+            />
+          </Section>
         ) : null}
       </div>
     </AdminWorkspace>
