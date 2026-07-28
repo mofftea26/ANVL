@@ -58,7 +58,9 @@ export function CareSymbolGrid({
   const baseId = useId()
   const [hovered, setHovered] = useState<OpenTile | null>(null)
   const [pinned, setPinned] = useState<OpenTile | null>(null)
-  const open = pinned ?? hovered
+  // Transient hover/focus wins over a pin, so moving across the grid always
+  // shows the tile under the pointer; leaving falls back to the pinned tile.
+  const open = hovered ?? pinned
 
   const dismiss = useCallback(() => {
     setPinned(null)

@@ -227,3 +227,18 @@ describe('CareSymbolTable', () => {
     )
   })
 })
+
+describe('CareSymbolGrid popover precedence', () => {
+  it('lets a hovered tile override a pinned one, then falls back to the pin', async () => {
+    const user = userEvent.setup()
+    render(<CareSymbolGrid groups={[bleaching]} />)
+    await user.click(screen.getByRole('button', { name: 'Bleach allowed' }))
+    expect(openPopoverLabel()).toBe('Bleach allowed')
+
+    await user.hover(screen.getByRole('button', { name: 'Do not bleach' }))
+    expect(openPopoverLabel()).toBe('Do not bleach')
+
+    await user.unhover(screen.getByRole('button', { name: 'Do not bleach' }))
+    expect(openPopoverLabel()).toBe('Bleach allowed')
+  })
+})
