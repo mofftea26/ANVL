@@ -45,7 +45,10 @@ export function MeasurementFigure({
   useSchematicDrawIn(figureRef, [schematic.key])
 
   const highlighted = activeKey ?? pinnedKey
-  const letters = points.map((point) => point.letter).filter(Boolean)
+  // Sorted independently of `points`' order — the CMS-authored list order is
+  // meaningful for display (see `resolveGarmentPoints`), but the caption's
+  // "A–G" span means the smallest-to-largest letter, not first-to-last row.
+  const letters = points.map((point) => point.letter).filter(Boolean).sort()
   const range =
     letters.length > 1 ? `${letters[0]}–${letters[letters.length - 1]}` : (letters[0] ?? '')
 

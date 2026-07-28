@@ -29,6 +29,8 @@ function defaultGarmentType(key: GarmentTypeKey) {
  * never written back until the admin actually edits or reorders. Preserves
  * whatever order the stored block already carries for keys it has, then
  * appends any canonical keys it doesn't (in the code-owned default order).
+ * Mirrors `resolveGarmentPoints` in `resolveSupportContent.ts` exactly, so
+ * what the admin sees in this list is the order the storefront will render.
  */
 function displayPoints(garmentTypeKey: GarmentTypeKey, cmsPoints: MeasurePoint[]): MeasurePoint[] {
   const defaults = defaultGarmentType(garmentTypeKey).points
@@ -53,12 +55,17 @@ interface MeasurementsFieldProps {
  * "Where we measure" editor: heading/intro/footnote, plus — per garment type —
  * a label and its fixed set of measurement points (letter, label, description).
  * Point KEYS and per-type membership are code-owned (`GARMENT_SCHEMATICS` draws
- * the geometry; `resolveMeasurePoints` always renders in that code-owned
- * order) — the CMS can only edit copy for a point that already exists, never
- * add or remove one. Reordering here only changes the stored array's order,
- * which has no rendering effect, but is kept for a consistent editing feel
- * with the other reorderable list editors. "Reset to defaults" for a type
- * deletes its whole override block rather than blanking each field one by one.
+ * the schematic's anchor geometry, keyed by point `key` — never by list
+ * position) — the CMS can only edit copy for a point that already exists,
+ * never add or remove one. Reordering here IS meaningful: `resolveGarmentPoints`
+ * (`resolveSupportContent.ts`) renders the description list in the CMS-authored
+ * order, not a fixed code order. Each point's `letter` travels WITH it when
+ * reordered — it is a field stored on that point and resolved independently
+ * of position, so dragging a point never re-labels it with a different
+ * letter, it only changes where it appears in the list; the schematic's badge
+ * for a given key is unaffected either way. "Reset to defaults" for a type
+ * deletes its whole override block (order included) rather than blanking each
+ * field one by one.
  */
 export function MeasurementsField({ measure, onChange }: MeasurementsFieldProps) {
   const [activeType, setActiveType] = useState<GarmentTypeKey>(GARMENT_TYPE_KEYS[0])
