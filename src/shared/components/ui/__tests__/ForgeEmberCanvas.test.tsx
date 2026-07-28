@@ -109,6 +109,26 @@ describe('ForgeEmberCanvas', () => {
     expect(getContextSpy).toHaveBeenCalled()
   })
 
+  // The surface is sized to the swarm's own bounding box, not the viewport —
+  // a full-viewport compositor layer for a sub-second effect that occupies a
+  // known box was the most expensive thing about it.
+  it('sizes the canvas to the swarm’s bounding box, not the viewport', () => {
+    const targetRef = makeTargetRef(RECT)
+    const { container } = render(
+      <ForgeEmberCanvas targetRef={targetRef} count={5} spreadScale={0.4} />,
+    )
+    const canvas = container.querySelector('canvas')
+    expect(canvas).not.toBeNull()
+    const width = Number.parseFloat(canvas?.style.width ?? '0')
+    const height = Number.parseFloat(canvas?.style.height ?? '0')
+    expect(width).toBeGreaterThan(RECT.width)
+    expect(width).toBeLessThan(window.innerWidth)
+    expect(height).toBeGreaterThan(RECT.height)
+    expect(height).toBeLessThan(window.innerHeight)
+    // Positioned, not stretched — `inset-0` would have made it viewport-sized.
+    expect(canvas?.className).not.toContain('inset-0')
+  })
+
   it('renders nothing under reduced motion', () => {
     mockReducedMotion(true)
     const targetRef = makeTargetRef(RECT)
@@ -139,6 +159,22 @@ describe('ForgeEmberCanvas', () => {
     frames.tick(0) // first frame: t = 0
     expect(onComplete).not.toHaveBeenCalled()
     frames.tick(150) // past the duration: t clamps to 1, pass ends
+    expect(onComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('completes immediately when the target is entirely off-screen', () => {
+    installFrameControls()
+    const onComplete = vi.fn()
+    const offscreen: DOMRect = { ...RECT, left: -900, right: -800, x: -900 }
+    render(
+      <ForgeEmberCanvas
+        targetRef={makeTargetRef(offscreen)}
+        count={5}
+        spreadScale={0.05}
+        onComplete={onComplete}
+      />,
+    )
+    // Nothing to draw, but the caller must not be left waiting on a landing.
     expect(onComplete).toHaveBeenCalledTimes(1)
   })
 

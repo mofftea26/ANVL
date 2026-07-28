@@ -110,6 +110,27 @@ describe('buildEmbers', () => {
       )
     }
   })
+
+  // The perf contract: `drawForgeFrame` only writes `fillStyle` when the colour
+  // changes, so the swarm has to arrive grouped by ramp tier or that saving
+  // evaporates. Contiguous runs, not sorted order — the tier order is arbitrary.
+  it('emits the swarm grouped into contiguous ramp-tier runs', () => {
+    const embers = buildEmbers({ rect, ramp, count: 400, edgeShare: 0.6 })
+    const runs: string[] = []
+    for (const e of embers) {
+      if (runs[runs.length - 1] !== e.color) runs.push(e.color)
+    }
+    expect(runs.length).toBeLessThanOrEqual(3)
+    expect(new Set(runs).size).toBe(runs.length)
+  })
+
+  it('bakes each ember’s flicker phase in so the draw loop needs no per-ember sin', () => {
+    for (const e of buildEmbers({ rect, ramp, count: 40, edgeShare: 0.5 })) {
+      const phase = e.seed * MODAL_FORGE_TUNING.flickerSeedScale
+      expect(e.flickerSin).toBeCloseTo(Math.sin(phase), 12)
+      expect(e.flickerCos).toBeCloseTo(Math.cos(phase), 12)
+    }
+  })
 })
 
 describe('MODAL_FORGE_TUNING vs TOAST_FORGE_TUNING', () => {
@@ -175,24 +196,55 @@ describe('MODAL_FORGE_TUNING vs TOAST_FORGE_TUNING', () => {
 })
 
 describe('drawForgeFrame', () => {
-  it('draws without throwing against a minimal 2D-context stub', () => {
-    const rect: ForgeRect = { left: 0, top: 0, width: 40, height: 40 }
-    const ramp = { cold: '#fff', ember: '#f80', hot: '#fff8f0' }
-    const embers = buildEmbers({ rect, ramp, count: 10, edgeShare: 0.5 })
+  const ramp = { cold: '#fff', ember: '#f80', hot: '#fff8f0' }
 
-    const calls: string[] = []
+  /** Counts the canvas state writes and draw calls one frame issues. */
+  function recordingContext() {
+    const record = { arcs: 0, fills: 0, fillStyles: 0, alphas: 0 }
     const ctx = {
-      set globalAlpha(_v: number) {},
+      set globalAlpha(_v: number) {
+        record.alphas += 1
+      },
       set globalCompositeOperation(_v: string) {},
-      set fillStyle(_v: string) {},
-      beginPath: () => calls.push('beginPath'),
-      arc: () => calls.push('arc'),
-      fill: () => calls.push('fill'),
+      set fillStyle(_v: string) {
+        record.fillStyles += 1
+      },
+      beginPath: () => {},
+      arc: () => {
+        record.arcs += 1
+      },
+      fill: () => {
+        record.fills += 1
+      },
       // Justification: a hand-rolled stub only needs the subset of the 2D
       // context API this module actually calls.
     } as unknown as CanvasRenderingContext2D
+    return { ctx, record }
+  }
+
+  it('draws without throwing against a minimal 2D-context stub', () => {
+    const rect: ForgeRect = { left: 0, top: 0, width: 40, height: 40 }
+    const embers = buildEmbers({ rect, ramp, count: 10, edgeShare: 0.5 })
+    const { ctx, record } = recordingContext()
 
     expect(() => drawForgeFrame(ctx, embers, { t: 0.9, now: 1000, ramp })).not.toThrow()
-    expect(calls).toContain('arc')
+    expect(record.arcs).toBeGreaterThan(0)
+  })
+
+  // THE perf regression guard. Before this was optimised, a frame wrote
+  // `fillStyle` once per drawn ember (1040 CSS-colour-string parses at the
+  // t = 0.9 peak, measured at 0.14 ms/frame). It must now be bounded by the
+  // number of ramp tiers plus the single batched hot-core pass, no matter how
+  // many embers there are.
+  it('writes fillStyle a handful of times per frame, not once per ember', () => {
+    const rect: ForgeRect = { left: 0, top: 0, width: 400, height: 400 }
+    const embers = buildEmbers({ rect, ramp, count: 500, edgeShare: 0.62 })
+    const { ctx, record } = recordingContext()
+
+    drawForgeFrame(ctx, embers, { t: 0.9, now: 1000, ramp })
+
+    expect(record.arcs).toBeGreaterThan(400)
+    // At most one write per tier present, plus one for the hot-core batch.
+    expect(record.fillStyles).toBeLessThanOrEqual(4)
   })
 })

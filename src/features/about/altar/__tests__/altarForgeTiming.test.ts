@@ -46,6 +46,28 @@ describe('altarForgeTiming', () => {
     expect(ALTAR_MODAL.panelDelay).toBeLessThan(ALTAR_FORGE.swarmDuration)
   })
 
+  it('derives the ring-out’s end from the swing table it actually plays', () => {
+    const swings = ALTAR_STRIKE.ringOut.reduce((total, swing) => total + swing.duration, 0)
+    expect(ALTAR_STRIKE.ringOut.length).toBeGreaterThan(1)
+    expect(ALTAR_STRIKE.ringOutEndAfterImpact).toBeCloseTo(ALTAR_STRIKE.hitStop + swings)
+    // The chain has to come to rest, or the hammer never rejoins its idle sway.
+    expect(ALTAR_STRIKE.ringOut[ALTAR_STRIKE.ringOut.length - 1].to).toBe(0)
+  })
+
+  it('parks the 3D loop only once nothing in the canvas is animating', () => {
+    // After the hammer has rung out AND the shroud has fully crossfaded away…
+    expect(ALTAR_FORGE.stageSettleAfterImpact).toBeGreaterThanOrEqual(
+      ALTAR_STRIKE.ringOutEndAfterImpact,
+    )
+    expect(ALTAR_FORGE.stageSettleAfterImpact).toBeGreaterThanOrEqual(
+      ALTAR_FORGE.handoffAfterImpact + ALTAR_FORGE.emberFadeDuration,
+    )
+    // …but before the DOM swarm's pass ends, or parking buys the swarm nothing.
+    expect(ALTAR_FORGE.stageSettleAfterImpact).toBeLessThan(
+      ALTAR_FORGE.handoffAfterImpact + ALTAR_FORGE.swarmDuration,
+    )
+  })
+
   it('orders the panel reveal: ignite → panel → content → stats', () => {
     expect(ALTAR_MODAL.igniteDelay).toBeLessThanOrEqual(ALTAR_MODAL.panelDelay)
     expect(ALTAR_MODAL.contentDelay).toBeGreaterThan(ALTAR_MODAL.panelDelay)

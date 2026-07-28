@@ -132,7 +132,7 @@ export function AltarScene({
           onSelect={onSelect}
         />
       ))}
-      <AltarModalForge state={state} />
+      <AltarModalForge state={state} orbs={orbs} />
 
       <DustField drive={drive} count={500} />
     </>

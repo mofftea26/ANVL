@@ -9,6 +9,13 @@ import {
   type ForgeMotionTuning,
   type ForgeRect,
 } from '@/shared/lib/forge/emberForge'
+import {
+  clampBoxToViewport,
+  containsBox,
+  FORGE_MAX_DPR,
+  forgeSwarmBounds,
+  unionBox,
+} from '@/shared/lib/forge/forgeSurface'
 
 /**
  * The React shell for the shared ember-forge engine (`src/shared/lib/forge/emberForge.ts`):
@@ -95,12 +102,61 @@ export function ForgeEmberCanvas({
       : (getRectRef.current?.() ?? null)
     if (!initialRect) return
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const dpr = Math.min(window.devicePixelRatio || 1, FORGE_MAX_DPR)
     const vw = window.innerWidth
     const vh = window.innerHeight
-    canvas.width = Math.floor(vw * dpr)
-    canvas.height = Math.floor(vh * dpr)
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+    // The swarm occupies a known box (its launch ring unioned with the target
+    // rect), so size, position and clear only that instead of always taking a
+    // viewport-sized surface. How much that saves depends on the launch ring: a
+    // `spreadScale`-tightened swarm like the About altar's needs 38% of the
+    // viewport's pixels, while a default dialog's ring genuinely spans the
+    // viewport and clamps back to it (no worse than before, and `FORGE_MAX_DPR`
+    // still applies).
+    let box = clampBoxToViewport(
+      forgeSwarmBounds({ rect: initialRect, origin, spreadScale, tuning }),
+      vw,
+      vh,
+    )
+    // The whole swarm is off-screen: there is nothing to draw, but the caller
+    // still has to be told the pass is over or it waits on a swarm that will
+    // never land (the altar keeps its canvas mounted until `onComplete`).
+    if (box.width <= 0 || box.height <= 0) {
+      onCompleteRef.current?.()
+      return
+    }
+
+    const applyBox = () => {
+      canvas.style.left = `${box.left}px`
+      canvas.style.top = `${box.top}px`
+      canvas.style.width = `${box.width}px`
+      canvas.style.height = `${box.height}px`
+      canvas.width = Math.max(1, Math.round(box.width * dpr))
+      canvas.height = Math.max(1, Math.round(box.height * dpr))
+    }
+    applyBox()
+
+    /** Embers carry viewport coordinates; the box's own offset rides in the
+     *  transform, so nothing downstream has to know the canvas moved. */
+    const clearFrame = () => {
+      ctx.setTransform(dpr, 0, 0, dpr, -box.left * dpr, -box.top * dpr)
+      ctx.clearRect(box.left, box.top, box.width, box.height)
+    }
+
+    /** A live caller's rect moves (a toast plate restacking mid-pass). Grow the
+     *  box so the swarm is never clipped — grow only, so a drifting rect cannot
+     *  thrash the surface. Resizing wipes it, which is harmless: every frame
+     *  repaints from scratch. */
+    const growBoxFor = (rect: ForgeRect) => {
+      const needed = clampBoxToViewport(
+        forgeSwarmBounds({ rect, origin, spreadScale, tuning }),
+        vw,
+        vh,
+      )
+      if (needed.width <= 0 || needed.height <= 0 || containsBox(box, needed)) return
+      box = unionBox(box, needed)
+      applyBox()
+    }
 
     const ramp = resolveForgeRamp(tint)
     // `spreadScale` is forwarded as-is: `buildEmbers` defaults it to 1, so a
@@ -124,21 +180,22 @@ export function ForgeEmberCanvas({
         if (!rect) {
           // The target left the DOM — stop immediately (mirrors the old
           // ToastForgeEffect's "self-remove the moment the node disconnects").
-          ctx.clearRect(0, 0, vw, vh)
+          clearFrame()
           onCompleteRef.current?.()
           return
         }
         for (const ember of embers) projectEmber(ember, rect, origin)
+        growBoxFor(rect)
       }
 
       const t = Math.min(1, (now - start) / durationMs)
-      ctx.clearRect(0, 0, vw, vh)
+      clearFrame()
       drawForgeFrame(ctx, embers, { t, now, ramp, tuning })
 
       if (t < 1) {
         raf = requestAnimationFrame(draw)
       } else {
-        ctx.clearRect(0, 0, vw, vh)
+        clearFrame()
         onCompleteRef.current?.()
       }
     }
@@ -163,12 +220,15 @@ export function ForgeEmberCanvas({
 
   if (reducedMotion) return null
 
+  // Geometry is set by the effect above (it needs a layout measurement), not
+  // here — the swarm's box is smaller than the viewport. Starts collapsed so
+  // there is never a viewport-sized surface, not even for the mount frame.
   return (
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 h-full w-full"
-      style={{ zIndex }}
+      className="pointer-events-none fixed"
+      style={{ zIndex, left: 0, top: 0, width: 0, height: 0 }}
     />
   )
 }

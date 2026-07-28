@@ -58,6 +58,14 @@ export function AboutOrbModal({
       // even at opacity 0 (Chromium), which smeared the embers into nothing.
       // Its delay is therefore pinned to the 3D shroud's cross-fade: it may
       // only start once the in-canvas embers are gone.
+      //
+      // `immediateRender: false` is load-bearing for the same reason, one step
+      // further: a `fromTo` normally applies its from-state on creation, so the
+      // element would carry `backdrop-filter: blur(0px)` from the hand-off frame
+      // — visually a no-op, but it makes the compositor snapshot and re-filter
+      // the whole viewport behind it (a live WebGL canvas plus the ember swarm)
+      // every frame of the delay. Deferring the from-state means no
+      // backdrop-filter root exists at all until the blur genuinely starts.
       gsap.fromTo(
         q('[data-modal-backdrop]'),
         { opacity: 0, backdropFilter: 'blur(0px)', webkitBackdropFilter: 'blur(0px)' },
@@ -68,6 +76,7 @@ export function AboutOrbModal({
           duration: ALTAR_MODAL.backdropDuration,
           ease: 'power2.out',
           delay: ALTAR_MODAL.backdropDelay,
+          immediateRender: false,
         },
       )
       // The panel forges in with a touch of depth — tilting up out of the
@@ -162,7 +171,16 @@ export function AboutOrbModal({
           aria-modal="true"
           aria-labelledby="about-orb-modal-title"
           className="pointer-events-auto relative w-full max-w-2xl overflow-hidden rounded-xl border bg-[color-mix(in_srgb,var(--color-surface)_92%,var(--color-bg))] shadow-[0_30px_90px_rgba(0,0,0,0.7)] will-change-transform"
-          style={{ borderColor: `color-mix(in srgb, ${orb.color} 38%, var(--color-line))` }}
+          // The orb's colour as a custom property so descendants (the close
+          // control) can tint themselves through `color-mix` in a class and
+          // still keep their `:hover` states — an inline `color` would win over
+          // any hover utility.
+          style={
+            {
+              borderColor: `color-mix(in srgb, ${orb.color} 38%, var(--color-line))`,
+              '--about-orb-tint': orb.color,
+            } as React.CSSProperties
+          }
         >
           {/* Hairline in the orb's color across the top of the panel. */}
           <span
@@ -183,11 +201,21 @@ export function AboutOrbModal({
             }}
           />
           {/* Close — anchored to the PANEL (not the scroller), so it stays put
-              while the content scrolls beneath it. */}
+              while the content scrolls beneath it. Wears the orb's colour like
+              the rest of the panel's hardware: its ring matches the panel's own
+              border mix, and the glyph is the orb mixed 45% into
+              `--color-heading` — the same "lighten the tint toward the
+              foreground" move `resolveForgeRamp` makes for the swarm's cold
+              stop. 45% is the contrast floor, not a taste call: it clears WCAG
+              AA (≥4.5:1) against the panel for every orb colour in the shipped
+              set in BOTH themes (worst case 4.9:1, bone on bone-light), where
+              the raw orb colour manages only 1.3:1. Mixing toward the theme's
+              own foreground token is what keeps that true for CMS colours the
+              set does not contain. */}
           <button
             type="button"
             onClick={onClose}
-            className="focus-ring absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-line)] bg-[color-mix(in_srgb,var(--color-surface)_72%,transparent)] text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-highlight)] hover:text-[var(--color-heading)]"
+            className="focus-ring absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--about-orb-tint)_38%,var(--color-line))] bg-[color-mix(in_srgb,var(--color-surface)_72%,transparent)] text-[color-mix(in_srgb,var(--about-orb-tint)_45%,var(--color-heading))] transition-colors hover:border-[var(--about-orb-tint)] hover:bg-[color-mix(in_srgb,var(--about-orb-tint)_16%,var(--color-surface))] hover:text-[var(--color-heading)]"
             aria-label="Close dialog"
           >
             <X size={ICON_SIZE.md} aria-hidden="true" />

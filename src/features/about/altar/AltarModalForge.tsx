@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
-import { readThemeCssColor } from '@/shared/lib/themeColor'
+import { resolveForgeRamp } from '@/shared/lib/forge/emberForge'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import type { AltarState } from './altarState'
 import { ORB_RADIUS, ORB_SEAT, ORB_SEAT_SCALE } from './AltarOrb'
@@ -89,8 +89,10 @@ void main() {
 }
 `
 
-/** The armory / Coming Soon ember look — cold steel → ember → white-hot ramp
- *  with a hot core and per-seed twinkle (the particle-forge standard). */
+/** The forge ember look — cold → ember → white-hot ramp with a hot core and
+ *  per-seed twinkle (the particle-forge standard). The three stops come from
+ *  `resolveForgeRamp`, so they are the struck orb's colour, derived exactly the
+ *  way the DOM swarm derives its own — see the component doc below. */
 const FORGE_FRAGMENT = /* glsl */ `
 precision highp float;
 
@@ -176,43 +178,66 @@ function buildForgeGeometry(): THREE.BufferGeometry {
  * projected to screen pixels through `state.seatNdc`). The two overlap by
  * design, so it reads as one continuous swarm crossing canvas → DOM.
  *
- * Brand-token ember colors only (the orb's colour rides the DOM swarm, not
- * this one — the in-canvas shroud stays the forge's own steel-to-white-hot
- * ramp, matching the passport/Coming Soon forges). Idle frames render nothing;
- * reduced motion renders the pool not at all (the modal simply fades in).
+ * THE SHROUD CARRIES THE STRUCK ORB'S COLOUR. It used to stay on the site's own
+ * steel→ember→white-hot tokens on purpose ("never a per-orb neon"), leaving the
+ * orb's colour to the DOM half — but the two populations overlap in the same
+ * band for 350ms, so that read as the swarm changing hue mid-flight. The three
+ * shader stops now come from the same `resolveForgeRamp(tint)` the DOM engine
+ * uses, off `state.activeIndex`'s orb, which keeps the near-white hot stop (a
+ * tinted-toward-white core) so it still reads as forged metal rather than flat
+ * neon. Untinted orbs fall back to the site ramp, exactly as an untinted modal
+ * or toast does. Idle frames render nothing; reduced motion renders the pool not
+ * at all (the modal simply fades in).
  */
-export function AltarModalForge({ state }: { state: AltarState }) {
+export function AltarModalForge({
+  state,
+  orbs,
+}: {
+  state: AltarState
+  /** Only each orb's colour is read; structurally typed so this module stays
+   *  independent of the About content schema. */
+  orbs: readonly { color?: string }[]
+}) {
   const points = useRef<THREE.Points>(null)
   const reducedMotion = useReducedMotion()
 
   const geometry = useMemo(() => buildForgeGeometry(), [])
   useEffect(() => () => geometry.dispose(), [geometry])
 
+  /** The untinted fallback — the site's own ember ramp, resolved once. */
+  const siteRamp = useMemo(() => resolveForgeRamp(), [])
+
   const uniforms = useMemo(
     () => ({
       uScatter: { value: 0 },
       uFade: { value: 0 },
       uTime: { value: 0 },
-      // The site ember palette (theme tokens, read on mount) — the same ramp
-      // as the passport/Coming Soon forges, never a per-orb neon.
-      uColdColor: {
-        value: new THREE.Color(readThemeCssColor('--color-surface-elevated', '#34373A')).lerp(
-          new THREE.Color(readThemeCssColor('--color-heading', '#E7E4DF')),
-          0.35,
-        ),
-      },
-      uEmberColor: { value: new THREE.Color(readThemeCssColor('--color-highlight', '#c2703d')) },
-      uHotColor: {
-        value: new THREE.Color(readThemeCssColor('--color-highlight-bright', '#e08a4a')),
-      },
+      // Re-pointed at the struck orb's ramp on every strike (see useFrame).
+      uColdColor: { value: new THREE.Color(siteRamp.cold) },
+      uEmberColor: { value: new THREE.Color(siteRamp.ember) },
+      uHotColor: { value: new THREE.Color(siteRamp.hot) },
       uPixelRatio: {
         value: typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio, 2),
       },
     }),
-    [],
+    [siteRamp],
   )
 
+  /** Whose ramp the uniforms currently hold — `-1` is the site ramp. */
+  const rampIndex = useRef(-1)
+
   useFrame(({ clock }) => {
+    // The struck orb is chosen through the mutable state bridge, not through
+    // React, so the ramp is re-derived here — once per strike, not per frame.
+    if (state.activeIndex !== rampIndex.current) {
+      rampIndex.current = state.activeIndex
+      const tint = state.activeIndex >= 0 ? orbs[state.activeIndex]?.color?.trim() : undefined
+      const ramp = tint ? resolveForgeRamp(tint) : siteRamp
+      uniforms.uColdColor.value.set(ramp.cold)
+      uniforms.uEmberColor.value.set(ramp.ember)
+      uniforms.uHotColor.value.set(ramp.hot)
+    }
+
     // The pool lives from the disintegration until the hand-off cross-fade has
     // fully retired it (or the stage resets on release).
     const active = !reducedMotion && state.scatterT > 0.001 && state.emberFade < 0.999

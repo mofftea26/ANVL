@@ -58,6 +58,11 @@ export default function AboutAltar({
   const colors = useMemo(() => readAboutBrandColors(), [])
   const reducedMotion = useReducedMotion()
   const [openIndex, setOpenIndex] = useState<number | null>(null)
+  // The R3F loop is parked (`'demand'` — R3F still redraws on resize, unlike
+  // `'never'`) from the beat the stage stops animating until the modal closes.
+  // Nothing visible is lost: by then the hammer has rung out, the 3D shroud has
+  // crossfaded away, and the ring is dimmed to a crawl behind a blurred scrim.
+  const [frameloop, setFrameloop] = useState<'always' | 'demand'>('always')
   // The DOM half of the ember hand-off: armed at the hand-off beat, launched by
   // the panel's own measure, retired when the pass lands or the modal closes.
   const { swarm, armSwarm, handlePanelMeasure, swarmRect, retireSwarm, resetSwarm } =
@@ -216,17 +221,13 @@ export default function AboutAltar({
         tl.to(state, { hammerT: 0, duration: 0.5, ease: 'power2.out' }, impactAt + 0.2)
       } else {
         // HIT-STOP: hammerT is untouched for `ALTAR_STRIKE.hitStop` — the hammer
-        // stays frozen, buried in the impact (the anime frame-hold), then…
-        // RING-OUT: a violent rebound that OVERSHOOTS the cocked rest and
-        // rings down through four diminishing swings (-0.26 → +0.14 → -0.10 →
-        // +0.05 → 0), pendulum-eased, before melting into the idle figure-8
-        // (the hammer's sway weight fades back in as |hammerT| shrinks).
-        const ringOutAt = impactAt + ALTAR_STRIKE.hitStop
-        tl.to(state, { hammerT: -0.26, duration: 0.34, ease: 'power3.out' }, ringOutAt)
-        tl.to(state, { hammerT: 0.14, duration: 0.28, ease: 'power2.inOut' }, ringOutAt + 0.34)
-        tl.to(state, { hammerT: -0.1, duration: 0.24, ease: 'power2.inOut' }, ringOutAt + 0.62)
-        tl.to(state, { hammerT: 0.05, duration: 0.22, ease: 'power2.inOut' }, ringOutAt + 0.86)
-        tl.to(state, { hammerT: 0, duration: 0.34, ease: 'sine.out' }, ringOutAt + 1.08)
+        // stays frozen, buried in the impact (the anime frame-hold) — and then
+        // the ring-out chain plays out of the clock's own table.
+        let swingAt = impactAt + ALTAR_STRIKE.hitStop
+        for (const swing of ALTAR_STRIKE.ringOut) {
+          tl.to(state, { hammerT: swing.to, duration: swing.duration, ease: swing.ease }, swingAt)
+          swingAt += swing.duration
+        }
       }
       // THE HAND-OFF — one beat, three things, deliberately simultaneous so the
       // embers read as ONE swarm crossing from the canvas into the DOM:
@@ -255,11 +256,20 @@ export default function AboutAltar({
           handoffAt,
         )
       }
+      // Park the 3D loop once the stage has nothing left to animate (see
+      // `ALTAR_FORGE.stageSettleAfterImpact`): the DOM swarm's last frames and
+      // the open dialog get the GPU to themselves. `release` wakes it.
+      tl.call(
+        () => setFrameloop('demand'),
+        [],
+        impactAt + ALTAR_FORGE.stageSettleAfterImpact,
+      )
     },
     [state, reducedMotion, armSwarm],
   )
 
   const release = useCallback(() => {
+    setFrameloop('always')
     setOpenIndex(null)
     // Closing mid-forge (or after it) retires the DOM swarm — nothing left to
     // form once the panel is gone.
@@ -366,6 +376,7 @@ export default function AboutAltar({
           camera={{ position: [0, 0.6, 6.4], fov: 38 }}
           gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
           dpr={[1, 2]}
+          frameloop={frameloop}
         >
           <AltarScene
             state={state}

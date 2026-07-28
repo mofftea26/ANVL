@@ -8,6 +8,7 @@ import {
   type Ember,
   type ForgeRamp,
 } from '@/shared/lib/forge/emberForge'
+import { FORGE_MAX_DPR } from '@/shared/lib/forge/forgeSurface'
 
 /**
  * The toast forge layer — every sonner toast materializes out of embers the
@@ -83,8 +84,12 @@ export function ToastForgeEffect() {
     if (!ctx) return // jsdom / unsupported — bail cleanly.
 
     let dpr = 1
+    // Full-viewport, unlike `ForgeEmberCanvas`'s per-pass bounding box: this one
+    // surface is shared by every concurrent pass and lives for the app's whole
+    // session, so it cannot be sized to any single plate. It shares the forge's
+    // DPR ceiling so a toast and a dialog never read as different resolutions.
     const sizeCanvas = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2)
+      dpr = Math.min(window.devicePixelRatio || 1, FORGE_MAX_DPR)
       canvas.width = Math.floor(window.innerWidth * dpr)
       canvas.height = Math.floor(window.innerHeight * dpr)
     }
