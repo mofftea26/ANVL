@@ -10,7 +10,7 @@ import { AltarAurora } from './AltarAurora'
 import { AltarAnvil, ANVIL_FACE_Y } from './AltarAnvil'
 import { AltarHammer } from './AltarHammer'
 import { AltarOrb, ORB_SEAT } from './AltarOrb'
-import { AltarModalForge } from './AltarModalForge'
+import { AltarModalForge, SHROUD_OUTER_RADIUS } from './AltarModalForge'
 
 /** Camera drifts with the pointer and rattles on impact — always looking at
  *  the altar. */
@@ -32,20 +32,30 @@ function CameraRig({ state }: { state: AltarState }) {
 }
 
 /**
- * The ONE piece of in-canvas → DOM plumbing: the orb seat projected to NDC by
- * the live scene camera (which drifts with the pointer and rattles on impact),
- * written into the mutable altar state every frame. At the hand-off beat the
- * DOM side turns this into viewport pixels — the origin the shared ember swarm
- * scatters from — using the canvas element's own box. Kept camera-only here
- * (no `getBoundingClientRect`) so nothing in the render loop forces layout.
+ * The ONE piece of in-canvas → DOM plumbing: the orb seat, and the ember
+ * shroud's outer radius around it, projected to NDC by the live scene camera
+ * (which drifts with the pointer and rattles on impact) into the mutable altar
+ * state every frame. At the hand-off beat the DOM side turns both into viewport
+ * pixels — the origin the shared ember swarm scatters from, and how wide its
+ * launch ring must be to sit on top of the shroud it is taking over from —
+ * using the canvas element's own box. Kept camera-only here (no
+ * `getBoundingClientRect`) so nothing in the render loop forces layout.
  * Mounted after {@link CameraRig} so it reads the camera the rig just moved.
+ *
+ * The radius is measured along world X rather than the camera's right vector:
+ * the rig never rolls and yaws by at most a couple of degrees of parallax, so
+ * the difference is under a percent — and both points sit on the same depth
+ * plane, where the perspective divide is a constant.
  */
 function SeatProjector({ state }: { state: AltarState }) {
-  const ndc = useRef(new THREE.Vector3())
+  const seat = useRef(new THREE.Vector3())
+  const rim = useRef(new THREE.Vector3())
   useFrame(({ camera }) => {
-    ndc.current.copy(ORB_SEAT).project(camera)
-    state.seatNdc.x = ndc.current.x
-    state.seatNdc.y = ndc.current.y
+    seat.current.copy(ORB_SEAT).project(camera)
+    rim.current.set(ORB_SEAT.x + SHROUD_OUTER_RADIUS, ORB_SEAT.y, ORB_SEAT.z).project(camera)
+    state.seatNdc.x = seat.current.x
+    state.seatNdc.y = seat.current.y
+    state.seatNdc.radius = Math.abs(rim.current.x - seat.current.x)
   })
   return null
 }

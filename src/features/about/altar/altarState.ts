@@ -28,11 +28,12 @@ export interface AltarState {
    *  ember swarm (the shared canvas-2D forge every modal/toast uses) streams in
    *  from the same screen point to form the panel. 1 = the pool is retired. */
   emberFade: number
-  /** The orb seat projected to NDC (-1..1, y up) by the scene camera — written
-   *  in-canvas every frame, read by the DOM side at the hand-off to place the
-   *  ember swarm's origin in viewport pixels. The exact inverse of the modal
-   *  rect → NDC conversion the in-canvas formation used to do. */
-  seatNdc: { x: number; y: number }
+  /** The orb seat projected to NDC (-1..1, y up) by the scene camera, plus the
+   *  ember shroud's outer radius as an NDC x-offset from it — written in-canvas
+   *  every frame, read by the DOM side at the hand-off to place the ember
+   *  swarm's origin AND size its launch ring in viewport pixels. The exact
+   *  inverse of the modal rect → NDC conversion the formation used to do. */
+  seatNdc: { x: number; y: number; radius: number }
   /** Impact flash intensity (point light + orb emissive spike), decays fast. */
   flash: number
   /** Camera shake amplitude, decays after impact. */
@@ -55,7 +56,7 @@ export function createAltarState(orbCount: number): AltarState {
     explodeT: 0,
     scatterT: 0,
     emberFade: 0,
-    seatNdc: { x: 0, y: 0 },
+    seatNdc: { x: 0, y: 0, radius: 0 },
     flash: 0,
     shake: 0,
     pointerX: 0,

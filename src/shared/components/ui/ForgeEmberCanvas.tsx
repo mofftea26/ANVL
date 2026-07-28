@@ -38,6 +38,14 @@ export interface ForgeEmberCanvasProps {
   tint?: string
   /** Which surface's motion numbers to use. Default: the modal's (`MODAL_FORGE_TUNING`). */
   tuning?: ForgeMotionTuning
+  /**
+   * Extra multiplier on the tuning's launch spread — how far out from `origin`
+   * the swarm starts, as a fraction of the rect's longest side. Default `1`
+   * (the tuning's own radius, i.e. exactly what modals and toasts do). Below 1
+   * gathers from a tighter ring: the About altar uses it to launch its swarm
+   * inside the in-canvas ember shroud it is taking over from.
+   */
+  spreadScale?: number
   durationMs?: number
   count?: number
   edgeShare?: number
@@ -55,6 +63,7 @@ export function ForgeEmberCanvas({
   origin,
   tint,
   tuning,
+  spreadScale,
   durationMs = FORGE_DURATION_MS,
   count = DEFAULT_COUNT,
   edgeShare = DEFAULT_EDGE_SHARE,
@@ -94,7 +103,18 @@ export function ForgeEmberCanvas({
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
     const ramp = resolveForgeRamp(tint)
-    const embers = buildEmbers({ rect: initialRect, origin, ramp, count, edgeShare, tuning })
+    // `spreadScale` is forwarded as-is: `buildEmbers` defaults it to 1, so a
+    // caller that omits it (ModalForgeEffect, ToastForgeEffect) builds exactly
+    // the embers it built before this prop existed.
+    const embers = buildEmbers({
+      rect: initialRect,
+      origin,
+      ramp,
+      count,
+      edgeShare,
+      spreadScale,
+      tuning,
+    })
 
     let raf = 0
     const start = performance.now()
@@ -128,7 +148,18 @@ export function ForgeEmberCanvas({
     // fresh `{ x, y }` literal every render, and restarting the whole swarm
     // just because of that (rather than an actual position change) would
     // visibly reset the animation mid-flight.
-  }, [reducedMotion, targetRef, tint, tuning, durationMs, count, edgeShare, origin?.x, origin?.y])
+  }, [
+    reducedMotion,
+    targetRef,
+    tint,
+    tuning,
+    spreadScale,
+    durationMs,
+    count,
+    edgeShare,
+    origin?.x,
+    origin?.y,
+  ])
 
   if (reducedMotion) return null
 

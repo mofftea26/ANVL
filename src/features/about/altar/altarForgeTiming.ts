@@ -33,9 +33,9 @@ import { FORGE_DURATION_MS } from '@/shared/lib/forge/emberForge'
  *       releases its embers into a hovering shroud (3D, AltarModalForge)
  * 2.38  the shroud is fully out; it hangs for a beat so it reads
  * 2.73  HAND-OFF — the modal mounts (invisible) and the DOM ember swarm
- *       launches from the orb's seat; the 3D shroud crossfades out UNDER the
- *       arriving DOM swarm (one continuous swarm crossing canvas → DOM)
- * 3.18  the 3D shroud is gone; the backdrop may now blur (it would otherwise
+ *       launches from the orb's seat, out of the shroud's own band; the 3D
+ *       shroud dissolves UNDER it (one swarm crossing canvas → DOM)
+ * 3.08  the 3D shroud is gone; the backdrop may now blur (it would otherwise
  *       smear the live 3D embers — see AboutOrbModal's blur note)
  * 3.23  the panel materializes as the swarm's hot cores land and dissolve
  * 3.68  the DOM swarm's pass ends
@@ -92,12 +92,19 @@ export const ALTAR_FORGE = {
    */
   handoffAfterImpact: SCATTER_DURATION + SHROUD_HOLD,
   /**
-   * The 3D shroud's crossfade (`state.emberFade`), starting AT the hand-off —
+   * The 3D shroud's cross-fade (`state.emberFade`), starting AT the hand-off —
    * deliberately shorter than {@link swarmDuration} and overlapping it, so the
-   * canvas embers are still alive while the DOM swarm streams in from the same
-   * screen point. Anything that reads as two effects in sequence is a bug.
+   * canvas embers are still alive while the DOM swarm streams in. Anything that
+   * reads as two effects in sequence is a bug.
+   *
+   * A true dissolve, not a hand-wave: the DOM swarm's launch ring is sized to
+   * this shroud (`deriveSwarmSpreadScale`), so the two ember populations occupy
+   * the SAME band at the hand-off and the 3D can decay from the first frame —
+   * paired with a near-linear ease, tracking the DOM embers' own alpha ramp.
+   * (It used to be longer and back-loaded to cover for a DOM ring that started
+   * ~3× further out than the shroud; that gap is gone.)
    */
-  emberFadeDuration: 0.45,
+  emberFadeDuration: 0.35,
   /**
    * The DOM swarm's pass — the shared engine's canonical modal duration, so
    * the altar's modal forges out of embers on exactly the same clock as every

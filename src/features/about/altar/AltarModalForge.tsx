@@ -14,6 +14,20 @@ const PARTICLE_COUNT = 2400
 /** The seated (shrunken) orb's radius — the embers are born ON this sphere. */
 const SPHERE_R = ORB_RADIUS * ORB_SEAT_SCALE * 1.1
 /**
+ * How far a fully-released ember eases out along its surface normal, in world
+ * units: the `0.45 + aSeed * 0.85` reach in `FORGE_VERTEX`'s `hover`, at
+ * `aSeed = 1`. **Keep in sync with that expression.**
+ */
+const SHROUD_REACH = 0.45 + 0.85
+/**
+ * The shroud's OUTER radius around the seat once the release completes (born on
+ * the sphere, then eased out). Exported because the DOM hand-off needs it: the
+ * shared ember swarm launches from a ring this wide (projected to screen pixels
+ * through the same camera) instead of the engine's much wider default, so the
+ * DOM embers appear exactly where these embers are as the two cross-fade.
+ */
+export const SHROUD_OUTER_RADIUS = SPHERE_R + SHROUD_REACH
+/**
  * Paints after the orbs (ORB_RENDER_ORDER = 1) so the glowing shroud is never
  * dimmed by a passing stone, and before the hammer (10) — the hammer stays
  * the top actor even through the disintegration. depthTest is off (the shroud

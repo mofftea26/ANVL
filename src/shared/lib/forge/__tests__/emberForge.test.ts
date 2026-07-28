@@ -87,6 +87,29 @@ describe('buildEmbers', () => {
   it('returns an empty swarm for a zero count', () => {
     expect(buildEmbers({ rect, ramp, count: 0, edgeShare: 0.5 })).toEqual([])
   })
+
+  // `spreadScale` is surfaced on `ForgeEmberCanvas` for the About altar (whose
+  // swarm has to launch from inside the in-canvas ember shroud it takes over
+  // from). Omitting it must stay byte-for-byte what modals and toasts did
+  // before that prop existed — hence the "unset === 1" pinning here.
+  it('leaves the launch spread at the tuning’s own band when spreadScale is unset', () => {
+    for (const e of buildEmbers({ rect, ramp, count: 60, edgeShare: 0.5 })) {
+      expect(e.spreadFactor).toBeGreaterThanOrEqual(MODAL_FORGE_TUNING.spreadBase)
+      expect(e.spreadFactor).toBeLessThanOrEqual(
+        MODAL_FORGE_TUNING.spreadBase + MODAL_FORGE_TUNING.spreadRange,
+      )
+    }
+  })
+
+  it('scales the launch spread band by spreadScale', () => {
+    const scale = 0.35
+    for (const e of buildEmbers({ rect, ramp, count: 60, edgeShare: 0.5, spreadScale: scale })) {
+      expect(e.spreadFactor).toBeGreaterThanOrEqual(MODAL_FORGE_TUNING.spreadBase * scale)
+      expect(e.spreadFactor).toBeLessThanOrEqual(
+        (MODAL_FORGE_TUNING.spreadBase + MODAL_FORGE_TUNING.spreadRange) * scale,
+      )
+    }
+  })
 })
 
 describe('MODAL_FORGE_TUNING vs TOAST_FORGE_TUNING', () => {

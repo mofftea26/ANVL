@@ -12,7 +12,12 @@ import type { AboutPageAssets } from '../index'
 import { readAboutBrandColors } from '../webgl/aboutBrandColors'
 import { createAltarState } from './altarState'
 import { ALTAR_FORGE, ALTAR_STRIKE } from './altarForgeTiming'
-import { projectSeatToViewport, type AltarEmberSwarm } from './altarEmberHandoff'
+import {
+  deriveSwarmSpreadScale,
+  projectSeatToViewport,
+  type AltarEmberSwarm,
+  type AltarSeatProjection,
+} from './altarEmberHandoff'
 import { AltarScene } from './AltarScene'
 import { AboutOrbModal } from './AboutOrbModal'
 
@@ -61,6 +66,12 @@ export default function AboutAltar({
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const [swarm, setSwarm] = useState<AltarEmberSwarm | null>(null)
   const swarmKey = useRef(0)
+  /** Captured at the hand-off beat, launched by the panel's measure below. */
+  const pendingSwarm = useRef<{
+    key: number
+    tint?: string
+    seat?: AltarSeatProjection
+  } | null>(null)
   /** The panel's rect at natural layout — see {@link handlePanelMeasure}. */
   const panelRect = useRef<ForgeRect | null>(null)
   useCanvasTeardownMark()
@@ -108,37 +119,57 @@ export default function AboutAltar({
    * The mounted (still-invisible) modal panel reports its rect at NATURAL
    * layout, before its own reveal transform — that is the rectangle the ember
    * swarm must draw, so the plate lands exactly where the panel will stand.
-   * The modal's `useGSAP` (a layout effect) reports it in the same commit the
-   * swarm mounts in, ahead of `ForgeEmberCanvas`'s passive measure effect.
+   *
+   * This is also where a pending swarm is launched, because the panel's rect is
+   * the one input the launch ring's scale needs (see
+   * {@link deriveSwarmSpreadScale}). The modal reports it from a LAYOUT effect,
+   * so this `setSwarm` is flushed synchronously before the browser paints — the
+   * swarm still appears on the hand-off frame, and it can never mount without a
+   * rect to aim at.
    */
   const handlePanelMeasure = useCallback((rect: DOMRect) => {
-    panelRect.current = {
+    const forgeRect: ForgeRect = {
       left: rect.left,
       top: rect.top,
       width: rect.width,
       height: rect.height,
     }
+    panelRect.current = forgeRect
+    const pending = pendingSwarm.current
+    if (!pending) return
+    pendingSwarm.current = null
+    setSwarm({
+      key: pending.key,
+      tint: pending.tint,
+      origin: pending.seat?.origin,
+      spreadScale: pending.seat
+        ? deriveSwarmSpreadScale(pending.seat.shroudOuterPx, forgeRect)
+        : undefined,
+    })
   }, [])
 
   const swarmRect = useCallback(() => panelRect.current, [])
   const retireSwarm = useCallback(() => setSwarm(null), [])
 
   /**
-   * The hand-off beat: mount the (still invisible) modal and, in the same
-   * commit, launch the DOM ember swarm from the orb's seat. Both land in one
-   * React batch, so the panel's ref is attached — and its natural rect already
-   * reported through {@link handlePanelMeasure} — before the swarm measures.
+   * The hand-off beat: mount the (still invisible) modal and arm the DOM ember
+   * swarm with the orb's colour and its seat — projected NOW, through the live
+   * camera, before the modal's backdrop covers the stage. The panel's measure
+   * (above) fires it on the same frame.
    */
   const openPanel = useCallback(
     (index: number) => {
       setOpenIndex(index)
-      if (reducedMotion) return
+      if (reducedMotion) {
+        pendingSwarm.current = null
+        return
+      }
       swarmKey.current += 1
-      setSwarm({
+      pendingSwarm.current = {
         key: swarmKey.current,
         tint: orbs[index]?.color?.trim() || undefined,
-        origin: projectSeatToViewport(canvasBox.current, state.seatNdc),
-      })
+        seat: projectSeatToViewport(canvasBox.current, state.seatNdc),
+      }
     },
     [orbs, reducedMotion, state],
   )
@@ -271,16 +302,20 @@ export default function AboutAltar({
       // THE HAND-OFF — one beat, three things, deliberately simultaneous so the
       // embers read as ONE swarm crossing from the canvas into the DOM:
       //  1. the modal mounts (invisible) and reports its natural rect;
-      //  2. the shared ember swarm launches from the orb's seat, tinted with
-      //     the orb's colour, and converges on that rect exactly the way it
-      //     forms every other dialog and toast in the app;
-      //  3. the in-canvas shroud cross-fades out UNDER it (shorter than the
-      //     swarm's pass, so both are alive together — never a hard cut).
+      //  2. the shared ember swarm launches out of the shroud's own band around
+      //     the orb's seat, tinted with the orb's colour, and converges on that
+      //     rect exactly the way it forms every other dialog and toast;
+      //  3. the in-canvas shroud dissolves UNDER it (shorter than the swarm's
+      //     pass, so both are alive together — never a hard cut). Near-linear
+      //     (`power1.in`) because the two populations now start in the SAME
+      //     band: the 3D should decay as the DOM embers' alpha ramps, rather
+      //     than holding bright (`power2.in`) to cover a spatial gap that the
+      //     matched launch ring removed.
       tl.call(() => openPanel(index), [], handoffAt)
       if (!reducedMotion) {
         tl.to(
           state,
-          { emberFade: 1, duration: ALTAR_FORGE.emberFadeDuration, ease: 'power2.in' },
+          { emberFade: 1, duration: ALTAR_FORGE.emberFadeDuration, ease: 'power1.in' },
           handoffAt,
         )
       }
@@ -293,6 +328,7 @@ export default function AboutAltar({
     // Closing mid-forge (or after it) retires the DOM swarm — nothing left to
     // form once the panel is gone.
     setSwarm(null)
+    pendingSwarm.current = null
     panelRect.current = null
     const index = state.activeIndex
     if (index === -1) return
@@ -451,15 +487,16 @@ export default function AboutAltar({
 
       {/* The app's shared ember forge — the same swarm that materializes every
           modal and every toast, here tinted with the struck orb's colour and
-          launched from its seat on the anvil. Rendered AFTER the modal so the
-          panel's ref is attached (and its natural rect reported) before this
-          measures. Self-gates under reduced motion; we also skip mounting it
-          (defense in depth, mirroring the shared Modal). */}
+          launched from a ring sized to the in-canvas shroud it is taking over
+          from, centred on the orb's seat. Mounted by the panel's measure, so the
+          rect it forms is always known. Self-gates under reduced motion; we also
+          skip mounting it (defense in depth, mirroring the shared Modal). */}
       {swarm && !reducedMotion ? (
         <ForgeEmberCanvas
           key={swarm.key}
           getRect={swarmRect}
           origin={swarm.origin}
+          spreadScale={swarm.spreadScale}
           tint={swarm.tint}
           zIndex={FORGE_CANVAS_Z}
           onComplete={retireSwarm}
