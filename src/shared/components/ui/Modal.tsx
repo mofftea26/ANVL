@@ -10,10 +10,8 @@ import { createPortal } from 'react-dom'
 import { cn } from '@/shared/lib/cn'
 import { useDialogFocusTrap } from '@/shared/hooks/useDialogFocusTrap'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
+import { FORGE_DURATION_MS } from '@/shared/lib/forge/emberForge'
 import { ModalForgeEffect } from './ModalForgeEffect'
-
-/** How long the ember swarm owns the open (ModalForgeEffect's DURATION_MS). */
-const FORGE_MS = 1000
 
 type ModalProps = PropsWithChildren<{
   open: boolean
@@ -73,7 +71,7 @@ export function Modal({
   useEffect(() => {
     if (!open || reducedMotion) return
     setForging(true)
-    const timer = setTimeout(() => setForging(false), FORGE_MS)
+    const timer = setTimeout(() => setForging(false), FORGE_DURATION_MS)
     return () => {
       clearTimeout(timer)
       setForging(false)
