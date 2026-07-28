@@ -139,6 +139,7 @@ export function AdminTopbar({
                     {crumb.to && !isLast ? (
                       <Link
                         to={crumb.to as LinkProps['to']}
+                        preload={false}
                         className="truncate transition-colors hover:text-[var(--color-text)]"
                       >
                         {crumb.label}

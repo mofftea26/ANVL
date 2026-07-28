@@ -3,6 +3,7 @@ import { useContext, type ReactNode } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AdminAuthContext, AdminAuthProvider } from '../AdminAuthProvider'
 import type { AdminAuthContextValue } from '../adminAuth.types'
+import { invalidateAdminSessionCache } from '../adminAuthCache'
 
 const hoisted = vi.hoisted(() => ({
   getAdminSessionServerFn: vi.fn(),
@@ -58,6 +59,10 @@ describe('AdminAuthProvider', () => {
     hoisted.loginAdminServerFn.mockReset()
     hoisted.setSession.mockClear()
     hoisted.hydrateAdminCmsFromSupabase.mockClear()
+    // `adminAuthCache` is a real, module-scoped cache (not mocked here) that
+    // would otherwise leak an "authenticated" result from one test's mock
+    // into the next test's bootstrap check.
+    invalidateAdminSessionCache()
   })
 
   it('bootstraps to logged out when the server has no session', async () => {

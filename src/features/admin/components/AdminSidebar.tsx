@@ -105,6 +105,12 @@ function SidebarNavLink({
   return (
     <Link
       to={item.href as LinkProps['to']}
+      // Hovering any admin nav item fires the intent-preload machinery,
+      // which re-runs the `/admin` `beforeLoad` auth chain. The shared
+      // `getCachedAdminSession` cache absorbs that now, but there's still no
+      // useful data to preload here (the target is another admin editor
+      // behind the same already-mounted shell) — skip it outright.
+      preload={false}
       onClick={onNavigate}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
@@ -163,6 +169,7 @@ function RailCategoryLink({
   return (
     <Link
       to={href as LinkProps['to']}
+      preload={false}
       onClick={onNavigate}
       aria-label={label}
       title={label}
@@ -272,6 +279,7 @@ export function AdminSidebar({
         >
           <Link
             to="/admin"
+            preload={false}
             className="focus-ring flex min-w-0 items-center gap-3 rounded-xl no-underline"
             onClick={onNavigate}
           >
@@ -456,6 +464,7 @@ export function AdminSidebar({
 
           <Link
             to="/admin/settings"
+            preload={false}
             title="Settings"
             className={cn(
               'focus-ring inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-line)]/75 bg-[var(--color-surface-soft)]/50 text-[var(--color-text-muted)] no-underline transition hover:border-[var(--color-line)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-heading)]',
