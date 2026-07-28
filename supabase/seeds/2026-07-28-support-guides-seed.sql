@@ -52,26 +52,84 @@
 --   - the garment-type tab strip / PDP compact legend get a real,
 --     non-trivial (>1 type) case to render against.
 --
--- IDEMPOTENT / NON-DESTRUCTIVE
--- Every write is a targeted JSONB merge (`||` shallow merge at each
--- nesting level it touches), never a wholesale column replacement:
---   - Every existing top-level key of `support_content` (`faq`, `contact`,
---     `shipping`, `returns`, and any already-authored `careGuide`/
---     `sizeGuide` scalar fields, `sections`, or `perProduct` entries for
---     OTHER slugs) survives untouched.
---   - `careGuide.legend` and `sizeGuide.measure` are REASSERTED to the
---     values below on every run — re-running this script is a no-op once
---     applied, but note it will overwrite any admin customization already
---     made to those two specific sub-objects back to the code defaults. It
---     is meant to be run once, before an admin has touched those tabs.
---   - The three `sizeGuide.perProduct[<slug>]` merges only ever touch/add
---     the `garmentType` field on those specific slugs — any `note`/`rows`/
---     `table` an admin may already have authored for `oversized-tee`,
---     `stringer`, or `compression-tee` is preserved.
+-- ============================================================================
+-- SAFETY MODEL — READ THIS BEFORE RUNNING. FILL-ONLY-IF-ABSENT, NEVER
+-- OVERWRITE. This is a rewrite of an earlier draft that unconditionally
+-- REASSERTED `careGuide.legend` and `sizeGuide.measure` to these defaults on
+-- every run — which would have silently reverted any admin customization of
+-- those two blocks back to today's code defaults. That is exactly the
+-- destructive case this version is designed to rule out. This script is
+-- meant to be run by hand, quite possibly more than once, quite possibly
+-- long after an admin has customized these exact fields — so every single
+-- write below is individually gated on "is this specific piece of data
+-- currently absent/blank", never on "does the whole column look untouched".
+-- Concretely, this version will NEVER touch:
+--   - `faq`, `contact`, `shipping`, `returns` (untouched at any level).
+--   - `careGuide.legend.heading` / `.intro` — written ONLY when currently
+--     blank or absent; a NON-blank value (however it got there) is left
+--     byte-for-byte as-is.
+--   - `careGuide.legend.entries` — the 26-key override map is written AS A
+--     WHOLE default set ONLY when it is currently `{}` (or absent). The
+--     instant it has even ONE key in it, this script does not touch
+--     `entries` at all, in either direction — see "the ambiguity we cannot
+--     resolve" below.
+--   - `sizeGuide.measure.heading` / `.intro` / `.footnote` — same per-field
+--     blank-only rule as the legend's heading/intro.
+--   - `sizeGuide.measure.garmentTypes` — the 5-type default array is written
+--     ONLY when it is currently `[]` (or absent); once it has even one
+--     element, this script does not touch `garmentTypes` at all.
+--   - `sizeGuide.perProduct[<slug>].garmentType` for the three product slugs
+--     below — set ONLY when that slug's entry currently has NO `garmentType`
+--     key at all; a slug that already has one (any value) is left alone,
+--     and any `note`/`rows`/`table` already authored for that slug survives
+--     regardless (the merge is per-field within the slug's own object, never
+--     a wholesale replacement of the slug's entry).
+--   - Any `sizeGuide.perProduct`/`careGuide.perProduct` entry for a slug
+--     OTHER than the three named below.
+--
+-- THE AMBIGUITY WE CANNOT RESOLVE, AND WHY WE UNDER-WRITE INSTEAD OF
+-- OVER-WRITE. Both `careGuide.legend.entries` (`CareLegendField.tsx`,
+-- "Reset to default" deletes the key) and `sizeGuide.measure.garmentTypes`
+-- (`MeasurementsField.tsx`, "Reset to defaults" deletes the whole type
+-- block) are OVERRIDES-ONLY by design in the app itself: an admin who never
+-- touched a symbol/garment-type, and an admin who explicitly customized one
+-- and then clicked "Reset to default", both end up with that key/type
+-- ABSENT from the stored JSON — there is no third state ("deliberately
+-- reset") for raw SQL to detect. Per-key backfilling into an
+-- already-non-empty collection could therefore silently undo a real,
+-- deliberate "Reset to default" click. This script resolves that by only
+-- ever writing the FULL default set into `entries`/`garmentTypes` while the
+-- collection is genuinely empty (nothing to ambiguously resurrect yet); the
+-- moment it has any content, both are left alone, in full, even if that
+-- means some symbols/types stay un-pre-populated. Under-writing over
+-- over-writing, as instructed. The same theoretical ambiguity exists for
+-- `sizeGuide.perProduct[<slug>].garmentType` (its admin field has an
+-- explicit "Default (Tee)" option that also stores `undefined`, i.e. no
+-- key) — accepted here because this per-product data is net-new (this
+-- script is what is expected to create it in the first place), so on every
+-- realistic first run there is nothing to resurrect; the residual risk is
+-- narrow (an admin would have to explicitly reset one of these exact three
+-- products back to "Default" and then someone re-runs this exact script) but
+-- is called out here for completeness.
+--
+-- IDEMPOTENT. A first run fills in whatever is absent; a second run against
+-- the row the first run produced changes nothing (every gate above is now
+-- false), and a run against a row an admin has since customized changes
+-- nothing to what they customized either.
+-- ============================================================================
 --
 -- NO SCHEMA CHANGE. Both columns already exist as
 -- `jsonb not null default '{}'::jsonb`
 -- (see supabase/migrations/20260719140000_legal_support_content.sql).
+-- Verified against a scratch local Postgres (not the project's Supabase —
+-- no credentials were used or available) with three reachable states of
+-- `support_content`: `NULL`, `'{}'::jsonb`, and a fully-populated row with
+-- pre-existing `careGuide.legend`/`sizeGuide.measure` content and other
+-- `support_content` keys. Every `coalesce(support_content, '{}'::jsonb)`
+-- guards the `NULL` case (unreachable in production under the column's
+-- `NOT NULL` constraint, but the script does not assume that constraint
+-- holds); the fully-populated case is the one this rewrite exists for, and
+-- is the one actually exercised in that local test — see the task report.
 --
 -- TIMESTAMP / REVISION CONVENTION
 -- Mirrors `runAdminCmsRemoteFlush` in
@@ -81,11 +139,14 @@
 -- run inside one transaction/DO block so the two tables timestamp
 -- identically (`now()` is stable for the duration of a Postgres
 -- transaction, matching the single `Date.now()` call the TS code makes).
+-- These timestamps DO get bumped even on a run that writes nothing else
+-- (e.g. a fully-customized row) — that mirrors `runAdminCmsRemoteFlush`,
+-- which always stamps on every publish regardless of which fields changed.
 -- ============================================================================
 
 DO $$
 DECLARE
-  care_legend jsonb := $legend$
+  care_legend_default jsonb := $legend$
 {
   "heading": "What the symbols mean",
   "intro": "The standard care marks on every ANVL tag, explained in plain language.",
@@ -120,7 +181,7 @@ DECLARE
 }
 $legend$::jsonb;
 
-  size_measure jsonb := $measure$
+  size_measure_default jsonb := $measure$
 {
   "heading": "Where we measure",
   "intro": "Every ANVL piece is measured flat, seam to seam, before it ships. Match the points below to your own tape before you pick a size.",
@@ -191,27 +252,63 @@ $measure$::jsonb;
 BEGIN
   -- --------------------------------------------------------------------
   -- cms_settings.support_content (editor source of truth)
+  --
+  -- Every field below is written via `existing || patch`, where `patch` is
+  -- built with jsonb_strip_nulls() so a CASE that evaluates to "leave it
+  -- alone" contributes NO key to the patch at all — `||` then reproduces
+  -- the existing value for that key completely untouched. Nothing here can
+  -- ever replace a non-empty value.
   -- --------------------------------------------------------------------
   UPDATE cms_settings
   SET support_content = coalesce(support_content, '{}'::jsonb) || jsonb_build_object(
         'careGuide',
         coalesce(support_content->'careGuide', '{}'::jsonb) || jsonb_build_object(
-          'legend', care_legend
+          'legend',
+          coalesce(support_content #> '{careGuide,legend}', '{}'::jsonb)
+            || jsonb_strip_nulls(jsonb_build_object(
+                 'heading',
+                 CASE WHEN coalesce(support_content #>> '{careGuide,legend,heading}', '') = ''
+                      THEN care_legend_default ->> 'heading' END,
+                 'intro',
+                 CASE WHEN coalesce(support_content #>> '{careGuide,legend,intro}', '') = ''
+                      THEN care_legend_default ->> 'intro' END,
+                 'entries',
+                 CASE WHEN coalesce(support_content #> '{careGuide,legend,entries}', '{}'::jsonb) = '{}'::jsonb
+                      THEN care_legend_default -> 'entries' END
+               ))
         ),
         'sizeGuide',
         coalesce(support_content->'sizeGuide', '{}'::jsonb) || jsonb_build_object(
-          'measure', size_measure,
+          'measure',
+          coalesce(support_content #> '{sizeGuide,measure}', '{}'::jsonb)
+            || jsonb_strip_nulls(jsonb_build_object(
+                 'heading',
+                 CASE WHEN coalesce(support_content #>> '{sizeGuide,measure,heading}', '') = ''
+                      THEN size_measure_default ->> 'heading' END,
+                 'intro',
+                 CASE WHEN coalesce(support_content #>> '{sizeGuide,measure,intro}', '') = ''
+                      THEN size_measure_default ->> 'intro' END,
+                 'footnote',
+                 CASE WHEN coalesce(support_content #>> '{sizeGuide,measure,footnote}', '') = ''
+                      THEN size_measure_default ->> 'footnote' END,
+                 'garmentTypes',
+                 CASE WHEN coalesce(support_content #> '{sizeGuide,measure,garmentTypes}', '[]'::jsonb) = '[]'::jsonb
+                      THEN size_measure_default -> 'garmentTypes' END
+               )),
           'perProduct',
           coalesce(support_content #> '{sizeGuide,perProduct}', '{}'::jsonb) || jsonb_build_object(
             'oversized-tee',
             coalesce(support_content #> '{sizeGuide,perProduct,oversized-tee}', '{}'::jsonb)
-              || jsonb_build_object('garmentType', 'tee'),
+              || CASE WHEN NOT coalesce(support_content #> '{sizeGuide,perProduct,oversized-tee}', '{}'::jsonb) ? 'garmentType'
+                      THEN jsonb_build_object('garmentType', 'tee') ELSE '{}'::jsonb END,
             'stringer',
             coalesce(support_content #> '{sizeGuide,perProduct,stringer}', '{}'::jsonb)
-              || jsonb_build_object('garmentType', 'stringer'),
+              || CASE WHEN NOT coalesce(support_content #> '{sizeGuide,perProduct,stringer}', '{}'::jsonb) ? 'garmentType'
+                      THEN jsonb_build_object('garmentType', 'stringer') ELSE '{}'::jsonb END,
             'compression-tee',
             coalesce(support_content #> '{sizeGuide,perProduct,compression-tee}', '{}'::jsonb)
-              || jsonb_build_object('garmentType', 'tee')
+              || CASE WHEN NOT coalesce(support_content #> '{sizeGuide,perProduct,compression-tee}', '{}'::jsonb) ? 'garmentType'
+                      THEN jsonb_build_object('garmentType', 'tee') ELSE '{}'::jsonb END
           )
         )
       ),
@@ -220,27 +317,60 @@ BEGIN
 
   -- --------------------------------------------------------------------
   -- storefront_publication.support_content (anon-readable SSR mirror)
+  -- Identical logic to the cms_settings UPDATE above, applied to this
+  -- table's OWN current support_content (not copied from cms_settings —
+  -- the two are read independently in case they have ever diverged).
   -- --------------------------------------------------------------------
   UPDATE storefront_publication
   SET support_content = coalesce(support_content, '{}'::jsonb) || jsonb_build_object(
         'careGuide',
         coalesce(support_content->'careGuide', '{}'::jsonb) || jsonb_build_object(
-          'legend', care_legend
+          'legend',
+          coalesce(support_content #> '{careGuide,legend}', '{}'::jsonb)
+            || jsonb_strip_nulls(jsonb_build_object(
+                 'heading',
+                 CASE WHEN coalesce(support_content #>> '{careGuide,legend,heading}', '') = ''
+                      THEN care_legend_default ->> 'heading' END,
+                 'intro',
+                 CASE WHEN coalesce(support_content #>> '{careGuide,legend,intro}', '') = ''
+                      THEN care_legend_default ->> 'intro' END,
+                 'entries',
+                 CASE WHEN coalesce(support_content #> '{careGuide,legend,entries}', '{}'::jsonb) = '{}'::jsonb
+                      THEN care_legend_default -> 'entries' END
+               ))
         ),
         'sizeGuide',
         coalesce(support_content->'sizeGuide', '{}'::jsonb) || jsonb_build_object(
-          'measure', size_measure,
+          'measure',
+          coalesce(support_content #> '{sizeGuide,measure}', '{}'::jsonb)
+            || jsonb_strip_nulls(jsonb_build_object(
+                 'heading',
+                 CASE WHEN coalesce(support_content #>> '{sizeGuide,measure,heading}', '') = ''
+                      THEN size_measure_default ->> 'heading' END,
+                 'intro',
+                 CASE WHEN coalesce(support_content #>> '{sizeGuide,measure,intro}', '') = ''
+                      THEN size_measure_default ->> 'intro' END,
+                 'footnote',
+                 CASE WHEN coalesce(support_content #>> '{sizeGuide,measure,footnote}', '') = ''
+                      THEN size_measure_default ->> 'footnote' END,
+                 'garmentTypes',
+                 CASE WHEN coalesce(support_content #> '{sizeGuide,measure,garmentTypes}', '[]'::jsonb) = '[]'::jsonb
+                      THEN size_measure_default -> 'garmentTypes' END
+               )),
           'perProduct',
           coalesce(support_content #> '{sizeGuide,perProduct}', '{}'::jsonb) || jsonb_build_object(
             'oversized-tee',
             coalesce(support_content #> '{sizeGuide,perProduct,oversized-tee}', '{}'::jsonb)
-              || jsonb_build_object('garmentType', 'tee'),
+              || CASE WHEN NOT coalesce(support_content #> '{sizeGuide,perProduct,oversized-tee}', '{}'::jsonb) ? 'garmentType'
+                      THEN jsonb_build_object('garmentType', 'tee') ELSE '{}'::jsonb END,
             'stringer',
             coalesce(support_content #> '{sizeGuide,perProduct,stringer}', '{}'::jsonb)
-              || jsonb_build_object('garmentType', 'stringer'),
+              || CASE WHEN NOT coalesce(support_content #> '{sizeGuide,perProduct,stringer}', '{}'::jsonb) ? 'garmentType'
+                      THEN jsonb_build_object('garmentType', 'stringer') ELSE '{}'::jsonb END,
             'compression-tee',
             coalesce(support_content #> '{sizeGuide,perProduct,compression-tee}', '{}'::jsonb)
-              || jsonb_build_object('garmentType', 'tee')
+              || CASE WHEN NOT coalesce(support_content #> '{sizeGuide,perProduct,compression-tee}', '{}'::jsonb) ? 'garmentType'
+                      THEN jsonb_build_object('garmentType', 'tee') ELSE '{}'::jsonb END
           )
         )
       ),
