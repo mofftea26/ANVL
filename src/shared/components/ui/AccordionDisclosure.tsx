@@ -11,13 +11,23 @@ import type { ReactNode } from 'react'
  */
 export function AccordionDisclosure({
   title,
+  defaultOpen = false,
   children,
 }: {
   title: string
+  /**
+   * Opens on first paint. Uncontrolled after that — React only rewrites the
+   * `open` attribute when this prop's value changes, so a visitor's own
+   * toggling stands.
+   */
+  defaultOpen?: boolean
   children: ReactNode
 }) {
   return (
-    <details className="group rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3">
+    <details
+      open={defaultOpen}
+      className="group rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3"
+    >
       <summary className="focus-ring cursor-pointer list-none rounded font-semibold text-[var(--color-heading)] marker:hidden [&::-webkit-details-marker]:hidden">
         <span className="flex items-center justify-between gap-2">
           {title}

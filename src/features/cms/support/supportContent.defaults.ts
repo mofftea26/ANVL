@@ -14,6 +14,12 @@ import type { SupportContentConfig } from './supportContent.zod'
  * `answer`/`body` are plain text; a blank line starts a new paragraph.
  */
 
+/**
+ * Fallback "Last updated" stamp for the two guide pages, shown when the CMS
+ * leaves `updatedAt` blank. Bump it when the default guide copy below changes.
+ */
+const GUIDE_UPDATED_AT = '2026-07-28'
+
 export const SUPPORT_CONTENT_DEFAULTS: SupportContentConfig = {
   faq: {
     intro:
@@ -108,6 +114,7 @@ export const SUPPORT_CONTENT_DEFAULTS: SupportContentConfig = {
   },
   careGuide: {
     intro: 'Keep every ANVL piece structured, clean, and long-lasting.',
+    updatedAt: GUIDE_UPDATED_AT,
     sections: [
       {
         id: 'care-washing',
@@ -166,6 +173,7 @@ export const SUPPORT_CONTENT_DEFAULTS: SupportContentConfig = {
   sizeGuide: {
     intro:
       'All measurements are in centimetres. EU numbers follow the men’s woven/knit top scale you see across Lebanon (44–52), shown next to our letter sizes so you can match what you already wear.',
+    updatedAt: GUIDE_UPDATED_AT,
     note: 'How to measure — Chest: run the tape horizontally around the fullest part with arms relaxed and breathe normally. Length: measure from the top of the shoulder seam at the base of the neck down to where you want the hem. Between sizes? For oversized and stringer, take the larger chest bracket for more drape; for compression, most lifters size down for maximum hold. ANVL patterns may differ from imported basics sold under the same EU number — always compare to your own chest tape reading first.',
     // "Where we measure" — the diagram's lettered points, one content set per
     // garment silhouette (a stringer has no sleeve/cuff; joggers/shorts have

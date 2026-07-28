@@ -29,6 +29,7 @@ describe('parseSupportContent', () => {
       returns: { intro: 'Ret', sections: [{ id: 'r1', heading: 'H', body: 'B' }] },
       careGuide: {
         intro: 'Care',
+        updatedAt: '2026-07-01',
         sections: [{ id: 'c1', heading: 'H', body: 'B' }],
         legend: {
           heading: 'Legend',
@@ -47,6 +48,7 @@ describe('parseSupportContent', () => {
       },
       sizeGuide: {
         intro: 'Size',
+        updatedAt: '2026-07-02',
         note: 'Measure',
         measure: {
           heading: 'Where we measure',

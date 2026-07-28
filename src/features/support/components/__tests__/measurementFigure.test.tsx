@@ -11,7 +11,6 @@ import { resolveMeasurePoints } from '@/features/cms/support/resolveSupportConte
 import {
   GARMENT_SCHEMATICS,
   MeasurementFigure,
-  SIZE_MEASUREMENT_POINTS,
   SizeDiagram,
   anchorBadgePoint,
   getGarmentSchematic,
@@ -199,11 +198,11 @@ describe('MeasurementFigure', () => {
 
 describe('SizeDiagram', () => {
   it('exposes the drawing as a labelled image naming every lettered point', () => {
-    render(<SizeDiagram />)
+    render(<SizeDiagram garmentTypeKey="tee" points={pointsFor('tee').points} />)
     const image = screen.getByRole('img')
     const label = image.getAttribute('aria-label') ?? ''
     expect(label).toContain('tee')
-    for (const point of SIZE_MEASUREMENT_POINTS) {
+    for (const point of pointsFor('tee').points) {
       expect(label).toContain(point.label.toLowerCase())
     }
   })
@@ -216,7 +215,7 @@ describe('SizeDiagram', () => {
   it('namespaces every SVG def id so two instances never collide', () => {
     const { container } = render(
       <>
-        <SizeDiagram />
+        <SizeDiagram garmentTypeKey="tee" points={pointsFor('tee').points} />
         <SizeDiagram garmentTypeKey="joggers" points={pointsFor('joggers').points} />
       </>,
     )

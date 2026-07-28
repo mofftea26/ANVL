@@ -124,6 +124,8 @@ export type SizeProductEntry = z.infer<typeof sizeProductEntrySchema>
 export const supportSizeGuideSchema = z
   .object({
     intro: z.string().catch(''),
+    /** ISO `YYYY-MM-DD`; blank falls back to the code-owned default stamp. */
+    updatedAt: z.string().catch(''),
     note: z.string().catch(''),
     measure: sizeMeasureSchema,
     perProduct: z.record(z.string(), sizeProductEntrySchema).catch({}),
@@ -250,7 +252,7 @@ function pickSizePerProduct(raw: unknown): Record<string, unknown> {
 export function pickSizeGuide(raw: unknown): Record<string, unknown> {
   const v = obj(raw)
   return {
-    ...pickKeys(v, ['intro', 'note']),
+    ...pickKeys(v, ['intro', 'updatedAt', 'note']),
     measure: pickSizeMeasure(v.measure),
     perProduct: pickSizePerProduct(v.perProduct),
   }

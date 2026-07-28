@@ -9,7 +9,7 @@ import {
 export const SITE_SEO_STORAGE_KEY = 'anvl.siteSeo.v1'
 export const SITE_SEO_CHANGE_EVENT = 'anvl:siteSeo:change'
 
-export type SiteStaticSeoPath = '/' | '/shop' | '/about' | '/size-guide'
+export type SiteStaticSeoPath = '/' | '/shop' | '/about' | '/size-guide' | '/care-guide'
 
 export type SiteSeoGlobalDefaults = {
   metaTitle?: string
@@ -83,6 +83,7 @@ const STATIC_SEO_PATHS: SiteStaticSeoPath[] = [
   '/shop',
   '/about',
   '/size-guide',
+  '/care-guide',
 ]
 
 /**

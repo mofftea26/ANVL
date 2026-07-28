@@ -1,16 +1,28 @@
 import { describe, expect, it } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
-import { resolveSupportContent } from '@/features/cms/support/resolveSupportContent'
-import { DEFAULT_SUPPORT_CONTENT } from '@/features/cms/support/supportContent.zod'
+import userEvent from '@testing-library/user-event'
+import {
+  resolveCareLegend,
+  resolveMeasurePoints,
+  resolveSupportContent,
+} from '@/features/cms/support/resolveSupportContent'
+import {
+  DEFAULT_SUPPORT_CONTENT,
+  type SizeProductEntry,
+} from '@/features/cms/support/supportContent.zod'
 import {
   CareLines,
+  CareSymbolLegend,
   ContactPanel,
   FaqAccordion,
+  MeasureExplorer,
   SizeTable,
   SupportSectionList,
   faqPageJsonLd,
   formatDocDate,
 } from '@/features/support/components'
+import { AccordionDisclosure } from '@/shared/components/ui/AccordionDisclosure'
+import { resolveGarmentTypeKeys } from '@/features/support/lib/garmentTypes'
 
 const content = resolveSupportContent(DEFAULT_SUPPORT_CONTENT)
 
@@ -112,6 +124,156 @@ describe('SizeTable (structured)', () => {
     expect(screen.getByText(/half measurements/i)).toBeInTheDocument()
     // Legacy shape is not rendered when structured data exists.
     expect(screen.queryByText('Chest (cm)')).not.toBeInTheDocument()
+  })
+})
+
+function sizeEntry(garmentType?: SizeProductEntry['garmentType']): SizeProductEntry {
+  return { note: '', columns: [], rows: [], ...(garmentType ? { garmentType } : {}) }
+}
+
+describe('resolveGarmentTypeKeys', () => {
+  it('always offers the tee, even with no authored products', () => {
+    expect(resolveGarmentTypeKeys({})).toEqual(['tee'])
+  })
+
+  it('offers a type once at least one product uses it, in canonical order', () => {
+    const keys = resolveGarmentTypeKeys({
+      shorts: sizeEntry('shorts'),
+      hoodie: sizeEntry('hoodie'),
+    })
+    expect(keys).toEqual(['tee', 'hoodie', 'shorts'])
+  })
+
+  it('does not offer a type no product uses', () => {
+    expect(resolveGarmentTypeKeys({ a: sizeEntry('joggers') })).not.toContain('stringer')
+  })
+
+  it('treats a product with no chosen type as a tee', () => {
+    expect(resolveGarmentTypeKeys({ a: sizeEntry() })).toEqual(['tee'])
+  })
+})
+
+describe('MeasureExplorer', () => {
+  const tee = resolveMeasurePoints(DEFAULT_SUPPORT_CONTENT, 'tee')
+  const joggers = resolveMeasurePoints(DEFAULT_SUPPORT_CONTENT, 'joggers')
+
+  it('renders one tab per garment type with its point count, first selected', () => {
+    render(<MeasureExplorer measures={[tee, joggers]} />)
+    const tabs = screen.getAllByRole('tab')
+    expect(tabs).toHaveLength(2)
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true')
+    expect(tabs[0]?.textContent).toContain(`${tee.points.length} pts`)
+    expect(tabs[1]).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('mounts only the selected panel, so a switch replaces the figure entirely', async () => {
+    const user = userEvent.setup()
+    render(<MeasureExplorer measures={[tee, joggers]} />)
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
+    // A tee-only measurement point.
+    expect(screen.getByRole('button', { name: 'Chest' })).toBeInTheDocument()
+
+    await user.click(screen.getAllByRole('tab')[1] as HTMLElement)
+
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: 'Chest' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Inseam length' })).toBeInTheDocument()
+  })
+
+  it('moves selection with the arrow keys and wraps at the ends', async () => {
+    const user = userEvent.setup()
+    render(<MeasureExplorer measures={[tee, joggers]} />)
+    const tabs = screen.getAllByRole('tab')
+    ;(tabs[0] as HTMLElement).focus()
+
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getAllByRole('tab')[1]).toHaveAttribute('aria-selected', 'true')
+
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getAllByRole('tab')[0]).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('omits the strip when there is nothing to switch between', () => {
+    render(<MeasureExplorer measures={[tee]} />)
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Chest' })).toBeInTheDocument()
+  })
+})
+
+describe('CareSymbolLegend', () => {
+  const legend = resolveCareLegend(DEFAULT_SUPPORT_CONTENT)
+  const total = Object.keys(legend.entries).length
+
+  // Real timers throughout: the search debounce is 250ms and `findBy*` polls
+  // for a second, so the filtered state arrives well inside the budget. The
+  // exact debounce boundary is asserted against the hook itself in
+  // `careSymbolLegend.test.tsx`, where fake timers are safe to use.
+  function setup() {
+    const user = userEvent.setup()
+    render(<CareSymbolLegend legend={legend} />)
+    return user
+  }
+
+  function categories() {
+    return within(screen.getByRole('group', { name: 'Filter by category' }))
+  }
+
+  it('announces the full count before any filtering', () => {
+    setup()
+    const status = screen.getByText(`${total} of ${total} marks`)
+    expect(status).toHaveAttribute('aria-live', 'polite')
+  })
+
+  it('narrows the count to the search matches once the debounce elapses', async () => {
+    const user = setup()
+    await user.type(screen.getByLabelText('Search care symbols'), 'bleach')
+    expect(await screen.findByText(`2 of ${total} marks`)).toBeInTheDocument()
+  })
+
+  it('narrows to one category when its chip is pressed, and releases it again', async () => {
+    const user = setup()
+    const chip = categories().getByRole('button', { name: /^Bleaching/ })
+    expect(chip).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(chip)
+    expect(categories().getByRole('button', { name: /^Bleaching/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByText(`2 of ${total} marks`)).toBeInTheDocument()
+
+    await user.click(categories().getByRole('button', { name: /^Bleaching/ }))
+    expect(screen.getByText(`${total} of ${total} marks`)).toBeInTheDocument()
+  })
+
+  it('shows an explicit empty state when nothing matches, and clears back to everything', async () => {
+    const user = setup()
+    await user.type(screen.getByLabelText('Search care symbols'), 'zzzzz')
+
+    expect(await screen.findByText('No marks match')).toBeInTheDocument()
+    expect(screen.getByText(`0 of ${total} marks`)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /clear filters/i }))
+    expect(await screen.findByText(`${total} of ${total} marks`)).toBeInTheDocument()
+    expect(screen.queryByText('No marks match')).not.toBeInTheDocument()
+  })
+})
+
+describe('AccordionDisclosure', () => {
+  it('opens only the disclosure asked to open by default', () => {
+    const { container } = render(
+      <>
+        <AccordionDisclosure title="First" defaultOpen>
+          <p>one</p>
+        </AccordionDisclosure>
+        <AccordionDisclosure title="Second">
+          <p>two</p>
+        </AccordionDisclosure>
+      </>,
+    )
+    const details = container.querySelectorAll('details')
+    expect(details[0]?.open).toBe(true)
+    expect(details[1]?.open).toBe(false)
   })
 })
 

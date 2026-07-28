@@ -145,12 +145,14 @@ export const DEFAULT_SUPPORT_CONTENT: SupportContentConfig = {
   returns: { intro: '', sections: [] },
   careGuide: {
     intro: '',
+    updatedAt: '',
     sections: [],
     legend: { heading: '', intro: '', entries: {} },
     perProduct: {},
   },
   sizeGuide: {
     intro: '',
+    updatedAt: '',
     note: '',
     measure: { heading: '', intro: '', footnote: '', garmentTypes: [] },
     perProduct: {},

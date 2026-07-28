@@ -43,11 +43,15 @@ export type ResolvedSupportContent = {
   returns: { intro: string; sections: ResolvedSupportSection[] }
   careGuide: {
     intro: string
+    /** ISO `YYYY-MM-DD` for the "Last updated" stamp. */
+    updatedAt: string
     sections: ResolvedSupportSection[]
     perProduct: Record<string, CareProductEntry>
   }
   sizeGuide: {
     intro: string
+    /** ISO `YYYY-MM-DD` for the "Last updated" stamp. */
+    updatedAt: string
     note: string
     perProduct: Record<string, SizeProductEntry>
   }
@@ -191,12 +195,14 @@ export function resolveSupportContent(
     },
     careGuide: {
       intro: text(config.careGuide.intro, D.careGuide.intro),
+      updatedAt: text(config.careGuide.updatedAt, D.careGuide.updatedAt),
       sections: resolveSections(config.careGuide.sections, D.careGuide.sections),
       // Per-product care notes have no code default — pass authored entries through.
       perProduct: config.careGuide.perProduct,
     },
     sizeGuide: {
       intro: text(config.sizeGuide.intro, D.sizeGuide.intro),
+      updatedAt: text(config.sizeGuide.updatedAt, D.sizeGuide.updatedAt),
       note: text(config.sizeGuide.note, D.sizeGuide.note),
       // Per-product size tables have no code default — pass authored entries through.
       perProduct: config.sizeGuide.perProduct,

@@ -1,9 +1,5 @@
 import { cn } from '@/shared/lib/cn'
-import { DEFAULT_SUPPORT_CONTENT } from '@/features/cms/support/supportContent.zod'
-import {
-  resolveMeasurePoints,
-  type ResolvedMeasurePoint,
-} from '@/features/cms/support/resolveSupportContent'
+import type { ResolvedMeasurePoint } from '@/features/cms/support/resolveSupportContent'
 import { GarmentSchematicSvg } from './GarmentSchematicSvg'
 import { getGarmentSchematic } from './garments'
 
@@ -18,31 +14,15 @@ import { getGarmentSchematic } from './garments'
  * information.
  */
 
-/**
- * The tee's default measurement points, resolved from code defaults.
- *
- * @deprecated Read `resolveMeasurePoints(config, garmentTypeKey)` instead — it
- * honours CMS copy overrides and the per-product garment type. Kept only so
- * existing callers keep compiling while they migrate.
- */
-export const SIZE_MEASUREMENT_POINTS: readonly ResolvedMeasurePoint[] = resolveMeasurePoints(
-  DEFAULT_SUPPORT_CONTENT,
-  'tee',
-).points
-
 export interface SizeDiagramProps {
   /** Which schematic to draw. Unknown keys fall back to the tee. */
-  garmentTypeKey?: string
-  /** Resolved points to letter. Defaults to the tee's code defaults. */
-  points?: readonly ResolvedMeasurePoint[]
+  garmentTypeKey: string
+  /** Resolved points to letter — from `resolveMeasurePoints(config, key)`. */
+  points: readonly ResolvedMeasurePoint[]
   className?: string
 }
 
-export function SizeDiagram({
-  garmentTypeKey = 'tee',
-  points = SIZE_MEASUREMENT_POINTS,
-  className,
-}: SizeDiagramProps) {
+export function SizeDiagram({ garmentTypeKey, points, className }: SizeDiagramProps) {
   const schematic = getGarmentSchematic(garmentTypeKey)
   return (
     <GarmentSchematicSvg

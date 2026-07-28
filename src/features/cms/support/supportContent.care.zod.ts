@@ -118,6 +118,8 @@ export type CareLegend = z.infer<typeof careLegendSchema>
 export const supportCareGuideSchema = z
   .object({
     intro: z.string().catch(''),
+    /** ISO `YYYY-MM-DD`; blank falls back to the code-owned default stamp. */
+    updatedAt: z.string().catch(''),
     sections: z.array(supportSectionSchema).catch([]),
     legend: careLegendSchema,
     perProduct: z.record(z.string(), careProductEntrySchema).catch({}),
@@ -189,7 +191,7 @@ function pickCareLegend(raw: unknown): Record<string, unknown> {
 export function pickCareGuide(raw: unknown): Record<string, unknown> {
   const v = obj(raw)
   return {
-    ...pickKeys(v, ['intro']),
+    ...pickKeys(v, ['intro', 'updatedAt']),
     sections: pickSectionArray(v.sections),
     legend: pickCareLegend(v.legend),
     perProduct: pickCarePerProduct(v.perProduct),
