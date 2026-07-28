@@ -17,18 +17,30 @@ import { getGarmentSchematic } from './garments'
 export interface SizeDiagramProps {
   /** Which schematic to draw. Unknown keys fall back to the tee. */
   garmentTypeKey: string
+  /**
+   * CMS-authored garment type name for the `aria-label` (e.g.
+   * `resolveMeasurePoints(config, key).garmentTypeLabel`). Falls back to the
+   * code-owned `schematic.label` when not supplied, so a renamed garment type
+   * is announced under its current name rather than the original code label.
+   */
+  garmentTypeLabel?: string
   /** Resolved points to letter — from `resolveMeasurePoints(config, key)`. */
   points: readonly ResolvedMeasurePoint[]
   className?: string
 }
 
-export function SizeDiagram({ garmentTypeKey, points, className }: SizeDiagramProps) {
+export function SizeDiagram({
+  garmentTypeKey,
+  garmentTypeLabel,
+  points,
+  className,
+}: SizeDiagramProps) {
   const schematic = getGarmentSchematic(garmentTypeKey)
   return (
     <GarmentSchematicSvg
       schematic={schematic}
       points={points}
-      ariaLabel={buildDiagramLabel(schematic.label, points)}
+      ariaLabel={buildDiagramLabel(garmentTypeLabel || schematic.label, points)}
       className={cn('max-w-md', className)}
     />
   )

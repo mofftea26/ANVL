@@ -99,7 +99,8 @@ function SizeGuidePage() {
       {content.sizeGuide.note.trim() ? (
         <Section>
           <Container className="max-w-3xl">
-            <GuideSectionHeader title="How to measure" intro={content.sizeGuide.note} />
+            {/* Directly under DocHero's own border-b — no second rule here. */}
+            <GuideSectionHeader title="How to measure" intro={content.sizeGuide.note} rule={false} />
           </Container>
         </Section>
       ) : null}
@@ -124,9 +125,11 @@ function SizeGuidePage() {
 
       <Section className="border-t border-[var(--color-line)] bg-[var(--color-surface)]">
         <Container className="max-w-4xl">
+          {/* The Section above already carries the border-t. */}
           <GuideSectionHeader
             title="Measurements by piece"
             meta={perProduct.length > 0 ? formatPieceCount(perProduct.length) : undefined}
+            rule={false}
           />
           {perProduct.length > 0 ? (
             <div className="mt-8 space-y-3">

@@ -72,6 +72,7 @@ export function PdpSupportDetails({ support }: { support: PdpProductSupport }) {
           <div className="mt-4 grid items-start gap-4 sm:grid-cols-[minmax(0,14rem)_1fr]">
             <SizeDiagram
               garmentTypeKey={support.measure.garmentTypeKey}
+              garmentTypeLabel={support.measure.garmentTypeLabel}
               points={support.measure.points}
               className="max-w-[14rem]"
             />

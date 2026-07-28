@@ -16,6 +16,7 @@ export function GuideSectionHeader({
   titleId,
   meta,
   intro,
+  rule = true,
   className,
 }: {
   title: string
@@ -25,10 +26,17 @@ export function GuideSectionHeader({
   meta?: ReactNode
   /** Plain-text intro; blank lines start new paragraphs. */
   intro?: string
+  /**
+   * Set `false` when a border already sits directly above this header — e.g.
+   * `DocHero`'s own `border-b`, or a wrapping `Section`'s `border-t` — so the
+   * reader never sees two full-width rules stacked a section's padding apart.
+   * Defaults `true` (the header supplies its own separating rule).
+   */
+  rule?: boolean
   className?: string
 }) {
   return (
-    <div className={cn('border-t border-[var(--color-line)] pt-5', className)}>
+    <div className={cn(rule && 'border-t border-[var(--color-line)] pt-5', className)}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <h2
           id={titleId}

@@ -13,7 +13,9 @@ import type { CareIconKey } from '@/features/cms/support/supportContent.zod'
  * `className` / `aria-hidden` props Phosphor icons do, so it drops into the
  * shared `CARE_ICON_COMPONENTS` map that every care surface renders from. The
  * glyph itself is always decorative — the instruction NAME carries the meaning
- * for assistive tech (see `CARE_SYMBOL_META` for the plain-language copy).
+ * for assistive tech (see `careIconMeaning` in `careIcons.ts` for the
+ * plain-language copy, sourced from `SUPPORT_CONTENT_DEFAULTS` so the admin
+ * preview and the storefront `/care-guide` legend never diverge).
  */
 
 export interface CareGlyphProps {
@@ -333,10 +335,11 @@ export const CARE_SYMBOL_COMPONENTS: Record<CareIconKey, CareGlyphComponent> = {
 /**
  * ISO-grouped legend categories — the five families the Care guide's symbol
  * legend renders under. Code-owned: membership is fixed and NOT
- * CMS-editable (only each symbol's `label`/`meaning`, via `CARE_SYMBOL_META`
- * defaults + `resolveCareLegend` overrides, are). Exactly the 26 distinct
- * symbols — the 14 legacy alias keys in {@link CARE_SYMBOL_COMPONENTS} are
- * never legend members.
+ * CMS-editable (only each symbol's `label`/`meaning`, via
+ * `SUPPORT_CONTENT_DEFAULTS.careGuide.legend.entries` defaults +
+ * `resolveCareLegend` overrides, are). Exactly the 26 distinct symbols — the
+ * 14 legacy alias keys in {@link CARE_SYMBOL_COMPONENTS} are never legend
+ * members.
  */
 export interface CareSymbolCategory {
   id: string
@@ -390,38 +393,3 @@ export const CARE_SYMBOL_CATEGORIES: readonly CareSymbolCategory[] = [
     keys: ['dry-clean', 'do-not-dry-clean'],
   },
 ] as const
-
-/**
- * Plain-language meaning for the standard symbols — surfaced as the caption
- * under the picker preview and the "what it means" line in the passport care
- * ritual. Legacy/decorative keys have no entry (their instruction text stands
- * on its own).
- */
-export const CARE_SYMBOL_META: Partial<Record<CareIconKey, { label: string; meaning: string }>> = {
-  wash: { label: 'Machine wash', meaning: 'Machine wash on a normal cycle.' },
-  'wash-30': { label: 'Wash at 30°C', meaning: 'Machine wash at 30°C or below.' },
-  'wash-40': { label: 'Wash at 40°C', meaning: 'Machine wash at 40°C or below.' },
-  'wash-50': { label: 'Wash at 50°C', meaning: 'Machine wash at 50°C or below.' },
-  'wash-60': { label: 'Wash at 60°C', meaning: 'Machine wash at 60°C or below.' },
-  'wash-cold': { label: 'Cold wash', meaning: 'Machine wash cold — heat kills compression and print.' },
-  'wash-gentle': { label: 'Gentle cycle', meaning: 'Use the delicate cycle — reduced agitation and spin.' },
-  'wash-hand': { label: 'Hand wash', meaning: 'Hand wash only — no machine.' },
-  'wash-inside-out': { label: 'Wash inside out', meaning: 'Turn inside out to protect the print and face yarn.' },
-  'do-not-wash': { label: 'Do not wash', meaning: 'Do not wash — clean by another method.' },
-  bleach: { label: 'Bleach allowed', meaning: 'Bleach may be used when needed.' },
-  'do-not-bleach': { label: 'Do not bleach', meaning: 'No bleach of any kind — it destroys elastane.' },
-  'tumble-dry': { label: 'Tumble dry', meaning: 'Tumble drying is allowed.' },
-  'tumble-dry-low': { label: 'Tumble dry low', meaning: 'Tumble dry on low heat only.' },
-  'tumble-dry-high': { label: 'Tumble dry high', meaning: 'Tumble dry on high heat is fine.' },
-  'do-not-tumble-dry': { label: 'Do not tumble dry', meaning: 'No dryer — tumble heat relaxes the knit.' },
-  'line-dry': { label: 'Line dry', meaning: 'Hang to dry, out of direct sun.' },
-  'dry-flat': { label: 'Dry flat', meaning: 'Dry flat so the piece keeps its shape.' },
-  'drip-dry': { label: 'Drip dry', meaning: 'Hang dripping wet and let it drip dry.' },
-  iron: { label: 'Iron', meaning: 'Ironing is allowed.' },
-  'iron-low': { label: 'Iron low', meaning: 'Iron on the lowest setting, inside out.' },
-  'iron-medium': { label: 'Iron medium', meaning: 'Iron on a medium setting.' },
-  'iron-high': { label: 'Iron high', meaning: 'Iron on a high setting.' },
-  'do-not-iron': { label: 'Do not iron', meaning: 'Never iron — direct heat melts performance fibre.' },
-  'dry-clean': { label: 'Dry clean', meaning: 'Professional dry cleaning is allowed.' },
-  'do-not-dry-clean': { label: 'Do not dry clean', meaning: 'No dry cleaning — the solvents attack the fibre.' },
-}

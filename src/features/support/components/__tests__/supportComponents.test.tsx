@@ -49,6 +49,20 @@ describe('SupportSectionList', () => {
     render(<SupportSectionList sections={content.shipping.sections} />)
     expect(screen.getByRole('heading', { name: 'Processing time' })).toBeInTheDocument()
   })
+
+  it('skips the first section header rule (DocHero already supplies one) but keeps it on later sections', () => {
+    expect(content.shipping.sections.length).toBeGreaterThan(1)
+    render(<SupportSectionList sections={content.shipping.sections} />)
+    const headings = content.shipping.sections.map((section) =>
+      screen.getByRole('heading', { name: section.heading }),
+    )
+    // GuideSectionHeader's outer (rule) box is the heading's grandparent —
+    // the immediate parent is the flex row wrapping the heading + meta slot.
+    const firstHeaderBox = headings[0]?.parentElement?.parentElement
+    const laterHeaderBox = headings[1]?.parentElement?.parentElement
+    expect(firstHeaderBox?.className).not.toContain('border-t')
+    expect(laterHeaderBox?.className).toContain('border-t')
+  })
 })
 
 describe('ContactPanel', () => {

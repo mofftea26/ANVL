@@ -29,8 +29,12 @@ function defaultGarmentType(key: GarmentTypeKey) {
  * never written back until the admin actually edits or reorders. Preserves
  * whatever order the stored block already carries for keys it has, then
  * appends any canonical keys it doesn't (in the code-owned default order).
- * Mirrors `resolveGarmentPoints` in `resolveSupportContent.ts` exactly, so
- * what the admin sees in this list is the order the storefront will render.
+ * Mirrors `resolveGarmentPoints`'s ordering in `resolveSupportContent.ts`, so
+ * what the admin sees in this list is the order the storefront will render —
+ * but unlike that resolver, this filter does not dedupe by key: a hand-edited
+ * JSON blob with a repeated point key would survive here (and collide on
+ * `key={point.key}` below) instead of first-wins dropping the repeat. Never
+ * reachable through this editor's own UI, which cannot author a duplicate key.
  */
 function displayPoints(garmentTypeKey: GarmentTypeKey, cmsPoints: MeasurePoint[]): MeasurePoint[] {
   const defaults = defaultGarmentType(garmentTypeKey).points
@@ -189,7 +193,7 @@ export function MeasurementsField({ measure, onChange }: MeasurementsFieldProps)
                     className="focus-ring inline-flex cursor-grab items-center gap-1.5 rounded px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)] active:cursor-grabbing"
                   >
                     <ArrowDownUp size={ICON_SIZE.sm} aria-hidden="true" />
-                    Point {fallback?.letter || index + 1}
+                    Point {point.letter || fallback?.letter || index + 1}
                   </button>
                   <div className="flex items-center gap-1">
                     <IconButton

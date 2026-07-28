@@ -100,9 +100,11 @@ function CareGuidePage() {
 
       <Section className="border-t border-[var(--color-line)] bg-[var(--color-surface)]">
         <Container className="max-w-3xl">
+          {/* The Section above already carries the border-t. */}
           <GuideSectionHeader
             title="Care by piece"
             meta={perProduct.length > 0 ? formatPieceCount(perProduct.length) : undefined}
+            rule={false}
           />
           {perProduct.length > 0 ? (
             <div className="mt-8 space-y-3">

@@ -132,10 +132,13 @@ export const SUPPORT_CONTENT_DEFAULTS: SupportContentConfig = {
         body: 'For compression products, lay flat to dry and avoid high heat. Never iron directly over prints or technical panels.',
       },
     ],
-    // Overrides-only legend copy, keyed by `CareIconKey` — seeded from
-    // `CARE_SYMBOL_META` (careSymbols.tsx), refined to the brand's direct,
-    // physical voice. Only the 26 keys in `CARE_SYMBOL_CATEGORIES` are legend
-    // members; legacy alias keys are never looked up here.
+    // Overrides-only legend copy, keyed by `CareIconKey` — the single
+    // code-owned source for every symbol's plain-language meaning (read
+    // directly by `careIcons.ts#careIconMeaning`, and merged with CMS
+    // overrides by `resolveCareLegend` for the storefront `/care-guide`
+    // legend), in the brand's direct, physical voice. Only the 26 keys in
+    // `CARE_SYMBOL_CATEGORIES` are legend members; legacy alias keys are
+    // never looked up here.
     legend: {
       heading: 'What the symbols mean',
       intro: 'The standard care marks on every ANVL tag, explained in plain language.',

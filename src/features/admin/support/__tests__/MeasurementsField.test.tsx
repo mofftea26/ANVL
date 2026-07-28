@@ -76,6 +76,20 @@ describe('MeasurementsField', () => {
     expect(tee?.points.map((p) => p.key).slice(0, 2)).toEqual(['chest', 'length'])
   })
 
+  it('drag handle shows the authored letter, not the code-default one, once a point is renamed', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+
+    // Chest is tee's 2nd point (length, chest, waist, ...) — default letter "B".
+    const chestLetterInput = screen.getByRole('textbox', { name: /^chest point letter/i })
+    await user.clear(chestLetterInput)
+    await user.type(chestLetterInput, 'X')
+
+    const handle = screen.getByRole('button', { name: /drag to reorder point 2/i })
+    expect(handle).toHaveTextContent('Point X')
+    expect(handle).not.toHaveTextContent('Point B')
+  })
+
   it('"Reset to defaults" is disabled until the type is touched, then clears the whole override block', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()

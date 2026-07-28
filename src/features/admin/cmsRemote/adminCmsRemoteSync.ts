@@ -169,6 +169,10 @@ async function recoverAdminSessionFromServer(
     const { getAdminSessionServerFn } = await import(
       '@/features/admin/auth/adminAuth'
     )
+    // Deliberately bypasses `getCachedAdminSession` (adminAuthCache.ts): this
+    // call exists to hand the browser client a FRESH accessToken/refreshToken
+    // pair, and a cached result may already have been rotated away server-side
+    // by the time we read it, defeating the whole point of a recovery call.
     const result = await getAdminSessionServerFn()
     if (!result.authenticated) return false
     const { error } = await client.auth.setSession({

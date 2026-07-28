@@ -3,7 +3,6 @@ export { CARE_ICON_COMPONENTS, careIconMeaning, formatCareValue } from './careIc
 export {
   CARE_SYMBOL_CATEGORIES,
   CARE_SYMBOL_COMPONENTS,
-  CARE_SYMBOL_META,
   type CareGlyphComponent,
   type CareSymbolCategory,
 } from './careSymbols'

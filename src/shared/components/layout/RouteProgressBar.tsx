@@ -10,6 +10,25 @@ import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 const ENTRY_DELAY_MS = 120
 /** How long the bar takes to fade out once the router finishes loading. */
 const FADE_OUT_MS = 200
+/** Duration of the `transform` creep/completion transition. */
+const CREEP_DURATION_MS = 600
+/** Indeterminate "still loading" width, as a `scaleX` fraction. */
+const CREEP_TARGET_SCALE = 0.72
+/** Full width, used while completing + fading out. */
+const COMPLETE_SCALE = 1
+/**
+ * Starting width for the creep-in. Small rather than 0 so the very first
+ * frame already reads as "a bar," not an invisible sliver.
+ */
+const CREEP_START_SCALE = 0.08
+/**
+ * Gap between mounting the bar at `CREEP_START_SCALE` and bumping it to
+ * `CREEP_TARGET_SCALE`. `transition: transform` has nothing to animate from
+ * if both values land in the same paint — this timeout lets the browser
+ * paint the start value first, so the following update is a real transition
+ * instead of the bar popping straight to 72% width.
+ */
+const CREEP_START_FRAME_MS = 16
 
 /**
  * Thin top-of-viewport progress indicator driven directly by the router's
@@ -25,7 +44,16 @@ export function RouteProgressBar() {
   const reducedMotion = useReducedMotion()
   const [visible, setVisible] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const [scale, setScale] = useState(CREEP_START_SCALE)
+  // Mirrors `visible` for the effect below to read synchronously. `visible`
+  // itself cannot be an effect dependency: this effect is what calls
+  // `setVisible`, so depending on it would re-run the effect on its own
+  // update mid-sequence — canceling the just-scheduled creep timer before it
+  // ever fires. The effect only needs to react to the router's loading state
+  // and the reduced-motion preference, never to its own visibility output.
+  const visibleRef = useRef(false)
   const entryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const creepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -38,14 +66,32 @@ export function RouteProgressBar() {
 
       if (reducedMotion) {
         // No animated entry — just show it immediately once loading starts.
+        setScale(CREEP_TARGET_SCALE)
         setVisible(true)
+        visibleRef.current = true
         return undefined
       }
-      entryTimerRef.current = setTimeout(() => setVisible(true), ENTRY_DELAY_MS)
+
+      entryTimerRef.current = setTimeout(() => {
+        // Mount at the small start value first, then bump to the creep
+        // target one frame later (see CREEP_START_FRAME_MS) so the
+        // transform transition has an actual start value to animate from.
+        setScale(CREEP_START_SCALE)
+        setVisible(true)
+        visibleRef.current = true
+        creepTimerRef.current = setTimeout(() => {
+          setScale(CREEP_TARGET_SCALE)
+        }, CREEP_START_FRAME_MS)
+      }, ENTRY_DELAY_MS)
+
       return () => {
         if (entryTimerRef.current) {
           clearTimeout(entryTimerRef.current)
           entryTimerRef.current = null
+        }
+        if (creepTimerRef.current) {
+          clearTimeout(creepTimerRef.current)
+          creepTimerRef.current = null
         }
       }
     }
@@ -56,16 +102,24 @@ export function RouteProgressBar() {
       clearTimeout(entryTimerRef.current)
       entryTimerRef.current = null
     }
-    if (!visible) return undefined
+    if (creepTimerRef.current) {
+      clearTimeout(creepTimerRef.current)
+      creepTimerRef.current = null
+    }
+    if (!visibleRef.current) return undefined
 
     if (reducedMotion) {
       setVisible(false)
+      visibleRef.current = false
       return undefined
     }
+    setScale(COMPLETE_SCALE)
     setLeaving(true)
     leaveTimerRef.current = setTimeout(() => {
       setVisible(false)
+      visibleRef.current = false
       setLeaving(false)
+      setScale(CREEP_START_SCALE)
     }, FADE_OUT_MS)
     return () => {
       if (leaveTimerRef.current) {
@@ -73,7 +127,7 @@ export function RouteProgressBar() {
         leaveTimerRef.current = null
       }
     }
-  }, [isLoading, reducedMotion, visible])
+  }, [isLoading, reducedMotion])
 
   if (!visible) return null
 
@@ -87,11 +141,11 @@ export function RouteProgressBar() {
         data-testid="route-progress-bar-fill"
         className="h-full origin-left bg-[var(--color-highlight-bright)]"
         style={{
-          transform: `scaleX(${leaving ? 1 : 0.72})`,
+          transform: `scaleX(${leaving ? COMPLETE_SCALE : scale})`,
           opacity: leaving ? 0 : 1,
           transition: reducedMotion
             ? 'none'
-            : `transform 600ms ease-out, opacity ${FADE_OUT_MS}ms ease-out`,
+            : `transform ${CREEP_DURATION_MS}ms ease-out, opacity ${FADE_OUT_MS}ms ease-out`,
         }}
       />
     </div>

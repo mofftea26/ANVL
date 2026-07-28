@@ -277,6 +277,18 @@ describe('SizeDiagram', () => {
     expect(screen.getByRole('img').getAttribute('aria-label')).toContain('hoodie')
   })
 
+  it('announces the CMS-authored garment type name over the code-owned schematic label', () => {
+    render(
+      <SizeDiagram
+        garmentTypeKey="hoodie"
+        garmentTypeLabel="Heavyweight hoodie"
+        points={pointsFor('hoodie').points}
+      />,
+    )
+    const label = screen.getByRole('img').getAttribute('aria-label') ?? ''
+    expect(label).toContain('heavyweight hoodie')
+  })
+
   it('namespaces every SVG def id so two instances never collide', () => {
     const { container } = render(
       <>
