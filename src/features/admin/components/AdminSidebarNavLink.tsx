@@ -19,12 +19,16 @@ export function SidebarNavLink({
   return (
     <Link
       to={item.href as LinkProps['to']}
-      // Hovering any admin nav item fires the intent-preload machinery,
-      // which re-runs the `/admin` `beforeLoad` auth chain. The shared
-      // `getCachedAdminSession` cache absorbs that now, but there's still no
-      // useful data to preload here (the target is another admin editor
-      // behind the same already-mounted shell) — skip it outright.
-      preload={false}
+      // Preload on hover. Every admin editor is a `lazyRouteComponent`, so
+      // this fetches the target's JS chunk (19–74 KB) while the pointer is
+      // still travelling — without it the chunk only starts downloading on
+      // click, which is the whole of the perceived delay when switching
+      // editors. The earlier `preload={false}` reasoned that there is "no
+      // useful data to preload"; that conflates loader data with the route
+      // MODULE, and it is the module that costs. The cost it was really
+      // guarding against — hover re-running the `/admin` `beforeLoad` auth
+      // chain — is absorbed by `getCachedAdminSession`'s 45s promise cache.
+      preload="intent"
       onClick={onNavigate}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
@@ -83,7 +87,8 @@ export function RailCategoryLink({
   return (
     <Link
       to={href as LinkProps['to']}
-      preload={false}
+      // Same reasoning as SidebarNavLink above: preload the lazy editor chunk.
+      preload="intent"
       onClick={onNavigate}
       aria-label={label}
       title={label}

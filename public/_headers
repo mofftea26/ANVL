@@ -9,3 +9,46 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
   X-Content-Type-Options: nosniff
+
+# Everything below is copied verbatim out of `public/` and is therefore NOT
+# content-hashed — the URL stays the same when the file changes. So these get a
+# finite max-age rather than `immutable`: long enough that a repeat visitor
+# never re-downloads them, short enough that replacing an asset propagates
+# without a cache-busting rename.
+#
+# Before this, only /assets/* had any rule at all, which left ~18 MB of media
+# (two GLB models at 10.8 MB, a 6.8 MB hero video, brand art, page backgrounds)
+# with no Cache-Control — revalidated or refetched on every visit.
+
+# 3D models for the About altar + the Coming Soon ember scene. Large and
+# effectively static; a change here is a deliberate re-export.
+/about/*
+  Cache-Control: public, max-age=2592000
+  X-Content-Type-Options: nosniff
+
+# Hero/landing video. Range requests make a refetch especially expensive.
+/videos/*
+  Cache-Control: public, max-age=2592000
+  X-Content-Type-Options: nosniff
+
+# Brand marks, page backdrops and section art — swapped rarely, and a stale
+# copy for a week is harmless next to re-downloading them every visit.
+/brand/*
+  Cache-Control: public, max-age=604800
+  X-Content-Type-Options: nosniff
+
+/page-backgrounds/*
+  Cache-Control: public, max-age=604800
+  X-Content-Type-Options: nosniff
+
+/landing/*
+  Cache-Control: public, max-age=604800
+  X-Content-Type-Options: nosniff
+
+/shop/*
+  Cache-Control: public, max-age=604800
+  X-Content-Type-Options: nosniff
+
+/account/*
+  Cache-Control: public, max-age=604800
+  X-Content-Type-Options: nosniff
