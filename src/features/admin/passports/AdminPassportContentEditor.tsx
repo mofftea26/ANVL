@@ -25,14 +25,52 @@ function useStoredPassportContent() {
   )
 }
 
-/** How many of the six sections carry authored content. */
+/**
+ * The editable passport sections, in the same order as the tabs in
+ * `PassportContentTabsEditor`. Keep the two in step — this count is what the
+ * picker reports as "N of TOTAL sections authored".
+ */
+const PASSPORT_SECTION_COUNT = 11
+
+/** How many of the eleven sections carry authored content. */
 function authoredSectionCount(c: PassportProductContent): number {
   let n = 0
   if (c.identity.tagline || c.identity.authenticityNote) n += 1
   if (c.piece.heroRender || c.piece.gallery.length) n += 1
   if (c.material.title || c.material.note || c.material.macroAsset || c.material.materials.length)
     n += 1
+  // Placed markers count as authored content: a section whose only authored
+  // thing is three plates on the render is not an empty section.
+  if (
+    c.blueprint.heading ||
+    c.blueprint.intro ||
+    c.blueprint.features.length ||
+    c.blueprint.points.length
+  )
+    n += 1
+  if (
+    c.specs.construction ||
+    c.specs.fitType ||
+    c.specs.compression ||
+    c.specs.stretch ||
+    c.specs.breathability ||
+    c.specs.intendedUse ||
+    c.specs.points.length
+  )
+    n += 1
   if (c.care.intro || c.care.steps.length || c.care.asset || c.care.careItems.length) n += 1
+  if (
+    c.fit.intendedFit ||
+    c.fit.measurements.length ||
+    c.fit.stretchRange ||
+    c.fit.modelHeight ||
+    c.fit.modelSize ||
+    c.fit.sizeAdvice ||
+    c.fit.points.length
+  )
+    n += 1
+  if (c.hotspots.length) n += 1
+  if (c.forgeNotes.length) n += 1
   if (c.details.heading || c.details.story || c.details.facts.length || c.details.funFact) n += 1
   if (c.origin.label || c.origin.place || c.origin.story || c.origin.asset) n += 1
   return n
@@ -134,7 +172,7 @@ export function AdminPassportContentEditor({
                       {row.product?.name ?? row.slug}
                     </p>
                     <p className="anvl-micro text-[var(--color-text-muted)]">
-                      {row.sections} of 6 sections authored
+                      {row.sections} of {PASSPORT_SECTION_COUNT} sections authored
                       {!row.product ? ' · product no longer in catalog' : ''}
                     </p>
                   </div>

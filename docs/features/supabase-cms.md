@@ -121,6 +121,7 @@ When **`VITE_SUPABASE_*`** is configured:
 
 1. **Sign-in:** `/admin/login` → `signInWithPassword` → `fetchCmsProfileRoleWhenReady`. Only **`role = admin`** may use `/admin`.
 2. **Hydration:** `hydrateAdminCmsFromSupabase` pulls `cms_settings` → localStorage. Runs `migrateOathTenetAssetsFromSlots` on pull. `AdminLayout` blocks until `isRemoteCmsReady`.
+   - **Every write-through column must be hydrated.** `pdp_content` and `shop_config` were missing until 2026-07-30, and both are **whole-map** blobs: a save publishes the entire map, so an un-hydrated browser published a one-key map and erased every other product in `cms_settings` *and* `storefront_publication`. `CmsSettingsFieldKey` is now derived such that a column with no hydration pull is a compile error, and `WHOLE_MAP_COLUMNS` in `adminCmsRemoteSync.ts` refuses the publish (hard-fail on a scoped save; omit-never-wipe on the unscoped auto-sync). A caller that writes localStorage itself instead of going through `save*Async` **must** call the matching `assert*Hydrated` first — the flush-level guard probes for a localStorage key the write would already have created.
 3. **Sync:** `adminCmsRemoteSync` upserts slim fields to `cms_settings` + `storefront_publication`, rebuilds `media_index`. Immediate flush on explicit Save; 850 ms debounce for active drop + media mutations.
 4. **No publish RPC:** Setting active drop or saving config mirrors directly — no `cms_publish_drop` call.
 

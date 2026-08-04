@@ -14,8 +14,8 @@ import type { ResolvedSupportSection } from '@/features/cms/support/resolveSuppo
  * for the wide guide sections.
  *
  * The first section's header skips its own rule — this list always follows
- * `DocHero`, whose `border-b` already separates it, so a second rule stacked
- * one `Section` padding below would double up. Every later section still gets
+ * the page masthead, whose molten rule and fade-out already separate it, so a
+ * second full-width rule one `Section` padding below would double up. Every later section still gets
  * its own rule; it is the only separator between consecutive body sections.
  */
 export function SupportSectionList({ sections }: { sections: ResolvedSupportSection[] }) {

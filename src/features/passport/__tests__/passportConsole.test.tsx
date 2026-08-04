@@ -49,6 +49,7 @@ const view: PassportView = {
   isPublic: false,
   isTransferPending: false,
   transferValid: false,
+  ownerArmoryHandle: null,
 }
 
 const content: ResolvedPassportContent = {
@@ -62,6 +63,7 @@ const content: ResolvedPassportContent = {
     stretch: 'Four-way',
     breathability: '',
     intendedUse: '',
+    points: [],
   },
   fit: {
     intendedFit: 'Relaxed',
@@ -70,9 +72,11 @@ const content: ResolvedPassportContent = {
     modelHeight: '183 cm',
     modelSize: 'M',
     sizeAdvice: '',
+    points: [],
   },
   forgeNotes: [{ title: 'Eleven revisions', body: 'The collar alone took four.' }],
   hotspots: [{ x: 50, y: 30, title: 'Shoulder knit', body: 'Ribbed for load.' }],
+  blueprint: { heading: 'Blueprint', intro: '', features: [], points: [] },
   care: { intro: '', steps: ['Cold wash', 'Hang dry'], symbols: ['no-bleach'], careItems: [], notes: [] },
   details: { heading: 'Forged details', story: 'A story.', facts: ['Fact'], funFact: '' },
   origin: {
@@ -157,5 +161,79 @@ describe('PassportConsole tabs + section swap (no animation clock required)', ()
       vi.advanceTimersByTime(700)
     })
     expect(screen.getByRole('heading', { name: 'Material dossier' })).toBeTruthy()
+  })
+})
+
+/**
+ * The Blueprint section has no drawing of its own — the piece on the left goes
+ * holographic while it is open. The class + `data-holo` pair IS the contract
+ * (`.pp-holo` in styles.css does the rest), so this pins the toggle rather
+ * than any rendered pixel.
+ */
+describe('PassportConsole — the blueprint hologram', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  const withBlueprint: ResolvedPassportContent = {
+    ...content,
+    piece: { heroRenderUrl: 'https://cdn/render.png', gallery: [] },
+    blueprint: {
+      heading: 'Blueprint',
+      intro: '',
+      features: [{ code: 'a', title: 'High neck front neckline', body: 'Sits on the throat.' }],
+      points: [],
+    },
+  }
+
+  const stage = (container: HTMLElement) =>
+    container.querySelector<HTMLElement>('[data-pc-image]')!
+
+  it('arms the render only while the blueprint section is open', () => {
+    const { container } = render(
+      <PassportConsole
+        view={view}
+        product={null}
+        content={withBlueprint}
+        storyChapter={null}
+        sizeGuide={null}
+        related={null}
+        claimedDate="14 July 2026"
+      />,
+    )
+
+    expect(stage(container).className).toContain('pp-holo')
+    expect(stage(container).dataset.holo).toBe('off')
+
+    fireEvent.click(screen.getByRole('button', { name: /blueprint/i }))
+    act(() => {
+      vi.advanceTimersByTime(700)
+    })
+    expect(stage(container).dataset.holo).toBe('on')
+
+    fireEvent.click(screen.getByRole('button', { name: /back to the craft/i }))
+    act(() => {
+      vi.advanceTimersByTime(700)
+    })
+    expect(stage(container).dataset.holo).toBe('off')
+  })
+
+  it('leaves the render alone for any other section', () => {
+    const { container } = render(
+      <PassportConsole
+        view={view}
+        product={null}
+        content={withBlueprint}
+        storyChapter={null}
+        sizeGuide={null}
+        related={null}
+        claimedDate="14 July 2026"
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /material dossier/i }))
+    act(() => {
+      vi.advanceTimersByTime(700)
+    })
+    expect(stage(container).dataset.holo).toBe('off')
   })
 })

@@ -1,5 +1,7 @@
 # ANVL Premium Cinematic Commerce Redesign
 
+> **ARCHIVED — historical plan (2026-06-02).** Predates the 2026-06-20 merge of The Oath I + II into the single continuous cinematic landing. For the shipped design see `docs/landing-pages.md` and `docs/animation-guidelines.md`. Retained as a record of the original design reasoning.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans. Run `pnpm verify` before declaring any phase done.
 
 **Goal:** Cinematic landing becomes a CMS hero preset (`cinematicScrollHero`); homepage continues with act sections below; premium nav + storefront redesign.

@@ -44,13 +44,19 @@ The current phase uses local/mock adapters where a real backend does not yet exi
 | State — local | Zustand v5 |
 | Forms | React Hook Form + Zod v4 |
 | Animation | GSAP 3 + `@gsap/react` useGSAP + ScrollTrigger |
-| Motion (lightweight) | Framer Motion |
+| Motion (lightweight) | **No library** — `RevealOnScroll` uses IntersectionObserver + a CSS transition. `framer-motion` was removed; do not reintroduce it for simple reveals |
 | 3D / WebGL | three.js + `@react-three/fiber` v9 + `@react-three/drei` v10 — The Oath landing emblem, Story chapter book, the About Forge Altar (anvil/hammer GLBs + aurora), and the site-wide cursor dust (`src/shared/webgl/DustField`, one shared field mounted globally via `SiteDustGate` and inside scene canvases) — all lazy `vendor-three`, gated to capable devices |
 | Smooth scroll | Lenis |
-| Icons | lucide-react (named imports only) |
+| Icons | **`@phosphor-icons/react`**, consumed *only* through the `@/shared/icons` seam (`src/shared/icons/index.tsx`), which re-exports Phosphor under the historical lucide names so call sites never import the vendor directly. Global weight is **duotone** via `IconContext` (`PHOSPHOR_ICON_WEIGHT` — one line to change it). `Anvil` is an inlined SVG path (Phosphor has no anvil; path from lucide, ISC). Sizes come from the `ICON_SIZE` buckets in `src/shared/lib/iconSize.ts`, never raw numbers. **`lucide-react` was removed 2026-07-17** — do not reintroduce it |
 | Toasts | sonner |
+| PDF parsing | `pdfjs-dist` (pinned exact) — techpack ingestion only, browser-side, lazy `vendor-pdfjs`; never in the SSR graph (it cannot load on `workerd`) |
 | Build | Vite v8 |
 | Test | Vitest v4 + @testing-library/react v16 + jsdom |
+| Component workbench | Storybook v10 (`@storybook/react-vite`) — 23 `*.stories.tsx` across the shared UI kit; `.storybook/main.ts` strips the TanStack Start plugins out of the shared Vite config (they assume a full SSR build) and `.storybook/preview.tsx` wraps stories in `DesignSystemPreviewProvider` for theming |
+| Fuzzy search | `fuse.js` — the global search matching engine (`src/features/search/lib/matchEngine.ts`) |
+| QR codes | `qrcode` — the **branded** renderer in `src/features/share/qr/anvlQr.ts` uses `QRCode.create()` for the raw module matrix and draws it itself: neighbour-aware rounded modules, deliberately **DARK** finder eyes (champagne binarises as light and the locators vanish — see the comment on `drawFinder`), and an `AnvlCrest` knockout centred on the plate by `fitCrestBox` at level-H correction. Both surfaces use it: the storefront share sheet (`renderAnvlQr`, one code + a Blob for `navigator.share`) and the admin passport print sheet (`renderAnvlQrBatch` + `PRINT_QR_COLORS`, one scratch canvas for up to 500 codes, paper white / K-only black, never theme tokens) |
+| Virtualization | `@tanstack/react-virtual` — admin media library grid (`src/features/admin/media/MediaAssetGrid.tsx`) |
+| PDF parsing | `pdfjs-dist` — techpack ingestion, browser-only + lazy, SSR-guarded; split into the `vendor-pdfjs` chunk. Only `techpacks/parse/pdfExtract.ts` imports the package |
 | Package manager | pnpm (pinned) |
 | Backend / DB | Supabase (auth, postgres, storage, edge functions) |
 | Commerce (optional) | Shopify Storefront API (when `VITE_SHOPIFY_*` are set) |
@@ -79,7 +85,7 @@ Data / Runtime layer       → src/app/config/runtime.ts + adapter files
 ### Client Abstraction (Dependency Inversion)
 
 All interface contracts live in `src/app/config/clients.ts`:
-- `CmsClient`, `CommerceClient`, `SeoClient`, `SiteSettingsClient`, `AnalyticsClient`, `PaymentClient`, `AccountClient`
+- `CmsClient`, `CommerceClient`, `SeoClient`, `SiteSettingsClient`, `AnalyticsClient`, `PaymentClient`, `AccountClient`, `StoryClient`
 
 Runtime wiring via `createRuntimeClients({ isServer })` in `src/app/config/runtime.ts`:
 - **Server:** seed adapters (no `localStorage`, SSR-safe)
@@ -97,6 +103,8 @@ src/features/landingPages/**   → code-owned landing pages (registry, renderer,
 src/features/marketing/**      → storefront home sections (home/: campaign cards, lookbook strip)
 src/features/passport/**       → product passports: /p/$token claim flow (teaser → onboarding → GSAP claim ceremony → passport dossier), RPC clients (passport + armory), Armory life (ranks/badges, Forge XP + challenges, wear journal, Feats, Hall of Honor, public armory /armory/$handle, verified-owner reviews) — storefront-safe
 src/features/about/**          → About page: desktop "Forge Altar" (non-scrollable 3D anvil + orbiting content orbs + hammer-strike modals) + normal mobile page — not registered in landingPages/registry.ts (About is a fixed page, not a swappable drop)
+src/features/techpacks/**      → Techpack ingestion domain: Zod document model, disclosure policy, and the coordinate-driven PDF parsers. PURE — no React, no Supabase, so every parser is testable from small JSON fixtures. Only `parse/pdfExtract.ts` + `parse/pdfImages.ts` touch pdfjs-dist, and they are browser-only
+src/features/share/**          → THE share surface (Image / Link / QR sheet) used by the passport, the Armory panel and every feat row. Pure routing + caption + preset + QR-geometry logic, a canvas image engine (one file per preset), and the branded QR renderer — storefront-safe. A feature rather than shared/** because it reads passport types
 src/features/story/**          → Story saga: schemas, clients, 3D shelf + book overlay
 src/features/products/**       → product catalog, commerce adapters, shop components
 src/features/cart/**           → cart store + hooks (Zustand)
@@ -127,22 +135,22 @@ src/
     seo/             meta.ts (buildSeoMeta)
   content/           seed data + mocks
   features/
-    admin/           Slim CMS — dashboard (one-screen control room + setup/ wizard hub), theme, fonts, assets, shop, products, landing content, about, coming-soon, banner, legal, support (FaqListField, PerProductCareField, PerProductSizeField, MeasurementsField, CareLegendField), passports, story, gamification, settings (+ auth). Shell: AdminLayout → AdminShell (persistent categorized sidebar — components/AdminSidebar.tsx + AdminSidebarNavLink.tsx/adminSidebarActive.ts/useAdminSidebarExpandedCats.ts — + topbar Preview toggle) / AdminWorkspace / AdminRailPanel; preview/ (live-preview panel — drag-resizable split — + draft/hover channels), components/wizard/ (generic AdminWizard), setup/ (six guided setup wizards + live status reads), hooks/useSortableList (native DnD reorder)
+    admin/           Slim CMS — dashboard (one-screen control room + setup/ wizard hub), theme, fonts, assets, shop, products, landing content, about, coming-soon, banner, legal, support (FaqListField, PerProductCareField, PerProductSizeField, MeasurementsField, CareLegendField), passports (+ techpacks/ techpack ingestion & import), story, gamification, analytics, settings (+ auth). Shell: AdminLayout → AdminShell (persistent categorized sidebar — components/AdminSidebar.tsx + AdminSidebarNavLink.tsx/adminSidebarActive.ts/useAdminSidebarExpandedCats.ts — + topbar Preview toggle) / AdminWorkspace / AdminRailPanel; preview/ (live-preview panel — drag-resizable split — + draft/hover channels), components/wizard/ (generic AdminWizard), setup/ (six guided setup wizards + live status reads), hooks/useSortableList (native DnD reorder)
     analytics/       Analytics client mock + hooks
     about/           About page: content schema/defaults/resolver (CMS-driven orbs = sections) + altar/ (desktop Forge Altar — grabbable 3D anvil, aurora, per-color orbiting orbs, hammer-strike explosion → modal) + mobile/ (normal scrolling page; orbs render as stacked sections)
     cart/            Zustand cart store + hooks
     checkout/        Forms, schemas, payment config + mock adapters
     cms/             Storefront-safe CMS reads: theme/font/asset config (cmsSiteConfig), landing content envelope, coming-soon config, banner/ (banner_config + SiteBannerRail above the topbar), legal/ + support/ (legal_content/support_content blobs + resolvers with full code-default copy; support/'s Zod schema is split into an acyclic module family — supportContent.shared/.care/.size.zod.ts + parseUtils.ts, composed by supportContent.zod.ts — incl. the care-symbol legend and per-garment-type "Where we measure" point sets), publication readers, navigation + layout defaults, preview/ (admin live-preview bridge: protocol, PreviewDraftProvider, targets/highlight)
-    legal/           Storefront legal-page UI: LegalDocument (hero + sticky TOC + sections), consumes cms/legal resolver
-    support/         Storefront support-page UI: DocHero, FaqAccordion (+FAQPage JSON-LD), ContactPanel, Size/Care tables, per-product resolvers; consumes cms/support resolver. components/garments/ (per-garment-type schematic geometry — tee/stringer/hoodie/joggers/shorts outline+detail+badge anchors, registry, outline-bounds viewBox), MeasureExplorer + GarmentTypeTabs (the size-guide's garment-type tab strip, one tab per type the catalogue's sizeGuide.perProduct entries actually use), MeasurementFigure, CareSymbolGrid/Table/Legend/Popover (the 26-symbol care legend, searchable), lib/garmentTypes.ts (resolveGarmentTypeKeys)
+    legal/           Storefront legal-page UI: LegalDocument (sticky TOC + sections; its masthead is the shared shared/components/premium/PageMasthead), consumes cms/legal resolver
+    support/         Storefront support-page UI: ContactPanel, Size/Care tables, per-product resolvers; consumes cms/support resolver. Page mastheads come from shared/components/premium/PageMasthead (DocHero was removed). faq/ ("The Forge Seam" — the forged-plate answer stack: FaqForge, FaqSeamRow, FaqSearchField, faqSearch, useFaqRailHeat; FaqAccordion.tsx is now a thin re-export). components/garments/ (per-garment-type schematic geometry — tee/stringer/hoodie/joggers/shorts outline+detail+badge anchors, registry, outline-bounds viewBox), MeasureExplorer + GarmentTypeTabs (the size-guide's garment-type tab strip, one tab per type the catalogue's sizeGuide.perProduct entries actually use), MeasurementFigure, CareSymbolGrid/Table/Legend/Popover (the 26-symbol care legend, searchable), lib/garmentTypes.ts (resolveGarmentTypeKeys)
     comingSoon/      Coming Soon reveal page: one-screen CMS-driven experience (backdrop/logo/countdown/email capture), GSAP entrance + pointer parallax, root-layout site-mode gate helpers
     experience/      Centralized experience system: registry (keyed 1:1 to active landing key), ExperienceProvider/useExperience, useExperienceVariant (structural variant seam), data-experience storefront wrapper, ExperiencePageTransition
     landingPages/    Code-owned landing pages: registry, renderer, asset slots, pages/TheOathLanding (the single Drop 01 cinematic landing)
     marketing/       Storefront home sections (home/: campaign cards, lookbook strip)
-    passport/        Product passports: Zod schemas, RPC client (get/claim/transfer/visibility), usePassport hooks, ranks lib (3 levels/rank + emblems), country presets + WorldOriginMap, /p/$token experience (teaser, onboarding, ClaimCeremony, PassportPage → console/ ember-card console or scrolling dossier, both from the PASSPORT_SECTIONS registry grouped as Craft/Ritual/Legacy), webgl/ bento-card ember forge
-    products/        Commerce adapters (localStorage, seed, Shopify, Supabase), catalog, hooks
+    passport/        Product passports: Zod schemas, RPC client (get/claim/transfer/visibility), usePassport hooks, ranks lib (3 levels/rank + emblems), country presets + WorldOriginMap, /p/$token experience (teaser, onboarding, ClaimCeremony, PassportPage → console/ ember-card console or scrolling dossier, both from the PASSPORT_SECTIONS registry grouped as Craft/Ritual/Legacy), webgl/ bento-card ember forge, effects/ (per-section signature effects: one lazy registry + PassportSectionEffectLayer host; sections/ has one file per effect incl. the EffectBlueprint WebGL hologram whose CSS .pp-holo is the gated fallback — see docs/animation-guidelines.md "Passport section effects")
+    products/        Commerce adapters (localStorage, seed, Shopify), catalog, hooks
     search/          Storefront global search: Fuse.js-backed matching engine (types/, lib/matchEngine.ts, index-agnostic), corpus assembly (lib/searchCorpus.ts, reshapes existing runtimeClients/CMS reads), useGlobalSearch hook + GlobalSearchBar/Dropdown/Overlay UI — mounted in PremiumNavTopbar + PremiumNavMobile
-    seo/             SEO document schema + types
+    share/           The share sheet: ShareButton + ShareModal (tabs/ Image · Link · QR), targets.ts (send-to registry + pure resolveShareRoute), captions.ts, shareActions.ts, useShareCapabilities/useImagePick/useShareData/useShareLauncher, image/ (drawKit + shareImage + presets/ — one file per look, seven in ONE family: a look is an arrangement, and the self-resolving stage supplies the hero, so every look works with or without a photo), qr/anvlQr.ts (branded QR), socialIcons.tsx
     shopify/         Shopify Storefront API client + mappers
     story/           Story saga: schemas, seed, asset resolver, page components + book overlay, Supabase/seed clients
     storefront-account/ Public account UI stubs
@@ -157,21 +165,25 @@ src/
     story.tsx        Story saga page (chapter shelf + deep-linkable book overlay)
     about.tsx        About page — renders <AboutExperience> (desktop Forge Altar / mobile normal page; CMS-editable copy + assets)
     auth/            Sign in / sign up / forgot password
-    admin/           Slim CMS admin routes: dashboard (index), theme, fonts, assets, shop, products, content, about, coming-soon, passports, story, gamification, settings, login
+    admin/           Slim CMS admin routes: dashboard (index), theme, fonts, assets, shop, products, content, about, coming-soon, legal, support, passports (+ passports_.content.$slug), techpacks, story, gamification, analytics, settings, login, category.$categoryKey
   shared/
     api/contracts/   Typed DTOs for future REST/BFF (scaffolding — not yet wired)
     assets/brand/    Inline SVG logo components (AnvlWordmark, AnvlCrest, etc.)
     components/
       brand/         AnvlLogoImage, DropEmblemDecor
-      layout/        PremiumNav (+ mobile/topbar), AnnouncementRail, SiteFooter, ContentPage, GrainOverlay
-      motion/        RevealOnScroll
-      premium/       SectionShell, PageHero, ContentPanel, SectionEyebrow, ForgeAtmosphere, WarBanner
+      layout/        PremiumNav (+ mobile/topbar), AnnouncementRail, SiteFooter, GrainOverlay
+      motion/        RevealOnScroll (IntersectionObserver + CSS — no motion library)
+      premium/       PageMasthead (THE shared doc-page header — /faq, /care-guide, /size-guide, /contact, /shipping, /returns + the 4 legal pages; champagne-foil title, derived ghost watermark, no action slot), SectionShell, PageHero, ContentPanel, SectionEyebrow, ForgeAtmosphere, WarBanner
       seo/           JsonLd, MarketingToolsHead, structuredData
-      ui/            Button, Input, Modal, Drawer, Select, Skeleton, SafeLink, MediaPickerField, etc.
+      ui/            Button, Input, Modal, Drawer, Select, Skeleton, SafeLink, Switch, DatePicker, PhoneInput, AnvlToaster, ForgeEmberCanvas, ModalForgeEffect, ToastForgeEffect, ThemeTintedMediaMark, etc.
     constants/       brand.ts, brandLogos.ts
-    hooks/           useDialogFocusTrap, useLenisScroll, useLockPageScroll, useReducedMotion
-    lib/             cn.ts, gsap.ts, url.ts, stripAngleBracketTags.ts, color.ts, storage/, forge/ (emberForge.ts + forgeSurface.ts — the shared canvas-2D ember-forge engine backing Modal, the toast layer, and the About altar's ember hand-off; components/ui/ForgeEmberCanvas.tsx is its React shell)
-    schemas/         media, money, navigation (shared Zod scaffolding)
+    data/            countryDialCodes.ts
+    devPreview/      DesignSystemPreviewProvider (Storybook-only theming wrapper)
+    hooks/           useDialogFocusTrap, useLenisScroll, useLockPageScroll, useReducedMotion, useContainedMediaRect
+    icons/           index.tsx — THE icon seam: @phosphor-icons/react re-exported under stable names + the inlined Anvil glyph. Never import the vendor directly
+    lib/             cn.ts, gsap.ts, url.ts, iconSize.ts (ICON_SIZE buckets), stripAngleBracketTags.ts, color.ts, storage/, forge/ (emberForge.ts + forgeSurface.ts — the shared canvas-2D ember-forge engine backing Modal, the toast layer, and the About altar's ember hand-off; components/ui/ForgeEmberCanvas.tsx is its React shell)
+    schemas/         media.schema.ts, stringList.ts (the orphaned money/navigation scaffolding was deleted 2026-07-29)
+    webgl/           DustField, SiteDustGate, SiteDustLayer, dustShaders, particleShapes, siteDustState, isWebglAvailable, canvasTeardownGuard
   styles.css         Global tokens, themes, scrollbars, reduced-motion rules
   router.tsx         TanStack Router setup
   routeTree.gen.ts   AUTO-GENERATED — never edit directly
@@ -202,6 +214,10 @@ pnpm deploy                     # pnpm build && wrangler deploy → Cloudflare W
 pnpm cf-typegen                 # wrangler types → worker-configuration.d.ts (gitignored, regenerable)
 pnpm verify                     # typecheck + test + build (definition of done gate)
 pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALYZE=1)
+pnpm storybook                  # Component workbench on port 6006
+pnpm build-storybook            # Static Storybook build
+pnpm docs:check                 # Doc-freshness gate (which docs this change set still owes)
+pnpm hooks:install              # Point git at .githooks (one-time, per clone)
 ```
 
 > No ESLint is configured. `pnpm typecheck` is the static analysis gate.
@@ -219,7 +235,7 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
   - `VITE_CANONICAL_BASE_URL`, `VITE_ANVL_INTERNATIONAL_CHECKOUT`
 - Server-only / Edge (never `VITE_*`): `SUPABASE_SERVICE_ROLE_KEY`, `SHOPIFY_ADMIN_API_ACCESS_TOKEN`, `SHOPIFY_API_SECRET_KEY`, `ANVL_ADMIN_SESSION_SECRET` (seals the HttpOnly `/admin` session cookie — see `src/features/admin/auth/adminAuthSession.server.ts`; 32+ chars, rotating it signs out all admin sessions)
 - `.env.example` must have placeholder values only — never real credentials.
-- Env vars are validated by Zod in `src/app/config/publicEnv.ts` before use.
+- Browser env vars are validated **per-consumer**, not in one place: `VITE_ANVL_INTERNATIONAL_CHECKOUT` via Zod in `src/app/config/publicEnv.ts`; the Supabase URL/key via hand-rolled checks in `src/features/cms/api/supabasePublicEnv.ts` (`getSupabaseEnvIssue` / `isUsableSupabasePublicKey`). The `VITE_SHOPIFY_*` vars are presence-checked only. Adding a new `VITE_*` var means picking one of these paths deliberately.
 - **Cloudflare Workers split (see `docs/deployment.md`):** `VITE_*` vars are **build-time** — they must be present when `vite build`/`pnpm deploy` runs (local `.env` or CI), **not** Worker secrets. Server runtime vars live on the Worker: `NODE_ENV=production` in `wrangler.jsonc` `vars` (Cloudflare doesn't set it automatically; the admin/CSRF cookies' `Secure` flag depends on it), and `ANVL_ADMIN_SESSION_SECRET` via `wrangler secret put` (never committed). `nodejs_compat` is required for request-time `process.env` reads.
 
 ---
@@ -231,9 +247,9 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 | Table | Purpose | RLS |
 |---|---|---|
 | `public.cms_profiles` | Links `auth.users` to CMS role (`viewer\|editor\|admin`) | Read own row |
-| `public.cms_settings` | Singleton: active drop key, theme, fonts, asset slot map, landing content blobs | Public read, editor update |
+| `public.cms_settings` | Singleton: active drop key, theme, fonts, asset slot map, landing content blobs | **CMS-role read** (`viewer\|editor\|admin` — there is no anon SELECT), editor/admin update |
 | `public.landing_pages` | Picker metadata (keys must match code registry) | Public read available rows |
-| `public.storefront_publication` | Anon-readable mirror: theme, fonts, assets, media_index, active key | Public read, editor update |
+| `public.storefront_publication` | Anon-readable mirror: theme, fonts, assets, media_index, active key | Public read, **admin** update (policy is `role = 'admin'`, not editor) |
 | `public.cms_media_assets` | Media library + asset assignments | CMS roles only |
 | `cms_settings.shop_config` / `storefront_publication.shop_config` | Shop Experience config blob (jsonb) — `/shop` layout/behavior/copy; mirrors `landing_content` flow | Public read, editor update |
 | `cms_settings.coming_soon` / `storefront_publication.coming_soon` | Coming Soon site-mode blob (jsonb) — `enabled` toggle + reveal-page copy/countdown/assets/SEO; mirrors `shop_config` flow | Public read, editor update |
@@ -247,11 +263,13 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 | `public.armory_feats` | Owner-authored achievement log ("Deadlift PR — 240 kg"), each with a per-entry `is_public`. No anon SELECT; public entries surface only via `get_public_armory` | Own-row CRUD |
 | `public.product_reviews` | PDP reviews, one per owner per product; write gated on holding a registered passport for the product (`submit_product_review` verifies ownership). Anon read via `get_product_reviews` (name/content only, `is_mine` for the signed-in owner) | Owner read/delete own; RPC-gated write |
 | `public.passport_transfers` | Passport ownership hand-over log (written by the accept RPC) | Participants read own rows; CMS read all |
-| `cms_settings.passport_content` / `storefront_publication.passport_content` | Per-product passport section content (jsonb `{ [slug]: {...} }`) — identity/piece/material/care/details/origin copy + assets, authored in the passports wizard; mirrors `pdp_content` flow | Public read, editor update |
+| `cms_settings.passport_content` / `storefront_publication.passport_content` | Per-product passport section content (jsonb `{ [slug]: {...} }`) — identity/piece/material/**blueprint**/care/details/origin copy + assets, authored in the passports wizard; mirrors `pdp_content` flow | Public read, editor update |
+| `public.techpacks` | One row per uploaded supplier techpack PDF; `document` jsonb holds the parsed `TechpackDocument`, `ai_document` holds optional AI suggestions (never merged into `document`). Partial unique index enforces at most one `is_final` per `product_slug` — set it via `set_techpack_final()`, never client-side, or the two-statement swap races the index and can leave zero finals. **No anon policy** | CMS roles read, editor write |
+| `public.techpack_images` | Images extracted from a pack, stored in the PRIVATE `techpacks` bucket. `promoted_media_id → cms_media_assets` (ON DELETE SET NULL) records the one deliberate act that lets an image reach the storefront. **No anon policy** | CMS roles read, editor write |
 | `public.story_chapters` | Story "books" (`product_slug` = Shopify handle); **multiple chapters may share a product_slug** — PDP/passport embed the first by `sort_order`; grouped by `drop_label`/`drop_slug`; acts are its pages | Public read published; editor write |
 | `public.story_acts` | Ordered story beats (book pages) within a chapter | Public read (parent published); editor write |
 | `public.story_cast` | CMS-authored characters (army roster) | Public read (parent published); editor write |
-| `public.gamification_settings` / `gamification_ranks` / `gamification_rank_levels` / `gamification_challenges` / `gamification_badges` | The Armory's editable gamification rules (Forge XP constants + level curve; 4 fixed rank keys with per-level AND-combined thresholds + optional `emblem_url` override; challenges/badges as declarative `metric ∈ {registrations, total_wears, max_wears, feat_count, full_drops, honor_pinned}` + target). Seeded == code defaults (`DEFAULT_GAMIFICATION_RULES`), so pre-migration behavior is identical. Storefront reads via anon fetch (`useGamificationRules`, React Query, defaults as placeholder); rules resolvers in `passport/lib/{ranks,challenges,forgeXp}.ts` take rules with default fallback | Public SELECT; editor/admin write |
+| `public.gamification_settings` / `gamification_ranks` / `gamification_rank_levels` / `gamification_challenges` / `gamification_badges` | The Armory's editable gamification rules (Forge XP constants + level curve; **4 seeded** rank keys with per-level AND-combined thresholds + optional `emblem_url` override — the `CHECK` constraint pinning the key set was dropped in `20260720120000_gamification_rank_keys.sql`, so admins can create and delete ranks and `ArmoryRankKey` is a free string with code-owned fallback artwork; challenges/badges as declarative `metric ∈ {registrations, total_wears, max_wears, feat_count, full_drops, honor_pinned}` + target). Seeded == code defaults (`DEFAULT_GAMIFICATION_RULES`), so pre-migration behavior is identical. Storefront reads via anon fetch (`useGamificationRules`, React Query, defaults as placeholder); rules resolvers in `passport/lib/{ranks,challenges,forgeXp}.ts` take rules with default fallback | Public SELECT; editor/admin write |
 | `public.storefront_profiles` | Customer identity/profile — name, email, `phone`, `addresses` (jsonb), notification prefs; `armory_public` + minted-once `armory_handle` for the shareable read-only armory (`/armory/$handle` via `get_public_armory`, toggled by `set_armory_share`); auto-created on signup | Read/update own row |
 | `public.orders` | Shopify order mirror (written by `shopify-webhook` Edge Fn) for account order history | Read own (by id or email claim); service-role write only |
 
@@ -266,12 +284,23 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 - Before any schema change: document current schema → target schema → migration steps → risks → rollback plan.
 - Published storefront state flows: admin edits local working copy → `adminCmsRemoteSync` → `cms_settings` + `storefront_publication` mirror.
 
-### Edge Functions (in repo)
+### Edge Functions
 
-- `shopify-webhook` — Ack-only webhook receiver (no DB writes)
-- `medusa-webhook-stub` — Placeholder for future Medusa sync
+| Function | Purpose | Deploy state (verified 2026-07-29) |
+|---|---|---|
+| `shopify-webhook` | Verifies Shopify HMAC. For `orders/*` topics it upserts a denormalized copy into `public.orders` (service role), linking to `storefront_profiles` by email; all other topics are acknowledged without writes | **Deployed** (v4, ACTIVE) |
+| `techpack-ai` | Optional AI rewrite overlay for a parsed techpack — writes only `techpacks.ai_document`, never `techpacks.document`. Returns `not_configured` until `ANTHROPIC_API_KEY` is set as a Supabase secret | **Deployed** (v3, ACTIVE, `verify_jwt: true`) |
+| `medusa-webhook-stub` | Placeholder for future Medusa sync | **In repo, never deployed** |
 
-> Publish/scheduled-drop Edge Functions were removed. Admin sync writes directly via `adminCmsRemoteSync`. See MIG-01 in `docs/technical-debt.md` for orphaned RPC migrations.
+> Publish/scheduled-drop Edge Functions were removed. Admin sync writes directly via `adminCmsRemoteSync`. See MIG-01 in `docs/technical-debt.md` for migration drift.
+
+### Storage buckets
+
+| Bucket | Public | Limit | Purpose |
+|---|---|---|---|
+| `cms-media` | Yes | 50 MB | General CMS media library (images/fonts/video/GLB) — live since 2026-05-18 |
+| `story-media` | Yes | 500 MB | Story saga chapter/act media — live since 2026-06-09 |
+| `techpacks` | **No** | 100 MB | Private techpack PDFs + extracted images; SELECT is RLS-gated, reads go through `createSignedUrl` |
 
 ---
 
@@ -297,19 +326,21 @@ Storefront never reads admin draft data directly. Landing page **content** is co
 | `/admin/assets` | Media library + general/per-drop slot assignments |
 | `/admin/shop` | Shop Experience editor — shop layout, product cards, filters, sort, toggles, state copy **and the Product-detail (PDP) section toggles + related count + animation** (`shop_config`, incl. `shop_config.pdp`) |
 | `/admin/products` | Per-product PDP editorial content — pick a product (commerce catalog / Shopify), author its bento story/material/care/details + editorial assets (`pdp_content`, keyed by slug) |
+| `/admin/techpacks` | Techpacks — upload a supplier techpack PDF, parse it **in the browser** (pdf.js) into a normalized `TechpackDocument`, review the extracted fields + parser issues, promote extracted images into the media library one at a time, and **Import from techpack** into `passport_content` / `support_content.sizeGuide` / `pdp_content`. Many packs per product, exactly one `is_final` (relational: `techpacks` + `techpack_images`, private `techpacks` bucket) |
 | `/admin/content` | Landing content editor — per-scene copy overrides with code-default fallbacks |
 | `/admin/about` | About page editor — hero, the **orbs** (add/edit/remove free-form sections: label, color, copy, lines, points, stats, CTAs, image), marquee (`landing_content.about`); anvil/hammer GLBs + page imagery assign on `/admin/assets` |
 | `/admin/coming-soon` | Coming Soon site mode — master toggle + reveal-page copy, countdown, early-access capture, assets, SEO (`coming_soon`) |
 | *(dashboard modal)* | Storefront announcement banner — managed from the dashboard's drop-status modal (`BannerCustomizeModal`: live mini-preview, message/link/image, solid-or-gradient colors, idle-animation presets, optional schedule + manual switch; `banner_config`); renders above the topbar via `SiteBannerRail`. The standalone `/admin/banner` page was removed 2026-07-22 |
 | `/admin/legal` | Legal pages editor — tabbed (privacy, terms, cookies, accessibility): title, updated-date, intro, reorderable sections (`legal_content`) |
 | `/admin/support` | Support pages editor — tabbed (FAQ, contact, shipping, returns, care guide, size guide, **Measurements**, **Care symbols**) incl. per-product care lines + size tables keyed by slug, the "Where we measure" per-garment-type point sets (`sizeGuide.measure`, CMS-reorderable), and the 26-entry care-symbol legend (`careGuide.legend`) (`support_content`) |
-| `/admin/passports` | Product passports, two tabs: **QR codes** (generate per-unit batches, claimed/unclaimed ledger, unassign/delete, printable QR sheet — relational CRUD via `product_passports`) and **Passport content** (per-product editorial sections authored in a multi-step wizard — one step per passport section, each with copy + assets — saved to `passport_content`) |
+| `/admin/passports` | Product passports, two tabs: **QR codes** (generate per-unit batches, claimed/unclaimed ledger, unassign/delete, printable QR sheet — relational CRUD via `product_passports`) and **Passport content** (a product picker that opens `/admin/passports/content/$slug` — an 11-tab per-product editor: identity, piece, material, blueprint, specs, care, fit, hotspots, forgeNotes, details, origin — each tab its own copy + assets, saved to `passport_content`) |
+| `/admin/techpacks` | Techpack ingestion — upload supplier PDFs (parsed client-side via pdf.js into a `TechpackDocument`), review the blueprint/specs/sizing/care extraction plus the issues queue, selectively import facts into `passport_content` / `support_content` / `pdp_content`, promote extracted images into the media library, optional AI-rewrite overlay (`techpacks` + `techpack_images` tables, private `techpacks` storage bucket) |
 | `/admin/story` | Story saga editor — chapters, acts, cast (relational; Supabase CRUD) |
-| `/admin/gamification` | Gamification — the Armory's rules in four tabs: **Ranks** (fixed 4 keys; copy/emblem/per-level thresholds), **Challenges** (drag-reorder, metric+target, active toggle, create/delete), **Forge XP** (4 constants + level-curve factor with preview), **Badges** (metric+target milestones). Relational CRUD on the `gamification_*` tables |
+| `/admin/gamification` | Gamification — the Armory's rules in four tabs: **Ranks** (4 seeded identities + create/delete; copy/emblem/per-level thresholds), **Challenges** (drag-reorder, metric+target, active toggle, create/delete), **Forge XP** (4 constants + level-curve factor with preview), **Badges** (metric+target milestones). Relational CRUD on the `gamification_*` tables |
 | `/admin/analytics` | Analytics & SEO — the site-wide `site_seo` blob: analytics/marketing tags (GA4, GTM, Meta Pixel, Hotjar, Google site verification, custom script — provider + ID + on/off), search-engine visibility (robots/sitemap), global SEO defaults. Storefront injects the published tags via `MarketingToolsHead` |
 | `/admin/settings` | Session + local reset |
 
-> **Admin shell (2026-07-18 rework):** persistent categorized sidebar ≥1024px (collapsible to an icon rail, preference in `anvl.adminSidebar.v1`; drawer below `lg`). Categories: Dashboard · Design (theme, fonts) · Content (landing, about, story, coming-soon) · Commerce (shop, products) · Passports · Gamification · Media (assets) · Settings — nav-only grouping, `/admin/*` URLs unchanged (`adminNav.ts` is the single IA source; breadcrumbs derive from it). A topbar **Preview** toggle opens the live-preview panel (below).
+> **Admin shell (2026-07-18 rework):** persistent categorized sidebar ≥1024px (collapsible to an icon rail, preference in `anvl.adminSidebar.v1`; drawer below `lg`). Categories: Dashboard · Design (theme, fonts) · Content (landing, about, story, coming-soon) · Commerce (shop, products, techpacks) · Passports · Gamification · Media (assets) · Settings — nav-only grouping, `/admin/*` URLs unchanged (`adminNav.ts` is the single IA source; breadcrumbs derive from it). A topbar **Preview** toggle opens the live-preview panel (below).
 
 > **Live preview:** the admin embeds the REAL storefront in a same-origin iframe (`/<route>?anvl-cms-preview=1`) and pushes UNSAVED editor working copies over a Zod-validated postMessage bridge (v1: `hello`/`draft`/`focus`/`hover` → `ready`/`located`). The handshake is **bidirectional** (the storefront announces `ready` after hydration; the admin replies + retries `hello`) and requires same-origin framing — `X-Frame-Options: SAMEORIGIN` + `frame-ancestors 'self'` in `src/start.ts` (never DENY/'none' — that kills the preview). Storefront side lives in `src/features/cms/preview/` (SSR-safe, null until post-mount, same-origin-gated); admin side in `src/features/admin/preview/` (draft store, lazy `AdminPreviewPanel` with device switcher — desktop 1280 triggers the real Oath cinematic gate — locate buttons, and **inspection-style hover**: `usePreviewHoverProps` on editor fields rings the matching `data-anvl-preview-target` element while hovered; Oath scenes resolve via their existing `data-scene` contract; About orbs use index-based `about:orb-N` ids). Save still = publish; the preview only covers the pre-save gap.
 
@@ -382,10 +413,9 @@ Admin editor (localStorage working copy)
 - Avoid random decorative animation.
 - **Mobile:** simplified or disabled animation. The Oath cinematic (GSAP pins, WebGL) runs at **≥1280px (`xl`)** only; tablet gets static layout.
 - **Reduced motion:** always respect `prefers-reduced-motion: reduce`.
-- **Three animation systems:**
+- **Two animation systems:**
   - **GSAP** — cinematic desktop sequences (hero pinning, scroll reveals, timelines)
-  - **Framer Motion** — lightweight browser animations (page transitions, UI micro-interactions)
-  - **CSS transitions** — for simple hover states and focus rings
+  - **IntersectionObserver + CSS transitions** — lightweight reveals (`RevealOnScroll`), hover states, focus rings. There is no motion library: `framer-motion` was removed once `RevealOnScroll` was rewritten without it. Reach for GSAP or plain CSS, not a new dependency.
 - Keep animation logic in dedicated hooks/utilities, not scattered in component render bodies.
 - `useReducedMotion()` hook (`src/shared/hooks/useReducedMotion.ts`) — use before creating expensive animations.
 - Reference cinematic implementation: `TheOathLanding` — timeline in `hooks/useTheOathScrollTimeline.ts` composing the per-scene `motion/buildOath*.ts` builders, with a DOM⇄WebGL motion bridge (`motion/oathMotionState.ts`).
@@ -444,6 +474,7 @@ Admin editor (localStorage working copy)
 - Route files are thin — heavy UI lives in feature components imported by routes.
 - SSR: never access `window`, `document`, `localStorage`, `matchMedia` at module top-level or during render. Gate inside `useEffect` or check `typeof window !== 'undefined'`.
 - Avoid hydration mismatches — anything that differs server/client needs a `useEffect` or `ClientOnly` pattern.
+- **Radix `Select.Item` cannot take `value=""`** — Radix reserves the empty string for "cleared, show the placeholder" and *throws*, crashing the whole panel. A select that needs a genuinely selectable "none"/"unassigned"/"assign later" option must swap the empty value for a sentinel at the boundary. `AdminFieldSelect` already does this (`EMPTY_OPTION_SENTINEL`, engaged only when such an option exists), so prefer it over hand-rolling a Radix select; any new wrapper must do the same.
 
 ---
 
@@ -480,7 +511,7 @@ Admin editor (localStorage working copy)
 > **shadcn/ui is NOT installed in this project.**
 
 The project uses its own branded UI system under `src/shared/components/ui/`:
-`Button, Input, Modal, Drawer, Select, Skeleton, SafeLink, FormField, IconButton, Badge, Checkbox, ColorSwatch, QuantityStepper, SizeSelector, ProductCard, ProductGallery, EmptyState, AccordionDisclosure, Textarea, Container, Section`
+`Button, Input, Modal, Drawer, Select, Skeleton, SafeLink, FormField, IconButton, Badge, Checkbox, ColorSwatch, QuantityStepper, SizeSelector, ProductCard, EmptyState, AccordionDisclosure, Textarea, Container, Section, Switch, DatePicker, PhoneInput, AnvlToaster, ForgeEmberCanvas, ModalForgeEffect, ToastForgeEffect, ThemeTintedMediaMark`
 
 If shadcn/ui is added in the future:
 - Customize components to match ANVL brand — do not use default shadcn styles.
@@ -525,9 +556,9 @@ If shadcn/ui is added in the future:
 - **Admin routes** must use `lazyRouteComponent` — never statically imported from storefront routes.
 - Large editor panels (≥600 lines) must be behind a `React.lazy` + `Suspense` boundary.
 - Storefront entry chunk must not import `src/features/admin/**` runtime code.
-- GSAP, Lenis, Framer Motion, and three.js/@react-three are code-split into `vendor-gsap`, `vendor-lenis`, `vendor-framer-motion`, and `vendor-three` chunks (see `vite.config.ts` `manualChunks`).
+- Heavy vendors are code-split via `vite.config.ts` `manualChunks`. The real chunk set is: `admin-cms-remote`, `vendor-gsap`, `vendor-lenis`, `vendor-three`, `vendor-pdfjs` (admin techpack parser only), `vendor-zod`, `vendor-supabase`, `vendor-fuse`, `vendor-tanstack`, `vendor-react`.
 - The landing page registry uses `lazy()` per page, so only the active page's chunk ships.
-- `lucide-react` must use named imports only (`import { Menu } from 'lucide-react'`), never `import *`.
+- Icons import from `@/shared/icons` with **named imports only** (`import { Menu } from '@/shared/icons'`), never `import *` and never straight from `@phosphor-icons/react` — the seam is what keeps the vendor swappable and the global duotone weight applied.
 - Images from CMS: must have `width`, `height`, `loading="lazy"` (unless LCP), `decoding="async"`, `alt`.
 - Animate `transform`/`opacity` only — never `width`, `height`, `top`, `left`.
 - Scroll listeners must be `{ passive: true }`.
@@ -635,7 +666,8 @@ Import aliases `@/` and `#/` both resolve to `src/`.
 - Do not register GSAP plugins in component files — use `src/shared/lib/gsap.ts`.
 - Do not call `new Lenis()` directly — use `useLenisScroll`.
 - Do not use GSAP on mobile or under `prefers-reduced-motion`.
-- Do not use `import *` from `lucide-react`.
+- Do not use `import *` from `@/shared/icons`, and do not import `@phosphor-icons/react` directly — always go through the seam.
+- Do not reintroduce `lucide-react`; it was removed 2026-07-17 in favour of Phosphor.
 - Do not edit `src/routeTree.gen.ts` directly.
 - Do not make admin routes statically imported from storefront bundles.
 - Do not skip `pnpm verify` before marking a task done.
@@ -709,6 +741,15 @@ Test layout:
 
 ## Documentation Maintenance Rules
 
+**This is enforced, not just requested.** `scripts/check-docs-freshness.mjs` maps changed files onto the docs that must move with them, and runs from two places:
+
+- `.githooks/pre-commit` — **advisory** for human commits: prints exactly which doc is owed and why, then lets the commit through. Enable once per clone with `pnpm hooks:install` (sets `core.hooksPath`).
+- `.claude/settings.json` → a `PreToolUse` hook on Bash (`scripts/claude-doc-gate.mjs`) — **blocking** for Claude: a `git commit` is refused with exit 2 until the owed docs are updated. The gate inspects the actual command, so only real commits are affected.
+
+Both honour `ANVL_SKIP_DOC_CHECK=1` for the rare change that genuinely needs no doc update. Run `pnpm docs:check` any time to see what the current working tree owes.
+
+The script also carries a **stale-claim lint** (`BANNED_DOC_TERMS`): docs may not assert a removed dependency as current. Lines that explicitly mark something historical ("was removed", "no longer", "do not reintroduce") are exempt, so you can still write about the past. When you remove a dependency, add it to that list — that is what stops the next `lucide-react`-style claim from surviving for months.
+
 Every code change must check whether documentation needs updating. After any:
 - Folder structure change → update `docs/project-map.md` + folder structure in `CLAUDE.md`
 - New command → update "Important Commands" in `CLAUDE.md`
@@ -719,6 +760,8 @@ Every code change must check whether documentation needs updating. After any:
 - Significant architectural decision → update `docs/frontend-architecture.md`
 - Deployment / hosting / Cloudflare / `wrangler` / build-target change → update `docs/deployment.md` + Stack table & Commands in `CLAUDE.md`
 - Task completion → update `docs/audit-2026-05-17.md` + append to `docs/changelog.md`
+- Dependency **removal** → also add the package name to `BANNED_DOC_TERMS` in `scripts/check-docs-freshness.mjs`, so docs cannot keep claiming it
+- Admin route added/removed → the route table in `CLAUDE.md` **and** the surface tables in `docs/cms-architecture.md` + `docs/project-map.md`
 
 ---
 
@@ -729,13 +772,13 @@ Every code change must check whether documentation needs updating. After any:
 | SEC-01/02/03 | Admin auth | **Resolved 2026-07-04.** Static env-file password gate removed — Supabase is the only admin auth path. |
 | SEC-11 | Admin auth | **Resolved 2026-07-04.** `/admin/*` access is now server-validated via TanStack Start `createServerFn` (`src/features/admin/auth/adminAuth.ts`) + a sealed HttpOnly session cookie (`adminAuthSession.server.ts`, `useSession`/`getSession` from `@tanstack/react-start/server`), checked in `beforeLoad` (`src/routes/admin/route.tsx`) on SSR and every client navigation. Cookie holds the Supabase refresh token; every validation call refreshes + re-verifies `cms_profiles.role = admin` + rotates the cookie. Remember Me controls cookie `Max-Age` (30 days persistent vs. session-only). The browser Supabase client (`adminSupabaseBrowserClient.ts`, CMS reads only) has `autoRefreshToken: false` — the server is the sole refresh-token rotator to avoid a dual-rotation race. Not covered: CSRF tokens, CSP/HSTS, rate limiting (still Phase J). |
 | PERF-01 | Admin routes | All admin routes must use `lazyRouteComponent`. |
-| PERF-11 | Bundle size | Dependency cleanup: removed unused `@tanstack/react-table` + `@radix-ui/react-dropdown-menu` (2026-06-11), `@fontsource/bebas-neue`, `@fontsource/manrope`, `@tanstack/react-query-devtools`, `@tailwindcss/typography` (2026-06-20), and `react-colorful` (with the orphaned shared `ColorField`) + `react-day-picker` (with the orphaned `AdminDateTimeField`) (2026-06-27). `@tanstack/react-virtual` (admin media grid), `framer-motion` (RevealOnScroll), and the active fonts (Anton/Sora/Cinzel) remain in use. |
-| MAINT-01 | Large files | Several admin editor files exceed 500 lines (tracked refactor candidates). |
-| MAINT-02 | Feature boundary | Storefront-safe code imports from `admin/**` (media URL, types) — extract to `cms/**` |
+| PERF-11 | Bundle size | Dependency cleanup: removed unused `@tanstack/react-table` + `@radix-ui/react-dropdown-menu` (2026-06-11), `@fontsource/bebas-neue`, `@fontsource/manrope`, `@tanstack/react-query-devtools`, `@tailwindcss/typography` (2026-06-20), and `react-colorful` (with the orphaned shared `ColorField`) + `react-day-picker` (with the orphaned `AdminDateTimeField`) (2026-06-27). `framer-motion` was also removed once `RevealOnScroll` was rewritten on IntersectionObserver + CSS. `@tanstack/react-virtual` (admin media grid) and the active fonts (Anton/Sora/Cinzel) remain in use. A full dependency sweep on 2026-07-29 found **no unused packages** left in either `dependencies` or `devDependencies`. |
+| MAINT-01 | Large files | Admin editor files over the 500-line hard limit (refactor backlog, measured 2026-07-29): `about/sections/AboutOrbsFields.tsx` 713 · `setup/wizards/GamificationSetupWizard.tsx` 712 · `setup/wizards/StorySetupWizard.tsx` 582 · `banner/BannerCustomizeModal.tsx` 571 · `preview/AdminPreviewPanel.tsx` 566 · `media/MediaAssetGrid.tsx` 561 · `setup/wizards/AboutSetupWizard.tsx` 522. |
+| MAINT-02 | Feature boundary | **Narrowed to exactly one file (2026-07-29 sweep).** `src/features/cms/api/cmsPersistenceMode.ts:1` imports `type CmsProfileRole` from `@/features/admin/auth/adminCmsProfileRole`. Nothing else in `cms/`, `products/`, `passport/`, `cart/`, `checkout/`, `shopify/`, `storefront-account/`, `analytics/`, `seo/`, `shared/`, or the non-admin routes violates the boundary. That file is currently only consumed by admin code so it does not reach the storefront bundle, but the import still breaks the rule — move the type into `cms/**`. |
 | MAINT-03 | localStorage reset | **Resolved.** `resetAllLocalCmsKeys()` clears every key in the `ADMIN_STORAGE_KEYS` registry (incl. `anvl.landingContent.v1` and the sidebar preference) |
-| MIG-01 | Supabase migrations | Orphaned publish RPC migrations post drop-builder teardown |
+| MIG-01 | Supabase migrations | **Disk↔history drift (re-scoped 2026-07-29, worse than previously stated).** Beyond the three orphaned drop-builder publish-RPC migrations, the folder and the live migration history have diverged both ways: **7 migrations applied in production have no file on disk** (`tighten_cms_settings_rls_and_revoke_rls_auto_enable_grant`, `revoke_public_execute_on_rls_auto_enable`, `perf20_wrap_auth_uid_in_rls_policies`, `perf21_add_missing_fk_covering_indexes`, `sec24_move_pg_net_out_of_public_schema`, `sec25_remove_public_storage_listing_policies`, `site_seo_column`), and **7 files on disk never appear in the applied history**. A fresh `supabase db push` into an empty project would therefore NOT reproduce production RLS/schema state. Fix = backfill the missing SQL as files before any environment rebuild. |
 | Phase I | Router repatch | `scripts/repatch-admin-route-tree.mjs` is a workaround for TanStack Start upstream limitation. |
-| Phase J | Production launch | Admin real server auth + HttpOnly sessions done (see SEC-11). **Hosting set up 2026-07-11: Cloudflare Workers SSR (`wrangler.jsonc` + `@cloudflare/vite-plugin`), verified via build + dry-run — see `docs/deployment.md`.** Remaining: first `wrangler deploy` + DNS cutover, flip CSP to enforcing (currently report-only, WASM/blob allowances added), rate limits, upload validation. CSRF double-submit cookie is in place (`src/start.ts`). |
+| Phase J | Production launch | Admin real server auth + HttpOnly sessions done (see SEC-11). **Hosting live: Worker `anvl` created 2026-07-11 and last deployed 2026-07-28 (verified against the Cloudflare account 2026-07-29) — see `docs/deployment.md`.** Remaining: DNS cutover to the custom domain, flip CSP to enforcing (currently report-only, WASM/blob allowances added), rate limits, upload validation. CSRF double-submit cookie is in place (`src/start.ts`). Also open from the 2026-07-29 DB audit: `touch_row_updated_at()` has a mutable `search_path`; 4 unindexed FKs (`armory_feats.user_id`, `passport_transfers.from_user`/`to_user`, `techpacks.created_by`); and every table created *after* the PERF-20 fix still calls bare `auth.uid()` in RLS instead of `(select auth.uid())`. |
 
 ---
 
@@ -744,8 +787,10 @@ Every code change must check whether documentation needs updating. After any:
 See `docs/next-steps.md` for the full prioritized task list.
 
 Top priorities:
-1. **Phase J (production blockers):** admin real server auth is done (SEC-11) — CSP, rate limiting, CSRF, upload validation still required before public launch.
-2. **Phase D (feature boundary cleanup):** move shared types/helpers out of `admin/**` into `cms/**`/`shared/**` (MAINT-02).
-3. **Shopify commerce wiring:** connect `VITE_SHOPIFY_*` vars if eCommerce checkout is needed now.
-4. **Supabase storage:** wire media library to a real Supabase storage bucket.
+1. **Phase J (production blockers):** admin server auth (SEC-11) and CSRF are done — remaining: flip CSP from report-only to enforcing, rate limiting, upload validation, DNS cutover.
+2. **MIG-01 migration backfill:** 7 production migrations have no file on disk. Backfill them before anyone rebuilds an environment from `supabase/migrations/`.
+3. **Phase D (feature boundary cleanup):** move shared types/helpers out of `admin/**` into `cms/**`/`shared/**` (MAINT-02).
+4. **Shopify commerce wiring:** connect `VITE_SHOPIFY_*` vars if eCommerce checkout is needed now.
 5. **Product page polish:** real product images, size guides, add-to-cart flow end-to-end.
+
+> Supabase storage was previously listed here as unwired. It is not: `cms-media` has been live since 2026-05-18 and already holds real assets. Removed 2026-07-29.

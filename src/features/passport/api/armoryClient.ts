@@ -2,6 +2,7 @@ import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { restRpc } from '@/features/cms/api/supabaseRest'
 import {
   armoryFeatSchema,
+  armorySearchHitSchema,
   armoryShareSchema,
   productReviewSchema,
   publicArmorySchema,
@@ -9,6 +10,7 @@ import {
 import type {
   ArmoryFeat,
   ArmoryFeatInput,
+  ArmorySearchHit,
   ArmoryShare,
   ProductReview,
   PublicArmory,
@@ -33,7 +35,8 @@ async function getAuthedClient() {
 
 /** Result union for armory writes — failures carry the REAL reason so the UI
  *  can toast it instead of silently doing nothing. */
-export type ArmoryWriteResult = { ok: true } | { ok: false; error: string }
+/** `id` is present on inserts that return the new row (feat creation). */
+export type ArmoryWriteResult = { ok: true; id?: string } | { ok: false; error: string }
 
 /**
  * Writes must run on a LIVE session. getSession() hands back whatever is in
@@ -136,13 +139,20 @@ export async function createArmoryFeat(input: ArmoryFeatInput): Promise<ArmoryWr
   if (!client) return { ok: false, error: 'Sign in to log feats.' }
   const sessionError = await ensureLiveSession(client)
   if (sessionError) return { ok: false, error: sessionError }
-  const { error } = await client.from('armory_feats').insert({
-    title: input.title,
-    achieved_on: input.achievedOn,
-    is_public: input.isPublic,
-    product_slug: input.productSlug,
-  })
-  return error ? { ok: false, error: error.message } : { ok: true }
+  // The id comes back so the caller can offer to share the feat it just
+  // logged, without refetching and guessing which row is new.
+  const { data, error } = await client
+    .from('armory_feats')
+    .insert({
+      title: input.title,
+      achieved_on: input.achievedOn,
+      is_public: input.isPublic,
+      product_slug: input.productSlug,
+    })
+    .select('id')
+    .single()
+  if (error) return { ok: false, error: error.message }
+  return { ok: true, id: typeof data?.id === 'string' ? data.id : undefined }
 }
 
 export async function updateArmoryFeat(
@@ -216,6 +226,29 @@ export async function fetchPublicArmory(handle: string): Promise<PublicArmory | 
   if (error || data === null) return null
   const parsed = publicArmorySchema.safeParse(data)
   return parsed.success ? parsed.data : null
+}
+
+/**
+ * Anon search over PUBLIC armories only (`search_public_armories` — SECURITY
+ * DEFINER, restricted server-side to `armory_public` profiles, wildcards
+ * escaped, capped at 12). Returns `[]` silently when Supabase is unconfigured,
+ * the query is too short (< 2 chars, the RPC's own floor), or the RPC errors —
+ * search must degrade to nothing, never toast.
+ */
+export async function searchPublicArmories(query: string, limit = 8): Promise<ArmorySearchHit[]> {
+  const env = getSupabasePublicEnv()
+  if (!env) return []
+  const { data, error } = await restRpc(env, 'search_public_armories', {
+    p_query: query,
+    p_limit: limit,
+  })
+  if (error || !Array.isArray(data)) return []
+  const out: ArmorySearchHit[] = []
+  for (const row of data) {
+    const parsed = armorySearchHitSchema.safeParse(row)
+    if (parsed.success) out.push(parsed.data)
+  }
+  return out
 }
 
 /* --------------------------------------------------------------- reviews --- */

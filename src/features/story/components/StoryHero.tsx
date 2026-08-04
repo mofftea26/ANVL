@@ -8,15 +8,9 @@ const CTA_FORGE =
 const CTA_STEEL =
   'focus-ring inline-flex h-11 items-center rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-text)] no-underline hover:border-[color-mix(in_oklab,var(--color-highlight)_60%,var(--color-line))]'
 
-/** Forged foil for display accents — champagne drawn from the theme tokens,
- *  so the chronicle re-tempers with every CMS palette (never a hardcoded gold). */
-const FOIL_TEXT: React.CSSProperties = {
-  background:
-    'linear-gradient(100deg, var(--color-highlight) 0%, var(--color-highlight-bright) 45%, var(--color-highlight) 70%, color-mix(in srgb, var(--color-highlight) 55%, black) 100%)',
-  WebkitBackgroundClip: 'text',
-  backgroundClip: 'text',
-  color: 'transparent',
-}
+/* The forged foil now lives in `src/styles.css` as `.anvl-foil-text` — the doc
+ * pages' `PageMasthead` wears the same metal, and one definition keeps them
+ * from drifting apart. */
 
 export interface StoryHeroStats {
   /** Drop groups on the shelf. */
@@ -82,7 +76,7 @@ export function StoryHero({ stats }: { stats: StoryHeroStats }) {
               >
                 The Forged
                 <br />
-                <span style={FOIL_TEXT}>Kingdom</span>
+                <span className="anvl-foil-text">Kingdom</span>
               </h1>
             </RevealOnScroll>
 
@@ -113,10 +107,7 @@ export function StoryHero({ stats }: { stats: StoryHeroStats }) {
               {ledger.map(([value, label, note]) => (
                 <div key={label}>
                   <dt className="sr-only">{label}</dt>
-                  <dd
-                    className="anvl-heading leading-none text-[clamp(2rem,4vw,3rem)]"
-                    style={FOIL_TEXT}
-                  >
+                  <dd className="anvl-heading anvl-foil-text leading-none text-[clamp(2rem,4vw,3rem)]">
                     {String(value).padStart(2, '0')}
                   </dd>
                   <dd className="anvl-display mt-1 text-[10px] tracking-[0.26em] text-[var(--color-heading)]">

@@ -5,11 +5,11 @@ import { usePreviewDraft } from '@/features/cms/preview'
 import { resolveSupportContent } from '@/features/cms/support/resolveSupportContent'
 import {
   DocFooterCta,
-  DocHero,
   DOC_CTA_PRIMARY_CLASS,
   DOC_CTA_SECONDARY_CLASS,
-  FaqAccordion,
+  FaqForge,
 } from '@/features/support/components'
+import { PageMasthead } from '@/shared/components/premium/PageMasthead'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 
 export const Route = createFileRoute('/faq')({
@@ -34,8 +34,8 @@ function FaqPage() {
 
   return (
     <>
-      <DocHero eyebrow="Help & support" title="FAQ" intro={content.faq.intro} />
-      <FaqAccordion items={content.faq.items} />
+      <PageMasthead eyebrow="Help & support" title="FAQ" intro={content.faq.intro} />
+      <FaqForge items={content.faq.items} />
       <DocFooterCta message="Still need a hand? We answer fast.">
         <SafeLink href="/contact" className={DOC_CTA_PRIMARY_CLASS}>
           Contact us

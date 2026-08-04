@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { Eye, EyeOff, Pencil, Plus, Trophy, X } from '@/shared/icons'
+import { Eye, EyeOff, Pencil, Plus, Share2, Trophy, X } from '@/shared/icons'
 import { useArmoryFeatsQuery, useFeatMutations } from '@/features/passport/hooks/useArmory'
 import type { ArmoryFeat } from '@/features/passport/schemas/passport.schema'
+import { ShareModal } from '@/features/share/ShareModal'
+import { useShareLauncher } from '@/features/share/useShareLauncher'
 import { Switch } from '@/shared/components/ui/Switch'
 
 /**
@@ -9,6 +11,10 @@ import { Switch } from '@/shared/components/ui/Switch'
  * piece ("Deadlift PR — 240 kg"). Add / edit / delete inline; each entry has a
  * date and a public/private switch (public ones surface on the shared armory).
  * The product is the card's piece — no picker needed.
+ *
+ * Every row can be shared, and a feat that has just been logged opens the
+ * share sheet on itself: setting a PR is the moment worth posting, and asking
+ * the athlete to go find it again afterwards loses it.
  */
 
 function todayIso(): string {
@@ -20,6 +26,7 @@ export function PieceFeats({ slug }: { slug: string }) {
   const { create, update, remove } = useFeatMutations()
   const feats = (featsQuery.data ?? []).filter((f) => f.productSlug === slug)
   const [editing, setEditing] = useState<ArmoryFeat | 'new' | null>(null)
+  const share = useShareLauncher({ pieceSlug: slug })
   const closeForm = () => setEditing(null)
 
   return (
@@ -50,7 +57,15 @@ export function PieceFeats({ slug }: { slug: string }) {
               { ...input, productSlug: slug },
               // Close only on a REAL success — a failed write keeps the form
               // (and its values) so nothing looks silently "added".
-              { onSuccess: (r) => r.ok && closeForm() },
+              {
+                onSuccess: (r) => {
+                  if (!r.ok) return
+                  closeForm()
+                  // `id` comes back from the insert, so the sheet can open
+                  // preselected on the feat that was just forged.
+                  if (r.id) share.open({ featId: r.id })
+                },
+              },
             )
           }
         />
@@ -90,6 +105,14 @@ export function PieceFeats({ slug }: { slug: string }) {
                 </div>
                 <button
                   type="button"
+                  onClick={() => share.open({ featId: feat.id })}
+                  aria-label={`Share feat: ${feat.title}`}
+                  className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-highlight-bright)]"
+                >
+                  <Share2 size={14} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
                   onClick={() => setEditing(feat)}
                   aria-label={`Edit feat: ${feat.title}`}
                   className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-muted)] motion-safe:transition-colors hover:text-[var(--color-text)]"
@@ -113,6 +136,17 @@ export function PieceFeats({ slug }: { slug: string }) {
         <p className="anvl-micro mt-1 text-[9px] text-[var(--color-text-muted)]">
           No feats in this piece yet — log your first PR.
         </p>
+      ) : null}
+
+      {/* Mounted only while open: this component renders once per piece card,
+          and the sheet pulls the catalog + profile behind it. */}
+      {share.isOpen ? (
+        <ShareModal
+          open
+          onClose={share.close}
+          initialPieceSlug={share.initialPieceSlug}
+          initialFeatId={share.initialFeatId}
+        />
       ) : null}
     </div>
   )

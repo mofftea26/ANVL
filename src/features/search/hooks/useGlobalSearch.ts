@@ -1,7 +1,9 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createSearchIndex, runSearch } from '@/features/search/lib/matchEngine'
+import { useArmorySearch } from '@/features/search/hooks/useArmorySearch'
 import { useSearchCorpusQuery } from '@/features/search/hooks/useSearchCorpusQuery'
+import type { ArmorySearchHit } from '@/features/passport/schemas/passport.schema'
 import {
   SEARCH_CATEGORY_ORDER,
   type GroupedResults,
@@ -24,6 +26,28 @@ function groupResults(results: SearchResult[], cap?: number): GroupedResults {
 
 function flatten(grouped: GroupedResults): SearchResult[] {
   return SEARCH_CATEGORY_ORDER.flatMap((type) => grouped[type] ?? [])
+}
+
+/**
+ * Shapes a live `search_public_armories` hit as a `SearchResult` so the
+ * "Warriors" group flows through the same grouping, row markup, and keyboard
+ * navigation as every corpus-backed category. Only what `/armory/$handle`
+ * itself shows rides along: display name + handle.
+ */
+function armoryHitToResult(hit: ArmorySearchHit): SearchResult {
+  return {
+    score: 0,
+    matches: [],
+    document: {
+      id: `armory-${hit.handle}`,
+      type: 'armory',
+      title: hit.displayName,
+      subtitle: `@${hit.handle}`,
+      body: '',
+      url: `/armory/${hit.handle}`,
+      meta: { handle: hit.handle },
+    },
+  }
 }
 
 /**
@@ -60,8 +84,19 @@ export function useGlobalSearch(options: { enableSlashShortcut?: boolean } = {})
     [index, committedQuery],
   )
 
-  const results = useMemo(() => groupResults(rawResults, DROPDOWN_CATEGORY_CAP), [rawResults])
-  const allResults = useMemo(() => groupResults(rawResults), [rawResults])
+  // Warriors are live data (public armories), not corpus documents — fetched
+  // per committed query and merged into the same grouped result shape.
+  const armoryQuery = useArmorySearch(committedQuery, { enabled: hasInteracted })
+  const combinedResults = useMemo(
+    () => [...rawResults, ...(armoryQuery.data ?? []).map(armoryHitToResult)],
+    [rawResults, armoryQuery.data],
+  )
+
+  const results = useMemo(
+    () => groupResults(combinedResults, DROPDOWN_CATEGORY_CAP),
+    [combinedResults],
+  )
+  const allResults = useMemo(() => groupResults(combinedResults), [combinedResults])
   const flatResults = useMemo(() => flatten(isOverlayOpen ? allResults : results), [
     isOverlayOpen,
     allResults,
@@ -133,6 +168,12 @@ export function useGlobalSearch(options: { enableSlashShortcut?: boolean } = {})
       }
       case 'about-orb': {
         void navigate({ to: '/about', hash: meta.hash })
+        break
+      }
+      case 'armory': {
+        if (meta.handle) {
+          void navigate({ to: '/armory/$handle', params: { handle: meta.handle } })
+        }
         break
       }
       case 'static-page': {

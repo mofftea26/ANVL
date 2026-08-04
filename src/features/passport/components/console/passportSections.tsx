@@ -6,6 +6,8 @@ import { recommendSizes, type PassportSizeGuide } from '../../lib/sizeRecommenda
 import type { PassportView } from '../../schemas/passport.schema'
 import { PdpMaterialCard } from '@/features/products/pdp/PdpBentoCards'
 import { CareGuide } from '../CareGuide'
+import { PassportBlueprint } from '../PassportBlueprint'
+import { PassportGallery } from '../PassportGallery'
 import { ForgeNotes } from '../ForgeNotes'
 import { PassportStoryChapter } from '../PassportStoryChapter'
 import { WorldOriginMap } from '../WorldOriginMap'
@@ -25,7 +27,9 @@ export interface PassportSectionContext {
 }
 
 export type PassportSectionKey =
+  | 'piece'
   | 'material'
+  | 'blueprint'
   | 'specs'
   | 'details'
   | 'care'
@@ -67,6 +71,24 @@ export interface PassportSectionDef {
  * drift apart. No icons by design — cards carry champagne numerals instead.
  */
 export const PASSPORT_SECTIONS: PassportSectionDef[] = [
+  {
+    key: 'piece',
+    group: 'craft',
+    title: 'The piece',
+    eyebrow: 'Views',
+    // More than one image: the first is already the hero on both surfaces, so a
+    // lone shot would open a section that just repeats what is on screen.
+    available: ({ content }) => content.piece.gallery.length > 1,
+    teaser: ({ content }) =>
+      `${content.piece.gallery.length} views of this piece, front to back.`,
+    cardImage: ({ content }) => content.piece.gallery[1]?.src,
+    Detail: ({ ctx }) => (
+      <PassportGallery
+        gallery={ctx.content.piece.gallery}
+        productName={ctx.view.productName}
+      />
+    ),
+  },
   {
     key: 'material',
     group: 'craft',
@@ -115,6 +137,19 @@ export const PASSPORT_SECTIONS: PassportSectionDef[] = [
         ) : null}
       </div>
     ),
+  },
+  {
+    key: 'blueprint',
+    group: 'craft',
+    title: 'Blueprint',
+    eyebrow: 'Construction',
+    available: ({ content }) => content.blueprint.features.length > 0,
+    teaser: ({ content }) =>
+      content.blueprint.intro ||
+      `${content.blueprint.features.length} construction callouts, decision by decision.`,
+    // No card image by design: the blueprint's visual is the product render
+    // itself, which goes holographic while this section is open.
+    Detail: ({ ctx }) => <PassportBlueprint blueprint={ctx.content.blueprint} />,
   },
   {
     key: 'specs',

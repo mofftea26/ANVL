@@ -20,6 +20,7 @@ import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraf
 import { usePreviewHoverProps } from '@/features/admin/preview/usePreviewHoverProps'
 import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotField'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
+import { TechpackImportButton } from '@/features/admin/techpacks/import/TechpackImportButton'
 import { previewFieldAnchorId } from '@/features/cms/preview'
 import {
   readPdpContentFromStorage,
@@ -181,6 +182,18 @@ export function AdminPdpContentEditor() {
 
         {slug ? (
           <>
+            {/* Composition and care are printed on the techpack; retyping them
+                is how they drift. Only `pdp_content` is offered here — this
+                editor cannot save the passport or size-guide blobs. */}
+            <div className="flex justify-end">
+              <TechpackImportButton
+                productSlug={slug}
+                targets={['pdp']}
+                pdp={current}
+                onImport={({ drafts }) => patch(drafts.pdp)}
+              />
+            </div>
+
             <section className="space-y-4 rounded-xl border border-[var(--color-line)] p-5">
               <h2 className="anvl-heading text-base font-normal">Story</h2>
               <FormField label="Story heading" hint="Small eyebrow above the story (blank → “The piece”)." labelStyle="stacked">

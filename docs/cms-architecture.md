@@ -2,24 +2,33 @@
 
 The ANVL CMS is a **slim admin surface** over a code-owned storefront. Landing page structure lives in the codebase (`src/features/landingPages/`); Supabase stores **which page is active**, **theme**, **fonts**, **asset slot assignments**, the **media library**, and per-scene **copy overrides** (`landing_content`) with code defaults filling every gap.
 
-## Admin surfaces (7 + settings)
+## Admin surfaces (17 total)
+
+Rebuilt 2026-07-29 from `src/features/admin/components/adminNav.ts` (the single IA source — 17 nav items across the `Dashboard/Design/Content/Commerce/Passports/Gamification/Media/Settings` categories), Settings included, cross-checked against `src/routes/admin/`:
 
 | Surface | Route | Persists to |
 |---|---|---|
 | Dashboard — Active drop | `/admin` | `cms_settings.active_landing_page_key` |
 | Theme & Colors | `/admin/theme` | `cms_settings.theme_config` |
 | Fonts | `/admin/fonts` | `cms_settings.font_config` |
-| Assets | `/admin/assets` | `cms_settings.asset_config` + `cms_media_assets` |
 | Landing Content | `/admin/content` | `cms_settings.landing_content` (per-landing-key copy blobs) + reads/writes `asset_config.drops` for non-tenet scene media |
 | About Page | `/admin/about` | `cms_settings.landing_content.about` — hero + marquee copy and the **orbs array** (free-form sections with label/color/copy/lines/points/stats/CTAs/`mediaId`; add/edit/remove, The Oath tenets ownership contract). Anvil/hammer GLBs + page imagery assign on `/admin/assets` (`asset_config.pages.about`) |
-| Coming Soon | `/admin/coming-soon` | `cms_settings.coming_soon` — site-mode `enabled` toggle + reveal-page copy, countdown (wall-clock + IANA timezone), CTAs, email-capture config, media-id asset refs, SEO/OG overrides |
-| Passports | `/admin/passports` | `product_passports` — generate per-unit QR batches (product picker from the commerce catalog, manual quantity), claimed/unclaimed ledger with claimant snapshots, unassign/delete, printable QR sheet (see `docs/features/product-passport.md`) |
 | Story | `/admin/story` | `story_chapters` + `story_acts` + `story_cast` (+ `story-media` bucket) |
-| Support pages | `/admin/support` | `cms_settings.support_content` — tabbed: FAQ, contact, shipping, returns, care guide, size guide, **Measurements** (`sizeGuide.measure` — per-garment-type reorderable measurement points), **Care symbols** (`careGuide.legend` — the 26 care-symbol `{label, meaning}` overrides). See "Support pages" below |
+| Coming Soon | `/admin/coming-soon` | `cms_settings.coming_soon` — site-mode `enabled` toggle + reveal-page copy, countdown (wall-clock + IANA timezone), CTAs, email-capture config, media-id asset refs, SEO/OG overrides |
+| Legal | `/admin/legal` | `cms_settings.legal_content` — tabbed privacy/terms/cookies/accessibility: title, updated-date, intro, reorderable sections |
+| Support | `/admin/support` | `cms_settings.support_content` — tabbed: FAQ, contact, shipping, returns, care guide, size guide, **Measurements** (`sizeGuide.measure` — per-garment-type reorderable measurement points), **Care symbols** (`careGuide.legend` — the 26 care-symbol `{label, meaning}` overrides). See "Support pages" below |
+| Shop Experience | `/admin/shop` | `cms_settings.shop_config` — shop layout, product cards, filters, sort, toggles, state copy **and** the PDP section toggles + related count + animation (`shop_config.pdp`) |
+| Products | `/admin/products` | `cms_settings.pdp_content` — per-product PDP editorial content (bento story/material/care/details copy + editorial assets), keyed by slug; commerce data stays on the product |
+| Techpacks | `/admin/techpacks` | `public.techpacks` + `public.techpack_images` (relational, no jsonb blob) — ingest supplier PDFs parsed client-side, review extracted images, promote approved ones into `cms_media_assets` |
+| Passports | `/admin/passports` | `product_passports` (QR codes tab) — generate per-unit QR batches (product picker from the commerce catalog, manual quantity), claimed/unclaimed ledger with claimant snapshots, unassign/delete, printable QR sheet; `cms_settings.passport_content` (Passport content tab) — per-product editorial sections authored in a multi-step wizard (see `docs/features/product-passport.md`) |
 | Gamification | `/admin/gamification` | `gamification_settings` + `gamification_ranks` + `gamification_rank_levels` + `gamification_challenges` + `gamification_badges` — the Armory's rules (Forge XP constants + curve, rank copy/emblem/thresholds, challenges + badges as declarative metric+target). Relational CRUD like Story; seeded == code defaults. Since `20260720120000_gamification_rank_keys.sql` rank KEYS are admin-managed (create/delete/reorder — the seed-keys CHECK is dropped; levels cascade on delete); non-seed ranks fall back to `/brand/mark.svg` until an emblem is assigned, and `deriveArmoryRank`/`buildRankLadder` are rank-count-agnostic |
+| Assets | `/admin/assets` | `cms_settings.asset_config` + `cms_media_assets` |
+| Analytics & SEO | `/admin/analytics` | `cms_settings.site_seo` — analytics/marketing tags (GA4, GTM, Meta Pixel, Hotjar, Google site verification, custom script), search-engine visibility (robots/sitemap), global SEO defaults; injected storefront-wide by `MarketingToolsHead` |
 | Settings | `/admin/settings` | Session + local reset only |
 
-Removed from CMS: website layout, SEO, drop-builder, campaigns, lookbook, global brand.
+> `/admin/category/$categoryKey` is a category landing page (nav-only grouping derived from `adminNav.ts`), not an additional editable surface. The dashboard's banner control (`BannerCustomizeModal`, `banner_config`) is a modal reached from `/admin`, not its own route.
+
+Removed from CMS: website layout, drop-builder, campaigns, lookbook, global brand.
 
 ## The ANVL Studio identity (admin's own design)
 
@@ -58,6 +67,12 @@ Two blocks were added in this pass, both editable from two new `/admin/support` 
 - **Cross-navigation:** `/admin/assets` accepts `?page=<scope>&slot=<key>&q=<search>` (opens the slot panel scoped + highlights the slot + seeds the library search); `/admin/passports` accepts `?tab=content&product=<slug>` (opens that product's wizard). The PDP editor links to its product's passport content.
 - **Speed affordances:** generic `AdminWizard` (extracted from the passport content wizard); native HTML5 drag-reorder via `useSortableList` (About orbs, Oath showcase products, story acts, gamification challenges — always with keyboard up/down fallback); media library cards drag onto any `MediaLibrarySlotField` / slot-panel row to assign; the upload naming modal's slot select has a "Custom name…" option (kebab-forced) for every context; the dashboard carries a drop-setup checklist with live completion ticks.
 
+## `AdminFieldSelect` empty-value rule
+
+Radix's `Select.Item` reserves `value=""` to mean "cleared, show the placeholder" — mounting an actual `<Select.Item value="">` throws and takes the whole panel down. This caused a real admin crash where an editor needed a genuine selectable "none" option (e.g. "Unassigned", "Assign later", "All products") that the user can select **back to**, which a placeholder cannot express.
+
+`src/features/admin/components/AdminFieldSelect.tsx` shields every caller from this constraint: when its `options` array contains a `value: ''` entry, the wrapper swaps that empty string for an internal `EMPTY_OPTION_SENTINEL` (`'__anvl_select_none__'`) on the way into Radix and swaps it back on the way out via `onChange`. The swap only engages when an empty-valued option is actually present, so ordinary selects (where `value === ''` genuinely just means "nothing chosen yet, show the placeholder") behave exactly as before. **Never** pass a raw empty-string `value` into a Radix `Select.Item` anywhere else in the admin — go through `AdminFieldSelect` (or replicate this sentinel swap) instead of reintroducing the crash.
+
 ## Live preview (unsaved edits, real storefront)
 
 The topbar **Preview** toggle docks a panel embedding the REAL storefront in a same-origin iframe (`/<route>?anvl-cms-preview=1`, device switcher: desktop 1280 — the true Oath cinematic gate — / tablet 768 / mobile 390; closing unmounts the iframe).
@@ -76,6 +91,23 @@ iframe → admin   anvl-preview/ready · anvl-preview/located { target, found }
 - Storefront activation is **SSR-safe and visitor-safe**: `PreviewDraftProvider` (mounted once in `__root.tsx`) stays `null` on the server and first paint, and activates only when the query param is present AND the page runs inside an iframe AND a `hello` arrives from the **same origin** (re-checked per message). Consumers (`SiteThemeProvider`, home/about/PDP routes, `useShopConfig`, `useComingSoonConfig`) prefer a present draft slice, else published data.
 - **Locate**: editors' crosshair buttons send `focus`; the storefront scrolls to and rings the element carrying `data-anvl-preview-target` (via `usePreviewTargetProps`) — Oath scenes resolve through their existing `data-scene` contract, so the cinematic components carry no new attributes.
 - Save still = publish (dual-write untouched); the preview covers only the pre-save gap.
+
+### Preview target-id vocabulary
+
+`src/features/cms/preview/previewTargetRegistry.ts` is the single source mapping every `data-anvl-preview-target` (and the Oath's `data-scene` fallback) id the storefront can emit to the admin editor route that owns it, so locate/hover always resolves to something meaningful. The registry is pattern-matched, first-match-wins:
+
+| Target id pattern | Owning editor |
+|---|---|
+| `site:page` | None (`adminRoute: null`) — the whole-page marker every editor can ring, but which no single editor owns |
+| `shop:(hero\|toolbar\|grid)` | `/admin/shop` |
+| `pdp:(materials\|care\|details)` | `/admin/products` |
+| `passport:(identity\|piece\|material\|blueprint\|specs\|care\|fit\|details\|forge-notes\|origin\|authenticity\|story)` | `/admin/passports` |
+| `the-oath:(hero\|manifesto\|tenets\|products\|finale)` | `/admin/content` |
+| `about:(hero\|marquee)` and `about:orb-\d+` | `/admin/about` |
+| `banner:rail` | `/admin` (the dashboard's `BannerCustomizeModal` — no static page-anchor exists) |
+| `coming-soon:page` | `/admin/coming-soon` |
+
+**Deliberate aliasing:** some editor tabs intentionally share one target id rather than each getting a distinct one. The passport content wizard's **"Design details"** tab (`hotspots` step — pin markers on the render) shares `targetId: 'passport:piece'` with **"The piece"** tab (`PassportContentTabsEditor.tsx`), because both edit content anchored to the same hero render — locate/hover rings the piece section for either tab. This is by design, not a gap to "fix" by minting a new id per tab.
 
 > **Story is the one relational CMS surface.** Unlike the singleton-JSON config above, the saga is many rows across three tables with direct Supabase CRUD (editor-role RLS). It is **not** mirrored into `storefront_publication`; the storefront reads published rows directly via anon RLS (`is_published`).
 
@@ -151,7 +183,15 @@ active_landing_page_key text NOT NULL DEFAULT 'the-oath'
 theme_config jsonb NOT NULL    -- { activeThemeId, themes[] }; each theme.palette is the normalized 15-token set (background/foreground/card(+fg)/muted(+fg)/border/primary(+fg)/accent(+fg)/ring/destructive/success/warning). Legacy palette keys are migrated on read (cmsSiteConfig.zod.ts) and normalized in place by migration 20260620140000.
 font_config jsonb NOT NULL     -- { sans, heading, display }
 asset_config jsonb NOT NULL    -- { general: { slot: mediaId }, drops: { dropKey: { slot: mediaId } }, pages: { pageKey: { slot: mediaId } } }
-landing_content jsonb NOT NULL -- { [landingKey]: { ...page-shaped copy overrides } }
+landing_content jsonb NOT NULL -- { [landingKey]: { ...page-shaped copy overrides }, about: {...} }
+shop_config jsonb NOT NULL     -- /admin/shop: shop layout, product cards, filters, sort, toggles, state copy, and shop_config.pdp (PDP section toggles + related count + animation)
+pdp_content jsonb NOT NULL     -- /admin/products: { [slug]: {...} } per-product PDP editorial content (bento copy + editorial assets); commerce data stays on the product
+passport_content jsonb NOT NULL -- /admin/passports (Passport content tab): { [slug]: {...} } per-product passport section content (identity/piece/material/care/details/origin copy + assets)
+coming_soon jsonb NOT NULL     -- /admin/coming-soon: site-mode enabled toggle + reveal-page copy/countdown/CTAs/email-capture/assets/SEO
+banner_config jsonb NOT NULL   -- dashboard drop-status modal: storefront announcement banner (enabled, message, optional href/label/image, colors, optional schedule)
+legal_content jsonb NOT NULL   -- /admin/legal: privacy/terms/cookies/accessibility copy (title, updatedAt, intro, sections)
+support_content jsonb NOT NULL -- /admin/support: faq/contact/shipping/returns/care/size copy + per-product care lines & size tables keyed by slug
+site_seo jsonb NOT NULL        -- /admin/analytics: global SEO defaults, per-page SEO, technical (robots/sitemap), analytics/marketing tags (GA4/GTM/Meta Pixel/Hotjar/verification/custom script)
 updated_at timestamptz
 ```
 
@@ -159,6 +199,22 @@ updated_at timestamptz
 (`oathContent.schema.ts`); blank/missing fields fall back to designed code
 defaults at render (`resolveOathContent`). The single Drop 01 page (The Oath)
 stores its copy under key `the-oath`.
+
+`storefront_publication` mirrors the same eight jsonb blobs (`shop_config`
+through `site_seo`) alongside its own copies of `theme_config`/`font_config`/
+`asset_config`/`landing_content` — see `src/features/admin/cmsRemote/adminCmsRemoteSync.ts`'s
+`CmsSettingsFieldKey` union for the authoritative list of every column this
+sync module knows how to scope a write to.
+
+> **Relational tables alongside the blobs.** Not everything in the CMS is a
+> singleton jsonb column — `product_passports` (+ transfer/review/feats
+> tables), the `gamification_*` tables, the `story_*` tables, and
+> `techpacks`/`techpack_images` are ordinary relational tables with direct
+> Supabase CRUD (editor-role RLS), documented in full in `CLAUDE.md`'s
+> Supabase schema table. `cms_settings.passport_content` /
+> `storefront_publication.passport_content` above is the jsonb **editorial
+> copy** for a passport's sections — it is separate from the relational
+> `product_passports` row that tracks claim/ownership/QR state.
 
 #### `public.landing_pages`
 Picker metadata only (key, name, description, preview_image, is_available). Content lives in the code registry; rows must intersect with registry keys.
@@ -175,6 +231,14 @@ theme_config jsonb
 font_config jsonb
 asset_config jsonb
 landing_content jsonb      -- published mirror of cms_settings.landing_content
+shop_config jsonb          -- published mirror of cms_settings.shop_config
+pdp_content jsonb          -- published mirror of cms_settings.pdp_content
+passport_content jsonb     -- published mirror of cms_settings.passport_content
+coming_soon jsonb          -- published mirror of cms_settings.coming_soon
+banner_config jsonb        -- published mirror of cms_settings.banner_config
+legal_content jsonb        -- published mirror of cms_settings.legal_content
+support_content jsonb      -- published mirror of cms_settings.support_content
+site_seo jsonb             -- published mirror of cms_settings.site_seo
 media_index jsonb          -- denormalized public URLs for assigned assets
 revision bigint
 published_at timestamptz
@@ -312,19 +376,18 @@ Products are **not** CMS-edited. `createCommerceClient` returns:
 - **Sign-in:** Supabase email + password via `/admin/login`
 - **Panel access (`/admin`):** `cms_profiles.role` must be **`admin`** only — editors and viewers are rejected at login
 - **CMS writes (DB RLS):** `editor` or `admin` may upsert `cms_settings`, `cms_media_assets`, and story tables
-- Session storage key: `anvl.supabase.admin.v1`
-
-### Without Supabase (local/demo)
-Static env gate: `VITE_ANVL_ADMIN_USERNAME` + `VITE_ANVL_ADMIN_PASSWORD` (not production-grade). localStorage only; no remote sync.
+- Browser session storage key: `anvl.supabase.admin.v1` (CMS reads only — `autoRefreshToken: false`)
+- **Server-validated (SEC-11, resolved 2026-07-04):** `/admin/*` access is checked in `beforeLoad` on every SSR request and client navigation via a sealed HttpOnly session cookie (`src/features/admin/auth/adminAuthSession.server.ts`) holding the Supabase refresh token; every validation call refreshes + re-verifies `cms_profiles.role = admin` and rotates the cookie. The static env-file username/password gate was removed in this same pass — Supabase is the only admin auth path.
 
 ---
 
 ## Edge functions (in repo)
 
-| Function | Purpose |
-|---|---|
-| `shopify-webhook` | Verifies Shopify HMAC; ack-only — no DB writes |
-| `medusa-webhook-stub` | Validates `x-anvl-medusa-secret`; placeholder for future Medusa sync |
+| Function | Deployed? | Purpose |
+|---|---|---|
+| `shopify-webhook` | Yes | Verifies Shopify HMAC; ack-only — no DB writes |
+| `techpack-ai` | Yes (`verify_jwt: true`) | Techpack ingestion AI parsing for `/admin/techpacks` |
+| `medusa-webhook-stub` | No — never deployed | Validates `x-anvl-medusa-secret`; placeholder for future Medusa sync |
 
 > **Removed:** `publish-storefront` and `process-scheduled-drops` Edge Functions. Admin sync writes directly to `cms_settings` + `storefront_publication` via `adminCmsRemoteSync`. See `docs/technical-debt.md` (MIG-01) for orphaned publish RPC migrations still in the migration history.
 

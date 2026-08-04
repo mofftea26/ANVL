@@ -8,17 +8,21 @@ Prioritized recommended tasks for ANVL Athletics development. Update this file a
 
 These are **required before any public launch**. Do not launch without them.
 
-| Task | Effort | Risk if skipped |
-|---|---|---|
-| Real server auth with HttpOnly cookies | High | Admin accounts vulnerable to XSS-based token theft |
-| CSP (Content Security Policy) headers | Medium | XSS attack surface remains open |
-| HSTS headers | Low | SSL stripping attacks possible |
-| Rate limiting on auth endpoints | Medium | Brute-force admin login possible |
-| Rate limiting on forms (waitlist, contact) | Medium | Spam/abuse |
-| Server-side upload validation (type, size, MIME) | Medium | Malicious file upload possible |
-| CSRF protection on state-mutating endpoints | Medium | Cross-site request forgery |
+| Task | Status | Effort | Risk if skipped |
+|---|---|---|---|
+| Real server auth with HttpOnly cookies | ✅ Done (SEC-11, 2026-07-04) | High | Admin accounts vulnerable to XSS-based token theft |
+| CSP (Content Security Policy) headers | ⚠️ Report-only — **must be flipped to enforcing** | Medium | XSS attack surface remains open |
+| HSTS headers | ✅ Done (`src/start.ts`) | Low | SSL stripping attacks possible |
+| CSRF protection on state-mutating endpoints | ✅ Done — double-submit cookie (`src/start.ts`) | Medium | Cross-site request forgery |
+| Rate limiting on auth endpoints | ❌ Open | Medium | Brute-force admin login possible |
+| Rate limiting on forms (waitlist, contact) | ❌ Open | Medium | Spam/abuse |
+| Server-side upload validation (type, size, MIME) | ❌ Open | Medium | Malicious file upload possible |
+| DNS cutover to the custom domain | ❌ Open | Low | Site only reachable on the `workers.dev` URL |
+| Backfill the 7 file-less production migrations (MIG-01) | ❌ Open | Medium | `supabase db push` cannot rebuild production RLS/schema state |
 
 Tracked under finding IDs `SEC-01`, `SEC-02`, `SEC-03`, `SEC-11` in `docs/audit-2026-05-17.md`.
+
+> Hosting is **live**, not pending: Worker `anvl` was created 2026-07-11 and last deployed 2026-07-28 (verified against the Cloudflare account 2026-07-29).
 
 ---
 
@@ -39,7 +43,9 @@ These turn the storefront from a demo into a functional store.
 
 ## Priority 3: Feature Boundary Cleanup (Phase D)
 
-Move CMS read surfaces out of `features/admin/**` into `features/cms/**` and `features/drops/**` so the storefront bundle does not depend on admin modules. Currently a known risk (MAINT-02, PERF-03).
+Move CMS read surfaces out of `features/admin/**` into `features/cms/**` so the storefront bundle does not depend on admin modules (MAINT-02, PERF-03).
+
+**Scope as of 2026-07-29:** almost done. `features/drops/**` no longer exists (torn down with the drop-builder), and the 2026-07-05 pass moved the media types/helpers. Exactly **one** violation remains: `src/features/cms/api/cmsPersistenceMode.ts:1` imports `type CmsProfileRole` from `@/features/admin/auth/adminCmsProfileRole`. Moving that one type into `features/cms/**` closes this item.
 
 Steps:
 1. Grep for storefront imports of `src/features/admin/**`
@@ -77,7 +83,7 @@ Steps:
 | Task | Notes |
 |---|---|
 | Finalize The Oath drop content | Verify all acts, copy, and product assignments in admin |
-| Test full publish flow (local → Supabase) | Verify `cms_publish_drop()` RPC → storefront reads correctly |
+| Test full publish flow (local → Supabase) | Verify `adminCmsRemoteSync` → `cms_settings` + `storefront_publication` mirror → storefront SSR read. (The old `cms_publish_drop()` RPC was dropped with the drop-builder; admin now writes directly, scoped per changed column.) |
 | OG image for The Oath | `og-default.svg` exists; make a drop-specific one |
 | Countdown timer for release date | `CountdownTrioReveal` preset exists; configure release date |
 | Waitlist email collection | `MinimalWaitlistForm` / `OathFullWidthForm` exist; wire to email service |
@@ -99,7 +105,7 @@ Steps:
 
 | Task | Notes |
 |---|---|
-| Sitemap generation | `public/sitemap.xml` is static; generate dynamically from active products/drops |
+| Sitemap generation | `public/sitemap.xml` is static; generate dynamically from the active landing page + products. Note `site_seo.technical.sitemapEnabled` is persisted in the CMS but not yet wired to the static file |
 | Product structured data | JSON-LD exists; verify all PDP routes emit correct `Product` schema |
 | OG images for all routes | Products, drop, about, shop |
 | Analytics wiring | Replace `mockAnalyticsClient` with PostHog or Plausible |
@@ -110,10 +116,19 @@ Steps:
 
 Keep admin editor files under the 500-line hard limit. Tracked as MAINT-01.
 
-The former 600+ line offenders (`DropActsBuilderPanel`, `DropEditorRoute`, `ProductEditorRoute`) were removed with the drop/acts/products CMS surfaces. Remaining watch-list (none currently over 500):
-- `AdminAuthProvider.tsx` (~430) — auth state machine; split if it grows
-- `AdminDateTimeField.tsx` (~340) — extract the day-picker chrome if it grows
-- `AdminSidebar.tsx` (~315) — extract nav cluster rendering if it grows
+The former 600+ line offenders (`DropActsBuilderPanel`, `DropEditorRoute`, `ProductEditorRoute`) were removed with the drop/acts/products CMS surfaces — but new ones have accumulated since. **Measured 2026-07-29, seven files are over the 500-line hard limit:**
+
+| File | Lines |
+|---|---|
+| `admin/about/sections/AboutOrbsFields.tsx` | 713 |
+| `admin/setup/wizards/GamificationSetupWizard.tsx` | 712 |
+| `admin/setup/wizards/StorySetupWizard.tsx` | 582 |
+| `admin/banner/BannerCustomizeModal.tsx` | 571 |
+| `admin/preview/AdminPreviewPanel.tsx` | 566 |
+| `admin/media/MediaAssetGrid.tsx` | 561 |
+| `admin/setup/wizards/AboutSetupWizard.tsx` | 522 |
+
+(The previous watch-list here claimed "none currently over 500" and named `AdminDateTimeField.tsx`, which no longer exists — it was deleted with `react-day-picker` under PERF-11.)
 
 ---
 
@@ -130,10 +145,9 @@ The former 600+ line offenders (`DropActsBuilderPanel`, `DropEditorRoute`, `Prod
 
 | Task | Notes |
 |---|---|
-| Bone-light editorial theme | CSS variables exist; needs design direction and act presets |
-| `@tanstack/react-table` for admin tables | Installed, not yet used in admin drops/products list |
+| Bone-light editorial theme | CSS variables exist; needs design direction |
 | Medusa backend | See `docs/backend-medusa-roadmap.md` |
-| Real-time CMS sync | Supabase Realtime could push drop changes to storefront without page reload |
+| Real-time CMS sync | Supabase Realtime could push CMS changes to the storefront without a page reload |
 | Phase I (router repatch fix) | Waiting for upstream TanStack Start fix for admin lazy routes |
 
 ---

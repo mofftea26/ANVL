@@ -348,6 +348,66 @@ two changes that measured real wins.
 
 ---
 
+## Passport section effects (`src/features/passport/effects/`)
+
+Every passport section carries a signature ambient effect — the Blueprint's
+WebGL hologram is the flagship — mounted through ONE seam so the console, the
+mobile sheet and the Armory tab treat them identically:
+
+- **The contract** is `effectTypes.ts` (`PassportEffectProps { sectionKey,
+  imageUrl, tier: 'console' | 'sheet' }`). `PassportSectionEffectLayer.tsx`
+  is the host: a `pointer-events-none` absolute layer over the product stage
+  (or behind the Armory panel), one `lazy()` import per effect so a visitor
+  only downloads the sections they open. Exactly ONE effect is mounted at a
+  time, keyed by section so switching runs the old cleanup first.
+- **The hologram** (`sections/EffectBlueprint.tsx` + `EffectBlueprintCanvas.tsx`
+  + `effectBlueprintShaders.ts`) is gate + lazy canvas on the
+  `PassportForgeGate` pattern. Since the 2026-07-31 redesign it is a FULL
+  Jarvis projection, not an overlay: when the canvas mounts, the console host
+  dissolves the photograph entirely (`data-holo-solo` — image and hotspot
+  buttons fade with pointer-events off), and the projection is the product
+  display — emitter ring + light shaft, a 5.6k-point cloud streaming up from
+  the ring (silhouette-accurate via `sampleImageSilhouette`, shell-baked onto
+  an elliptic tube so the continuous ~24s museum turn shows volume edge-on),
+  precessing data rings, spec-tag sprites, glitch ticks.
+  `useBlueprintHologramGate()` is shared with the console host, so the CSS
+  `.pp-holo` treatment (which keeps the photo — it has nothing else to show)
+  arms exactly when the canvas will not (reduced motion / no WebGL /
+  sub-console width) — fallback and flagship cannot both fire, and cannot
+  both go dark. Its blueprint-blue (`--pp-blueprint`, fallback `#7fb2d9`) is
+  the one sanctioned deviation from brand-token-only color, per explicit user
+  direction 2026-07-30.
+- **Chunk hygiene for the 2D effects**: `@/shared/webgl/particleShapes`
+  imports three.js at module top level, so a canvas-2D/SVG effect must NEVER
+  import it — that would drag `vendor-three` into its lazy chunk. Re-derive
+  the sampling technique instead (EffectPiece's Moore-neighbour contour trace
+  and EffectSpecs' per-row edge profile are the house examples; both files
+  document this in their headers).
+- **The other ten** are canvas-2D or SVG+GSAP, and since the 2026-07-31/08-01
+  redesigns they all follow the SHAPE-REGISTERED standard: each effect samples
+  the real product image through `effects/lib/silhouette2d.ts` (ordered
+  contour, per-row edge intercepts, centroid — never `particleShapes`, see
+  below) and reacts to THIS garment, stays continuously alive, and opens with
+  a mount narrative. The set: a living outline of circulating embers (piece),
+  a lattice woven from the silhouette's real row widths (material), a
+  shape-aware analysis scan with intercept flares + typewriting chips (specs),
+  contour-born embers with a quench-line sweep (details), tape bands spanning
+  the garment's sampled widths with honestly derived values (fit), a waterline
+  breaking at the real edges (care), a pen writing Cinzel fragments along
+  actual contour segments (story; letterless chalk ticks for forge-notes), a
+  route landing on the sampled chest point with the chart occluded behind the
+  piece (origin), an outline-validation rite sealing on the true centroid
+  (authenticity), and a hall registered to the panel's measured content
+  geometry with scroll-welded glints (armory). Every effect ships a DESIGNED
+  fallback for a null sample — the sampler returns null on any failure, and
+  "broken image" must never mean "broken effect".
+- **Non-negotiables**, enforced by each effect's tests: reduced motion renders
+  a STILL composition (authored-at-rest markup, never a slowed animation);
+  colors are read from CSS vars at runtime with literal fallbacks; DPR ≤2;
+  rAF parks on `document.hidden` and resumes without fast-forwarding; null
+  `getContext('2d')` degrades to the DOM-only layer; sheet tier runs roughly
+  half the elements; cleanup is total (rAF, observers, GSAP via `useGSAP`).
+
 ## The ANVL particle-forge standard (THE quality benchmark)
 
 The Coming Soon ember anvil (`src/features/comingSoon/scene/`) and The Oath

@@ -25,6 +25,7 @@ const EXPECTED_HREFS = [
   '/admin/support',
   '/admin/shop',
   '/admin/products',
+  '/admin/techpacks',
   '/admin/passports',
   '/admin/gamification',
   '/admin/assets',

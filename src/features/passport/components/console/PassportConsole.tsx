@@ -21,6 +21,9 @@ import {
   PASSPORT_SHATTER_OUT,
   PASSPORT_SWAP_AT,
 } from '../../webgl/passportForgeTiming'
+import { PassportSectionEffectLayer } from '../../effects/PassportSectionEffectLayer'
+import { buildPassportEffectFacts } from '../../effects/effectFacts'
+import { useBlueprintHologramGate } from '../../effects/effectTypes'
 import { AuthenticityPlate } from '../AuthenticityPlate'
 import { PassportArmoryPanel } from '../PassportArmoryPanel'
 import { PassportHotspotDetail, PassportHotspots } from '../PassportHotspots'
@@ -105,6 +108,19 @@ export function PassportConsole({
   )
   const groupSections = availableSections.filter((s) => s.group === group)
   const activeDef = availableSections.find((s) => s.key === active) ?? null
+  // The Blueprint section has no drawing of its own — the piece on the left
+  // BECOMES the schematic. The WebGL hologram (EffectBlueprint) owns that when
+  // it can mount; the CSS `.pp-holo` treatment is its FALLBACK, so it arms
+  // exactly when the canvas will not (reduced motion / no WebGL).
+  // The readouts Blueprint/Specs/Fit draw over the piece — derived from the
+  // same content the cards render, so overlay and card cannot disagree.
+  const effectFacts = useMemo(() => buildPassportEffectFacts(content), [content])
+  const hologramOn = useBlueprintHologramGate()
+  const holo = activeDef?.key === 'blueprint' && !hologramOn
+  // When the WebGL hologram mounts, the photograph leaves the stage entirely —
+  // the projection IS the product display (Jarvis, not an overlay). The CSS
+  // re-light path keeps the photo; only the canvas earns a solo stage.
+  const holoSolo = activeDef?.key === 'blueprint' && hologramOn
 
   const stageImage =
     content.piece.heroRenderUrl ??
@@ -245,7 +261,9 @@ export function PassportConsole({
               // its own aspect ratio.
               <div
                 data-pc-image
-                className="relative flex aspect-[4/5] h-[42vh] max-h-[26rem] items-center justify-center"
+                data-holo={holo ? 'on' : 'off'}
+                data-holo-solo={holoSolo ? 'on' : 'off'}
+                className="pp-holo relative flex aspect-[4/5] h-[42vh] max-h-[26rem] items-center justify-center"
               >
                 <ProductForgeImage
                   src={stageImage}
@@ -259,6 +277,18 @@ export function PassportConsole({
                     onSelect={setHotspot}
                   />
                 </ProductForgeImage>
+                {/* The active section's signature effect, over the stage.
+                    Keyed so a section switch runs the old effect's cleanup
+                    before the next one mounts. */}
+                {activeDef ? (
+                  <PassportSectionEffectLayer
+                    key={activeDef.key}
+                    sectionKey={activeDef.key}
+                    imageUrl={stageImage}
+                    tier="console"
+                    facts={effectFacts}
+                  />
+                ) : null}
               </div>
             ) : (
               <div
@@ -365,13 +395,24 @@ export function PassportConsole({
                 />
               </div>
             ) : group === 'armory' ? (
-              /* The Armory tab is ONE composed surface, not bento cards. */
+              /* The Armory tab is ONE composed surface, not bento cards.
+                 The ambient effect sits on a non-scrolling wrapper: inside the
+                 scroll container an absolute layer would be pinned to the
+                 content box and scroll away with it. */
               <div
                 data-pc-shape
                 data-pc-item
-                className="max-h-full overflow-y-auto overscroll-contain rounded-2xl border border-[color-mix(in_oklab,var(--color-highlight)_18%,var(--color-line))] bg-[color-mix(in_oklab,var(--color-surface)_88%,transparent)] p-7 [scrollbar-width:thin]"
+                className="relative max-h-full overflow-hidden rounded-2xl border border-[color-mix(in_oklab,var(--color-highlight)_18%,var(--color-line))] bg-[color-mix(in_oklab,var(--color-surface)_88%,transparent)]"
               >
-                <PassportArmoryPanel ctx={ctx} />
+                <PassportSectionEffectLayer
+                  sectionKey="armory"
+                  imageUrl={stageImage}
+                  tier="console"
+                  facts={effectFacts}
+                />
+                <div className="relative z-[2] max-h-full overflow-y-auto overscroll-contain p-7 [scrollbar-width:thin]">
+                  <PassportArmoryPanel ctx={ctx} />
+                </div>
               </div>
             ) : /* The detail fits the console by design; it scrolls only when a
                   section's content genuinely exceeds the panel (long saga). */

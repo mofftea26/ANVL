@@ -14,6 +14,14 @@ import {
   type FontLibraryConfig,
 } from '@/features/cms/config/fontLibrary'
 
+// This suite cold-imports one of the repo's heaviest lazy editor panels. In a
+// FULL parallel run (239 files as of 2026-07-30) that first import reliably
+// exceeds the 15s default on a loaded machine — the suite passes in isolation
+// and fails only at the tail of `pnpm test`, and a timeout mid-render then
+// cascades ("multiple combobox") into the next test. 60s still catches a real
+// hang; it just stops punishing cold-import cost.
+vi.setConfig({ testTimeout: 60_000 })
+
 // Mutable "persisted" store the settings mock serves; `saveFontConfigAsync`
 // commits the working copy here and notifies subscribers — mirroring the real
 // write-then-event flow so the component's `stored` read updates after save.

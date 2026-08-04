@@ -34,6 +34,7 @@ const EMITTED_TARGET_IDS: Array<{ id: string; adminRoute: string | null }> = [
   { id: 'passport:identity', adminRoute: '/admin/passports' },
   { id: 'passport:piece', adminRoute: '/admin/passports' },
   { id: 'passport:material', adminRoute: '/admin/passports' },
+  { id: 'passport:blueprint', adminRoute: '/admin/passports' },
   { id: 'passport:specs', adminRoute: '/admin/passports' },
   { id: 'passport:care', adminRoute: '/admin/passports' },
   { id: 'passport:fit', adminRoute: '/admin/passports' },

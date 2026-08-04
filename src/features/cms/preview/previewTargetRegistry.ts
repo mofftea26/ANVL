@@ -51,7 +51,7 @@ const PREVIEW_TARGET_REGISTRY: PreviewTargetRegistryEntry[] = [
   // recognized so inspect-click degrades gracefully rather than as "unmapped".
   {
     pattern:
-      /^passport:(identity|piece|material|specs|care|fit|details|forge-notes|origin|authenticity|story)$/,
+      /^passport:(identity|piece|material|blueprint|specs|care|fit|details|forge-notes|origin|authenticity|story)$/,
     adminRoute: '/admin/passports',
   },
   { pattern: /^the-oath:(hero|manifesto|tenets|products|finale)$/, adminRoute: '/admin/content' },

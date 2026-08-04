@@ -69,7 +69,12 @@ The Oath is composed to read as **one continuous scene**, not stacked sections:
 
 ### Animation rules (non-negotiable)
 
-Mirror `pages/TheOathLanding/hooks/useTheOathScrollTimeline.ts` and `oathBreakpoints.ts`:
+Mirror `pages/TheOathLanding/hooks/useTheOathScrollTimeline.ts` and `oathBreakpoints.ts`.
+
+> Breakpoints live **per page**, in that page's own folder. A shared
+> `landingPages/landingBreakpoints.ts` existed briefly and was never imported by
+> anything — it was deleted 2026-07-29. Copy `oathBreakpoints.ts` into a new
+> page's folder rather than reaching for a shared module.
 
 | Tier | Viewport | Motion |
 |---|---|---|

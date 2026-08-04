@@ -330,8 +330,168 @@ product render now forges from embers sampled from the real image on first load
 only (`ProductForgeImage` → lazy `ProductForgeCanvas`/`ProductForgeParticles`),
 then the canvas unmounts; reduced motion / no WebGL shows the image immediately.
 
+## Phase H (2026-07-29) — the Blueprint section
+
+A new `craft` section, fed by the techpack pipeline (`docs/features/techpacks.md`):
+the manufacturer's construction callouts.
+
+- **New `passport_content.blueprint`** — `{ heading, intro, features[] }` where a
+  feature is `{ code, title, body }`. The existing hero-render `hotspots` are
+  untouched.
+- **`deepMergeDefaults` is the real schema.** Adding or removing a section field
+  on `passportProductContentSchema` without changing that hand-written literal
+  typechecks (it returns through an `as` cast) and then silently drops the data
+  on every save, because `writePassportContentToStorage` parses through it.
+  Schema + `DEFAULT_PASSPORT_PRODUCT_CONTENT` + `deepMergeDefaults` change
+  together; the round-trip regression test guards it.
+- Authored in an 11th wizard tab; techpack import fills it.
+
+### 2026-07-30 — the flat is gone; the render becomes the schematic
+
+The section originally pinned lettered markers to the manufacturer's technical
+flat, extracted from the supplier PDF. The extraction was a page crop with
+residual artefacts and the operator's verdict was "not accurate at all" — and
+coordinates measured against a crop can only ever be as good as that crop. So:
+
+- **The callouts are CARDS.** `PassportBlueprint.tsx` is a static card grid —
+  code chip, title, body — with no image, no markers and no coordinates. Being
+  static markup it is identical for a mouse, a screen reader and a phone.
+- **`blueprint.flatAsset` and `features[].positions` are removed** from
+  `passportContent.zod.ts`, `DEFAULT_PASSPORT_PRODUCT_CONTENT`,
+  `deepMergeDefaults`, the resolver and `PASSPORT_MEDIA_FIELDS`
+  (`collectAssignedMediaIds.ts`). Blobs authored before this drop both on the
+  next parse — the schema is non-strict, so unknown keys are stripped.
+- **The passport's OWN render becomes the schematic** while the section is open:
+  `.pp-holo` in `styles.css`, armed by `data-holo="on"` on the image box in
+  `PassportConsole` (desktop) and `PassportMobile` (phone). CSS only — a filter
+  chain flattening the render to a luminance mask plus alpha-following
+  `drop-shadow` bloom, a technical grid + scanline comb, and one slow sweep.
+  Champagne and bone tokens only; motion lives entirely inside a
+  `prefers-reduced-motion: no-preference` block, so reduced motion keeps the
+  static readout, and any unsupported declaration simply drops back to the
+  plain photograph.
+
+## Armory discovery (2026-07-31)
+
+Two consented paths into a shared armory
+(`supabase/migrations/20260731090000_armory_discovery.sql`):
+
+- **`get_passport_by_token` also returns `owner_armory_handle`** — non-null
+  ONLY when both switches agree: the passport shows its owner (you own it, or
+  it's public) AND the owner's armory is public with a minted handle. A live
+  transfer code deliberately does NOT unlock it — the code proves a hand-over
+  in progress, not a decision to publicise the armory. Parsed as
+  `PassportView.ownerArmoryHandle` (null default, so older payloads keep
+  parsing); when present, the public authenticity view gains a second,
+  ghost-prominence action — "View the owner's Armory" → `/armory/$handle`
+  (`PassportOwnerArmoryLink`, overlaid from `PassportPage`) — while "View this
+  product" stays the primary action. The UI never derives the handle from any
+  other source.
+- **New anon RPC `search_public_armories(p_query, p_limit)`** (SECURITY
+  DEFINER): searches ONLY `armory_public` profiles by handle/name and returns
+  ONLY `{ handle, display_name }` — exactly the fields `/armory/$handle`
+  already shows. ILIKE wildcards are escaped, queries under 2 chars return
+  `[]`, results cap at 12. The storefront global search surfaces it as the
+  live "Warriors" group: `useArmorySearch` (React Query over the anon REST
+  path, silent `[]` without Supabase env) feeds `useGlobalSearch`, which merges
+  the hits into the same grouped results as the Fuse corpus — so the dropdown,
+  the overlay, and keyboard navigation are the existing shared machinery.
+
+## 2026-08-03 — sharing, rebuilt (`src/features/share/`)
+
+The old share studio (`armoryShare.ts` + `ArmoryShareModal.tsx`, both over the
+500-line limit) is deleted. Sharing is now one feature with one entry point.
+
+**What was wrong.** Picking a gallery/camera photo left the preview unchanged;
+the "what to share" dropdown did nothing once a photo was picked, because the
+HUD templates rendered only name/rank/stats and ignored the subject entirely;
+the Instagram, TikTok and Discord tiles resolved to `href: () => null` and
+silently did nothing; and the sheet asked the user to pick "a piece" while they
+were standing inside that piece's passport.
+
+**The platform constraint that shapes all of this.** No web page can hand an
+image to an Instagram Story, a Facebook Story or a WhatsApp status via a deep
+link — `instagram-stories://share` requires a native app registered with a
+Facebook App ID, and WhatsApp's scheme carries text only. The one route that
+really delivers pixels is `navigator.share({ files })` (iOS Safari 15+, Chrome
+Android, Chrome/Edge on Windows). So `resolveShareRoute()` resolves each tile at
+tap time — OS sheet with the PNG → the platform's web intent → the app deep link
+on a phone or the web composer on a desktop — and every non-sheet route saves
+the image and copies the caption FIRST, then says so. A tile can never appear to
+do nothing; the route matrix is unit-tested for exactly that.
+
+**The photo path.** `useImagePick` replaces `FileReader`-to-data-URL with
+`createObjectURL` → `decode()` → a one-time downscale (2160px long edge) into an
+offscreen canvas held in a ref, so only a version counter crosses React. Two
+consequences: no `data:` URL is ever handed to an `<img crossOrigin>` (a
+CORS-mode fetch of a `data:` URL fails in several engines — the identified cause
+of the silent drop), and an undecodable file, HEIC on desktop being the usual
+one, reports an error instead of leaving the preview looking unchanged.
+`drawKit.loadImage` now sets `crossOrigin` only for `http(s)` sources.
+
+**Content model.** The piece is *context*, set by whatever opened the sheet, and
+the only content choice is which feat rides along — `No feat`, or one of the
+feats logged in that piece. The armory entry point is the sole place a piece can
+be chosen, because it is the only one where no piece is implied.
+
+**Three tabs.** *Image* — live preview, format, preset, photo, feat, send-to,
+download. *Link* — armory URL and derived caption, each copyable. *QR* — the
+branded code.
+
+**Seven presets, one family.** There used to be two families — three "backdrop"
+looks for when the athlete had no photo and seven HUD looks for when they did,
+with the sheet swapping families under the user the moment a photo was added or
+removed. Five of the ten were therefore unreachable at any given moment, and
+picking one could silently turn it into another.
+
+A look now describes ARRANGEMENT only. What it composes over is THE STAGE
+(`image/presets/stage.ts`), which resolves itself: the athlete's photo when there
+is one, the piece's own product render over brand atmosphere when there is not.
+Adding a photo swaps the hero and nothing else. The seven are `bottom-rail` (the
+default: one rail across the base carrying thumbnail, piece, feat and headline
+stat, clear of Instagram's own furniture), `modern`, `minimal`, `premium`,
+`luxe`, `game`, `jarvis`. All seven carry the piece thumbnail and the selected
+feat, each in its own language, in both stage states — `__tests__/presets.test.ts`
+walks all 7 × 3 formats × 2 stages and asserts it. `SHARE_PRESETS` is typed
+`Record<SharePresetKey, SharePreset>`, so a missing look is a compile error
+rather than a blank canvas. Presets are synchronous and take a `ShareCanvas`
+— the narrow slice of `CanvasRenderingContext2D` they may touch — so tests hand
+them a recording surface and assert the thumbnail and feat actually landed.
+
+**The QR encodes the public armory URL, never `/p/<token>`.** The token is the
+claim secret and the transfer surface; it has no business on a public post.
+`qr/anvlQr.ts` takes the module matrix from `QRCode.create(url, {
+errorCorrectionLevel: 'H' })` and draws it: neighbour-aware rounded modules that
+fuse into continuous strokes, champagne rounded finder eyes, and a centre
+knockout (~24% of the width, ≈5.8% of module area — a fraction of level H's 30%
+budget) carrying `AnvlCrest`. The crest path data moved to
+`shared/assets/brand/anvlCrestPath.ts` so the SVG component and the canvas
+renderer cannot drift.
+
+**The finder eyes are dark, not champagne, and that is a scannability
+decision.** Decoders binarize before hunting the finder's 1:1:3:1:1 run-length
+signature. Champagne `#C5A56A` is luminance ~168/255 against bone at ~228 and
+the modules at ~11, so any threshold lands near 120 and the accent would
+binarize as *light* — the three locator patterns would disappear and the code
+would not be found at all. The brand lives in the module shapes and the crest;
+the locators stay legible to a camera. Verified against real rendered pixels in
+a browser: 1413 data modules binarized outside the finders and knockout with
+**zero mismatches** against the source matrix at 256 / 512 / 1024 px, and each
+eye reading `D1 L1 D3 L1 D1`.
+
+**Feats.** Every feat row has a share icon, and `createArmoryFeat` now returns
+the new row's `id` (`.select('id').single()`) so a successful add opens the
+sheet on the feat just logged. Setting a PR is the moment worth posting.
+
+**Entry points.** Passport Armory tab, the account Armory panel, and any feat
+row — one share icon each. `ShareModal` mounts only while open, because
+`PieceFeats` renders once per armory card and the sheet pulls the catalog and
+profile behind it.
+
 ## Follow-ups
 
+- Scan-verify the branded QR on a physical phone camera at print size before
+  it goes on anything printed.
 - RPC rate limiting (Phase-J family; 122-bit tokens make brute force
   impractical today).
 - Shopify Admin API stock-driven batch sizes.

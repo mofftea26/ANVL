@@ -91,26 +91,58 @@ anon:
   - SELECT on published story_chapters / story_acts / story_cast (parent is_published)
   - SELECT on gamification_* (settings/ranks/rank_levels/challenges/badges — the
     Armory's rules are public data; seeded == code defaults)
+  - INSERT on coming_soon_subscribers (write-only mailbox; no SELECT)
   - EXECUTE get_passport_by_token(token) (SECURITY DEFINER — safe projection only;
-    product_passports has NO public SELECT so claim tokens cannot be enumerated)
+    product_passports has NO public SELECT so claim tokens cannot be enumerated.
+    Since 20260731090000_armory_discovery.sql it also returns owner_armory_handle,
+    non-null ONLY when the passport shows its owner (owner/public) AND the owner's
+    armory is public — a live transfer code does not unlock it)
+  - EXECUTE get_product_reviews(...), get_public_armory(handle) (SECURITY DEFINER)
+  - EXECUTE search_public_armories(query, limit) (SECURITY DEFINER — searches
+    armory_public profiles only, returns handle + display name only; ILIKE
+    wildcards escaped, min query length 2, results capped at 12)
 
 authenticated (viewer/editor/admin):
   - SELECT on cms_settings, landing_pages, cms_media_assets, story_*, product_passports (all rows for CMS roles)
+  - SELECT on techpacks, techpack_images (no anon policy at all)
+  - SELECT on passport_transfers (CMS reads all)
   - SELECT on cms_profiles (own row)
 
 authenticated (customer):
   - SELECT on product_passports where claimed_by = auth.uid() (account Armory)
+  - SELECT/INSERT/UPDATE/DELETE on armory_feats (own rows only)
+  - SELECT/DELETE on product_reviews (own rows); writes only via submit_product_review
+  - SELECT/UPDATE on storefront_profiles (own row; auto-created on signup by the
+    handle_new_storefront_user() trigger)
+  - SELECT on orders (own — matched by id or email claim); writes are service-role only
+  - SELECT on passport_transfers where the caller is a participant
   - EXECUTE claim_passport(token, color, size, display_name) (SECURITY DEFINER —
     atomic first-claim: UPDATE ... WHERE token = $1 AND claimed_by IS NULL)
 
 authenticated (editor/admin):
-  - INSERT/UPDATE/DELETE on cms_media_assets, story_*, product_passports, gamification_*
+  - INSERT/UPDATE/DELETE on cms_media_assets, story_*, product_passports, gamification_*,
+    techpacks, techpack_images
   - UPDATE on cms_settings
+  - EXECUTE set_techpack_final(id), admin_search_profiles(query),
+    admin_unassign_passport(...) — each re-checks cms_profiles.role INSIDE the
+    function body, so the grant to `authenticated` is not the real gate
 
 authenticated (admin):
-  - UPDATE on storefront_publication
+  - UPDATE on storefront_publication   ← admin only, NOT editor
   - INSERT/UPDATE/DELETE on landing_pages
 ```
+
+> `cms_settings` has **no anon SELECT policy** — it is CMS-role-only. Only
+> `storefront_publication` is anon-readable. Anything the storefront must render
+> at request time has to reach the publication mirror, not `cms_settings`.
+
+### Known RLS/advisor debt (2026-07-29 audit)
+
+- `touch_row_updated_at()` has a mutable `search_path`.
+- Unindexed FKs: `armory_feats.user_id`, `passport_transfers.from_user`, `passport_transfers.to_user`, `techpacks.created_by`.
+- Every table created **after** the `perf20_wrap_auth_uid_in_rls_policies` migration still calls bare `auth.uid()` in its policies instead of `(select auth.uid())` — `gamification_*`, `product_passports`, `passport_transfers`, `coming_soon_subscribers`, `techpacks`, `techpack_images`. The PERF-20 fix was a one-time sweep, not a standing rule; new tables must use the `(select auth.uid())` form.
+- Duplicate permissive SELECT policies on `landing_pages`, `passport_transfers`, `product_passports`, `story_*`.
+- Auth: leaked-password protection still disabled (SEC-23, a dashboard toggle).
 
 **Never disable RLS on any table.** Orphaned drop-builder RPCs may exist in migration history (MIG-01) — the app does not call them.
 
@@ -140,6 +172,9 @@ Write this plan first:
 - Destructive changes (DROP COLUMN, DROP TABLE) need explicit sign-off and a tested rollback.
 - Test migrations on a local Supabase instance or staging before applying to production.
 - Use `IF NOT EXISTS` / `IF EXISTS` guards where safe to make migrations idempotent.
+- **Never apply SQL to production without committing the file.** Applying ad-hoc SQL (dashboard SQL editor, `execute_sql`, MCP) creates a migration in the remote history with no counterpart on disk.
+
+> ⚠️ **This folder is NOT currently a faithful source of truth.** A 2026-07-29 audit against the live migration history found **7 migrations applied in production with no file here** (the PERF-20/21 and SEC-24/25 remediations, the `cms_settings` RLS tightening, and `site_seo_column`) and **7 files here that never appear in the applied history**. A fresh `supabase db push` into an empty project would therefore not reproduce production. Tracked as **MIG-01**; backfill the missing SQL before rebuilding any environment from this folder.
 
 ### Running migrations
 
@@ -156,12 +191,13 @@ supabase db reset
 
 ---
 
-## Edge Functions (in repo)
+## Edge Functions
 
-| Function | Purpose |
-|---|---|
-| `shopify-webhook` | Verifies Shopify HMAC; ack-only — no DB writes |
-| `medusa-webhook-stub` | Validates secret header; placeholder for future Medusa sync |
+| Function | Purpose | Deploy state (verified 2026-07-29) |
+|---|---|---|
+| `shopify-webhook` | Verifies Shopify HMAC. For `orders/*` topics, upserts a denormalized copy into `public.orders` (service role), linking to `storefront_profiles` by email. Other topics are acknowledged without writes | **Deployed** (v4, ACTIVE) |
+| `techpack-ai` | AI rewrite overlay for a parsed techpack. Writes only `techpacks.ai_document`, never `techpacks.document`, so the deterministic parse is never overwritten. Guards on `cms_profiles` role; returns `not_configured` until `ANTHROPIC_API_KEY` is set via `supabase secrets set` | **Deployed** (v3, ACTIVE, `verify_jwt: true`) |
+| `medusa-webhook-stub` | Validates secret header; placeholder for future Medusa sync | **In repo, never deployed** |
 
 **Removed from repo:** `publish-storefront`, `process-scheduled-drops`. Admin sync writes directly via `adminCmsRemoteSync`.
 

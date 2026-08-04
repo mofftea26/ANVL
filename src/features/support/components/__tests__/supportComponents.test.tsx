@@ -21,9 +21,9 @@ import {
   SizeTable,
   SupportSectionList,
   faqPageJsonLd,
-  formatDocDate,
 } from '@/features/support/components'
 import { AccordionDisclosure } from '@/shared/components/ui/AccordionDisclosure'
+import { formatDocDate } from '@/shared/components/premium/PageMasthead'
 import { resolveGarmentTypeKeys } from '@/features/support/lib/garmentTypes'
 
 const content = resolveSupportContent(DEFAULT_SUPPORT_CONTENT)
@@ -50,7 +50,7 @@ describe('SupportSectionList', () => {
     expect(screen.getByRole('heading', { name: 'Processing time' })).toBeInTheDocument()
   })
 
-  it('skips the first section header rule (DocHero already supplies one) but keeps it on later sections', () => {
+  it('skips the first section header rule (the masthead already supplies one) but keeps it on later sections', () => {
     expect(content.shipping.sections.length).toBeGreaterThan(1)
     render(<SupportSectionList sections={content.shipping.sections} />)
     const headings = content.shipping.sections.map((section) =>

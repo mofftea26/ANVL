@@ -86,7 +86,12 @@ export interface PaymentClient {
   placeOrder(input: CheckoutInput, lines: CartLine[]): Promise<CheckoutOrderResult>
 }
 
-/** TODO: Medusa customer + order APIs with secure server session — replace mock AccountClient. */
+/**
+ * TODO(backend, medium): replace the mock `AccountClient` with real customer +
+ * order APIs behind a secure server session. Not a bug — the mock is the
+ * intended state until a commerce backend is chosen (see "Next Recommended
+ * Steps" in CLAUDE.md). Blocks: real order history, address book persistence.
+ */
 export interface AccountClient {
   getCustomerProfile(): Promise<Customer>
   updateCustomerProfile(input: CustomerProfileUpdate): Promise<Customer>

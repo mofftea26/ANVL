@@ -41,6 +41,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as ArmoryHandleRouteImport } from './routes/armory/$handle'
 import { Route as ApiCspReportRouteImport } from './routes/api/csp-report'
 import { Route as AdminThemeRouteImport } from './routes/admin/theme'
+import { Route as AdminTechpacksRouteImport } from './routes/admin/techpacks'
 import { Route as AdminSupportRouteImport } from './routes/admin/support'
 import { Route as AdminStoryRouteImport } from './routes/admin/story'
 import { Route as AdminShopRouteImport } from './routes/admin/shop'
@@ -224,6 +225,11 @@ const AdminThemeRoute = AdminThemeRouteImport.update({
   path: '/theme',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminTechpacksRoute = AdminTechpacksRouteImport.update({
+  id: '/techpacks',
+  path: '/techpacks',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminSupportRoute = AdminSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -372,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/techpacks': typeof AdminTechpacksRoute
   '/admin/theme': typeof AdminThemeRoute
   '/api/csp-report': typeof ApiCspReportRoute
   '/armory/$handle': typeof ArmoryHandleRoute
@@ -426,6 +433,7 @@ export interface FileRoutesByTo {
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/techpacks': typeof AdminTechpacksRoute
   '/admin/theme': typeof AdminThemeRoute
   '/api/csp-report': typeof ApiCspReportRoute
   '/armory/$handle': typeof ArmoryHandleRoute
@@ -483,6 +491,7 @@ export interface FileRoutesById {
   '/admin/shop': typeof AdminShopRoute
   '/admin/story': typeof AdminStoryRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/techpacks': typeof AdminTechpacksRoute
   '/admin/theme': typeof AdminThemeRoute
   '/api/csp-report': typeof ApiCspReportRoute
   '/armory/$handle': typeof ArmoryHandleRoute
@@ -541,6 +550,7 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/story'
     | '/admin/support'
+    | '/admin/techpacks'
     | '/admin/theme'
     | '/api/csp-report'
     | '/armory/$handle'
@@ -595,6 +605,7 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/story'
     | '/admin/support'
+    | '/admin/techpacks'
     | '/admin/theme'
     | '/api/csp-report'
     | '/armory/$handle'
@@ -651,6 +662,7 @@ export interface FileRouteTypes {
     | '/admin/shop'
     | '/admin/story'
     | '/admin/support'
+    | '/admin/techpacks'
     | '/admin/theme'
     | '/api/csp-report'
     | '/armory/$handle'
@@ -931,6 +943,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminThemeRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/techpacks': {
+      id: '/admin/techpacks'
+      path: '/techpacks'
+      fullPath: '/admin/techpacks'
+      preLoaderRoute: typeof AdminTechpacksRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/support': {
       id: '/admin/support'
       path: '/support'
@@ -1126,6 +1145,7 @@ interface AdminRouteRouteChildren {
   AdminShopRoute: typeof AdminShopRoute
   AdminStoryRoute: typeof AdminStoryRoute
   AdminSupportRoute: typeof AdminSupportRoute
+  AdminTechpacksRoute: typeof AdminTechpacksRoute
   AdminThemeRoute: typeof AdminThemeRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminCategoryCategoryKeyRoute: typeof AdminCategoryCategoryKeyRoute
@@ -1148,6 +1168,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminShopRoute: AdminShopRoute,
   AdminStoryRoute: AdminStoryRoute,
   AdminSupportRoute: AdminSupportRoute,
+  AdminTechpacksRoute: AdminTechpacksRoute,
   AdminThemeRoute: AdminThemeRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminCategoryCategoryKeyRoute: AdminCategoryCategoryKeyRoute,

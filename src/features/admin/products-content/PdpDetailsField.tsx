@@ -25,7 +25,7 @@ function blankDetail(): PdpDetail {
  * Structured "forged details" editor: each row is a titled detail with an
  * optional description and card image (via the media library). Rows add /
  * delete / drag-reorder with the keyboard up/down fallback — same list
- * contract as {@link PdpMaterialsField} / {@link CareSelector}.
+ * contract as {@link MaterialsField} / {@link CareSelector}.
  */
 export function PdpDetailsField({ details, onChange, assets }: PdpDetailsFieldProps) {
   const move = (from: number, to: number) => {

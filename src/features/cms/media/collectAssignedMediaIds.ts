@@ -108,6 +108,34 @@ const PDP_MEDIA_FIELDS: { key: string; label: string }[] = [
   { key: 'sizeGuideDiagram', label: 'size-guide diagram' },
 ]
 
+/**
+ * Media ids hiding one level down, inside a LIST of cards.
+ *
+ * `materials[].image` and `details[].image` are real, rendered card backdrops
+ * (`pdpMaterialSchema.image` / `pdpDetailSchema.image`), and the passport
+ * reuses the material shape. They are not top-level keys, so the flat walk
+ * above skipped them and the library reported them unassigned — offering to
+ * delete an asset a live bento card is drawing.
+ */
+const CARD_LIST_MEDIA_FIELDS: { key: string; label: string }[] = [
+  { key: 'materials', label: 'material card' },
+  { key: 'details', label: 'detail card' },
+]
+
+function collectCardListImages(
+  record: Record<string, unknown>,
+  usage: Usage,
+  prefix: string,
+): void {
+  for (const { key, label } of CARD_LIST_MEDIA_FIELDS) {
+    const list = record[key]
+    if (!Array.isArray(list)) continue
+    list.forEach((item, i) =>
+      addUsage(usage, asRecord(item)?.image, `${prefix} — ${label} ${i + 1}`),
+    )
+  }
+}
+
 function collectPdpContent(usage: Usage): void {
   const config = asRecord(readPdpContentFromStorage())
   if (!config) return
@@ -117,10 +145,19 @@ function collectPdpContent(usage: Usage): void {
     for (const { key, label } of PDP_MEDIA_FIELDS) {
       addUsage(usage, record[key], `PDP ${slug} — ${label}`)
     }
+    collectCardListImages(record, usage, `PDP ${slug}`)
   }
 }
 
-/** passport_content media-id fields per section (see `passportContent.zod.ts`). */
+/**
+ * passport_content media-id fields per section (see `passportContent.zod.ts`).
+ *
+ * The placed markers (`blueprint/specs/fit.points`, `hotspots`) reference no
+ * media at all — they are coordinates plus text, pinned to `piece.heroRender`,
+ * which is already listed below. Adding a per-section image would mean adding
+ * a row here, or the library would offer to delete an image the passport is
+ * actively rendering.
+ */
 const PASSPORT_MEDIA_FIELDS: { section: string; key: string; label: string }[] = [
   { section: 'piece', key: 'heroRender', label: 'hero render' },
   { section: 'material', key: 'macroAsset', label: 'material macro' },
@@ -144,6 +181,11 @@ function collectPassportContent(usage: Usage): void {
         addUsage(usage, id, `Passport ${slug} — gallery ${i + 1}`),
       )
     }
+    // The passport authors the same structured fabric cards the PDP does, and
+    // resolves each `image` to a URL (`resolvePassportContent`), so they are
+    // assignments too.
+    const material = asRecord(record.material)
+    if (material) collectCardListImages(material, usage, `Passport ${slug}`)
   }
 }
 

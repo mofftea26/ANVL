@@ -103,6 +103,11 @@ export function Modal({
         className={cn(
           // Borderless by design — depth comes from the shadow, not a line.
           'relative w-full max-w-lg rounded-xl bg-[var(--color-surface)] p-6 shadow-[0_32px_90px_-18px_rgba(0,0,0,0.85)] outline-none',
+          // A dialog taller than the viewport used to overflow it, putting its
+          // own confirm button out of reach with no way to scroll to it. This
+          // is a floor, not a layout: dialogs that fit are unaffected, and one
+          // that needs a pinned footer overrides both via `className`.
+          'max-h-[92dvh] overflow-y-auto',
           'motion-safe:transition-shadow motion-safe:duration-300 motion-reduce:transition-none',
           // Materializes as the ember swarm lands (no-op under reduced motion).
           'anvl-modal-forge',

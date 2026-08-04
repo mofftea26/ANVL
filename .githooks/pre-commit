@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# ANVL doc-freshness gate (advisory).
+#
+# Prints which docs this commit should have brought with it, then lets the
+# commit through. It is deliberately non-blocking for humans — the point is the
+# reminder, not the roadblock. Claude's own commits are gated harder, via the
+# PreToolUse hook in .claude/settings.json.
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+# Bypass:                 ANVL_SKIP_DOC_CHECK=1 git commit ...
+
+if [ "$ANVL_SKIP_DOC_CHECK" = "1" ]; then
+  exit 0
+fi
+
+node scripts/check-docs-freshness.mjs || true
+
+exit 0

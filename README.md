@@ -19,11 +19,15 @@ Brand context implemented from `/docs/ANVL_Athletics_Professional_Brand_Document
 - React Hook Form + Zod
 - Tailwind CSS v4 + CSS variable tokens
 - class-variance-authority + clsx + tailwind-merge
-- Framer Motion
 - Lenis (smooth scroll hook)
-- lucide-react
+- `@phosphor-icons/react` (via the `@/shared/icons` seam)
+- GSAP + ScrollTrigger, three.js / @react-three/fiber (cinematic surfaces)
 - sonner
 - `@tanstack/react-virtual` (admin media grid)
+- `@radix-ui/react-select`, `@radix-ui/react-popover` (unstyled primitives behind branded UI)
+- `fuse.js` (global search), `qrcode` (passport QR generation), `pdfjs-dist` (in-browser techpack PDF parsing)
+- Supabase (`@supabase/supabase-js`) — auth, Postgres, storage
+- Cloudflare Workers SSR runtime (`wrangler` + `@cloudflare/vite-plugin`)
 - Vitest + Testing Library
 
 ## Run Locally
@@ -43,21 +47,31 @@ pnpm verify   # typecheck + test + build
 
 ## Route Map
 
-**Storefront**
+Built from `src/routes/**` (file-based routing). `route.tsx` files are pathless layouts and files prefixed with `-` (e.g. `-adminTechpacks.tsx`) are route-adjacent components, not routes — neither is listed below. 32 storefront routes + 20 admin routes.
+
+**Storefront** (32)
 - `/` — code-owned landing page (default: The Oath)
 - `/shop`, `/shop/$slug`
 - `/story` — story saga (chapter shelf + book overlay)
 - `/cart`, `/checkout`, `/checkout/success`
-- `/about`, `/size-guide`, `/care-guide`, `/contact`, `/privacy`, `/terms`, `/returns`
-- `/auth/sign-in`, `/auth/sign-up`, `/auth/forgot-password`
-- `/account`, `/account/personal`, `/account/addresses`, `/account/orders`
+- `/about`, `/size-guide`, `/care-guide`, `/contact`, `/shipping`, `/returns`, `/faq`
+- `/privacy`, `/terms`, `/cookie-policy`, `/accessibility`
+- `/p/$token` — product passport claim/dossier (QR scan target; noindex)
+- `/armory/$handle` — public read-only Armory profile
+- `/auth/sign-in`, `/auth/sign-up`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/verify-email`, `/auth/callback`
+- `/account`, `/account/personal`, `/account/addresses`, `/account/settings`, `/account/orders`, `/account/orders/$orderId`
 
-**Admin** (lazy-loaded; Supabase auth or legacy env gate)
+**Admin** (20; lazy-loaded, server-validated Supabase session — see SEC-11)
 - `/admin` — dashboard (active landing picker)
-- `/admin/theme`, `/admin/fonts`, `/admin/assets`, `/admin/content`, `/admin/story`, `/admin/settings`
-- `/admin/login`
-
-- `/admin-preview` (guarded by env flag)
+- `/admin/theme`, `/admin/fonts`, `/admin/assets`
+- `/admin/shop`, `/admin/products` — commerce (Shop Experience + per-product PDP editorial content)
+- `/admin/content`, `/admin/about`, `/admin/coming-soon`
+- `/admin/legal`, `/admin/support`
+- `/admin/passports`, `/admin/passports/content/$slug`
+- `/admin/story`, `/admin/gamification`, `/admin/analytics`
+- `/admin/techpacks`
+- `/admin/settings`, `/admin/login`
+- `/admin/category/$categoryKey` — mobile nav category landing tile
 
 ## Architecture
 
@@ -193,7 +207,7 @@ Replace mock console analytics with PostHog/Plausible/custom backend by swapping
 
 ## CMS (slim admin)
 
-Seven editor surfaces + settings. Landing pages are **code-owned** (`src/features/landingPages/`); CMS picks active key, theme (global 15-token palette), fonts, asset slots, and per-scene copy (`landing_content`).
+Sixteen editor surfaces (dashboard, theme, fonts, assets, shop, products, content, about, coming-soon, legal, support, passports, story, gamification, analytics, techpacks) + settings + login (see the Admin route list above). Landing pages are **code-owned** (`src/features/landingPages/`); CMS picks active key, theme (global 15-token palette), fonts, asset slots, and per-scene copy (`landing_content`).
 
 With **`VITE_SUPABASE_*`:** admin syncs to `cms_settings` + `storefront_publication`. Story saga uses relational `story_*` tables.
 

@@ -8,6 +8,8 @@ import {
 } from '../collectAssignedMediaIds'
 import { writeAssetConfigToStorage } from '@/features/cms/config/cmsSiteConfig.settings'
 import { writeLandingContentToStorage } from '@/features/cms/landingContent/landingContent.settings'
+import { writePassportContentToStorage } from '@/features/cms/passportContent/passportContent.settings'
+import { DEFAULT_PASSPORT_PRODUCT_CONTENT } from '@/features/cms/passportContent/passportContent.zod'
 import { DEFAULT_ASSET_CONFIG, type AssetConfig } from '@/features/cms/config/cmsSiteConfig.zod'
 
 describe('collectAssignedMediaIds', () => {
@@ -99,6 +101,53 @@ describe('collectAssignedMediaIds', () => {
     expect(ids.has('Forged under pressure')).toBe(false)
     expect(ids.has('Oath Tee')).toBe(false)
     expect(ids.has('The Creed')).toBe(false)
+  })
+
+  it('counts passport media, including the card images nested one level down', () => {
+    // An unregistered field makes the library call a live asset "unassigned"
+    // and offer to delete it — so every media id the passport RENDERS has to
+    // be reachable from here, not just the top-level slots.
+    const base = DEFAULT_PASSPORT_PRODUCT_CONTENT
+    writePassportContentToStorage({
+      'oath-tee': {
+        ...base,
+        piece: { heroRender: 'media-hero', gallery: ['media-gallery-1'] },
+        material: {
+          ...base.material,
+          macroAsset: 'media-macro',
+          materials: [
+            { id: 'm1', name: 'Cotton', percentage: null, gsm: null, image: 'media-material-card' },
+          ],
+        },
+        care: { ...base.care, asset: 'media-care' },
+        details: { ...base.details, asset: 'media-detail' },
+        origin: { ...base.origin, asset: 'media-origin' },
+        // Placed markers hold coordinates and copy — never a media id.
+        blueprint: {
+          ...base.blueprint,
+          points: [{ x: 20, y: 30, label: 'Flatlock', value: '6-thread' }],
+        },
+      },
+    })
+
+    const usage = collectAssignedMediaUsage(DEFAULT_ASSET_CONFIG)
+
+    for (const id of [
+      'media-hero',
+      'media-gallery-1',
+      'media-macro',
+      'media-material-card',
+      'media-care',
+      'media-detail',
+      'media-origin',
+    ]) {
+      expect(usage.has(id)).toBe(true)
+    }
+    expect(usage.get('media-material-card')).toEqual([
+      'Passport oath-tee — material card 1',
+    ])
+    // Marker copy is not a media id.
+    expect(usage.has('Flatlock')).toBe(false)
   })
 
   it('reports where each id is used via collectAssignedMediaUsage', () => {

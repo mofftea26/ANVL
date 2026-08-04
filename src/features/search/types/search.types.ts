@@ -13,6 +13,7 @@ export type SearchDocumentType =
   | 'story-cast'
   | 'about-orb'
   | 'pdp-tile'
+  | 'armory'
   | 'static-page'
 
 export interface SearchDocument {
@@ -41,6 +42,8 @@ export type SearchDocumentMeta = {
   hash?: string
   /** Static route path (`static-page`). */
   path?: string
+  /** Public armory handle (`armory`) — routes to `/armory/$handle`. */
+  handle?: string
 }
 
 export interface SearchResult {
@@ -58,6 +61,7 @@ export const SEARCH_DOCUMENT_TYPE_LABELS: Record<SearchDocumentType, string> = {
   'story-cast': 'The Saga',
   'about-orb': 'About',
   'pdp-tile': 'Products',
+  armory: 'Warriors',
   'static-page': 'Pages',
 }
 
@@ -69,5 +73,6 @@ export const SEARCH_CATEGORY_ORDER: SearchDocumentType[] = [
   'story-act',
   'story-cast',
   'about-orb',
+  'armory',
   'static-page',
 ]

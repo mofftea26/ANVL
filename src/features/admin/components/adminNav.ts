@@ -11,6 +11,7 @@ import {
   Package,
   Palette,
   QrCode,
+  Ruler,
   Settings,
   ShieldCheck,
   ShoppingBag,
@@ -172,6 +173,16 @@ export const adminNavItems: AdminNavItem[] = [
     icon: Package,
     cta: 'Edit',
     badge: 'PDP',
+  },
+  {
+    label: 'Techpacks',
+    href: '/admin/techpacks',
+    description:
+      'Ingest supplier techpack PDFs, review what the parser read, and publish approved images.',
+    category: 'Commerce',
+    icon: Ruler,
+    cta: 'Ingest',
+    badge: 'Specs',
   },
   {
     label: 'Passports',

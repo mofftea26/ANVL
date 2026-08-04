@@ -27,6 +27,7 @@ const view: PassportView = {
   isPublic: false,
   isTransferPending: false,
   transferValid: false,
+  ownerArmoryHandle: null,
 }
 
 const content: ResolvedPassportContent = {
@@ -40,6 +41,7 @@ const content: ResolvedPassportContent = {
     stretch: '',
     breathability: '',
     intendedUse: '',
+    points: [],
   },
   fit: {
     intendedFit: 'Relaxed',
@@ -48,9 +50,11 @@ const content: ResolvedPassportContent = {
     modelHeight: '',
     modelSize: '',
     sizeAdvice: '',
+    points: [],
   },
   forgeNotes: [],
   hotspots: [{ x: 50, y: 30, title: 'Shoulder knit', body: 'Ribbed for load.' }],
+  blueprint: { heading: 'Blueprint', intro: '', features: [], points: [] },
   care: { intro: '', steps: ['Cold wash', 'Hang dry'], symbols: [], careItems: [], notes: [] },
   details: { heading: 'Forged details', story: 'A story.', facts: ['Fact'], funFact: '' },
   origin: {
@@ -119,5 +123,73 @@ describe('PassportMobile — same section behavior as the desktop console', () =
     expect(screen.getByRole('heading', { name: 'Oversized Tee' })).toBeTruthy()
     expect(screen.queryByRole('tab')).toBeNull()
     expect(screen.getByText(/already registered to its owner/i)).toBeTruthy()
+  })
+})
+
+/**
+ * The phone gets the same treatment as the console: while the Blueprint sheet
+ * is open the piece above it goes holographic. The class + `data-holo` pair IS
+ * the contract (`.pp-holo` in styles.css does the rest).
+ */
+describe('PassportMobile — the blueprint hologram', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  const withBlueprint: ResolvedPassportContent = {
+    ...content,
+    piece: {
+      heroRenderUrl: undefined,
+      gallery: [{ src: 'https://cdn/render.png', alt: 'Oversized Tee' }],
+    },
+    blueprint: {
+      heading: 'Blueprint',
+      intro: '',
+      features: [{ code: 'a', title: 'High neck front neckline', body: 'Sits on the throat.' }],
+      points: [],
+    },
+  }
+
+  const stage = (container: HTMLElement) => container.querySelector<HTMLElement>('.pp-holo')!
+
+  it('arms the piece only while the blueprint sheet is open', () => {
+    const { container } = render(
+      <PassportMobile
+        variant="owner"
+        view={view}
+        product={null}
+        content={withBlueprint}
+        storyChapter={null}
+        sizeGuide={null}
+        related={null}
+        claimedDate="14 July 2026"
+      />,
+    )
+
+    expect(stage(container).dataset.holo).toBe('off')
+
+    fireEvent.click(screen.getByRole('button', { name: /blueprint/i }))
+    expect(screen.getByRole('dialog', { name: 'Blueprint' })).toBeTruthy()
+    expect(stage(container).dataset.holo).toBe('on')
+
+    fireEvent.click(screen.getByRole('button', { name: /close section/i }))
+    expect(stage(container).dataset.holo).toBe('off')
+  })
+
+  it('leaves the piece alone for any other section', () => {
+    const { container } = render(
+      <PassportMobile
+        variant="owner"
+        view={view}
+        product={null}
+        content={withBlueprint}
+        storyChapter={null}
+        sizeGuide={null}
+        related={null}
+        claimedDate="14 July 2026"
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /material dossier/i }))
+    expect(stage(container).dataset.holo).toBe('off')
   })
 })

@@ -46,7 +46,7 @@ type Drop = {
 };
 ```
 
-Canonical fields for the current codebase live in `src/features/admin/drops/drops.types.ts` â€” notably `visuals.heroImageUrl` for the public drop hero backdrop, `landingActSequence` / composed `landingActs` for the homepage pipeline, and `seo.ogTitle` / `seo.ogDescription` for social overrides on `/drop/:slug`.
+Canonical fields for the current codebase live in `src/features/admin/drops/drops.types.ts` — notably `visuals.heroImageUrl` for the public drop hero backdrop, `landingActSequence` / composed `landingActs` for the homepage pipeline, and `seo.ogTitle` / `seo.ogDescription` for social overrides on `/drop/:slug`.
 
 ## Drop theme
 ```ts
@@ -152,11 +152,11 @@ When a drop becomes active:
 - **Storefront resolution**: `getResolvedStorefrontLandingCmsSync` (`src/features/cms/runtime/storefrontCmsSync.ts`) is the single sync entry for composed landing CMS: **SSR** uses the same `SEED_DROP` + `SEED_WEBSITE_LAYOUT` pairing as `seedCmsClient`; **browser** uses the persisted active drop + website layout (`localStorage`). Homepage products (`getStorefrontProductsForHome`), root theme, and seed SEO use this resolver (or the async `runtimeClients.cms` wrappers that delegate to it) so navigation cannot drift from the CMS “Set Active” selection.
 - Landing page uses that drop's acts.
 - Drop nav item changes label and link to active drop.
-- Header/footer/mobile links whose `href` starts with `/drop/` are rewritten to `/drop/{activeSlug}` and their **label** is set to the active drop **title** (e.g. â€œThe Oathâ€) so the top bar always matches the campaign name.
+- Header/footer/mobile links whose `href` starts with `/drop/` are rewritten to `/drop/{activeSlug}` and their **label** is set to the active drop **title** (e.g. “The Oath”) so the top bar always matches the campaign name.
 - Site theme variables update to the active drop palette (`:root` via **`ActiveDropThemeProvider`** on public routes — SSR-first `<style id="anvl-active-drop-theme">`, then client updates when drop storage changes).
 - The public `/drop/:slug` route resolves only the active drop: wrong slug redirects to the active slug; there is no standalone archived drop URL in this phase.
 
-- Header/footer/mobile links whose `href` starts with `/drop/` are rewritten to `/drop/{activeSlug}` and their **label** is set to the active drop **title** (for example â€œThe Oathâ€).
+- Header/footer/mobile links whose `href` starts with `/drop/` are rewritten to `/drop/{activeSlug}` and their **label** is set to the active drop **title** (for example “The Oath”).
 - Site theme variables update to the active drop palette (`:root` via **`ActiveDropThemeProvider`** on public routes — SSR-first `<style id="anvl-active-drop-theme">`, then client updates when drop storage changes).
 - The public `/drop/:slug` route resolves only the active drop: a mismatched slug redirects to the active slug.- Drop page shows title, subtitle, optional hero backdrop (`visuals.heroImageUrl`), emblem, description, optional **release** block (`releaseDate` with client-side countdown after hydration), and assigned product cards linking to `/shop/$slug`.
 

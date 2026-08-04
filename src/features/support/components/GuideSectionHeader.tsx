@@ -27,9 +27,10 @@ export function GuideSectionHeader({
   /** Plain-text intro; blank lines start new paragraphs. */
   intro?: string
   /**
-   * Set `false` when a border already sits directly above this header — e.g.
-   * `DocHero`'s own `border-b`, or a wrapping `Section`'s `border-t` — so the
-   * reader never sees two full-width rules stacked a section's padding apart.
+   * Set `false` when a separator already sits directly above this header —
+   * the page masthead's own molten rule and fade-out, or a wrapping
+   * `Section`'s `border-t` — so the reader never sees two full-width rules
+   * stacked a section's padding apart.
    * Defaults `true` (the header supplies its own separating rule).
    */
   rule?: boolean

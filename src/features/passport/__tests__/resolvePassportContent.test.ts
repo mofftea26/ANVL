@@ -163,6 +163,59 @@ describe('resolvePassportContent', () => {
     expect(inherited.care.careItems[0]?.icon).toBe('iron-low')
   })
 
+  it('resolves the blueprint callouts and drops the ones with nothing to say', () => {
+    const resolved = resolvePassportContent({
+      product,
+      passportContent: {
+        'seamless-tee': {
+          ...DEFAULT_PASSPORT_PRODUCT_CONTENT,
+          blueprint: {
+            heading: '',
+            intro: '  Every seam, marked.  ',
+            features: [
+              { code: 'j', title: 'Hem wrapped label', body: '  Woven, not printed. ' },
+              // Untitled callouts carry nothing readable — dropped.
+              { code: 'z', title: '   ', body: 'Orphan' },
+            ],
+            points: [],
+          },
+        },
+      },
+      pdpContent: null,
+      mediaIndex,
+      productSlug: 'seamless-tee',
+    })
+    expect(resolved.blueprint.heading).toBe('Blueprint')
+    expect(resolved.blueprint.intro).toBe('Every seam, marked.')
+    expect(resolved.blueprint.features).toEqual([
+      { code: 'j', title: 'Hem wrapped label', body: 'Woven, not printed.' },
+    ])
+  })
+
+  it('letters a blank callout code so its chip still reads', () => {
+    const resolved = resolvePassportContent({
+      product,
+      passportContent: {
+        'seamless-tee': {
+          ...DEFAULT_PASSPORT_PRODUCT_CONTENT,
+          blueprint: {
+            heading: '',
+            intro: '',
+            features: [
+              { code: '', title: 'First', body: '' },
+              { code: '', title: 'Second', body: '' },
+            ],
+            points: [],
+          },
+        },
+      },
+      pdpContent: null,
+      mediaIndex: [],
+      productSlug: 'seamless-tee',
+    })
+    expect(resolved.blueprint.features.map((f) => f.code)).toEqual(['a', 'b'])
+  })
+
   it('handles a missing product entirely (deleted from the catalog)', () => {
     const resolved = resolvePassportContent({
       product: null,

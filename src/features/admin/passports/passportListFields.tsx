@@ -19,7 +19,7 @@ import { Input } from '@/shared/components/ui/Input'
  */
 
 /** Drag handle + up/down + delete controls shared by every row below. */
-function SortableRow({
+export function SortableRow({
   index,
   total,
   label,

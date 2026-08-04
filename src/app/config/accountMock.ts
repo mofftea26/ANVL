@@ -2,7 +2,15 @@ import type { AccountClient } from '@/app/config/clients'
 import type { Customer, Order } from '@/app/config/accountContracts'
 import { getSessionCustomerId } from '@/app/config/accountSession'
 
-/** In-memory mock storefront account + orders. TODO: wire to Medusa customer + order modules. */
+/**
+ * In-memory mock storefront account + orders.
+ *
+ * TODO(backend, medium): wire to real customer + order modules. Deliberate
+ * placeholder, not an oversight — see the `AccountClient` note in
+ * `src/app/config/clients.ts`. Real order history already flows into
+ * `public.orders` via the `shopify-webhook` edge function, so this mock is the
+ * remaining gap on the read side.
+ */
 export const DEMO_EMAIL = 'demo@anvl.lb'
 export const DEMO_PASSWORD = 'demo1234'
 

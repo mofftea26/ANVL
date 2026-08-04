@@ -1,7 +1,9 @@
 # ANVL System Map
 
 **Audit phase:** 1 (Architecture & codebase mapping)
-**Status:** Verified against live code (`src/**`) and the live Supabase project `ANVL` (`cptebkgyrfmokklwtrgp`) on 2026-07-05. Not a design doc — every box below is backed by a real file or table.
+**Status:** Verified against live code (`src/**`) and the live Supabase project `ANVL` (`cptebkgyrfmokklwtrgp`) on 2026-07-05. Not a design doc — every box below was backed by a real file or table *at that date*.
+
+> ⚠️ **Point-in-time snapshot, not maintained.** Re-checked 2026-07-29: the system has grown substantially since this map was drawn — the techpacks feature, the FAQ "Forge Seam" redesign, the announcement banner, the legal/support/analytics admin surfaces, and the `techpack-ai` edge function all postdate it. For the current picture use `CLAUDE.md` (architecture + Supabase tables) and `docs/project-map.md` (file/route inventory).
 
 ---
 

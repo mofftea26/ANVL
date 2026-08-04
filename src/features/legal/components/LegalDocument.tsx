@@ -1,5 +1,6 @@
 import { Container, Section } from '@/shared/components/ui'
-import { DocHero, ProseBody } from '@/features/support/components'
+import { ProseBody } from '@/features/support/components'
+import { PageMasthead } from '@/shared/components/premium/PageMasthead'
 import type { ResolvedLegalPage } from '@/features/cms/legal/resolveLegalContent'
 
 /**
@@ -22,7 +23,12 @@ export function LegalDocument({
 
   return (
     <>
-      <DocHero eyebrow={eyebrow} title={page.title} intro={page.intro} updatedAt={page.updatedAt} />
+      <PageMasthead
+        eyebrow={eyebrow}
+        title={page.title}
+        intro={page.intro}
+        updatedAt={page.updatedAt}
+      />
 
       <Section>
         <Container className="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-16">

@@ -106,6 +106,11 @@ const config = defineConfig(({ isSsrBuild }) => ({
           ) {
             return 'vendor-three'
           }
+          // pdf.js is only reached from the admin techpack parser via a lazy
+          // `await import()`. It is ~1 MB with its worker, so it gets its own
+          // chunk: nothing else in the admin should pay for it, and it must
+          // never appear in the storefront entry.
+          if (id.includes('node_modules/pdfjs-dist')) return 'vendor-pdfjs'
           if (id.includes('node_modules/zod')) return 'vendor-zod'
           // supabase-js (GoTrue + Realtime) is deferred off the storefront
           // entry (lazy account client) — keep it in one cacheable chunk for

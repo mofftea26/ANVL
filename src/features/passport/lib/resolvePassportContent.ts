@@ -38,6 +38,8 @@ export interface ResolvedPassportContent {
     stretch: string
     breathability: string
     intendedUse: string
+    /** Authored readouts the Specifications effect pins to the render. */
+    points: ResolvedPassportMarker[]
   }
   fit: {
     intendedFit: string
@@ -47,10 +49,20 @@ export interface ResolvedPassportContent {
     modelHeight: string
     modelSize: string
     sizeAdvice: string
+    /** Authored measurement readouts the Fit effect pins to the render. */
+    points: ResolvedPassportMarker[]
   }
   forgeNotes: Array<{ title: string; body: string }>
   /** Design-detail markers pinned to the render (x/y are % of the image box). */
   hotspots: Array<{ x: number; y: number; title: string; body: string }>
+  blueprint: {
+    heading: string
+    intro: string
+    /** Construction callouts, rendered as cards — no drawing, no coordinates. */
+    features: Array<{ code: string; title: string; body: string }>
+    /** Authored readouts the Blueprint hologram pins to the render. */
+    points: ResolvedPassportMarker[]
+  }
   care: {
     intro: string
     steps: string[]
@@ -72,6 +84,47 @@ export interface ResolvedPassportContent {
     madeIn: string
     designedIn: string
   }
+}
+
+/** A bad number must never park a marker off-image. */
+function clampPercent(value: number): number {
+  return Math.min(100, Math.max(0, value))
+}
+
+/** One authored readout pinned to the render (percent of the image box). */
+export interface ResolvedPassportMarker {
+  x: number
+  y: number
+  label: string
+  value: string
+}
+
+/**
+ * Clean the authored effect markers.
+ *
+ * A marker with neither a label nor a value says nothing, so it is dropped
+ * rather than drawn as an empty plate — the same rule the hero hotspots use.
+ * One of the two is enough: "A" alone is a legitimate construction callout,
+ * and "52 cm" alone is a legitimate measurement.
+ */
+function resolveMarkers(
+  markers: ReadonlyArray<{ x: number; y: number; label: string; value: string }>,
+): ResolvedPassportMarker[] {
+  return markers
+    .map((m) => ({
+      x: clampPercent(m.x),
+      y: clampPercent(m.y),
+      label: m.label.trim(),
+      value: m.value.trim(),
+    }))
+    .filter((m) => m.label || m.value)
+}
+
+/** A blank techpack code still needs a legible mark — fall back to its letter. */
+function markerCode(code: string, index: number): string {
+  const trimmed = code.trim()
+  if (trimmed) return trimmed
+  return index < 26 ? String.fromCharCode(97 + index) : String(index + 1)
 }
 
 function firstNonEmpty(...vals: (string | undefined)[]): string {
@@ -163,6 +216,7 @@ export function resolvePassportContent(input: {
       stretch: c.specs.stretch.trim(),
       breathability: c.specs.breathability.trim(),
       intendedUse: c.specs.intendedUse.trim(),
+      points: resolveMarkers(c.specs.points),
     },
     fit: {
       intendedFit: firstNonEmpty(c.fit.intendedFit, product?.fit),
@@ -176,19 +230,32 @@ export function resolvePassportContent(input: {
       modelHeight: c.fit.modelHeight.trim(),
       modelSize: c.fit.modelSize.trim(),
       sizeAdvice: c.fit.sizeAdvice.trim(),
+      points: resolveMarkers(c.fit.points),
     },
     forgeNotes: c.forgeNotes
       .map((n) => ({ title: n.title.trim(), body: n.body.trim() }))
       .filter((n) => n.title || n.body),
     hotspots: c.hotspots
       .map((h) => ({
-        // Clamp defensively: a bad number must never park a marker off-image.
-        x: Math.min(100, Math.max(0, h.x)),
-        y: Math.min(100, Math.max(0, h.y)),
+        x: clampPercent(h.x),
+        y: clampPercent(h.y),
         title: h.title.trim(),
         body: h.body.trim(),
       }))
       .filter((h) => h.title),
+    blueprint: {
+      heading: firstNonEmpty(c.blueprint.heading, 'Blueprint'),
+      intro: c.blueprint.intro.trim(),
+      // The title is the card — a callout without one has nothing to say.
+      features: c.blueprint.features
+        .map((f, i) => ({
+          code: markerCode(f.code, i),
+          title: f.title.trim(),
+          body: f.body.trim(),
+        }))
+        .filter((f) => f.title),
+      points: resolveMarkers(c.blueprint.points),
+    },
     care: {
       intro: c.care.intro.trim(),
       steps: careSteps,

@@ -65,13 +65,23 @@ const AdminThemeEditor = lazyRouteComponent(
 
 Large editor panels (≥500 lines) should be loaded behind `React.lazy` + `Suspense`, keyed by visibility. Don't load a full editor on page mount — only when its tab/section is first viewed.
 
-### lucide-react
+### Icons (`@/shared/icons` → Phosphor)
 
-Always use named imports:
+Icons come from `@phosphor-icons/react`, but call sites import them **only** through
+the `@/shared/icons` seam. Always use named imports:
+
 ```ts
-import { Menu, ShoppingCart, X } from 'lucide-react'  // ✓
-import * as Icons from 'lucide-react'                  // ✗ imports entire library
+import { Menu, ShoppingCart, X } from '@/shared/icons'      // ✓
+import * as Icons from '@/shared/icons'                      // ✗ pulls the whole set
+import { List } from '@phosphor-icons/react'                 // ✗ bypasses the seam
 ```
+
+Bypassing the seam also loses the global duotone weight (`IconContext`), so the icon
+renders inconsistently with the rest of the UI. Use the `ICON_SIZE` buckets from
+`src/shared/lib/iconSize.ts` rather than raw pixel numbers.
+
+> `lucide-react` was removed 2026-07-17. Older docs and changelog entries that name it
+> describe the pre-Phosphor codebase.
 
 ---
 
@@ -200,6 +210,6 @@ After any PR that touches `vite.config.ts`, `package.json`, or adds new heavy co
 - [ ] Large images lazy-loaded
 - [ ] Font weights limited to what's needed
 - [ ] Admin routes not in storefront bundle
-- [ ] No `import *` from lucide-react
+- [ ] No `import *` from `@/shared/icons`, and no direct `@phosphor-icons/react` imports
 - [ ] Scroll listeners use `{ passive: true }`
 - [ ] No forced layout reads in scroll/resize handlers

@@ -23,7 +23,13 @@ function writeBrowserSession(id: string | null): void {
 }
 
 /**
- * Demo-only session pointer. TODO: replace with httpOnly secure session from backend auth (Medusa or provider).
+ * Demo-only session pointer for the MOCK account client.
+ *
+ * TODO(backend, medium): replace with an HttpOnly server session once a
+ * commerce backend lands. Scope note: this is NOT the admin session — `/admin`
+ * already uses a sealed HttpOnly cookie (`adminAuthSession.server.ts`, SEC-11),
+ * and storefront customers already authenticate against Supabase. This pointer
+ * only backs the in-memory mock, so it is not a live security gap.
  */
 export function setSessionCustomerId(id: string | null): void {
   sessionCustomerId = id

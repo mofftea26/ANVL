@@ -334,10 +334,16 @@ Nav content comes from code defaults (`staticWebsiteNavigation`) via the root lo
 | `vendor-tanstack` | All `@tanstack/*` packages |
 | `vendor-gsap` | GSAP + ScrollTrigger + useGSAP |
 | `vendor-lenis` | Lenis smooth scroll |
-| `vendor-framer-motion` | Framer Motion |
-| `vendor-three` | `three`, `@react-three/*`, `troika-three-text` (The Oath WebGL only) |
+| `vendor-three` | `three`, `@react-three/*`, `troika-three-text` — The Oath emblem, the About Forge Altar, the Story book, and the site-wide cursor dust |
+| `vendor-pdfjs` | `pdfjs-dist` — admin techpack PDF parsing only, loaded via dynamic import |
 | `vendor-zod` | Zod |
+| `vendor-supabase` | `@supabase/supabase-js` |
+| `vendor-fuse` | `fuse.js` — global search matcher |
+| `admin-cms-remote` | `features/admin/cmsRemote/**` |
 | Admin routes | Lazy via `lazyRouteComponent` |
+
+There is no `vendor-framer-motion` chunk: `framer-motion` was removed once
+`RevealOnScroll` was rewritten on IntersectionObserver + CSS transitions.
 
 Configured in `vite.config.ts` under `build.rollupOptions.output.manualChunks`.
 

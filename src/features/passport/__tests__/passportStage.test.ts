@@ -17,6 +17,7 @@ function view(overrides: Partial<PassportView>): PassportView {
     isPublic: false,
     isTransferPending: false,
     transferValid: false,
+    ownerArmoryHandle: null,
     ...overrides,
   }
 }

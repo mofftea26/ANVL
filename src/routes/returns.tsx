@@ -5,11 +5,11 @@ import { usePreviewDraft } from '@/features/cms/preview'
 import { resolveSupportContent } from '@/features/cms/support/resolveSupportContent'
 import {
   DocFooterCta,
-  DocHero,
   DOC_CTA_PRIMARY_CLASS,
   DOC_CTA_SECONDARY_CLASS,
   SupportSectionList,
 } from '@/features/support/components'
+import { PageMasthead } from '@/shared/components/premium/PageMasthead'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 
 export const Route = createFileRoute('/returns')({
@@ -33,7 +33,7 @@ function ReturnsPage() {
 
   return (
     <>
-      <DocHero eyebrow="Help & support" title="Returns" intro={content.returns.intro} />
+      <PageMasthead eyebrow="Help & support" title="Returns" intro={content.returns.intro} />
       <SupportSectionList sections={content.returns.sections} />
       <DocFooterCta message="Need to start a return or check delivery? We can help.">
         <SafeLink href="/contact" className={DOC_CTA_PRIMARY_CLASS}>

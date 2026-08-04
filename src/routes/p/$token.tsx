@@ -86,6 +86,7 @@ async function loadPassportPreview(previewSlug: string | undefined, view: Passpo
         isPublic: true,
         isTransferPending: false,
         transferValid: false,
+        ownerArmoryHandle: null,
       }
     : null
 

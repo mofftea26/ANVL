@@ -20,15 +20,100 @@ import { writeSupportContentToStorage } from '@/features/cms/support/supportCont
 import { parseSupportContent } from '@/features/cms/support/supportContent.zod'
 import { writePassportContentToStorage } from '@/features/cms/passportContent/passportContent.settings'
 import { parsePassportContent } from '@/features/cms/passportContent/passportContent.zod'
+import { writePdpContentToStorage } from '@/features/cms/pdpContent/pdpContent.settings'
+import { parsePdpContent } from '@/features/cms/pdpContent/pdpContent.zod'
+import { writeShopConfigToStorage } from '@/features/cms/shop/shopExperience.settings'
+import { parseShopConfig } from '@/features/cms/shop/shopExperience.zod'
 import {
   parseSiteSeoUnknown,
   writeSiteSeoContentToStorage,
 } from '@/features/cms/siteSeo.local'
 import { migrateOathTenetAssetsFromSlots } from '@/features/cms/landingContent/migrateOathTenetAssets'
+import type { CmsSettingsFieldKey } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
 import {
   beginAdminCmsRemoteHydration,
   endAdminCmsRemoteHydration,
 } from '@/features/admin/cmsRemote/adminCmsRemoteGate'
+
+/**
+ * Columns fetched together in the opening query. They predate the tolerant
+ * per-column pattern below and share one round trip because the asset/landing
+ * pair needs a cross-column migration step before either is written.
+ */
+const CORE_HYDRATED_COLUMNS = [
+  'active_landing_page_key',
+  'theme_config',
+  'font_config',
+  'asset_config',
+  'landing_content',
+] as const satisfies readonly CmsSettingsFieldKey[]
+
+/**
+ * Columns pulled ONE AT A TIME, each tolerant of its own failure: an
+ * environment whose migration for that column has not run must not fail the
+ * hydration of every other column (the editor then starts from local/defaults
+ * for that one).
+ *
+ * Registering a column here is not optional bookkeeping — it is what the
+ * compile-time coverage check at the bottom of this file measures. Three of
+ * these (`pdp_content`, `shop_config`, `passport_content`) are WHOLE-MAP blobs:
+ * every save republishes the entire map, so a browser that reaches an editor
+ * without having pulled one first will publish a map containing only what that
+ * session touched and destroy the rest — in `cms_settings` and in the
+ * anon-readable `storefront_publication` mirror at the same time.
+ */
+const TOLERANT_COLUMN_PULLS = [
+  { column: 'coming_soon', write: (v: unknown) => writeComingSoonConfigToStorage(parseComingSoonConfig(v)) },
+  { column: 'banner_config', write: (v: unknown) => writeBannerConfigToStorage(parseBannerConfig(v)) },
+  { column: 'passport_content', write: (v: unknown) => writePassportContentToStorage(parsePassportContent(v)) },
+  { column: 'pdp_content', write: (v: unknown) => writePdpContentToStorage(parsePdpContent(v)) },
+  { column: 'shop_config', write: (v: unknown) => writeShopConfigToStorage(parseShopConfig(v)) },
+  { column: 'legal_content', write: (v: unknown) => writeLegalContentToStorage(parseLegalContent(v)) },
+  { column: 'support_content', write: (v: unknown) => writeSupportContentToStorage(parseSupportContent(v)) },
+  { column: 'site_seo', write: (v: unknown) => writeSiteSeoContentToStorage(parseSiteSeoUnknown(v)) },
+] as const satisfies readonly {
+  column: CmsSettingsFieldKey
+  write: (value: unknown) => void
+}[]
+
+type HydratedCmsSettingsColumn =
+  | (typeof CORE_HYDRATED_COLUMNS)[number]
+  | (typeof TOLERANT_COLUMN_PULLS)[number]['column']
+
+/** Runtime view of the same set, for the coverage test. */
+export const HYDRATED_CMS_SETTINGS_COLUMNS: readonly CmsSettingsFieldKey[] = [
+  ...CORE_HYDRATED_COLUMNS,
+  ...TOLERANT_COLUMN_PULLS.map((pull) => pull.column),
+]
+
+/**
+ * Compile-time coverage: every column the admin can WRITE
+ * (`CMS_SETTINGS_FIELD_KEYS`) must also be a column hydration PULLS. The
+ * `Exclude` is `never` when the two sets match; the moment a write-through
+ * column ships without a pull, the leftover key stops satisfying the
+ * `extends never` constraint and `pnpm typecheck` fails on this line.
+ *
+ * WHY this exists: `pdp_content` and `shop_config` sat in the write set with
+ * no pull, so a fresh admin browser published an empty map over authored
+ * content on its first save. Nothing structural connected the two lists, so
+ * nothing caught it. Now something does.
+ */
+type AssertNoUnhydratedColumn<T extends never> = T
+export type CmsHydrationCoverage = AssertNoUnhydratedColumn<
+  Exclude<CmsSettingsFieldKey, HydratedCmsSettingsColumn>
+>
+
+/**
+ * supabase-js types a returned row from the LITERAL column string passed to
+ * `.select()`. These selects are built from the registries above, so the type
+ * parser gives up and yields `GenericStringError`. Every value read out of the
+ * row is handed straight to a Zod parser, so one narrowing helper here is
+ * cheaper than duplicating the column lists as string literals purely to keep
+ * an inference that buys nothing.
+ */
+function asRow(data: unknown): Record<string, unknown> | null {
+  return data && typeof data === 'object' ? (data as Record<string, unknown>) : null
+}
 
 /**
  * Pull canonical CMS rows from Supabase into localStorage keys the admin editors use.
@@ -40,9 +125,7 @@ export async function hydrateAdminCmsFromSupabase(
   try {
     const settingsRes = await client
       .from('cms_settings')
-      .select(
-        'active_landing_page_key, theme_config, font_config, asset_config, landing_content',
-      )
+      .select(CORE_HYDRATED_COLUMNS.join(', '))
       .eq('id', 1)
       .maybeSingle()
 
@@ -50,7 +133,7 @@ export async function hydrateAdminCmsFromSupabase(
       throw new Error(settingsRes.error.message)
     }
 
-    const settings = settingsRes.data
+    const settings = asRow(settingsRes.data)
     if (!settings) return
 
     const key = settings.active_landing_page_key
@@ -70,76 +153,14 @@ export async function hydrateAdminCmsFromSupabase(
     writeAssetConfigToStorage(migrated.assetConfig)
     writeLandingContentToStorage(migrated.landingContent)
 
-    // Separate tolerant query: a DB without the `coming_soon` migration must
-    // not fail the main hydration above, so this column is fetched on its own
-    // and any error is ignored (the editor then starts from local/defaults).
-    const comingSoonRes = await client
-      .from('cms_settings')
-      .select('coming_soon')
-      .eq('id', 1)
-      .maybeSingle()
-    if (!comingSoonRes.error && comingSoonRes.data) {
-      writeComingSoonConfigToStorage(
-        parseComingSoonConfig(comingSoonRes.data.coming_soon),
-      )
-    }
-
-    // Same tolerant treatment for `banner_config` — pre-migration DBs must
-    // not fail hydration; the editor then starts from local/defaults.
-    const bannerRes = await client
-      .from('cms_settings')
-      .select('banner_config')
-      .eq('id', 1)
-      .maybeSingle()
-    if (!bannerRes.error && bannerRes.data) {
-      writeBannerConfigToStorage(parseBannerConfig(bannerRes.data.banner_config))
-    }
-
-    // Same tolerant treatment for `passport_content` — a fresh browser must
-    // hydrate the authored passports before the editor's first save, or it
-    // would clobber them with an empty local snapshot.
-    const passportRes = await client
-      .from('cms_settings')
-      .select('passport_content')
-      .eq('id', 1)
-      .maybeSingle()
-    if (!passportRes.error && passportRes.data) {
-      writePassportContentToStorage(
-        parsePassportContent(passportRes.data.passport_content),
-      )
-    }
-
-    // Same tolerant treatment for `legal_content` — pre-migration DBs must not
-    // fail hydration; the editor then starts from local/defaults.
-    const legalRes = await client
-      .from('cms_settings')
-      .select('legal_content')
-      .eq('id', 1)
-      .maybeSingle()
-    if (!legalRes.error && legalRes.data) {
-      writeLegalContentToStorage(parseLegalContent(legalRes.data.legal_content))
-    }
-
-    // Same tolerant treatment for `support_content`.
-    const supportRes = await client
-      .from('cms_settings')
-      .select('support_content')
-      .eq('id', 1)
-      .maybeSingle()
-    if (!supportRes.error && supportRes.data) {
-      writeSupportContentToStorage(
-        parseSupportContent(supportRes.data.support_content),
-      )
-    }
-
-    // Same tolerant treatment for `site_seo` (SEO defaults + analytics tags).
-    const siteSeoRes = await client
-      .from('cms_settings')
-      .select('site_seo')
-      .eq('id', 1)
-      .maybeSingle()
-    if (!siteSeoRes.error && siteSeoRes.data) {
-      writeSiteSeoContentToStorage(parseSiteSeoUnknown(siteSeoRes.data.site_seo))
+    for (const { column, write } of TOLERANT_COLUMN_PULLS) {
+      const res = await client
+        .from('cms_settings')
+        .select(column)
+        .eq('id', 1)
+        .maybeSingle()
+      const row = res.error ? null : asRow(res.data)
+      if (row) write(row[column])
     }
   } finally {
     endAdminCmsRemoteHydration()

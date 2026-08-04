@@ -58,10 +58,11 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 
 ### `functions/` (in repo)
 
-| Function | Purpose |
-|---|---|
-| `shopify-webhook/` | Verifies Shopify HMAC; ack-only — no DB writes |
-| `medusa-webhook-stub/` | Stub for future Medusa commerce backend |
+| Function | Deployed? | Purpose |
+|---|---|---|
+| `shopify-webhook/` | Yes | Verifies Shopify HMAC; ack-only — no DB writes |
+| `techpack-ai/` | Yes (`verify_jwt: true`) | Techpack ingestion AI parsing for `/admin/techpacks` |
+| `medusa-webhook-stub/` | No — never deployed | Stub for future Medusa commerce backend |
 
 ---
 
@@ -86,9 +87,12 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 
 ### `src/routes/`
 
+57 files in `src/routes/**` (excluding `-`-prefixed sidecars and `__tests__/`): 53 resolve to a distinct URL, plus the root layout (`__root.tsx`), 2 pathless layouts (`account/route.tsx`, `admin/route.tsx`), and 1 non-route helper (`storefrontMainLayout.ts`). Rebuilt 2026-07-29 by listing `src/routes/**` directly.
+
 | Route | URL | Notes |
 |---|---|---|
-| `__root.tsx` | all | Root layout; loads storefront projection from Supabase or fallback; injects SSR theme CSS + landing-entry lock |
+| `__root.tsx` | all | Root layout; loads storefront projection from Supabase or fallback; injects SSR theme CSS + landing-entry lock; gates every public route behind Coming Soon when enabled |
+| `storefrontMainLayout.ts` | — | Helper (not a route) — `getStorefrontMainClassName()` used by `__root.tsx` |
 | `index.tsx` | `/` | Home — renders the active code-owned landing page via `landingPages` registry (default: The Oath) |
 | `shop/index.tsx` | `/shop` | Shop listing with filters |
 | `shop/$slug.tsx` | `/shop/:slug` | Product detail page |
@@ -96,33 +100,56 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 | `checkout/index.tsx` | `/checkout` | Checkout form |
 | `checkout/success.tsx` | `/checkout/success` | Order confirmation |
 | `story.tsx` | `/story` | Story saga (chapter shelf + deep-linkable book overlay) |
-| `about.tsx` | `/about` | About page |
+| `about.tsx` | `/about` | About page — renders `<AboutExperience>` (desktop Forge Altar / mobile normal page) |
+| `p/$token.tsx` | `/p/:token` | Product passport — claim flow / owner dossier / public authenticity view (noindex); also serves the admin live-preview host |
+| `armory/$handle.tsx` | `/armory/:handle` | Public read-only Armory view for an owner's shared handle (`get_public_armory`) |
 | `size-guide.tsx` | `/size-guide` | Size guide |
 | `care-guide.tsx` | `/care-guide` | Care instructions |
 | `contact.tsx` | `/contact` | Contact page |
-| `privacy.tsx` | `/privacy` | Privacy policy |
-| `terms.tsx` | `/terms` | Terms of service |
-| `returns.tsx` | `/returns` | Returns policy |
-| `admin/route.tsx` | `/admin` | Admin layout shell (lazy) |
-| `admin/index.tsx` | `/admin` | Dashboard — active landing-page picker |
+| `faq.tsx` | `/faq` | FAQ — "The Forge Seam" answer stack (`FaqForge`) under the shared `PageMasthead` |
+| `shipping.tsx` | `/shipping` | Shipping info (support content sections) |
+| `returns.tsx` | `/returns` | Returns policy (support content sections) |
+| `privacy.tsx` | `/privacy` | Privacy policy (`LegalDocumentRoute`) |
+| `terms.tsx` | `/terms` | Terms of service (`LegalDocumentRoute`) |
+| `cookie-policy.tsx` | `/cookie-policy` | Cookie policy (`LegalDocumentRoute`) |
+| `accessibility.tsx` | `/accessibility` | Accessibility statement (`LegalDocumentRoute`) |
+| `api/csp-report.ts` | `/api/csp-report` | Server-only `POST` handler — logs `Content-Security-Policy-Report-Only` violation reports to console (no persistence); see `src/start.ts` |
+| `auth/sign-in.tsx` | `/auth/sign-in` | Sign in (Supabase auth) |
+| `auth/sign-up.tsx` | `/auth/sign-up` | Sign up |
+| `auth/forgot-password.tsx` | `/auth/forgot-password` | Password reset request |
+| `auth/reset-password.tsx` | `/auth/reset-password` | Set new password (reached from reset-password email link) |
+| `auth/verify-email.tsx` | `/auth/verify-email` | Resend/confirm email verification |
+| `auth/callback.tsx` | `/auth/callback` | OAuth/email-confirmation redirect landing — resolves session, redirects to destination |
+| `account/route.tsx` | — | Pathless layout — renders `<AccountShellLayout>` for every `/account/*` route |
+| `account/index.tsx` | `/account` | Account overview |
+| `account/personal.tsx` | `/account/personal` | Profile editor |
+| `account/addresses.tsx` | `/account/addresses` | Addresses |
+| `account/settings.tsx` | `/account/settings` | Redirect-only shim → `/account?tab=settings` |
+| `account/orders/index.tsx` | `/account/orders` | Order history |
+| `account/orders/$orderId.tsx` | `/account/orders/:orderId` | Order detail |
+| `admin/route.tsx` | — | Pathless layout — persistent shell (sidebar + topbar + preview panel), lazy-loaded, never in the storefront entry chunk (PERF-01) |
+| `admin/index.tsx` | `/admin` | Dashboard — one-screen control room: active landing-page picker, status strip, setup wizards |
 | `admin/login.tsx` | `/admin/login` | Admin sign-in |
+| `admin/category.$categoryKey.tsx` | `/admin/category/:categoryKey` | Category landing page (nav-only grouping from `adminNav.ts`) |
 | `admin/theme.tsx` | `/admin/theme` | Theme & colors editor (15-token palette) |
 | `admin/fonts.tsx` | `/admin/fonts` | Fonts editor |
 | `admin/assets.tsx` | `/admin/assets` | Media library + asset slot assignments |
 | `admin/content.tsx` | `/admin/content` | Landing content (per-scene copy overrides) |
+| `admin/about.tsx` | `/admin/about` | About page editor — hero, orbs, marquee |
+| `admin/coming-soon.tsx` | `/admin/coming-soon` | Coming Soon site mode — master toggle + reveal-page copy/countdown/assets/SEO |
+| `admin/legal.tsx` | `/admin/legal` | Legal pages editor (privacy/terms/cookies/accessibility) |
+| `admin/support.tsx` | `/admin/support` | Support pages editor (FAQ/contact/shipping/returns/care/size guide) |
+| `admin/shop.tsx` | `/admin/shop` | Shop Experience editor (`shop_config`, incl. PDP section toggles) |
+| `admin/products.tsx` | `/admin/products` | Per-product PDP editorial content editor (`pdp_content`) |
+| `admin/techpacks.tsx` | `/admin/techpacks` | Techpack ingestion — upload supplier PDFs, review parsed output, publish images |
+| `admin/passports.tsx` | `/admin/passports` | Product passports — QR codes tab + Passport content tab |
+| `admin/passports_.content.$slug.tsx` | `/admin/passports/content/:slug` | Per-product passport content wizard (trailing `_` opts out of nesting under `passports.tsx`) |
 | `admin/story.tsx` | `/admin/story` | Story saga editor (chapters/acts/cast) |
 | `admin/gamification.tsx` | `/admin/gamification` | Gamification — ranks, challenges, Forge XP, badges |
+| `admin/analytics.tsx` | `/admin/analytics` | Analytics & SEO editor (`site_seo`) |
 | `admin/settings.tsx` | `/admin/settings` | Session + local reset |
-| `auth/sign-in.tsx` | `/auth/sign-in` | Sign in (Supabase auth) |
-| `auth/sign-up.tsx` | `/auth/sign-up` | Sign up |
-| `auth/forgot-password.tsx` | `/auth/forgot-password` | Password reset |
-| `account/route.tsx` | `/account` | Account area (guarded) |
-| `account/index.tsx` | `/account` | Account overview |
-| `account/personal.tsx` | `/account/personal` | Profile editor |
-| `account/addresses.tsx` | `/account/addresses` | Addresses |
-| `account/orders/` | `/account/orders` | Order history + detail |
 
-> Each heavy admin page is registered lazily via a colocated `-admin*.tsx` sidecar (`PERF-01`). Routes prefixed with `-` are ignored by the route scanner (used for sidecars + route tests).
+> Each heavy admin page is registered lazily via a colocated `-admin*.tsx` sidecar (`PERF-01`) — e.g. `admin/techpacks.tsx` → `admin/-adminTechpacks.tsx`. Files prefixed `-` (and `__tests__/`) are ignored by the route scanner — they are route-adjacent components/tests, not routes. `route.tsx` files are **pathless layouts** (no own URL segment) wrapping their directory's child routes.
 
 ### `src/features/`
 
@@ -159,10 +186,23 @@ Static, cinematic landing experiences live in code (one folder per page). The CM
 | `assetSlots.ts` | Code-defined asset slots (general + per-drop) the admin Assets editor assigns media to |
 | `pages/TheOathLanding/` | Drop 01 — The Oath (the single merged WebGL + GSAP film): `index.tsx` (composition), `theOathAssets.ts` / `theOathAssetSlots.ts` (asset binding + slots), `content/` (Zod schema + designed defaults + `resolveOathContent`), `components/` (OathHero, OathManifesto, OathTenets, ProductRevealSequence, OathFinale, OathCursor, OathProgressRail, OathCtaLink, OathMediaFallback, OathCmsMark), `motion/` (`oathMotionState` bridge, per-scene `buildOath*` builders, spotlight, SplitText wrapper, magnetics), `hooks/` (scroll timeline, pointer), `webgl/` (canvas gate, lazy `OathCanvas`, `Monolith`/`AnvlOath3D`/`DustMotes`, dust shader, brand colors) |
 | `__tests__/registry.test.ts` | Registry resolution + fallback behavior |
-
 | `LandingEntryContext.tsx` / `landingEntryLoad.ts` | Landing entry-lock context + load coordination (prevents flash before the cinematic page hydrates) |
 
 > The legacy act/drop-builder landing system (`marketing/act-presets`, `marketing/public-landing`, `cms/landing`, and the `drops` feature) has been **removed**. The public home route renders only the code-owned `landingPages` registry.
+
+#### `experience/`
+
+Centralized experience system — the **only** place experience variants (header/footer/product-card/button chrome, animation preset, background, page transition, typography) are selected. Keyed 1:1 to the active landing key so no scattered `key === 'the-oath'` conditionals leak into components:
+
+| File / Folder | Purpose |
+|---|---|
+| `experience.types.ts` | `ExperienceKey`, `ExperienceConfig`, and every variant union (`HeaderVariant`, `FooterVariant`, `ProductCardVariant`, `ButtonVariant`, `AnimationPreset`, `BackgroundPreset`, `PageTransition`, `TypographyPreset`) |
+| `experienceRegistry.ts` | `EXPERIENCES` map + `DEFAULT_EXPERIENCE_KEY` (`the-oath` — classic variants everywhere, so selecting it keeps the storefront pixel-for-pixel unchanged), `resolveExperience`/`resolveExperienceKey`, `isExperienceKey` |
+| `ExperienceProvider.tsx` | React context provider + `useExperience()` — resolves the active landing key to its `ExperienceConfig` |
+| `useExperienceVariant.ts` | The structural variant seam — components read one named variant field instead of branching on the landing key |
+| `chrome/ExperiencePageTransition.tsx` | Page-transition wrapper driven by the active experience's `pageTransition` |
+| `index.ts` | Public exports |
+| `__tests__/` | Registry resolution + variant hook tests |
 
 #### `cms/`
 
@@ -199,6 +239,38 @@ Pre-launch reveal page — replaces every public route while `coming_soon.enable
 | `hooks/` | `useComingSoonEntrance` (GSAP entrance, matchMedia-gated), `useCountdown` (1s tick, hydration-safe) |
 | `lib/` | `countdownTarget.ts` (wall-clock+IANA→UTC, DST-safe), `comingSoonGate.ts` (exempt paths + preview bypass) |
 | `api/subscribeComingSoon.ts` | Anon insert into `coming_soon_subscribers`; duplicate → friendly success |
+
+#### `about/`
+
+The About page: a desktop non-scrollable 3D "Forge Altar" (grabbable anvil + orbiting content orbs + hammer-strike modals) and a normal scrolling mobile page — both CMS-driven from the same content model. **Not** registered in `landingPages/registry.ts` — About is a fixed page, not a swappable drop.
+
+| File / Folder | Purpose |
+|---|---|
+| `index.tsx` | `AboutExperience` — chooses desktop altar vs. mobile page (`useAboutViewMode`) |
+| `aboutBreakpoints.ts` | The altar/mobile breakpoint contract (mirrors `oathBreakpoints.ts`) |
+| `content/aboutContent.schema.ts` | Zod schema for hero + marquee + the free-form **orbs** array (label/color/copy/lines/points/stats/CTAs/`mediaId`) |
+| `content/aboutContent.defaults.ts` | Designed default copy for every field |
+| `content/resolveAboutContent.ts` | CMS blob → render model, code defaults fill every gap |
+| `hooks/useAboutViewMode.ts` | Resolves desktop-altar vs. mobile-page at the current viewport |
+| `components/AboutHeader.tsx`, `AboutMarquee.tsx`, `AboutCtaLink.tsx`, `AboutMediaFallback.tsx` | Shared chrome between the desktop altar and mobile page |
+| `components/AboutOrbContent.tsx`, `AboutOrbLayouts.tsx` | Renders one orb's content — reused inside altar hammer-strike modals and stacked mobile sections |
+| `components/aboutWorldMap.ts` | World-origin map data reused by an orb type |
+| `altar/AboutAltar.tsx` | Desktop composition root — mounts the WebGL stage + orb ring + modal layer |
+| `altar/AltarScene.tsx` | `@react-three/fiber` canvas: anvil, aurora backdrop, orbiting orbs |
+| `altar/AltarAnvil.tsx`, `AltarHammer.tsx` | The grabbable 3D anvil + hammer GLB meshes (assets assigned on `/admin/assets`) |
+| `altar/AltarAurora.tsx` | Aurora backdrop shader mesh (`shaders/aurora.ts`) |
+| `altar/AltarOrb.tsx` | One orbiting content orb (per-color) |
+| `altar/AboutOrbModal.tsx`, `AltarModalForge.tsx` | Hammer-strike explosion → modal reveal for the struck orb's content |
+| `altar/altarState.ts` | Altar interaction/motion state bridge |
+| `altar/altarOrbs.ts` | Orb layout/ring math |
+| `altar/altarEmberHandoff.ts` | Hands the strike-burst embers off to the shared `lib/forge/emberForge.ts` engine |
+| `altar/altarForgeTiming.ts` | Choreography-clock constants for the strike → modal sequence |
+| `altar/useFittedGltf.ts` | Loads + scales/centers a GLB to fit its target bounds |
+| `altar/shaders/aurora.ts`, `shaders/palantir.ts` | GLSL shader sources for the aurora backdrop + orb surface |
+| `altar/__tests__/` | Ember hand-off + forge-timing unit tests |
+| `mobile/AboutMobilePage.tsx` | Normal scrolling mobile page — orbs render as stacked sections |
+| `webgl/aboutBrandColors.ts` | Reads the shared theme token vars for the altar's WebGL materials |
+| `__tests__/` | Orb content + content-resolver tests |
 
 #### `marketing/`
 
@@ -241,13 +313,38 @@ Storefront global search — nav-owned, covers products, story, About, PDP edito
 | `components/GlobalSearchOverlay.tsx` | Full-screen cinematic overlay (lazy-loaded) |
 | `components/SearchResultRow.tsx` | One result row with highlighted match spans |
 
+#### `share/`
+
+The single share surface, opened from a passport, the Armory panel, or any feat row. Its own feature (not `shared/**`) because it reads passport types; storefront-safe throughout. Replaced the old `storefront-account/account/panels/armory/armoryShare.ts` + `ArmoryShareModal.tsx` studio (2026-08-03):
+
+| File / Folder | Purpose |
+|---|---|
+| `types.ts` | `ShareContext` (url + owner + stats + **piece as context** + chosen feat), formats, preset keys, `ShareCanvas` (the exact `CanvasRenderingContext2D` subset presets may touch), `ShareCapabilities`, `ShareRoute` |
+| `targets.ts` | Send-to registry + `resolveShareRoute()` — the pure decision of what a tile does on this device |
+| `captions.ts` | Caption / title / filename / display-host derivation |
+| `shareActions.ts` | The side effects: download, clipboard, `navigator.share({ files })`, `runShareRoute()` |
+| `useShareCapabilities.ts` | Post-mount detection of `navigator.share` / `canShare({ files })` / coarse pointer |
+| `useImagePick.ts` | Gallery/camera seam — objectURL → `decode()` → downscaled offscreen canvas held in a ref; visible error on undecodable files |
+| `useShareData.ts` | Assembles raw data from existing queries; pure `buildShareContext()` + `featsForPiece()` |
+| `useShareLauncher.ts` | Open/close + mints the armory handle on first share |
+| `ShareButton.tsx` / `ShareModal.tsx` | The share icon and the 3-tab sheet (Image · Link · QR); the modal mounts only while open |
+| `tabs/` | `ShareImageTab` (preview, format, preset, photo, feat picker, send-to), `ShareLinkTab`, `ShareQrTab` |
+| `SendToGrid.tsx` / `socialIcons.tsx` | The app tiles and their inline brand glyphs |
+| `image/` | `drawKit.ts` (fit/wrap/rounded-box helpers + the http-only `crossOrigin` rule), `layout.ts` (the composition frame), `shareImage.ts` (format table, preset dispatch, PNG encode), `presets/` — one file per look, plus the shared `stage.ts` / `hudParts.ts` |
+| `qr/anvlQr.ts` | The branded QR: neighbour-aware rounded modules, deliberately **dark** finder eyes (champagne binarises as light and the locators vanish), crest knockout, plus pure `qrGeometry`/`isFinderModule`/`knockoutBounds` helpers |
+| `__tests__/` | Route matrix, QR geometry, context/caption derivation, preset output via a recording canvas, modal behaviour |
+
+**Seven presets, one family.** `bottom-rail` (default), `modern`, `minimal`, `premium`, `luxe`, `game`, `jarvis` — every one of them carries the piece thumbnail and the selected feat, and every one works with or without a photo. A preset describes ARRANGEMENT only; what it composes over is THE STAGE (`presets/stage.ts`), which resolves itself — the athlete's photo when there is one, the piece's own product render over brand atmosphere when there is not. Adding or removing a photo swaps the hero and nothing else, so the chosen look is never silently substituted.
+
 #### `support/`
 
 Storefront support-page UI, consumed by `/size-guide`, `/care-guide`, `/faq`, `/contact`, `/shipping`, `/returns` (each thin route delegates to these components):
 
 | File / Folder | Purpose |
 |---|---|
-| `components/DocHero.tsx`, `GuideSectionHeader.tsx`, `SupportSectionList.tsx`, `ProseBody.tsx`, `DocFooterCta.tsx`, `FaqAccordion.tsx`, `ContactPanel.tsx` | Shared doc-page chrome (masthead, sections, FAQ, contact) |
+| `components/GuideSectionHeader.tsx`, `SupportSectionList.tsx`, `ProseBody.tsx`, `DocFooterCta.tsx`, `ContactPanel.tsx` | Shared doc-page chrome (sections, contact, foot CTAs). The masthead is no longer here — every doc page uses `shared/components/premium/PageMasthead` |
+| `components/FaqAccordion.tsx` | Thin re-export of the FAQ forge — kept so the route + JSON-LD helper import paths are stable |
+| `components/faq/` | **"The Forge Seam"** — the `/faq` answer stack (its masthead is the shared `PageMasthead`). `FaqForge.tsx` (the section: instant search, one-open-at-a-time state, roving arrow-key nav, hash deep-links, FAQPage JSON-LD built from the *unfiltered* items), `FaqSeamRow.tsx` (one forged plate: pointer-tracked heat-scan, molten seam that splits from the strike point, GSAP spark burst + staggered answer wipe at `≥768px` + no-reduced-motion), `FaqSearchField.tsx`, `FaqHighlightedText.tsx`, `faqSearch.ts` (normalized substring match + highlight segmentation), `faqPageJsonLd.ts`, `useFaqRailHeat.ts` (the molten conduit's travelling heat blob — transform-only, `ResizeObserver`-tracked). Styles live in the `FAQ · "The Forge Seam"` block in `src/styles.css` |
 | `components/MeasureExplorer.tsx` | "Where we measure" garment-type tab strip + the active type's `MeasurementFigure` — one tab per garment type the catalogue's `sizeGuide.perProduct[slug].garmentType` values actually use (`tee` always included as the fallback) |
 | `components/GarmentTypeTabs.tsx` | The tab strip itself — one `GarmentSilhouette` per type, framed to that type's outline bounds |
 | `components/MeasurementFigure.tsx` | The lettered measurement schematic for one garment type (badges keyed by `SizeTableRowKey`, not list position) |
@@ -260,6 +357,17 @@ Storefront support-page UI, consumed by `/size-guide`, `/care-guide`, `/faq`, `/
 | `hooks/useSchematicDrawIn.ts` | GSAP stroke draw-in for the active schematic (`≥768px` + no reduced motion; `gsap.matchMedia` dual gate; see the `contextSafe` gotcha in `docs/animation-guidelines.md`) |
 | `lib/garmentTypes.ts` | `resolveGarmentTypeKeys()` — which tabs `MeasureExplorer` shows, derived from the catalogue's actually-used garment types |
 | `lib/resolveProductNames.ts` | Orders/labels per-product entries by real commerce product name |
+
+#### `legal/`
+
+Storefront legal-page UI, consumed by `/privacy`, `/terms`, `/cookie-policy`, `/accessibility`:
+
+| File / Folder | Purpose |
+|---|---|
+| `components/LegalDocument.tsx` | Hero + sticky table-of-contents + reorderable sections renderer for one legal page |
+| `components/LegalDocumentRoute.tsx` | Route-facing wrapper — resolves `cms/legal`'s published/preview content for a given `pageKey` and renders `LegalDocument` |
+| `components/index.ts` | Public exports |
+| `components/__tests__/legalDocument.test.tsx` | Rendering/behavior tests |
 
 #### `cart/`
 
@@ -298,17 +406,23 @@ Framework-agnostic primitives — no feature imports allowed here.
 | `components/brand/` | Logo image wrapper, campaign mark, spinning mark |
 | `components/layout/` | PremiumNav (storefront chrome), SiteFooter, AnnouncementBar/Rail, StickyHeader |
 | `components/motion/` | AnimatedText, RevealOnScroll |
-| `components/premium/` | Layout primitives: SectionShell, PageHero, ContentPanel, SectionEyebrow, CTAGroup, BrandBadge |
+| `components/premium/` | Layout primitives: SectionShell, PageHero, ContentPanel, SectionEyebrow, CTAGroup, BrandBadge, ForgeAtmosphere, **PageMasthead** |
+| `components/premium/PageMasthead.tsx` | **The one storefront doc-page header** — used by `/faq`, `/care-guide`, `/size-guide`, `/contact`, `/shipping`, `/returns` and all four legal pages (via `LegalDocument`). Eyebrow on a hairline; title two-tone like Story's "The Forged / **Kingdom**" (lead words bone, final word in the shared `.anvl-foil-text` champagne foil — `splitTitleForFoil`); molten strike rule; optional "Last updated" stamp; intro. Behind it: `ForgeAtmosphere` masked at both ends (fades in under the site header, out into the page body) and a colossal **solid** ghost word entering from the right edge and dissolving leftward under a directional mask, auto-derived from the title (`deriveWatermark`: "Size guide" → SIZE). Owns **no** action slot — CTAs belong in `DocFooterCta` at the page foot. Exports `formatDocDate`. Styles: the `PageMasthead` block in `src/styles.css`. Replaced the former `support/components/DocHero.tsx` and `support/components/faq/FaqHero.tsx`, both deleted |
 | `components/seo/` | JsonLd, MarketingToolsHead, structuredData helpers |
 | `components/ui/` | Core UI: Button, Input, Modal, Drawer, Select, Badge, Skeleton, SafeLink, etc. |
 | `constants/brand.ts` | Brand color constants + palette |
 | `constants/brandLogos.ts` | Logo file path constants |
+| `data/countryDialCodes.ts` | Country dial-code presets (used by `PhoneInput` / passport country presets) |
+| `devPreview/DesignSystemPreviewProvider.tsx` | Dev-only design-system/component preview provider |
 | `hooks/useDialogFocusTrap.ts` | Focus trap for modals/drawers |
 | `hooks/useLenisScroll.ts` | Lenis smooth scroll (desktop, no reduced motion) |
 | `hooks/useReducedMotion.ts` | `prefers-reduced-motion` detector |
 | `hooks/useStickyHeader.ts` | Sticky header scroll state |
+| `hooks/useContainedMediaRect.ts` | Computes the rendered (letterboxed) rect of an `object-fit: contain` media element — used where overlay UI must align to the visible image, not its box |
+| `icons/index.tsx` | The Phosphor icon seam — every UI icon is re-exported from here under stable names (named imports only; never import `@phosphor-icons/react` directly). Global duotone weight via `IconContext`; the `Anvil` glyph is inlined because Phosphor has none |
 | `lib/cn.ts` | `cn()` = clsx + tailwind-merge |
 | `lib/gsap.ts` | Registers GSAP + ScrollTrigger + useGSAP (SSR-safe) |
+| `lib/iconSize.ts` | Shared icon size-token → pixel-size resolver for `icons/` consumers |
 | `lib/forge/emberForge.ts`, `lib/forge/forgeSurface.ts` | The shared canvas-2D ember-forge engine (maths + surface sizing) backing `Modal`, the toast layer, and the About altar's ember hand-off — see `docs/animation-guidelines.md` |
 | `components/ui/ForgeEmberCanvas.tsx` | React shell for `lib/forge/emberForge.ts` — sizes/positions the canvas to the swarm's own bounding box, rAF loop, reduced-motion gate |
 | `lib/url.ts` | `sanitizeHref()` — validates CMS-driven hrefs |
@@ -316,7 +430,16 @@ Framework-agnostic primitives — no feature imports allowed here.
 | `lib/color.ts` | Color manipulation utilities |
 | `lib/storage/createJsonStore.ts` | Generic Zod-validated localStorage store factory |
 | `lib/storage/createLocalStorageChannel.ts` | Cross-tab event channel for storage changes |
-| `schemas/` | Shared Zod schemas: media, money, navigation (scaffolding for future REST/BFF; not all wired yet) |
+| `schemas/media.schema.ts` | Shared media Zod schema |
+| `schemas/stringList.ts` | Shared Zod helper for CMS string-list fields |
+| `webgl/DustField.tsx` | The site-wide cursor dust field — one shared instance mounted globally |
+| `webgl/SiteDustGate.tsx` | Gates `DustField` to capable devices/routes — excludes `/` and `/about`, which integrate dust in-canvas themselves |
+| `webgl/SiteDustLayer.tsx` | Fixed-position layer hosting the gated `DustField` |
+| `webgl/dustShaders.ts` | Vertex/fragment shaders for the dust particle field |
+| `webgl/particleShapes.ts` | Particle silhouette/shape sampling helpers shared by dust + forge WebGL surfaces |
+| `webgl/siteDustState.ts` | Mutable motion-state bridge for the shared dust field |
+| `webgl/isWebglAvailable.ts` | WebGL capability/device gate check |
+| `webgl/canvasTeardownGuard.ts` | Guards against double-teardown/leaks when a WebGL canvas unmounts |
 | `types/` | Types inferred from shared schemas |
 
 ---

@@ -47,7 +47,7 @@ These bind every task. A reviewer should treat a violation as a defect.
    `useDialogFocusTrap`.
 10. **Performance.** Debounce text inputs driving expensive recomputes at
     ≥250ms. Scroll listeners `{ passive: true }`. No forced layout reads in
-    scroll/resize handlers. `lucide-react` named imports only.
+    scroll/resize handlers. Icons: named imports from `@/shared/icons` only.
 11. **File size.** Soft limit 300 lines, hard limit 500. A file over 500
     lines needs a written reason in a header comment.
 12. **No new dependencies.** No `console.log` in production code.

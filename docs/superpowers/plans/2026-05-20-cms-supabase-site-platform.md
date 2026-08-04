@@ -1,5 +1,7 @@
 # CMS Supabase Platform + Site Redesign Implementation Plan
 
+> **ARCHIVED — historical plan (2026-05-20).** Drop-builder-era design work. The drop/act system it plans around has since been removed; landing pages are code-owned and the admin IA was reworked. Current truth lives in `CLAUDE.md` and `docs/cms-architecture.md`. Retained as a record of the original design reasoning.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make Supabase the single read/write source of truth for all CMS data, ensure the storefront renders only published Supabase projections, complete every Site section feature (Layout, Theme, SEO, Media) with a faster/clarity-first redesign, wire all drop act natures + presets with professional GSAP scroll animations, and tighten CMS copy/chrome — while **keeping the Drops editor UI unchanged**.

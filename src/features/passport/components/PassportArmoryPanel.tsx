@@ -35,8 +35,6 @@ export function PassportArmoryPanel({ ctx }: { ctx: PassportSectionContext }) {
         <SectionHeading eyebrow="Spread the forge" title="Share this piece" />
         <PassportShareSection
           productSlug={ctx.view.productSlug}
-          productName={ctx.view.productName}
-          ownerName={ctx.view.claimedDisplayName ?? 'an ANVL athlete'}
           imageUrl={ctx.content.piece.heroRenderUrl ?? ctx.content.piece.gallery[0]?.src ?? null}
         />
       </section>

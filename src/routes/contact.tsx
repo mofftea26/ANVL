@@ -6,10 +6,10 @@ import { resolveSupportContent } from '@/features/cms/support/resolveSupportCont
 import {
   ContactPanel,
   DocFooterCta,
-  DocHero,
   DOC_CTA_PRIMARY_CLASS,
   DOC_CTA_SECONDARY_CLASS,
 } from '@/features/support/components'
+import { PageMasthead } from '@/shared/components/premium/PageMasthead'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 
 export const Route = createFileRoute('/contact')({
@@ -33,7 +33,7 @@ function ContactPage() {
 
   return (
     <>
-      <DocHero eyebrow="Help & support" title="Contact" intro={content.contact.intro} />
+      <PageMasthead eyebrow="Help & support" title="Contact" intro={content.contact.intro} />
       <ContactPanel contact={content.contact} />
       <DocFooterCta message="Prefer to browse first? Everything about fit and care is a click away.">
         <SafeLink href="/faq" className={DOC_CTA_PRIMARY_CLASS}>

@@ -12,6 +12,13 @@ vi.mock('@/features/search/hooks/useSearchCorpusQuery', () => ({
   useSearchCorpusQuery: () => ({ data: [] as SearchDocument[], isLoading: false }),
 }))
 
+// Live armory hits (React Query inside — mocked so no QueryClientProvider is
+// needed here). Tests fill `armoryHits.current` to simulate RPC results.
+const armoryHits: { current: { handle: string; displayName: string }[] } = { current: [] }
+vi.mock('@/features/search/hooks/useArmorySearch', () => ({
+  useArmorySearch: () => ({ data: armoryHits.current, isLoading: false }),
+}))
+
 import { useGlobalSearch } from '@/features/search/hooks/useGlobalSearch'
 
 function makeResult(overrides: Partial<SearchDocument>): SearchResult {
@@ -33,6 +40,7 @@ function makeResult(overrides: Partial<SearchDocument>): SearchResult {
 describe('useGlobalSearch', () => {
   beforeEach(() => {
     navigateMock.mockClear()
+    armoryHits.current = []
     vi.useFakeTimers()
   })
 
@@ -107,5 +115,43 @@ describe('useGlobalSearch', () => {
     const { result } = renderHook(() => useGlobalSearch())
     act(() => result.current.navigateToResult(makeResult({ type: 'static-page', meta: { path: '/cart' } })))
     expect(navigateMock).toHaveBeenCalledWith({ to: '/cart' })
+  })
+
+  it('navigates an armory result to the public armory route', () => {
+    const { result } = renderHook(() => useGlobalSearch())
+    act(() =>
+      result.current.navigateToResult(makeResult({ type: 'armory', meta: { handle: 'iron-warrior' } })),
+    )
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/armory/$handle',
+      params: { handle: 'iron-warrior' },
+    })
+  })
+
+  it('merges live armory hits as a Warriors group in dropdown, overlay, and keyboard order', () => {
+    armoryHits.current = [{ handle: 'iron-warrior', displayName: 'George M.' }]
+    const { result } = renderHook(() => useGlobalSearch())
+    const dropdownGroup = result.current.results['armory']
+    expect(dropdownGroup?.map((r) => r.document)).toMatchObject([
+      {
+        type: 'armory',
+        title: 'George M.',
+        subtitle: '@iron-warrior',
+        meta: { handle: 'iron-warrior' },
+      },
+    ])
+    // Same group in the overlay's uncapped results, and rows participate in
+    // the flat keyboard-navigation order.
+    expect(result.current.allResults['armory']).toHaveLength(1)
+    expect(
+      result.current.flatResults.some((r) => r.document.id === 'armory-iron-warrior'),
+    ).toBe(true)
+  })
+
+  it('renders no Warriors group when the armory search returns nothing', () => {
+    armoryHits.current = []
+    const { result } = renderHook(() => useGlobalSearch())
+    expect(result.current.results['armory']).toBeUndefined()
+    expect(result.current.allResults['armory']).toBeUndefined()
   })
 })

@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react'
-import { BookOpen, FileText, Flame, Package, Users } from '@/shared/icons'
+import { BookOpen, FileText, Flame, Package, Shield, Users } from '@/shared/icons'
 import { cn } from '@/shared/lib/cn'
 import type { SearchDocumentType, SearchResult } from '@/features/search/types/search.types'
 
@@ -10,6 +10,7 @@ const TYPE_ICON: Record<SearchDocumentType, ComponentType<{ size?: number; 'aria
   'story-act': BookOpen,
   'story-cast': Users,
   'about-orb': Flame,
+  armory: Shield,
   'static-page': FileText,
 }
 

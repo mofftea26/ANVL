@@ -8,6 +8,7 @@ import type { PassportSizeGuide } from '../lib/sizeRecommendation'
 import type { PassportView } from '../schemas/passport.schema'
 import { PassportConsole } from './console/PassportConsole'
 import { PassportMobile } from './PassportMobile'
+import { PassportOwnerArmoryLink } from './PassportOwnerArmoryLink'
 import { PASSPORT_CONSOLE_MQ } from '../webgl/PassportForgeGate'
 
 export interface PassportPageProps {
@@ -72,6 +73,19 @@ export function PassportPage(props: PassportPageProps) {
         claimedDate={props.claimedDate}
         actions={props.actions}
       />
+    )
+  }
+
+  // The public authenticity view's second action: link to the owner's public
+  // armory when (and only when) the RPC released the handle. Overlaid from
+  // here rather than inlined in PassportMobile's public block so the armory
+  // discovery seam stays out of the shared owner/public surface component.
+  if (props.variant === 'public' && props.view.ownerArmoryHandle) {
+    return (
+      <div className="relative">
+        <PassportMobile {...props} />
+        <PassportOwnerArmoryLink handle={props.view.ownerArmoryHandle} />
+      </div>
     )
   }
 

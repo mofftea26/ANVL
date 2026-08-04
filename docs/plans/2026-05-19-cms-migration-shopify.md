@@ -1,5 +1,7 @@
 # CMS → Shopify commerce migration — implementation plan
 
+> **ARCHIVED — historical plan (2026-05-19).** Written during the drop-builder era, before that system was torn down and landing pages became code-owned. Parts of it were executed, parts were superseded. Do not treat any of it as a description of the current architecture — for that see `CLAUDE.md`, `docs/cms-architecture.md`, and `docs/features/shopify-commerce.md`. Retained as a record of the original design reasoning.
+
 > **For agentic workers:** Implement on branch `cms-migration` (from `cms`). Work phase-by-phase; each phase ends with `pnpm verify` and a commit. Reference finding IDs in commits where applicable (`MAINT-*`, `PERF-*`, `SEC-*`).
 
 **Goal:** Move all **commerce truth** (products, variants, inventory, cart, checkout, orders) to **Shopify**, keep **campaign CMS** (drops, acts, landing, header/footer, active-drop theme) in **Supabase + ANVL Admin**, and wire the **storefront** to read published CMS from Supabase and catalog/cart from Shopify.

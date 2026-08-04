@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  armorySearchHitSchema,
   claimPassportResultSchema,
   ownedPassportSchema,
   passportViewSchema,
@@ -44,6 +45,32 @@ describe('passportViewSchema', () => {
 
   it('rejects a malformed projection', () => {
     expect(passportViewSchema.safeParse({ product_slug: '' }).success).toBe(false)
+  })
+
+  it('maps owner_armory_handle when the RPC releases it', () => {
+    const view = passportViewSchema.parse({ ...rpcView, owner_armory_handle: 'iron-warrior' })
+    expect(view.ownerArmoryHandle).toBe('iron-warrior')
+  })
+
+  it('defaults ownerArmoryHandle to null when withheld or absent (older payloads)', () => {
+    // Explicit null — the RPC withheld it (private passport / private armory).
+    expect(
+      passportViewSchema.parse({ ...rpcView, owner_armory_handle: null }).ownerArmoryHandle,
+    ).toBeNull()
+    // Absent entirely — claim/accept payloads and pre-migration responses.
+    expect(passportViewSchema.parse(rpcView).ownerArmoryHandle).toBeNull()
+  })
+})
+
+describe('armorySearchHitSchema', () => {
+  it('parses a search_public_armories row into camelCase', () => {
+    const hit = armorySearchHitSchema.parse({ handle: 'iron-warrior', display_name: 'George M.' })
+    expect(hit).toEqual({ handle: 'iron-warrior', displayName: 'George M.' })
+  })
+
+  it('rejects rows missing the handle or name', () => {
+    expect(armorySearchHitSchema.safeParse({ display_name: 'George M.' }).success).toBe(false)
+    expect(armorySearchHitSchema.safeParse({ handle: '', display_name: 'G' }).success).toBe(false)
   })
 })
 

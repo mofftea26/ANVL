@@ -24,6 +24,10 @@ export const passportViewSchema = z
     // Transfer state (absent from claim/accept RPC payloads → defaults).
     is_transfer_pending: z.boolean().default(false).catch(false),
     transfer_valid: z.boolean().default(false).catch(false),
+    // The owner's public-armory handle. The RPC releases it ONLY when the
+    // passport shows its owner (owner/public) AND the owner shared their
+    // armory — never invent it from another source (absent → null).
+    owner_armory_handle: z.string().nullable().default(null).catch(null),
   })
   .transform((raw) => ({
     productSlug: raw.product_slug,
@@ -39,6 +43,7 @@ export const passportViewSchema = z
     isPublic: raw.is_public,
     isTransferPending: raw.is_transfer_pending,
     transferValid: raw.transfer_valid,
+    ownerArmoryHandle: raw.owner_armory_handle,
   }))
 
 export type PassportView = z.infer<typeof passportViewSchema>
@@ -219,6 +224,20 @@ export const publicArmorySchema = z
   }))
 
 export type PublicArmory = z.infer<typeof publicArmorySchema>
+
+/**
+ * One row from `search_public_armories` — deliberately just the two fields the
+ * public armory page (`/armory/$handle`) itself shows. Nothing else may ride
+ * along (no emails, no counts).
+ */
+export const armorySearchHitSchema = z
+  .object({
+    handle: z.string().min(1),
+    display_name: z.string().min(1),
+  })
+  .transform((raw) => ({ handle: raw.handle, displayName: raw.display_name }))
+
+export type ArmorySearchHit = z.infer<typeof armorySearchHitSchema>
 
 /** One PDP review from `get_product_reviews` (owner-verified by the RPC). */
 export const productReviewSchema = z

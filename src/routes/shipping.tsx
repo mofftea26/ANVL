@@ -5,11 +5,11 @@ import { usePreviewDraft } from '@/features/cms/preview'
 import { resolveSupportContent } from '@/features/cms/support/resolveSupportContent'
 import {
   DocFooterCta,
-  DocHero,
   DOC_CTA_PRIMARY_CLASS,
   DOC_CTA_SECONDARY_CLASS,
   SupportSectionList,
 } from '@/features/support/components'
+import { PageMasthead } from '@/shared/components/premium/PageMasthead'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 
 export const Route = createFileRoute('/shipping')({
@@ -34,7 +34,7 @@ function ShippingPage() {
 
   return (
     <>
-      <DocHero eyebrow="Help & support" title="Shipping" intro={content.shipping.intro} />
+      <PageMasthead eyebrow="Help & support" title="Shipping" intro={content.shipping.intro} />
       <SupportSectionList sections={content.shipping.sections} />
       <DocFooterCta message="Ready to order? Browse Drop 01 — delivery is confirmed before you pay.">
         <SafeLink href="/shop" className={DOC_CTA_PRIMARY_CLASS}>

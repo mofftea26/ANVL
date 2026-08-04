@@ -1,3 +1,4 @@
+import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import {
   DEFAULT_SHOP_CONFIG,
   parseShopConfig,
@@ -77,8 +78,30 @@ export function subscribeShopConfigChange(listener: () => void): () => void {
   }
 }
 
+/**
+ * Refuse to publish a whole-config snapshot this browser never loaded.
+ *
+ * Same hazard as `pdp_content`: `shop_config` is one jsonb blob and every save
+ * replaces all of it. A browser that never hydrated it reads the CODE
+ * DEFAULTS, so the editor's save silently reverts the authored shop layout,
+ * copy and PDP toggles in `cms_settings` and in the anon-readable
+ * `storefront_publication` mirror. Checked before the local write, because
+ * `writeShopConfigToStorage` creates the key and would make the same probe in
+ * the flush always pass — see `WholeMapColumn` in `adminCmsRemoteSync.ts`.
+ */
+function assertShopConfigHydrated(): void {
+  // Only meaningful when Supabase is the authority (see pdpContent.settings).
+  if (!getSupabasePublicEnv()) return
+  if (hasStoredShopConfig()) return
+  throw new Error(
+    'Shop settings have not loaded from Supabase in this browser yet — saving now ' +
+      'would reset the published shop configuration. Reload /admin and try again.',
+  )
+}
+
 /** Save + write-through to Supabase (when configured). Throws on sync error. */
 export async function saveShopConfigAsync(next: ShopConfig): Promise<void> {
+  assertShopConfigHydrated()
   writeShopConfigToStorage(next)
   const { afterLocalCmsMutation } = await import(
     '@/features/admin/cmsRemote/cmsWriteThrough'

@@ -2,10 +2,30 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   clearCmsProfileRoleCache,
+  listUnhydratedWholeMapColumns,
   pickCmsSettingsFields,
   runAdminCmsRemoteFlush,
   type CmsSettingsFieldKey,
 } from '../adminCmsRemoteSync'
+import {
+  readPdpContentFromStorage,
+  writePdpContentToStorage,
+} from '@/features/cms/pdpContent/pdpContent.settings'
+import {
+  readShopConfigFromStorage,
+  writeShopConfigToStorage,
+} from '@/features/cms/shop/shopExperience.settings'
+
+/**
+ * Every test below models an admin whose hydration already ran, so the
+ * whole-map clobber guard is satisfied. Without this, jsdom's freshly-cleared
+ * localStorage looks exactly like the never-hydrated browser the guard exists
+ * to stop — see the dedicated guard suite at the bottom of this file.
+ */
+function seedHydratedWholeMapSnapshots(): void {
+  writePdpContentToStorage(readPdpContentFromStorage())
+  writeShopConfigToStorage(readShopConfigFromStorage())
+}
 
 // saveThemeConfigAsync dynamically imports this module — mocking it lets the
 // "save*Async throws on error result" contract be tested without Supabase.
@@ -184,6 +204,7 @@ function overridesWithValues(extra?: {
 describe('runAdminCmsRemoteFlush', () => {
   beforeEach(() => {
     clearCmsProfileRoleCache()
+    seedHydratedWholeMapSnapshots()
   })
 
   it('returns a no-session error (after one failed recovery) instead of fake success', async () => {
@@ -350,6 +371,67 @@ describe('runAdminCmsRemoteFlush', () => {
       theme_config: { name: 'theme' },
       updated_at: expect.any(String),
     })
+  })
+})
+
+describe('whole-map clobber guard', () => {
+  beforeEach(() => {
+    clearCmsProfileRoleCache()
+    // Deliberately NOT seeded: this is the fresh/reset browser.
+  })
+
+  it('reports both whole-map columns as unhydrated on a fresh browser', () => {
+    expect(listUnhydratedWholeMapColumns().sort()).toEqual([
+      'pdp_content',
+      'shop_config',
+    ])
+  })
+
+  it('refuses a scoped publish of an unhydrated column before touching the network', async () => {
+    const { client, calls } = createFakeClient({ session: SESSION, role: 'admin' })
+    const result = await runAdminCmsRemoteFlush(
+      client,
+      ['pdp_content'],
+      overridesWithValues(),
+    )
+    expect(result.status).toBe('error')
+    if (result.status === 'error') {
+      expect(result.reason).toBe('not-hydrated')
+      expect(result.message).toMatch(/NOT published/i)
+      expect(result.message).toMatch(/Reload \/admin/i)
+    }
+    expect(calls.getSession).toBe(0)
+    expect(calls.settingsPatches).toHaveLength(0)
+    expect(calls.pubPatches).toHaveLength(0)
+  })
+
+  it('leaves a scoped publish of an unrelated column alone', async () => {
+    const { client, calls } = createFakeClient({ session: SESSION, role: 'admin' })
+    const result = await runAdminCmsRemoteFlush(
+      client,
+      ['theme_config'],
+      overridesWithValues(),
+    )
+    expect(result.status).toBe('ok')
+    expect(calls.settingsPatches[0]).not.toHaveProperty('pdp_content')
+  })
+
+  it('drops unhydrated whole-map columns from an unscoped sync instead of failing it', async () => {
+    const { client, calls } = createFakeClient({ session: SESSION, role: 'admin' })
+    const result = await runAdminCmsRemoteFlush(
+      client,
+      undefined,
+      overridesWithValues(),
+    )
+    expect(result.status).toBe('ok')
+    // Omitted -> the partial UPDATE leaves the remote maps untouched.
+    expect(calls.settingsPatches[0]).not.toHaveProperty('pdp_content')
+    expect(calls.settingsPatches[0]).not.toHaveProperty('shop_config')
+    expect(calls.pubPatches[0]).not.toHaveProperty('pdp_content')
+    expect(calls.pubPatches[0]).not.toHaveProperty('shop_config')
+    // Everything else still publishes.
+    expect(calls.settingsPatches[0]).toHaveProperty('theme_config')
+    expect(calls.settingsPatches[0]).toHaveProperty('legal_content')
   })
 })
 

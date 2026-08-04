@@ -16,13 +16,13 @@ import { AccordionDisclosure, Container, Section } from '@/shared/components/ui'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 import {
   DocFooterCta,
-  DocHero,
   DOC_CTA_PRIMARY_CLASS,
   DOC_CTA_SECONDARY_CLASS,
   GuideSectionHeader,
   MeasureExplorer,
   SizeTable,
 } from '@/features/support/components'
+import { PageMasthead } from '@/shared/components/premium/PageMasthead'
 import type { SizeProductEntry } from '@/features/cms/support/supportContent.zod'
 import { resolveGarmentTypeKeys } from '@/features/support/lib/garmentTypes'
 import {
@@ -89,7 +89,7 @@ function SizeGuidePage() {
 
   return (
     <>
-      <DocHero
+      <PageMasthead
         eyebrow="Fit & sizing"
         title="Size guide"
         intro={content.sizeGuide.intro}
@@ -99,7 +99,7 @@ function SizeGuidePage() {
       {content.sizeGuide.note.trim() ? (
         <Section>
           <Container className="max-w-3xl">
-            {/* Directly under DocHero's own border-b — no second rule here. */}
+            {/* Directly under the masthead — no second rule here. — no second rule here. */}
             <GuideSectionHeader title="How to measure" intro={content.sizeGuide.note} rule={false} />
           </Container>
         </Section>

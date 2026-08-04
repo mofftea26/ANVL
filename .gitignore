@@ -33,3 +33,6 @@ ds-bundle/
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+# Superpowers brainstorming companion (local mockups)
+.superpowers/

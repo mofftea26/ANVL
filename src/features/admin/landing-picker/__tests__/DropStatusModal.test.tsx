@@ -150,8 +150,13 @@ describe('ActiveDropTile → DropStatusModal', () => {
       await screen.findByRole('switch', { name: /announcement banner/i }),
     )
 
-    // The (lazy) customize modal opens instead of a direct write.
-    expect(await screen.findByTestId('banner-customize-modal')).toBeInTheDocument()
+    // The (lazy) customize modal opens instead of a direct write. This awaits a
+    // real dynamic import resolving through a Suspense boundary, so it needs
+    // more than the 1s default: under a loaded full-suite run the chunk's
+    // transform+import alone can exceed it and the assertion flakes.
+    expect(
+      await screen.findByTestId('banner-customize-modal', undefined, { timeout: 15_000 }),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('checkbox', { name: /enable the banner/i }),
     ).toBeChecked()

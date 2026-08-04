@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { Award, LayoutDashboard, Medal, QrCode, Shield } from '@/shared/icons'
 import { useArmoryFeatsQuery } from '@/features/passport/hooks/useArmory'
+import { useArmoryCatalogQuery } from '@/features/passport/hooks/useArmoryCatalog'
+import { ShareButton } from '@/features/share/ShareButton'
 import { useGamificationRules } from '@/features/passport/hooks/useGamificationRules'
 import { useOwnedPassportsQuery } from '@/features/passport/hooks/usePassport'
-import type { ArmoryCatalogEntry } from '@/features/passport/lib/armory'
 import {
   buildChallengeContext,
   evaluateChallenges,
@@ -15,14 +15,12 @@ import {
   deriveArmoryBadges,
   deriveArmoryRank,
 } from '@/features/passport/lib/ranks'
-import { useCustomerProfileQuery } from '@/features/storefront-account/publicAccount.core'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
 import { cn } from '@/shared/lib/cn'
 import { ArmoryChallenges } from './armory/ArmoryChallenges'
 import { ArmoryHonor } from './armory/ArmoryHonor'
 import { ArmoryOverlay } from './armory/ArmoryOverlay'
-import { ArmoryShareButton } from './armory/ArmoryShareButton'
 import {
   ARMORY_VIEWS,
   ArmoryCollectionView,
@@ -34,25 +32,6 @@ import {
 import { CollectionCrest } from './armory/CollectionCrest'
 import { ForgeProgress } from './armory/ForgeProgress'
 import { RankLadderModal } from './armory/RankLadderModal'
-
-/** Catalog for the Armory's views — light, cached, storefront-safe. */
-function useArmoryCatalogQuery() {
-  return useQuery({
-    queryKey: ['storefrontAccount', 'armory-catalog'],
-    queryFn: async (): Promise<ArmoryCatalogEntry[]> => {
-      const { runtimeClients } = await import('@/app/config/runtime')
-      const catalog = await runtimeClients.commerce.getShopListingCatalog()
-      return catalog.items.map((p) => ({
-        slug: p.slug,
-        name: p.name,
-        dropName: p.dropName,
-        image: p.images[0]?.src,
-        category: p.shop?.category,
-      }))
-    },
-    staleTime: 5 * 60_000,
-  })
-}
 
 /**
  * The Armory — every physical piece the athlete has registered via its product
@@ -84,20 +63,6 @@ export function ArmoryPanel() {
     rules,
   )
   const honorPinned = owned.filter((p) => p.featuredSlot !== null).length
-  // Distinct pieces for the share studio (image from the catalog).
-  const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]))
-  const sharePieces = Array.from(
-    new Map(owned.map((p) => [p.productSlug, p])).values(),
-  ).map((p) => ({
-    slug: p.productSlug,
-    name: p.productName,
-    image: catalogBySlug.get(p.productSlug)?.image,
-    wearCount: p.wearCount,
-  }))
-  const profileQuery = useCustomerProfileQuery()
-  const ownerName =
-    [profileQuery.data?.firstName, profileQuery.data?.lastName].filter(Boolean).join(' ') ||
-    'ANVL Athlete'
 
   return (
     <div className="space-y-4">
@@ -136,20 +101,9 @@ export function ArmoryPanel() {
               })}
             </div>
           ) : null}
-          <ArmoryShareButton
-          ownerName={ownerName}
-          rank={rank}
-          pieces={sharePieces}
-          feats={featsQuery.data ?? []}
-          memberSince={
-            owned.length > 0
-              ? (owned
-                  .map((p) => p.claimedAt)
-                  .filter((d): d is string => Boolean(d))
-                  .sort()[0] ?? null)
-              : null
-          }
-          />
+          {/* No piece is implied here, so this is the one entry point that
+              lets the sheet choose one. */}
+          <ShareButton allowPiecePicker label="Share your armory" />
         </div>
       </div>
 

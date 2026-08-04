@@ -31,7 +31,7 @@ When Supabase is configured, the storefront account now reads real data:
 - ✅ **Session reconcile** — `useHydrateStorefrontAccountSession` reads the GoTrue session + subscribes to `onAuthStateChange` (handles OAuth returns to `/account`); `logout()` routes through `signOutStorefront()`.
 
 ### Still open
-- `phone` and `addresses` are not persisted (no columns on `storefront_profiles`) — name/email round-trip only. Add columns + map them when needed.
+- `phone` and `addresses` **are** persisted — both columns were added to `storefront_profiles` in `supabase/migrations/20260630120000_storefront_profiles_extend.sql` (`addresses` is jsonb), alongside the notification preferences and the `armory_public` / `armory_handle` sharing fields.
 - Email-confirmation UX (sign-up returns "check your email" when confirmation is required) — currently a toast.
 - `routes/account/**` visuals are functional but not yet redesigned to the premium language (a Phase 4 follow-up).
 

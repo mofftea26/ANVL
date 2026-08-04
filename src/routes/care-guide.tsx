@@ -17,12 +17,12 @@ import {
   CareSymbolLegend,
   CARE_SYMBOLS_SECTION_ID,
   DocFooterCta,
-  DocHero,
   DOC_CTA_PRIMARY_CLASS,
   DOC_CTA_SECONDARY_CLASS,
   GuideSectionHeader,
   SupportSectionList,
 } from '@/features/support/components'
+import { PageMasthead } from '@/shared/components/premium/PageMasthead'
 import { AccordionDisclosure, Container, Section } from '@/shared/components/ui'
 import { SafeLink } from '@/shared/components/ui/SafeLink'
 import type { CareProductEntry } from '@/features/cms/support/supportContent.zod'
@@ -81,7 +81,7 @@ function CareGuidePage() {
 
   return (
     <>
-      <DocHero
+      <PageMasthead
         eyebrow="Care & longevity"
         title="Care guide"
         intro={content.careGuide.intro}

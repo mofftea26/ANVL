@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { SizeGuideTable, EMPTY_SIZE_TABLE } from '@/features/admin/components/SizeGuideTable'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
+import { TechpackImportButton } from '@/features/admin/techpacks/import/TechpackImportButton'
 import { convertLegacySizeEntry } from '@/features/cms/support/supportContent.convert'
 import { SUPPORT_CONTENT_DEFAULTS } from '@/features/cms/support/supportContent.defaults'
 import {
@@ -78,6 +79,19 @@ export function PerProductSizeField({ perProduct, onChange }: PerProductSizeFiel
       />
       {entry ? (
         <div className="space-y-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-bg)]/30 p-3">
+          {/* The techpack's graded table IS this table — same seven rows, same
+              A–G lettering. It arrives converted to centimetres, since the
+              packs are printed in inches and this grid is not. Only the
+              size-guide blob is offered: that is all this field can save. */}
+          <div className="flex justify-end">
+            <TechpackImportButton
+              productSlug={slug}
+              targets={['sizeGuide']}
+              size={entry}
+              onImport={({ drafts }) => setEntry(drafts.size)}
+            />
+          </div>
+
           <FormField label="Note" hint="Optional fit note for this product." labelStyle="micro">
             <Input
               density="compact"

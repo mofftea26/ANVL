@@ -24,14 +24,20 @@ Node host.
 ### `wrangler.jsonc`
 ```jsonc
 {
-  "name": "anvl-athletics",
-  "compatibility_date": "2025-09-02",
+  "name": "anvl",
+  "compatibility_date": "2026-07-11",
   "compatibility_flags": ["nodejs_compat"],   // required — see below
   "main": "@tanstack/react-start/server-entry",
   "observability": { "enabled": true },
+  "placement": { "mode": "smart" },           // see below
   "vars": { "NODE_ENV": "production" }         // required — see below
 }
 ```
+
+- **`placement.mode: "smart"`** runs the SSR Worker near the Supabase origin
+  rather than near each visitor. The storefront projection load makes several
+  Supabase round-trips per request, so co-locating with the database beats
+  co-locating with the user.
 
 - **`nodejs_compat` is required, not optional.** The SSR entry reads server
   secrets at request time via `process.env` (`ANVL_ADMIN_SESSION_SECRET`,

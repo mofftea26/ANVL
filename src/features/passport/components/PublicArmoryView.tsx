@@ -4,6 +4,7 @@ import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { RevealOnScroll } from '@/shared/components/motion/RevealOnScroll'
 import { Input, Select, SelectItem } from '@/shared/components/ui'
 import { cn } from '@/shared/lib/cn'
+import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { useGamificationRules } from '../hooks/useGamificationRules'
 import { deriveArmoryRank } from '../lib/ranks'
 import type { PublicArmory } from '../schemas/passport.schema'
@@ -14,6 +15,26 @@ const ROMAN = ['I', 'II', 'III'] as const
 /** Bevel-cut plate — the forged-plate language shared with the toasts. */
 const PLATE_CLIP =
   '[clip-path:polygon(12px_0,calc(100%-12px)_0,100%_12px,100%_calc(100%-12px),calc(100%-12px)_100%,12px_100%,0_calc(100%-12px),0_12px)]'
+
+/**
+ * The micro-caps voice, spelled out rather than reused from `.anvl-micro`.
+ * `.anvl-micro` is declared *unlayered* in styles.css while Tailwind v4 emits
+ * utilities into `@layer utilities`, and unlayered beats any layer — so the old
+ * `anvl-micro text-[9px] text-[…]` pairings silently rendered at 0.65rem in
+ * `--color-text-muted`, throwing away both the size and the ink they asked for.
+ * Dropping the class is the only way those actually land.
+ *
+ * Both inks mix toward `--color-heading` — the maximum-contrast ink on *either*
+ * theme — so one formula lifts oath-dark and bone-light at once, which matters
+ * because a component cannot branch on theme. Measured on the identity plate
+ * (AA wants 4.5:1 at this size): MICRO ≈12:1 dark / ≈8.4–10:1 light;
+ * EMBER ≈9.8:1 dark / ≈6.2:1 light — raw `--color-highlight-bright` is only
+ * ≈3.8:1 on bone-light, a genuine AA failure, hence the tempering. Ember used
+ * as decoration (hairline, pips, light pools, icons) stays pure.
+ */
+const MICRO_CAPS = 'text-[11px] uppercase leading-[1.35] tracking-[0.1em]'
+const MICRO_LABEL = `${MICRO_CAPS} text-[color-mix(in_oklab,var(--color-heading)_55%,var(--color-text-muted))]`
+const EMBER_LABEL = `${MICRO_CAPS} text-[color-mix(in_oklab,var(--color-highlight-bright)_70%,var(--color-heading))]`
 
 /**
  * The read-only face of an athlete's Armory — what a visitor sees at
@@ -138,15 +159,22 @@ export function PublicArmoryView({
                 aria-hidden="true"
                 className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent_0%,var(--color-highlight-bright)_30%,color-mix(in_srgb,var(--color-highlight)_60%,transparent)_70%,transparent_100%)]"
               />
-              {/* Ghost inscription behind the record numbers. */}
+              {/* Ghost inscription. From `md` up the card is a row, the record
+                  numbers sit top-right, and the word can be the full-size
+                  bottom-right slab it was designed as. Below `md` the numbers are
+                  a full-width bottom strip, so a 96px word lands straight on them
+                  — there it shrinks and moves to the empty top-left gutter. `z-0`
+                  against the content's `z-10` makes the layering explicit instead
+                  of DOM-order luck. 7% (was 5%) keeps the mark readable as a mark
+                  on bone-light, where a dark ghost on a near-white plate fades. */}
               <span
                 aria-hidden="true"
-                className="anvl-heading pointer-events-none absolute -bottom-6 right-0 select-none text-8xl leading-none text-[color-mix(in_srgb,var(--color-heading)_5%,transparent)]"
+                className="anvl-heading pointer-events-none absolute left-3 top-2 z-0 select-none text-4xl leading-none text-[color-mix(in_srgb,var(--color-heading)_7%,transparent)] sm:text-5xl md:-bottom-6 md:left-auto md:right-0 md:top-auto md:text-7xl lg:text-8xl"
               >
                 ARMORY
               </span>
 
-              <div className="relative flex flex-col items-center gap-6 text-center md:flex-row md:items-center md:gap-8 md:text-left">
+              <div className="relative z-10 flex flex-col items-center gap-6 text-center md:flex-row md:items-center md:gap-8 md:text-left">
                 {/* The emblem on its lit disc. */}
                 <div className="relative shrink-0">
                   <span
@@ -169,12 +197,12 @@ export function PublicArmoryView({
 
                 {/* The athlete. */}
                 <div className="min-w-0 md:flex-1">
-                  <p className="anvl-micro text-[var(--color-highlight-bright)]">The Armory of</p>
+                  <p className={EMBER_LABEL}>The Armory of</p>
                   <h1 className="anvl-heading mt-1 text-3xl leading-none text-[var(--color-heading)] sm:text-4xl">
                     {armory.ownerName}
                   </h1>
                   <p className="mt-2 flex items-center justify-center gap-2 md:justify-start">
-                    <span className="anvl-micro text-[10px] uppercase tracking-[0.2em] text-[var(--color-highlight-bright)]">
+                    <span className={cn(EMBER_LABEL, 'font-semibold tracking-[0.16em]')}>
                       {rank.title}
                     </span>
                     {/* Level pips — I · II · III within the rank. */}
@@ -193,7 +221,7 @@ export function PublicArmoryView({
                   </p>
                   {funStats.length > 0 ? (
                     <p
-                      className="anvl-micro mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[9px] text-[var(--color-text-muted)] md:justify-start"
+                      className={cn(MICRO_LABEL, 'mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 md:justify-start')}
                       suppressHydrationWarning
                     >
                       {funStats.map((s) => (
@@ -209,8 +237,9 @@ export function PublicArmoryView({
                   ) : null}
                 </div>
 
-                {/* The record numbers. */}
-                <dl className="grid shrink-0 grid-cols-3 gap-6 border-t border-[color-mix(in_oklab,var(--color-line)_70%,transparent)] pt-5 md:self-start md:border-l md:border-t-0 md:pl-8 md:pt-1">
+                {/* The record numbers. `gap-4` on a phone buys each label the
+                    width it needs at 11px; `gap-6` returns once there is room. */}
+                <dl className="grid shrink-0 grid-cols-3 gap-4 border-t border-[color-mix(in_oklab,var(--color-line)_70%,transparent)] pt-5 sm:gap-6 md:self-start md:border-l md:border-t-0 md:pl-8 md:pt-1">
                   {(
                     [
                       [String(armory.totalPieces), armory.totalPieces === 1 ? 'Piece forged' : 'Pieces forged'],
@@ -218,14 +247,15 @@ export function PublicArmoryView({
                       [String(armory.feats.length), armory.feats.length === 1 ? 'Feat' : 'Feats'],
                     ] as const
                   ).map(([value, label]) => (
-                    <div key={label} className="flex flex-col items-center gap-1 md:items-start">
+                    <div
+                      key={label}
+                      className="flex flex-col items-center gap-1 text-center md:items-start md:text-left"
+                    >
                       <dt className="sr-only">{label}</dt>
                       <dd className="anvl-heading text-3xl leading-none text-[var(--color-heading)]">
                         {value}
                       </dd>
-                      <dd className="anvl-micro text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
-                        {label}
-                      </dd>
+                      <dd className={cn(MICRO_LABEL, 'font-medium')}>{label}</dd>
                     </div>
                   ))}
                 </dl>
@@ -240,8 +270,8 @@ export function PublicArmoryView({
             <RevealOnScroll>
               <div className="mb-8 flex items-center justify-center gap-3">
                 <span aria-hidden="true" className="h-px w-10 bg-[linear-gradient(90deg,transparent,var(--color-highlight))]" />
-                <Medal size={15} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
-                <h2 className="anvl-micro text-[10px] uppercase tracking-[0.26em] text-[var(--color-highlight-bright)]">
+                <Medal size={ICON_SIZE.sm} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
+                <h2 className={cn(EMBER_LABEL, 'font-semibold tracking-[0.26em]')}>
                   Hall of Honor
                 </h2>
                 <span aria-hidden="true" className="h-px w-10 bg-[linear-gradient(270deg,transparent,var(--color-highlight))]" />
@@ -275,7 +305,7 @@ export function PublicArmoryView({
                         />
                       ) : (
                         <div className="grid h-44 w-36 place-items-center bg-[var(--color-surface-elevated)] [clip-path:polygon(10px_0,calc(100%-10px)_0,100%_10px,100%_calc(100%-10px),calc(100%-10px)_100%,10px_100%,0_calc(100%-10px),0_10px)]">
-                          <Star size={22} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
+                          <Star size={ICON_SIZE.lg} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
                         </div>
                       )}
                     </div>
@@ -291,19 +321,16 @@ export function PublicArmoryView({
                     />
 
                     <figcaption className="mt-3">
-                      <p className="anvl-micro text-[8px] uppercase tracking-[0.2em] text-[color-mix(in_oklab,var(--color-highlight-bright)_80%,transparent)]">
+                      {/* Was 8px at 80% ember — the faintest text on the page. */}
+                      <p className={cn(EMBER_LABEL, 'font-semibold tracking-[0.2em]')}>
                         Honor {ROMAN[i] ?? ''}
                       </p>
                       <p className="mt-1 line-clamp-2 text-sm font-semibold leading-tight text-[var(--color-heading)]">
                         {piece.productName}
                       </p>
                       {piece.wearCount > 0 ? (
-                        <p className="anvl-micro mt-1 flex items-center justify-center gap-1 text-[9px] text-[var(--color-text-muted)]">
-                          <Flame
-                            size={10}
-                            aria-hidden="true"
-                            className="text-[var(--color-highlight-bright)]"
-                          />
+                        <p className={cn(MICRO_LABEL, 'mt-1 flex items-center justify-center gap-1')}>
+                          <Flame size={ICON_SIZE.xs} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
                           {piece.wearCount} {piece.wearCount === 1 ? 'wear' : 'wears'}
                         </p>
                       ) : null}
@@ -319,11 +346,13 @@ export function PublicArmoryView({
         {armory.pieces.length > 0 ? (
           <section className="mt-16">
             <RevealOnScroll>
-              <div className="mb-4 flex items-end justify-between gap-3">
+              {/* Stacked on a phone: at 11px the hint no longer fits beside the
+                  heading, and squeezing it there would wrap both awkwardly. */}
+              <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
                 <h2 className="anvl-heading text-2xl leading-none text-[var(--color-heading)]">
                   The Collection
                 </h2>
-                <p className="anvl-micro text-[9px] text-[var(--color-text-muted)]">
+                <p className={cn(MICRO_LABEL, 'sm:shrink-0 sm:text-right')}>
                   Click a card to read its record
                 </p>
               </div>
@@ -334,7 +363,7 @@ export function PublicArmoryView({
               <div className="mb-6 flex flex-col gap-2.5 sm:flex-row sm:items-center">
                 <div className="relative flex-1 sm:max-w-xs">
                   <Search
-                    size={14}
+                    size={ICON_SIZE.xs}
                     aria-hidden="true"
                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
                   />
@@ -415,7 +444,7 @@ export function PublicArmoryView({
           <section className="mt-16">
             <RevealOnScroll>
               <div className="mb-4 flex items-center gap-2">
-                <Trophy size={17} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
+                <Trophy size={ICON_SIZE.md} aria-hidden="true" className="text-[var(--color-highlight-bright)]" />
                 <h2 className="anvl-heading text-lg text-[var(--color-heading)]">More feats</h2>
               </div>
             </RevealOnScroll>
@@ -429,12 +458,12 @@ export function PublicArmoryView({
                     <span className="min-w-0 text-sm font-semibold text-[var(--color-heading)]">
                       {feat.title}
                       {feat.productSlug && names[feat.productSlug] ? (
-                        <span className="anvl-micro ml-2 text-[9px] text-[var(--color-text-muted)]">
+                        <span className={cn(MICRO_LABEL, 'ml-2')}>
                           wearing {names[feat.productSlug]}
                         </span>
                       ) : null}
                     </span>
-                    <span className="anvl-micro shrink-0 text-[10px] text-[var(--color-text-muted)]">
+                    <span className={cn(MICRO_LABEL, 'shrink-0')}>
                       {new Date(feat.achievedOn).toLocaleDateString()}
                     </span>
                   </li>
@@ -452,7 +481,7 @@ export function PublicArmoryView({
 export function PublicArmoryMissing() {
   return (
     <div className="mx-auto flex min-h-[60svh] max-w-md flex-col items-center justify-center gap-3 px-6 text-center">
-      <Star size={28} aria-hidden="true" className="text-[var(--color-text-muted)]" />
+      <Star size={ICON_SIZE.xl} aria-hidden="true" className="text-[var(--color-text-muted)]" />
       <h1 className="anvl-heading text-2xl text-[var(--color-heading)]">Armory not found</h1>
       <p className="text-sm text-[var(--color-text-muted)]">
         This armory is private or the link is no longer active.

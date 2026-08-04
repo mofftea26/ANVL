@@ -352,6 +352,32 @@ body {
   color: var(--color-heading);
 }
 
+/* Forged foil — the champagne metal on Story's "Kingdom" and every doc page's
+   masthead title. One definition so the two can never drift apart: dark
+   shoulder → base → bright specular → base → deep shadow, all mixed from
+   `--color-highlight`, so it re-tempers with every CMS palette (never a
+   hardcoded gold). Apply to a `<span>` around the word that should catch the
+   light, not to a whole heading. */
+.anvl-foil-text {
+  background: linear-gradient(
+    100deg,
+    var(--color-highlight) 0%,
+    var(--color-highlight-bright) 45%,
+    var(--color-highlight) 70%,
+    color-mix(in srgb, var(--color-highlight) 55%, black) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* Forced-colours mode drops the gradient, which would leave the word invisible. */
+@media (forced-colors: active) {
+  .anvl-foil-text {
+    background: none;
+    color: CanvasText;
+  }
+}
+
 /* Brief arrival pulse for search-deep-linked sections (About orbs, PDP tiles).
    Reduced motion gets an instant static flash instead of the keyframe glow. */
 .anvl-highlight-pulse {
@@ -1655,6 +1681,164 @@ html[data-landing-entry='active'] body {
 }
 
 /* ------------------------------------------------------------------------- */
+/* The passport BLUEPRINT hologram.                                          */
+/*                                                                           */
+/* While the Blueprint section is open, the passport's OWN product render is  */
+/* re-lit as a schematic readout — the instrument the callout cards are read  */
+/* against. There is no second image and no WebGL: this has to run inside the */
+/* desktop console panel AND on a phone, so it is a filter chain on the image */
+/* already on screen plus two pseudo-element layers.                          */
+/*                                                                           */
+/* COLOUR: champagne (`--color-highlight*`) and bone only. A cyan sci-fi      */
+/* readout is the obvious reference and the wrong one for ANVL — the          */
+/* "instrument" reading is carried by GEOMETRY (the technical grid, the       */
+/* scanline comb, the sweep), not by a foreign hue. Every value derives from  */
+/* palette tokens, so it re-tempers with each CMS theme.                      */
+/*                                                                           */
+/* DEGRADATION: every piece is independent. No `filter` support → the plain   */
+/* photograph. No `color-mix` → that declaration drops and the layer simply   */
+/* does not paint. Reduced motion → the static treatment stays; the sweep and */
+/* the float never start.                                                    */
+/* ------------------------------------------------------------------------- */
+.pp-holo {
+  position: relative;
+  /* Deterministic blending. The two layers below use `screen`, and without an
+     isolated group they would reach through to whatever the surface happens to
+     be — the console gets a stacking context from GSAP's inline filter, the
+     mobile frame does not, and the effect would differ between them. */
+  isolation: isolate;
+}
+
+/* Solo hologram: when the WebGL projection owns the stage the photograph (and
+   its hotspot buttons) dissolve out entirely — everything except the effect
+   layer, which carries the projection. Interaction must go with visibility:
+   an invisible hotspot button that still takes taps would be a ghost UI. */
+.pp-holo > :not([data-pp-effect]) {
+  transition: opacity 600ms ease;
+}
+.pp-holo[data-holo-solo='on'] > :not([data-pp-effect]) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The render itself: flattened to a luminance mask, then re-lit with chained
+   `drop-shadow`s. `drop-shadow` follows the image's real ALPHA, so the
+   transparent-PNG hero render blooms along the garment's own silhouette rather
+   than around a rectangle. */
+.pp-holo img {
+  transition:
+    filter 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 700ms ease;
+}
+.pp-holo[data-holo='on'] img {
+  filter: grayscale(1) brightness(1.15) contrast(1.75)
+    drop-shadow(0 0 5px color-mix(in oklab, var(--color-highlight-bright) 70%, transparent))
+    drop-shadow(0 0 20px color-mix(in oklab, var(--color-highlight) 45%, transparent))
+    /* The faint chromatic edge: two sub-pixel offsets, no blur, in the two
+       tones the palette already holds — the outline splits without inventing a
+       colour the theme cannot supply. */
+    drop-shadow(-1px 0 0 color-mix(in oklab, var(--color-text) 42%, transparent))
+    drop-shadow(1px 0 0 color-mix(in oklab, var(--color-highlight) 48%, transparent));
+}
+
+/* The instrument field: a technical grid over a fine scanline comb. `screen`
+   keeps it additive — it lights the dark surround and brightens the garment
+   beneath, instead of laying a grey film over both. */
+.pp-holo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  transition: opacity 700ms ease;
+  /* The instrument field must never reveal the stage's rectangle — a hard
+     edge reads as a cropped box, not a projection (user feedback 2026-07-30:
+     "too squarish with sharp edges"). One radial mask both rounds the corners
+     away and dissolves the grid over its outer band. */
+  mask-image: radial-gradient(120% 120% at 50% 50%, #000 58%, transparent 94%);
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      color-mix(in oklab, var(--color-highlight) 20%, transparent) 0 1px,
+      transparent 1px 40px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-highlight) 20%, transparent) 0 1px,
+      transparent 1px 40px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-text) 7%, transparent) 0 1px,
+      transparent 1px 3px
+    );
+}
+.pp-holo[data-holo='on']::before {
+  opacity: 1;
+}
+
+/* The sweep: one soft band crossing the readout. Driven by `background-position`
+   rather than a transform because a translated band has to travel outside the
+   render box, and any clip tight enough to contain it would also clip the bloom
+   above. */
+.pp-holo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  transition: opacity 700ms ease;
+  /* Same feather as the grid: the sweep band would otherwise print the box's
+     straight edges every pass. */
+  mask-image: radial-gradient(120% 120% at 50% 50%, #000 58%, transparent 94%);
+  background-repeat: no-repeat;
+  background-size: 100% 26%;
+  background-position: 0 -30%;
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in oklab, var(--color-highlight-bright) 30%, transparent) 45%,
+    color-mix(in oklab, var(--color-text) 20%, transparent) 50%,
+    color-mix(in oklab, var(--color-highlight-bright) 30%, transparent) 55%,
+    transparent 100%
+  );
+}
+
+/* Motion lives only here, so the reduced-motion default is the STATIC readout
+   (grid, scanlines, bloom) rather than a stripped-back one. */
+@media (prefers-reduced-motion: no-preference) {
+  .pp-holo[data-holo='on']::after {
+    opacity: 1;
+    animation: pp-holo-sweep 5.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+  .pp-holo[data-holo='on'] img {
+    animation: pp-holo-float 9s ease-in-out infinite;
+  }
+}
+
+@keyframes pp-holo-sweep {
+  0%,
+  12% {
+    background-position: 0 -30%;
+  }
+  88%,
+  100% {
+    background-position: 0 130%;
+  }
+}
+@keyframes pp-holo-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -3px, 0);
+  }
+}
+
+/* ------------------------------------------------------------------------- */
 /* ANVL toasts — "the mill-stamped billet" (mounted once via AnvlToaster).   */
 /* A slab of dark billet steel with ONE aggressive corner shear (the         */
 /* passport-plate cut): a molten seam runs the full top edge — it IGNITES    */
@@ -1975,5 +2159,787 @@ html[data-landing-entry='active'] body {
   .anvl-modal-forge,
   .anvl-modal-backdrop-fade {
     animation: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FAQ · "The Forge Seam"
+   ------------------------------------------------------------------------
+   The /faq answer stack (src/features/support/components/faq/). Each question
+   is a forged steel plate with a hairline seam along its lower edge; hover runs
+   a specular heat-scan that tracks the pointer (via `--faq-mx`, written by the
+   row on pointermove), and opening splits the plate along that seam — the seam
+   core scales out from the strike point while sparks lift off the crack.
+
+   All colour comes from the normalized `--color-*` palette, so every CMS theme
+   (and bone-light) re-skins this wholesale. Transform/opacity only, except the
+   panel's `grid-template-rows` — the standard 0fr→1fr disclosure technique,
+   which is the one layout property that has to move for an accordion to open.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Shared geometry. The plates are softened just enough to read as milled steel
+   rather than raw cut sheet — anything rounder loses the forged edge. */
+:root {
+  --faq-radius: 6px;
+}
+
+
+/* ── The slab the stack sits on ─────────────────────────────────────────── */
+.anvl-faq-slab {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: transparent;
+}
+.anvl-faq-slab-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    70% 44% at 50% 108%,
+    color-mix(in srgb, var(--color-highlight-soft) 80%, transparent) 0%,
+    transparent 62%
+  );
+}
+
+/* ── Masthead ───────────────────────────────────────────────────────────── */
+.anvl-faq-masthead {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  margin-bottom: 3rem;
+}
+@media (min-width: 768px) {
+  .anvl-faq-masthead {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2.5rem;
+  }
+}
+.anvl-faq-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.32em;
+  color: var(--color-highlight-bright);
+}
+.anvl-faq-eyebrow::before {
+  content: '';
+  height: 1px;
+  width: 2rem;
+  background: var(--color-highlight);
+}
+.anvl-faq-title {
+  margin-top: 0.75rem;
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  font-size: clamp(1.75rem, 4.5vw, 2.75rem);
+}
+
+/* ── Search field ───────────────────────────────────────────────────────── */
+.anvl-faq-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.625rem 0.25rem;
+  border-bottom: 1px solid var(--color-line);
+  transition: border-color 260ms var(--anvl-control-transition-ease);
+}
+@media (min-width: 768px) {
+  .anvl-faq-search {
+    width: 20rem;
+    flex: 0 0 auto;
+  }
+}
+.anvl-faq-search:focus-within {
+  border-bottom-color: color-mix(in srgb, var(--color-highlight) 55%, var(--color-line));
+}
+.anvl-faq-search-icon {
+  display: inline-flex;
+  color: var(--color-text-muted);
+  transition: color 260ms var(--anvl-control-transition-ease);
+}
+.anvl-faq-search:focus-within .anvl-faq-search-icon {
+  color: var(--color-highlight-bright);
+}
+.anvl-faq-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-heading);
+  font-size: 1rem; /* 16px — no iOS zoom-on-focus. */
+  outline: none;
+}
+@media (min-width: 768px) {
+  .anvl-faq-search-input {
+    font-size: 0.875rem;
+  }
+}
+.anvl-faq-search-input::placeholder {
+  color: var(--color-text-muted);
+}
+.anvl-faq-search-input::-webkit-search-cancel-button {
+  display: none; /* Replaced by our own clear control. */
+}
+.anvl-faq-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.75rem;
+  width: 1.75rem;
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  transition:
+    color 200ms ease,
+    background-color 200ms ease;
+}
+.anvl-faq-search-clear:hover {
+  color: var(--color-heading);
+  background: var(--color-highlight-soft);
+}
+/* The molten underline that ignites while the field is focused. */
+.anvl-faq-search-underline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    var(--color-highlight-bright),
+    color-mix(in srgb, var(--color-highlight) 30%, transparent)
+  );
+  box-shadow: 0 0 10px 0 var(--color-highlight-soft);
+  transition: transform 420ms var(--anvl-control-transition-ease);
+}
+.anvl-faq-search:focus-within .anvl-faq-search-underline {
+  transform: scaleX(1);
+}
+.anvl-faq-search-status {
+  position: absolute;
+  right: 0.25rem;
+  top: -1.35rem;
+  margin: 0;
+}
+
+/* ── The stack + its molten conduit ─────────────────────────────────────── */
+.anvl-faq-stack {
+  position: relative;
+}
+@media (min-width: 768px) {
+  .anvl-faq-stack {
+    padding-left: 2.25rem;
+  }
+}
+.anvl-faq-rail {
+  display: none;
+}
+@media (min-width: 768px) {
+  .anvl-faq-rail {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    overflow: hidden;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      var(--color-line) 10%,
+      var(--color-line) 90%,
+      transparent 100%
+    );
+  }
+}
+.anvl-faq-rail-heat {
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 3px;
+  border-radius: 999px;
+  opacity: 0;
+  transform: translate3d(0, 0, 0);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--color-highlight) 26%,
+    var(--color-highlight-bright) 50%,
+    var(--color-highlight) 74%,
+    transparent 100%
+  );
+  box-shadow: 0 0 18px 2px var(--color-highlight-soft);
+  will-change: transform;
+  transition:
+    transform 720ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 400ms ease;
+}
+
+.anvl-faq-list {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── The plate ──────────────────────────────────────────────────────────── */
+.anvl-faq-plate {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden; /* Keeps the scan band and sparks inside the rounded corners. */
+  border: 1px solid var(--color-line);
+  border-radius: var(--faq-radius);
+  /* Semi-transparent so the cursor dust drifts behind the metal instead of
+     being sealed off by it — still opaque enough to hold the answer text. */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-elevated) 82%, transparent) 0%,
+    color-mix(in srgb, var(--color-surface) 80%, transparent) 100%
+  );
+  transition:
+    transform 320ms var(--anvl-control-transition-ease),
+    border-color 320ms var(--anvl-control-transition-ease),
+    box-shadow 320ms var(--anvl-control-transition-ease);
+}
+/* Left edge — the plate's own tap off the conduit. */
+.anvl-faq-plate::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: scaleY(0);
+  transform-origin: center;
+  background: linear-gradient(180deg, transparent, var(--color-highlight-bright), transparent);
+  transition: transform 460ms var(--anvl-control-transition-ease);
+}
+.anvl-faq-plate:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-highlight) 38%, var(--color-line));
+  box-shadow: 0 10px 30px -18px color-mix(in srgb, var(--color-highlight) 60%, transparent);
+}
+/* Open: warmer and a touch more solid, with the heat falling away gradually
+   toward the base instead of stopping on a hard line. */
+.anvl-faq-plate[data-open='true'] {
+  border-color: color-mix(in srgb, var(--color-highlight) 46%, var(--color-line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-elevated) 90%, transparent) 0%,
+    color-mix(in srgb, var(--color-surface) 88%, transparent) 45%,
+    color-mix(in srgb, var(--color-surface) 84%, transparent) 100%
+  );
+}
+.anvl-faq-plate[data-open='true']::before {
+  transform: scaleY(1);
+}
+
+/* The head is the seam's positioning context: the crack sits on the trigger's
+   lower edge and stays there while the answer expands below it. */
+.anvl-faq-head {
+  position: relative;
+  margin: 0;
+}
+/* Heat bleeding down out of the crack into the answer — the open plate's glow
+   has to fall off gradually instead of stopping dead at the seam. */
+.anvl-faq-head::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 5.5rem;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-highlight-soft) 90%, transparent) 0%,
+    transparent 100%
+  );
+  transition: opacity 520ms var(--anvl-control-transition-ease);
+}
+.anvl-faq-plate[data-open='true'] .anvl-faq-head::after {
+  opacity: 1;
+}
+.anvl-faq-trigger {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.15rem;
+  text-align: left;
+  cursor: pointer;
+}
+@media (min-width: 768px) {
+  .anvl-faq-trigger {
+    gap: 1.5rem;
+    padding: 1.4rem 1.5rem;
+  }
+}
+
+/* Specular heat-scan — a light band that follows the pointer across the metal. */
+/* The band is clipped by the trigger box, which would otherwise end it on a
+   hard horizontal line at the seam — most obvious while a plate is open. The
+   mask dissolves it into the plate before it ever reaches that edge. */
+.anvl-faq-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 320ms ease;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(0 0 0) 26%,
+    rgb(0 0 0) 52%,
+    transparent 96%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(0 0 0) 26%,
+    rgb(0 0 0) 52%,
+    transparent 96%
+  );
+}
+.anvl-faq-plate:hover .anvl-faq-scan {
+  opacity: 1;
+}
+.anvl-faq-scan-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 260px;
+  margin-left: -130px;
+  transform: translate3d(var(--faq-mx, 50%), 0, 0);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-highlight) 22%, transparent) 38%,
+    color-mix(in srgb, var(--color-highlight-bright) 30%, transparent) 50%,
+    color-mix(in srgb, var(--color-highlight) 22%, transparent) 62%,
+    transparent 100%
+  );
+}
+
+.anvl-faq-serial {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  color: var(--color-text-muted);
+  transition:
+    color 320ms ease,
+    text-shadow 320ms ease;
+}
+.anvl-faq-plate:hover .anvl-faq-serial,
+.anvl-faq-plate[data-open='true'] .anvl-faq-serial {
+  color: var(--color-highlight-bright);
+  text-shadow: 0 0 12px var(--color-highlight-soft);
+}
+
+.anvl-faq-question {
+  flex: 1 1 auto;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--color-heading);
+}
+@media (min-width: 768px) {
+  .anvl-faq-question {
+    font-size: 1.2rem;
+  }
+}
+
+/* Glyph: a plus that loses its stem and turns as the plate opens. */
+.anvl-faq-glyph {
+  position: relative;
+  flex: 0 0 auto;
+  height: 0.875rem;
+  width: 0.875rem;
+  transition: transform 460ms var(--anvl-control-transition-ease);
+}
+.anvl-faq-plate[data-open='true'] .anvl-faq-glyph {
+  transform: rotate(90deg);
+}
+.anvl-faq-glyph-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  margin-top: -0.5px;
+  background: var(--color-text-muted);
+  transition:
+    transform 460ms var(--anvl-control-transition-ease),
+    background-color 320ms ease;
+}
+.anvl-faq-glyph-bar--v {
+  transform: rotate(90deg);
+}
+.anvl-faq-plate:hover .anvl-faq-glyph-bar,
+.anvl-faq-plate[data-open='true'] .anvl-faq-glyph-bar {
+  background: var(--color-highlight-bright);
+}
+.anvl-faq-plate[data-open='true'] .anvl-faq-glyph-bar--v {
+  transform: rotate(90deg) scaleX(0);
+}
+
+/* ── The seam ───────────────────────────────────────────────────────────── */
+.anvl-faq-seam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--color-line) 70%, transparent);
+  transition: background-color 320ms ease;
+}
+.anvl-faq-plate:hover .anvl-faq-seam {
+  background: color-mix(in srgb, var(--color-highlight) 42%, transparent);
+}
+.anvl-faq-seam-core {
+  position: absolute;
+  inset: -1px 0;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: var(--faq-mx, 50%) center;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-highlight) 18%,
+    var(--color-highlight-bright) 42%,
+    color-mix(in srgb, white 62%, var(--color-highlight-bright)) 50%,
+    var(--color-highlight-bright) 58%,
+    var(--color-highlight) 82%,
+    transparent 100%
+  );
+  box-shadow: 0 0 14px 1px var(--color-highlight-soft);
+  transition:
+    transform 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 320ms ease;
+}
+.anvl-faq-plate[data-open='true'] .anvl-faq-seam-core {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* Sparks lifting off the crack. Positioned on the seam; animated by GSAP on
+   open (desktop, no-reduced-motion only) — invisible at rest. */
+.anvl-faq-sparks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  pointer-events: none;
+}
+.anvl-faq-spark {
+  position: absolute;
+  bottom: 0;
+  border-radius: 999px;
+  opacity: 0;
+  background: var(--color-highlight-bright);
+  box-shadow: 0 0 6px 1px var(--color-highlight-soft);
+}
+
+/* ── The answer panel ───────────────────────────────────────────────────── */
+.anvl-faq-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.anvl-faq-panel--open {
+  grid-template-rows: 1fr;
+}
+.anvl-faq-panel-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+.anvl-faq-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.35rem 1.15rem 1.5rem;
+}
+@media (min-width: 768px) {
+  .anvl-faq-panel-body {
+    padding: 0.5rem 1.5rem 1.85rem 4.25rem;
+  }
+}
+.anvl-faq-answer {
+  margin: 0;
+  white-space: pre-line;
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: var(--color-text-muted);
+}
+@media (min-width: 768px) {
+  .anvl-faq-answer {
+    font-size: 1rem;
+  }
+}
+
+/* Search hits. */
+.anvl-faq-mark {
+  background: color-mix(in srgb, var(--color-highlight) 26%, transparent);
+  color: var(--color-heading);
+  border-radius: 2px;
+  padding: 0 0.15em;
+  box-shadow: 0 0 10px -2px var(--color-highlight-soft);
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+.anvl-faq-empty {
+  border: 1px dashed color-mix(in srgb, var(--color-highlight) 30%, var(--color-line));
+  border-radius: var(--faq-radius);
+  background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+.anvl-faq-empty-title {
+  margin: 0;
+  font-weight: 400;
+  font-size: 1.25rem;
+}
+.anvl-faq-empty-body {
+  margin: 0.75rem auto 0;
+  max-width: 32rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+}
+
+/* ── Reduced motion: the plate still opens, nothing else moves. ─────────── */
+@media (prefers-reduced-motion: reduce) {
+  .anvl-faq-plate,
+  .anvl-faq-plate::before,
+  .anvl-faq-seam,
+  .anvl-faq-seam-core,
+  .anvl-faq-glyph,
+  .anvl-faq-glyph-bar,
+  .anvl-faq-rail-heat,
+  .anvl-faq-search-underline,
+  .anvl-faq-panel {
+    transition: none;
+  }
+  .anvl-faq-plate:hover {
+    transform: none;
+  }
+  .anvl-faq-scan {
+    display: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PageMasthead — the one storefront doc-page header
+   ------------------------------------------------------------------------
+   Used by /faq, /care-guide, /size-guide, /contact, /shipping, /returns and
+   all four legal pages (via `LegalDocument`), so they read as one system.
+
+   A colossal outlined ghost word bleeds off the right edge — the device from
+   `StoryHero`'s "SAGA", pitched much fainter here (7% vs 11% stroke) so it
+   stays texture and never competes with the title. The title itself wears the
+   palette's `primary` token, which `themeConfigToCssVars` exposes as
+   `--color-accent` (the muted champagne), so it re-tempers with every CMS
+   theme rather than hardcoding a colour.
+   ══════════════════════════════════════════════════════════════════════════ */
+.anvl-masthead {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+/* The site's standard forge atmosphere, masked at BOTH ends: it fades up from
+   nothing under the transparent site header (its own top glow would otherwise
+   start on a hard horizontal band at y=0) and falls away again into the page
+   body below. */
+.anvl-masthead-atmos {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(0 0 0) 24%,
+    rgb(0 0 0) 58%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(0 0 0) 24%,
+    rgb(0 0 0) 58%,
+    transparent 100%
+  );
+}
+/* The ghost word. Flat, solid, oversized — no outline, no bevel, no shadow.
+   Definition comes from scale and a directional dissolve: the word enters
+   solid at the right edge and is masked away toward the headline, so it reads
+   as a printed underlay rather than a decorated letterform. Tight tracking and
+   a solid fill keep it contemporary; a stroked or embossed version reads
+   dated at this size. */
+.anvl-masthead-ghost {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-48%);
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+  line-height: 0.78;
+  white-space: nowrap;
+  letter-spacing: -0.045em;
+  font-size: clamp(6rem, 21vw, 17rem);
+  color: color-mix(in srgb, var(--color-heading) 7%, transparent);
+  -webkit-mask-image: linear-gradient(
+    270deg,
+    rgb(0 0 0) 0%,
+    rgb(0 0 0) 30%,
+    rgba(0, 0, 0, 0.35) 68%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    270deg,
+    rgb(0 0 0) 0%,
+    rgb(0 0 0) 30%,
+    rgba(0, 0, 0, 0.35) 68%,
+    transparent 100%
+  );
+}
+@media (forced-colors: active) {
+  .anvl-masthead-ghost {
+    display: none;
+  }
+}
+.anvl-masthead-container {
+  position: relative;
+  z-index: 10;
+  /* Sits close under the fixed 4rem site header — `<main>` already reserves
+     `--anvl-header-h`, so this is clearance, not offset. */
+  padding-top: 2.5rem;
+  padding-bottom: 2rem;
+}
+@media (min-width: 768px) {
+  .anvl-masthead-container {
+    padding-top: 3.5rem;
+    padding-bottom: 2.5rem;
+  }
+}
+.anvl-masthead-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.32em;
+  color: var(--color-highlight-bright);
+}
+.anvl-masthead-eyebrow::before {
+  content: '';
+  height: 1px;
+  width: 2rem;
+  background: var(--color-highlight);
+}
+.anvl-masthead-title {
+  display: block;
+  margin-top: 1rem;
+  font-weight: 400;
+  /* Story's own heading metrics. Size stays on this page's smaller ramp — the
+     masthead was deliberately brought down from display scale. */
+  line-height: 0.85;
+  letter-spacing: -0.01em;
+  font-size: clamp(1.95rem, 5vw, 3.75rem);
+  color: var(--color-heading);
+}
+/* The molten rule under the title — the first heat on the page. */
+.anvl-masthead-rule {
+  display: block;
+  margin-top: 1.35rem;
+  height: 2px;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    var(--color-highlight-bright) 0%,
+    var(--color-highlight) 42%,
+    transparent 100%
+  );
+  box-shadow: 0 0 18px 0 var(--color-highlight-soft);
+  animation: anvl-masthead-rule-strike 900ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+}
+@keyframes anvl-masthead-rule-strike {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+.anvl-masthead-stamp {
+  margin: 1.15rem 0 0;
+}
+.anvl-masthead-intro {
+  margin: 1.25rem 0 0;
+  max-width: 38rem;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--color-text-muted);
+}
+@media (min-width: 768px) {
+  .anvl-masthead-intro {
+    font-size: 1.0625rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No base transform/opacity on the rule, so dropping the animation simply
+     leaves it struck and fully visible. */
+  .anvl-masthead-rule {
+    animation: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Indeterminate progress sweep — techpack ingest.
+ *
+ * The upload phase has NO progress signal (supabase-js reports none for a
+ * standard upload), and a bar frozen at a computed-looking 5% reads as a hang.
+ * A sweep says "still working" without claiming to know how far along it is.
+ * Reduced motion gets a static dimmed bar instead — see the component.
+ * ----------------------------------------------------------------------- */
+@keyframes anvl-progress-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.anvl-progress-sweep {
+  animation: anvl-progress-sweep 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anvl-progress-sweep {
+    animation: none;
+    transform: none;
   }
 }

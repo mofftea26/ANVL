@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useGSAP } from '@gsap/react'
@@ -24,6 +24,8 @@ import {
   PASSPORT_SECTIONS,
   type PassportSectionContext,
 } from './console/passportSections'
+import { PassportSectionEffectLayer } from '../effects/PassportSectionEffectLayer'
+import { buildPassportEffectFacts } from '../effects/effectFacts'
 import { AuthenticityPlate } from './AuthenticityPlate'
 import { PassportArmoryPanel } from './PassportArmoryPanel'
 import { PassportAtmosphere } from './PassportAtmosphere'
@@ -100,6 +102,12 @@ export function PassportMobile({
   const groupSections = availableSections.filter((s) => s.group === group)
   const activeDef = availableSections.find((s) => s.key === openSection) ?? null
   const isOwner = variant === 'owner'
+  // The Blueprint sheet has no drawing of its own — the piece above it BECOMES
+  // the schematic while that sheet is open (`.pp-holo` in styles.css).
+  // Same derivation as the console: overlay readouts come from the content the
+  // sheets render, never from constants.
+  const effectFacts = useMemo(() => buildPassportEffectFacts(content), [content])
+  const holo = activeDef?.key === 'blueprint'
 
   const heroImage =
     (view.claimedColor
@@ -160,20 +168,28 @@ export function PassportMobile({
           ) : null}
         </header>
 
-        {/* 2 — The piece (small), with its design-detail markers */}
+        {/* 2 — The piece, with its design-detail markers.
+            `object-contain`, not cover: the markers are a percent of the IMAGE,
+            and cover CROPS it, so every marker landed off its detail and part
+            of the garment was hidden underneath them. Sized to leave the 44px
+            targets far enough apart to hit — at the old 11rem several of them
+            overlapped into one tap area. */}
         {heroImage ? (
           <div
             data-pm-in
-            className="mx-auto mt-6 w-full max-w-[11rem] sm:max-w-[13rem]"
+            className="mx-auto mt-6 w-full max-w-[17rem] sm:max-w-[20rem]"
             {...pieceTarget}
           >
-            <div className="relative aspect-[4/5] overflow-hidden rounded-xl border border-[var(--color-line)]">
+            <div
+              data-holo={holo ? 'on' : 'off'}
+              className="pp-holo relative aspect-[4/5] overflow-hidden rounded-xl border border-[var(--color-line)]"
+            >
               <ProductForgeImage
                 src={heroImage.src}
                 alt={heroImage.alt || view.productName}
                 enableForge={false}
                 wrapperClassName="h-full w-full"
-                imgClassName="h-full w-full object-cover"
+                imgClassName="h-full w-full object-contain"
               >
                 <PassportHotspots
                   hotspots={content.hotspots}
@@ -181,6 +197,19 @@ export function PassportMobile({
                   onSelect={setHotspot}
                 />
               </ProductForgeImage>
+              {/* The open section's signature effect, over the piece — the
+                  mobile counterpart of the console stage layer (sheet tier =
+                  lighter variants; the WebGL hologram never mounts here, so
+                  blueprint keeps the CSS `.pp-holo` treatment). */}
+              {activeDef ? (
+                <PassportSectionEffectLayer
+                  key={activeDef.key}
+                  sectionKey={activeDef.key}
+                  imageUrl={heroImage.src}
+                  tier="sheet"
+                  facts={effectFacts}
+                />
+              ) : null}
             </div>
           </div>
         ) : null}
@@ -298,9 +327,18 @@ export function PassportMobile({
               )}
             >
               {group === 'armory' ? (
-                /* One composed surface for the owner tools — no bentos. */
-                <div data-pm-panel-item>
-                  <PassportArmoryPanel ctx={ctx} />
+                /* One composed surface for the owner tools — no bentos. The
+                   ambient effect sits behind it (sheet tier: sparse). */
+                <div data-pm-panel-item className="relative">
+                  <PassportSectionEffectLayer
+                    sectionKey="armory"
+                    imageUrl={heroImage?.src ?? null}
+                    tier="sheet"
+                    facts={effectFacts}
+                  />
+                  <div className="relative z-[2]">
+                    <PassportArmoryPanel ctx={ctx} />
+                  </div>
                 </div>
               ) : (
               <div className="grid grid-cols-2 gap-3">

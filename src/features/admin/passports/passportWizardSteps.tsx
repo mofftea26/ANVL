@@ -1,5 +1,4 @@
-import { useMemo, type Dispatch, type SetStateAction } from 'react'
-import { mediaAssetPublicUrl } from '@/features/admin/media/mediaAssets.service'
+import type { Dispatch, SetStateAction } from 'react'
 import type { CmsMediaAsset } from '@/features/admin/media/mediaAssets.types'
 import { MediaLibrarySlotField } from '@/features/admin/media/MediaLibrarySlotField'
 import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
@@ -15,12 +14,8 @@ import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { Textarea } from '@/shared/components/ui'
 import { HotspotPlacer } from './HotspotPlacer'
-import {
-  CareStepsField,
-  LabelValueRowsField,
-  SizeMapRowsField,
-  StringRowsField,
-} from './passportListFields'
+import { useHeroRenderUrl } from './useHeroRenderUrl'
+import { CareStepsField, StringRowsField } from './passportListFields'
 
 export type PassportPatch = <K extends keyof PassportProductContent>(
   key: K,
@@ -34,6 +29,12 @@ export interface PassportStepProps {
   mediaAssets: CmsMediaAsset[]
   /** Selected product slug — reseeds order-less list editors on product change. */
   productSlug?: string
+  /**
+   * Switch the editor to another tab by key. Every marker placer needs it: a
+   * blank hero render blocks placement, and the fix lives on the Piece tab, so
+   * the blocker carries the jump instead of describing where to go.
+   */
+  onGoToTab?: (key: string) => void
 }
 
 export function IdentityStep({ draft, patch }: PassportStepProps) {
@@ -126,35 +127,6 @@ export function MaterialStep({ draft, patch, mediaAssets }: PassportStepProps) {
   )
 }
 
-const SPEC_FIELDS: Array<{
-  key: keyof PassportProductContent['specs']
-  label: string
-  hint?: string
-}> = [
-  { key: 'construction', label: 'Construction' },
-  { key: 'fitType', label: 'Fit type', hint: "Blank → the product's fit." },
-  { key: 'compression', label: 'Compression' },
-  { key: 'stretch', label: 'Stretch' },
-  { key: 'breathability', label: 'Breathability' },
-  { key: 'intendedUse', label: 'Intended use' },
-]
-
-export function SpecsStep({ draft, patch }: PassportStepProps) {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {SPEC_FIELDS.map((field) => (
-        <FormField key={field.key} label={field.label} hint={field.hint} labelStyle="stacked">
-          <Input
-            density="compact"
-            value={draft.specs[field.key]}
-            onChange={(e) => patch('specs', { [field.key]: e.target.value })}
-          />
-        </FormField>
-      ))}
-    </div>
-  )
-}
-
 export function CareStep({ draft, patch, mediaAssets }: PassportStepProps) {
   return (
     <>
@@ -197,89 +169,20 @@ export function CareStep({ draft, patch, mediaAssets }: PassportStepProps) {
   )
 }
 
-export function FitStep({ draft, patch, productSlug }: PassportStepProps) {
-  return (
-    <>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Intended fit" labelStyle="stacked">
-          <Input
-            density="compact"
-            value={draft.fit.intendedFit}
-            onChange={(e) => patch('fit', { intendedFit: e.target.value })}
-          />
-        </FormField>
-        <FormField label="Stretch range" labelStyle="stacked">
-          <Input
-            density="compact"
-            value={draft.fit.stretchRange}
-            onChange={(e) => patch('fit', { stretchRange: e.target.value })}
-          />
-        </FormField>
-        <FormField label="Model height" labelStyle="stacked">
-          <Input
-            density="compact"
-            value={draft.fit.modelHeight}
-            onChange={(e) => patch('fit', { modelHeight: e.target.value })}
-          />
-        </FormField>
-        <FormField label="Size worn by the model" labelStyle="stacked">
-          <Input
-            density="compact"
-            value={draft.fit.modelSize}
-            onChange={(e) => patch('fit', { modelSize: e.target.value })}
-          />
-        </FormField>
-      </div>
-      <FormField
-        label="Measurements"
-        hint="A label and value per row, e.g. Chest / 52 cm."
-        labelStyle="stacked"
-      >
-        <LabelValueRowsField
-          values={draft.fit.measurements}
-          onChange={(measurements) => patch('fit', { measurements })}
-          label="Measurement"
-          addLabel="Add measurement"
-          labelPlaceholder="Label (e.g. Chest)"
-          valuePlaceholder="Value (e.g. 52 cm)"
-        />
-      </FormField>
-      <FormField label="Sizing advice" labelStyle="stacked">
-        <Textarea
-          rows={2}
-          value={draft.fit.sizeAdvice}
-          onChange={(e) => patch('fit', { sizeAdvice: e.target.value })}
-        />
-      </FormField>
-      <FormField
-        label="Size map"
-        hint="Powers cross-product size advice: map each of THIS product's sizes to a canonical body size (e.g. an oversized cut's M → S). Products sharing a canonical fit the same body. Leave empty to keep this product out of size advice entirely."
-        labelStyle="stacked"
-      >
-        <SizeMapRowsField
-          value={draft.fit.sizeEquivalence}
-          onChange={(sizeEquivalence) => patch('fit', { sizeEquivalence })}
-          resetKey={productSlug ?? ''}
-        />
-      </FormField>
-    </>
-  )
-}
-
-export function HotspotsStep({ draft, setDraft, mediaAssets }: PassportStepProps) {
-  // The hero render is the canvas hotspots are pinned to.
-  const heroRenderUrl = useMemo(() => {
-    const id = draft.piece.heroRender.trim()
-    if (!id) return null
-    const asset = mediaAssets.find((a) => a.id === id)
-    return asset ? mediaAssetPublicUrl(asset) : null
-  }, [draft.piece.heroRender, mediaAssets])
+export function HotspotsStep({
+  draft,
+  setDraft,
+  mediaAssets,
+  onGoToTab,
+}: PassportStepProps) {
+  const heroRenderUrl = useHeroRenderUrl(draft, mediaAssets)
 
   return (
     <HotspotPlacer
       imageUrl={heroRenderUrl}
       hotspots={draft.hotspots}
       onChange={(hotspots) => setDraft((prev) => ({ ...prev, hotspots }))}
+      onGoToPiece={onGoToTab ? () => onGoToTab('piece') : undefined}
     />
   )
 }

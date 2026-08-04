@@ -20,6 +20,35 @@ describe('PassportHotspots', () => {
     expect(screen.getByRole('button', { name: 'Chest contour' })).toBeTruthy()
   })
 
+  /**
+   * Size contract. The marks were reported as too big and were trimmed — the
+   * PAINTED ring and dot only. The 44×44 hit area is a separate, invisible box
+   * and is exactly what a "make them smaller" change is most likely to take
+   * with it, so it is asserted alongside them rather than trusted.
+   *
+   * Class names stand in for sizes here because jsdom applies no stylesheet:
+   * `h-11` is 44px, `h-3` is 12px, `h-2` is 8px on Tailwind's 0.25rem scale.
+   */
+  it('paints a small mark inside a full 44x44 touch target', () => {
+    render(<PassportHotspots hotspots={hotspots} activeIndex={null} onSelect={() => {}} />)
+    const marker = screen.getByRole('button', { name: 'Shoulder knit' })
+    const has = (el: Element, token: string) => el.className.split(/\s+/).includes(token)
+
+    // 44×44 — the touch target, which never shrinks with the artwork.
+    expect(has(marker, 'h-11')).toBe(true)
+    expect(has(marker, 'w-11')).toBe(true)
+
+    const marks = Array.from(marker.querySelectorAll('span'))
+    const ring = marks.find((el) => has(el, 'absolute'))
+    const dot = marks.find((el) => has(el, 'relative'))
+    if (!ring || !dot) throw new Error('marker is missing its ring or its dot')
+    // 12px pulse ring around an 8px dot — the trimmed sizes.
+    expect(has(ring, 'h-3') && has(ring, 'w-3')).toBe(true)
+    expect(has(dot, 'h-2') && has(dot, 'w-2')).toBe(true)
+    // …and neither may creep back up to the hit area's own size.
+    expect(has(ring, 'h-11') || has(dot, 'h-11')).toBe(false)
+  })
+
   it('renders nothing when a product has no authored details', () => {
     const { container } = render(
       <PassportHotspots hotspots={[]} activeIndex={null} onSelect={() => {}} />,

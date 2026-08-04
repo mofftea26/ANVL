@@ -19,6 +19,7 @@ import { AdminWorkspace } from '@/features/admin/components/AdminWorkspace'
 import { useAdminPageActions } from '@/features/admin/components/AdminPageActionsContext'
 import { useAdminProductCatalogQuery } from '@/features/admin/hooks/useAdminProductCatalogQuery'
 import { useSingletonCmsEditor } from '@/features/admin/hooks/useSingletonCmsEditor'
+import { TechpackImportButton } from '@/features/admin/techpacks/import/TechpackImportButton'
 import { useMediaAssetsQuery } from '@/features/admin/media/useMediaAssetsQuery'
 import { usePreviewHoverProps } from '@/features/admin/preview/usePreviewHoverProps'
 import { usePushPreviewDraft } from '@/features/admin/preview/usePushPreviewDraft'
@@ -41,17 +42,18 @@ import {
   buildPassportPreviewRoute,
   type PassportPreviewView,
 } from '@/features/passport/lib/passportPreview'
+import { BlueprintStep } from './BlueprintStep'
+import { FitStep } from './FitStep'
+import { SpecsStep } from './SpecsStep'
 import {
   CareStep,
   DetailsStep,
-  FitStep,
   ForgeNotesStep,
   HotspotsStep,
   IdentityStep,
   MaterialStep,
   OriginStep,
   PieceStep,
-  SpecsStep,
   type PassportPatch,
   type PassportStepProps,
 } from './passportWizardSteps'
@@ -73,14 +75,25 @@ interface PassportTab {
   body: (props: PassportStepProps) => React.ReactNode
 }
 
+/**
+ * The section tabs, in authoring order.
+ *
+ * "Hotspots" sits second, straight after the render it pins to. It was called
+ * "Design details" and sat eighth, which is why nobody could find the marker
+ * editor: the name never matched the word an editor searches for, and it was
+ * nowhere near the tab that assigns the image. The per-SECTION marker placers
+ * (blueprint / specs / fit) are not here at all — each one lives inside its own
+ * tab, next to the copy it annotates.
+ */
 const TABS: PassportTab[] = [
   { key: 'identity', title: 'Identity', blurb: 'Tagline under the product name and the authenticity note.', targetId: 'passport:identity', body: IdentityStep },
-  { key: 'piece', title: 'The piece', blurb: 'Hero render (feeds the ember silhouette) and the gallery.', targetId: 'passport:piece', body: PieceStep },
-  { key: 'material', title: 'Material', blurb: 'Fabric story + macro shot.', targetId: 'passport:material', body: MaterialStep },
-  { key: 'specs', title: 'Specifications', blurb: 'Construction, fit, compression, stretch, breathability, use.', targetId: 'passport:specs', body: SpecsStep },
+  { key: 'piece', title: 'The piece', blurb: 'Hero render (feeds the ember silhouette and every marker) and the gallery.', targetId: 'passport:piece', body: PieceStep },
+  { key: 'hotspots', title: 'Hotspots', blurb: 'Tap-to-explore markers on the render — the whole-garment set, with a title and story each.', targetId: 'passport:piece', body: HotspotsStep },
+  { key: 'material', title: 'Material', blurb: 'Fabric story + macro shot. Markers on the render live in Hotspots.', targetId: 'passport:material', body: MaterialStep },
+  { key: 'blueprint', title: 'Blueprint', blurb: 'The lettered construction callouts, plus the spec plates placed on the render.', targetId: 'passport:blueprint', body: BlueprintStep },
+  { key: 'specs', title: 'Specifications', blurb: 'Construction, fit, compression, stretch, breathability, use — and the analysis chips placed on the render.', targetId: 'passport:specs', body: SpecsStep },
   { key: 'care', title: 'Care ritual', blurb: 'Care symbols and the numbered ritual steps.', targetId: 'passport:care', body: CareStep },
-  { key: 'fit', title: 'Fit & sizing', blurb: 'Measurements, model fit, and the canonical size map.', targetId: 'passport:fit', body: FitStep },
-  { key: 'hotspots', title: 'Design details', blurb: 'Pin markers on the render for customers to explore.', targetId: 'passport:piece', body: HotspotsStep },
+  { key: 'fit', title: 'Fit & sizing', blurb: 'Measurements, model fit, the canonical size map, and the tape bands placed on the render.', targetId: 'passport:fit', body: FitStep },
   { key: 'forgeNotes', title: 'Forge notes', blurb: 'Development fact cards — revisions, testing, hidden details.', targetId: 'passport:forge-notes', body: ForgeNotesStep },
   { key: 'details', title: 'Details & story', blurb: 'Design facts, the story, and one forge fact.', targetId: 'passport:details', body: DetailsStep },
   { key: 'origin', title: 'Origin', blurb: 'Where and how this piece was forged.', targetId: 'passport:origin', body: OriginStep },
@@ -269,6 +282,19 @@ export function PassportContentTabsEditor({ productSlug }: { productSlug: string
               {product?.name ?? productSlug}
             </h2>
           </div>
+
+          {/* Pull the facts across from a parsed techpack rather than retyping
+              them. The import only fills blanks unless the operator says
+              otherwise, and it writes into this same unsaved draft — so it
+              goes out through the Save button above like any hand edit.
+              This editor saves `passport_content` and nothing else, hence the
+              single target. */}
+          <TechpackImportButton
+            productSlug={productSlug}
+            targets={['passport']}
+            passport={current}
+            onImport={({ drafts }) => setCurrent(() => drafts.passport)}
+          />
         </div>
 
         {/* Section tabs — free switching, no forced next/back. */}
@@ -306,6 +332,7 @@ export function PassportContentTabsEditor({ productSlug }: { productSlug: string
             setDraft={setCurrent}
             mediaAssets={mediaAssets}
             productSlug={productSlug}
+            onGoToTab={setActiveKey}
           />
         </section>
       </div>

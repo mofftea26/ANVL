@@ -1,4 +1,4 @@
-﻿# Feature â€” Products / Commerce
+﻿# Feature — Products / Commerce
 
 ## Storefront performance notes
 - PDP `ProductGallery` uses `fetchPriority="high"` on the hero frame, lazy + async decoding for thumbnails, and an optional `images` prop for colorway-specific galleries when `product.shop.imagesByColorName` is present.
@@ -108,7 +108,7 @@ Support:
 
 ### Internal mock checkout (guest, offline fallback)
 - Guest-first flow on `/checkout` (no sign-in gate).
-- Shipping: address lines 1â€“2, city, optional postal code, country select, phone, optional delivery notes; payment methods come from `src/features/checkout/config/checkoutPayments.config.ts` (Lebanon: COD + Whish Money when country matches Lebanon or ISO `lb`; non-Lebanon: card only when `VITE_ANVL_INTERNATIONAL_CHECKOUT=true`).
+- Shipping: address lines 1–2, city, optional postal code, country select, phone, optional delivery notes; payment methods come from `src/features/checkout/config/checkoutPayments.config.ts` (Lebanon: COD + Whish Money when country matches Lebanon or ISO `lb`; non-Lebanon: card only when `VITE_ANVL_INTERNATIONAL_CHECKOUT=true`).
 - Real PSP / Whish / Medusa wiring is stubbed in `paymentGateway.mock.ts` with explicit integration labels in the UI.
 
 ## Product detail page (rebuilt 2026-06-29)

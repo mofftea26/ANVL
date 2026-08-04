@@ -1,7 +1,9 @@
 # ANVL Test Matrix
 
 **Audit phase:** 11 (Testing & observability plan)
-**Baseline:** 107 test files / 646 tests passing (`pnpm test`, as of 2026-07-06 after this session's remediation round), Vitest + RTL + jsdom. No E2E framework installed — recommendations below respect that constraint rather than assuming a new one is welcome.
+**Baseline:** 107 test files / 646 tests passing (`pnpm test`, as of 2026-07-06 after that session's remediation round), Vitest + RTL + jsdom. No E2E framework installed — recommendations below respect that constraint rather than assuming a new one is welcome.
+
+> ⚠️ **Point-in-time snapshot, not maintained.** The counts above are frozen at 2026-07-06. Re-measured **2026-07-29: 214 test files / 1466 tests passing.** Treat every number in this document as historical; run `pnpm test` for current figures.
 
 ---
 

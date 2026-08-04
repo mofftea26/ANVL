@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Container } from '@/shared/components/ui/Container'
 import { cn } from '@/shared/lib/cn'
+import {
+  useContainedMediaRect,
+  type ContainedMediaRect,
+} from '@/shared/hooks/useContainedMediaRect'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import type {
   OathResolvedHotspot,
@@ -31,60 +35,8 @@ import { OathSceneSeam } from './OathSceneSeam'
  * `tenets.items[]` content key are unchanged.
  */
 
-/** Where the drawn media actually sits inside the stage box (px). */
-type ContentRect = { left: number; top: number; width: number; height: number }
-
-/**
- * ACCURACY CORE. Hotspot x/y are authored in the admin as percent of the IMAGE
- * itself, but the stage renders stills with `object-contain` — the drawn image
- * occupies only a letterboxed sub-rect of the stage, so naive `left: x%` of the
- * stage drifts whenever aspect ratios differ. This measures the contained rect
- * (natural aspect vs. stage box) and re-measures on resize/late load. Without a
- * still (GLB viewer / ember plate) the drawn media IS the stage → full box.
- */
-function useContainedMediaRect(stageRef: React.RefObject<HTMLDivElement | null>) {
-  const [rect, setRect] = useState<ContentRect | null>(null)
-
-  useEffect(() => {
-    const stage = stageRef.current
-    if (!stage) return
-
-    const measure = () => {
-      const box = stage.getBoundingClientRect()
-      if (box.width < 2 || box.height < 2) return
-      const img = stage.querySelector<HTMLImageElement>('img[data-tenet-media]')
-      if (!img || !img.naturalWidth || !img.naturalHeight) {
-        setRect({ left: 0, top: 0, width: box.width, height: box.height })
-        return
-      }
-      const scale = Math.min(
-        box.width / img.naturalWidth,
-        box.height / img.naturalHeight,
-      )
-      const width = img.naturalWidth * scale
-      const height = img.naturalHeight * scale
-      setRect({
-        left: (box.width - width) / 2,
-        top: (box.height - height) / 2,
-        width,
-        height,
-      })
-    }
-
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(stage)
-    // Stills can finish decoding after mount — re-measure once natural size lands.
-    const img = stage.querySelector<HTMLImageElement>('img[data-tenet-media]')
-    img?.addEventListener('load', measure)
-    return () => {
-      observer.disconnect()
-      img?.removeEventListener('load', measure)
-    }
-  }, [stageRef])
-
-  return rect
-}
+/** The still the callouts are anchored to (absent for the GLB viewer/plate). */
+const TENET_MEDIA_SELECTOR = 'img[data-tenet-media]'
 
 /** Leader length between the reticle edge and the card (px). */
 const LEADER_LENGTH = 44
@@ -95,7 +47,7 @@ type HotspotSide = 'right' | 'left'
 
 interface HotspotProps {
   hotspot: OathResolvedHotspot
-  rect: ContentRect | null
+  rect: ContainedMediaRect | null
   open: boolean
   reduced: boolean
   /** Coarse pointer → tap-to-toggle; fine pointer → hover / focus to expand. */
@@ -317,7 +269,7 @@ function AnnotatedStage({
   item: OathResolvedContent['tenets']['items'][number]
 }) {
   const stageRef = useRef<HTMLDivElement | null>(null)
-  const rect = useContainedMediaRect(stageRef)
+  const rect = useContainedMediaRect(stageRef, TENET_MEDIA_SELECTOR)
   const reduced = useReducedMotion()
 
   // Only one callout open per slide (opening one closes the rest).

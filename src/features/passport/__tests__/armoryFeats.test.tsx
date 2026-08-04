@@ -16,6 +16,10 @@ vi.mock('@/features/passport/hooks/useArmory', () => ({
     update: { mutate: state.update, isPending: false },
     remove: { mutate: state.remove, isPending: false },
   }),
+  // The rows carry a share button, so the launcher's share-state hooks are
+  // part of this component's surface now.
+  useArmoryShareQuery: () => ({ data: { isPublic: true, handle: 'george' } }),
+  useSetArmoryShareMutation: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
 import { PieceFeats } from '@/features/storefront-account/account/panels/armory/PieceFeats'
