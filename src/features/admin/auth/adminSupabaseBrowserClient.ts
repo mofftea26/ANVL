@@ -68,7 +68,27 @@ export function getAdminSupabaseBrowserClient(): SupabaseClient | null {
 
   store.__anvlAdminSupabaseClient = createAnvlSupabaseClient(env, {
     auth: {
-      persistSession: true,
+      // SECURITY (F-20): the session is held in MEMORY ONLY. It used to be
+      // persisted under ADMIN_SUPABASE_AUTH_STORAGE_KEY, which put the admin's
+      // Supabase REFRESH token in same-origin localStorage — readable by any
+      // script on the page, and directly contradicting the sealed-HttpOnly-
+      // cookie design this file's own comment describes. Paired with the CMS
+      // SVG sink (see `themeSvgMarkupForTint`) that was a complete
+      // editor -> admin takeover chain, and a Report-Only CSP carrying
+      // `script-src 'unsafe-inline'` would not have stopped it.
+      //
+      // Nothing is lost by not persisting: the sealed cookie is already the
+      // sole source of truth, and `AdminAuthProvider` re-applies fresh tokens
+      // from the server on login, on mount and on every heartbeat. What the
+      // persisted copy actually did was mask a race — see the awaited
+      // `setSession` in `applyAuthenticatedResult`.
+      //
+      // NOTE: this stops the token being PERSISTED, not it reaching the
+      // browser at all. Removing it entirely means moving to supabase-js's
+      // `accessToken` factory, which disables `supabase.auth.*` — and
+      // `auth.getSession()` is currently called by 8 admin services. That
+      // migration is tracked separately.
+      persistSession: false,
       // The HttpOnly session cookie (adminAuthSession.server.ts) is the sole
       // authority for refresh-token rotation — AdminAuthProvider re-applies
       // fresh tokens from the server on login/mount/heartbeat via setSession().

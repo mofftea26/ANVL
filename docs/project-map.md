@@ -113,7 +113,7 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 | `terms.tsx` | `/terms` | Terms of service (`LegalDocumentRoute`) |
 | `cookie-policy.tsx` | `/cookie-policy` | Cookie policy (`LegalDocumentRoute`) |
 | `accessibility.tsx` | `/accessibility` | Accessibility statement (`LegalDocumentRoute`) |
-| `api/csp-report.ts` | `/api/csp-report` | Server-only `POST` handler — logs `Content-Security-Policy-Report-Only` violation reports to console (no persistence); see `src/start.ts` |
+| `api/csp-report.ts` | `/api/csp-report` | Server-only `POST` handler — logs `Content-Security-Policy-Report-Only` violation reports to console (no persistence); see `src/start.ts`. Rate-limited per IP via `src/rateLimit.server.ts` (fails open when the binding is absent) |
 | `auth/sign-in.tsx` | `/auth/sign-in` | Sign in (Supabase auth) |
 | `auth/sign-up.tsx` | `/auth/sign-up` | Sign up |
 | `auth/forgot-password.tsx` | `/auth/forgot-password` | Password reset request |

@@ -103,7 +103,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
   /** Mirrors a freshly-validated server session into React state and hands
    * the client Supabase browser client its tokens (CMS-read bridge only —
    * see adminSupabaseBrowserClient.ts). */
-  const applyAuthenticatedResult = useCallback((result: AuthenticatedResult) => {
+  const applyAuthenticatedResult = useCallback(async (result: AuthenticatedResult) => {
     setSession({
       userId: result.user.userId,
       email: result.user.email,
@@ -112,7 +112,13 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
     })
     const client = getAdminSupabaseBrowserClient()
     if (client) {
-      void client.auth.setSession({
+      // AWAITED, deliberately. The browser client no longer persists its
+      // session (`persistSession: false`, F-20), so there is no localStorage
+      // copy to cover the window between "tokens arrived" and "client can
+      // authenticate". Every caller runs `startRemoteCmsPull()` immediately
+      // after this; firing that pull before the JWT is applied would hit RLS
+      // unauthenticated and surface as "Failed to load CMS data from Supabase".
+      await client.auth.setSession({
         access_token: result.accessToken,
         refresh_token: result.refreshToken,
       })
@@ -142,7 +148,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
           setSession(null)
           return
         }
-        applyAuthenticatedResult(result)
+        await applyAuthenticatedResult(result)
         startRemoteCmsPull(opts)
       } catch {
         // Network/timeout — keep existing state, next heartbeat retries.
@@ -158,7 +164,8 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
         const result = await getCachedAdminSession()
         if (cancelled) return
         if (result.authenticated) {
-          applyAuthenticatedResult(result)
+          await applyAuthenticatedResult(result)
+          if (cancelled) return
           startRemoteCmsPull()
         } else {
           invalidateAdminSessionCache()
@@ -188,7 +195,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
       if (!result.ok) {
         return { ok: false as const, error: result.error }
       }
-      applyAuthenticatedResult(result)
+      await applyAuthenticatedResult(result)
       startRemoteCmsPull()
       return { ok: true as const }
     },

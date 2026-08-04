@@ -15,8 +15,8 @@
 | **0.2c** `snippetId` validation (`F-08`) | ✅ **Done.** Per-provider regex at the Zod boundary; empty values still allowed so half-filled rows save. |
 | **0.3** `passport_content` guard (`F-03`, `F-05`) | ✅ **Done.** Added to the clobber guard, and the guard list is now an **exhaustive `Record<CmsSettingsFieldKey, …>`** so a new column cannot ship unclassified — `pnpm typecheck` fails if it does. |
 | **0.4** Migration backfill (`F-04`) | 🟡 **Half done.** The 8 content-gap files are restored verbatim from production (SELECT-only read), including both security-hardening migrations. The **version-numbering divergence is NOT fixed** — see `F-04(b)`; it needs a deliberate `supabase migration repair`/renumber, which is destructive-adjacent and awaits explicit approval. |
-| **0.2b** Refresh token in localStorage (`F-20`) | ⬜ **Not started.** Changes the admin auth handshake and signs out active sessions — flagged high-risk in §6. |
-| **0.5** Rate limiting (`F-07`) | ⬜ **Not started.** Needs a Cloudflare Rate Limiting binding in `wrangler.jsonc` + rollout care so admins are not locked out. |
+| **0.2b** Refresh token in localStorage (`F-20`) | 🟡 **Mitigated, not eliminated.** `persistSession: false` — the session is memory-only, so the refresh token no longer sits in localStorage where one line of injected script can read it. `setSession` is now awaited before the CMS pull at all three call sites (the persisted copy had been masking that race). **Removing the token from the browser entirely** needs supabase-js's `accessToken` factory, which disables `supabase.auth.*` — and `auth.getSession()` is called by 8 admin services. Tracked as Phase 2 work. |
+| **0.5** Rate limiting (`F-07`) | ✅ **Done.** `ADMIN_LOGIN_RATE_LIMIT` (20/60 s, keyed by `CF-Connecting-IP`) on the sign-in server fn and `CSP_REPORT_RATE_LIMIT` (60/60 s) on the anon report endpoint, via Cloudflare `ratelimits` bindings. `src/rateLimit.server.ts` **fails open** everywhere, so a missing binding can never refuse traffic. **Activates on the next deploy.** Still unthrottled: the anon `coming_soon_subscribers` insert, passport claim, review submit. |
 
 ---
 

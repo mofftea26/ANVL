@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { checkRateLimit, clientIpFromHeaders } from '@/rateLimit.server'
 
 /**
  * Collects `Content-Security-Policy-Report-Only` violation reports (see
@@ -17,6 +18,13 @@ export const Route = createFileRoute('/api/csp-report')({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // Unauthenticated and unbounded before this (F-07): anyone could POST
+        // here in a loop and flood the Worker logs. Fail-open — see
+        // `rateLimit.server.ts`; a missing binding never blocks traffic.
+        const ip = clientIpFromHeaders((n) => request.headers.get(n))
+        const { allowed } = await checkRateLimit('CSP_REPORT_RATE_LIMIT', ip)
+        if (!allowed) return new Response(null, { status: 429 })
+
         try {
           const report = await request.json()
           console.warn('[CSP violation]', JSON.stringify(report))

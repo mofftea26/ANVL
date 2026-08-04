@@ -30,6 +30,7 @@ Node host.
   "main": "@tanstack/react-start/server-entry",
   "observability": { "enabled": true },
   "placement": { "mode": "smart" },           // see below
+  "ratelimits": [ /* admin login + CSP report — see below */ ],
   "vars": { "NODE_ENV": "production" }         // required — see below
 }
 ```
@@ -48,6 +49,28 @@ Node host.
   (`src/features/admin/auth/…`, `src/start.ts`) gate their `Secure` attribute —
   and the CSP its dev-only relaxations — on `process.env.NODE_ENV === 'production'`.
   If unset, production would ship non-`Secure` auth cookies.
+
+- **`ratelimits` (added 2026-08-04, F-07).** Two Cloudflare Rate Limiting
+  bindings — `ADMIN_LOGIN_RATE_LIMIT` (20 / 60 s) and `CSP_REPORT_RATE_LIMIT`
+  (60 / 60 s), both keyed by `CF-Connecting-IP`. They cover the two
+  unauthenticated surfaces that previously had no throttle at all: admin
+  sign-in (brute force) and the anon CSP report endpoint (log flooding).
+
+  Three things to know:
+  1. **The bindings only exist on a deployed Worker.**
+     `src/rateLimit.server.ts` therefore **fails open** on every failure path —
+     binding absent, running under Node/vitest, the limiter throwing. Local dev
+     and any deploy predating this config behave exactly as before. Failing
+     closed on an infra detail would be a worse regression than the gap.
+  2. **`namespace_id` must stay stable.** It identifies the counter; changing
+     one resets its window. `period` accepts only `10` or `60`.
+  3. **`wrangler types` does not emit types for rate-limit bindings**, so
+     `Env` in `worker-configuration.d.ts` will not list them. That is expected —
+     `rateLimit.server.ts` reads them from an untyped record and feature-detects
+     `.limit()` before calling it.
+
+  Still unthrottled and tracked separately: the anon `coming_soon_subscribers`
+  insert, passport claim, and review submit.
 
 ---
 
