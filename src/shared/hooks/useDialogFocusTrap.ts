@@ -10,9 +10,40 @@ function listFocusables(panel: HTMLElement): HTMLElement[] {
 }
 
 /**
+ * Every currently-open trap panel, in registration order.
+ *
+ * Escape must close ONE dialog — the innermost. Each trap attaches its listener
+ * to `document`, so before this every open dialog received the same Escape and
+ * all of them called `onClose`: opening a picker from inside a wizard and
+ * pressing Escape collapsed the picker AND the wizard behind it, losing the
+ * operator's place. `e.stopPropagation()` could never have fixed that — sibling
+ * listeners on the SAME node still run.
+ */
+const openDialogPanels: HTMLElement[] = []
+
+/**
+ * Which open dialog owns this Escape?
+ *
+ * Registration order alone is NOT enough, and getting that wrong is easy:
+ * `useLayoutEffect` runs child-first, so a DOM-nested inner dialog registers
+ * BEFORE its parent and "last registered" resolves to the outer one — exactly
+ * backwards. So containment decides when one panel encloses another, and
+ * registration order only breaks ties between panels that do not nest (two
+ * portaled siblings, where the later-opened one is genuinely on top).
+ */
+function innermostOpenDialog(): HTMLElement | undefined {
+  const enclosing = openDialogPanels.filter((panel) =>
+    openDialogPanels.some((other) => other !== panel && panel.contains(other)),
+  )
+  const candidates = openDialogPanels.filter((panel) => !enclosing.includes(panel))
+  return candidates[candidates.length - 1]
+}
+
+/**
  * Focus trap for `role="dialog"` panels: moves focus to the first control on
- * open, cycles Tab / Shift+Tab inside the panel, closes on Escape, restores
- * focus on cleanup. Safe for SSR (effect runs only when `open` is true).
+ * open, cycles Tab / Shift+Tab inside the panel, closes on Escape (topmost
+ * dialog only), restores focus on cleanup. Safe for SSR (effect runs only when
+ * `open` is true).
  */
 export function useDialogFocusTrap(opts: {
   open: boolean
@@ -29,12 +60,17 @@ export function useDialogFocusTrap(opts: {
     const panel = panelRef.current
     if (!panel) return
 
+    openDialogPanels.push(panel)
+
     const focusables = () => listFocusables(panel)
     const first = focusables()[0]
     queueMicrotask(() => first?.focus())
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
+        // Only the innermost open dialog reacts, so one Escape closes one
+        // layer instead of the whole stack.
+        if (innermostOpenDialog() !== panel) return
         e.stopPropagation()
         onCloseRef.current()
         return
@@ -56,6 +92,11 @@ export function useDialogFocusTrap(opts: {
     document.addEventListener('keydown', onKeyDown)
     return () => {
       document.removeEventListener('keydown', onKeyDown)
+      // Splice by identity, not pop: dialogs can unmount out of order (a parent
+      // closing while a child is still open), and popping blindly would strand
+      // a dead entry and swallow every later Escape.
+      const at = openDialogPanels.lastIndexOf(panel)
+      if (at !== -1) openDialogPanels.splice(at, 1)
       previouslyFocused?.focus?.()
     }
   }, [open, panelRef])

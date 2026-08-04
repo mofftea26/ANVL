@@ -1,4 +1,11 @@
-﻿## 2026-08-04 — Money gets a formatter, the cart gets a schema, and an open redirect closes
+﻿## 2026-08-04 — One Escape closes one dialog
+
+- **Escape closed every open dialog at once.** `useDialogFocusTrap` attaches its keydown listener to `document`, so a stacked pair — a media picker opened from inside a wizard, say — had two listeners on the same node and both called `onClose`. The picker and the wizard behind it collapsed together, losing the operator's place. The `e.stopPropagation()` sitting there could never have helped: sibling listeners on the *same* node still run.
+- **Getting the "topmost" wrong is easy, and the first attempt did.** A registration-order stack looked obvious and was **inverted** — `useLayoutEffect` runs child-first, so a DOM-nested inner dialog registers *before* its parent and "last registered" resolves to the outer one. The test caught it immediately (inner never closed). Ownership is now decided by DOM containment, with registration order breaking ties only between panels that do not nest — which is the case that matters for two portaled siblings, where the later-opened one genuinely is on top.
+- Unregistration splices by identity rather than popping, because dialogs can unmount out of order; a blind `pop()` would strand a dead entry and swallow every later Escape.
+- 4 tests: nested pair closes one layer, control returns to the parent once the child unmounts, a lone dialog still closes, and focus still moves into the panel on open.
+
+## 2026-08-04 — Money gets a formatter, the cart gets a schema, and an open redirect closes
 
 - **Every price was written `` `$${price}` `` — eighteen times across eight files** — while the currency the commerce adapter actually returns was used *only* in JSON-LD. So the markup search engines read and the number the shopper read could disagree, and a store selling in anything but USD showed the wrong symbol everywhere. New `shared/lib/money.ts` formats through `Intl.NumberFormat` from the real currency; `CartLine` gained an optional `currency` captured at add-to-cart. Optional on purpose — carts persisted before the field existed stay valid and fall back to USD.
   - The test caught a bug in the first implementation: a single `maximumFractionDigits: 2` formatter renders `85.5` as **`$85.5`**, which is not a price. Whole amounts now format with 0 decimals and fractional ones with exactly 2.
