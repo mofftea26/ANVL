@@ -139,6 +139,7 @@ A **fixed transparent WebGL canvas** (the 3D monolith logo + dust particles) sit
 ## Entry moment + assets
 
 - **Entry overlay** (`LandingEntryOverlay` + `LandingEntryContext`) — branded preload gate before the lazy page chunk hydrates. Home route locks scroll until entry completes; nav/footer hidden until `homeEntryComplete`.
+- **Hero video preload:** both the desktop and mobile `<video>` elements are always in the DOM, hidden per breakpoint by CSS. `display:none` does **not** stop a browser honouring `preload="auto"`, so the desktop element carried the full hero (6.97 MB — and by default the *same file* as the mobile one) onto phones purely to discard it. Both now use `preload="metadata"`; playback is unaffected because `motion/buildOathStatic.ts` calls `.play()`, which loads the media regardless of the hint. Do not raise this back to `auto` without first rendering only one element per breakpoint.
 - **Preloader** (`components/LandingPreloader.tsx`) — the Drop 01 mark resolves with a thin progress line, then the veil lifts. Pure CSS (`.anvl-preloader*` in `styles.css`): renders in SSR, no hydration state, `pointer-events-none` (never traps the page), auto-dismisses, and collapses instantly under `prefers-reduced-motion`.
 - **Asset fallback** (`theOathAssets.ts`) — code defaults; CMS overrides via `bindOathCmsAssets(props.assets)`. Missing media resolves to duotone + Drop-logo placeholder via `OathMediaFallback`. The Drop logo (`dropLogo`, `/brand/the-oath-shape.svg`) doubles as the 3D extrude source — keep it valid SVG XML.
 

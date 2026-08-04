@@ -16,6 +16,7 @@ import {
   PdpSupportDetails,
   type PdpProductSupport,
 } from '@/features/products/pdp/PdpSupportDetails'
+import { formatMoney } from '@/shared/lib/money'
 
 function MetaChip({ label }: { label: string }) {
   return (
@@ -93,12 +94,12 @@ export function PdpBuyPanel({
       <div className="flex flex-wrap items-baseline gap-3">
         {saleActive ? (
           <>
-            <p className="anvl-heading text-2xl font-normal text-[var(--shop-accent)]">${displayPrice}</p>
-            <p className="text-base text-[var(--shop-text-muted)] line-through">${compareAt}</p>
+            <p className="anvl-heading text-2xl font-normal text-[var(--shop-accent)]">{formatMoney(displayPrice, product.shop?.currency)}</p>
+            <p className="text-base text-[var(--shop-text-muted)] line-through">{formatMoney(compareAt, product.shop?.currency)}</p>
             {product.shop?.saleLabel ? <MetaChip label={product.shop.saleLabel} /> : null}
           </>
         ) : (
-          <p className="anvl-heading text-2xl font-normal text-[var(--shop-text)]">${displayPrice}</p>
+          <p className="anvl-heading text-2xl font-normal text-[var(--shop-text)]">{formatMoney(displayPrice, product.shop?.currency)}</p>
         )}
       </div>
 
@@ -174,7 +175,7 @@ export function PdpBuyPanel({
               <Loader2 size={ICON_SIZE.md} aria-hidden="true" className="mr-2 animate-spin" /> Adding…
             </>
           ) : canPurchase ? (
-            `Add to cart — $${displayPrice}`
+            `Add to cart — ${formatMoney(displayPrice, product.shop?.currency)}`
           ) : (
             'Unavailable'
           )}

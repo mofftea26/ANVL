@@ -5,6 +5,7 @@ import { effectivePrice } from '@/features/products/catalog/storefrontCatalog'
 import { DEFAULT_EMBLEM_SRC, isBundledPlaceholderImage } from '@/shared/constants/brandAssets'
 import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 import { withShopifyImageWidth } from '@/shared/lib/url'
+import { formatMoney } from '@/shared/lib/money'
 
 /** Related-card image renders small in a tight "complete the kit" strip. */
 const RELATED_IMAGE_WIDTH = 400
@@ -46,7 +47,7 @@ export const PdpRelatedCard = memo(function PdpRelatedCard({ product }: { produc
           <h3 className="anvl-heading truncate text-sm font-normal leading-tight text-[var(--shop-text)] transition-colors group-hover/rel:text-[var(--shop-accent)]">
             {stripAngleBracketTags(product.name)}
           </h3>
-          <p className="anvl-display shrink-0 text-xs text-[var(--shop-text-muted)]">${effectivePrice(product)}</p>
+          <p className="anvl-display shrink-0 text-xs text-[var(--shop-text-muted)]">{formatMoney(effectivePrice(product), product.shop?.currency)}</p>
         </div>
         {blurb ? (
           <p className="mt-1 line-clamp-1 text-[0.7rem] leading-relaxed text-[var(--shop-text-muted)]">

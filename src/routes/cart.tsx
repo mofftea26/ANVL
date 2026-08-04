@@ -14,6 +14,7 @@ import {
   QuantityStepper,
   Section,
 } from '@/shared/components/ui'
+import { formatMoney } from '@/shared/lib/money'
 
 export const Route = createFileRoute('/cart')({
   head: () =>
@@ -121,7 +122,7 @@ function CartPage() {
                     <p className="anvl-micro mt-1 text-[var(--color-text-muted)]">
                       {line.colorway} · {line.size}
                     </p>
-                    <p className="anvl-heading mt-2 text-base font-normal">${line.price}</p>
+                    <p className="anvl-heading mt-2 text-base font-normal">{formatMoney(line.price, line.currency)}</p>
                   </div>
                   <div className="flex flex-col items-end justify-between gap-3">
                     <QuantityStepper
@@ -146,7 +147,7 @@ function CartPage() {
               <dl className="mt-4 space-y-2 border-b border-[var(--color-line)] pb-4 text-sm">
                 <div className="flex items-center justify-between">
                   <dt className="text-[var(--color-text-muted)]">Subtotal</dt>
-                  <dd className="anvl-heading font-normal">${subtotal.toFixed(2)}</dd>
+                  <dd className="anvl-heading font-normal">{formatMoney(subtotal, lines[0]?.currency)}</dd>
                 </div>
                 <div className="flex items-center justify-between">
                   <dt className="text-[var(--color-text-muted)]">Shipping</dt>
@@ -155,7 +156,7 @@ function CartPage() {
               </dl>
               <div className="mt-4 flex items-center justify-between">
                 <span className="anvl-micro text-[var(--color-text-muted)]">Total</span>
-                <span className="anvl-heading text-2xl font-normal">${subtotal.toFixed(2)}</span>
+                <span className="anvl-heading text-2xl font-normal">{formatMoney(subtotal, lines[0]?.currency)}</span>
               </div>
               <Button
                 className="mt-6 w-full"

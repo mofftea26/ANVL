@@ -8,6 +8,7 @@ import {
   SHOP_STATUS_FILTERS,
   type ShopUrlSearch,
 } from '@/features/products/shop/shopUrlSearch'
+import { formatMoney } from '@/shared/lib/money'
 
 const STATUS_CHIP_LABELS: Record<StorefrontProductStatus, string> = {
   available: 'Available',
@@ -156,14 +157,14 @@ export function useShopFilters({
     if (typeof search.minPrice === 'number') {
       chips.push({
         key: 'minPrice',
-        label: `Min $${search.minPrice}`,
+        label: `Min ${formatMoney(search.minPrice, undefined)}`,
         onRemove: () => patchSearch({ minPrice: undefined }),
       })
     }
     if (typeof search.maxPrice === 'number') {
       chips.push({
         key: 'maxPrice',
-        label: `Max $${search.maxPrice}`,
+        label: `Max ${formatMoney(search.maxPrice, undefined)}`,
         onRemove: () => patchSearch({ maxPrice: undefined }),
       })
     }

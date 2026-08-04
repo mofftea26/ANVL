@@ -9,6 +9,7 @@ import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { useProductAnalytics } from '@/features/analytics/hooks/useProductAnalytics'
+import { resolveCartVariantId } from '@/features/products/lib/resolveCartVariantId'
 import { SizeSelector } from '@/shared/components/ui/SizeSelector'
 import { cn } from '@/shared/lib/cn'
 
@@ -103,10 +104,7 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
         return
       }
       setState('adding')
-      const variantId =
-        product.shop?.variantIdByColorAndSize?.[chosenColor || 'Default']?.[
-          chosenSize || 'One Size'
-        ]
+      const variantId = resolveCartVariantId(product, chosenColor, chosenSize)
       addLine({
         productId: product.id,
         slug: product.slug,
@@ -117,6 +115,7 @@ export function ProductCardQuickAdd({ product }: { product: Product }) {
         quantity: 1,
         image: product.images[0]?.src ?? '',
         variantId,
+        currency: product.shop?.currency,
       })
       trackAddToCart(product, 1)
       useCartDrawerStore.getState().openDrawer()

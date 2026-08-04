@@ -292,6 +292,7 @@ Commerce adapters + catalog:
 | `api/commerceClient.supabase.ts` | Legacy name; commerce uses Shopify or seed/localStorage (no CMS products) |
 | `api/createCommerceClient.ts` | Factory — picks the right adapter |
 | `catalog/storefrontCatalog.ts` | Public catalog read facade |
+| `lib/resolveCartVariantId.ts` | The **single** Shopify variant-GID lookup for a (colourway, size) pair. This value decides whether a cart line can reach hosted checkout at all — `createShopifyCheckout` refuses a cart where only some lines resolve — so it must not be re-derived per call site. Encodes the `'Default'` / `'One Size'` fallback keys the Shopify mapper uses for single-option products |
 | `hooks/` | `useProducts`, `useHomeProducts`, `useTrackProductView` |
 | `schemas/` | `commerce.schema.ts`, `product.schema.ts` |
 | `shop/` | `ShopFiltersForm`, `shopUrlSearch` (URL state for filters) |
@@ -422,6 +423,7 @@ Framework-agnostic primitives — no feature imports allowed here.
 | `hooks/useContainedMediaRect.ts` | Computes the rendered (letterboxed) rect of an `object-fit: contain` media element — used where overlay UI must align to the visible image, not its box |
 | `icons/index.tsx` | The Phosphor icon seam — every UI icon is re-exported from here under stable names (named imports only; never import `@phosphor-icons/react` directly). Global duotone weight via `IconContext`; the `Anvil` glyph is inlined because Phosphor has none |
 | `lib/cn.ts` | `cn()` = clsx + tailwind-merge |
+| `lib/money.ts` | `formatMoney(amount, currency, locale?)` — **THE** currency formatter; every customer-visible price goes through it. Whole amounts render with 0 decimals, fractional with exactly 2 (a single `maximumFractionDigits:2` formatter turns 85.5 into `$85.5`, which is not a price). Falls back to USD on a missing or malformed ISO code rather than throwing. Currency comes from `product.shop?.currency` / `CartLine.currency` — **not** `Product.currency`, which does not exist |
 | `lib/gsap.ts` | Registers GSAP + ScrollTrigger + useGSAP (SSR-safe) |
 | `lib/iconSize.ts` | Shared icon size-token → pixel-size resolver for `icons/` consumers |
 | `lib/forge/emberForge.ts`, `lib/forge/forgeSurface.ts` | The shared canvas-2D ember-forge engine (maths + surface sizing) backing `Modal`, the toast layer, and the About altar's ember hand-off — see `docs/animation-guidelines.md` |

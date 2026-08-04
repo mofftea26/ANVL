@@ -110,9 +110,30 @@ export const settingsSchema = z.object({
   orderUpdatesOptIn: z.boolean(),
 })
 
+/**
+ * Constrain a `?redirect=` param to a path on THIS origin.
+ *
+ * The string checks this replaces (`startsWith('/')` + reject `//`) let
+ * `/\evil.com` through — and per the WHATWG URL spec a backslash is treated as
+ * a forward slash in the relative-slash state for special schemes, so browsers
+ * resolve that to `https://evil.com/`. That is an open redirect on sign-in,
+ * sign-up and the OAuth callback: a phishing link lands on our real domain,
+ * authenticates, then bounces the user to an attacker page.
+ *
+ * Parsing against a throwaway base and comparing origins is the check that
+ * cannot be talked around by separator tricks, encoded or otherwise — anything
+ * that resolves off-origin fails the comparison.
+ */
 export function sanitizeInternalRedirect(raw: string | undefined): string {
-  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/account'
-  return raw
+  if (!raw || !raw.startsWith('/')) return '/account'
+  try {
+    const base = 'https://anvl.invalid'
+    const url = new URL(raw, base)
+    if (url.origin !== base) return '/account'
+    return `${url.pathname}${url.search}${url.hash}`
+  } catch {
+    return '/account'
+  }
 }
 
 interface StorefrontAccountSessionState {

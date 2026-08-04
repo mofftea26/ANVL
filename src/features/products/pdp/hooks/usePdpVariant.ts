@@ -7,6 +7,7 @@ import {
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { useProductAnalytics } from '@/features/analytics/hooks/useProductAnalytics'
+import { resolveCartVariantId } from '@/features/products/lib/resolveCartVariantId'
 
 function disabledSizesForColor(product: Product, colorName: string): ReadonlySet<string> {
   const out = new Set<string>()
@@ -85,10 +86,7 @@ export function usePdpVariant(product: Product) {
   const add = useCallback(() => {
     if (!canPurchase || addState !== 'idle') return
     setAddState('adding')
-    const variantId =
-      product.shop?.variantIdByColorAndSize?.[colorName || 'Default']?.[
-        size || 'One Size'
-      ]
+    const variantId = resolveCartVariantId(product, colorName, size)
     addLine({
       productId: product.id,
       slug: product.slug,
@@ -99,6 +97,7 @@ export function usePdpVariant(product: Product) {
       quantity,
       image: heroImageSrc,
       variantId,
+      currency: product.shop?.currency,
     })
     trackAddToCart(product, quantity)
     useCartDrawerStore.getState().openDrawer()

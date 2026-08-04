@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { formatMoney } from '@/shared/lib/money'
 import { Check, Loader2 } from '@/shared/icons'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Product } from '@/features/products/types/product.types'
@@ -10,6 +11,7 @@ import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { useProductAnalytics } from '@/features/analytics/hooks/useProductAnalytics'
+import { resolveCartVariantId } from '@/features/products/lib/resolveCartVariantId'
 import { useResponsiveShopLayout } from '@/features/products/shop/hooks/useResponsiveShopLayout'
 import {
   Button,
@@ -109,8 +111,8 @@ export function ProductQuickView({
       size,
       quantity: 1,
       image: hero,
-      variantId:
-        product.shop?.variantIdByColorAndSize?.[colorway.name || 'Default']?.[size || 'One Size'],
+      variantId: resolveCartVariantId(product, colorway.name, size),
+      currency: product.shop?.currency,
     })
     trackAddToCart(product, 1)
     useCartDrawerStore.getState().openDrawer()
@@ -147,9 +149,9 @@ export function ProductQuickView({
           {stripAngleBracketTags(product.name)}
         </h2>
         <div className="mt-2 flex items-baseline gap-3">
-          <p className="anvl-display text-xl text-[var(--shop-text)]">${price}</p>
+          <p className="anvl-display text-xl text-[var(--shop-text)]">{formatMoney(price, product.shop?.currency)}</p>
           {showCompare && shop ? (
-            <p className="text-sm text-[var(--shop-text-muted)] line-through">${shop.compareAtPrice}</p>
+            <p className="text-sm text-[var(--shop-text-muted)] line-through">{formatMoney(shop.compareAtPrice, product.shop?.currency)}</p>
           ) : null}
         </div>
 
@@ -188,7 +190,7 @@ export function ProductQuickView({
                 <Loader2 size={ICON_SIZE.md} aria-hidden="true" className="mr-2 animate-spin" /> Adding…
               </>
             ) : canPurchase ? (
-              `Add to cart — $${price}`
+              `Add to cart — ${formatMoney(price, product.shop?.currency)}`
             ) : (
               'Unavailable'
             )}
@@ -232,7 +234,7 @@ export function ProductQuickView({
             Details
           </Link>
           <Button type="button" className="flex-1" disabled={!canPurchase || state !== 'idle'} onClick={add}>
-            {state === 'added' ? 'Added' : canPurchase ? `Add — $${price}` : 'Unavailable'}
+            {state === 'added' ? 'Added' : canPurchase ? `Add — ${formatMoney(price, product.shop?.currency)}` : 'Unavailable'}
           </Button>
         </div>
       </div>

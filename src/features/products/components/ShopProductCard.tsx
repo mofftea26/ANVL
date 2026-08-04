@@ -14,6 +14,7 @@ import { stripAngleBracketTags } from '@/shared/lib/stripAngleBracketTags'
 import { withShopifyImageWidth } from '@/shared/lib/url'
 import { cn } from '@/shared/lib/cn'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
+import { formatMoney } from '@/shared/lib/money'
 
 /** Grid cards render at most ~400 CSS px wide; covers retina at that size. */
 const CARD_IMAGE_WIDTH = 800
@@ -170,7 +171,7 @@ export const ShopProductCard = memo(function ShopProductCard({
               <div className="shrink-0 text-right text-sm">
                 {showCompare && shop ? (
                   <p className="text-[var(--shop-text-muted)] line-through">
-                    ${shop.compareAtPrice}
+                    {formatMoney(shop.compareAtPrice, product.shop?.currency)}
                     <span className="sr-only"> original price</span>
                   </p>
                 ) : null}
@@ -180,7 +181,7 @@ export const ShopProductCard = memo(function ShopProductCard({
                     showCompare ? 'text-[var(--shop-accent)]' : 'text-[var(--shop-text)]',
                   )}
                 >
-                  ${price}
+                  {formatMoney(price, product.shop?.currency)}
                 </p>
               </div>
             ) : null}

@@ -7,6 +7,7 @@ import { useCart } from '@/features/cart/hooks/useCart'
 import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { getStorefrontUserEmail } from '@/features/storefront-account/auth'
 import { Button, Drawer, QuantityStepper } from '@/shared/components/ui'
+import { formatMoney } from '@/shared/lib/money'
 
 /**
  * Slide-in mini-cart. Opens on add-to-cart and from the header cart icon. Reuses
@@ -82,7 +83,7 @@ export function CartDrawer() {
                       value={line.quantity}
                       onChange={(v) => updateQuantity(line.productId, line.size, line.colorway, v)}
                     />
-                    <span className="anvl-heading text-sm">${(line.price * line.quantity).toFixed(2)}</span>
+                    <span className="anvl-heading text-sm">{formatMoney(line.price * line.quantity, line.currency)}</span>
                   </div>
                   <button
                     className="focus-ring mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)] underline underline-offset-4 hover:text-[var(--color-text)]"
@@ -97,7 +98,7 @@ export function CartDrawer() {
           <div className="mt-4 shrink-0 border-t border-[var(--color-line)] pt-4">
             <div className="flex items-center justify-between">
               <span className="anvl-micro text-[var(--color-text-muted)]">Subtotal</span>
-              <span className="anvl-heading text-xl">${subtotal.toFixed(2)}</span>
+              <span className="anvl-heading text-xl">{formatMoney(subtotal, lines[0]?.currency)}</span>
             </div>
             <Button className="mt-4 w-full" disabled={checkingOut} onClick={() => void handleCheckout()}>
               {checkingOut ? 'Redirecting…' : 'Checkout'}
