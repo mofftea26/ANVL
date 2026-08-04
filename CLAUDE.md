@@ -211,7 +211,7 @@ pnpm test src/features/cart     # Run one feature's tests
 pnpm typecheck                  # tsc --noEmit (repatch runs first)
 pnpm build                      # Production build (client + workerd SSR bundle → dist/)
 pnpm preview                    # Serve the built Worker locally in workerd
-pnpm deploy                     # pnpm build && wrangler deploy → Cloudflare Workers
+pnpm run deploy                 # pnpm build && wrangler deploy → Cloudflare Workers
 pnpm cf-typegen                 # wrangler types → worker-configuration.d.ts (gitignored, regenerable)
 pnpm verify                     # typecheck + test + build (definition of done gate)
 pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALYZE=1)

@@ -5,10 +5,12 @@ server on the Workers runtime (`workerd`), with the client bundle served as
 Workers static assets. Edge delivery, one runtime for SSR + assets, no separate
 Node host.
 
-> **Status:** setup complete and verified locally (`pnpm build` + `wrangler
-> deploy --dry-run` pass; `env.NODE_ENV` binding + 202 client assets confirmed).
-> The first real `wrangler deploy` (needs a Cloudflare login) and the GoDaddy →
-> Cloudflare nameserver migration are the only remaining steps.
+> **Status: LIVE.** Deployed and smoke-tested 2026-08-04 at
+> <https://anvl.georgemaalouf73.workers.dev> (version `0c306b75`). Both rate-limit
+> bindings provisioned and reported by wrangler; `/checkout` correctly 307s to
+> `/cart` in production, `/admin` 307s to `/admin/login`, and the new
+> `public/_headers` media rules verified on the live edge.
+> The GoDaddy → Cloudflare nameserver migration (custom domain) is the remaining step.
 
 ---
 
@@ -130,7 +132,7 @@ only by migrations/privileged server scripts, not the Worker.
 pnpm dev          # vite dev — SSR on workerd + HMR (dev↔prod parity)
 pnpm build        # vite build — client + workerd SSR bundle → dist/
 pnpm preview      # vite preview — serves the built Worker in workerd locally
-pnpm deploy       # pnpm build && wrangler deploy
+pnpm run deploy   # pnpm build && wrangler deploy  (NOT `pnpm deploy` — reserved by pnpm)
 pnpm cf-typegen   # wrangler types → worker-configuration.d.ts (regenerable; gitignored)
 ```
 
@@ -139,9 +141,11 @@ pnpm cf-typegen   # wrangler types → worker-configuration.d.ts (regenerable; g
 
 `worker-configuration.d.ts` is **gitignored** and **excluded from `tsconfig.json`**:
 its Cloudflare Workers `Element` global collides with the DOM lib (`removeAttribute`
-returns `Element` vs `void`). The app is DOM-centric and uses no Worker bindings.
-If bindings (KV/R2/D1/DO) are ever added, create a Worker-scoped tsconfig that
-re-includes it.
+returns `Element` vs `void`). The app is DOM-centric, and the only bindings so
+far are the two rate limiters — which `wrangler types` does not emit types for
+anyway, and which `src/rateLimit.server.ts` reads from an untyped record. If
+typed bindings (KV/R2/D1/DO) are ever added, create a Worker-scoped tsconfig
+that re-includes it.
 
 ---
 
@@ -161,7 +165,7 @@ wrangler deploy --dry-run    # validates config + bundling + assets, uploads not
 
 ### Production
 ```bash
-pnpm deploy                  # → *.workers.dev URL
+pnpm run deploy              # → *.workers.dev URL
 ```
 Test the `*.workers.dev` URL end-to-end before attaching the custom domain.
 
