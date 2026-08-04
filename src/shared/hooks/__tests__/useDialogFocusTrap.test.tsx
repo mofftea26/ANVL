@@ -75,6 +75,38 @@ describe('useDialogFocusTrap — Escape closes exactly one layer', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  it('locks background scroll while open and restores it on close', () => {
+    const { rerender } = render(<Dialog open onClose={() => {}} label="Solo" />)
+    expect(document.body.style.overflow).toBe('hidden')
+
+    rerender(<Dialog open={false} onClose={() => {}} label="Solo" />)
+    expect(document.body.style.overflow).not.toBe('hidden')
+  })
+
+  it('keeps the lock while an outer dialog is still open', () => {
+    const { rerender } = render(
+      <Dialog open onClose={() => {}} label="Wizard">
+        <Dialog open onClose={() => {}} label="Picker" />
+      </Dialog>,
+    )
+    expect(document.body.style.overflow).toBe('hidden')
+
+    // Only the inner one closes — the page must stay locked behind the wizard.
+    rerender(
+      <Dialog open onClose={() => {}} label="Wizard">
+        <Dialog open={false} onClose={() => {}} label="Picker" />
+      </Dialog>,
+    )
+    expect(document.body.style.overflow).toBe('hidden')
+
+    rerender(
+      <Dialog open={false} onClose={() => {}} label="Wizard">
+        <Dialog open={false} onClose={() => {}} label="Picker" />
+      </Dialog>,
+    )
+    expect(document.body.style.overflow).not.toBe('hidden')
+  })
+
   it('moves focus into the panel on open', async () => {
     render(<Dialog open onClose={() => {}} label="Solo" />)
     // The trap focuses in a microtask so the panel is painted first.

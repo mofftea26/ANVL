@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Copy, Download, Pencil, Trash2 } from '@/shared/icons'
 import { toast } from 'sonner'
@@ -281,6 +281,37 @@ function MediaAssetCard({
   )
 }
 
+/**
+ * The column count the CSS grid is ACTUALLY rendering, tracked live.
+ *
+ * The virtualizer positions rows absolutely and slices the asset list into
+ * rows of N; if N disagrees with the real grid, rows stack on top of each
+ * other and the assets past the first row become unreachable. The breakpoints
+ * here mirror `grid gap-3 sm:grid-cols-2 lg:grid-cols-3` exactly — change one,
+ * change the other.
+ *
+ * SSR-safe: renders at the desktop value and corrects on mount, which is
+ * correct for an admin surface that is desktop-first anyway.
+ */
+function useResponsiveGridColumns(desktopColumns: number): number {
+  const [cols, setCols] = useState(desktopColumns)
+
+  useEffect(() => {
+    const lg = window.matchMedia('(min-width: 1024px)')
+    const sm = window.matchMedia('(min-width: 640px)')
+    const update = () => setCols(lg.matches ? desktopColumns : sm.matches ? 2 : 1)
+    update()
+    lg.addEventListener('change', update)
+    sm.addEventListener('change', update)
+    return () => {
+      lg.removeEventListener('change', update)
+      sm.removeEventListener('change', update)
+    }
+  }, [desktopColumns])
+
+  return cols
+}
+
 export function MediaAssetGrid({
   assets,
   search,
@@ -374,9 +405,16 @@ export function MediaAssetGrid({
     clearSelection()
   }
 
+  // The virtualizer slices `filtered` into rows of N, and N MUST equal the
+  // number of columns the CSS grid is actually rendering
+  // (`grid gap-3 sm:grid-cols-2 lg:grid-cols-3` → 1 / 2 / 3). It was hardcoded
+  // to 3, so below `lg` the absolutely-positioned rows overlapped and most of
+  // the library became unreachable on a laptop, tablet or phone.
+  const liveColumns = useResponsiveGridColumns(columns)
+
   const useVirtual = filtered.length > VIRTUALIZE_THRESHOLD
   const rowCount = useVirtual
-    ? Math.ceil(filtered.length / columns)
+    ? Math.ceil(filtered.length / liveColumns)
     : 0
 
   const virtualizer = useVirtualizer({
@@ -505,8 +543,8 @@ export function MediaAssetGrid({
           }}
         >
           {virtualizer.getVirtualItems().map((virtualRow) => {
-            const start = virtualRow.index * columns
-            const rowAssets = filtered.slice(start, start + columns)
+            const start = virtualRow.index * liveColumns
+            const rowAssets = filtered.slice(start, start + liveColumns)
             return (
               <div
                 key={virtualRow.key}

@@ -138,8 +138,8 @@ authenticated (admin):
 
 ### Known RLS/advisor debt (2026-07-29 audit)
 
-- `touch_row_updated_at()` has a mutable `search_path`.
-- Unindexed FKs: `armory_feats.user_id`, `passport_transfers.from_user`, `passport_transfers.to_user`, `techpacks.created_by`.
+- ~~`touch_row_updated_at()` has a mutable `search_path`.~~ **Fixed 2026-08-04** (`search_path = ''`); advisor warning confirmed cleared.
+- ~~Unindexed FKs: `armory_feats.user_id`, `passport_transfers.from_user`, `passport_transfers.to_user`, `techpacks.created_by`.~~ **Fixed 2026-08-04**, plus `product_reviews (product_slug, created_at DESC)` — the existing `(user_id, product_slug)` composite leads with `user_id` and so could not serve `get_product_reviews`' by-slug lookup.
 - Every table created **after** the `perf20_wrap_auth_uid_in_rls_policies` migration still calls bare `auth.uid()` in its policies instead of `(select auth.uid())` — `gamification_*`, `product_passports`, `passport_transfers`, `coming_soon_subscribers`, `techpacks`, `techpack_images`. The PERF-20 fix was a one-time sweep, not a standing rule; new tables must use the `(select auth.uid())` form.
 - Duplicate permissive SELECT policies on `landing_pages`, `passport_transfers`, `product_passports`, `story_*`.
 - Auth: leaked-password protection still disabled (SEC-23, a dashboard toggle).
@@ -155,6 +155,13 @@ Two separate problems; only the first is fixed.
    - `sec25_remove_public_storage_listing_policies` — drops the `storage.objects` policies that allowed enumerating every filename in `cms-media` / `story-media`. Public object fetches are served by the bucket's `public: true` flag, so existing CDN URLs are unaffected.
    - `20260518133503_anvl_oath_bootstrap_storefront.sql` is a **deliberate no-op**: its original body seeded the drop-builder (`anvl_drops`, `published_drop_snapshot`), all of which a later migration drops. The file exists so the version appears in the folder; the SQL is recoverable from production if ever needed.
 2. **Version divergence — STILL OPEN.** The folder numbers migrations `…120000` while the applied history uses real timestamps. Only 15 of 71 files match an applied version; **56 carry versions never applied**. `supabase db push` against production would attempt to re-apply them, and not all are idempotent (`create extension pg_net` is not). **Do not rebuild an environment from this folder** until a `supabase migration repair` / renumber pass aligns the two.
+
+### Audit corrections applied 2026-08-04 (`20260804172317`)
+
+- `get_product_reviews` now orders **inside** the subquery so `LIMIT 50` takes the newest 50. It previously limited before ordering, so past 50 reviews a product showed an arbitrary subset.
+- `touch_row_updated_at` has `search_path = ''`. It was the only function in `public` without one; the advisor warning is confirmed cleared.
+- Covering indexes added: `product_reviews (product_slug, created_at DESC)`, `armory_feats (user_id)`, `passport_transfers (from_user)`, `passport_transfers (to_user)`, `techpacks (created_by)`. The reviews one matters most — the existing `(user_id, product_slug)` composite leads with `user_id` and so could not serve the by-slug lookup.
+- **Still open:** `accept_passport_transfer` does not reset Armory state (`wear_count`, `last_worn_at`, `featured_slot`, `is_public`) and can hard-fail on the `(claimed_by, featured_slot)` partial unique index; the `orders` RLS empty-email coercion; `log_passport_wear`'s check-then-update race; `admin_unassign_passport` allowing `editor`; and 21 post-PERF-20 policies still calling bare `auth.uid()`. Each touches live ownership data or access rules and wants its own review.
 
 ---
 

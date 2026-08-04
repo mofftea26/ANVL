@@ -31,6 +31,47 @@ const openDialogPanels: HTMLElement[] = []
  * registration order only breaks ties between panels that do not nest (two
  * portaled siblings, where the later-opened one is genuinely on top).
  */
+/**
+ * Background scroll lock, reference-counted across the open-dialog stack.
+ *
+ * Deliberately NOT `useLockPageScroll`: that hook drives the LANDING ENTRY
+ * lock (`applyLandingEntryLock` / `releaseLandingEntryLock`) and pins the body
+ * with `position: fixed`. Calling it from a dialog would release the home
+ * entry gate as a side effect and, on iOS, throw away scroll position —
+ * `PassportSheet` already carries a comment explaining why it avoided it.
+ *
+ * `overflow: hidden` with scrollbar-width compensation is the right tool here:
+ * no layout shift when the bar disappears, and no interaction with any other
+ * subsystem. Counted so a picker opened over a wizard does not unlock the page
+ * when only the picker closes.
+ */
+let scrollLockDepth = 0
+let previousBodyOverflow = ''
+let previousBodyPaddingRight = ''
+
+function acquireScrollLock(): void {
+  if (typeof document === 'undefined') return
+  scrollLockDepth += 1
+  if (scrollLockDepth > 1) return
+  const { body } = document
+  previousBodyOverflow = body.style.overflow
+  previousBodyPaddingRight = body.style.paddingRight
+  const barWidth = window.innerWidth - document.documentElement.clientWidth
+  if (barWidth > 0) {
+    const current = Number.parseFloat(window.getComputedStyle(body).paddingRight) || 0
+    body.style.paddingRight = `${current + barWidth}px`
+  }
+  body.style.overflow = 'hidden'
+}
+
+function releaseScrollLock(): void {
+  if (typeof document === 'undefined') return
+  scrollLockDepth = Math.max(0, scrollLockDepth - 1)
+  if (scrollLockDepth > 0) return
+  document.body.style.overflow = previousBodyOverflow
+  document.body.style.paddingRight = previousBodyPaddingRight
+}
+
 function innermostOpenDialog(): HTMLElement | undefined {
   const enclosing = openDialogPanels.filter((panel) =>
     openDialogPanels.some((other) => other !== panel && panel.contains(other)),
@@ -61,6 +102,7 @@ export function useDialogFocusTrap(opts: {
     if (!panel) return
 
     openDialogPanels.push(panel)
+    acquireScrollLock()
 
     const focusables = () => listFocusables(panel)
     const first = focusables()[0]
@@ -97,6 +139,7 @@ export function useDialogFocusTrap(opts: {
       // a dead entry and swallow every later Escape.
       const at = openDialogPanels.lastIndexOf(panel)
       if (at !== -1) openDialogPanels.splice(at, 1)
+      releaseScrollLock()
       previouslyFocused?.focus?.()
     }
   }, [open, panelRef])

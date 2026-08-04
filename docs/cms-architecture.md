@@ -69,6 +69,14 @@ Two blocks were added in this pass, both editable from two new `/admin/support` 
 - **Cross-navigation:** `/admin/assets` accepts `?page=<scope>&slot=<key>&q=<search>` (opens the slot panel scoped + highlights the slot + seeds the library search); `/admin/passports` accepts `?tab=content&product=<slug>` (opens that product's wizard). The PDP editor links to its product's passport content.
 - **Speed affordances:** generic `AdminWizard` (extracted from the passport content wizard); native HTML5 drag-reorder via `useSortableList` (About orbs, Oath showcase products, story acts, gamification challenges — always with keyboard up/down fallback); media library cards drag onto any `MediaLibrarySlotField` / slot-panel row to assign; the upload naming modal's slot select has a "Custom name…" option (kebab-forced) for every context; the dashboard carries a drop-setup checklist with live completion ticks.
 
+### Media library grid
+
+`MediaAssetGrid` virtualises above 100 assets. The virtualiser slices the asset list into rows of N and positions rows absolutely, so **N must equal the column count the CSS grid is actually rendering** (`grid gap-3 sm:grid-cols-2 lg:grid-cols-3` → 1 / 2 / 3). It was hardcoded to 3, so below `lg` rows overlapped and most of the library became unreachable on a laptop, tablet or phone. `useResponsiveGridColumns` now tracks it live against those same breakpoints — change one, change the other.
+
+## Media library grid
+
+`MediaAssetGrid` virtualises above 100 assets. The virtualiser slices the asset list into rows of N and positions rows **absolutely**, so **N must equal the column count the CSS grid is actually rendering** (`grid gap-3 sm:grid-cols-2 lg:grid-cols-3` → 1 / 2 / 3). It was hardcoded to 3, so below `lg` the rows overlapped and most of the library became unreachable on a laptop, tablet or phone. `useResponsiveGridColumns` now tracks it live against those same breakpoints — change one, change the other.
+
 ## `AdminFieldSelect` empty-value rule
 
 Radix's `Select.Item` reserves `value=""` to mean "cleared, show the placeholder" — mounting an actual `<Select.Item value="">` throws and takes the whole panel down. This caused a real admin crash where an editor needed a genuine selectable "none" option (e.g. "Unassigned", "Assign later", "All products") that the user can select **back to**, which a placeholder cannot express.
