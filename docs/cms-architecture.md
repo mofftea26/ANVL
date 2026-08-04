@@ -170,6 +170,8 @@ Nav, footer, and SEO use **code defaults** (`navigation.defaults.ts` → `static
 | Active drop change, media upload/alt/delete | `scheduleAdminCmsRemoteSync` | Debounced 850 ms |
 | Login / session restore | `hydrateAdminCmsFromSupabase` | Pull remote → localStorage |
 
+The 10-minute session heartbeat refreshes the session ALWAYS, but the **heartbeat does NOT re-pull the CMS while any editor is dirty** (`isAnyAdminEditorDirtyNow()`): `hydrateAdminCmsFromSupabase` overwrites the localStorage working copy, so re-pulling mid-edit silently threw away whatever the operator had typed and not yet saved. Foreground pulls (login, mount) are unaffected — nothing is unsaved at those moments.
+
 Hydration is gated by `beginAdminCmsRemoteHydration` / `endAdminCmsRemoteHydration` so push does not race pull. `AdminLayout` blocks editors until `isRemoteCmsReady`. On pull, `migrateOathTenetAssetsFromSlots` moves legacy tenet asset slots into `landing_content`.
 
 ### Whole-map clobber guard (`adminCmsRemoteSync.ts`)

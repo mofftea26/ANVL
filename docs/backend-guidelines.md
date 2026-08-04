@@ -161,7 +161,9 @@ Two separate problems; only the first is fixed.
 - `get_product_reviews` now orders **inside** the subquery so `LIMIT 50` takes the newest 50. It previously limited before ordering, so past 50 reviews a product showed an arbitrary subset.
 - `touch_row_updated_at` has `search_path = ''`. It was the only function in `public` without one; the advisor warning is confirmed cleared.
 - Covering indexes added: `product_reviews (product_slug, created_at DESC)`, `armory_feats (user_id)`, `passport_transfers (from_user)`, `passport_transfers (to_user)`, `techpacks (created_by)`. The reviews one matters most — the existing `(user_id, product_slug)` composite leads with `user_id` and so could not serve the by-slug lookup.
-- **Still open:** `accept_passport_transfer` does not reset Armory state (`wear_count`, `last_worn_at`, `featured_slot`, `is_public`) and can hard-fail on the `(claimed_by, featured_slot)` partial unique index; the `orders` RLS empty-email coercion; `log_passport_wear`'s check-then-update race; `admin_unassign_passport` allowing `editor`; and 21 post-PERF-20 policies still calling bare `auth.uid()`. Each touches live ownership data or access rules and wants its own review.
+**Round 2 (`20260804174508`)** closed three of those: `accept_passport_transfer` now resets `wear_count` / `last_worn_at` / `featured_slot` / `is_public` (it could previously HARD-FAIL on the `(claimed_by, featured_slot)` partial unique index when the receiving owner already had that slot pinned); `log_passport_wear` folds its 24h cooldown into the UPDATE's WHERE clause so the row lock arbitrates instead of a check-then-write race; and `orders` RLS uses `nullif()` on both sides of the email comparison, so an order whose email resolved to `''` is no longer readable by any signed-in user lacking an email claim.
+
+- **Still open:** `admin_unassign_passport` allows `editor` though the documented model is admin-only (left alone deliberately — narrowing it removes a capability an editor may rely on, which is an operational call); and 21 post-PERF-20 policies still call bare `auth.uid()`.
 
 ---
 

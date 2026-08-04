@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from 'react'
 import { Outlet, useRouterState } from '@tanstack/react-router'
 
+import { AdminErrorBoundary } from '@/app/components/AdminErrorBoundary'
 import { useAdminAuth } from '@/features/admin/auth/useAdminAuth'
 import { AdminShell } from './AdminShell'
 import { AdminSyncIndicator } from './AdminSyncIndicator'
@@ -23,7 +24,20 @@ export function AdminShellLayout() {
 
   return (
     <AdminChrome>
-      <Outlet />
+      {/*
+       * Content-scoped error boundary. `route.tsx` already wraps the WHOLE
+       * shell in one, but that outer boundary is the last resort: when it
+       * caught an editor's render error it replaced the sidebar and topbar
+       * too, so a single broken page blanked the entire admin and left the
+       * operator with no navigation to escape with — the opposite of the
+       * persistent-shell contract this component exists to provide.
+       *
+       * Keyed on `pathname` so navigating to another editor clears the error
+       * instead of stranding the operator on it.
+       */}
+      <AdminErrorBoundary resetKey={pathname}>
+        <Outlet />
+      </AdminErrorBoundary>
     </AdminChrome>
   )
 }

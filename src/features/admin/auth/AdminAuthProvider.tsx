@@ -25,6 +25,7 @@ import type {
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { hydrateAdminCmsFromSupabase } from '@/features/admin/cmsRemote/adminCmsHydration'
 import { clearCmsProfileRoleCache } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
+import { isAnyAdminEditorDirtyNow } from '@/features/admin/hooks/useAdminDirtyRegistry'
 
 export const AdminAuthContext = createContext<AdminAuthContextValue | null>(null)
 
@@ -149,6 +150,18 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
           return
         }
         await applyAuthenticatedResult(result)
+
+        // The session refresh above must ALWAYS run — that is what keeps the
+        // operator signed in. The CMS re-pull below must not, when there are
+        // unsaved edits: `hydrateAdminCmsFromSupabase` overwrites the
+        // localStorage working copy with the remote values, so the 10-minute
+        // heartbeat would silently throw away whatever the operator had typed
+        // and not yet saved. Skipping it leaves them exactly where they were;
+        // the next explicit save publishes their work, and the pull after that
+        // reconciles. (Foreground pulls — login, mount — are unaffected: there
+        // is nothing unsaved to lose at those moments.)
+        if (opts?.background && isAnyAdminEditorDirtyNow()) return
+
         startRemoteCmsPull(opts)
       } catch {
         // Network/timeout — keep existing state, next heartbeat retries.
