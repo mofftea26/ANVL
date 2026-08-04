@@ -384,6 +384,7 @@ Storefront legal-page UI, consumed by `/privacy`, `/terms`, `/cookie-policy`, `/
 | `api/paymentGateway.mock.ts` | Mock payment adapters: COD, Whish, card |
 | `api/paymentGateway.types.ts` | PaymentClient interface |
 | `config/checkoutPayments.config.ts` | Lebanon COD/Whish + international card config |
+| `config/internalCheckout.ts` | `isInternalCheckoutEnabled()` — the single gate keeping the **mock** payment gateway unreachable in production. Returns true only when Shopify is unconfigured **and** `import.meta.env.DEV`. Consulted by the `/checkout` route guard and by both cart checkout handlers, which surface an error instead of falling back when it returns false |
 | `hooks/useCheckoutForm.ts` | Checkout form state + submission |
 | `schemas/checkout.schema.ts` | Zod checkout schema |
 

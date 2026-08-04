@@ -17,7 +17,10 @@ import {
   hasStoredPdpContent,
   readPdpContentFromStorage,
 } from '@/features/cms/pdpContent/pdpContent.settings'
-import { readPassportContentFromStorage } from '@/features/cms/passportContent/passportContent.settings'
+import {
+  hasStoredPassportContent,
+  readPassportContentFromStorage,
+} from '@/features/cms/passportContent/passportContent.settings'
 import { readComingSoonConfigFromStorage } from '@/features/cms/comingSoon/comingSoon.settings'
 import { readBannerConfigFromStorage } from '@/features/cms/banner/bannerConfig.settings'
 import { readLegalContentFromStorage } from '@/features/cms/legal/legalContent.settings'
@@ -137,20 +140,63 @@ interface WholeMapColumn {
   readonly hasLocalSnapshot: () => boolean
 }
 
-const WHOLE_MAP_COLUMNS: readonly WholeMapColumn[] = [
-  {
-    column: 'pdp_content',
-    label: 'Product (PDP) content',
-    risk: "every other product's authored PDP content would be erased",
-    hasLocalSnapshot: hasStoredPdpContent,
-  },
-  {
+/**
+ * EXHAUSTIVE classification of every CMS settings column: a guard entry when a
+ * publish from an unhydrated snapshot would destroy data the operator cannot
+ * see, or `null` when it would not.
+ *
+ * Keyed by `CmsSettingsFieldKey`, so adding a column to
+ * `CMS_SETTINGS_FIELD_KEYS` without classifying it here is a `pnpm typecheck`
+ * FAILURE. That is deliberate: `passport_content` shipped as a per-slug map
+ * with no guard precisely because the old array let a new column be added
+ * without anyone noticing the omission — the same class of gap the hydration
+ * side already prevents structurally.
+ *
+ * `null` is the right answer for singleton blobs (theme, fonts, banner, legal,
+ * SEO…): republishing those from defaults is immediately visible on the
+ * storefront and re-editable, whereas a per-slug map silently loses the entries
+ * this session never touched.
+ */
+const WHOLE_MAP_GUARDS: Readonly<
+  Record<CmsSettingsFieldKey, WholeMapColumn | null>
+> = {
+  active_landing_page_key: null,
+  theme_config: null,
+  font_config: null,
+  asset_config: null,
+  landing_content: null,
+  shop_config: {
     column: 'shop_config',
     label: 'Shop experience settings',
     risk: 'the published shop configuration would be reset to code defaults',
     hasLocalSnapshot: hasStoredShopConfig,
   },
-]
+  pdp_content: {
+    column: 'pdp_content',
+    label: 'Product (PDP) content',
+    risk: "every other product's authored PDP content would be erased",
+    hasLocalSnapshot: hasStoredPdpContent,
+  },
+  passport_content: {
+    column: 'passport_content',
+    label: 'Passport content',
+    risk: "every other product's authored passport content would be erased",
+    hasLocalSnapshot: hasStoredPassportContent,
+  },
+  coming_soon: null,
+  banner_config: null,
+  legal_content: null,
+  // NOTE: `support_content` carries per-slug care lines and size tables, so it
+  // has the same shape of exposure. It is left unguarded here only because
+  // adding it changes save behaviour for an editor that has never hydrated,
+  // which is outside this change's scope. Tracked as a follow-up.
+  support_content: null,
+  site_seo: null,
+}
+
+const WHOLE_MAP_COLUMNS: readonly WholeMapColumn[] = Object.values(
+  WHOLE_MAP_GUARDS,
+).filter((entry): entry is WholeMapColumn => entry !== null)
 
 function findUnhydratedWholeMapColumns(): WholeMapColumn[] {
   return WHOLE_MAP_COLUMNS.filter((entry) => !entry.hasLocalSnapshot())

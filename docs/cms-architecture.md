@@ -162,6 +162,18 @@ Nav, footer, and SEO use **code defaults** (`navigation.defaults.ts` → `static
 
 Hydration is gated by `beginAdminCmsRemoteHydration` / `endAdminCmsRemoteHydration` so push does not race pull. `AdminLayout` blocks editors until `isRemoteCmsReady`. On pull, `migrateOathTenetAssetsFromSlots` moves legacy tenet asset slots into `landing_content`.
 
+### Whole-map clobber guard (`adminCmsRemoteSync.ts`)
+
+Some columns store the WHOLE authored map rather than a field patched in place, so publishing one replaces everything in it — in `cms_settings` **and** the anon-readable `storefront_publication` mirror — in a single UPDATE. A browser that never hydrated that column (fresh machine, incognito, cleared site data, `/admin/settings` local reset, or a hydration pull that failed on that column) would publish a map containing only what this session happened to touch and **destroy the rest**.
+
+`WHOLE_MAP_GUARDS` is an **exhaustive** `Record<CmsSettingsFieldKey, WholeMapColumn | null>`: every column must be classified, so adding a key to `CMS_SETTINGS_FIELD_KEYS` without classifying it is a `pnpm typecheck` failure. That structure replaced a hand-maintained array on 2026-08-04 — `passport_content` had shipped as a per-slug map with no guard precisely because the array let a new column slip in unnoticed.
+
+Guarded: `pdp_content`, `passport_content`, `shop_config`. `null` (unguarded) is correct for singleton blobs — republishing theme/fonts/banner/legal/SEO from defaults is immediately visible and re-editable, whereas a per-slug map silently loses entries the operator never saw.
+
+> **Known gap:** `support_content` also carries per-slug care lines and size tables, so it has the same shape of exposure. It is deliberately left `null` for now because guarding it changes save behaviour for a never-hydrated editor; tracked as a follow-up.
+
+A scoped publish of an unhydrated guarded column **hard-fails before any network write** (reload `/admin` to re-pull, then save). The unscoped debounced auto-sync instead omits the column from the patch, so the remote value is left alone — the same "omit, never wipe" rule already applied to `media_index`.
+
 ### Landing Content ↔ Assets sync
 
 `OathLandingAssetFields` on `/admin/content` writes the same `asset_config.drops['the-oath']` map as `/admin/assets`. Both editors subscribe to `subscribeCmsSiteConfigChange` for live cross-page sync. Tenet images use `landing_content['the-oath'].tenets.items[].mediaId` (up to 12 vows) via `MediaLibraryIdPickerModal` — not asset slots.

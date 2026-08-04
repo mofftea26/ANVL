@@ -380,11 +380,32 @@ describe('whole-map clobber guard', () => {
     // Deliberately NOT seeded: this is the fresh/reset browser.
   })
 
-  it('reports both whole-map columns as unhydrated on a fresh browser', () => {
+  it('reports every whole-map column as unhydrated on a fresh browser', () => {
+    // `passport_content` is a per-slug map exactly like `pdp_content`, so it
+    // carries the same "publishing from an empty snapshot erases every other
+    // product" risk and must be guarded alongside it.
     expect(listUnhydratedWholeMapColumns().sort()).toEqual([
+      'passport_content',
       'pdp_content',
       'shop_config',
     ])
+  })
+
+  it('refuses a scoped publish of unhydrated passport_content', async () => {
+    const { client, calls } = createFakeClient({ session: SESSION, role: 'admin' })
+    const result = await runAdminCmsRemoteFlush(
+      client,
+      ['passport_content'],
+      overridesWithValues(),
+    )
+    expect(result.status).toBe('error')
+    if (result.status === 'error') {
+      expect(result.reason).toBe('not-hydrated')
+      expect(result.message).toMatch(/NOT published/i)
+    }
+    // The whole point of the guard: it refuses BEFORE any network write.
+    expect(calls.settingsPatches).toHaveLength(0)
+    expect(calls.pubPatches).toHaveLength(0)
   })
 
   it('refuses a scoped publish of an unhydrated column before touching the network', async () => {

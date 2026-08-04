@@ -107,19 +107,54 @@ export function sanitizeStaticPagesLoose(
   return out
 }
 
-const marketingToolSchema = z.object({
-  id: z.string(),
-  provider: z.enum([
-    'gtm',
-    'ga4',
-    'metaPixel',
-    'hotjar',
-    'googleSiteVerification',
-    'customScript',
-  ]),
-  snippetId: z.string(),
-  enabled: z.boolean(),
-})
+/**
+ * Per-provider `snippetId` formats.
+ *
+ * `MarketingToolsHead` string-interpolates this value straight into
+ * `script.innerHTML` for gtm/ga4/metaPixel/hotjar — and for hotjar it lands as
+ * an UNQUOTED JavaScript value (`hjid:${id}`). An unconstrained string there is
+ * stored XSS on every storefront page for anyone who can write `site_seo`.
+ * Constraining the shape at the schema boundary is the fix: these IDs have
+ * strict, well-known formats, so nothing legitimate is rejected.
+ *
+ * `customScript` is deliberately absent — it is a URL, validated at the
+ * injection site (which requires an `http(s)` prefix) rather than here.
+ */
+const SNIPPET_ID_PATTERNS: Partial<Record<string, RegExp>> = {
+  gtm: /^GTM-[A-Z0-9]{4,12}$/,
+  ga4: /^G-[A-Z0-9]{6,14}$/,
+  metaPixel: /^\d{5,20}$/,
+  hotjar: /^\d{5,10}$/,
+  googleSiteVerification: /^[A-Za-z0-9_-]{10,100}$/,
+}
+
+const marketingToolSchema = z
+  .object({
+    id: z.string(),
+    provider: z.enum([
+      'gtm',
+      'ga4',
+      'metaPixel',
+      'hotjar',
+      'googleSiteVerification',
+      'customScript',
+    ]),
+    snippetId: z.string(),
+    enabled: z.boolean(),
+  })
+  .refine(
+    (tool) => {
+      // An empty id is "not configured yet" — the injector skips it, so let the
+      // editor save a half-filled row without a validation wall.
+      if (tool.snippetId.trim() === '') return true
+      const pattern = SNIPPET_ID_PATTERNS[tool.provider]
+      return pattern ? pattern.test(tool.snippetId.trim()) : true
+    },
+    {
+      message: 'Tracking ID does not match the expected format for this provider.',
+      path: ['snippetId'],
+    },
+  )
 
 const technicalSeoSchema = z.object({
   robotsIndex: z.boolean().optional(),

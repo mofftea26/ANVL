@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react'
 import { Link } from '@tanstack/react-router'
+import { toast } from 'sonner'
 import { runtimeClients } from '@/app/config/runtime'
+import { isInternalCheckoutEnabled } from '@/features/checkout/config/internalCheckout'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
 import { getStorefrontUserEmail } from '@/features/storefront-account/auth'
@@ -17,6 +19,10 @@ export function CartDrawer() {
   const { lines, subtotal, quantity, updateQuantity, removeLine } = useCart()
   const [checkingOut, setCheckingOut] = useState(false)
 
+  // Mirrors `routes/cart.tsx`: the internal /checkout route runs the mock
+  // gateway, so it is only ever a fallback in dev/seed setups. When Shopify is
+  // live a failure is surfaced instead — never silently redirected into a flow
+  // that would fake an order confirmation.
   const handleCheckout = useCallback(async () => {
     if (checkingOut) return
     setCheckingOut(true)
@@ -30,11 +36,19 @@ export function CartDrawer() {
         window.location.href = url
         return
       }
-    } catch {
-      // Fall through to the internal checkout route.
+      if (isInternalCheckoutEnabled()) {
+        closeDrawer()
+        window.location.assign('/checkout')
+        return
+      }
+      throw new Error('Checkout did not return a hosted URL.')
+    } catch (error) {
+      setCheckingOut(false)
+      console.error('[checkout] could not start hosted checkout', error)
+      toast.error('Checkout is unavailable right now.', {
+        description: 'Your cart has been kept. Please try again in a moment.',
+      })
     }
-    closeDrawer()
-    window.location.assign('/checkout')
   }, [checkingOut, lines, closeDrawer])
 
   return (

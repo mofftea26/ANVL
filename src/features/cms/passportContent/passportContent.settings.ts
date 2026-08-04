@@ -40,6 +40,24 @@ export function readPassportContentFromStorage(): PassportContentConfig {
   return cachedValue
 }
 
+/**
+ * Does this browser hold a local snapshot of the passport-content map at all?
+ *
+ * `passport_content` is a WHOLE-MAP column: publishing it replaces every
+ * product's authored passport content in one UPDATE. The clobber guard in
+ * `adminCmsRemoteSync.ts` uses this to refuse a publish from a browser that
+ * never hydrated the column (fresh machine, incognito, cleared site data, or a
+ * hydration pull that failed on this column). Mirrors `hasStoredPdpContent`.
+ */
+export function hasStoredPassportContent(): boolean {
+  if (!isBrowser()) return false
+  try {
+    return window.localStorage.getItem(PASSPORT_CONTENT_STORAGE_KEY) != null
+  } catch {
+    return false
+  }
+}
+
 export function writePassportContentToStorage(next: PassportContentConfig): void {
   if (!isBrowser()) return
   const safe = parsePassportContent(next)

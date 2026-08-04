@@ -146,6 +146,16 @@ authenticated (admin):
 
 **Never disable RLS on any table.** Orphaned drop-builder RPCs may exist in migration history (MIG-01) — the app does not call them.
 
+### Migration history vs `supabase/migrations/` (MIG-01, updated 2026-08-04)
+
+Two separate problems; only the first is fixed.
+
+1. **Content gap — CLOSED.** Eight applied migrations had their SQL on disk nowhere. They were backfilled verbatim (SELECT-only read of `supabase_migrations.schema_migrations`). Two of them are load-bearing for security, and their absence meant a rebuilt environment was *less* secure than production:
+   - `tighten_cms_settings_rls_and_revoke_rls_auto_enable_grant` — drops the public SELECT on `cms_settings` (anon could read unpublished CMS drafts) and revokes `rls_auto_enable()` EXECUTE.
+   - `sec25_remove_public_storage_listing_policies` — drops the `storage.objects` policies that allowed enumerating every filename in `cms-media` / `story-media`. Public object fetches are served by the bucket's `public: true` flag, so existing CDN URLs are unaffected.
+   - `20260518133503_anvl_oath_bootstrap_storefront.sql` is a **deliberate no-op**: its original body seeded the drop-builder (`anvl_drops`, `published_drop_snapshot`), all of which a later migration drops. The file exists so the version appears in the folder; the SQL is recoverable from production if ever needed.
+2. **Version divergence — STILL OPEN.** The folder numbers migrations `…120000` while the applied history uses real timestamps. Only 15 of 71 files match an applied version; **56 carry versions never applied**. `supabase db push` against production would attempt to re-apply them, and not all are idempotent (`create extension pg_net` is not). **Do not rebuild an environment from this folder** until a `supabase migration repair` / renumber pass aligns the two.
+
 ---
 
 ## Database Migrations
