@@ -142,7 +142,8 @@ iframe → admin   anvl-preview/ready · anvl-preview/located { target, found }
 ```
 Admin browser
   └── edits theme / fonts / assets / landing content / active drop (localStorage working copy)
-        └── adminCmsRemoteSync → cms_settings + storefront_publication mirror
+        └── adminCmsRemoteSync → publish_cms_settings() RPC
+            └── cms_settings + storefront_publication, in ONE transaction (F-19)
 
 Storefront (SSR + browser)
   └── loadStorefrontProjection()

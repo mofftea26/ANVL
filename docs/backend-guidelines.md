@@ -146,6 +146,27 @@ authenticated (admin):
 
 **Never disable RLS on any table.** Orphaned drop-builder RPCs may exist in migration history (MIG-01) — the app does not call them.
 
+### `publish_cms_settings(p_patch jsonb, p_media_index jsonb)` — the atomic CMS publish
+
+The admin publishes through **one** SECURITY DEFINER RPC, not two UPDATEs. Before it (F-19), `adminCmsRemoteSync` fired independent PostgREST UPDATEs at `cms_settings` and `storefront_publication` under `Promise.all` — and postgrest-js does **not** reject on a transport failure, it converts one into `{data:null,error}`. So `Promise.all` never rejected and never cancelled its sibling: a one-of-two failure always ran to completion as a **half-write**, permanently diverging the editor's source of truth from what SSR renders. It was also self-concealing, because hydration reads `cms_settings` only — reloading `/admin` could not reveal the split, and if `cms_settings` was the failed half, reloading silently replaced the operator's edit with the stale draft while the storefront kept serving the new value.
+
+Things that matter when changing it:
+- **The role gate is `admin`, deliberately** — the STRICTER of the two tables (`cms_settings` allows editor|admin, `storefront_publication` allows admin only). Gating on `editor` would hand editors a write path to the anon-readable publication mirror they do not have today. The table policies are untouched, so nobody's direct rights changed.
+- **Key presence decides what is written, and a JSON `null` counts as absent.** Every jsonb column is `NOT NULL`, but a JSON null is a *legal* jsonb value, so the constraint would not catch it — `coalesce(p_patch->'k', k)` would store a json null that the Zod readers then resolve to code defaults, i.e. a silent content wipe.
+- **The allowed-column list mirrors `CMS_SETTINGS_FIELD_KEYS`** in `adminCmsRemoteSync.ts`, and there is **no typecheck link** between them. A new column must be added in both.
+- `updated_at`, `published_at` and `revision` are set server-side; `revision` is now the Postgres clock rather than the browser's `Date.now()`.
+- A 0-row match **raises**, which rolls both UPDATEs back together.
+
+**Regression detector** — after any change here, all 13 shared columns must still be identical in both tables:
+```sql
+select k, (to_jsonb(s.*) -> k) is not distinct from (to_jsonb(p.*) -> k) as identical
+from public.cms_settings s, public.storefront_publication p,
+unnest(array['active_landing_page_key','theme_config','font_config','asset_config',
+  'landing_content','shop_config','pdp_content','passport_content','coming_soon',
+  'banner_config','legal_content','support_content','site_seo']) k
+where s.id=1 and p.id=1;
+```
+
 ### Migration history vs `supabase/migrations/` (MIG-01, updated 2026-08-04)
 
 Two separate problems; only the first is fixed.

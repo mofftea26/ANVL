@@ -116,25 +116,27 @@ interface FakeClientOptions {
   session?: { user: { id: string } } | null
   role?: string | null
   roleError?: string
-  settingsRows?: { id: number }[]
-  pubRows?: { id: number }[]
-  settingsError?: string
-  pubError?: string
+  /** Publishing now goes through ONE transactional RPC, so there is a single
+   *  failure mode rather than a per-table one (F-19). */
+  rpcError?: string
+  rpcRows?: { settings_rows: number; publication_rows: number }
 }
 
 interface FakeClientCalls {
   getSession: number
   profileSelects: number
-  settingsPatches: Record<string, unknown>[]
-  pubPatches: Record<string, unknown>[]
+  rpcCalls: { fn: string; p_patch: Record<string, unknown>; p_media_index: unknown }[]
+  /** Any surviving direct table UPDATE. Must stay empty: a second, independent
+   *  write is exactly what created the half-published state F-19 describes. */
+  directUpdates: string[]
 }
 
 function createFakeClient(opts: FakeClientOptions) {
   const calls: FakeClientCalls = {
     getSession: 0,
     profileSelects: 0,
-    settingsPatches: [],
-    pubPatches: [],
+    rpcCalls: [],
+    directUpdates: [],
   }
   const fake = {
     auth: {
@@ -164,24 +166,26 @@ function createFakeClient(opts: FakeClientOptions) {
         }
       }
       return {
-        update: (patch: Record<string, unknown>) => ({
+        update: () => ({
           eq: () => ({
             select: async () => {
-              if (table === 'cms_settings') {
-                calls.settingsPatches.push(patch)
-                if (opts.settingsError) {
-                  return { data: null, error: { message: opts.settingsError } }
-                }
-                return { data: opts.settingsRows ?? [{ id: 1 }], error: null }
-              }
-              calls.pubPatches.push(patch)
-              if (opts.pubError) {
-                return { data: null, error: { message: opts.pubError } }
-              }
-              return { data: opts.pubRows ?? [{ id: 1 }], error: null }
+              // Recorded, not served: publishing must go through the RPC.
+              calls.directUpdates.push(table)
+              return { data: [{ id: 1 }], error: null }
             },
           }),
         }),
+      }
+    },
+    async rpc(
+      fn: string,
+      args: { p_patch: Record<string, unknown>; p_media_index: unknown },
+    ) {
+      calls.rpcCalls.push({ fn, ...args })
+      if (opts.rpcError) return { data: null, error: { message: opts.rpcError } }
+      return {
+        data: opts.rpcRows ?? { settings_rows: 1, publication_rows: 1 },
+        error: null,
       }
     },
   }
@@ -236,8 +240,8 @@ describe('runAdminCmsRemoteFlush', () => {
     })
     expect(recoverSession).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ status: 'ok', rows: 2 })
-    expect(calls.settingsPatches).toHaveLength(1)
-    expect(calls.pubPatches).toHaveLength(1)
+    expect(calls.rpcCalls).toHaveLength(1)
+    expect(calls.directUpdates).toHaveLength(0)
   })
 
   it('returns a role error for viewers instead of fake success', async () => {
@@ -249,8 +253,7 @@ describe('runAdminCmsRemoteFlush', () => {
     )
     expect(result.status).toBe('error')
     if (result.status === 'error') expect(result.reason).toBe('role')
-    expect(calls.settingsPatches).toHaveLength(0)
-    expect(calls.pubPatches).toHaveLength(0)
+    expect(calls.rpcCalls).toHaveLength(0)
   })
 
   it('caches the cms-profile role per user — one lookup across many saves', async () => {
@@ -289,10 +292,10 @@ describe('runAdminCmsRemoteFlush', () => {
     })
     expect(result.status).toBe('ok')
     expect(loadMediaIndex).not.toHaveBeenCalled()
-    expect(calls.pubPatches[0]).not.toHaveProperty('media_index')
+    expect(calls.rpcCalls[0]!.p_media_index).toBeNull()
     // The scoped column + publication bookkeeping still go through.
-    expect(calls.pubPatches[0]).toHaveProperty('theme_config')
-    expect(calls.pubPatches[0]).toHaveProperty('published_at')
+    expect(calls.rpcCalls[0]!.p_patch).toHaveProperty('theme_config')
+    expect(calls.rpcCalls[0]!.fn).toBe('publish_cms_settings')
   })
 
   it('rebuilds media_index when the save includes asset_config (and on full syncs)', async () => {
@@ -307,8 +310,8 @@ describe('runAdminCmsRemoteFlush', () => {
       loadMediaIndex,
     })
     expect(loadMediaIndex).toHaveBeenCalledTimes(2)
-    expect(calls.pubPatches[0]).toHaveProperty('media_index', [{ id: 'm1' }])
-    expect(calls.pubPatches[1]).toHaveProperty('media_index', [{ id: 'm1' }])
+    expect(calls.rpcCalls[0]!.p_media_index).toEqual([{ id: 'm1' }])
+    expect(calls.rpcCalls[1]!.p_media_index).toEqual([{ id: 'm1' }])
   })
 
   it('omits media_index (never wipes it) when the media library read fails', async () => {
@@ -318,14 +321,18 @@ describe('runAdminCmsRemoteFlush', () => {
       loadMediaIndex: async () => null,
     })
     expect(result.status).toBe('ok')
-    expect(calls.pubPatches[0]).not.toHaveProperty('media_index')
+    expect(calls.rpcCalls[0]!.p_media_index).toBeNull()
   })
 
-  it('reports a write-failed error mentioning RLS when an UPDATE hits 0 rows', async () => {
-    const { client } = createFakeClient({
+  it('reports a write-failed error, and says BOTH tables rolled back, when the publish fails', async () => {
+    // The 0-rows case (missing singleton, or RLS filtering the row away) now
+    // RAISES inside `publish_cms_settings`, which rolls both UPDATEs back
+    // together — so it reaches the client as one ordinary RPC error rather than
+    // a per-table result that has to be pieced together.
+    const { client, calls } = createFakeClient({
       session: SESSION,
       role: 'admin',
-      settingsRows: [],
+      rpcError: 'publish matched no row (cms_settings=0, storefront_publication=0)',
     })
     const result = await runAdminCmsRemoteFlush(
       client,
@@ -335,16 +342,19 @@ describe('runAdminCmsRemoteFlush', () => {
     expect(result.status).toBe('error')
     if (result.status === 'error') {
       expect(result.reason).toBe('write-failed')
-      expect(result.message).toMatch(/cms_settings/)
-      expect(result.message).toMatch(/Row Level Security/i)
+      expect(result.message).toMatch(/rolled back/i)
+      expect(result.message).toMatch(/still agree/i)
+      expect(result.message).toMatch(/publish matched no row/)
     }
+    // The reassurance in that message is only true if nothing else wrote.
+    expect(calls.directUpdates).toHaveLength(0)
   })
 
-  it('reports a write-failed error when Supabase rejects the UPDATE', async () => {
+  it('surfaces a permission failure from the RPC', async () => {
     const { client } = createFakeClient({
       session: SESSION,
       role: 'admin',
-      pubError: 'permission denied for table storefront_publication',
+      rpcError: 'cms admin role required',
     })
     const result = await runAdminCmsRemoteFlush(
       client,
@@ -354,8 +364,7 @@ describe('runAdminCmsRemoteFlush', () => {
     expect(result.status).toBe('error')
     if (result.status === 'error') {
       expect(result.reason).toBe('write-failed')
-      expect(result.message).toMatch(/storefront_publication/)
-      expect(result.message).toMatch(/permission denied/)
+      expect(result.message).toMatch(/cms admin role required/)
     }
   })
 
@@ -367,10 +376,19 @@ describe('runAdminCmsRemoteFlush', () => {
       overridesWithValues(),
     )
     expect(result).toEqual({ status: 'ok', rows: 2 })
-    expect(calls.settingsPatches[0]).toEqual({
-      theme_config: { name: 'theme' },
-      updated_at: expect.any(String),
-    })
+    // No `updated_at`: the timestamps and `revision` moved server-side into the
+    // RPC, so the patch now carries content columns ONLY.
+    expect(calls.rpcCalls[0]!.p_patch).toEqual({ theme_config: { name: 'theme' } })
+    expect(calls.rpcCalls[0]!.fn).toBe('publish_cms_settings')
+  })
+
+  it('publishes through ONE call — never a second, independent write', async () => {
+    // The regression this pins: two independent UPDATEs could half-succeed and
+    // permanently diverge the CMS draft from the live storefront (F-19).
+    const { client, calls } = createFakeClient({ session: SESSION, role: 'admin' })
+    await runAdminCmsRemoteFlush(client, undefined, overridesWithValues())
+    expect(calls.rpcCalls).toHaveLength(1)
+    expect(calls.directUpdates).toEqual([])
   })
 })
 
@@ -404,8 +422,7 @@ describe('whole-map clobber guard', () => {
       expect(result.message).toMatch(/NOT published/i)
     }
     // The whole point of the guard: it refuses BEFORE any network write.
-    expect(calls.settingsPatches).toHaveLength(0)
-    expect(calls.pubPatches).toHaveLength(0)
+    expect(calls.rpcCalls).toHaveLength(0)
   })
 
   it('refuses a scoped publish of an unhydrated column before touching the network', async () => {
@@ -422,8 +439,7 @@ describe('whole-map clobber guard', () => {
       expect(result.message).toMatch(/Reload \/admin/i)
     }
     expect(calls.getSession).toBe(0)
-    expect(calls.settingsPatches).toHaveLength(0)
-    expect(calls.pubPatches).toHaveLength(0)
+    expect(calls.rpcCalls).toHaveLength(0)
   })
 
   it('leaves a scoped publish of an unrelated column alone', async () => {
@@ -434,7 +450,7 @@ describe('whole-map clobber guard', () => {
       overridesWithValues(),
     )
     expect(result.status).toBe('ok')
-    expect(calls.settingsPatches[0]).not.toHaveProperty('pdp_content')
+    expect(calls.rpcCalls[0]!.p_patch).not.toHaveProperty('pdp_content')
   })
 
   it('drops unhydrated whole-map columns from an unscoped sync instead of failing it', async () => {
@@ -446,13 +462,11 @@ describe('whole-map clobber guard', () => {
     )
     expect(result.status).toBe('ok')
     // Omitted -> the partial UPDATE leaves the remote maps untouched.
-    expect(calls.settingsPatches[0]).not.toHaveProperty('pdp_content')
-    expect(calls.settingsPatches[0]).not.toHaveProperty('shop_config')
-    expect(calls.pubPatches[0]).not.toHaveProperty('pdp_content')
-    expect(calls.pubPatches[0]).not.toHaveProperty('shop_config')
+    expect(calls.rpcCalls[0]!.p_patch).not.toHaveProperty('pdp_content')
+    expect(calls.rpcCalls[0]!.p_patch).not.toHaveProperty('shop_config')
     // Everything else still publishes.
-    expect(calls.settingsPatches[0]).toHaveProperty('theme_config')
-    expect(calls.settingsPatches[0]).toHaveProperty('legal_content')
+    expect(calls.rpcCalls[0]!.p_patch).toHaveProperty('theme_config')
+    expect(calls.rpcCalls[0]!.p_patch).toHaveProperty('legal_content')
   })
 })
 

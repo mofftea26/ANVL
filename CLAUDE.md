@@ -283,7 +283,7 @@ pnpm hooks:install              # Point git at .githooks (one-time, per clone)
 - `SUPABASE_SERVICE_ROLE_KEY` is **never** bundled in client code. It is for migrations and privileged server scripts only.
 - All CMS JSON writes must pass Zod validation (`cmsSiteConfig.zod.ts`) before Supabase upsert.
 - Before any schema change: document current schema → target schema → migration steps → risks → rollback plan.
-- Published storefront state flows: admin edits local working copy → `adminCmsRemoteSync` → `cms_settings` + `storefront_publication` mirror.
+- Published storefront state flows: admin edits local working copy → `adminCmsRemoteSync` → **`publish_cms_settings()`** → `cms_settings` + `storefront_publication`, in **ONE transaction** (F-19). Never write those two tables as separate UPDATEs: postgrest-js does not reject on a transport failure, so a `Promise.all` pair half-succeeds silently and the split is invisible (hydration reads `cms_settings` only). The RPC gates on **`admin`** — the stricter of the two tables — and treats a JSON `null` as absent, since every jsonb column is `NOT NULL` but a JSON null is a legal jsonb value the constraint will not catch.
 
 ### Edge Functions
 

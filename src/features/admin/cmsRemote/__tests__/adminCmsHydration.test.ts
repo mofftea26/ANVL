@@ -66,7 +66,7 @@ interface Row {
 function createFakeSupabase(
   settings: Row,
   publication: Row,
-  opts?: { failColumns?: readonly string[] },
+  opts?: { failColumns?: readonly string[]; rpcError?: string },
 ) {
   const client = {
     auth: {
@@ -102,15 +102,19 @@ function createFakeSupabase(
             },
           }),
         }),
-        update: (patch: Row) => ({
-          eq: () => ({
-            select: async () => {
-              Object.assign(row, patch)
-              return { data: [{ id: 1 }], error: null }
-            },
-          }),
-        }),
       }
+    },
+    // Publishing goes through the transactional RPC (F-19), so the fake models
+    // the transaction: the patch lands on the settings row or nothing does.
+    // `p_media_index` is publication-only and this fake tracks a single row, so
+    // it is accepted and ignored rather than merged into the settings shape.
+    async rpc(_fn: string, args: { p_patch: Row; p_media_index: unknown }) {
+      // Models the transaction: BOTH rows move, or neither does.
+      if (opts?.rpcError) return { data: null, error: { message: opts.rpcError } }
+      Object.assign(settings, args.p_patch)
+      Object.assign(publication, args.p_patch)
+      if (args.p_media_index != null) publication.media_index = args.p_media_index
+      return { data: { settings_rows: 1, publication_rows: 1 }, error: null }
     },
   }
   // Minimal structural fake — only the surface these paths touch exists, so a
@@ -279,5 +283,46 @@ describe('whole-map clobber regression', () => {
     expect(Object.keys(settings.pdp_content as Row).sort()).toEqual(['hoodie', 'tee'])
     expect((publication.shop_config as Row).heading).toBe('Remote Armory')
     expect(publication.active_landing_page_key).toBe('the-oath')
+  })
+})
+
+describe('atomic publish (F-19)', () => {
+  it('leaves BOTH tables untouched when the publish fails', async () => {
+    // Before the transactional RPC, the two UPDATEs were independent and
+    // postgrest-js never rejects on a transport failure — so a one-of-two
+    // failure ran to completion as a HALF-WRITE, permanently diverging the CMS
+    // draft from what SSR renders, with no signal the operator could find.
+    const settings = remoteSettings()
+    const publication = remoteSettings()
+    const before = JSON.stringify([settings, publication])
+
+    const client = createFakeSupabase(settings, publication, { rpcError: 'boom' })
+    const result = await runAdminCmsRemoteFlush(client, ['theme_config'], {
+      readAllValues: readLocalValues,
+      loadMediaIndex: async () => null,
+    })
+
+    expect(result.status).toBe('error')
+    expect(JSON.stringify([settings, publication])).toBe(before)
+  })
+
+  it('moves both tables together on success — they cannot diverge', async () => {
+    const settings = remoteSettings()
+    const publication = remoteSettings()
+    const client = createFakeSupabase(settings, publication)
+
+    // `theme_config`, not a whole-map column: this test is about atomicity, and
+    // a whole-map column would be refused by the clobber guard first (this
+    // suite's localStorage is deliberately un-hydrated).
+    const result = await runAdminCmsRemoteFlush(client, ['theme_config'], {
+      readAllValues: readLocalValues,
+      loadMediaIndex: async () => null,
+    })
+
+    expect(result.status).toBe('ok')
+    // The same invariant the production regression check asserts: the shared
+    // columns are identical in both tables after a publish.
+    expect(settings.theme_config).toEqual(publication.theme_config)
+    expect(settings.active_landing_page_key).toEqual(publication.active_landing_page_key)
   })
 })

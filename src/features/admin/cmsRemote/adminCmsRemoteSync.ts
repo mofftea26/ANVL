@@ -332,24 +332,15 @@ async function defaultLoadMediaIndex(
   return mediaList.ok ? buildMediaIndex(mediaList.assets) : null
 }
 
-function describeCmsWriteFailure(
-  table: string,
-  res: {
-    error: { message: string } | null
-    data: unknown[] | null
-  },
-): string | null {
-  if (res.error) return `Publishing to ${table} failed: ${res.error.message}`
-  if (!res.data || res.data.length === 0) {
-    // `.update().eq('id', 1)` without `.select()` cannot tell "updated 1 row"
-    // from "RLS filtered the row away" — the returned-rows check can.
-    return (
-      `Publishing to ${table} updated 0 rows — the singleton row (id = 1) is missing, ` +
-      'or Row Level Security blocked the write for this account.'
-    )
-  }
-  return null
-}
+/*
+ * `describeCmsWriteFailure` lived here until F-19. It reported per-table write
+ * failures for the two independent UPDATEs, including the "updated 0 rows means
+ * the singleton is missing or RLS blocked it" case. Both jobs moved into
+ * `publish_cms_settings`: a 0-row match now RAISES inside the function, which
+ * rolls both UPDATEs back together, and PostgREST surfaces that as a single
+ * `error`. There is no longer a per-table outcome to describe, because there is
+ * no longer a state where one table succeeded and the other did not.
+ */
 
 /**
  * The environment-independent core of the flush, exported so tests can drive
@@ -434,34 +425,46 @@ export async function runAdminCmsRemoteFlush(
     mediaIndex = await load(client)
   }
 
-  const now = new Date().toISOString()
-  const settingsPatch = { ...scopedValues, updated_at: now }
-  const pubPatch: Record<string, unknown> = {
-    ...scopedValues,
-    published_at: now,
-    revision: Date.now(),
+  // --- Write: ONE transaction (F-19) --------------------------------------
+  // This was two independent PostgREST UPDATEs under `Promise.all`. postgrest-js
+  // does NOT reject on a transport failure — it converts one into
+  // `{ data: null, error }` — so `Promise.all` never rejected and never
+  // cancelled its sibling: a one-of-two failure always ran to completion as a
+  // HALF-WRITE, permanently diverging the editor's source of truth from what
+  // SSR renders. And it was self-concealing: `adminCmsHydration` reads
+  // `cms_settings` only, so reloading /admin could never reveal the split, and
+  // if `cms_settings` was the failed half, reloading silently replaced the
+  // operator's edit with the stale draft while the storefront served the new
+  // value. `publish_cms_settings` updates both tables or neither.
+  //
+  // `updated_at` / `published_at` / `revision` are now set server-side, so
+  // `revision` is the Postgres clock rather than the browser's `Date.now()`
+  // (read in one place, coerced to a number; nothing orders on it).
+  const { data, error } = await client.rpc('publish_cms_settings', {
+    p_patch: scopedValues,
+    p_media_index: mediaIndex,
+  })
+
+  if (error) {
+    return {
+      status: 'error',
+      reason: 'write-failed',
+      message:
+        'Publishing failed — cms_settings and storefront_publication were rolled back ' +
+        `together, so the CMS and the live storefront still agree: ${error.message}`,
+    }
   }
-  if (mediaIndex != null) pubPatch.media_index = mediaIndex
 
-  // --- Writes (parallel; `.select('id')` proves a row was actually hit) -----
-  const [settingsRes, pubRes] = await Promise.all([
-    client.from('cms_settings').update(settingsPatch).eq('id', 1).select('id'),
-    client
-      .from('storefront_publication')
-      .update(pubPatch)
-      .eq('id', 1)
-      .select('id'),
-  ])
+  return { status: 'ok', rows: readPublishedRowCount(data) }
+}
 
-  const failure =
-    describeCmsWriteFailure('cms_settings', settingsRes) ??
-    describeCmsWriteFailure('storefront_publication', pubRes)
-  if (failure) return { status: 'error', reason: 'write-failed', message: failure }
-
-  return {
-    status: 'ok',
-    rows: (settingsRes.data?.length ?? 0) + (pubRes.data?.length ?? 0),
-  }
+/** Row counts returned by `publish_cms_settings`; 0 when the shape is unexpected. */
+function readPublishedRowCount(data: unknown): number {
+  if (!data || typeof data !== 'object') return 0
+  const row = data as Record<string, unknown>
+  const settings = typeof row.settings_rows === 'number' ? row.settings_rows : 0
+  const published = typeof row.publication_rows === 'number' ? row.publication_rows : 0
+  return settings + published
 }
 
 export async function flushAdminCmsRemoteSync(
