@@ -166,7 +166,7 @@ Slim CMS admin, split into subfolders. Every page renders inside the wide-screen
 | `landing-picker/` | Dashboard control to pick the active code-owned landing page (Supabase `landing_pages` ∩ registry) |
 | `landing-content/` | Landing Content editor (`/admin/content`): RHF form over The Oath's content schema, code defaults as placeholders (`sections/Oath*Fields`) |
 | `lib/` | Admin datetime helpers (`adminDateTime.ts`), local reset |
-| `media/` | Media library: upload zone, asset grid, picker, `useMediaAssetsQuery` |
+| `media/` | Media library: upload zone, asset grid, picker, `useMediaAssetsQuery`, and `mediaUploadAdvice.ts` — **advisory only** size/format guidance shown per file in the naming modal. It never blocks an upload; it exists because CMS media is served as the RAW original (`publicCmsMediaUrl` builds an `/object/public/` URL, and Supabase image transformation is a Pro-plan feature this project does not have), so whatever is uploaded is exactly what every visitor downloads |
 | `site-theme/` | Theme editor (15-token palette) + WCAG contrast report + preview rail |
 | `site-font/` | Fonts editor + font families service |
 | `site-assets/` | Assets editor (media library + general/per-drop slot assignment) |

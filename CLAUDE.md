@@ -218,6 +218,7 @@ pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALY
 pnpm storybook                  # Component workbench on port 6006
 pnpm build-storybook            # Static Storybook build
 pnpm docs:check                 # Doc-freshness gate (which docs this change set still owes)
+node scripts/compress-glb-textures.mjs public/about/*.glb   # Re-encode embedded GLB textures (--check to report only)
 pnpm hooks:install              # Point git at .githooks (one-time, per clone)
 ```
 

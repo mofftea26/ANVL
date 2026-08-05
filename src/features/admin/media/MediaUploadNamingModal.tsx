@@ -14,6 +14,7 @@ import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { Modal } from '@/shared/components/ui/Modal'
 import { cn } from '@/shared/lib/cn'
+import { getMediaUploadAdvice } from './mediaUploadAdvice'
 
 /**
  * Enforced functional naming for every upload. Two modes per file:
@@ -207,6 +208,7 @@ export function MediaUploadNamingModal({
                     onChange={(mode) => patch(i, { mode })}
                   />
                 </div>
+                <MediaUploadAdviceNote file={file} />
                 {entry.mode === 'prefixed' ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <AdminFieldSelect
@@ -276,5 +278,31 @@ export function MediaUploadNamingModal({
         </div>
       </div>
     </Modal>
+  )
+}
+
+/**
+ * Advisory only — never blocks the upload and never re-encodes anything.
+ * CMS media is served as the raw original (there is no resizing layer on the
+ * free Supabase plan), so whatever is uploaded here is exactly what every
+ * visitor downloads. This is the only place that says so before it ships.
+ */
+function MediaUploadAdviceNote({ file }: { file: File }) {
+  const advice = getMediaUploadAdvice(file)
+  if (!advice) return null
+  return (
+    <p
+      className={cn(
+        'mb-3 rounded-lg border px-3 py-2 text-xs leading-relaxed',
+        advice.level === 'warn'
+          ? 'border-[color-mix(in_oklab,var(--color-warning)_45%,transparent)] bg-[color-mix(in_oklab,var(--color-warning)_10%,transparent)] text-[var(--color-text)]'
+          : 'border-[var(--color-line)] bg-[var(--color-surface-soft)] text-[var(--color-text-muted)]',
+      )}
+    >
+      <span className="font-semibold">
+        {advice.level === 'warn' ? 'Heavy file — ' : 'Tip — '}
+      </span>
+      {advice.message}
+    </p>
   )
 }

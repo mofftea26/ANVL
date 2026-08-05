@@ -83,6 +83,14 @@ Two things to keep in mind when touching this:
 - `bestForeground()` only inspects the **flat** accent. The primary button paints a gradient whose top is `mix(accent, white, .24)` (`--color-highlight-bright`), and that stop can fail while the flat colour passes — bone-light did, at 3.64:1 against 5.97:1. `themeContrast.test.ts` asserts **both** stops for that reason.
 - The 15 palette tokens are CMS-editable, so the shipped defaults are a floor, not a guarantee. The live published theme wins over them.
 
+## Upload advice (advisory, never blocking)
+
+The naming modal shows a per-file size/format note (`mediaUploadAdvice.ts`). It **never blocks an upload and never re-encodes anything** — an operator with a reason for a 12 MB hero still gets it.
+
+It exists because CMS media is served as the **raw original**: `publicCmsMediaUrl()` builds an `/object/public/` Storage URL, and Supabase image transformation is a **Pro-plan** feature this project does not have. There is no resizing layer anywhere, so whatever is uploaded is exactly what every visitor downloads, at full resolution. Before this, `MediaUploadZone` enforced only the bucket's 50 MB hard limit — a 9 MB PNG uploaded as silently as a 90 KB WebP.
+
+Thresholds live in one module and are pinned by test, **including the silence**: a warning on every file is a warning on none. SVGs are exempt (size heuristics do not apply to vectors), `.glb` is matched by extension when the browser sends no MIME type, and the GLB note points at `scripts/compress-glb-textures.mjs` — because GLB weight is almost always embedded textures, not geometry.
+
 ## Media library grid
 
 `MediaAssetGrid` virtualises above 100 assets. The virtualiser slices the asset list into rows of N and positions rows absolutely, so **N must equal the column count the CSS grid is actually rendering** (`grid gap-3 sm:grid-cols-2 lg:grid-cols-3` → 1 / 2 / 3). It was hardcoded to 3, so below `lg` rows overlapped and most of the library became unreachable on a laptop, tablet or phone. `useResponsiveGridColumns` now tracks it live against those same breakpoints — change one, change the other.
