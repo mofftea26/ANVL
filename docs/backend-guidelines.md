@@ -140,7 +140,7 @@ authenticated (admin):
 
 - ~~`touch_row_updated_at()` has a mutable `search_path`.~~ **Fixed 2026-08-04** (`search_path = ''`); advisor warning confirmed cleared.
 - ~~Unindexed FKs: `armory_feats.user_id`, `passport_transfers.from_user`, `passport_transfers.to_user`, `techpacks.created_by`.~~ **Fixed 2026-08-04**, plus `product_reviews (product_slug, created_at DESC)` — the existing `(user_id, product_slug)` composite leads with `user_id` and so could not serve `get_product_reviews`' by-slug lookup.
-- Every table created **after** the `perf20_wrap_auth_uid_in_rls_policies` migration still calls bare `auth.uid()` in its policies instead of `(select auth.uid())` — `gamification_*`, `product_passports`, `passport_transfers`, `coming_soon_subscribers`, `techpacks`, `techpack_images`. The PERF-20 fix was a one-time sweep, not a standing rule; new tables must use the `(select auth.uid())` form.
+- ~~Every table created after `perf20_wrap_auth_uid_in_rls_policies` still calls bare `auth.uid()`.~~ **Fixed 2026-08-05** (`20260805045202_perf22…`): all **31** remaining policies across `gamification_*`, `product_passports`, `passport_transfers`, `coming_soon_subscribers`, `techpacks` and `techpack_images` rewritten; every `auth_rls_initplan` advisor warning cleared. PERF-20 was a one-time sweep and drifted straight back, so treat `(select auth.uid())` as a **standing rule for every new policy** — the fix migration is idempotent and can be re-run as a sweep if it drifts again.
 - Duplicate permissive SELECT policies on `landing_pages`, `passport_transfers`, `product_passports`, `story_*`.
 - Auth: leaked-password protection still disabled (SEC-23, a dashboard toggle).
 
@@ -163,7 +163,7 @@ Two separate problems; only the first is fixed.
 - Covering indexes added: `product_reviews (product_slug, created_at DESC)`, `armory_feats (user_id)`, `passport_transfers (from_user)`, `passport_transfers (to_user)`, `techpacks (created_by)`. The reviews one matters most — the existing `(user_id, product_slug)` composite leads with `user_id` and so could not serve the by-slug lookup.
 **Round 2 (`20260804174508`)** closed three of those: `accept_passport_transfer` now resets `wear_count` / `last_worn_at` / `featured_slot` / `is_public` (it could previously HARD-FAIL on the `(claimed_by, featured_slot)` partial unique index when the receiving owner already had that slot pinned); `log_passport_wear` folds its 24h cooldown into the UPDATE's WHERE clause so the row lock arbitrates instead of a check-then-write race; and `orders` RLS uses `nullif()` on both sides of the email comparison, so an order whose email resolved to `''` is no longer readable by any signed-in user lacking an email claim.
 
-- **Still open:** `admin_unassign_passport` allows `editor` though the documented model is admin-only (left alone deliberately — narrowing it removes a capability an editor may rely on, which is an operational call); and 21 post-PERF-20 policies still call bare `auth.uid()`.
+- **Still open:** `admin_unassign_passport` allows `editor` though the documented model is admin-only (left alone deliberately — narrowing it removes a capability an editor may rely on, which is an operational call).
 
 ---
 
