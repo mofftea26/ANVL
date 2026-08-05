@@ -1,67 +1,20 @@
-import type { CmsClient, SeoClient, SiteSettingsClient } from '@/app/config/clients'
-import { cmsMockData } from '@/features/cms/data/cms.mock'
+import type { SeoClient } from '@/app/config/clients'
 import { resolveSeoByPath } from '@/features/cms/api/resolveSeoByPath'
 import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { defaultSiteSeoContent } from '@/features/cms/siteSeo.local'
 import { fetchPublishedStorefrontProjection } from '@/features/cms/api/publicStorefrontPublication'
-import { DEFAULT_SITE_HOMEPAGE } from '@/features/cms/siteHomepage.settings'
-import {
-  buildStaticWebsiteNavigation,
-  staticHeaderNavLinks,
-} from '@/features/cms/navigation/staticWebsiteNavigation'
-import { createDefaultWebsiteLayout } from '@/features/cms/layout/websiteLayout.defaults'
 
-const STATIC_NAV = buildStaticWebsiteNavigation()
-
-export type SupabaseCmsPublicReadSlice = Pick<
-  CmsClient,
-  'getNavigation' | 'getAnnouncementBar' | 'getCampaigns' | 'getLookbook' | 'getSiteHomepage'
->
-
-export function createSupabaseCmsPublicReadSlice(
-  _env: SupabasePublicEnv,
-): SupabaseCmsPublicReadSlice {
-  return {
-    async getNavigation() {
-      return staticHeaderNavLinks().map((link) => ({
-        label: link.label,
-        href: link.href,
-      }))
-    },
-
-    async getAnnouncementBar() {
-      const a = STATIC_NAV.announcement
-      if (a?.enabled && a.message.trim()) {
-        return {
-          message: a.message,
-          ctaLabel: a.href?.trim() ? 'Open' : '',
-          ctaHref: a.href?.trim() ?? '#',
-        }
-      }
-      return { message: '', ctaLabel: '', ctaHref: '#' }
-    },
-    async getCampaigns() {
-      return cmsMockData.campaigns
-    },
-    async getLookbook() {
-      return cmsMockData.lookbook
-    },
-
-    async getSiteHomepage() {
-      return DEFAULT_SITE_HOMEPAGE
-    },
-  }
-}
-
-export function createSupabaseSiteSettingsReadSlice(
-  _env: SupabasePublicEnv,
-): Pick<SiteSettingsClient, 'getWebsiteLayout'> {
-  return {
-    async getWebsiteLayout() {
-      return structuredClone(createDefaultWebsiteLayout())
-    },
-  }
-}
+/*
+ * `createSupabaseCmsPublicReadSlice` and `createSupabaseSiteSettingsReadSlice`
+ * lived here until 2026-08-05. They implemented `CmsClient` /
+ * `SiteSettingsClient`, both of which had ZERO call sites — nothing ever read
+ * `runtimeClients.cms` or `runtimeClients.siteSettings`. The slices returned
+ * static defaults (nav from `staticWebsiteNavigation`, campaigns/lookbook from
+ * the mock fixture, layout from `websiteLayout.defaults`), so they were not
+ * "Supabase readers" in any real sense either — leftovers from the removed
+ * drop-builder. Deleted with their contracts and adapters; the storefront
+ * reads its chrome from code defaults directly.
+ */
 
 export function createSupabaseSeoReadSlice(
   env: SupabasePublicEnv,

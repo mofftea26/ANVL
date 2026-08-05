@@ -85,7 +85,7 @@ Data / Runtime layer       → src/app/config/runtime.ts + adapter files
 ### Client Abstraction (Dependency Inversion)
 
 All interface contracts live in `src/app/config/clients.ts`:
-- `CmsClient`, `CommerceClient`, `SeoClient`, `SiteSettingsClient`, `AnalyticsClient`, `PaymentClient`, `AccountClient`, `StoryClient`
+- `CommerceClient`, `SeoClient`, `StoryClient`, `AnalyticsClient`, `PaymentClient`, `AccountClient` — six. (`CmsClient` and `SiteSettingsClient` were deleted 2026-08-05: zero call sites, and their "Supabase readers" only ever returned code defaults.)
 
 Runtime wiring via `createRuntimeClients({ isServer })` in `src/app/config/runtime.ts`:
 - **Server:** seed adapters (no `localStorage`, SSR-safe)

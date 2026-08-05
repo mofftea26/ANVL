@@ -1,4 +1,13 @@
-﻿## 2026-08-05 — ~180 admin controls get a real label
+﻿## 2026-08-05 — Two dead contracts, four dead adapters and two fake "Supabase readers" leave the tree
+
+- **`CmsClient` and `SiteSettingsClient` had zero call sites.** Nothing anywhere read `runtimeClients.cms` or `runtimeClients.siteSettings` — verified by grep for both the property access and any dynamic `runtimeClients[...]` indexing. They existed only to be declared in `clients.ts`, implemented four times (seed + localStorage for each), wired twice in `runtime.ts`, and asserted on by a test that was therefore testing only its own scaffolding.
+- **The two "Supabase read slices" were not reading Supabase.** `createSupabaseCmsPublicReadSlice` returned navigation from `staticWebsiteNavigation`, campaigns and lookbook from the mock fixture, and the homepage from a code default; `createSupabaseSiteSettingsReadSlice` returned `createDefaultWebsiteLayout()`. Both took a `SupabasePublicEnv` they ignored (`_env`). Leftovers from the removed drop-builder.
+- Removed: 2 interfaces, 2 `RuntimeClients` keys, 4 adapter files, 2 slice functions, and the wiring in both branches of `createRuntimeClients`. `supabaseStorefrontReaders.ts` keeps its one real reader (SEO) and carries a note about what left.
+- **Typecheck did the verification work**, catching every straggler in turn — the test's key list, two now-unused type imports in `clients.ts`, and the slice signatures. Worth noting for the next cleanup: an initial scripted pass silently no-oped because the repo's files are **CRLF** and the patterns used `
+`; the edits only landed once done through line-exact replacements.
+- `cms.mock`, `siteHomepage.settings` and `websiteLayout.defaults` were checked and still have other consumers, so they stayed.
+
+## 2026-08-05 — ~180 admin controls get a real label
 
 - **`FormField` rendered a label that pointed at nothing.** It uses an *explicit* `<label htmlFor>` rather than wrapping the control — deliberate, because a composite child (a "Choose media" button beside an input) would otherwise fold the label text into the button's accessible name. But `htmlFor` was **optional**, so every call site that omitted it produced a control that *looked* labelled and was **anonymous to assistive tech**. That single gap is the whole of the ~180-unlabelled-inputs finding, the admin sign-in email field included.
 - **Fixed centrally, with zero call-site changes.** The id is now resolved in `FormField`: an explicit `htmlFor` wins, else the child's own `id`, else a generated one injected into the child. Only the last case mutates the child, and never over an existing `id` — other code references those (`aria-controls`, scroll-to-field, tests). Composite children still cannot be auto-associated, which is exactly why `htmlFor` remains available.

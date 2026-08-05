@@ -69,7 +69,11 @@ Two blocks were added in this pass, both editable from two new `/admin/support` 
 - **Cross-navigation:** `/admin/assets` accepts `?page=<scope>&slot=<key>&q=<search>` (opens the slot panel scoped + highlights the slot + seeds the library search); `/admin/passports` accepts `?tab=content&product=<slug>` (opens that product's wizard). The PDP editor links to its product's passport content.
 - **Speed affordances:** generic `AdminWizard` (extracted from the passport content wizard); native HTML5 drag-reorder via `useSortableList` (About orbs, Oath showcase products, story acts, gamification challenges — always with keyboard up/down fallback); media library cards drag onto any `MediaLibrarySlotField` / slot-panel row to assign; the upload naming modal's slot select has a "Custom name…" option (kebab-forced) for every context; the dashboard carries a drop-setup checklist with live completion ticks.
 
-### Media library grid
+#### a11y: one `<main>` landmark + skip link
+
+`AdminRootShell` used to render its own `<main>` around `AdminShell`'s — two "main" landmarks on every admin page, which leaves a screen reader no unambiguous jump target. The outer one is now a plain `<div>` (it carried no styling); `AdminShell`'s is the single landmark, id `ADMIN_MAIN_ID` (`adminMainId.ts`, its own module so the skip link and its target cannot drift). A skip link sits before the ~20-link sidebar, suppressed on `/admin/login` — that page renders bare, so there would be nothing to skip to.
+
+## Media library grid
 
 `MediaAssetGrid` virtualises above 100 assets. The virtualiser slices the asset list into rows of N and positions rows absolutely, so **N must equal the column count the CSS grid is actually rendering** (`grid gap-3 sm:grid-cols-2 lg:grid-cols-3` → 1 / 2 / 3). It was hardcoded to 3, so below `lg` rows overlapped and most of the library became unreachable on a laptop, tablet or phone. `useResponsiveGridColumns` now tracks it live against those same breakpoints — change one, change the other.
 

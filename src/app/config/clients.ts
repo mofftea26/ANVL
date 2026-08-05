@@ -1,8 +1,6 @@
 ﻿import type { Product, ShopDropFilterOption } from '@/features/products/types/product.types'
 import type { SeoContent } from '@/features/cms/types/cms.types'
 import type { SiteSeoContent } from '@/features/cms/siteSeo.local'
-import type { SiteHomepageSettings } from '@/features/cms/siteHomepage.settings'
-import type { WebsiteLayoutContent } from '@/features/cms/layout/websiteLayout.types'
 import type { CartLine } from '@/features/cart/types/cart.types'
 import type {
   CheckoutInput,
@@ -39,24 +37,10 @@ export interface CommerceClient {
   startCheckout(lines: CartLine[], buyer?: CheckoutBuyer): Promise<string | null>
 }
 
-export interface CmsClient {
-  getAnnouncementBar(): Promise<{ message: string; ctaLabel: string; ctaHref: string }>
-  getNavigation(): Promise<Array<{ label: string; href: string }>>
-  getCampaigns(): Promise<Array<{ id: string; title: string; description: string }>>
-  getLookbook(): Promise<Array<{ id: string; alt: string; src: string }>>
-  /** Published homepage extras (campaign/lookbook routing metadata). */
-  getSiteHomepage(): Promise<SiteHomepageSettings>
-}
-
 /** Per-path SEO cards for public routes — replace with CMS/API-backed documents later. */
 export interface SeoClient {
   getSeoByPath(path: string): Promise<SeoContent | null>
   getSiteSeo(): Promise<SiteSeoContent>
-}
-
-/** Site chrome (header/footer layout) separate from page-level landing CMS. */
-export interface SiteSettingsClient {
-  getWebsiteLayout(): Promise<WebsiteLayoutContent>
 }
 
 /** Published Story saga (chapters → acts → cast) for the `/story` page. */
@@ -100,10 +84,8 @@ export interface AccountClient {
 }
 
 export type RuntimeClients = {
-  cms: CmsClient
   commerce: CommerceClient
   seo: SeoClient
-  siteSettings: SiteSettingsClient
   story: StoryClient
   analytics: AnalyticsClient
   payment: PaymentClient
