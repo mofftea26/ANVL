@@ -37,6 +37,21 @@ interface FormFieldProps {
  * their accessible name. When `children` is a single element,
  * `aria-invalid`/`aria-describedby` are wired onto it automatically so the
  * hint/error are announced on focus.
+ *
+ * LABEL ASSOCIATION (fixed 2026-08-04): `htmlFor` is optional, and because the
+ * label is EXPLICIT rather than wrapping the control, omitting it produced a
+ * label pointing at nothing — i.e. a visually-labelled but programmatically
+ * ANONYMOUS control. That was the single cause of ~180 unlabelled admin inputs,
+ * including the admin sign-in email field. The id is now resolved here and
+ * injected into the child, so every existing call site is fixed with no change:
+ *
+ *   1. an explicit `htmlFor` always wins (caller knows best);
+ *   2. otherwise the child's own `id`, if it has one;
+ *   3. otherwise a generated one, injected onto the child.
+ *
+ * Only step 3 mutates the child, and only when `children` is a single element —
+ * a composite child (its own button + input) still cannot be auto-associated,
+ * which is exactly why `htmlFor` remains available.
  */
 export function FormField({
   label,
@@ -49,21 +64,38 @@ export function FormField({
 }: PropsWithChildren<FormFieldProps>) {
   const hintId = useId()
   const errorId = useId()
+  const generatedControlId = useId()
   const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined
 
-  const control =
-    isValidElement(children) && Children.count(children) === 1
-      ? cloneElement(
-          // Generic a11y prop injection — the wrapped control's own prop type
-          // isn't known statically here, so this is deliberately widened.
-          children as ReactElement<Record<string, unknown>>,
-          { 'aria-invalid': error ? true : undefined, 'aria-describedby': describedBy },
-        )
-      : children
+  const isSingleElement = isValidElement(children) && Children.count(children) === 1
+  const childProps = isSingleElement
+    ? ((children as ReactElement<Record<string, unknown>>).props ?? {})
+    : {}
+  const existingChildId =
+    typeof childProps.id === 'string' && childProps.id.length > 0 ? childProps.id : undefined
+
+  // `htmlFor` wins, then the child's own id, then a generated one. Only the
+  // last case needs injecting — the first two already resolve to a real node.
+  const controlId = htmlFor ?? existingChildId ?? (isSingleElement ? generatedControlId : undefined)
+
+  const control = isSingleElement
+    ? cloneElement(
+        // Generic a11y prop injection — the wrapped control's own prop type
+        // isn't known statically here, so this is deliberately widened.
+        children as ReactElement<Record<string, unknown>>,
+        {
+          'aria-invalid': error ? true : undefined,
+          'aria-describedby': describedBy,
+          // Never clobber an id the control already carries: other code may
+          // reference it (aria-controls, tests, scroll-to-field).
+          ...(existingChildId || htmlFor ? {} : { id: controlId }),
+        },
+      )
+    : children
 
   return (
     <div className={cn('block space-y-1.5', className)}>
-      <label className={labelStyles[labelStyle]} htmlFor={htmlFor}>
+      <label className={labelStyles[labelStyle]} htmlFor={controlId}>
         {label}
       </label>
       {control}
