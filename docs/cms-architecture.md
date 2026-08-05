@@ -73,6 +73,16 @@ Two blocks were added in this pass, both editable from two new `/admin/support` 
 
 `AdminRootShell` used to render its own `<main>` around `AdminShell`'s — two "main" landmarks on every admin page, which leaves a screen reader no unambiguous jump target. The outer one is now a plain `<div>` (it carried no styling); `AdminShell`'s is the single landmark, id `ADMIN_MAIN_ID` (`adminMainId.ts`, its own module so the skip link and its target cannot drift). A skip link sits before the ~20-link sidebar, suppressed on `/admin/login` — that page renders bare, so there would be nothing to skip to.
 
+## Theme presets and the contrast gate
+
+`finalizeThemePalette` (`themeLibrary.ts`) is **fill-only**: `if (!provided('accentForeground')) p.accentForeground = bestForeground(p.accent)`. An explicitly-present foreground therefore **suppresses** the WCAG gate. That is deliberate — an author who sets a colour keeps it — but it means anything *seeding* a palette must omit the derived foregrounds or the gate never runs.
+
+`createThemePreset()` used to seed straight from `DEFAULT_THEME_PALETTE` / `DEFAULT_BONE_LIGHT_PALETTE`, both of which spell `accentForeground` out literally, so every admin-created theme inherited it unchecked — which is how a preset carrying white on `#c2703d` (3.70:1) reached the live theme library. Since 2026-08-05 the seed **deletes `accentForeground` and `primaryForeground`** so the gate chooses them, matching what the house presets in `themePresets.ts` already relied on.
+
+Two things to keep in mind when touching this:
+- `bestForeground()` only inspects the **flat** accent. The primary button paints a gradient whose top is `mix(accent, white, .24)` (`--color-highlight-bright`), and that stop can fail while the flat colour passes — bone-light did, at 3.64:1 against 5.97:1. `themeContrast.test.ts` asserts **both** stops for that reason.
+- The 15 palette tokens are CMS-editable, so the shipped defaults are a floor, not a guarantee. The live published theme wins over them.
+
 ## Media library grid
 
 `MediaAssetGrid` virtualises above 100 assets. The virtualiser slices the asset list into rows of N and positions rows absolutely, so **N must equal the column count the CSS grid is actually rendering** (`grid gap-3 sm:grid-cols-2 lg:grid-cols-3` → 1 / 2 / 3). It was hardcoded to 3, so below `lg` rows overlapped and most of the library became unreachable on a laptop, tablet or phone. `useResponsiveGridColumns` now tracks it live against those same breakpoints — change one, change the other.
