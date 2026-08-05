@@ -230,10 +230,18 @@ export function parseThemeLibrary(raw: unknown): ThemeLibraryConfig {
 }
 
 export function createThemePreset(name: string, appearance: ThemeAppearance): ThemePreset {
-  const palette = finalizeThemePalette(
-    appearance === 'light' ? DEFAULT_BONE_LIGHT_PALETTE : DEFAULT_THEME_PALETTE,
-    appearance,
-  )
+  const base = appearance === 'light' ? DEFAULT_BONE_LIGHT_PALETTE : DEFAULT_THEME_PALETTE
+  // `finalizeThemePalette` is FILL-ONLY: an explicitly-present foreground
+  // suppresses its `bestForeground()` contrast gate. Both defaults spell
+  // `accentForeground` out literally, so seeding straight from them meant every
+  // admin-created theme inherited that value verbatim with the WCAG gate never
+  // running — which is how a preset carrying white on #c2703d (3.70:1) came to
+  // exist in the live theme library. Dropping the two DERIVED foregrounds lets
+  // the gate choose them, exactly as the house presets rely on.
+  const seed: Partial<ThemePalette> = { ...base }
+  delete seed.accentForeground
+  delete seed.primaryForeground
+  const palette = finalizeThemePalette(seed, appearance)
   return {
     id: `theme-${Date.now()}`,
     name,

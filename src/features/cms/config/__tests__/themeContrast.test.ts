@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { contrastRatio } from '@/shared/lib/color'
+import { contrastRatio, mix } from '@/shared/lib/color'
+import { createThemePreset } from '@/features/cms/config/themeLibrary'
 import {
   DEFAULT_THEME_CONFIG,
   DEFAULT_BONE_LIGHT_PALETTE,
@@ -73,6 +74,38 @@ describe.each(Object.entries(palettes))('%s — WCAG AA', (_name, palette) => {
       )
     }
   })
+})
+
+describe('createThemePreset — the gate must actually run', () => {
+  // The defect this pins: `finalizeThemePalette` is fill-only, so seeding a new
+  // preset from a palette that spells `accentForeground` out literally
+  // SUPPRESSES its `bestForeground()` contrast gate. That is how a preset
+  // carrying white on #c2703d (3.70:1) came to exist in the live theme library.
+  it.each(['dark', 'light'] as const)(
+    'a new %s theme clears AA on the accent AND on the button gradient top',
+    (appearance) => {
+      const p = createThemePreset('Test', appearance).palette
+      expect(contrastRatio(p.accentForeground, p.accent)).toBeGreaterThanOrEqual(
+        AA_NORMAL_TEXT,
+      )
+      // `--color-highlight-bright` = mix(accent, white, .24) is the TOP of the
+      // primary button's gradient, under the same text colour. `bestForeground`
+      // only looks at the flat accent, so this stop has to be asserted too.
+      expect(
+        contrastRatio(p.accentForeground, mix(p.accent, '#ffffff', 0.24)),
+      ).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+    },
+  )
+
+  it.each(['dark', 'light'] as const)(
+    'a new %s theme clears AA on the primary surface',
+    (appearance) => {
+      const p = createThemePreset('Test', appearance).palette
+      expect(contrastRatio(p.primaryForeground, p.primary)).toBeGreaterThanOrEqual(
+        AA_NORMAL_TEXT,
+      )
+    },
+  )
 })
 
 describe('the specific regression the audit found', () => {
