@@ -1,3 +1,20 @@
+## 2026-08-05 — MIG-01 is closed: the migrations folder finally reproduces production
+
+`supabase/migrations/` now matches the applied history **exactly** — 76 files ↔ 76 applied rows, zero gaps in either direction, identical ordering, zero name mismatches. A staging or dev rebuild is safe for the first time.
+
+Three separate problems were tangled together under one finding ID, which is why it stayed open so long.
+
+- **8 applied migrations had no file** (fixed 2026-08-04). Two were the security hardening that removed anon SELECT from CMS drafts and public listing from the media buckets — a rebuild without them produced a *less secure* database than production.
+- **48 files carried versions that were never applied.** The folder numbered migrations `…120000` while the applied history used real timestamps, so only 15 of 71 matched and `db push` would have re-run ~56 of them. Renamed with `git mv`, so history is preserved. Worth stating plainly: the new ordering is the order production was **actually built in** — the old disk order was fiction, and several files moved a long way (`storefront_site_drafts` from `20260620100000` to `20260520162707`). One name typo fell out of this too: disk `anvl_drops_client_id_admin_rls` vs applied `anvl_drops_client_drop_id_admin_rls`, content confirmed byte-identical before renaming.
+- **8 files had no history row at all.** These needed judgment rather than a script, so each was checked against production first: `model/gltf-binary` *is* in the `cms-media` bucket, `asset_config.pages` *is* an object, `landing_pages` has *zero* theme columns, tenets *are* array-shaped. They had been applied outside the CLI. Registered with a `migration repair`-equivalent metadata insert — no schema touched, reversible by deleting those 8 versions.
+
+> That last group mattered more than tidiness. Four of them are drop-builder era and target `anvl_drops` and friends, which `drop_builder_teardown` removed. Left unregistered, a `db push` would have tried to re-apply DDL against tables that no longer exist and **errored** — the folder was not merely untidy, it was unrunnable.
+
+`fix_publish_drop_body_column` turned out to have been applied **twice**, 19 seconds apart; the second version now carries a documented no-op file so the histories align without replaying dead drop-builder SQL.
+
+Two process notes worth keeping: an inline `node -e` script had its backticks eaten by bash and wrote mangled prose into `CLAUDE.md` — caught, reverted with `git checkout`, and redone from a file. And a line-based rewrite replaced a regex one after `
+` patterns silently no-oped against this repo's CRLF files, which is the second time that has cost a pass in this audit.
+
 ﻿## 2026-08-05 — 8.8 MB leaves the About page; uploads now warn before they ship
 
 - **The anvil and hammer GLBs were 88% and 85% embedded texture bytes.** Two 2048×2048 maps each, against trivial geometry (~18k verts), `extensionsUsed: []`. Both load on `/about`, and the anvil also on Coming Soon. Re-encoded to 1024px JPEG: **5.97 MB → 1.00 MB** and **4.77 MB → 0.93 MB** — 10.74 MB down to 1.93 MB.

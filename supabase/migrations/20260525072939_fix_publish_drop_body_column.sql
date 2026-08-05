@@ -1,0 +1,25 @@
+-- MIG-01 alignment — DELIBERATE NO-OP.
+--
+-- `fix_publish_drop_body_column` appears TWICE in production's applied history,
+-- 19 seconds apart:
+--
+--   20260525072920  fix_publish_drop_body_column
+--   20260525072939  fix_publish_drop_body_column   <- this file
+--
+-- That is an accidental double-apply, not two different changes. Only one file
+-- ever existed on disk, and it now carries the first version. This file exists
+-- so the folder and the applied history line up exactly — without it,
+-- `supabase migration list` shows a permanent phantom gap that invites someone
+-- to "fix" it later by re-applying real DDL.
+--
+-- The original body targeted `public.anvl_drops` / the publish RPC, both removed
+-- by `20260606051107_drop_builder_teardown.sql`. Replaying it would fail against
+-- a rebuilt database, and replaying it twice was never intended in the first
+-- place, so the SQL is deliberately not repeated here.
+--
+-- Recoverable from production if ever needed:
+--   select array_to_string(statements, E'\n')
+--   from supabase_migrations.schema_migrations
+--   where version = '20260525072939';
+
+select 1;

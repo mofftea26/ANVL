@@ -167,15 +167,18 @@ unnest(array['active_landing_page_key','theme_config','font_config','asset_confi
 where s.id=1 and p.id=1;
 ```
 
-### Migration history vs `supabase/migrations/` (MIG-01, updated 2026-08-04)
+### Migration history vs `supabase/migrations/` (MIG-01 — **CLOSED 2026-08-05**)
 
-Two separate problems; only the first is fixed.
+The folder now matches the applied history **exactly**: 76 files ↔ 76 applied rows, zero gaps in either direction, identical ordering, zero name mismatches. Re-check any time by diffing `supabase_migrations.schema_migrations` against the folder.
+
+Three distinct problems existed; all three are fixed.
 
 1. **Content gap — CLOSED.** Eight applied migrations had their SQL on disk nowhere. They were backfilled verbatim (SELECT-only read of `supabase_migrations.schema_migrations`). Two of them are load-bearing for security, and their absence meant a rebuilt environment was *less* secure than production:
    - `tighten_cms_settings_rls_and_revoke_rls_auto_enable_grant` — drops the public SELECT on `cms_settings` (anon could read unpublished CMS drafts) and revokes `rls_auto_enable()` EXECUTE.
    - `sec25_remove_public_storage_listing_policies` — drops the `storage.objects` policies that allowed enumerating every filename in `cms-media` / `story-media`. Public object fetches are served by the bucket's `public: true` flag, so existing CDN URLs are unaffected.
    - `20260518133503_anvl_oath_bootstrap_storefront.sql` is a **deliberate no-op**: its original body seeded the drop-builder (`anvl_drops`, `published_drop_snapshot`), all of which a later migration drops. The file exists so the version appears in the folder; the SQL is recoverable from production if ever needed.
-2. **Version divergence — STILL OPEN.** The folder numbers migrations `…120000` while the applied history uses real timestamps. Only 15 of 71 files match an applied version; **56 carry versions never applied**. `supabase db push` against production would attempt to re-apply them, and not all are idempotent (`create extension pg_net` is not). **Do not rebuild an environment from this folder** until a `supabase migration repair` / renumber pass aligns the two.
+2. **Version divergence — FIXED.** The folder numbered migrations `…120000` while the applied history used real timestamps, so only 15 of 71 files matched. 48 were renamed with `git mv` (history preserved) to their real applied versions. This also corrected a name typo — disk `anvl_drops_client_id_admin_rls` vs applied `anvl_drops_client_drop_id_admin_rls`, content confirmed identical before renaming. The resulting order is the order production was ACTUALLY built in; the old disk order was fiction.
+3. **Unrecorded-but-applied — FIXED.** 8 files had no history row. Their effects were verified present in production first (`model/gltf-binary` in the `cms-media` bucket, `asset_config.pages` as an object, zero theme columns on `landing_pages`, array-shaped tenets), so they had been applied outside the CLI. Registered with a `migration repair`-equivalent metadata insert — no schema touched, reversible by deleting those 8 versions. This mattered beyond tidiness: 4 are drop-builder era and target `anvl_drops` and friends, which the teardown removed, so a `db push` would have tried to re-apply DDL against tables that no longer exist and **errored**.
 
 ### Audit corrections applied 2026-08-04 (`20260804172317`)
 
