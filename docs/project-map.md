@@ -30,6 +30,8 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 |---|---|
 | `repatch-admin-route-tree.mjs` | Patches auto-generated `routeTree.gen.ts` for admin lazy routes (runs before dev/build/typecheck) |
 | `strip-brand-logo-bg.mjs` | CLI utility to strip backgrounds from brand SVG/PNG exports |
+| `check-dynamic-import-entry.mjs` | Runs as part of `pnpm build`. Fails if any emitted chunk dynamically imports the ENTRY chunk — the signature of a silent Rolldown bug where `await import(...)` resolves to a namespace missing its bindings, yielding `undefined` at runtime. Has caught four shipped instances |
+| `compress-glb-textures.mjs` | Re-encodes embedded GLB textures (refuses on an alpha channel) |
 
 ---
 

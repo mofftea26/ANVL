@@ -96,6 +96,56 @@ const config = defineConfig(({ isSsrBuild }) => ({
           // static reference so it can't be tree-shaken away (the cause of the
           // "n is not a function" save failure in production).
           if (id.includes('/features/admin/cmsRemote/')) return 'admin-cms-remote'
+          // Both of these are reached via `await import(...)` AND are otherwise
+          // entry-graph modules, so Rolldown merged them into the entry chunk and
+          // rewrote the dynamic import to target the entry — whose namespace does
+          // NOT re-export their bindings. `runtimeClients` and
+          // `getAdminSessionServerFn` both came back `undefined` at runtime.
+          // Verified in a built bundle: the entry exposes 307 exports and neither
+          // name is among them. Pinning them off the entry restores a real module
+          // namespace. `scripts/check-dynamic-import-entry.mjs` guards this.
+          if (id.includes('/app/config/runtime')) return 'app-runtime'
+          if (id.includes('/features/admin/auth/adminAuth.ts')) return 'admin-auth'
+          // Same failure, third site: `lazySupabaseAccountClient` does
+          // `import('./supabaseAccountClient').then((m) => m.supabaseAccountClient)`.
+          // Merged into the entry, that resolved to `undefined`, so EVERY account
+          // method (profile read/write, order list) threw. Pin only this module —
+          // pinning the whole `auth/` folder would drag `storefrontSupabaseClient`
+          // (and with it all of supabase-js) back onto the eager entry graph.
+          if (id.includes('/auth/supabaseAccountClient')) return 'storefront-account-client'
+          // --- Keeping supabase-js OFF the eager storefront graph (F-06b) ---
+          //
+          // These two are the only storefront-side modules that reach the SDK.
+          // They live under `features/cms/api/`, so the `cms-core` rule below
+          // would claim them — and since the entry imports `cms-core` for its
+          // schemas, either one alone puts all of supabase-js back on the eager
+          // graph. Every consumer of both is lazy, so they belong with the SDK.
+          // Must come BEFORE the `cms-core` rule (first match wins).
+          if (id.includes('/features/cms/api/createAnvlSupabaseClient')) return 'vendor-supabase'
+          if (id.includes('/features/cms/api/supabasePublicationClient')) return 'vendor-supabase'
+          // Storefront CMS read models. Shared between the entry and the admin
+          // write path; without their own chunk Rolldown parked them inside
+          // `admin-cms-remote`, forcing the entry to statically import that admin
+          // chunk — which is what dragged supabase-js along behind it.
+          if (id.includes('/features/cms/')) return 'cms-core'
+          // Site-wide toast layer, shared by storefront chrome AND admin. Same
+          // story: without its own chunk it landed in `admin-cms-remote` and kept
+          // the entry tied to that admin chunk.
+          if (id.includes('node_modules/sonner')) return 'vendor-sonner'
+          // The GSAP seam (`src/shared/lib/gsap.ts`) MUST share a chunk with the
+          // gsap vendor code and must never be merged into the entry.
+          //
+          // WHY: `useLenisScroll` reaches it via `await import('@/shared/lib/gsap')`
+          // and destructures `{ gsap, ScrollTrigger }`. When Rolldown merges the
+          // seam into the entry chunk, that dynamic import resolves to the ENTRY's
+          // namespace, which does not re-export those bindings — so `ScrollTrigger`
+          // came back `undefined` and every desktop page load threw
+          // "Cannot read properties of undefined (reading 'scrollerProxy')",
+          // silently disabling the Lenis↔ScrollTrigger integration in production.
+          // (Dev was fine; this only reproduced in a built bundle.)
+          //
+          // Same failure mode, and same fix, as the `admin-cms-remote` pin above.
+          if (id.includes('/shared/lib/gsap')) return 'vendor-gsap'
           if (id.includes('node_modules/gsap')) return 'vendor-gsap'
           if (id.includes('node_modules/lenis')) return 'vendor-lenis'
           if (

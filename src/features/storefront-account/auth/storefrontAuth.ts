@@ -1,16 +1,16 @@
-import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { getStorefrontSupabaseClient } from './storefrontSupabaseClient'
+import { isStorefrontAuthEnabled } from './storefrontAuthEnabled'
+
+// Re-exported so every existing `from './storefrontAuth'` / barrel import keeps
+// working. Callers on a hot path should import it from `./storefrontAuthEnabled`
+// directly — see that file for why.
+export { isStorefrontAuthEnabled }
 
 export type StorefrontOAuthProvider = 'google' | 'facebook' | 'apple'
 
 export type AuthResult =
   | { ok: true; userId: string | null; needsConfirmation?: boolean }
   | { ok: false; error: string }
-
-/** True when Supabase is configured — gates the real auth path vs the mock flow. */
-export function isStorefrontAuthEnabled(): boolean {
-  return Boolean(getSupabasePublicEnv())
-}
 
 function originRedirect(path = '/account'): string | undefined {
   if (typeof window === 'undefined') return undefined

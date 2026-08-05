@@ -130,7 +130,7 @@ only by migrations/privileged server scripts, not the Worker.
 ```bash
 # All commands require Node >=22.15 (Node 24 LTS recommended).
 pnpm dev          # vite dev — SSR on workerd + HMR (dev↔prod parity)
-pnpm build        # vite build — client + workerd SSR bundle → dist/
+pnpm build        # vite build — client + workerd SSR bundle → dist/, then the dynamic-import-entry guard
 pnpm preview      # vite preview — serves the built Worker in workerd locally
 pnpm run deploy   # pnpm build && wrangler deploy  (NOT `pnpm deploy` — reserved by pnpm)
 pnpm cf-typegen   # wrangler types → worker-configuration.d.ts (regenerable; gitignored)
@@ -138,6 +138,31 @@ pnpm cf-typegen   # wrangler types → worker-configuration.d.ts (regenerable; g
 
 `dist/` layout after a build: `dist/client/` (static assets) + `dist/server/`
 (the SSR Worker, entry `dist/server/index.js`).
+
+### Chunking: `pnpm build` fails on a dynamic import of the entry chunk
+
+`pnpm build` ends with `scripts/check-dynamic-import-entry.mjs`. It scans every
+emitted client chunk for `import("./index-<hash>.js")` and exits non-zero on a
+hit.
+
+That pattern is the signature of a silent Rolldown failure. When a module reached
+via `await import(...)` is *also* merged into the entry chunk, Rolldown rewrites
+the dynamic import to target the entry — but the entry namespace does not
+re-export that module's bindings, so the destructure yields `undefined` and the
+call site throws. **Dev is unaffected and the test suite stays green**; it only
+reproduces in a built bundle, which is why it shipped four separate times
+(`@/shared/lib/gsap`, `@/app/config/runtime`, `adminAuth.ts`,
+`supabaseAccountClient`) plus the earlier "n is not a function" save bug.
+
+The fix is always the same: pin the module to a non-entry chunk in
+`vite.config.ts` `manualChunks`. Those pins carry comments explaining why — they
+look arbitrary otherwise. **Do not remove one without re-running the guard.**
+
+Related caveat: a `manualChunks` rule is a *request*, not a guarantee. Rolldown
+merges any chunk that is always loaded alongside its importer, which is why
+`vendor-supabase` and `vendor-tanstack` are declared but never emitted in the
+client build. Verify against `dist/client/assets/` rather than trusting the
+config.
 
 `worker-configuration.d.ts` is **gitignored** and **excluded from `tsconfig.json`**:
 its Cloudflare Workers `Element` global collides with the DOM lib (`removeAttribute`

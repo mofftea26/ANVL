@@ -14,6 +14,12 @@
       "port": 3101
     },
     {
+      "name": "anvl-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "vite", "preview", "--port", "3102"],
+      "port": 3102
+    },
+    {
       "name": "anvl-storybook",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [

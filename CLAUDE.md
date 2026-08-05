@@ -153,7 +153,10 @@ src/
     share/           The share sheet: ShareButton + ShareModal (tabs/ Image · Link · QR), targets.ts (send-to registry + pure resolveShareRoute), captions.ts, shareActions.ts, useShareCapabilities/useImagePick/useShareData/useShareLauncher, image/ (drawKit + shareImage + presets/ — one file per look, seven in ONE family: a look is an arrangement, and the self-resolving stage supplies the hero, so every look works with or without a photo), qr/anvlQr.ts (branded QR), socialIcons.tsx
     shopify/         Shopify Storefront API client + mappers
     story/           Story saga: schemas, seed, asset resolver, page components + book overlay, Supabase/seed clients
-    storefront-account/ Public account UI stubs
+    storefront-account/ Public account UI stubs. `auth/storefrontAuthEnabled.ts` holds ONLY the env check,
+                     deliberately free of any import reaching `storefrontSupabaseClient` — the site-wide nav
+                     calls it on every page, so importing the `./auth` barrel here put all of supabase-js on
+                     the eager entry graph
   routes/
     __root.tsx       Root layout loader — fetches storefront projection from Supabase or runtime clients
     index.tsx        Home page — renders the active code-owned landing page (default: the-oath)
@@ -193,6 +196,9 @@ supabase/
   functions/         Edge Functions (shopify-webhook, medusa-webhook-stub)
 scripts/
   repatch-admin-route-tree.mjs  Patches routeTree.gen.ts for admin segment (runs before dev/build/typecheck)
+  check-dynamic-import-entry.mjs  Fails the build if any chunk dynamically imports the ENTRY chunk — the
+                                signature of a silent Rolldown bug where `await import(...)` resolves to a
+                                namespace missing its bindings (see the chunk pins in vite.config.ts)
 public/brand/        Raster + downloadable logo/asset exports
 docs/                Architecture, feature specs, audit, changelog, brand, animation docs
 ```
@@ -209,7 +215,7 @@ pnpm test:watch                 # TDD loop
 pnpm test:coverage              # Coverage report (v8 provider → dist/coverage)
 pnpm test src/features/cart     # Run one feature's tests
 pnpm typecheck                  # tsc --noEmit (repatch runs first)
-pnpm build                      # Production build (client + workerd SSR bundle → dist/)
+pnpm build                      # Production build (client + workerd SSR bundle → dist/) + dynamic-import-entry guard
 pnpm preview                    # Serve the built Worker locally in workerd
 pnpm run deploy                 # pnpm build && wrangler deploy → Cloudflare Workers
 pnpm cf-typegen                 # wrangler types → worker-configuration.d.ts (gitignored, regenerable)
@@ -558,7 +564,8 @@ If shadcn/ui is added in the future:
 - **Admin routes** must use `lazyRouteComponent` — never statically imported from storefront routes.
 - Large editor panels (≥600 lines) must be behind a `React.lazy` + `Suspense` boundary.
 - Storefront entry chunk must not import `src/features/admin/**` runtime code.
-- Heavy vendors are code-split via `vite.config.ts` `manualChunks`. The real chunk set is: `admin-cms-remote`, `vendor-gsap`, `vendor-lenis`, `vendor-three`, `vendor-pdfjs` (admin techpack parser only), `vendor-zod`, `vendor-supabase`, `vendor-fuse`, `vendor-tanstack`, `vendor-react`.
+- Heavy vendors are code-split via `vite.config.ts` `manualChunks`. Chunks actually emitted by the client build (verified 2026-08-05): `admin-cms-remote`, `cms-core`, `app-runtime`, `admin-auth`, `storefront-account-client`, `vendor-gsap`, `vendor-lenis`, `vendor-three`, `vendor-pdfjs` (admin techpack parser only), `vendor-zod`, `vendor-fuse`, `vendor-react`, `vendor-sonner`. **`vendor-supabase` and `vendor-tanstack` are requested but never emitted** — Rolldown merges any chunk that is always loaded alongside its importer, so those rules are aspirational, not effective. Do not assume a `manualChunks` name exists just because the rule is there; check `dist/client/assets/`.
+- **Any module reached via `await import(...)` must be pinned to a non-entry chunk.** If Rolldown merges it into the entry, it rewrites the dynamic import to target the entry chunk, whose namespace does NOT re-export that module's bindings — the destructure silently yields `undefined` and the call site throws at runtime. Dev is unaffected and tests stay green, so this only shows up in a built bundle. It has shipped **four** times (`@/shared/lib/gsap`, `@/app/config/runtime`, `adminAuth.ts`, `supabaseAccountClient`) plus the historical "n is not a function" save bug. `scripts/check-dynamic-import-entry.mjs` runs as part of `pnpm build` and fails on the signature.
 - The landing page registry uses `lazy()` per page, so only the active page's chunk ships.
 - Icons import from `@/shared/icons` with **named imports only** (`import { Menu } from '@/shared/icons'`), never `import *` and never straight from `@phosphor-icons/react` — the seam is what keeps the vendor swappable and the global duotone weight applied.
 - Images from CMS: must have `width`, `height`, `loading="lazy"` (unless LCP), `decoding="async"`, `alt`.

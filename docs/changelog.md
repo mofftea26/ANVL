@@ -1,3 +1,28 @@
+## 2026-08-05 — Four silent production bugs found while chasing a bundle split (F-06b)
+
+The task was a caching optimisation: split `supabase-js` into its own chunk. Verifying it in a **built** bundle — not dev — turned up four live runtime bugs, all the same shape, none of which any test could have caught.
+
+**The shape.** When a module reached via `await import(...)` also gets merged into the entry chunk, Rolldown rewrites the dynamic import to target the entry — but the entry namespace does not re-export that module's bindings. The destructure yields `undefined` and the call site throws. Dev is unaffected; the whole suite stays green. This is the same failure mode as the historical "n is not a function" save bug, which is why `vite.config.ts` already pinned `admin-cms-remote`.
+
+What was actually broken in production:
+
+- **`useLenisScroll`** — `await import('@/shared/lib/gsap')` returned a namespace without `ScrollTrigger`, so **every desktop page load** threw `Cannot read properties of undefined (reading 'scrollerProxy')` and the Lenis↔ScrollTrigger integration never wired up.
+- **`lazySupabaseAccountClient`** — `.then((m) => m.supabaseAccountClient)` resolved to `undefined`, so **every account method** (profile read/write, order list) threw on call.
+- **`runtimeClients`** — `undefined` in the `_slug` route chunk.
+- **`getAdminSessionServerFn`** — `undefined` in the admin CMS remote path.
+
+Confirmed at runtime, not inferred from minified code: the built entry exposes 307 exports and none of these names is among them.
+
+**Fixes.** Five one-line chunk pins in `vite.config.ts` (`/shared/lib/gsap`, `/app/config/runtime`, `adminAuth.ts`, `supabaseAccountClient`, plus `cms-core`/`vendor-sonner` to stop the admin chunk swallowing shared storefront code). Each carries a comment explaining the failure mode, because the rule looks arbitrary otherwise and would be "cleaned up" by the next reader.
+
+**New guard: `scripts/check-dynamic-import-entry.mjs`**, now part of `pnpm build`. It scans every emitted chunk for a dynamic `import()` of the entry chunk — the exact signature — so this class cannot silently return. Currently: 220 chunks, 0 offenders.
+
+**Also landed (the original F-06b work).** `supabase-js` is no longer reachable from the site-wide nav: `isStorefrontAuthEnabled` moved into its own SDK-free module (`auth/storefrontAuthEnabled.ts`) so `publicAccount.core` — loaded on every storefront page — stops importing the `./auth` barrel, and the Story slice now lazy-loads the publication client the way `lazySupabaseAccountClient` already did. A source-graph walk confirms all four SDK entry points are lazy; `__tests__/storefrontAuthEnabled.test.ts` pins the import shape.
+
+**Measured:** storefront entry **290.8 KB → 253.9 KB gzip (−36.9 KB, −12.7%)**. `pnpm verify` green (265 files / 2,566 tests). Browser-verified on the built Worker: home, shop, PDP, story, about, `/admin`, `/account` — zero console errors.
+
+**Still open.** `supabase-js` remains inside `admin-cms-remote`, which the entry still statically imports for ~60 shared bindings, so the SDK is still fetched eagerly. The literal F-06b goal — a separately-cached, non-eager `vendor-supabase` chunk — is **not** achieved. Rolldown merges any chunk that is always loaded with its importer, so this cannot be fixed by config alone; it needs the last entry↔`admin-cms-remote` binding edge unpicked.
+
 ## 2026-08-05 — MIG-01 is closed: the migrations folder finally reproduces production
 
 `supabase/migrations/` now matches the applied history **exactly** — 76 files ↔ 76 applied rows, zero gaps in either direction, identical ordering, zero name mismatches. A staging or dev rebuild is safe for the first time.
