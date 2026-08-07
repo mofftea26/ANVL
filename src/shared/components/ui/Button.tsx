@@ -16,11 +16,13 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // NOTE: text colors use the explicit `text-[color:var(...)]` form. A
-        // bare `text-[var(--color-bg)]` is ambiguous to tailwind-merge, which
-        // can classify it as a font-size, conflict with the base `text-sm`,
-        // and drop the color — leaving a light inherited label on bone/light
-        // backgrounds. The `color:` hint keeps it a color.
+        // NOTE: text colors use the explicit arbitrary form with a leading
+        // `color:` hint. Omitting the hint is ambiguous to tailwind-merge,
+        // which can classify the utility as a font-size, conflict with the
+        // base `text-sm`, and drop the color — leaving a light inherited
+        // label on bone/light backgrounds. The hint keeps it a color.
+        // (Written without literal bracket syntax: Tailwind scans comments
+        // too, and a spelled-out example is picked up as a real candidate.)
         primary:
           'border border-[color-mix(in_oklab,var(--color-highlight-bright)_45%,var(--color-highlight))] bg-gradient-to-b from-[var(--color-highlight-bright)] to-[var(--color-highlight)] text-[color:var(--color-on-highlight)] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_10px_26px_-10px_color-mix(in_oklab,var(--color-highlight)_75%,transparent)] hover:brightness-[1.05] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_16px_36px_-10px_color-mix(in_oklab,var(--color-highlight)_80%,transparent)]',
         secondary:

@@ -1,3 +1,28 @@
+## 2026-08-07 — Tailwind scans comments too: a `Button.tsx` NOTE was emitting a broken CSS rule
+
+Clean `node_modules` reinstall + full `pnpm verify` (265 files / 2566 tests, typecheck and build clean) surfaced one build warning: `Found 1 warning while optimizing generated CSS … Unexpected token Delim('.')`. The generated stylesheet contained a rule whose selector was the *placeholder* arbitrary-value utility spelled with a literal ellipsis inside `var()`, which is not valid CSS.
+
+The source was a **code comment**. `Button.tsx`'s NOTE explaining why text colors carry an explicit `color:` hint spelled the utility out literally, and Tailwind v4's automatic content detection scans comments like any other text — so the example was picked up as a real class candidate and emitted. Rewritten to describe the form in prose instead of reproducing bracket syntax.
+
+Fixing the comment alone did **not** clear the warning — two other tracked files hold the same literal and were also being scanned:
+
+- `dist-ui/**` — committed build output (it is the package `types` entry), holding a *stale* compiled copy of the old comment. Not gitignored, so Tailwind read it.
+- `docs/changelog.md` — an older entry quoting the utility verbatim.
+
+**So the scanner was scoped instead of chasing literals.** `styles.css` now declares `@source not "../dist-ui";` and `@source not "../docs";` (Tailwind 4.2 supports negative sources). Neither directory is UI source: one is build output that can resurrect deleted classes, the other is prose where a quoted example is indistinguishable from real usage.
+
+**Verified by diffing the generated stylesheet**, since scoping content detection can silently drop classes that are genuinely in use:
+
+| | before | after |
+|---|---|---|
+| `dist/client/assets/styles-*.css` | 328,657 B | 324,511 B (**−4,146 B**) |
+| distinct class selectors | 2,633 | 2,565 (**−68, +0**) |
+| CSS optimizer warnings | 1 | **0** |
+
+All 68 dropped classes were traced to their origin: **51 from `docs/` only, 2 from `dist-ui/` only, 15** containing parentheses or commas checked separately by substring. None appears as a real class token anywhere in the 1,289 files Tailwind still scans. Three of them (`max-h-[…]`, `shadow-[…]`, and a truncated `min-h-[calc(…)]`) contain a literal ellipsis — proof they came from truncated prose, not code. Confirmed at runtime as well: across 15 routes and 2,760 class-bearing elements in the rendered DOM, **zero** elements carry any dropped class.
+
+Method note worth keeping: the first two attempts at this audit were wrong in opposite directions. A character class written with a literal space as its lower bound matched the entire stylesheet as one "class"; and substring matching false-positives, because `mt-0` occurs inside `mt-0.5` and `object-top` inside `object-top-left`. Only token matching over the correctly-scoped tree gives a trustworthy answer.
+
 ## 2026-08-05 — Supabase deferral: every source-level edge removed; one bundler edge remains
 
 Follow-up to F-06b. Goal: stop the storefront downloading `@supabase/supabase-js` on first paint.
