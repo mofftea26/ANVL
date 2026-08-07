@@ -1,8 +1,10 @@
 import { useCallback, useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { toast } from 'sonner'
 import { defaultShopUrlSearch } from '@/features/products/shop/shopUrlSearch'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { runtimeClients } from '@/app/config/runtime'
+import { isInternalCheckoutEnabled } from '@/features/checkout/config/internalCheckout'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useCustomerProfileQuery } from '@/features/storefront-account'
 import {
@@ -12,6 +14,7 @@ import {
   QuantityStepper,
   Section,
 } from '@/shared/components/ui'
+import { formatMoney } from '@/shared/lib/money'
 
 export const Route = createFileRoute('/cart')({
   head: () =>
@@ -29,9 +32,14 @@ function CartPage() {
   const { data: customer } = useCustomerProfileQuery()
   const [checkingOut, setCheckingOut] = useState(false)
 
-  // Prefer Shopify's hosted checkout when the Shopify adapter is active; fall
-  // back to the internal /checkout flow (seed/local) or if cart creation fails.
-  // Pass the signed-in buyer's email so the resulting order links to the account.
+  // Prefer Shopify's hosted checkout when the Shopify adapter is active. Pass
+  // the signed-in buyer's email so the resulting order links to the account.
+  //
+  // A failure here must NEVER fall through to the internal /checkout route when
+  // Shopify is live: that route runs the mock gateway, which fakes a successful
+  // order. `isInternalCheckoutEnabled()` gates the fallback to dev-only,
+  // seed/localStorage setups; everywhere else the error is surfaced and the
+  // buyer stays on the cart with their lines intact.
   const handleCheckout = useCallback(async () => {
     if (checkingOut) return
     setCheckingOut(true)
@@ -44,11 +52,19 @@ function CartPage() {
         window.location.href = url
         return
       }
-    } catch {
-      // Swallow and fall through to the internal checkout route.
+      if (isInternalCheckoutEnabled()) {
+        setCheckingOut(false)
+        void navigate({ to: '/checkout' })
+        return
+      }
+      throw new Error('Checkout did not return a hosted URL.')
+    } catch (error) {
+      setCheckingOut(false)
+      console.error('[checkout] could not start hosted checkout', error)
+      toast.error('Checkout is unavailable right now.', {
+        description: 'Your cart has been kept. Please try again in a moment.',
+      })
     }
-    setCheckingOut(false)
-    void navigate({ to: '/checkout' })
   }, [checkingOut, lines, customer?.email, navigate])
 
   return (
@@ -106,7 +122,7 @@ function CartPage() {
                     <p className="anvl-micro mt-1 text-[var(--color-text-muted)]">
                       {line.colorway} · {line.size}
                     </p>
-                    <p className="anvl-heading mt-2 text-base font-normal">${line.price}</p>
+                    <p className="anvl-heading mt-2 text-base font-normal">{formatMoney(line.price, line.currency)}</p>
                   </div>
                   <div className="flex flex-col items-end justify-between gap-3">
                     <QuantityStepper
@@ -131,7 +147,7 @@ function CartPage() {
               <dl className="mt-4 space-y-2 border-b border-[var(--color-line)] pb-4 text-sm">
                 <div className="flex items-center justify-between">
                   <dt className="text-[var(--color-text-muted)]">Subtotal</dt>
-                  <dd className="anvl-heading font-normal">${subtotal.toFixed(2)}</dd>
+                  <dd className="anvl-heading font-normal">{formatMoney(subtotal, lines[0]?.currency)}</dd>
                 </div>
                 <div className="flex items-center justify-between">
                   <dt className="text-[var(--color-text-muted)]">Shipping</dt>
@@ -140,7 +156,7 @@ function CartPage() {
               </dl>
               <div className="mt-4 flex items-center justify-between">
                 <span className="anvl-micro text-[var(--color-text-muted)]">Total</span>
-                <span className="anvl-heading text-2xl font-normal">${subtotal.toFixed(2)}</span>
+                <span className="anvl-heading text-2xl font-normal">{formatMoney(subtotal, lines[0]?.currency)}</span>
               </div>
               <Button
                 className="mt-6 w-full"

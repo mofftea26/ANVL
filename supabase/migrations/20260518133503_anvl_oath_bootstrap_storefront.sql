@@ -1,0 +1,31 @@
+-- MIG-01 backfill — DELIBERATE NO-OP.
+--
+-- A migration with this exact version+name IS recorded in production's
+-- `supabase_migrations.schema_migrations` but had no file on disk. This file
+-- restores the entry so the on-disk folder and the applied history line up
+-- (`supabase migration list` shows no gap, and a fresh `db push` produces the
+-- same history as production).
+--
+-- Its original body is NOT replayed, on purpose. It was a one-time DATA seed
+-- for the drop-builder: it inserted a row into `public.anvl_drops` and wrote
+-- `storefront_publication.active_drop_id` / `published_drop_snapshot` /
+-- `website_layout` / `published_manifest`. Every one of those objects was
+-- removed later in this same folder by:
+--
+--   20260606051107_drop_builder_teardown.sql
+--   20260606095206_drop_orphaned_act_reference_tables.sql
+--
+-- Landing pages are now code-owned (`src/features/landingPages/registry.ts`);
+-- the CMS only picks the active key. So replaying the seed would insert rows
+-- into tables that a later migration drops — no schema or RLS difference, and
+-- a real risk of failing a rebuild if the earlier schema files have drifted.
+--
+-- Schema/RLS reproduction — the actual point of the MIG-01 backfill — is
+-- unaffected: the seven other backfilled files carry all of it.
+--
+-- The original SQL remains recoverable from production if ever needed:
+--   select array_to_string(statements, E'\n')
+--   from supabase_migrations.schema_migrations
+--   where name = 'anvl_oath_bootstrap_storefront';
+
+select 1;

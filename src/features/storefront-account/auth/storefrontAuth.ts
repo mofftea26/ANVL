@@ -1,16 +1,32 @@
-import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import { getStorefrontSupabaseClient } from './storefrontSupabaseClient'
+import { isStorefrontAuthEnabled } from './storefrontAuthEnabled'
+
+// Re-exported so every existing `from './storefrontAuth'` / barrel import keeps
+// working. Callers on a hot path should import it from `./storefrontAuthEnabled`
+// directly — see that file for why.
+export { isStorefrontAuthEnabled }
+
+/**
+ * Loads the storefront Supabase client on first use.
+ *
+ * MUST stay dynamic. This module is pulled into the entry chunk by the `./auth`
+ * barrel and `SocialAuthButtons`, so a STATIC import of the client here anchors
+ * `createAnvlSupabaseClient` → all of `@supabase/supabase-js` (~200 KB) onto the
+ * eager storefront graph — every visitor downloads the auth SDK on first paint,
+ * signed in or not.
+ *
+ * Every caller below is already `async` and the client is memoised, so this
+ * costs one microtask on the first real auth call.
+ */
+async function storefrontClient() {
+  const m = await import('./storefrontSupabaseClient')
+  return m.getStorefrontSupabaseClient()
+}
 
 export type StorefrontOAuthProvider = 'google' | 'facebook' | 'apple'
 
 export type AuthResult =
   | { ok: true; userId: string | null; needsConfirmation?: boolean }
   | { ok: false; error: string }
-
-/** True when Supabase is configured — gates the real auth path vs the mock flow. */
-export function isStorefrontAuthEnabled(): boolean {
-  return Boolean(getSupabasePublicEnv())
-}
 
 function originRedirect(path = '/account'): string | undefined {
   if (typeof window === 'undefined') return undefined
@@ -21,7 +37,7 @@ export async function signInWithPasswordStorefront(
   email: string,
   password: string,
 ): Promise<AuthResult> {
-  const client = getStorefrontSupabaseClient()
+  const client = await storefrontClient()
   if (!client) return { ok: false, error: 'Auth is not configured.' }
   const { data, error } = await client.auth.signInWithPassword({ email, password })
   if (error || !data.user) {
@@ -36,7 +52,7 @@ export async function signUpStorefront(
   fullName?: string,
   redirect?: string,
 ): Promise<AuthResult> {
-  const client = getStorefrontSupabaseClient()
+  const client = await storefrontClient()
   if (!client) return { ok: false, error: 'Auth is not configured.' }
   const { data, error } = await client.auth.signUp({
     email,
@@ -58,7 +74,7 @@ export async function signUpStorefront(
 export async function resendVerificationStorefront(
   email: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const client = getStorefrontSupabaseClient()
+  const client = await storefrontClient()
   if (!client) return { ok: false, error: 'Auth is not configured.' }
   const { error } = await client.auth.resend({
     type: 'signup',
@@ -73,7 +89,7 @@ export async function resendVerificationStorefront(
 export async function updatePasswordStorefront(
   password: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const client = getStorefrontSupabaseClient()
+  const client = await storefrontClient()
   if (!client) return { ok: false, error: 'Auth is not configured.' }
   const { error } = await client.auth.updateUser({ password })
   if (error) return { ok: false, error: error.message }
@@ -104,7 +120,7 @@ export async function signInWithOAuthStorefront(
   provider: StorefrontOAuthProvider,
   redirect?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const client = getStorefrontSupabaseClient()
+  const client = await storefrontClient()
   if (!client) return { ok: false, error: 'Auth is not configured.' }
   const { error } = await client.auth.signInWithOAuth({
     provider,
@@ -117,7 +133,7 @@ export async function signInWithOAuthStorefront(
 export async function sendPasswordResetStorefront(
   email: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const client = getStorefrontSupabaseClient()
+  const client = await storefrontClient()
   if (!client) return { ok: false, error: 'Auth is not configured.' }
   const { error } = await client.auth.resetPasswordForEmail(email, {
     redirectTo: originRedirect('/auth/reset-password'),
@@ -127,13 +143,13 @@ export async function sendPasswordResetStorefront(
 }
 
 export async function signOutStorefront(): Promise<void> {
-  const client = getStorefrontSupabaseClient()
+  const client = await storefrontClient()
   if (client) await client.auth.signOut()
 }
 
 /** Current Supabase user id, or null when signed out / not configured. */
 export async function getStorefrontUserId(): Promise<string | null> {
-  const client = getStorefrontSupabaseClient()
+  const client = await storefrontClient()
   if (!client) return null
   const { data } = await client.auth.getSession()
   return data.session?.user.id ?? null
@@ -141,7 +157,7 @@ export async function getStorefrontUserId(): Promise<string | null> {
 
 /** Current signed-in user's email (for linking a checkout to the account). */
 export async function getStorefrontUserEmail(): Promise<string | null> {
-  const client = getStorefrontSupabaseClient()
+  const client = await storefrontClient()
   if (!client) return null
   const { data } = await client.auth.getSession()
   return data.session?.user.email ?? null

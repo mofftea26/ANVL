@@ -1,10 +1,17 @@
 import { useCallback, useState } from 'react'
 import { Link } from '@tanstack/react-router'
+import { toast } from 'sonner'
 import { runtimeClients } from '@/app/config/runtime'
+import { isInternalCheckoutEnabled } from '@/features/checkout/config/internalCheckout'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
-import { getStorefrontUserEmail } from '@/features/storefront-account/auth'
+// Leaf module, NOT the `./auth` barrel: the barrel re-exports
+// `getStorefrontSupabaseClient` / `supabaseAccountClient`, and this drawer is
+// site-wide chrome on the eager entry chunk — importing the barrel here put all
+// of `@supabase/supabase-js` on every storefront visitor's first paint.
+import { getStorefrontUserEmail } from '@/features/storefront-account/auth/storefrontAuth'
 import { Button, Drawer, QuantityStepper } from '@/shared/components/ui'
+import { formatMoney } from '@/shared/lib/money'
 
 /**
  * Slide-in mini-cart. Opens on add-to-cart and from the header cart icon. Reuses
@@ -17,6 +24,10 @@ export function CartDrawer() {
   const { lines, subtotal, quantity, updateQuantity, removeLine } = useCart()
   const [checkingOut, setCheckingOut] = useState(false)
 
+  // Mirrors `routes/cart.tsx`: the internal /checkout route runs the mock
+  // gateway, so it is only ever a fallback in dev/seed setups. When Shopify is
+  // live a failure is surfaced instead — never silently redirected into a flow
+  // that would fake an order confirmation.
   const handleCheckout = useCallback(async () => {
     if (checkingOut) return
     setCheckingOut(true)
@@ -30,11 +41,19 @@ export function CartDrawer() {
         window.location.href = url
         return
       }
-    } catch {
-      // Fall through to the internal checkout route.
+      if (isInternalCheckoutEnabled()) {
+        closeDrawer()
+        window.location.assign('/checkout')
+        return
+      }
+      throw new Error('Checkout did not return a hosted URL.')
+    } catch (error) {
+      setCheckingOut(false)
+      console.error('[checkout] could not start hosted checkout', error)
+      toast.error('Checkout is unavailable right now.', {
+        description: 'Your cart has been kept. Please try again in a moment.',
+      })
     }
-    closeDrawer()
-    window.location.assign('/checkout')
   }, [checkingOut, lines, closeDrawer])
 
   return (
@@ -68,7 +87,7 @@ export function CartDrawer() {
                       value={line.quantity}
                       onChange={(v) => updateQuantity(line.productId, line.size, line.colorway, v)}
                     />
-                    <span className="anvl-heading text-sm">${(line.price * line.quantity).toFixed(2)}</span>
+                    <span className="anvl-heading text-sm">{formatMoney(line.price * line.quantity, line.currency)}</span>
                   </div>
                   <button
                     className="focus-ring mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-muted)] underline underline-offset-4 hover:text-[var(--color-text)]"
@@ -83,7 +102,7 @@ export function CartDrawer() {
           <div className="mt-4 shrink-0 border-t border-[var(--color-line)] pt-4">
             <div className="flex items-center justify-between">
               <span className="anvl-micro text-[var(--color-text-muted)]">Subtotal</span>
-              <span className="anvl-heading text-xl">${subtotal.toFixed(2)}</span>
+              <span className="anvl-heading text-xl">{formatMoney(subtotal, lines[0]?.currency)}</span>
             </div>
             <Button className="mt-4 w-full" disabled={checkingOut} onClick={() => void handleCheckout()}>
               {checkingOut ? 'Redirecting…' : 'Checkout'}

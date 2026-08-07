@@ -5,10 +5,12 @@ server on the Workers runtime (`workerd`), with the client bundle served as
 Workers static assets. Edge delivery, one runtime for SSR + assets, no separate
 Node host.
 
-> **Status:** setup complete and verified locally (`pnpm build` + `wrangler
-> deploy --dry-run` pass; `env.NODE_ENV` binding + 202 client assets confirmed).
-> The first real `wrangler deploy` (needs a Cloudflare login) and the GoDaddy →
-> Cloudflare nameserver migration are the only remaining steps.
+> **Status: LIVE.** Deployed and smoke-tested 2026-08-04 at
+> <https://anvl.georgemaalouf73.workers.dev> (version `0c306b75`). Both rate-limit
+> bindings provisioned and reported by wrangler; `/checkout` correctly 307s to
+> `/cart` in production, `/admin` 307s to `/admin/login`, and the new
+> `public/_headers` media rules verified on the live edge.
+> The GoDaddy → Cloudflare nameserver migration (custom domain) is the remaining step.
 
 ---
 
@@ -30,6 +32,7 @@ Node host.
   "main": "@tanstack/react-start/server-entry",
   "observability": { "enabled": true },
   "placement": { "mode": "smart" },           // see below
+  "ratelimits": [ /* admin login + CSP report — see below */ ],
   "vars": { "NODE_ENV": "production" }         // required — see below
 }
 ```
@@ -48,6 +51,28 @@ Node host.
   (`src/features/admin/auth/…`, `src/start.ts`) gate their `Secure` attribute —
   and the CSP its dev-only relaxations — on `process.env.NODE_ENV === 'production'`.
   If unset, production would ship non-`Secure` auth cookies.
+
+- **`ratelimits` (added 2026-08-04, F-07).** Two Cloudflare Rate Limiting
+  bindings — `ADMIN_LOGIN_RATE_LIMIT` (20 / 60 s) and `CSP_REPORT_RATE_LIMIT`
+  (60 / 60 s), both keyed by `CF-Connecting-IP`. They cover the two
+  unauthenticated surfaces that previously had no throttle at all: admin
+  sign-in (brute force) and the anon CSP report endpoint (log flooding).
+
+  Three things to know:
+  1. **The bindings only exist on a deployed Worker.**
+     `src/rateLimit.server.ts` therefore **fails open** on every failure path —
+     binding absent, running under Node/vitest, the limiter throwing. Local dev
+     and any deploy predating this config behave exactly as before. Failing
+     closed on an infra detail would be a worse regression than the gap.
+  2. **`namespace_id` must stay stable.** It identifies the counter; changing
+     one resets its window. `period` accepts only `10` or `60`.
+  3. **`wrangler types` does not emit types for rate-limit bindings**, so
+     `Env` in `worker-configuration.d.ts` will not list them. That is expected —
+     `rateLimit.server.ts` reads them from an untyped record and feature-detects
+     `.limit()` before calling it.
+
+  Still unthrottled and tracked separately: the anon `coming_soon_subscribers`
+  insert, passport claim, and review submit.
 
 ---
 
@@ -105,20 +130,76 @@ only by migrations/privileged server scripts, not the Worker.
 ```bash
 # All commands require Node >=22.15 (Node 24 LTS recommended).
 pnpm dev          # vite dev — SSR on workerd + HMR (dev↔prod parity)
-pnpm build        # vite build — client + workerd SSR bundle → dist/
+pnpm build        # vite build — client + workerd SSR bundle → dist/, then the dynamic-import-entry guard
 pnpm preview      # vite preview — serves the built Worker in workerd locally
-pnpm deploy       # pnpm build && wrangler deploy
+pnpm run deploy   # pnpm build && wrangler deploy  (NOT `pnpm deploy` — reserved by pnpm)
 pnpm cf-typegen   # wrangler types → worker-configuration.d.ts (regenerable; gitignored)
 ```
 
 `dist/` layout after a build: `dist/client/` (static assets) + `dist/server/`
 (the SSR Worker, entry `dist/server/index.js`).
 
+### Chunking: `pnpm build` fails on a dynamic import of the entry chunk
+
+`pnpm build` ends with `scripts/check-dynamic-import-entry.mjs`. It scans every
+emitted client chunk for `import("./index-<hash>.js")` and exits non-zero on a
+hit.
+
+That pattern is the signature of a silent Rolldown failure. When a module reached
+via `await import(...)` is *also* merged into the entry chunk, Rolldown rewrites
+the dynamic import to target the entry — but the entry namespace does not
+re-export that module's bindings, so the destructure yields `undefined` and the
+call site throws. **Dev is unaffected and the test suite stays green**; it only
+reproduces in a built bundle, which is why it shipped four separate times
+(`@/shared/lib/gsap`, `@/app/config/runtime`, `adminAuth.ts`,
+`supabaseAccountClient`) plus the earlier "n is not a function" save bug.
+
+The fix is always the same: pin the module to a non-entry chunk in
+`vite.config.ts` `manualChunks`. Those pins carry comments explaining why — they
+look arbitrary otherwise. **Do not remove one without re-running the guard.**
+
+Related caveat: a `manualChunks` rule is a *request*, not a guarantee. Rolldown
+merges any chunk that is always loaded alongside its importer, which is why
+`vendor-supabase` and `vendor-tanstack` are declared but never emitted in the
+client build. Verify against `dist/client/assets/` rather than trusting the
+config.
+
+### Debugging what pulls a module onto the eager graph
+
+```bash
+ANVL_IMPORTERS=1 pnpm build   # real static/dynamic importers, from the module graph
+ANVL_SOURCEMAP=1 pnpm build   # sourcemaps, so you can map a chunk back to its modules
+```
+
+`ANVL_IMPORTERS` is the only reliable oracle. Grepping the source misses
+**multi-line imports** and **`export … from` re-exports** — a re-export is a
+static edge even when nothing in the entry ever calls the binding, and that is
+exactly what kept supabase-js eager long after every call site had been made
+lazy.
+
+### Why supabase-js is still fetched on first paint (open)
+
+Every *source-level* static path to the SDK has been removed, and the entry is
+12.9% smaller for it. But the entry retains one static edge to the chunk holding
+the Supabase client wrappers, so the ~200 KB SDK still downloads on first paint.
+
+Things that were tried and do **not** work: splitting the thin wrappers from the
+vendor code (they re-merge, because the wrappers statically
+`import { createClient }`), and re-pointing `manualChunks` (advisory, see above).
+
+The one change that would close it: make `createAnvlSupabaseClient` load the SDK
+via `await import()`. That turns `getStorefrontSupabaseClient`,
+`getAdminSupabaseBrowserClient` and `getSupabasePublicationAnonClient` into async
+functions and touches ~20 call sites across admin and storefront — worth doing
+deliberately, with its own test pass, rather than as a tail-end change.
+
 `worker-configuration.d.ts` is **gitignored** and **excluded from `tsconfig.json`**:
 its Cloudflare Workers `Element` global collides with the DOM lib (`removeAttribute`
-returns `Element` vs `void`). The app is DOM-centric and uses no Worker bindings.
-If bindings (KV/R2/D1/DO) are ever added, create a Worker-scoped tsconfig that
-re-includes it.
+returns `Element` vs `void`). The app is DOM-centric, and the only bindings so
+far are the two rate limiters — which `wrangler types` does not emit types for
+anyway, and which `src/rateLimit.server.ts` reads from an untyped record. If
+typed bindings (KV/R2/D1/DO) are ever added, create a Worker-scoped tsconfig
+that re-includes it.
 
 ---
 
@@ -138,7 +219,7 @@ wrangler deploy --dry-run    # validates config + bundling + assets, uploads not
 
 ### Production
 ```bash
-pnpm deploy                  # → *.workers.dev URL
+pnpm run deploy              # → *.workers.dev URL
 ```
 Test the `*.workers.dev` URL end-to-end before attaching the custom domain.
 

@@ -59,6 +59,8 @@ export { gsap, ScrollTrigger, SplitText, useGSAP }
 
 Always import from `src/shared/lib/gsap.ts`, never directly from the `gsap` package in component files.
 
+> **Build constraint — do not remove the `vendor-gsap` pin for this file.** `vite.config.ts` deliberately maps `src/shared/lib/gsap.ts` into the `vendor-gsap` chunk. `useLenisScroll` reaches the seam via `await import('@/shared/lib/gsap')` and destructures `{ gsap, ScrollTrigger }`. If Rolldown merges the seam into the entry chunk, that dynamic import resolves to the entry's namespace, which does **not** re-export those bindings — `ScrollTrigger` comes back `undefined` and every desktop page load throws `Cannot read properties of undefined (reading 'scrollerProxy')`, silently killing the Lenis↔ScrollTrigger integration. This shipped and was only caught by loading a **built** bundle; dev and the test suite were both clean. `scripts/check-dynamic-import-entry.mjs` now guards it.
+
 ### SplitText (char/word/line reveals)
 
 SplitText is free since GSAP 3.13 and registered alongside ScrollTrigger. Use

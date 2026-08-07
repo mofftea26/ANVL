@@ -16,14 +16,19 @@ import {
   type ReactNode,
 } from 'react'
 import { AppProviders } from '@/app/providers/AppProviders'
-import { AdminAuthProvider } from '@/features/admin/auth/AdminAuthProvider'
-import { AdminThemeProvider } from '@/features/admin/theme/AdminThemeProvider'
 import { SiteThemeProvider } from '@/app/providers/SiteThemeProvider'
 import { RouteAnalytics } from '@/app/providers/RouteAnalytics'
 import { AppErrorBoundary } from '@/app/components/AppErrorBoundary'
 import { useWebsiteNavigation } from '@/features/cms/hooks/useWebsiteNavigation'
 import { buildStaticWebsiteNavigation } from '@/features/cms/navigation/staticWebsiteNavigation'
 import { loadStorefrontProjection } from '@/features/cms/api/loadStorefrontProjection'
+/** Lazy so the admin auth/theme stack (and supabase-js) stays out of the
+ *  storefront's static import graph — see `AdminRootShell` (F-06). */
+const AdminRootShell = lazy(() =>
+  import('@/features/admin/components/AdminRootShell').then((m) => ({
+    default: m.AdminRootShell,
+  })),
+)
 import {
   buildPublishedFontPreloadLinks,
   publishedProjectionInlineCss,
@@ -311,20 +316,20 @@ function RootLayoutBody() {
   ) : null
 
   if (isAdminRoute) {
-    // The admin wears its own fixed Studio identity — never the storefront
-    // theme (that appears only inside the theme editor's scoped preview).
+    // Lazy, deliberately — see `AdminRootShell`. Importing the admin auth /
+    // theme providers statically here put the whole admin CMS remote-sync
+    // module (and `@supabase/supabase-js` with it) into the storefront's
+    // static graph, on every route (F-06).
     return (
-      <AdminThemeProvider>
-        <AdminAuthProvider>
-          <RouteAnalytics />
-          <main>
-            <AppErrorBoundary resetKey={pathname}>
-              <Outlet />
-            </AppErrorBoundary>
-          </main>
-          {devtools}
-        </AdminAuthProvider>
-      </AdminThemeProvider>
+      <Suspense
+        // Theme-token void while the admin chunk streams — never a white flash.
+        fallback={<div className="min-h-screen bg-[var(--color-bg)]" />}
+      >
+        <AdminRootShell pathname={pathname}>
+          <Outlet />
+        </AdminRootShell>
+        {devtools}
+      </Suspense>
     )
   }
 

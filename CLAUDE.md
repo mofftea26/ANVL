@@ -85,7 +85,7 @@ Data / Runtime layer       → src/app/config/runtime.ts + adapter files
 ### Client Abstraction (Dependency Inversion)
 
 All interface contracts live in `src/app/config/clients.ts`:
-- `CmsClient`, `CommerceClient`, `SeoClient`, `SiteSettingsClient`, `AnalyticsClient`, `PaymentClient`, `AccountClient`, `StoryClient`
+- `CommerceClient`, `SeoClient`, `StoryClient`, `AnalyticsClient`, `PaymentClient`, `AccountClient` — six. (`CmsClient` and `SiteSettingsClient` were deleted 2026-08-05: zero call sites, and their "Supabase readers" only ever returned code defaults.)
 
 Runtime wiring via `createRuntimeClients({ isServer })` in `src/app/config/runtime.ts`:
 - **Server:** seed adapters (no `localStorage`, SSR-safe)
@@ -135,11 +135,11 @@ src/
     seo/             meta.ts (buildSeoMeta)
   content/           seed data + mocks
   features/
-    admin/           Slim CMS — dashboard (one-screen control room + setup/ wizard hub), theme, fonts, assets, shop, products, landing content, about, coming-soon, banner, legal, support (FaqListField, PerProductCareField, PerProductSizeField, MeasurementsField, CareLegendField), passports (+ techpacks/ techpack ingestion & import), story, gamification, analytics, settings (+ auth). Shell: AdminLayout → AdminShell (persistent categorized sidebar — components/AdminSidebar.tsx + AdminSidebarNavLink.tsx/adminSidebarActive.ts/useAdminSidebarExpandedCats.ts — + topbar Preview toggle) / AdminWorkspace / AdminRailPanel; preview/ (live-preview panel — drag-resizable split — + draft/hover channels), components/wizard/ (generic AdminWizard), setup/ (six guided setup wizards + live status reads), hooks/useSortableList (native DnD reorder)
+    admin/           Slim CMS — dashboard (one-screen control room + setup/ wizard hub), theme, fonts, assets, shop, products, landing content, about, coming-soon, banner, legal, support (FaqListField, PerProductCareField, PerProductSizeField, MeasurementsField, CareLegendField), passports (+ techpacks/ techpack ingestion & import), story, gamification, analytics, settings (+ auth). Shell: **AdminRootShell** (the `/admin` branch of `__root.tsx`, reached via `lazy()` so the admin auth/theme stack never enters the storefront's static graph — F-06) → AdminLayout → AdminShell (persistent categorized sidebar — components/AdminSidebar.tsx + AdminSidebarNavLink.tsx/adminSidebarActive.ts/useAdminSidebarExpandedCats.ts — + topbar Preview toggle) / AdminWorkspace / AdminRailPanel; preview/ (live-preview panel — drag-resizable split — + draft/hover channels), components/wizard/ (generic AdminWizard), setup/ (six guided setup wizards + live status reads), hooks/useSortableList (native DnD reorder)
     analytics/       Analytics client mock + hooks
     about/           About page: content schema/defaults/resolver (CMS-driven orbs = sections) + altar/ (desktop Forge Altar — grabbable 3D anvil, aurora, per-color orbiting orbs, hammer-strike explosion → modal) + mobile/ (normal scrolling page; orbs render as stacked sections)
     cart/            Zustand cart store + hooks
-    checkout/        Forms, schemas, payment config + mock adapters
+    checkout/        Forms, schemas, payment config + mock adapters. `config/internalCheckout.ts` is the gate that keeps the MOCK gateway unreachable in production (Shopify-unconfigured AND dev only) — the `/checkout` route and both cart handlers consult it
     cms/             Storefront-safe CMS reads: theme/font/asset config (cmsSiteConfig), landing content envelope, coming-soon config, banner/ (banner_config + SiteBannerRail above the topbar), legal/ + support/ (legal_content/support_content blobs + resolvers with full code-default copy; support/'s Zod schema is split into an acyclic module family — supportContent.shared/.care/.size.zod.ts + parseUtils.ts, composed by supportContent.zod.ts — incl. the care-symbol legend and per-garment-type "Where we measure" point sets), publication readers, navigation + layout defaults, preview/ (admin live-preview bridge: protocol, PreviewDraftProvider, targets/highlight)
     legal/           Storefront legal-page UI: LegalDocument (sticky TOC + sections; its masthead is the shared shared/components/premium/PageMasthead), consumes cms/legal resolver
     support/         Storefront support-page UI: ContactPanel, Size/Care tables, per-product resolvers; consumes cms/support resolver. Page mastheads come from shared/components/premium/PageMasthead (DocHero was removed). faq/ ("The Forge Seam" — the forged-plate answer stack: FaqForge, FaqSeamRow, FaqSearchField, faqSearch, useFaqRailHeat; FaqAccordion.tsx is now a thin re-export). components/garments/ (per-garment-type schematic geometry — tee/stringer/hoodie/joggers/shorts outline+detail+badge anchors, registry, outline-bounds viewBox), MeasureExplorer + GarmentTypeTabs (the size-guide's garment-type tab strip, one tab per type the catalogue's sizeGuide.perProduct entries actually use), MeasurementFigure, CareSymbolGrid/Table/Legend/Popover (the 26-symbol care legend, searchable), lib/garmentTypes.ts (resolveGarmentTypeKeys)
@@ -148,12 +148,15 @@ src/
     landingPages/    Code-owned landing pages: registry, renderer, asset slots, pages/TheOathLanding (the single Drop 01 cinematic landing)
     marketing/       Storefront home sections (home/: campaign cards, lookbook strip)
     passport/        Product passports: Zod schemas, RPC client (get/claim/transfer/visibility), usePassport hooks, ranks lib (3 levels/rank + emblems), country presets + WorldOriginMap, /p/$token experience (teaser, onboarding, ClaimCeremony, PassportPage → console/ ember-card console or scrolling dossier, both from the PASSPORT_SECTIONS registry grouped as Craft/Ritual/Legacy), webgl/ bento-card ember forge, effects/ (per-section signature effects: one lazy registry + PassportSectionEffectLayer host; sections/ has one file per effect incl. the EffectBlueprint WebGL hologram whose CSS .pp-holo is the gated fallback — see docs/animation-guidelines.md "Passport section effects")
-    products/        Commerce adapters (localStorage, seed, Shopify), catalog, hooks
+    products/        Commerce adapters (localStorage, seed, Shopify), catalog, hooks. `lib/resolveCartVariantId.ts` is THE Shopify variant-GID lookup — it decides whether a cart line can reach hosted checkout, so it must never be re-derived per call site
     search/          Storefront global search: Fuse.js-backed matching engine (types/, lib/matchEngine.ts, index-agnostic), corpus assembly (lib/searchCorpus.ts, reshapes existing runtimeClients/CMS reads), useGlobalSearch hook + GlobalSearchBar/Dropdown/Overlay UI — mounted in PremiumNavTopbar + PremiumNavMobile
     share/           The share sheet: ShareButton + ShareModal (tabs/ Image · Link · QR), targets.ts (send-to registry + pure resolveShareRoute), captions.ts, shareActions.ts, useShareCapabilities/useImagePick/useShareData/useShareLauncher, image/ (drawKit + shareImage + presets/ — one file per look, seven in ONE family: a look is an arrangement, and the self-resolving stage supplies the hero, so every look works with or without a photo), qr/anvlQr.ts (branded QR), socialIcons.tsx
     shopify/         Shopify Storefront API client + mappers
     story/           Story saga: schemas, seed, asset resolver, page components + book overlay, Supabase/seed clients
-    storefront-account/ Public account UI stubs
+    storefront-account/ Public account UI stubs. `auth/storefrontAuthEnabled.ts` holds ONLY the env check,
+                     deliberately free of any import reaching `storefrontSupabaseClient` — the site-wide nav
+                     calls it on every page, so importing the `./auth` barrel here put all of supabase-js on
+                     the eager entry graph
   routes/
     __root.tsx       Root layout loader — fetches storefront projection from Supabase or runtime clients
     index.tsx        Home page — renders the active code-owned landing page (default: the-oath)
@@ -186,12 +189,16 @@ src/
     webgl/           DustField, SiteDustGate, SiteDustLayer, dustShaders, particleShapes, siteDustState, isWebglAvailable, canvasTeardownGuard
   styles.css         Global tokens, themes, scrollbars, reduced-motion rules
   router.tsx         TanStack Router setup
+  rateLimit.server.ts Cloudflare Rate Limiting binding wrapper — FAILS OPEN when the binding is absent (local dev / pre-deploy), so a missing binding can never refuse traffic. Used by the admin login server fn + /api/csp-report
   routeTree.gen.ts   AUTO-GENERATED — never edit directly
 supabase/
   migrations/        Ordered SQL migration files
   functions/         Edge Functions (shopify-webhook, medusa-webhook-stub)
 scripts/
   repatch-admin-route-tree.mjs  Patches routeTree.gen.ts for admin segment (runs before dev/build/typecheck)
+  check-dynamic-import-entry.mjs  Fails the build if any chunk dynamically imports the ENTRY chunk — the
+                                signature of a silent Rolldown bug where `await import(...)` resolves to a
+                                namespace missing its bindings (see the chunk pins in vite.config.ts)
 public/brand/        Raster + downloadable logo/asset exports
 docs/                Architecture, feature specs, audit, changelog, brand, animation docs
 ```
@@ -208,15 +215,16 @@ pnpm test:watch                 # TDD loop
 pnpm test:coverage              # Coverage report (v8 provider → dist/coverage)
 pnpm test src/features/cart     # Run one feature's tests
 pnpm typecheck                  # tsc --noEmit (repatch runs first)
-pnpm build                      # Production build (client + workerd SSR bundle → dist/)
+pnpm build                      # Production build (client + workerd SSR bundle → dist/) + dynamic-import-entry guard
 pnpm preview                    # Serve the built Worker locally in workerd
-pnpm deploy                     # pnpm build && wrangler deploy → Cloudflare Workers
+pnpm run deploy                 # pnpm build && wrangler deploy → Cloudflare Workers
 pnpm cf-typegen                 # wrangler types → worker-configuration.d.ts (gitignored, regenerable)
 pnpm verify                     # typecheck + test + build (definition of done gate)
 pnpm analyze                    # Bundle treemap → dist/stats.html (ANVL_ANALYZE=1)
 pnpm storybook                  # Component workbench on port 6006
 pnpm build-storybook            # Static Storybook build
 pnpm docs:check                 # Doc-freshness gate (which docs this change set still owes)
+node scripts/compress-glb-textures.mjs public/about/*.glb   # Re-encode embedded GLB textures (--check to report only)
 pnpm hooks:install              # Point git at .githooks (one-time, per clone)
 ```
 
@@ -262,7 +270,7 @@ pnpm hooks:install              # Point git at .githooks (one-time, per clone)
 | `public.product_passports` | Per-unit QR registration tokens + one-time transfer codes + owner `is_public` visibility + Armory life (`wear_count`/`last_worn_at`, `featured_slot` 1-3 for Hall of Honor). **No public SELECT** (token enumeration); reads via `get_passport_by_token` RPC (privacy-aware: owner name/date only when public, owner, or holding a live transfer code), atomic first-claim via `claim_passport`, hand-over via `initiate/cancel/accept_passport_transfer`, visibility via `set_passport_visibility`, wear via `log_passport_wear`, pin via `set_passport_featured` (all SECURITY DEFINER). **Serials are internal-only — never shown to customers** | Owner reads own claimed rows; CMS read all; editor write |
 | `public.armory_feats` | Owner-authored achievement log ("Deadlift PR — 240 kg"), each with a per-entry `is_public`. No anon SELECT; public entries surface only via `get_public_armory` | Own-row CRUD |
 | `public.product_reviews` | PDP reviews, one per owner per product; write gated on holding a registered passport for the product (`submit_product_review` verifies ownership). Anon read via `get_product_reviews` (name/content only, `is_mine` for the signed-in owner) | Owner read/delete own; RPC-gated write |
-| `public.passport_transfers` | Passport ownership hand-over log (written by the accept RPC) | Participants read own rows; CMS read all |
+| `public.passport_transfers` | Passport ownership hand-over log (written by the accept RPC). Since `20260804174508`, `accept_passport_transfer` **resets the receiving owner's Armory state** (`wear_count`, `last_worn_at`, `featured_slot`, `is_public`) — without that the transfer could hard-fail on the `(claimed_by, featured_slot)` partial unique index | Participants read own rows; CMS read all |
 | `cms_settings.passport_content` / `storefront_publication.passport_content` | Per-product passport section content (jsonb `{ [slug]: {...} }`) — identity/piece/material/**blueprint**/care/details/origin copy + assets, authored in the passports wizard; mirrors `pdp_content` flow | Public read, editor update |
 | `public.techpacks` | One row per uploaded supplier techpack PDF; `document` jsonb holds the parsed `TechpackDocument`, `ai_document` holds optional AI suggestions (never merged into `document`). Partial unique index enforces at most one `is_final` per `product_slug` — set it via `set_techpack_final()`, never client-side, or the two-statement swap races the index and can leave zero finals. **No anon policy** | CMS roles read, editor write |
 | `public.techpack_images` | Images extracted from a pack, stored in the PRIVATE `techpacks` bucket. `promoted_media_id → cms_media_assets` (ON DELETE SET NULL) records the one deliberate act that lets an image reach the storefront. **No anon policy** | CMS roles read, editor write |
@@ -282,7 +290,7 @@ pnpm hooks:install              # Point git at .githooks (one-time, per clone)
 - `SUPABASE_SERVICE_ROLE_KEY` is **never** bundled in client code. It is for migrations and privileged server scripts only.
 - All CMS JSON writes must pass Zod validation (`cmsSiteConfig.zod.ts`) before Supabase upsert.
 - Before any schema change: document current schema → target schema → migration steps → risks → rollback plan.
-- Published storefront state flows: admin edits local working copy → `adminCmsRemoteSync` → `cms_settings` + `storefront_publication` mirror.
+- Published storefront state flows: admin edits local working copy → `adminCmsRemoteSync` → **`publish_cms_settings()`** → `cms_settings` + `storefront_publication`, in **ONE transaction** (F-19). Never write those two tables as separate UPDATEs: postgrest-js does not reject on a transport failure, so a `Promise.all` pair half-succeeds silently and the split is invisible (hydration reads `cms_settings` only). The RPC gates on **`admin`** — the stricter of the two tables — and treats a JSON `null` as absent, since every jsonb column is `NOT NULL` but a JSON null is a legal jsonb value the constraint will not catch.
 
 ### Edge Functions
 
@@ -556,7 +564,9 @@ If shadcn/ui is added in the future:
 - **Admin routes** must use `lazyRouteComponent` — never statically imported from storefront routes.
 - Large editor panels (≥600 lines) must be behind a `React.lazy` + `Suspense` boundary.
 - Storefront entry chunk must not import `src/features/admin/**` runtime code.
-- Heavy vendors are code-split via `vite.config.ts` `manualChunks`. The real chunk set is: `admin-cms-remote`, `vendor-gsap`, `vendor-lenis`, `vendor-three`, `vendor-pdfjs` (admin techpack parser only), `vendor-zod`, `vendor-supabase`, `vendor-fuse`, `vendor-tanstack`, `vendor-react`.
+- Heavy vendors are code-split via `vite.config.ts` `manualChunks`. Chunks actually emitted by the client build (verified 2026-08-05): `admin-cms-remote`, `cms-core`, `app-runtime`, `admin-auth`, `storefront-account-client`, `vendor-gsap`, `vendor-lenis`, `vendor-three`, `vendor-pdfjs` (admin techpack parser only), `vendor-zod`, `vendor-fuse`, `vendor-react`, `vendor-sonner`, `supabase-clients`. **`vendor-supabase` and `vendor-tanstack` are requested but never emitted** — Rolldown merges any chunk that is always loaded alongside its importer, so those rules are aspirational, not effective. Do not assume a `manualChunks` name exists just because the rule is there; check `dist/client/assets/`.
+- **Keeping `@supabase/supabase-js` off the eager graph is a maintained invariant.** Every path to the SDK is lazy: the `./auth` barrel must not re-export `getStorefrontSupabaseClient`/`supabaseAccountClient` (a re-export is a static edge even if nothing calls it), `storefrontAuth`/`adminCmsRemoteSync`/`mediaAssets.service` load their client via `await import(...)`, and `autoImportRun.ts` must import `cmsWriteThrough` dynamically — one static importer anywhere defeats every storefront `*.settings.ts` lazy import at once. Diagnose with `ANVL_IMPORTERS=1 pnpm build` (the module graph), never a grep: greps miss multi-line imports and `export … from` re-exports. One bundler-level edge still remains, so the SDK is *still* fetched on first paint — see `docs/deployment.md` for the async-factory change that would close it.
+- **Any module reached via `await import(...)` must be pinned to a non-entry chunk.** If Rolldown merges it into the entry, it rewrites the dynamic import to target the entry chunk, whose namespace does NOT re-export that module's bindings — the destructure silently yields `undefined` and the call site throws at runtime. Dev is unaffected and tests stay green, so this only shows up in a built bundle. It has shipped **four** times (`@/shared/lib/gsap`, `@/app/config/runtime`, `adminAuth.ts`, `supabaseAccountClient`) plus the historical "n is not a function" save bug. `scripts/check-dynamic-import-entry.mjs` runs as part of `pnpm build` and fails on the signature.
 - The landing page registry uses `lazy()` per page, so only the active page's chunk ships.
 - Icons import from `@/shared/icons` with **named imports only** (`import { Menu } from '@/shared/icons'`), never `import *` and never straight from `@phosphor-icons/react` — the seam is what keeps the vendor swappable and the global duotone weight applied.
 - Images from CMS: must have `width`, `height`, `loading="lazy"` (unless LCP), `decoding="async"`, `alt`.
@@ -776,9 +786,9 @@ Every code change must check whether documentation needs updating. After any:
 | MAINT-01 | Large files | Admin editor files over the 500-line hard limit (refactor backlog, measured 2026-07-29): `about/sections/AboutOrbsFields.tsx` 713 · `setup/wizards/GamificationSetupWizard.tsx` 712 · `setup/wizards/StorySetupWizard.tsx` 582 · `banner/BannerCustomizeModal.tsx` 571 · `preview/AdminPreviewPanel.tsx` 566 · `media/MediaAssetGrid.tsx` 561 · `setup/wizards/AboutSetupWizard.tsx` 522. |
 | MAINT-02 | Feature boundary | **Narrowed to exactly one file (2026-07-29 sweep).** `src/features/cms/api/cmsPersistenceMode.ts:1` imports `type CmsProfileRole` from `@/features/admin/auth/adminCmsProfileRole`. Nothing else in `cms/`, `products/`, `passport/`, `cart/`, `checkout/`, `shopify/`, `storefront-account/`, `analytics/`, `seo/`, `shared/`, or the non-admin routes violates the boundary. That file is currently only consumed by admin code so it does not reach the storefront bundle, but the import still breaks the rule — move the type into `cms/**`. |
 | MAINT-03 | localStorage reset | **Resolved.** `resetAllLocalCmsKeys()` clears every key in the `ADMIN_STORAGE_KEYS` registry (incl. `anvl.landingContent.v1` and the sidebar preference) |
-| MIG-01 | Supabase migrations | **Disk↔history drift (re-scoped 2026-07-29, worse than previously stated).** Beyond the three orphaned drop-builder publish-RPC migrations, the folder and the live migration history have diverged both ways: **7 migrations applied in production have no file on disk** (`tighten_cms_settings_rls_and_revoke_rls_auto_enable_grant`, `revoke_public_execute_on_rls_auto_enable`, `perf20_wrap_auth_uid_in_rls_policies`, `perf21_add_missing_fk_covering_indexes`, `sec24_move_pg_net_out_of_public_schema`, `sec25_remove_public_storage_listing_policies`, `site_seo_column`), and **7 files on disk never appear in the applied history**. A fresh `supabase db push` into an empty project would therefore NOT reproduce production RLS/schema state. Fix = backfill the missing SQL as files before any environment rebuild. |
+| MIG-01 | Supabase migrations | **CLOSED 2026-08-05.** The folder now matches the applied history exactly: **76 files ↔ 76 applied rows**, zero gaps either way, identical order, zero name mismatches. Three separate problems existed; all three are fixed. **(a)** 8 applied migrations had no file — backfilled verbatim, including the two security-hardening ones. **(b)** 48 files carried synthetic `…120000` versions that were never applied — renamed with `git mv` to their real applied versions, so `supabase db push` against production is now a no-op and a fresh rebuild replays them in the order production was *actually* built in (the old disk order was fiction). This also corrected one name typo: disk `anvl_drops_client_id_admin_rls` vs applied `anvl_drops_client_drop_id_admin_rls`, content confirmed identical first. **(c)** 8 files had no history row at all; their effects were verified present in production (`model/gltf-binary` in the `cms-media` bucket, `asset_config.pages` as an object, zero theme columns on `landing_pages`, array-shaped tenets), then registered with a `migration repair`-equivalent metadata insert — no schema touched, reversible by deleting those 8 versions. That mattered beyond tidiness: 4 are drop-builder era and target `anvl_drops` and friends, which the teardown removed, so a `db push` would have tried to re-apply DDL against tables that no longer exist and **errored**. `fix_publish_drop_body_column` was applied twice 19 s apart; the second version carries a documented no-op file. |
 | Phase I | Router repatch | `scripts/repatch-admin-route-tree.mjs` is a workaround for TanStack Start upstream limitation. |
-| Phase J | Production launch | Admin real server auth + HttpOnly sessions done (see SEC-11). **Hosting live: Worker `anvl` created 2026-07-11 and last deployed 2026-07-28 (verified against the Cloudflare account 2026-07-29) — see `docs/deployment.md`.** Remaining: DNS cutover to the custom domain, flip CSP to enforcing (currently report-only, WASM/blob allowances added), rate limits, upload validation. CSRF double-submit cookie is in place (`src/start.ts`). Also open from the 2026-07-29 DB audit: `touch_row_updated_at()` has a mutable `search_path`; 4 unindexed FKs (`armory_feats.user_id`, `passport_transfers.from_user`/`to_user`, `techpacks.created_by`); and every table created *after* the PERF-20 fix still calls bare `auth.uid()` in RLS instead of `(select auth.uid())`. |
+| Phase J | Production launch | Admin real server auth + HttpOnly sessions done (see SEC-11). **Hosting live: Worker `anvl` created 2026-07-11 and last deployed 2026-07-28 (verified against the Cloudflare account 2026-07-29) — see `docs/deployment.md`.** Remaining: DNS cutover to the custom domain, flip CSP to enforcing (currently report-only, WASM/blob allowances added — note `script-src` still carries `'unsafe-inline'`, so flipping it buys little until the three inline sinks in `__root.tsx`/`JsonLd` move to a nonce), upload validation. **Rate limiting landed 2026-08-04** for admin login + `/api/csp-report` via Cloudflare `ratelimits` bindings (`wrangler.jsonc` + `src/rateLimit.server.ts`); it activates on the next deploy and fails open until then. Other anon surfaces (`coming_soon_subscribers` insert, passport claim, review submit) are still unthrottled. CSRF double-submit cookie is in place (`src/start.ts`). From the 2026-07-29 DB audit: `touch_row_updated_at()`'s mutable `search_path` and the 4 unindexed FKs (`armory_feats.user_id`, `passport_transfers.from_user`/`to_user`, `techpacks.created_by`) were **fixed 2026-08-04** (migration `20260804172317`, which also added `product_reviews (product_slug, created_at DESC)` and corrected `get_product_reviews`' LIMIT-before-ORDER-BY). The 31 remaining bare `auth.uid()` RLS calls were **fixed 2026-08-05** (`20260805045202_perf22…` — every `auth_rls_initplan` warning cleared), as was `accept_passport_transfer`'s missing Armory reset (`20260804174508`). Still open: leaked-password protection is off (dashboard toggle). |
 
 ---
 
@@ -788,7 +798,7 @@ See `docs/next-steps.md` for the full prioritized task list.
 
 Top priorities:
 1. **Phase J (production blockers):** admin server auth (SEC-11) and CSRF are done — remaining: flip CSP from report-only to enforcing, rate limiting, upload validation, DNS cutover.
-2. **MIG-01 migration backfill:** 7 production migrations have no file on disk. Backfill them before anyone rebuilds an environment from `supabase/migrations/`.
+2. ~~**MIG-01 migration renumber**~~ — **done 2026-08-05.** `supabase/migrations/` now reproduces production, so a staging/dev rebuild is finally safe.
 3. **Phase D (feature boundary cleanup):** move shared types/helpers out of `admin/**` into `cms/**`/`shared/**` (MAINT-02).
 4. **Shopify commerce wiring:** connect `VITE_SHOPIFY_*` vars if eCommerce checkout is needed now.
 5. **Product page polish:** real product images, size guides, add-to-cart flow end-to-end.

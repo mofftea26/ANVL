@@ -31,10 +31,9 @@ describe('createRuntimeClients', () => {
 
     // Sanity: every contract slot is present in both modes.
     for (const key of [
-      'cms',
       'commerce',
       'seo',
-      'siteSettings',
+      'story',
       'analytics',
       'payment',
       'account',
@@ -44,11 +43,11 @@ describe('createRuntimeClients', () => {
     }
   })
 
-  it('returns a different cms/commerce/seo/siteSettings client per environment', () => {
+  it('returns a different commerce/seo client per environment', () => {
     const server = createRuntimeClients({ isServer: true })
     const browser = createRuntimeClients({ isServer: false })
 
-    for (const key of ['cms', 'commerce', 'seo', 'siteSettings'] as const) {
+    for (const key of ['commerce', 'seo'] as const) {
       expect(server[key]).not.toBe(browser[key])
     }
   })

@@ -82,7 +82,12 @@ describe('SiteThemeEditor', () => {
     renderEditor()
 
     await user.click(screen.getByRole('button', { name: /new theme/i }))
-    const nameInput = screen.getByLabelText(/theme name/i, { selector: 'input' })
+    // Scoped to the dialog: the editor behind it has its own "Theme name"
+    // field, and BOTH are now properly label-associated (they were not before
+    // FormField auto-wired htmlFor), so an unscoped query is ambiguous.
+    const nameInput = within(screen.getByRole('dialog')).getByLabelText(/theme name/i, {
+      selector: 'input',
+    })
     await user.clear(nameInput)
     await user.type(nameInput, 'Midnight Bronze')
     await user.click(screen.getByRole('button', { name: /create theme/i }))
@@ -98,7 +103,12 @@ describe('SiteThemeEditor', () => {
     renderEditor()
 
     await user.click(screen.getByRole('button', { name: /new theme/i }))
-    const nameInput = screen.getByLabelText(/theme name/i, { selector: 'input' })
+    // Scoped to the dialog: the editor behind it has its own "Theme name"
+    // field, and BOTH are now properly label-associated (they were not before
+    // FormField auto-wired htmlFor), so an unscoped query is ambiguous.
+    const nameInput = within(screen.getByRole('dialog')).getByLabelText(/theme name/i, {
+      selector: 'input',
+    })
     await user.clear(nameInput)
     await user.type(nameInput, 'Midnight Bronze')
     await user.click(screen.getByRole('button', { name: /create theme/i }))
@@ -155,7 +165,12 @@ describe('SiteThemeEditor', () => {
 
     // Create a second theme so delete is allowed, then delete it.
     await user.click(screen.getByRole('button', { name: /new theme/i }))
-    const nameInput = screen.getByLabelText(/theme name/i, { selector: 'input' })
+    // Scoped to the dialog: the editor behind it has its own "Theme name"
+    // field, and BOTH are now properly label-associated (they were not before
+    // FormField auto-wired htmlFor), so an unscoped query is ambiguous.
+    const nameInput = within(screen.getByRole('dialog')).getByLabelText(/theme name/i, {
+      selector: 'input',
+    })
     await user.clear(nameInput)
     await user.type(nameInput, 'Disposable')
     await user.click(screen.getByRole('button', { name: /create theme/i }))

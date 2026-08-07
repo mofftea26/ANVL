@@ -26,6 +26,28 @@
   "placement": {
     "mode": "smart"
   },
+  // Rate limiting for the two unauthenticated surfaces that had none (F-07).
+  // These bindings exist only on a deployed Worker; `src/rateLimit.server.ts`
+  // FAILS OPEN when they are absent, so local dev and any deploy that predates
+  // them behave exactly as before rather than refusing traffic.
+  //
+  // `namespace_id` is an arbitrary but STABLE per-limiter id — changing one
+  // resets its counters. `period` accepts only 10 or 60 (seconds).
+  // Limits are deliberately generous: they stop scripted abuse without ever
+  // getting in a real operator's way (a human cannot mistype a password 20
+  // times in a minute).
+  "ratelimits": [
+    {
+      "name": "ADMIN_LOGIN_RATE_LIMIT",
+      "namespace_id": "1001",
+      "simple": { "limit": 20, "period": 60 }
+    },
+    {
+      "name": "CSP_REPORT_RATE_LIMIT",
+      "namespace_id": "1002",
+      "simple": { "limit": 60, "period": 60 }
+    }
+  ],
   // Runtime (non-secret) vars. NODE_ENV must be "production" on the deployed
   // Worker — Cloudflare does not set it automatically, and the admin session +
   // CSRF cookies gate their `Secure` attribute (and HSTS) on it. Secrets

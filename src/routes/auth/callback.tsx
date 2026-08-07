@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { buildSeoMeta } from '@/app/seo/meta'
 import { AuthPageChrome, sanitizeInternalRedirect } from '@/features/storefront-account'
-import { getStorefrontSupabaseClient, isStorefrontAuthEnabled } from '@/features/storefront-account/auth'
+import { isStorefrontAuthEnabled } from '@/features/storefront-account/auth'
 import { setSessionCustomerId } from '@/app/config/accountSession'
 
 type CallbackSearch = { redirect?: string }
@@ -36,30 +36,51 @@ function CallbackPage() {
       window.location.assign('/auth/sign-in')
       return
     }
-    const client = getStorefrontSupabaseClient()
-    if (!client) {
-      window.location.assign('/auth/sign-in')
-      return
-    }
     let done = false
+    let cancelled = false
+    // Assigned once the lazy import resolves; the cleanup below may run first.
+    let cleanup: (() => void) | undefined
+
     const go = (userId: string) => {
       if (done) return
       done = true
       setSessionCustomerId(userId)
       window.location.assign(sanitizeInternalRedirect(redirect))
     }
-    void client.auth.getSession().then(({ data }) => {
-      if (data.session?.user) go(data.session.user.id)
-    })
-    const { data: sub } = client.auth.onAuthStateChange((_e, session) => {
-      if (session?.user) go(session.user.id)
-    })
-    const timeout = window.setTimeout(() => {
-      if (!done) setFailed(true)
-    }, 8000)
+
+    // Lazy: this route and /auth/reset-password were the last two static
+    // importers of the Supabase client. Two lazy route chunks sharing a module
+    // makes Rolldown hoist it into the ENTRY chunk, so ~200 KB of SDK was
+    // fetched on every storefront page. Deferring it here costs one dynamic
+    // import on a page that exists to talk to Supabase anyway.
+    void (async () => {
+      const { getStorefrontSupabaseClient } = await import(
+        '@/features/storefront-account/auth/storefrontSupabaseClient'
+      )
+      if (cancelled) return
+      const client = getStorefrontSupabaseClient()
+      if (!client) {
+        window.location.assign('/auth/sign-in')
+        return
+      }
+      void client.auth.getSession().then(({ data }) => {
+        if (!cancelled && data.session?.user) go(data.session.user.id)
+      })
+      const { data: sub } = client.auth.onAuthStateChange((_e, session) => {
+        if (!cancelled && session?.user) go(session.user.id)
+      })
+      const timeout = window.setTimeout(() => {
+        if (!done) setFailed(true)
+      }, 8000)
+      cleanup = () => {
+        sub.subscription.unsubscribe()
+        window.clearTimeout(timeout)
+      }
+    })()
+
     return () => {
-      sub.subscription.unsubscribe()
-      window.clearTimeout(timeout)
+      cancelled = true
+      cleanup?.()
     }
   }, [redirect])
 

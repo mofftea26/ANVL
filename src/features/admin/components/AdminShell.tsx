@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useState, type PropsWithChildren } from 'react'
 
+import { ADMIN_MAIN_ID } from '@/features/admin/components/adminMainId'
 import { subscribePreviewFocus } from '@/features/admin/preview/adminPreviewStore'
 import { ADMIN_STORAGE_KEYS } from '@/features/admin/storageKeys'
 import { Drawer } from '@/shared/components/ui/Drawer'
@@ -103,7 +104,13 @@ export function AdminShell({ children }: PropsWithChildren) {
         />
 
         <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
-          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 pb-8 sm:px-6 lg:px-8 lg:py-10 lg:pb-8">
+          {/* The admin's ONE main landmark, and the skip link's target — the
+              sidebar repeats ~20 links before this on every page. */}
+          <main
+            id={ADMIN_MAIN_ID}
+            tabIndex={-1}
+            className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 pb-8 sm:px-6 lg:px-8 lg:py-10 lg:pb-8"
+          >
             {children}
           </main>
 

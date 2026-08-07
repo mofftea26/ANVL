@@ -2,7 +2,6 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { canWriteCmsDraftsToSupabase } from '@/features/cms/api/cmsPersistenceMode'
-import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import {
   fetchCmsProfileRole,
   type CmsProfileRole,
@@ -17,7 +16,10 @@ import {
   hasStoredPdpContent,
   readPdpContentFromStorage,
 } from '@/features/cms/pdpContent/pdpContent.settings'
-import { readPassportContentFromStorage } from '@/features/cms/passportContent/passportContent.settings'
+import {
+  hasStoredPassportContent,
+  readPassportContentFromStorage,
+} from '@/features/cms/passportContent/passportContent.settings'
 import { readComingSoonConfigFromStorage } from '@/features/cms/comingSoon/comingSoon.settings'
 import { readBannerConfigFromStorage } from '@/features/cms/banner/bannerConfig.settings'
 import { readLegalContentFromStorage } from '@/features/cms/legal/legalContent.settings'
@@ -137,20 +139,63 @@ interface WholeMapColumn {
   readonly hasLocalSnapshot: () => boolean
 }
 
-const WHOLE_MAP_COLUMNS: readonly WholeMapColumn[] = [
-  {
-    column: 'pdp_content',
-    label: 'Product (PDP) content',
-    risk: "every other product's authored PDP content would be erased",
-    hasLocalSnapshot: hasStoredPdpContent,
-  },
-  {
+/**
+ * EXHAUSTIVE classification of every CMS settings column: a guard entry when a
+ * publish from an unhydrated snapshot would destroy data the operator cannot
+ * see, or `null` when it would not.
+ *
+ * Keyed by `CmsSettingsFieldKey`, so adding a column to
+ * `CMS_SETTINGS_FIELD_KEYS` without classifying it here is a `pnpm typecheck`
+ * FAILURE. That is deliberate: `passport_content` shipped as a per-slug map
+ * with no guard precisely because the old array let a new column be added
+ * without anyone noticing the omission — the same class of gap the hydration
+ * side already prevents structurally.
+ *
+ * `null` is the right answer for singleton blobs (theme, fonts, banner, legal,
+ * SEO…): republishing those from defaults is immediately visible on the
+ * storefront and re-editable, whereas a per-slug map silently loses the entries
+ * this session never touched.
+ */
+const WHOLE_MAP_GUARDS: Readonly<
+  Record<CmsSettingsFieldKey, WholeMapColumn | null>
+> = {
+  active_landing_page_key: null,
+  theme_config: null,
+  font_config: null,
+  asset_config: null,
+  landing_content: null,
+  shop_config: {
     column: 'shop_config',
     label: 'Shop experience settings',
     risk: 'the published shop configuration would be reset to code defaults',
     hasLocalSnapshot: hasStoredShopConfig,
   },
-]
+  pdp_content: {
+    column: 'pdp_content',
+    label: 'Product (PDP) content',
+    risk: "every other product's authored PDP content would be erased",
+    hasLocalSnapshot: hasStoredPdpContent,
+  },
+  passport_content: {
+    column: 'passport_content',
+    label: 'Passport content',
+    risk: "every other product's authored passport content would be erased",
+    hasLocalSnapshot: hasStoredPassportContent,
+  },
+  coming_soon: null,
+  banner_config: null,
+  legal_content: null,
+  // NOTE: `support_content` carries per-slug care lines and size tables, so it
+  // has the same shape of exposure. It is left unguarded here only because
+  // adding it changes save behaviour for an editor that has never hydrated,
+  // which is outside this change's scope. Tracked as a follow-up.
+  support_content: null,
+  site_seo: null,
+}
+
+const WHOLE_MAP_COLUMNS: readonly WholeMapColumn[] = Object.values(
+  WHOLE_MAP_GUARDS,
+).filter((entry): entry is WholeMapColumn => entry !== null)
 
 function findUnhydratedWholeMapColumns(): WholeMapColumn[] {
   return WHOLE_MAP_COLUMNS.filter((entry) => !entry.hasLocalSnapshot())
@@ -286,24 +331,15 @@ async function defaultLoadMediaIndex(
   return mediaList.ok ? buildMediaIndex(mediaList.assets) : null
 }
 
-function describeCmsWriteFailure(
-  table: string,
-  res: {
-    error: { message: string } | null
-    data: unknown[] | null
-  },
-): string | null {
-  if (res.error) return `Publishing to ${table} failed: ${res.error.message}`
-  if (!res.data || res.data.length === 0) {
-    // `.update().eq('id', 1)` without `.select()` cannot tell "updated 1 row"
-    // from "RLS filtered the row away" — the returned-rows check can.
-    return (
-      `Publishing to ${table} updated 0 rows — the singleton row (id = 1) is missing, ` +
-      'or Row Level Security blocked the write for this account.'
-    )
-  }
-  return null
-}
+/*
+ * `describeCmsWriteFailure` lived here until F-19. It reported per-table write
+ * failures for the two independent UPDATEs, including the "updated 0 rows means
+ * the singleton is missing or RLS blocked it" case. Both jobs moved into
+ * `publish_cms_settings`: a 0-row match now RAISES inside the function, which
+ * rolls both UPDATEs back together, and PostgREST surfaces that as a single
+ * `error`. There is no longer a per-table outcome to describe, because there is
+ * no longer a state where one table succeeded and the other did not.
+ */
 
 /**
  * The environment-independent core of the flush, exported so tests can drive
@@ -388,34 +424,46 @@ export async function runAdminCmsRemoteFlush(
     mediaIndex = await load(client)
   }
 
-  const now = new Date().toISOString()
-  const settingsPatch = { ...scopedValues, updated_at: now }
-  const pubPatch: Record<string, unknown> = {
-    ...scopedValues,
-    published_at: now,
-    revision: Date.now(),
+  // --- Write: ONE transaction (F-19) --------------------------------------
+  // This was two independent PostgREST UPDATEs under `Promise.all`. postgrest-js
+  // does NOT reject on a transport failure — it converts one into
+  // `{ data: null, error }` — so `Promise.all` never rejected and never
+  // cancelled its sibling: a one-of-two failure always ran to completion as a
+  // HALF-WRITE, permanently diverging the editor's source of truth from what
+  // SSR renders. And it was self-concealing: `adminCmsHydration` reads
+  // `cms_settings` only, so reloading /admin could never reveal the split, and
+  // if `cms_settings` was the failed half, reloading silently replaced the
+  // operator's edit with the stale draft while the storefront served the new
+  // value. `publish_cms_settings` updates both tables or neither.
+  //
+  // `updated_at` / `published_at` / `revision` are now set server-side, so
+  // `revision` is the Postgres clock rather than the browser's `Date.now()`
+  // (read in one place, coerced to a number; nothing orders on it).
+  const { data, error } = await client.rpc('publish_cms_settings', {
+    p_patch: scopedValues,
+    p_media_index: mediaIndex,
+  })
+
+  if (error) {
+    return {
+      status: 'error',
+      reason: 'write-failed',
+      message:
+        'Publishing failed — cms_settings and storefront_publication were rolled back ' +
+        `together, so the CMS and the live storefront still agree: ${error.message}`,
+    }
   }
-  if (mediaIndex != null) pubPatch.media_index = mediaIndex
 
-  // --- Writes (parallel; `.select('id')` proves a row was actually hit) -----
-  const [settingsRes, pubRes] = await Promise.all([
-    client.from('cms_settings').update(settingsPatch).eq('id', 1).select('id'),
-    client
-      .from('storefront_publication')
-      .update(pubPatch)
-      .eq('id', 1)
-      .select('id'),
-  ])
+  return { status: 'ok', rows: readPublishedRowCount(data) }
+}
 
-  const failure =
-    describeCmsWriteFailure('cms_settings', settingsRes) ??
-    describeCmsWriteFailure('storefront_publication', pubRes)
-  if (failure) return { status: 'error', reason: 'write-failed', message: failure }
-
-  return {
-    status: 'ok',
-    rows: (settingsRes.data?.length ?? 0) + (pubRes.data?.length ?? 0),
-  }
+/** Row counts returned by `publish_cms_settings`; 0 when the shape is unexpected. */
+function readPublishedRowCount(data: unknown): number {
+  if (!data || typeof data !== 'object') return 0
+  const row = data as Record<string, unknown>
+  const settings = typeof row.settings_rows === 'number' ? row.settings_rows : 0
+  const published = typeof row.publication_rows === 'number' ? row.publication_rows : 0
+  return settings + published
 }
 
 export async function flushAdminCmsRemoteSync(
@@ -428,6 +476,15 @@ export async function flushAdminCmsRemoteSync(
     return { status: 'skipped', reason: 'hydration-lock' }
   }
 
+  // MUST stay dynamic. This module shares a chunk with the storefront's CMS Zod
+  // schemas (the entry needs those for the SSR projection), so a static import
+  // here anchors `adminSupabaseBrowserClient` → `createAnvlSupabaseClient` →
+  // all of `@supabase/supabase-js` (~380 KB raw) into that shared chunk, and
+  // every storefront visitor pays for it on first paint. `mediaAssets.service.ts`
+  // carries the same constraint — both must stay dynamic for either to help.
+  const { getAdminSupabaseBrowserClient } = await import(
+    '@/features/admin/auth/adminSupabaseBrowserClient'
+  )
   const client = getAdminSupabaseBrowserClient()
   // Only reachable when window/env vanished between the guards above — benign.
   if (!client) return { status: 'skipped', reason: 'no-env' }

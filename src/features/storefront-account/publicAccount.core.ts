@@ -12,11 +12,12 @@ import {
   mockAccountSignUp,
 } from '@/app/config/accountMock'
 import { setSessionCustomerId } from '@/app/config/accountSession'
-import {
-  getStorefrontSupabaseClient,
-  isStorefrontAuthEnabled,
-  signOutStorefront,
-} from './auth'
+// Import the env check from its own module, NOT the `./auth` barrel. The barrel
+// reaches `storefrontSupabaseClient` (and `SocialAuthButtons`), so a static
+// import here would pull all of `@supabase/supabase-js` into the eager entry
+// graph — this module is loaded by the site-wide nav on every storefront page.
+// The two functions that genuinely need the SDK are imported lazily below.
+import { isStorefrontAuthEnabled } from './auth/storefrontAuthEnabled'
 
 export const accountQueryKeys = {
   all: ['storefrontAccount'] as const,
@@ -110,9 +111,30 @@ export const settingsSchema = z.object({
   orderUpdatesOptIn: z.boolean(),
 })
 
+/**
+ * Constrain a `?redirect=` param to a path on THIS origin.
+ *
+ * The string checks this replaces (`startsWith('/')` + reject `//`) let
+ * `/\evil.com` through — and per the WHATWG URL spec a backslash is treated as
+ * a forward slash in the relative-slash state for special schemes, so browsers
+ * resolve that to `https://evil.com/`. That is an open redirect on sign-in,
+ * sign-up and the OAuth callback: a phishing link lands on our real domain,
+ * authenticates, then bounces the user to an attacker page.
+ *
+ * Parsing against a throwaway base and comparing origins is the check that
+ * cannot be talked around by separator tricks, encoded or otherwise — anything
+ * that resolves off-origin fails the comparison.
+ */
 export function sanitizeInternalRedirect(raw: string | undefined): string {
-  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/account'
-  return raw
+  if (!raw || !raw.startsWith('/')) return '/account'
+  try {
+    const base = 'https://anvl.invalid'
+    const url = new URL(raw, base)
+    if (url.origin !== base) return '/account'
+    return `${url.pathname}${url.search}${url.hash}`
+  } catch {
+    return '/account'
+  }
 }
 
 interface StorefrontAccountSessionState {
@@ -130,7 +152,11 @@ export const useStorefrontAccountSession = create<StorefrontAccountSessionState>
   logout: () => {
     setSessionCustomerId(null)
     set({ customerId: null })
-    if (isStorefrontAuthEnabled()) void signOutStorefront()
+    // Lazy so the Supabase SDK stays off the eager entry graph. Already
+    // fire-and-forget, so deferring the import changes no observable behaviour.
+    if (isStorefrontAuthEnabled()) {
+      void import('./auth/storefrontAuth').then((m) => m.signOutStorefront())
+    }
   },
 }))
 
@@ -280,20 +306,34 @@ export function useHydrateStorefrontAccountSession() {
   // (handles OAuth returns to /account). No-op when Supabase is not configured.
   useEffect(() => {
     if (!isStorefrontAuthEnabled()) return
-    const client = getStorefrontSupabaseClient()
-    if (!client) return
     let active = true
-    void client.auth.getSession().then(({ data }) => {
+    // Assigned once the lazy import resolves. Read only by the cleanup below,
+    // which may run BEFORE that happens — hence the `active` flag: it both
+    // stops us subscribing after unmount and makes the cleanup a no-op.
+    let unsubscribe: (() => void) | undefined
+
+    // Lazy: this is the only eager-graph reference to the Supabase SDK from the
+    // site-wide nav. Importing the module directly (not the `./auth` barrel)
+    // keeps the deferred chunk to just the client factory.
+    void import('./auth/storefrontSupabaseClient').then(({ getStorefrontSupabaseClient }) => {
       if (!active) return
-      const uid = data.session?.user.id ?? null
-      if (uid) setCustomerId(uid)
+      const client = getStorefrontSupabaseClient()
+      if (!client) return
+      void client.auth.getSession().then(({ data }) => {
+        if (!active) return
+        const uid = data.session?.user.id ?? null
+        if (uid) setCustomerId(uid)
+      })
+      const { data: sub } = client.auth.onAuthStateChange((_event, session) => {
+        if (!active) return
+        setCustomerId(session?.user.id ?? null)
+      })
+      unsubscribe = () => sub.subscription.unsubscribe()
     })
-    const { data: sub } = client.auth.onAuthStateChange((_event, session) => {
-      setCustomerId(session?.user.id ?? null)
-    })
+
     return () => {
       active = false
-      sub.subscription.unsubscribe()
+      unsubscribe?.()
     }
   }, [setCustomerId])
 }

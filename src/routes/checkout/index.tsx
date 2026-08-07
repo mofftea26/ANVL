@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useMemo } from 'react'
 import { Controller, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -12,6 +12,7 @@ import {
   getCheckoutPaymentMethodDefinitions,
   isLebanonShippingCountry,
 } from '@/features/checkout/config/checkoutPayments.config'
+import { isInternalCheckoutEnabled } from '@/features/checkout/config/internalCheckout'
 import { useCheckoutForm } from '@/features/checkout/hooks/useCheckoutForm'
 import { useSyncCheckoutPaymentWithCountry } from '@/features/checkout/hooks/useSyncCheckoutPaymentWithCountry'
 import { useCartAnalytics } from '@/features/analytics/hooks/useCartAnalytics'
@@ -28,6 +29,15 @@ import {
 } from '@/shared/components/ui'
 
 export const Route = createFileRoute('/checkout/')({
+  // This page runs the MOCK payment gateway, which always reports success
+  // without charging anything. It must be unreachable in any build that could
+  // serve a real buyer — including by hand-typing the URL — so the guard runs
+  // on SSR and on every client navigation. See `internalCheckout.ts`.
+  beforeLoad: () => {
+    if (!isInternalCheckoutEnabled()) {
+      throw redirect({ to: '/cart', replace: true })
+    }
+  },
   head: () =>
     buildSeoMeta({
       title: 'Checkout | ANVL Athletics',
@@ -66,11 +76,21 @@ function CheckoutPage() {
     }
 
     trackBeginCheckout(lines.length, subtotal)
-    const order = await runtimeClients.payment.placeOrder(values, lines)
-    trackOrderPlaced(order.orderId, order.total)
-    clear()
-    toast.success('Order placed successfully.')
-    navigate({ to: '/checkout/success', search: { orderId: order.orderId } })
+    try {
+      const order = await runtimeClients.payment.placeOrder(values, lines)
+      trackOrderPlaced(order.orderId, order.total)
+      clear()
+      toast.success('Order placed successfully.')
+      navigate({ to: '/checkout/success', search: { orderId: order.orderId } })
+    } catch (error) {
+      // Previously unhandled: a rejected placeOrder (e.g. the region/payment
+      // assertion in the payment client) left the buyer staring at an inert
+      // button with no explanation and the cart untouched.
+      console.error('[checkout] placeOrder failed', error)
+      toast.error('We could not place your order.', {
+        description: 'Nothing was charged and your cart has been kept. Please try again.',
+      })
+    }
   })
 
   return (

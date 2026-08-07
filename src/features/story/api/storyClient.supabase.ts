@@ -1,7 +1,6 @@
 import type { StoryClient } from '@/app/config/clients'
 import type { StoryChapter } from '@/features/story/schemas/story.schema'
 import type { SupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
-import { getSupabasePublicationAnonClient } from '@/features/cms/api/supabasePublicationClient'
 import {
   assembleChapter,
   type StoryActRow,
@@ -17,6 +16,23 @@ const CAST_SELECT =
   'id, chapter_id, act_id, name, rank, blurb, avatar_asset, sort_order'
 
 /**
+ * Loads the anon publication client on first use.
+ *
+ * WHY LAZY: `runtime.ts` wires this story slice into the every-route
+ * `runtimeClients` singleton, so a static import of the publication client
+ * dragged all of `@supabase/supabase-js` into the eager storefront entry chunk
+ * — for every visitor, whether or not they ever open a Story chapter. This is
+ * the same fix, and the same reasoning, as `lazySupabaseAccountClient`.
+ *
+ * Every caller below is already `async` and the underlying client is memoised
+ * per env, so deferring the import costs one microtask on first read only.
+ */
+async function anonPublicationClient(env: SupabasePublicEnv) {
+  const mod = await import('@/features/cms/api/supabasePublicationClient')
+  return mod.getSupabasePublicationAnonClient(env)
+}
+
+/**
  * Storefront Story reader backed by Supabase. Relies on RLS to expose only
  * published chapters (and their acts/cast) to the anon role.
  */
@@ -26,7 +42,7 @@ export function createSupabaseStoryReadSlice(env: SupabasePublicEnv): StoryClien
     cast: StoryCastRow[]
   }> {
     if (chapterIds.length === 0) return { acts: [], cast: [] }
-    const supabase = getSupabasePublicationAnonClient(env)
+    const supabase = await anonPublicationClient(env)
     const [actsRes, castRes] = await Promise.all([
       supabase.from('story_acts').select(ACT_SELECT).in('chapter_id', chapterIds),
       supabase.from('story_cast').select(CAST_SELECT).in('chapter_id', chapterIds),
@@ -41,7 +57,7 @@ export function createSupabaseStoryReadSlice(env: SupabasePublicEnv): StoryClien
 
   return {
     async getPublishedChapters(): Promise<StoryChapter[]> {
-      const supabase = getSupabasePublicationAnonClient(env)
+      const supabase = await anonPublicationClient(env)
       const { data, error } = await supabase
         .from('story_chapters')
         .select(CHAPTER_SELECT)
@@ -54,7 +70,7 @@ export function createSupabaseStoryReadSlice(env: SupabasePublicEnv): StoryClien
     },
 
     async getChapterBySlug(slug: string): Promise<StoryChapter | null> {
-      const supabase = getSupabasePublicationAnonClient(env)
+      const supabase = await anonPublicationClient(env)
       const { data, error } = await supabase
         .from('story_chapters')
         .select(CHAPTER_SELECT)
@@ -73,7 +89,7 @@ export function createSupabaseStoryReadSlice(env: SupabasePublicEnv): StoryClien
       // index was dropped in 20260720100000). Ordered-first semantics: the
       // lowest sort_order book represents the product — `.maybeSingle()` would
       // error with >1 row.
-      const supabase = getSupabasePublicationAnonClient(env)
+      const supabase = await anonPublicationClient(env)
       const { data, error } = await supabase
         .from('story_chapters')
         .select(CHAPTER_SELECT)

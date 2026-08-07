@@ -3,6 +3,7 @@ import type { Product } from '@/features/products/types/product.types'
 import type { PdpVariant } from '@/features/products/pdp/hooks/usePdpVariant'
 import { Button, Container } from '@/shared/components/ui'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
+import { formatMoney } from '@/shared/lib/money'
 
 /**
  * Mobile-only sticky add-to-cart bar. Always reachable with one thumb; safe-area
@@ -17,7 +18,7 @@ export function PdpStickyBar({ product, variant }: { product: Product; variant: 
       <Container className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="anvl-heading truncate text-lg text-[var(--shop-text)]">{product.name}</p>
-          <p className="anvl-display text-sm text-[var(--shop-text-muted)]">${displayPrice}</p>
+          <p className="anvl-display text-sm text-[var(--shop-text-muted)]">{formatMoney(displayPrice, product.shop?.currency)}</p>
         </div>
         <Button className="shrink-0" disabled={!canPurchase || addState !== 'idle'} onClick={add}>
           {addState === 'added' ? (

@@ -25,6 +25,7 @@ import type {
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { hydrateAdminCmsFromSupabase } from '@/features/admin/cmsRemote/adminCmsHydration'
 import { clearCmsProfileRoleCache } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
+import { isAnyAdminEditorDirtyNow } from '@/features/admin/hooks/useAdminDirtyRegistry'
 
 export const AdminAuthContext = createContext<AdminAuthContextValue | null>(null)
 
@@ -103,7 +104,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
   /** Mirrors a freshly-validated server session into React state and hands
    * the client Supabase browser client its tokens (CMS-read bridge only —
    * see adminSupabaseBrowserClient.ts). */
-  const applyAuthenticatedResult = useCallback((result: AuthenticatedResult) => {
+  const applyAuthenticatedResult = useCallback(async (result: AuthenticatedResult) => {
     setSession({
       userId: result.user.userId,
       email: result.user.email,
@@ -112,7 +113,13 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
     })
     const client = getAdminSupabaseBrowserClient()
     if (client) {
-      void client.auth.setSession({
+      // AWAITED, deliberately. The browser client no longer persists its
+      // session (`persistSession: false`, F-20), so there is no localStorage
+      // copy to cover the window between "tokens arrived" and "client can
+      // authenticate". Every caller runs `startRemoteCmsPull()` immediately
+      // after this; firing that pull before the JWT is applied would hit RLS
+      // unauthenticated and surface as "Failed to load CMS data from Supabase".
+      await client.auth.setSession({
         access_token: result.accessToken,
         refresh_token: result.refreshToken,
       })
@@ -142,7 +149,19 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
           setSession(null)
           return
         }
-        applyAuthenticatedResult(result)
+        await applyAuthenticatedResult(result)
+
+        // The session refresh above must ALWAYS run — that is what keeps the
+        // operator signed in. The CMS re-pull below must not, when there are
+        // unsaved edits: `hydrateAdminCmsFromSupabase` overwrites the
+        // localStorage working copy with the remote values, so the 10-minute
+        // heartbeat would silently throw away whatever the operator had typed
+        // and not yet saved. Skipping it leaves them exactly where they were;
+        // the next explicit save publishes their work, and the pull after that
+        // reconciles. (Foreground pulls — login, mount — are unaffected: there
+        // is nothing unsaved to lose at those moments.)
+        if (opts?.background && isAnyAdminEditorDirtyNow()) return
+
         startRemoteCmsPull(opts)
       } catch {
         // Network/timeout — keep existing state, next heartbeat retries.
@@ -158,7 +177,8 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
         const result = await getCachedAdminSession()
         if (cancelled) return
         if (result.authenticated) {
-          applyAuthenticatedResult(result)
+          await applyAuthenticatedResult(result)
+          if (cancelled) return
           startRemoteCmsPull()
         } else {
           invalidateAdminSessionCache()
@@ -188,7 +208,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
       if (!result.ok) {
         return { ok: false as const, error: result.error }
       }
-      applyAuthenticatedResult(result)
+      await applyAuthenticatedResult(result)
       startRemoteCmsPull()
       return { ok: true as const }
     },

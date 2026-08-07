@@ -239,7 +239,17 @@ export function OathHero({ hero }: { hero: OathResolvedContent['hero'] }) {
 
                   playsInline
 
-                  preload="auto"
+                  // `metadata`, not `auto`. BOTH video elements are always in
+                  // the DOM — one is hidden with `md:hidden`, the other with
+                  // `hidden md:block` — and `display:none` does NOT stop a
+                  // browser honouring `preload="auto"`. On a phone that meant
+                  // front-loading the full desktop hero (6.97 MB, and by
+                  // default the very same file as the mobile one) purely to
+                  // throw it away. Playback is unaffected: the scroll timeline
+                  // calls `.play()` (`motion/buildOathStatic.ts`), which loads
+                  // the media regardless of this hint, and the landing entry
+                  // gate still preloads the hero it actually renders.
+                  preload="metadata"
 
                 />
 

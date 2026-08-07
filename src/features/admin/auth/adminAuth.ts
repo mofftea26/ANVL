@@ -1,5 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
+import { getRequestHeader } from '@tanstack/react-start/server'
 import { z } from 'zod'
+import { checkRateLimit, clientIpFromHeaders } from '@/rateLimit.server'
 import {
   clearAdminSessionData,
   readAdminSessionData,
@@ -62,6 +64,16 @@ export const loginAdminServerFn = createServerFn({ method: 'POST' })
   .middleware([csrfProtectionMiddleware])
   .inputValidator((data: unknown) => loginInputSchema.parse(data))
   .handler(async ({ data }): Promise<LoginAdminResult> => {
+    // Brute-force guard (F-07). Keyed by client IP, not by email, so an
+    // attacker cannot dodge it by rotating the address they try. Fail-open:
+    // if the binding is absent (local dev, not yet deployed) this allows the
+    // request, which is exactly today's behaviour. See `rateLimit.server.ts`.
+    const ip = clientIpFromHeaders((name) => getRequestHeader(name))
+    const { allowed } = await checkRateLimit('ADMIN_LOGIN_RATE_LIMIT', ip)
+    if (!allowed) {
+      return { ok: false, error: 'Too many sign-in attempts. Wait a minute and try again.' }
+    }
+
     const client = createAdminServerSupabaseClient()
     const env = getSupabasePublicEnv()
     if (!client || !env) {

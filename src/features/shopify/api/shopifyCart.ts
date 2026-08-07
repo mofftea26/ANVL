@@ -39,14 +39,28 @@ export async function createShopifyCheckout(
   const env = getShopifyPublicEnv()
   if (!env) return null
 
-  const cartLines = lines
-    .filter((line) => Boolean(line.variantId))
-    .map((line) => ({
-      merchandiseId: line.variantId as string,
-      quantity: line.quantity,
-    }))
+  const resolvable = lines.filter((line) => Boolean(line.variantId))
 
-  if (cartLines.length === 0) return null
+  // No line resolved a Shopify variant — the whole cart was built against the
+  // seed/local catalog. Report "not a Shopify cart" and let the caller decide.
+  if (resolvable.length === 0) return null
+
+  // Some resolved and some did not. Checking out only the resolvable subset
+  // would silently charge the buyer for part of their cart, so refuse: the
+  // caller surfaces this instead of quietly shipping a smaller order.
+  if (resolvable.length !== lines.length) {
+    const unavailable = lines
+      .filter((line) => !line.variantId)
+      .map((line) => `${line.name} (${line.colorway} · ${line.size})`)
+    throw new Error(
+      `Some items are unavailable for checkout: ${unavailable.join(', ')}. Remove them and try again.`,
+    )
+  }
+
+  const cartLines = resolvable.map((line) => ({
+    merchandiseId: line.variantId as string,
+    quantity: line.quantity,
+  }))
 
   const buyerIdentity =
     buyer && (buyer.email || buyer.countryCode)

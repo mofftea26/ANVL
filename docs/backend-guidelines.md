@@ -138,13 +138,56 @@ authenticated (admin):
 
 ### Known RLS/advisor debt (2026-07-29 audit)
 
-- `touch_row_updated_at()` has a mutable `search_path`.
-- Unindexed FKs: `armory_feats.user_id`, `passport_transfers.from_user`, `passport_transfers.to_user`, `techpacks.created_by`.
-- Every table created **after** the `perf20_wrap_auth_uid_in_rls_policies` migration still calls bare `auth.uid()` in its policies instead of `(select auth.uid())` — `gamification_*`, `product_passports`, `passport_transfers`, `coming_soon_subscribers`, `techpacks`, `techpack_images`. The PERF-20 fix was a one-time sweep, not a standing rule; new tables must use the `(select auth.uid())` form.
+- ~~`touch_row_updated_at()` has a mutable `search_path`.~~ **Fixed 2026-08-04** (`search_path = ''`); advisor warning confirmed cleared.
+- ~~Unindexed FKs: `armory_feats.user_id`, `passport_transfers.from_user`, `passport_transfers.to_user`, `techpacks.created_by`.~~ **Fixed 2026-08-04**, plus `product_reviews (product_slug, created_at DESC)` — the existing `(user_id, product_slug)` composite leads with `user_id` and so could not serve `get_product_reviews`' by-slug lookup.
+- ~~Every table created after `perf20_wrap_auth_uid_in_rls_policies` still calls bare `auth.uid()`.~~ **Fixed 2026-08-05** (`20260805045202_perf22…`): all **31** remaining policies across `gamification_*`, `product_passports`, `passport_transfers`, `coming_soon_subscribers`, `techpacks` and `techpack_images` rewritten; every `auth_rls_initplan` advisor warning cleared. PERF-20 was a one-time sweep and drifted straight back, so treat `(select auth.uid())` as a **standing rule for every new policy** — the fix migration is idempotent and can be re-run as a sweep if it drifts again.
 - Duplicate permissive SELECT policies on `landing_pages`, `passport_transfers`, `product_passports`, `story_*`.
 - Auth: leaked-password protection still disabled (SEC-23, a dashboard toggle).
 
 **Never disable RLS on any table.** Orphaned drop-builder RPCs may exist in migration history (MIG-01) — the app does not call them.
+
+### `publish_cms_settings(p_patch jsonb, p_media_index jsonb)` — the atomic CMS publish
+
+The admin publishes through **one** SECURITY DEFINER RPC, not two UPDATEs. Before it (F-19), `adminCmsRemoteSync` fired independent PostgREST UPDATEs at `cms_settings` and `storefront_publication` under `Promise.all` — and postgrest-js does **not** reject on a transport failure, it converts one into `{data:null,error}`. So `Promise.all` never rejected and never cancelled its sibling: a one-of-two failure always ran to completion as a **half-write**, permanently diverging the editor's source of truth from what SSR renders. It was also self-concealing, because hydration reads `cms_settings` only — reloading `/admin` could not reveal the split, and if `cms_settings` was the failed half, reloading silently replaced the operator's edit with the stale draft while the storefront kept serving the new value.
+
+Things that matter when changing it:
+- **The role gate is `admin`, deliberately** — the STRICTER of the two tables (`cms_settings` allows editor|admin, `storefront_publication` allows admin only). Gating on `editor` would hand editors a write path to the anon-readable publication mirror they do not have today. The table policies are untouched, so nobody's direct rights changed.
+- **Key presence decides what is written, and a JSON `null` counts as absent.** Every jsonb column is `NOT NULL`, but a JSON null is a *legal* jsonb value, so the constraint would not catch it — `coalesce(p_patch->'k', k)` would store a json null that the Zod readers then resolve to code defaults, i.e. a silent content wipe.
+- **The allowed-column list mirrors `CMS_SETTINGS_FIELD_KEYS`** in `adminCmsRemoteSync.ts`, and there is **no typecheck link** between them. A new column must be added in both.
+- `updated_at`, `published_at` and `revision` are set server-side; `revision` is now the Postgres clock rather than the browser's `Date.now()`.
+- A 0-row match **raises**, which rolls both UPDATEs back together.
+
+**Regression detector** — after any change here, all 13 shared columns must still be identical in both tables:
+```sql
+select k, (to_jsonb(s.*) -> k) is not distinct from (to_jsonb(p.*) -> k) as identical
+from public.cms_settings s, public.storefront_publication p,
+unnest(array['active_landing_page_key','theme_config','font_config','asset_config',
+  'landing_content','shop_config','pdp_content','passport_content','coming_soon',
+  'banner_config','legal_content','support_content','site_seo']) k
+where s.id=1 and p.id=1;
+```
+
+### Migration history vs `supabase/migrations/` (MIG-01 — **CLOSED 2026-08-05**)
+
+The folder now matches the applied history **exactly**: 76 files ↔ 76 applied rows, zero gaps in either direction, identical ordering, zero name mismatches. Re-check any time by diffing `supabase_migrations.schema_migrations` against the folder.
+
+Three distinct problems existed; all three are fixed.
+
+1. **Content gap — CLOSED.** Eight applied migrations had their SQL on disk nowhere. They were backfilled verbatim (SELECT-only read of `supabase_migrations.schema_migrations`). Two of them are load-bearing for security, and their absence meant a rebuilt environment was *less* secure than production:
+   - `tighten_cms_settings_rls_and_revoke_rls_auto_enable_grant` — drops the public SELECT on `cms_settings` (anon could read unpublished CMS drafts) and revokes `rls_auto_enable()` EXECUTE.
+   - `sec25_remove_public_storage_listing_policies` — drops the `storage.objects` policies that allowed enumerating every filename in `cms-media` / `story-media`. Public object fetches are served by the bucket's `public: true` flag, so existing CDN URLs are unaffected.
+   - `20260518133503_anvl_oath_bootstrap_storefront.sql` is a **deliberate no-op**: its original body seeded the drop-builder (`anvl_drops`, `published_drop_snapshot`), all of which a later migration drops. The file exists so the version appears in the folder; the SQL is recoverable from production if ever needed.
+2. **Version divergence — FIXED.** The folder numbered migrations `…120000` while the applied history used real timestamps, so only 15 of 71 files matched. 48 were renamed with `git mv` (history preserved) to their real applied versions. This also corrected a name typo — disk `anvl_drops_client_id_admin_rls` vs applied `anvl_drops_client_drop_id_admin_rls`, content confirmed identical before renaming. The resulting order is the order production was ACTUALLY built in; the old disk order was fiction.
+3. **Unrecorded-but-applied — FIXED.** 8 files had no history row. Their effects were verified present in production first (`model/gltf-binary` in the `cms-media` bucket, `asset_config.pages` as an object, zero theme columns on `landing_pages`, array-shaped tenets), so they had been applied outside the CLI. Registered with a `migration repair`-equivalent metadata insert — no schema touched, reversible by deleting those 8 versions. This mattered beyond tidiness: 4 are drop-builder era and target `anvl_drops` and friends, which the teardown removed, so a `db push` would have tried to re-apply DDL against tables that no longer exist and **errored**.
+
+### Audit corrections applied 2026-08-04 (`20260804172317`)
+
+- `get_product_reviews` now orders **inside** the subquery so `LIMIT 50` takes the newest 50. It previously limited before ordering, so past 50 reviews a product showed an arbitrary subset.
+- `touch_row_updated_at` has `search_path = ''`. It was the only function in `public` without one; the advisor warning is confirmed cleared.
+- Covering indexes added: `product_reviews (product_slug, created_at DESC)`, `armory_feats (user_id)`, `passport_transfers (from_user)`, `passport_transfers (to_user)`, `techpacks (created_by)`. The reviews one matters most — the existing `(user_id, product_slug)` composite leads with `user_id` and so could not serve the by-slug lookup.
+**Round 2 (`20260804174508`)** closed three of those: `accept_passport_transfer` now resets `wear_count` / `last_worn_at` / `featured_slot` / `is_public` (it could previously HARD-FAIL on the `(claimed_by, featured_slot)` partial unique index when the receiving owner already had that slot pinned); `log_passport_wear` folds its 24h cooldown into the UPDATE's WHERE clause so the row lock arbitrates instead of a check-then-write race; and `orders` RLS uses `nullif()` on both sides of the email comparison, so an order whose email resolved to `''` is no longer readable by any signed-in user lacking an email claim.
+
+- **Still open:** `admin_unassign_passport` allows `editor` though the documented model is admin-only (left alone deliberately — narrowing it removes a capability an editor may rely on, which is an operational call).
 
 ---
 

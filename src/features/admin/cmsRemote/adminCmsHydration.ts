@@ -153,13 +153,33 @@ export async function hydrateAdminCmsFromSupabase(
     writeAssetConfigToStorage(migrated.assetConfig)
     writeLandingContentToStorage(migrated.landingContent)
 
-    for (const { column, write } of TOLERANT_COLUMN_PULLS) {
-      const res = await client
-        .from('cms_settings')
-        .select(column)
-        .eq('id', 1)
-        .maybeSingle()
-      const row = res.error ? null : asRow(res.data)
+    // The tolerant pulls are INDEPENDENT: each reads one column and writes one
+    // localStorage key, so none depends on another's result or on ordering.
+    // Run serially they cost 8 sequential Supabase round trips on every hard
+    // admin load — the whole shell sits behind "Loading CMS…" for all of them
+    // (F-15). Fired together they cost one.
+    //
+    // They stay EIGHT single-column requests rather than one combined `select`
+    // on purpose: that is what makes them TOLERANT. A column missing from the
+    // database (a pre-migration deployment) fails only its own request, while a
+    // combined select would fail for ALL of them and silently reset every blob
+    // to code defaults. `adminCmsHydration.test.ts` pins this by failing a
+    // specific column, so collapsing them into one select turns that test red.
+    //
+    // Fetch is parallel; the WRITES stay sequential and in declaration order so
+    // a parser that throws still aborts the rest exactly as before.
+    const tolerantResults = await Promise.all(
+      TOLERANT_COLUMN_PULLS.map(async ({ column, write }) => {
+        const res = await client
+          .from('cms_settings')
+          .select(column)
+          .eq('id', 1)
+          .maybeSingle()
+        return { column, write, row: res.error ? null : asRow(res.data) }
+      }),
+    )
+
+    for (const { column, write, row } of tolerantResults) {
       if (row) write(row[column])
     }
   } finally {

@@ -30,6 +30,8 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 |---|---|
 | `repatch-admin-route-tree.mjs` | Patches auto-generated `routeTree.gen.ts` for admin lazy routes (runs before dev/build/typecheck) |
 | `strip-brand-logo-bg.mjs` | CLI utility to strip backgrounds from brand SVG/PNG exports |
+| `check-dynamic-import-entry.mjs` | Runs as part of `pnpm build`. Fails if any emitted chunk dynamically imports the ENTRY chunk — the signature of a silent Rolldown bug where `await import(...)` resolves to a namespace missing its bindings, yielding `undefined` at runtime. Has caught four shipped instances |
+| `compress-glb-textures.mjs` | Re-encodes embedded GLB textures (refuses on an alpha channel) |
 
 ---
 
@@ -113,7 +115,7 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 | `terms.tsx` | `/terms` | Terms of service (`LegalDocumentRoute`) |
 | `cookie-policy.tsx` | `/cookie-policy` | Cookie policy (`LegalDocumentRoute`) |
 | `accessibility.tsx` | `/accessibility` | Accessibility statement (`LegalDocumentRoute`) |
-| `api/csp-report.ts` | `/api/csp-report` | Server-only `POST` handler — logs `Content-Security-Policy-Report-Only` violation reports to console (no persistence); see `src/start.ts` |
+| `api/csp-report.ts` | `/api/csp-report` | Server-only `POST` handler — logs `Content-Security-Policy-Report-Only` violation reports to console (no persistence); see `src/start.ts`. Rate-limited per IP via `src/rateLimit.server.ts` (fails open when the binding is absent) |
 | `auth/sign-in.tsx` | `/auth/sign-in` | Sign in (Supabase auth) |
 | `auth/sign-up.tsx` | `/auth/sign-up` | Sign up |
 | `auth/forgot-password.tsx` | `/auth/forgot-password` | Password reset request |
@@ -161,12 +163,12 @@ Slim CMS admin, split into subfolders. Every page renders inside the wide-screen
 |---|---|
 | `auth/` | Supabase auth flow, admin session, `ProtectedAdminRoute`, role gate |
 | `cmsRemote/` | Supabase write-through (`adminCmsRemoteSync`, `cmsWriteThrough`) → `cms_settings` + `storefront_publication`; media upload |
-| `components/` | Admin UI primitives + layout: `AdminLayout`, `AdminWorkspace`, `AdminRailPanel`, `AdminWorkspaceStatusPanel`, `AdminSidebar` (+ `AdminSidebarNavLink.tsx`, `adminSidebarActive.ts`, `useAdminSidebarExpandedCats.ts` — extracted from `AdminSidebar.tsx` to stay under the 500-line hard limit), `AdminTopbar`, `AdminButton`, `AdminCard`, etc. |
+| `components/` | Admin UI primitives + layout: **`AdminRootShell`** (the `/admin` branch of `__root.tsx`, imported via `lazy()` so the admin auth/theme stack never enters the storefront's static graph — F-06; do not import admin modules directly into `__root.tsx`), `AdminLayout`, `AdminWorkspace`, `AdminRailPanel`, `AdminWorkspaceStatusPanel`, `AdminSidebar` (+ `AdminSidebarNavLink.tsx` — links use `preload="intent"` to fetch each lazy editor chunk on hover, `adminSidebarActive.ts`, `useAdminSidebarExpandedCats.ts` — extracted from `AdminSidebar.tsx` to stay under the 500-line hard limit), `AdminTopbar`, `AdminButton`, `AdminCard`, and `adminMainId.ts` (`ADMIN_MAIN_ID` — the id of the admin's ONE `<main>` landmark, in its own module so the skip link in `AdminRootShell` and the element in `AdminShell` cannot drift; a stale skip-link target fails silently and only for keyboard users), etc. |
 | `hooks/` | Admin-specific hooks (e.g. `useSaveSuccessFlash`) |
 | `landing-picker/` | Dashboard control to pick the active code-owned landing page (Supabase `landing_pages` ∩ registry) |
 | `landing-content/` | Landing Content editor (`/admin/content`): RHF form over The Oath's content schema, code defaults as placeholders (`sections/Oath*Fields`) |
 | `lib/` | Admin datetime helpers (`adminDateTime.ts`), local reset |
-| `media/` | Media library: upload zone, asset grid, picker, `useMediaAssetsQuery` |
+| `media/` | Media library: upload zone, asset grid, picker, `useMediaAssetsQuery`, and `mediaUploadAdvice.ts` — **advisory only** size/format guidance shown per file in the naming modal. It never blocks an upload; it exists because CMS media is served as the RAW original (`publicCmsMediaUrl` builds an `/object/public/` URL, and Supabase image transformation is a Pro-plan feature this project does not have), so whatever is uploaded is exactly what every visitor downloads |
 | `site-theme/` | Theme editor (15-token palette) + WCAG contrast report + preview rail |
 | `site-font/` | Fonts editor + font families service |
 | `site-assets/` | Assets editor (media library + general/per-drop slot assignment) |
@@ -292,6 +294,7 @@ Commerce adapters + catalog:
 | `api/commerceClient.supabase.ts` | Legacy name; commerce uses Shopify or seed/localStorage (no CMS products) |
 | `api/createCommerceClient.ts` | Factory — picks the right adapter |
 | `catalog/storefrontCatalog.ts` | Public catalog read facade |
+| `lib/resolveCartVariantId.ts` | The **single** Shopify variant-GID lookup for a (colourway, size) pair. This value decides whether a cart line can reach hosted checkout at all — `createShopifyCheckout` refuses a cart where only some lines resolve — so it must not be re-derived per call site. Encodes the `'Default'` / `'One Size'` fallback keys the Shopify mapper uses for single-option products |
 | `hooks/` | `useProducts`, `useHomeProducts`, `useTrackProductView` |
 | `schemas/` | `commerce.schema.ts`, `product.schema.ts` |
 | `shop/` | `ShopFiltersForm`, `shopUrlSearch` (URL state for filters) |
@@ -384,6 +387,7 @@ Storefront legal-page UI, consumed by `/privacy`, `/terms`, `/cookie-policy`, `/
 | `api/paymentGateway.mock.ts` | Mock payment adapters: COD, Whish, card |
 | `api/paymentGateway.types.ts` | PaymentClient interface |
 | `config/checkoutPayments.config.ts` | Lebanon COD/Whish + international card config |
+| `config/internalCheckout.ts` | `isInternalCheckoutEnabled()` — the single gate keeping the **mock** payment gateway unreachable in production. Returns true only when Shopify is unconfigured **and** `import.meta.env.DEV`. Consulted by the `/checkout` route guard and by both cart checkout handlers, which surface an error instead of falling back when it returns false |
 | `hooks/useCheckoutForm.ts` | Checkout form state + submission |
 | `schemas/checkout.schema.ts` | Zod checkout schema |
 
@@ -421,6 +425,7 @@ Framework-agnostic primitives — no feature imports allowed here.
 | `hooks/useContainedMediaRect.ts` | Computes the rendered (letterboxed) rect of an `object-fit: contain` media element — used where overlay UI must align to the visible image, not its box |
 | `icons/index.tsx` | The Phosphor icon seam — every UI icon is re-exported from here under stable names (named imports only; never import `@phosphor-icons/react` directly). Global duotone weight via `IconContext`; the `Anvil` glyph is inlined because Phosphor has none |
 | `lib/cn.ts` | `cn()` = clsx + tailwind-merge |
+| `lib/money.ts` | `formatMoney(amount, currency, locale?)` — **THE** currency formatter; every customer-visible price goes through it. Whole amounts render with 0 decimals, fractional with exactly 2 (a single `maximumFractionDigits:2` formatter turns 85.5 into `$85.5`, which is not a price). Falls back to USD on a missing or malformed ISO code rather than throwing. Currency comes from `product.shop?.currency` / `CartLine.currency` — **not** `Product.currency`, which does not exist |
 | `lib/gsap.ts` | Registers GSAP + ScrollTrigger + useGSAP (SSR-safe) |
 | `lib/iconSize.ts` | Shared icon size-token → pixel-size resolver for `icons/` consumers |
 | `lib/forge/emberForge.ts`, `lib/forge/forgeSurface.ts` | The shared canvas-2D ember-forge engine (maths + surface sizing) backing `Modal`, the toast layer, and the About altar's ember hand-off — see `docs/animation-guidelines.md` |

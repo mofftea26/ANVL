@@ -204,7 +204,15 @@ const NORMALIZED_DARK_PALETTE: Record<ThemePaletteKey, string> = {
   primary: '#c7c2b8',
   primaryForeground: '#141414',
   accent: '#c2703d',
-  accentForeground: '#ffffff',
+  // Near-black, NOT white. White on this bronze is 3.70:1 — and on the derived
+  // `highlightBright` (mix(accent, white, .24)) only 2.61:1 — while the primary
+  // button renders `text-sm font-semibold` (14px/600), which is NORMAL text and
+  // so needs 4.5:1, not the 3:1 large-text allowance. Near-black gives 4.98:1
+  // on the accent and 7.05:1 on the bright end, so both ends of the button's
+  // gradient pass. It also matches `primaryForeground` above, and the live
+  // published theme, which already uses #111111 on its own accent.
+  // `themeContrast.test.ts` pins this — the ratios are asserted, not trusted.
+  accentForeground: '#141414',
   ring: '#c7c2b8',
   destructive: '#cf5a4e',
   success: '#5f9e6b',
@@ -221,7 +229,15 @@ const NORMALIZED_BONE_LIGHT_PALETTE: Record<ThemePaletteKey, string> = {
   border: 'rgba(11, 11, 12, 0.2)',
   primary: '#2f3135',
   primaryForeground: '#f5f2ec',
-  accent: '#9a4f24',
+  // Darkened from #9a4f24. White cleared AA on the accent itself (5.97:1) but
+  // NOT on the derived `highlightBright` = mix(accent, white, .24), which is the
+  // TOP of the primary button's gradient — 3.64:1 there, against 14px/600 text
+  // that needs 4.5:1. Dark text is not the escape here either: near-black on
+  // this rust is only 3.09:1, so the colour had to move. #7a3a18 is the
+  // smallest darkening that clears both stops (4.66:1 on the bright end).
+  // bone-light is the not-yet-shipped editorial mode, so this changes nothing
+  // live — but a non-compliant default is a trap for whoever enables it.
+  accent: '#7a3a18',
   accentForeground: '#ffffff',
   ring: '#2f3135',
   destructive: '#b23b30',

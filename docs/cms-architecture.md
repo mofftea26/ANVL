@@ -63,9 +63,41 @@ Two blocks were added in this pass, both editable from two new `/admin/support` 
 
 ## Admin shell + IA (2026-07-18 rework)
 
+- **Mount chain:** `__root.tsx` → **`AdminRootShell`** (lazy) → `AdminLayout` → `AdminShell`. The lazy boundary is load-bearing, not cosmetic: `__root.tsx` renders on every storefront route, so importing `AdminAuthProvider`/`AdminThemeProvider` statically put the admin auth stack — and, through it, `adminCmsRemoteSync` — into the storefront's static import graph (F-06, fixed 2026-08-04). Keep the admin branch behind that boundary; adding a direct admin import to `__root.tsx` silently reintroduces the leak.
+- **Sidebar links use `preload="intent"`.** Every editor is a `lazyRouteComponent`, so hovering fetches its 19–74 kB chunk instead of waiting for the click. This was briefly `false` on the reasoning that there is "no useful data to preload" — which conflates loader data with the route module. The hover cost it guarded against (re-running the `/admin` `beforeLoad` chain) is absorbed by `getCachedAdminSession`'s 45 s cache.
 - **Persistent categorized sidebar** ≥1024px (collapsible to an icon rail; preference in `anvl.adminSidebar.v1`), drawer below `lg`. Categories — Dashboard · Design (theme, fonts) · Content (landing, about, story, coming-soon) · Commerce (shop, products) · Passports · Gamification · Media (assets) · Settings — are **nav-only**: `/admin/*` URLs are flat and unchanged. `adminNav.ts` is the single IA source (sidebar, breadcrumbs, dashboard cards all derive from it).
 - **Cross-navigation:** `/admin/assets` accepts `?page=<scope>&slot=<key>&q=<search>` (opens the slot panel scoped + highlights the slot + seeds the library search); `/admin/passports` accepts `?tab=content&product=<slug>` (opens that product's wizard). The PDP editor links to its product's passport content.
 - **Speed affordances:** generic `AdminWizard` (extracted from the passport content wizard); native HTML5 drag-reorder via `useSortableList` (About orbs, Oath showcase products, story acts, gamification challenges — always with keyboard up/down fallback); media library cards drag onto any `MediaLibrarySlotField` / slot-panel row to assign; the upload naming modal's slot select has a "Custom name…" option (kebab-forced) for every context; the dashboard carries a drop-setup checklist with live completion ticks.
+
+#### a11y: one `<main>` landmark + skip link
+
+`AdminRootShell` used to render its own `<main>` around `AdminShell`'s — two "main" landmarks on every admin page, which leaves a screen reader no unambiguous jump target. The outer one is now a plain `<div>` (it carried no styling); `AdminShell`'s is the single landmark, id `ADMIN_MAIN_ID` (`adminMainId.ts`, its own module so the skip link and its target cannot drift). A skip link sits before the ~20-link sidebar, suppressed on `/admin/login` — that page renders bare, so there would be nothing to skip to.
+
+## Theme presets and the contrast gate
+
+`finalizeThemePalette` (`themeLibrary.ts`) is **fill-only**: `if (!provided('accentForeground')) p.accentForeground = bestForeground(p.accent)`. An explicitly-present foreground therefore **suppresses** the WCAG gate. That is deliberate — an author who sets a colour keeps it — but it means anything *seeding* a palette must omit the derived foregrounds or the gate never runs.
+
+`createThemePreset()` used to seed straight from `DEFAULT_THEME_PALETTE` / `DEFAULT_BONE_LIGHT_PALETTE`, both of which spell `accentForeground` out literally, so every admin-created theme inherited it unchecked — which is how a preset carrying white on `#c2703d` (3.70:1) reached the live theme library. Since 2026-08-05 the seed **deletes `accentForeground` and `primaryForeground`** so the gate chooses them, matching what the house presets in `themePresets.ts` already relied on.
+
+Two things to keep in mind when touching this:
+- `bestForeground()` only inspects the **flat** accent. The primary button paints a gradient whose top is `mix(accent, white, .24)` (`--color-highlight-bright`), and that stop can fail while the flat colour passes — bone-light did, at 3.64:1 against 5.97:1. `themeContrast.test.ts` asserts **both** stops for that reason.
+- The 15 palette tokens are CMS-editable, so the shipped defaults are a floor, not a guarantee. The live published theme wins over them.
+
+## Upload advice (advisory, never blocking)
+
+The naming modal shows a per-file size/format note (`mediaUploadAdvice.ts`). It **never blocks an upload and never re-encodes anything** — an operator with a reason for a 12 MB hero still gets it.
+
+It exists because CMS media is served as the **raw original**: `publicCmsMediaUrl()` builds an `/object/public/` Storage URL, and Supabase image transformation is a **Pro-plan** feature this project does not have. There is no resizing layer anywhere, so whatever is uploaded is exactly what every visitor downloads, at full resolution. Before this, `MediaUploadZone` enforced only the bucket's 50 MB hard limit — a 9 MB PNG uploaded as silently as a 90 KB WebP.
+
+Thresholds live in one module and are pinned by test, **including the silence**: a warning on every file is a warning on none. SVGs are exempt (size heuristics do not apply to vectors), `.glb` is matched by extension when the browser sends no MIME type, and the GLB note points at `scripts/compress-glb-textures.mjs` — because GLB weight is almost always embedded textures, not geometry.
+
+## Media library grid
+
+`MediaAssetGrid` virtualises above 100 assets. The virtualiser slices the asset list into rows of N and positions rows absolutely, so **N must equal the column count the CSS grid is actually rendering** (`grid gap-3 sm:grid-cols-2 lg:grid-cols-3` → 1 / 2 / 3). It was hardcoded to 3, so below `lg` rows overlapped and most of the library became unreachable on a laptop, tablet or phone. `useResponsiveGridColumns` now tracks it live against those same breakpoints — change one, change the other.
+
+## Media library grid
+
+`MediaAssetGrid` virtualises above 100 assets. The virtualiser slices the asset list into rows of N and positions rows **absolutely**, so **N must equal the column count the CSS grid is actually rendering** (`grid gap-3 sm:grid-cols-2 lg:grid-cols-3` → 1 / 2 / 3). It was hardcoded to 3, so below `lg` the rows overlapped and most of the library became unreachable on a laptop, tablet or phone. `useResponsiveGridColumns` now tracks it live against those same breakpoints — change one, change the other.
 
 ## `AdminFieldSelect` empty-value rule
 
@@ -118,7 +150,8 @@ iframe → admin   anvl-preview/ready · anvl-preview/located { target, found }
 ```
 Admin browser
   └── edits theme / fonts / assets / landing content / active drop (localStorage working copy)
-        └── adminCmsRemoteSync → cms_settings + storefront_publication mirror
+        └── adminCmsRemoteSync → publish_cms_settings() RPC
+            └── cms_settings + storefront_publication, in ONE transaction (F-19)
 
 Storefront (SSR + browser)
   └── loadStorefrontProjection()
@@ -160,7 +193,35 @@ Nav, footer, and SEO use **code defaults** (`navigation.defaults.ts` → `static
 | Active drop change, media upload/alt/delete | `scheduleAdminCmsRemoteSync` | Debounced 850 ms |
 | Login / session restore | `hydrateAdminCmsFromSupabase` | Pull remote → localStorage |
 
+Hydration makes **two** waves of Supabase round trips, not nine. The core `select` of 5 columns stays first and serial — its `if (!settings) return` is a real early exit, and the asset/landing pair needs `migrateOathTenetAssetsFromSlots` across both before either is written. The **eight tolerant column pulls** then run CONCURRENTLY (fixed 2026-08-05; they were a `for…await` costing 8 sequential round trips with the whole shell behind "Loading CMS…"). They remain **eight single-column requests rather than one combined `select`** — that is precisely what makes them *tolerant*: a column missing on a pre-migration deployment fails only its own request, whereas a combined select would fail for all eight and silently reset every blob to code defaults. `adminCmsHydration.test.ts` pins this by failing one specific column, so collapsing them turns that test red. Fetching is parallel; the WRITES stay sequential and in declaration order, so a throwing Zod parser aborts the remainder exactly as before.
+
+The 10-minute session heartbeat refreshes the session ALWAYS, but the **heartbeat does NOT re-pull the CMS while any editor is dirty** (`isAnyAdminEditorDirtyNow()`): `hydrateAdminCmsFromSupabase` overwrites the localStorage working copy, so re-pulling mid-edit silently threw away whatever the operator had typed and not yet saved. Foreground pulls (login, mount) are unaffected — nothing is unsaved at those moments.
+
 Hydration is gated by `beginAdminCmsRemoteHydration` / `endAdminCmsRemoteHydration` so push does not race pull. `AdminLayout` blocks editors until `isRemoteCmsReady`. On pull, `migrateOathTenetAssetsFromSlots` moves legacy tenet asset slots into `landing_content`.
+
+> **The Supabase client here is loaded lazily, deliberately.**
+> `adminCmsRemoteSync` and `mediaAssets.service` reach `adminSupabaseBrowserClient`
+> through `await import(...)`, never a static import. Both modules share a chunk
+> with the storefront's CMS Zod schemas — which the entry needs for the SSR
+> projection — so a static import anchors `createAnvlSupabaseClient` and all of
+> `@supabase/supabase-js` (~200 KB) onto every storefront visitor's first paint.
+> The same rule is why `autoImportRun.ts` imports `cmsWriteThrough` dynamically:
+> one static importer anywhere defeats the lazy imports of every storefront
+> `*.settings.ts` module at once (Rolldown reports it as
+> `[INEFFECTIVE_DYNAMIC_IMPORT]`). Check with `ANVL_IMPORTERS=1 pnpm build`
+> before changing any of these imports.
+
+### Whole-map clobber guard (`adminCmsRemoteSync.ts`)
+
+Some columns store the WHOLE authored map rather than a field patched in place, so publishing one replaces everything in it — in `cms_settings` **and** the anon-readable `storefront_publication` mirror — in a single UPDATE. A browser that never hydrated that column (fresh machine, incognito, cleared site data, `/admin/settings` local reset, or a hydration pull that failed on that column) would publish a map containing only what this session happened to touch and **destroy the rest**.
+
+`WHOLE_MAP_GUARDS` is an **exhaustive** `Record<CmsSettingsFieldKey, WholeMapColumn | null>`: every column must be classified, so adding a key to `CMS_SETTINGS_FIELD_KEYS` without classifying it is a `pnpm typecheck` failure. That structure replaced a hand-maintained array on 2026-08-04 — `passport_content` had shipped as a per-slug map with no guard precisely because the array let a new column slip in unnoticed.
+
+Guarded: `pdp_content`, `passport_content`, `shop_config`. `null` (unguarded) is correct for singleton blobs — republishing theme/fonts/banner/legal/SEO from defaults is immediately visible and re-editable, whereas a per-slug map silently loses entries the operator never saw.
+
+> **Known gap:** `support_content` also carries per-slug care lines and size tables, so it has the same shape of exposure. It is deliberately left `null` for now because guarding it changes save behaviour for a never-hydrated editor; tracked as a follow-up.
+
+A scoped publish of an unhydrated guarded column **hard-fails before any network write** (reload `/admin` to re-pull, then save). The unscoped debounced auto-sync instead omits the column from the patch, so the remote value is left alone — the same "omit, never wipe" rule already applied to `media_index`.
 
 ### Landing Content ↔ Assets sync
 
@@ -376,7 +437,10 @@ Products are **not** CMS-edited. `createCommerceClient` returns:
 - **Sign-in:** Supabase email + password via `/admin/login`
 - **Panel access (`/admin`):** `cms_profiles.role` must be **`admin`** only — editors and viewers are rejected at login
 - **CMS writes (DB RLS):** `editor` or `admin` may upsert `cms_settings`, `cms_media_assets`, and story tables
-- Browser session storage key: `anvl.supabase.admin.v1` (CMS reads only — `autoRefreshToken: false`)
+- Browser client: **memory-only session** — `persistSession: false`, `autoRefreshToken: false`, CMS reads only. It used to persist under `anvl.supabase.admin.v1`, which put the admin's Supabase **refresh token in same-origin localStorage** (F-20, fixed 2026-08-04) — readable by any injected script, and the second half of an editor → admin takeover chain whose first half was the CMS SVG sink. Nothing is lost by not persisting: the sealed cookie is already the sole authority and `AdminAuthProvider` re-applies fresh tokens on login, on mount and on every heartbeat.
+  - **`setSession` is awaited before any CMS pull.** With no persisted copy, nothing covers the window between "tokens arrived" and "client can authenticate" — `applyAuthenticatedResult` previously fired `setSession()` with `void` while `startRemoteCmsPull()` ran immediately after, which would now hit RLS unauthenticated. All three call sites (login, mount bootstrap, heartbeat) await it.
+  - **Not yet eliminated:** the token still *reaches* the browser. Removing it entirely means supabase-js's `accessToken` factory, which disables `supabase.auth.*` — and `auth.getSession()` is called by 8 admin services (`adminCmsRemoteSync`, media, passports, fontFamilies, storyMedia, techpacks ×2). Tracked as Phase 2.
+- **Sign-in is rate limited** (F-07, 2026-08-04): `ADMIN_LOGIN_RATE_LIMIT`, 20 attempts / 60 s, keyed by `CF-Connecting-IP` so rotating the email tried does not dodge it. Fails open when the binding is absent — see `docs/deployment.md`.
 - **Server-validated (SEC-11, resolved 2026-07-04):** `/admin/*` access is checked in `beforeLoad` on every SSR request and client navigation via a sealed HttpOnly session cookie (`src/features/admin/auth/adminAuthSession.server.ts`) holding the Supabase refresh token; every validation call refreshes + re-verifies `cms_profiles.role = admin` and rotates the cookie. The static env-file username/password gate was removed in this same pass — Supabase is the only admin auth path.
 
 ---
