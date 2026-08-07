@@ -376,11 +376,26 @@ An RLS suite matters **least** here — the two riskiest RPCs are provably atomi
 | Entry `index-*.js` | 963.5 KB | **290.8 KB** |
 | Always-loaded entry graph | 1,716.6 KB | **520.2 KB** |
 | `vendor-three` | 971.0 KB | 261.2 KB |
+<!-- POST-CHANGE RE-MEASURE + CORRECTION — see the block below the table. -->
+
 | `admin-cms-remote` | 370.6 KB | 98.3 KB |
 | `styles-*.css` | 320.2 KB | 41.7 KB |
 | `vendor-react` | 175.1 KB | 54.4 KB |
 | `vendor-gsap` | 141.0 KB | 54.1 KB |
 | All fonts (15 woff2) | 189.4 KB | n/a (`unicode-range` gated) |
+
+> **Post-change re-measure (2026-08-05, transitive static closure from the entry) — and a correction.**
+>
+> | Metric | Before | After | Δ |
+> |---|---|---|---|
+> | Entry chunk alone | 290.8 KB gz | **253.5 KB gz** | **−12.9%** |
+> | **Eager first-paint JS (what the browser actually downloads)** | **520.2 KB gz** | **527.9 KB gz** | **+1.5%** |
+>
+> The entry *chunk* is genuinely 12.9% smaller, but that is chunk-level accounting, **not** a user-facing win: the bytes moved into sibling chunks (`cms-core`, `app-runtime`, `admin-auth`, `supabase-clients`) that the entry still statically imports. Earlier notes in this document, the changelog and the merge commit quoted the −12.9% figure as *the* performance result. **That was misleading and is corrected here.** Total first-paint JavaScript did not shrink — it grew slightly, partly because Phase 0/1 also *added* code (checkout gate, currency formatter, label plumbing, hardened sanitizer).
+>
+> The real prize is still on the table: `supabase-clients` is **51.6 KB gz of that eager graph**. Finishing the deferral (`F-06(b)`) would bring first-paint JS to roughly **476 KB gz — −8.5% against the original baseline**, which would be the first genuine reduction.
+>
+> Measured eager graph, after (10 chunks, 1,740,633 B raw / 527,874 B gzip): `index` 253.5 · `vendor-gsap` 55.8 · `vendor-react` 55.6 · `supabase-clients` 51.6 · `admin-cms-remote` 51.3 · `cms-core` 27.9 · `admin-auth` 12.2 · `app-runtime` 10.4 · `vendor-fuse` 9.1 · `rolldown-runtime` 0.5 (KB gz).
 | `public/about/*.glb` | **10,995 KB** | — |
 | `public/videos/WarriorHero1.mp4` | **6,808 KB** | — |
 | Production `/about` CMS images | **36.7 MB** | — |
