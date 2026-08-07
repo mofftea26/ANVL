@@ -12,11 +12,13 @@ import {
   useStorefrontAccountSession,
   useUpdateCustomerProfileMutation,
 } from '@/features/storefront-account/publicAccount.core'
-import {
-  getStorefrontSupabaseClient,
-  isStorefrontAuthEnabled,
-  updatePasswordStorefront,
-} from '@/features/storefront-account/auth'
+// Deliberately NOT the `./auth` barrel: it re-exports `getStorefrontSupabaseClient`
+// and `supabaseAccountClient`, so importing it from here — this panel is part of
+// the eager entry chunk — pulled all of `@supabase/supabase-js` onto the
+// storefront's first-paint graph. Import the leaf modules instead; the SDK-bound
+// client is loaded lazily in `signOutEverywhere` below.
+import { isStorefrontAuthEnabled } from '@/features/storefront-account/auth/storefrontAuthEnabled'
+import { updatePasswordStorefront } from '@/features/storefront-account/auth/storefrontAuth'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
 import { useRegisterAccountSave } from '@/features/storefront-account/account/accountSave.store'
@@ -55,6 +57,9 @@ export function SettingsPanel({ customer }: { customer: Customer | undefined }) 
   })
 
   const signOutEverywhere = async () => {
+    const { getStorefrontSupabaseClient } = await import(
+      '@/features/storefront-account/auth/storefrontSupabaseClient'
+    )
     const client = getStorefrontSupabaseClient()
     if (client) await client.auth.signOut({ scope: 'global' })
     logout()

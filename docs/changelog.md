@@ -1,3 +1,32 @@
+## 2026-08-05 — Supabase deferral: every source-level edge removed; one bundler edge remains
+
+Follow-up to F-06b. Goal: stop the storefront downloading `@supabase/supabase-js` on first paint.
+
+**Every static source path to the SDK is now gone.** Verified against the bundler's own module graph (`ANVL_IMPORTERS=1 pnpm build`), which is the only reliable oracle here — plain greps miss multi-line imports and `export … from` re-exports, and both hid a culprit during this work.
+
+- `autoImportRun.ts` statically imported `cmsWriteThrough`, which defeated the lazy imports of **every** storefront `*.settings.ts` module (Rolldown says so outright: `[INEFFECTIVE_DYNAMIC_IMPORT] … will not move module into another chunk`). That one edge pinned `cmsWriteThrough` → `adminCmsRemoteSync` → `adminSupabaseBrowserClient` → the SDK into the chunk holding the storefront's CMS schemas.
+- `adminCmsRemoteSync` and `mediaAssets.service` now load the admin browser client lazily.
+- `storefrontAuth` loads the storefront client lazily (9 call sites, all already `async`).
+- The `./auth` barrel no longer re-exports `getStorefrontSupabaseClient` / `supabaseAccountClient`. **A re-export is a static edge even when nothing in the entry calls it** — this was the single hardest link to spot.
+- `CartDrawer`, `SettingsPanel`, `publicAccount.ui`, `/auth/callback` and `/auth/reset-password` now import leaf modules instead of the barrel, or defer the client entirely.
+
+**Measured:** entry **290.8 → 253.4 KB gzip (−12.9%)**. The SDK is isolated in one 202 KB chunk (it used to sit inside a 380 KB admin chunk).
+
+**Still open — stated plainly.** The entry keeps ONE static edge to that chunk, so the SDK is still fetched on first paint. This is not a source-level edge: the bundler reports every external importer as dynamic. Splitting the thin wrappers from the vendor code does not help — they re-merge, because the wrappers statically `import { createClient }`. **The one change that would close it:** make `createAnvlSupabaseClient` load the SDK via `await import()`, which turns `getStorefrontSupabaseClient` / `getAdminSupabaseBrowserClient` / `getSupabasePublicationAnonClient` async and touches ~20 admin + storefront call sites. That is its own reviewed piece of work, not a tail-end addition.
+
+Also recorded: `manualChunks` is **advisory** under Rolldown. Instrumentation confirmed the rule fires with the right ids and still returns a name Rolldown overrides — `vendor-supabase` and `vendor-tanstack` are declared but never emitted. Verify against `dist/client/assets/`, never the config.
+
+### Separately: the About GLBs were never actually compressed in production
+
+Investigating a report that the anvil/hammer models were slow or missing. The storefront does **not** load `public/about/*.glb` — the CMS asset slots override them with copies in Supabase storage:
+
+| Actually served | Size | Time |
+|---|---|---|
+| `about-anvilmodel-…glb` | **6.26 MB** | 9.1 s |
+| `about-hammermodel-…glb` | **5.00 MB** | 7.3 s |
+
+That is **11.26 MB and ~16 s**, and Supabase storage returns `Cache-Control: no-cache`, so it re-downloads on every visit. Running the compressor over the CMS copies yields files **byte-identical** to `public/about/anvil.glb` / `hammer.glb` (1.00 MB / 0.93 MB) — proving they are the same models and that the earlier F-23 compression, reported as a 10.7 MB → 1.9 MB win, **never reached the live site**. Fix is operational (re-upload the compressed files, or clear the slot assignments so the edge-cached code defaults are used); no production data was touched.
+
 ## 2026-08-05 — Four silent production bugs found while chasing a bundle split (F-06b)
 
 The task was a caching optimisation: split `supabase-js` into its own chunk. Verifying it in a **built** bundle — not dev — turned up four live runtime bugs, all the same shape, none of which any test could have caught.

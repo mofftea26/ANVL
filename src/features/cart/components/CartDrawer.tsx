@@ -5,7 +5,11 @@ import { runtimeClients } from '@/app/config/runtime'
 import { isInternalCheckoutEnabled } from '@/features/checkout/config/internalCheckout'
 import { useCart } from '@/features/cart/hooks/useCart'
 import { useCartDrawerStore } from '@/features/cart/store/cartDrawer.store'
-import { getStorefrontUserEmail } from '@/features/storefront-account/auth'
+// Leaf module, NOT the `./auth` barrel: the barrel re-exports
+// `getStorefrontSupabaseClient` / `supabaseAccountClient`, and this drawer is
+// site-wide chrome on the eager entry chunk — importing the barrel here put all
+// of `@supabase/supabase-js` on every storefront visitor's first paint.
+import { getStorefrontUserEmail } from '@/features/storefront-account/auth/storefrontAuth'
 import { Button, Drawer, QuantityStepper } from '@/shared/components/ui'
 import { formatMoney } from '@/shared/lib/money'
 

@@ -1,5 +1,4 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import { CMS_MEDIA_BUCKET, publicCmsMediaUrl } from '@/features/cms/media/mediaUrl'
 import { coerceUploadFile, extensionFor } from './mediaMime'
 import type {
@@ -10,6 +9,25 @@ import type {
 } from './mediaAssets.types'
 
 export { resolveUploadMimeType } from './mediaMime'
+
+/**
+ * Loads the admin browser client on first use.
+ *
+ * MUST stay dynamic. Rolldown groups modules by reachability, and this module
+ * shares a chunk with the storefront's CMS Zod schemas (which the entry needs
+ * for the SSR projection). A STATIC import here anchored
+ * `adminSupabaseBrowserClient` → `createAnvlSupabaseClient` → all of
+ * `@supabase/supabase-js` (~380 KB raw) into that shared chunk, so every
+ * storefront visitor downloaded the SDK on first paint. `adminCmsRemoteSync.ts`
+ * carries the same constraint — both must stay dynamic for either to help.
+ *
+ * Every caller below is already `async`, and the client is memoised, so this
+ * costs one microtask on the first admin media call.
+ */
+async function browserSupabaseClient(): Promise<SupabaseClient | null> {
+  const m = await import('@/features/admin/auth/adminSupabaseBrowserClient')
+  return m.getAdminSupabaseBrowserClient()
+}
 
 function sanitizeFilename(name: string): string {
   const base = name
@@ -175,7 +193,7 @@ export async function readImageDimensions(
 export async function listMediaAssets(
   client?: SupabaseClient | null,
 ): Promise<MediaAssetsListResult> {
-  const supabase = client ?? getAdminSupabaseBrowserClient()
+  const supabase = client ?? await browserSupabaseClient()
   if (!supabase) {
     return { ok: false, error: 'Sign in to load the media library.' }
   }
@@ -206,7 +224,7 @@ export async function insertMediaAssetRecord(input: {
   alt?: string
   tags?: string[]
 }): Promise<MediaAssetMutationResult> {
-  const supabase = input.client ?? getAdminSupabaseBrowserClient()
+  const supabase = input.client ?? await browserSupabaseClient()
   if (!supabase) {
     return { ok: false, error: 'Sign in to save media metadata.' }
   }
@@ -243,7 +261,7 @@ export async function updateMediaAssetAlt(
   alt: string,
   client?: SupabaseClient | null,
 ): Promise<MediaAssetMutationResult> {
-  const supabase = client ?? getAdminSupabaseBrowserClient()
+  const supabase = client ?? await browserSupabaseClient()
   if (!supabase) {
     return { ok: false, error: 'Sign in to update media.' }
   }
@@ -267,7 +285,7 @@ export async function updateMediaAssetFilename(
   filename: string,
   client?: SupabaseClient | null,
 ): Promise<MediaAssetMutationResult> {
-  const supabase = client ?? getAdminSupabaseBrowserClient()
+  const supabase = client ?? await browserSupabaseClient()
   if (!supabase) {
     return { ok: false, error: 'Sign in to update media.' }
   }
@@ -293,7 +311,7 @@ export async function deleteMediaAsset(
   asset: CmsMediaAsset,
   client?: SupabaseClient | null,
 ): Promise<MediaAssetMutationResult> {
-  const supabase = client ?? getAdminSupabaseBrowserClient()
+  const supabase = client ?? await browserSupabaseClient()
   if (!supabase) {
     return { ok: false, error: 'Sign in to delete media.' }
   }
@@ -318,7 +336,7 @@ export async function deleteMediaAssets(
   assets: CmsMediaAsset[],
   client?: SupabaseClient | null,
 ): Promise<{ deleted: number; failures: { asset: CmsMediaAsset; error: string }[] }> {
-  const supabase = client ?? getAdminSupabaseBrowserClient()
+  const supabase = client ?? await browserSupabaseClient()
   const failures: { asset: CmsMediaAsset; error: string }[] = []
   let deleted = 0
   for (const asset of assets) {
@@ -338,7 +356,7 @@ export async function uploadLibraryMediaFile(
   | { ok: true; asset: CmsMediaAsset; publicUrl: string }
   | { ok: false; error: string }
 > {
-  const client = getAdminSupabaseBrowserClient()
+  const client = await browserSupabaseClient()
   if (!client) {
     return { ok: false, error: 'Sign in to upload media to Supabase.' }
   }

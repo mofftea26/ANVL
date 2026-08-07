@@ -7,7 +7,8 @@ import {
   useHydrateStorefrontAccountSession,
   useStorefrontAccountSession,
 } from './publicAccount.core'
-import { isStorefrontAuthEnabled } from './auth'
+// Leaf module, NOT the `./auth` barrel — see `auth/storefrontAuthEnabled.ts`.
+import { isStorefrontAuthEnabled } from './auth/storefrontAuthEnabled'
 
 /** Premium auth card — used by sign-in / sign-up / forgot-password. */
 export function AuthPageChrome({

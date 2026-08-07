@@ -164,6 +164,35 @@ merges any chunk that is always loaded alongside its importer, which is why
 client build. Verify against `dist/client/assets/` rather than trusting the
 config.
 
+### Debugging what pulls a module onto the eager graph
+
+```bash
+ANVL_IMPORTERS=1 pnpm build   # real static/dynamic importers, from the module graph
+ANVL_SOURCEMAP=1 pnpm build   # sourcemaps, so you can map a chunk back to its modules
+```
+
+`ANVL_IMPORTERS` is the only reliable oracle. Grepping the source misses
+**multi-line imports** and **`export … from` re-exports** — a re-export is a
+static edge even when nothing in the entry ever calls the binding, and that is
+exactly what kept supabase-js eager long after every call site had been made
+lazy.
+
+### Why supabase-js is still fetched on first paint (open)
+
+Every *source-level* static path to the SDK has been removed, and the entry is
+12.9% smaller for it. But the entry retains one static edge to the chunk holding
+the Supabase client wrappers, so the ~200 KB SDK still downloads on first paint.
+
+Things that were tried and do **not** work: splitting the thin wrappers from the
+vendor code (they re-merge, because the wrappers statically
+`import { createClient }`), and re-pointing `manualChunks` (advisory, see above).
+
+The one change that would close it: make `createAnvlSupabaseClient` load the SDK
+via `await import()`. That turns `getStorefrontSupabaseClient`,
+`getAdminSupabaseBrowserClient` and `getSupabasePublicationAnonClient` into async
+functions and touches ~20 call sites across admin and storefront — worth doing
+deliberately, with its own test pass, rather than as a tail-end change.
+
 `worker-configuration.d.ts` is **gitignored** and **excluded from `tsconfig.json`**:
 its Cloudflare Workers `Element` global collides with the DOM lib (`removeAttribute`
 returns `Element` vs `void`). The app is DOM-centric, and the only bindings so

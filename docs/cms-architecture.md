@@ -199,6 +199,18 @@ The 10-minute session heartbeat refreshes the session ALWAYS, but the **heartbea
 
 Hydration is gated by `beginAdminCmsRemoteHydration` / `endAdminCmsRemoteHydration` so push does not race pull. `AdminLayout` blocks editors until `isRemoteCmsReady`. On pull, `migrateOathTenetAssetsFromSlots` moves legacy tenet asset slots into `landing_content`.
 
+> **The Supabase client here is loaded lazily, deliberately.**
+> `adminCmsRemoteSync` and `mediaAssets.service` reach `adminSupabaseBrowserClient`
+> through `await import(...)`, never a static import. Both modules share a chunk
+> with the storefront's CMS Zod schemas — which the entry needs for the SSR
+> projection — so a static import anchors `createAnvlSupabaseClient` and all of
+> `@supabase/supabase-js` (~200 KB) onto every storefront visitor's first paint.
+> The same rule is why `autoImportRun.ts` imports `cmsWriteThrough` dynamically:
+> one static importer anywhere defeats the lazy imports of every storefront
+> `*.settings.ts` module at once (Rolldown reports it as
+> `[INEFFECTIVE_DYNAMIC_IMPORT]`). Check with `ANVL_IMPORTERS=1 pnpm build`
+> before changing any of these imports.
+
 ### Whole-map clobber guard (`adminCmsRemoteSync.ts`)
 
 Some columns store the WHOLE authored map rather than a field patched in place, so publishing one replaces everything in it — in `cms_settings` **and** the anon-readable `storefront_publication` mirror — in a single UPDATE. A browser that never hydrated that column (fresh machine, incognito, cleared site data, `/admin/settings` local reset, or a hydration pull that failed on that column) would publish a map containing only what this session happened to touch and **destroy the rest**.

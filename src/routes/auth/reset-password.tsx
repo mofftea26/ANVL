@@ -7,7 +7,6 @@ import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { AuthPageChrome, useNewPasswordForm } from '@/features/storefront-account'
 import {
-  getStorefrontSupabaseClient,
   isStorefrontAuthEnabled,
   updatePasswordStorefront,
 } from '@/features/storefront-account/auth'
@@ -35,15 +34,32 @@ function ResetPasswordPage() {
 
   useEffect(() => {
     if (!isStorefrontAuthEnabled()) return
-    const client = getStorefrontSupabaseClient()
-    if (!client) return
-    void client.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true)
-    })
-    const { data: sub } = client.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || session) setReady(true)
-    })
-    return () => sub.subscription.unsubscribe()
+    let cancelled = false
+    let unsubscribe: (() => void) | undefined
+
+    // Lazy — see the note in /auth/callback. This route and that one were the
+    // last two static importers of the Supabase client, which made Rolldown
+    // hoist ~200 KB of SDK into the storefront ENTRY chunk.
+    void (async () => {
+      const { getStorefrontSupabaseClient } = await import(
+        '@/features/storefront-account/auth/storefrontSupabaseClient'
+      )
+      if (cancelled) return
+      const client = getStorefrontSupabaseClient()
+      if (!client) return
+      void client.auth.getSession().then(({ data }) => {
+        if (!cancelled && data.session) setReady(true)
+      })
+      const { data: sub } = client.auth.onAuthStateChange((event, session) => {
+        if (!cancelled && (event === 'PASSWORD_RECOVERY' || session)) setReady(true)
+      })
+      unsubscribe = () => sub.subscription.unsubscribe()
+    })()
+
+    return () => {
+      cancelled = true
+      unsubscribe?.()
+    }
   }, [])
 
   const onSubmit = form.handleSubmit(async (values) => {

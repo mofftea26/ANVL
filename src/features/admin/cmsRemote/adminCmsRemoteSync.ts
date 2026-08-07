@@ -2,7 +2,6 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { getSupabasePublicEnv } from '@/features/cms/api/supabasePublicEnv'
 import { canWriteCmsDraftsToSupabase } from '@/features/cms/api/cmsPersistenceMode'
-import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
 import {
   fetchCmsProfileRole,
   type CmsProfileRole,
@@ -477,6 +476,15 @@ export async function flushAdminCmsRemoteSync(
     return { status: 'skipped', reason: 'hydration-lock' }
   }
 
+  // MUST stay dynamic. This module shares a chunk with the storefront's CMS Zod
+  // schemas (the entry needs those for the SSR projection), so a static import
+  // here anchors `adminSupabaseBrowserClient` → `createAnvlSupabaseClient` →
+  // all of `@supabase/supabase-js` (~380 KB raw) into that shared chunk, and
+  // every storefront visitor pays for it on first paint. `mediaAssets.service.ts`
+  // carries the same constraint — both must stay dynamic for either to help.
+  const { getAdminSupabaseBrowserClient } = await import(
+    '@/features/admin/auth/adminSupabaseBrowserClient'
+  )
   const client = getAdminSupabaseBrowserClient()
   // Only reachable when window/env vanished between the guards above — benign.
   if (!client) return { status: 'skipped', reason: 'no-env' }

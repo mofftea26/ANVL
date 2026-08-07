@@ -1,5 +1,4 @@
 import type { CmsSettingsFieldKey } from '@/features/admin/cmsRemote/adminCmsRemoteSync'
-import { flushAdminCmsWriteThrough } from '@/features/admin/cmsRemote/cmsWriteThrough'
 import {
   readPassportContentFromStorage,
   writePassportContentToStorage,
@@ -120,6 +119,21 @@ function writeTarget(target: ImportTarget, productSlug: string, drafts: ImportDr
  * every other editor in the CMS already treats as success.
  */
 async function publishTarget(target: ImportTarget): Promise<TargetPublishOutcome> {
+  // MUST stay a dynamic import, and this must remain the ONLY reference to
+  // `cmsWriteThrough` outside `cmsRemote/` itself.
+  //
+  // Every storefront `*.settings.ts` module already reaches this same module
+  // lazily. A single static import anywhere defeats all of them: Rolldown warns
+  // `[INEFFECTIVE_DYNAMIC_IMPORT] … dynamic import will not move module into
+  // another chunk` and pins `cmsWriteThrough` — plus its static dependents
+  // `adminCmsRemoteSync` → `adminSupabaseBrowserClient` → **all of
+  // @supabase/supabase-js** — into the chunk the storefront entry imports for
+  // its CMS schemas. That is what kept the SDK on the eager entry graph.
+  //
+  // This file is admin-only, so deferring costs nothing here.
+  const { flushAdminCmsWriteThrough } = await import(
+    '@/features/admin/cmsRemote/cmsWriteThrough'
+  )
   const result = await flushAdminCmsWriteThrough([TARGET_CMS_FIELDS[target]])
   if (result.status === 'error') throw new Error(result.message)
   if (result.status === 'skipped' && result.reason === 'hydration-lock') return 'deferred'
