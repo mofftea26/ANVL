@@ -125,7 +125,7 @@ export const OATH_DEFAULT_CONTENT: OathResolvedContent = {
       {
         id: 'stringer',
         index: '02',
-        title: 'IRONSPINE Stringer',
+        title: 'MARROW Stringer',
         subtitle: 'Bare for the iron — nothing left between you and the work.',
         line: 'Old-school cut with a spine down the back, built for range and heat.',
         marker: 'Bare',
@@ -133,7 +133,7 @@ export const OATH_DEFAULT_CONTENT: OathResolvedContent = {
         bgUrl: '/landing/the-oath/product-bg-2.webp',
         hotspots: [
           { id: 'armhole', label: 'Deep Armhole', description: 'A low-cut arm opens the lats and frees the shoulder through full range.', x: 36, y: 38 },
-          { id: 'spine', label: 'The Spine', description: 'A vertebral seam runs the length of the back — the mark the piece is named for.', x: 58, y: 56 },
+          { id: 'spine', label: 'The Spine', description: 'A vertebral seam runs the length of the back — the bone worn on the outside.', x: 58, y: 56 },
           { id: 'knit', label: 'Breathable Knit', description: 'Open ribbed knit dumps heat fast under the hardest training.', x: 48, y: 24 },
         ],
       },
@@ -195,7 +195,7 @@ export const OATH_PRODUCT_ROSTER: OathResolvedProductCopy[] = [
   },
   {
     slug: 'the-oath-stringer',
-    name: 'IRONSPINE Stringer',
+    name: 'MARROW Stringer',
     role: 'Old-school Stringer',
     tone: '#202327',
   },
