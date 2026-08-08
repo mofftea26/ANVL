@@ -221,7 +221,7 @@ export const ABOUT_DEFAULT_CONTENT: AboutResolvedContent = {
       stats: [
         { id: 'origin', label: 'Designed in', value: 'Lebanon', suffix: '' },
         { id: 'city', label: 'Home city', value: 'Zahle', suffix: '' },
-        { id: 'pieces', label: 'Pieces in Drop 01', value: '2', suffix: '' },
+        { id: 'pieces', label: 'Pieces in Drop 01', value: '3', suffix: '' },
         { id: 'iterations', label: 'Sampling rounds before production', value: '3', suffix: 'x' },
         { id: 'excuses', label: 'Excuses accepted', value: '0', suffix: '' },
       ],
