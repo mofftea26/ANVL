@@ -2,6 +2,7 @@ import { useStorefrontAccountSession } from '@/features/storefront-account/publi
 import { cn } from '@/shared/lib/cn'
 import { useGamificationRules } from '../hooks/useGamificationRules'
 import { useOwnedPassportsQuery } from '../hooks/usePassport'
+import { estimateForgeXpFromCounts } from '../lib/forgeXp'
 import { deriveArmoryRank } from '../lib/ranks'
 
 /**
@@ -22,8 +23,20 @@ export function RankBadge({
   if (!customerId || !ownedQuery.data) return null
 
   // Count-based rank (no catalog cross-reference on chrome surfaces — the
-  // full completion-aware rank lives in the Armory itself).
-  const rank = deriveArmoryRank(ownedQuery.data.length, [], rules)
+  // full completion-aware rank lives in the Armory itself). XP is estimated
+  // from pieces and wears, which is all this chrome surface loads.
+  const rank = deriveArmoryRank(
+    ownedQuery.data.length,
+    [],
+    rules,
+    estimateForgeXpFromCounts(
+      {
+        registrations: ownedQuery.data.length,
+        wears: ownedQuery.data.reduce((sum, p) => sum + p.wearCount, 0),
+      },
+      rules.settings,
+    ),
+  )
 
   return (
     <span

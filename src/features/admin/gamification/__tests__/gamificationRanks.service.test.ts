@@ -123,29 +123,40 @@ describe('rank derivation with a 5-rank ladder (count-agnostic)', () => {
       ...DEFAULT_GAMIFICATION_RULES.ranks,
       {
         key: 'titan',
-        sortOrder: 4,
+        // Above every seeded rank (Anvilborn is 7) so it stays the top rung.
+        sortOrder: 8,
         name: 'Titan',
         description: 'Beyond the warlords.',
         emblemUrl: null,
+        rewardTitle: '',
+        rewardDescription: '',
+        rewardStatus: 'none',
+        // Count-gated only (minXp null) — this suite pins that a rank with no
+        // XP threshold still derives purely from counts.
         levels: [
-          { rankKey: 'titan', level: 1, unlockCopy: 'Register 20 pieces', minRegistrations: 20, minFullDrops: null },
-          { rankKey: 'titan', level: 2, unlockCopy: 'Register 30 pieces', minRegistrations: 30, minFullDrops: null },
-          { rankKey: 'titan', level: 3, unlockCopy: 'Register 50 pieces', minRegistrations: 50, minFullDrops: null },
+          { rankKey: 'titan', level: 1, unlockCopy: 'Register 20 pieces', minXp: null, minRegistrations: 20, minFullDrops: null },
+          { rankKey: 'titan', level: 2, unlockCopy: 'Register 30 pieces', minXp: null, minRegistrations: 30, minFullDrops: null },
+          { rankKey: 'titan', level: 3, unlockCopy: 'Register 50 pieces', minXp: null, minRegistrations: 50, minFullDrops: null },
         ],
       },
     ],
   }
 
-  it('derives the custom fifth rank when its thresholds hold', () => {
-    const rank = deriveArmoryRank(35, [], fiveRankRules)
+  // Titan is count-gated only (every level has `minXp: null`), which is the
+  // point: an admin-authored rank must still resolve on the XP ladder without
+  // being given XP thresholds of its own.
+  it('derives the custom top rank when its thresholds hold', () => {
+    const rank = deriveArmoryRank(35, [], fiveRankRules, 0)
     expect(rank.key).toBe('titan')
     expect(rank.level).toBe(2)
     expect(rank.title).toBe('Titan II')
   })
 
   it('still derives seed ranks below the custom thresholds', () => {
-    expect(deriveArmoryRank(3, [], fiveRankRules).key).toBe('forged')
-    expect(deriveArmoryRank(0, [], fiveRankRules).key).toBe('initiate')
+    // 750 XP is Forged I in the seed ladder; 20 claims would be needed for
+    // Titan, so the seeded rank wins below that.
+    expect(deriveArmoryRank(3, [], fiveRankRules, 750).key).toBe('forged')
+    expect(deriveArmoryRank(0, [], fiveRankRules, 0).key).toBe('unsworn')
   })
 
   it('non-seed ranks fall back to the neutral brand mark without an emblem', () => {
@@ -154,10 +165,15 @@ describe('rank derivation with a 5-rank ladder (count-agnostic)', () => {
     expect(rankEmblemSrc('initiate', null)).toBe('/brand/ranks/initiate.png')
   })
 
-  it('builds a 5-entry ladder', () => {
+  it('appends the admin-created rank to the end of the seeded ladder', () => {
     const ladder = buildRankLadder(fiveRankRules)
-    expect(ladder).toHaveLength(5)
-    expect(ladder[4]?.key).toBe('titan')
-    expect(ladder[4]?.emblemSrc).toBe('/brand/mark.svg')
+    // Length is asserted RELATIVE to the seed rather than as a literal: the
+    // seeded ladder grew from 4 ranks to 8 in gamification v2, and a hardcoded
+    // count here would have to be edited every time a rank is added without
+    // testing anything about the behaviour under test.
+    expect(ladder).toHaveLength(DEFAULT_GAMIFICATION_RULES.ranks.length + 1)
+    const last = ladder[ladder.length - 1]
+    expect(last?.key).toBe('titan')
+    expect(last?.emblemSrc).toBe('/brand/mark.svg')
   })
 })

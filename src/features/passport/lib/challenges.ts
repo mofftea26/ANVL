@@ -22,6 +22,44 @@ export interface ChallengeContext {
   featCount: number
   fullDrops: number
   honorPinned: number
+  /* ---- v2 ---------------------------------------------------------------
+   * Everything below is OPTIONAL on purpose. Each needs a source the owner's
+   * passport rows cannot supply — the wear log, the reviews table, or a
+   * counter that does not exist yet. A caller that has not loaded a given
+   * source omits it, and the accessor reads 0, so the challenge simply sits
+   * at 0% instead of the whole log throwing.
+   *
+   * `resolveChallenges` filters out challenges whose source is absent (see
+   * UNSOURCED_METRICS), so an unloaded source shows nothing rather than a
+   * permanently-stuck row.
+   */
+  /** Longest run of consecutive days with a logged wear. */
+  streakDays?: number
+  /** Longest run of consecutive ISO weeks containing at least one wear. */
+  weeklyStreak?: number
+  /** Distinct calendar months containing at least one wear. */
+  distinctMonths?: number
+  /** Wears logged before 08:00 local time. */
+  earlyWears?: number
+  reviews?: number
+  publicFeats?: number
+  transfersOut?: number
+  transfersIn?: number
+  /** Whole days since the owner's first claim. */
+  tenureDays?: number
+  /** 1 when the armory is public with a minted handle, else 0. */
+  armoryPublic?: number
+  /** Most colourways owned of any single product. */
+  distinctColorways?: number
+  /** Most divisions owned within a single drop. */
+  divisionsOwned?: number
+  shares?: number
+  chaptersRead?: number
+}
+
+/** Reads an optional context number, treating absent as zero. */
+function opt(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
 export type { ChallengeCategory }
@@ -45,6 +83,65 @@ export const CHALLENGE_METRIC_ACCESSORS: Record<
   feat_count: (c) => c.featCount,
   full_drops: (c) => c.fullDrops,
   honor_pinned: (c) => c.honorPinned,
+  streak_days: (c) => opt(c.streakDays),
+  weekly_streak: (c) => opt(c.weeklyStreak),
+  distinct_months: (c) => opt(c.distinctMonths),
+  early_wears: (c) => opt(c.earlyWears),
+  reviews: (c) => opt(c.reviews),
+  public_feats: (c) => opt(c.publicFeats),
+  transfers_out: (c) => opt(c.transfersOut),
+  transfers_in: (c) => opt(c.transfersIn),
+  tenure_days: (c) => opt(c.tenureDays),
+  armory_public: (c) => opt(c.armoryPublic),
+  distinct_colorways: (c) => opt(c.distinctColorways),
+  divisions_owned: (c) => opt(c.divisionsOwned),
+  shares: (c) => opt(c.shares),
+  chapters_read: (c) => opt(c.chaptersRead),
+}
+
+/**
+ * Metrics whose source is not wired up yet. A challenge on one of these can
+ * never move off 0%, and a quest log full of permanently-empty rows reads as
+ * broken rather than aspirational — so `resolveChallenges` hides them.
+ *
+ * Delete an entry from this set the moment its counter ships; the challenges
+ * are already authored and will simply appear.
+ */
+export const UNSOURCED_METRICS: ReadonlySet<GamificationMetric> = new Set([
+  'shares',
+  'chapters_read',
+])
+
+/** Which context keys each metric depends on, for the "is it loaded" check. */
+const METRIC_CONTEXT_KEY: Partial<Record<GamificationMetric, keyof ChallengeContext>> = {
+  streak_days: 'streakDays',
+  weekly_streak: 'weeklyStreak',
+  distinct_months: 'distinctMonths',
+  early_wears: 'earlyWears',
+  reviews: 'reviews',
+  public_feats: 'publicFeats',
+  transfers_out: 'transfersOut',
+  transfers_in: 'transfersIn',
+  tenure_days: 'tenureDays',
+  armory_public: 'armoryPublic',
+  distinct_colorways: 'distinctColorways',
+  divisions_owned: 'divisionsOwned',
+  shares: 'shares',
+  chapters_read: 'chaptersRead',
+}
+
+/**
+ * Whether a challenge on this metric should be shown at all: its counter must
+ * exist, and the caller must actually have loaded the source.
+ */
+export function isMetricAvailable(
+  metric: GamificationMetric,
+  ctx: ChallengeContext,
+): boolean {
+  if (UNSOURCED_METRICS.has(metric)) return false
+  const key = METRIC_CONTEXT_KEY[metric]
+  if (!key) return true // one of the six original passport-derived metrics
+  return ctx[key] !== undefined
 }
 
 export interface ChallengeProgress {

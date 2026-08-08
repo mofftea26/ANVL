@@ -54,7 +54,7 @@ describe('evaluateChallenges', () => {
 
   it('clamps progress to the target and never exceeds 1', () => {
     const ctx: ChallengeContext = { ...empty, registrations: 9 }
-    const loadout = evaluateChallenges(ctx).find((c) => c.id === 'loadout')!
+    const loadout = evaluateChallenges(ctx).find((c) => c.id === 'full-loadout')!
     expect(loadout.current).toBe(3) // clamped from 9
     expect(loadout.progress).toBe(1)
     expect(loadout.complete).toBe(true)
@@ -67,7 +67,7 @@ describe('evaluateChallenges', () => {
     expect(result[0]!.complete).toBe(false)
     expect(result[result.length - 1]!.complete).toBe(true)
     // Battle-worn 20/25 (0.8) should lead the incomplete set over loadout 1/3.
-    expect(result[0]!.id).toBe('battle-worn')
+    expect(result[0]!.id).toBe('battle-worn-1')
   })
 
   it('marks everything incomplete for a fresh armory', () => {

@@ -6,6 +6,7 @@ import { Input, Select, SelectItem } from '@/shared/components/ui'
 import { cn } from '@/shared/lib/cn'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
 import { useGamificationRules } from '../hooks/useGamificationRules'
+import { estimateForgeXpFromCounts } from '../lib/forgeXp'
 import { deriveArmoryRank } from '../lib/ranks'
 import type { PublicArmory } from '../schemas/passport.schema'
 import { ArmoryTcgCard, type ArmoryProductMeta } from './ArmoryTcgCard'
@@ -63,7 +64,21 @@ export function PublicArmoryView({
   const rules = useGamificationRules()
   // Rank from the true total (completion needs the catalog cross-reference we
   // don't expose publicly, so this never overstates — Warlord bonuses aside).
-  const rank = deriveArmoryRank(armory.totalPieces, [], rules)
+  // XP is estimated from the public aggregates: the RPC exposes piece and wear
+  // counts but not feats, so this under-states rather than inflating a
+  // stranger's rank.
+  const rank = deriveArmoryRank(
+    armory.totalPieces,
+    [],
+    rules,
+    estimateForgeXpFromCounts(
+      {
+        registrations: armory.totalPieces,
+        wears: armory.pieces.reduce((sum, p) => sum + (p.wearCount ?? 0), 0),
+      },
+      rules.settings,
+    ),
+  )
   const honored = armory.pieces
     .filter((p) => p.featuredSlot)
     .sort((a, b) => (a.featuredSlot ?? 9) - (b.featuredSlot ?? 9))

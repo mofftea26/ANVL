@@ -9,25 +9,14 @@ import { computeForgeLevel, cumulativeXpForLevel } from '../lib/forgeXp'
 import { deriveArmoryRank, type DropCompletion } from '../lib/ranks'
 
 /**
- * The historical hardcoded ladder, kept verbatim as the equivalence oracle:
- * the declarative resolver + DEFAULT_GAMIFICATION_RULES must reproduce it
- * exactly for every (claims, fullDrops) combination.
+ * Rank-derivation contract for the XP-driven ladder.
+ *
+ * This suite previously pinned the declarative resolver against a hardcoded
+ * copy of the ORIGINAL four-rank, registration-gated ladder. That oracle is
+ * deliberately gone: gamification v2 replaced it with an eight-rank XP ladder,
+ * so an equivalence test against the old shape would now be asserting that the
+ * feature was never built.
  */
-function legacyRank(claimCount: number, fullDrops: number): { key: string; level: number } {
-  if (fullDrops >= 2) return { key: 'warlord', level: 3 }
-  if (fullDrops >= 1 && claimCount >= 12) return { key: 'warlord', level: 2 }
-  if (fullDrops >= 1) return { key: 'warlord', level: 1 }
-  if (claimCount >= 10) return { key: 'oathbound', level: 3 }
-  if (claimCount >= 8) return { key: 'oathbound', level: 2 }
-  if (claimCount >= 6) return { key: 'oathbound', level: 1 }
-  if (claimCount >= 5) return { key: 'forged', level: 3 }
-  if (claimCount >= 4) return { key: 'forged', level: 2 }
-  if (claimCount >= 3) return { key: 'forged', level: 1 }
-  if (claimCount >= 2) return { key: 'initiate', level: 3 }
-  if (claimCount >= 1) return { key: 'initiate', level: 2 }
-  return { key: 'initiate', level: 1 }
-}
-
 function completionWithFullDrops(count: number): DropCompletion[] {
   return Array.from({ length: count }, (_, i) => ({
     dropName: `Drop ${i + 1}`,
@@ -36,37 +25,50 @@ function completionWithFullDrops(count: number): DropCompletion[] {
   }))
 }
 
-describe('declarative rank derivation ≡ legacy hardcoded ladder', () => {
-  it('matches for every claims × fullDrops combination', () => {
+describe('declarative rank derivation', () => {
+  const R = DEFAULT_GAMIFICATION_RULES
+
+  it('is monotonic: more XP never demotes you', () => {
+    let lastIndex = -1
+    for (let xp = 0; xp <= 90_000; xp += 250) {
+      const rank = deriveArmoryRank(0, [], R, xp)
+      const index = R.ranks.findIndex((r) => r.key === rank.key)
+      expect(index, `xp=${xp} derived ${rank.key}`).toBeGreaterThanOrEqual(lastIndex)
+      lastIndex = index
+    }
+  })
+
+  /**
+   * With zero XP, only levels carrying no XP gate can match — and the seed
+   * floor is the only one. Counts alone must never lift anyone off it, which
+   * is the property that broke when the XP gate was skippable.
+   */
+  it('holds the floor at zero XP for every claims × fullDrops combination', () => {
     for (let claims = 0; claims <= 15; claims += 1) {
       for (let fullDrops = 0; fullDrops <= 3; fullDrops += 1) {
-        const declarative = deriveArmoryRank(claims, completionWithFullDrops(fullDrops))
-        const legacy = legacyRank(claims, fullDrops)
-        expect(
-          { key: declarative.key, level: declarative.level },
-          `claims=${claims} fullDrops=${fullDrops}`,
-        ).toEqual(legacy)
+        const rank = deriveArmoryRank(claims, completionWithFullDrops(fullDrops), R, 0)
+        expect(rank.key, `claims=${claims} fullDrops=${fullDrops}`).toBe('unsworn')
       }
     }
   })
 
   it('keeps the code-owned emblem fallback', () => {
-    expect(deriveArmoryRank(0, []).emblemSrc).toBe('/brand/ranks/initiate.png')
+    expect(deriveArmoryRank(1, [], R, 100).emblemSrc).toBe('/brand/ranks/initiate.png')
   })
 
   it('honors a CMS emblem override', () => {
     const rules = structuredClone(DEFAULT_GAMIFICATION_RULES)
-    rules.ranks[0]!.emblemUrl = 'https://cdn.example/initiate-custom.png'
-    expect(deriveArmoryRank(0, [], rules).emblemSrc).toBe(
+    rules.ranks.find((r) => r.key === 'initiate')!.emblemUrl =
+      'https://cdn.example/initiate-custom.png'
+    expect(deriveArmoryRank(1, [], rules, 100).emblemSrc).toBe(
       'https://cdn.example/initiate-custom.png',
     )
   })
 
   it('respects edited thresholds', () => {
     const rules = structuredClone(DEFAULT_GAMIFICATION_RULES)
-    const forgedI = rules.ranks[1]!.levels[0]!
-    forgedI.minRegistrations = 2
-    expect(deriveArmoryRank(2, [], rules)).toMatchObject({ key: 'forged', level: 1 })
+    rules.ranks.find((r) => r.key === 'forged')!.levels[0]!.minXp = 200
+    expect(deriveArmoryRank(0, [], rules, 200)).toMatchObject({ key: 'forged', level: 1 })
   })
 })
 

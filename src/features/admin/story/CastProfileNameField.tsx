@@ -7,8 +7,12 @@ import {
   searchAdminProfiles,
   type AdminProfileSearchHit,
 } from '@/features/admin/api/searchAdminProfiles'
+import { estimateForgeXpFromCounts } from '@/features/passport/lib/forgeXp'
 import { deriveArmoryRank } from '@/features/passport/lib/ranks'
-import type { GamificationRules } from '@/features/passport/schemas/gamification.schema'
+import {
+  DEFAULT_GAMIFICATION_RULES,
+  type GamificationRules,
+} from '@/features/passport/schemas/gamification.schema'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
 import { cn } from '@/shared/lib/cn'
@@ -24,7 +28,16 @@ const MIN_QUERY_LENGTH = 2
  * historical SNAPSHOT either way (it does not live-update with the athlete).
  */
 function deriveSnapshotRank(claimCount: number, rules: GamificationRules | undefined): string {
-  return deriveArmoryRank(claimCount, [], rules).title
+  const resolved = rules ?? DEFAULT_GAMIFICATION_RULES
+  // The search RPC exposes only `claim_count` — no wears, no feats — so XP is
+  // estimated from registrations alone. That under-states a real athlete's XP,
+  // which is the safe direction for a snapshot written into a story credit.
+  return deriveArmoryRank(
+    claimCount,
+    [],
+    resolved,
+    estimateForgeXpFromCounts({ registrations: claimCount }, resolved.settings),
+  ).title
 }
 
 export interface CastProfileSnapshot {

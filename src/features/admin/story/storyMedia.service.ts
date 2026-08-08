@@ -1,4 +1,5 @@
 import { getAdminSupabaseBrowserClient } from '@/features/admin/auth/adminSupabaseBrowserClient'
+import { encodeUploadImage } from '@/features/admin/media/encodeUploadImage'
 import {
   EMPTY_STORY_ASSET,
   type StoryAsset,
@@ -59,18 +60,23 @@ export async function uploadStoryMedia(
     return { ok: false, error: 'Only image or video files are supported.' }
   }
 
-  const objectPath = formatStoryMediaObjectPath(scope, file)
+  // Same downscale + WebP pass the media library applies, for the same reason:
+  // the `story-media` bucket allows 500 MB objects, so nothing else stops a
+  // full-resolution export from reaching the storefront. No-ops for video.
+  const upload = await encodeUploadImage(file)
+
+  const objectPath = formatStoryMediaObjectPath(scope, upload)
   const { error } = await client.storage
     .from(STORY_MEDIA_BUCKET)
-    .upload(objectPath, file, {
+    .upload(objectPath, upload, {
       cacheControl: '31536000',
       upsert: false,
-      contentType: file.type || undefined,
+      contentType: upload.type || undefined,
     })
   if (error) return { ok: false, error: error.message }
 
   const dims = isImage
-    ? await readImageDimensions(file)
+    ? await readImageDimensions(upload)
     : { width: null, height: null }
 
   return {

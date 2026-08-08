@@ -51,9 +51,11 @@ export function ArmoryPanel() {
 
   const rules = useGamificationRules()
   const completion = computeDropCompletion(owned, catalog)
-  const rank = deriveArmoryRank(owned.length, completion, rules)
-  const badges = deriveArmoryBadges(owned.length, completion, rules)
+  // Forge XP first: the rank ladder is XP-gated, so the rank cannot be derived
+  // until the XP total exists.
   const forge = computeForgeLevel({ owned, featCount, completion }, rules.settings)
+  const rank = deriveArmoryRank(owned.length, completion, rules, forge.total)
+  const badges = deriveArmoryBadges(owned.length, completion, rules)
   const milestone = nextForgeMilestone(
     { claimCount: owned.length, completion, forge },
     rules,
