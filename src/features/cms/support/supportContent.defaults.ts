@@ -64,7 +64,7 @@ export const SUPPORT_CONTENT_DEFAULTS: SupportContentConfig = {
     phone: '',
     instagram: '@anvlathletics',
     address: 'Lebanon',
-    hours: 'Monday to Friday, 9:00–18:00 (Beirut time)',
+    hours: 'Monday to Friday, 10:00–18:00 · Saturday, 10:00–13:00 (Beirut time)',
   },
   shipping: {
     intro:

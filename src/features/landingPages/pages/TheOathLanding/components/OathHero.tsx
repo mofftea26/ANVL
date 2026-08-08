@@ -37,13 +37,13 @@ import { OathSceneSeam } from './OathSceneSeam'
 
 
 
-/** Coordinates-style metadata (Beirut, LB) — code-owned cinematic detail. */
+/** Coordinates-style metadata (Zahle, LB) — code-owned cinematic detail. */
 
 const OATH_META = {
 
-  coords: 'N 33.8886° · E 35.5012°',
+  coords: 'N 33.8463° · E 35.9019°',
 
-  origin: 'Beirut · LB',
+  origin: 'Zahle · LB',
 
   drop: 'DR-01',
 

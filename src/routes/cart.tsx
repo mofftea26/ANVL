@@ -166,7 +166,7 @@ function CartPage() {
                 {checkingOut ? 'Redirecting to checkout…' : 'Checkout'}
               </Button>
               <p className="anvl-micro mt-3 text-center text-[10px] text-[var(--color-text-muted)]">
-                Forged in Beirut · Secure checkout
+                Delivered across Lebanon · Secure checkout
               </p>
             </aside>
           </div>

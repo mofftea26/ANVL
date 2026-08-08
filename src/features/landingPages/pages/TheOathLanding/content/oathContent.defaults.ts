@@ -117,7 +117,7 @@ export const OATH_DEFAULT_CONTENT: OathResolvedContent = {
         tone: '#1a1c1f',
         bgUrl: '/landing/the-oath/product-bg-1.webp',
         hotspots: [
-          { id: 'weight', label: 'Heavyweight Cotton', description: '240 GSM brushed cotton — it hangs like armour and outlasts the season.', x: 38, y: 30 },
+          { id: 'weight', label: 'Heavyweight Cotton', description: '260 GSM pure cotton — it hangs like armour and outlasts the season.', x: 38, y: 30 },
           { id: 'shoulder', label: 'Drop-Shoulder Cut', description: 'A dropped seam frames the delts and reads broad from across the floor.', x: 64, y: 44 },
           { id: 'collar', label: 'Reinforced Collar', description: 'Double-stitched ribbed neck that holds its shape through every wash.', x: 50, y: 18 },
         ],
