@@ -134,6 +134,17 @@ const config = defineConfig(({ isSsrBuild }) => ({
           // namespace. `scripts/check-dynamic-import-entry.mjs` guards this.
           if (id.includes('/app/config/runtime')) return 'app-runtime'
           if (id.includes('/features/admin/auth/adminAuth.ts')) return 'admin-auth'
+          // Same failure, fifth site. `armoryEventsClient` is reached ONLY via
+          // `await import(...)` — from the share runner and the story overlay,
+          // both of which must not pull supabase-js onto the eager graph. It is
+          // also an entry-graph module (the Armory imports it statically), so
+          // Rolldown merged it into the entry and rewrote the story chunk's
+          // dynamic import to target the entry namespace, where
+          // `recordArmoryEvent` does not exist. Caught by the guard, not by
+          // tests: dev and vitest resolve the real module either way.
+          if (id.includes('/features/passport/api/armoryEventsClient')) {
+            return 'armory-events'
+          }
           // Same failure, third site: `lazySupabaseAccountClient` does
           // `import('./supabaseAccountClient').then((m) => m.supabaseAccountClient)`.
           // Merged into the entry, that resolved to `undefined`, so EVERY account

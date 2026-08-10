@@ -15,6 +15,7 @@ import {
   deriveArmoryBadges,
   deriveArmoryRank,
 } from '@/features/passport/lib/ranks'
+import { useArmoryCounters } from '@/features/passport/hooks/useArmoryCounters'
 import { ArmoryRewardsCard } from '@/features/storefront-account/account/panels/armory/ArmoryRewardsCard'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
@@ -61,8 +62,18 @@ export function ArmoryPanel() {
     { claimCount: owned.length, completion, forge },
     rules,
   )
+  // Server counters (streaks, shares, chapter reads, tenure…). Only merged in
+  // once they have actually arrived — passing the placeholder zeroes early
+  // would make every one of those challenges render at 0% for a beat before
+  // snapping to the real value.
+  const countersQuery = useArmoryCounters(owned.length > 0)
   const challenges = evaluateChallenges(
-    buildChallengeContext({ owned, featCount, completion }),
+    buildChallengeContext({
+      owned,
+      featCount,
+      completion,
+      counters: countersQuery.isSuccess ? countersQuery.data : undefined,
+    }),
     rules,
   )
   const honorPinned = owned.filter((p) => p.featuredSlot !== null).length

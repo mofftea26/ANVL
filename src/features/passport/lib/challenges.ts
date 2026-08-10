@@ -109,8 +109,9 @@ export const CHALLENGE_METRIC_ACCESSORS: Record<
  * are already authored and will simply appear.
  */
 export const UNSOURCED_METRICS: ReadonlySet<GamificationMetric> = new Set([
-  'shares',
-  'chapters_read',
+  // Empty: every metric now has a counter behind it. `shares` and
+  // `chapters_read` were the last two, and both are recorded into
+  // `armory_events` as of the counter build.
 ])
 
 /** Which context keys each metric depends on, for the "is it loaded" check. */
@@ -165,12 +166,32 @@ export interface ChallengeProgress {
   familyComplete: boolean
 }
 
+/**
+ * The six passport-derived metrics, plus whatever server counters the caller
+ * has loaded.
+ *
+ * `counters` is optional: a surface that has not fetched them (or is rendering
+ * before they arrive) simply omits it, and the challenges depending on those
+ * metrics are hidden rather than shown stuck at zero.
+ *
+ * `divisionsOwned` is deliberately RECOMPUTED here rather than taken from the
+ * server. The RPC can only count distinct products, because the drop each
+ * product belongs to lives in the commerce catalogue rather than Postgres —
+ * and "own one of each division of a drop" needs that grouping. The client
+ * already holds the catalogue, so it can answer precisely.
+ */
 export function buildChallengeContext(input: {
   owned: readonly OwnedPassport[]
   featCount: number
   completion: readonly DropCompletion[]
+  counters?: Partial<ChallengeContext>
 }): ChallengeContext {
-  const { owned, featCount, completion } = input
+  const { owned, featCount, completion, counters } = input
+
+  // Most distinct products held within any ONE drop — `claimed` is already
+  // the distinct-product count for that drop.
+  const divisionsOwned = completion.reduce((max, d) => Math.max(max, d.claimed), 0)
+
   return {
     registrations: owned.length,
     totalWears: owned.reduce((sum, p) => sum + p.wearCount, 0),
@@ -178,6 +199,10 @@ export function buildChallengeContext(input: {
     featCount,
     fullDrops: completion.filter((d) => d.total > 0 && d.claimed >= d.total).length,
     honorPinned: owned.filter((p) => p.featuredSlot !== null).length,
+    ...counters,
+    // Recomputed AFTER the spread so the catalogue-aware number wins over the
+    // server's coarser distinct-product count.
+    ...(completion.length > 0 ? { divisionsOwned } : {}),
   }
 }
 

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Container, Section } from '@/shared/components/ui'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
@@ -201,6 +202,18 @@ export function StorySaga({
     activeChapterSlug != null
       ? (chapters.find((c) => c.slug === activeChapterSlug) ?? null)
       : null
+
+  // Record the read for the Chronicle challenges. A partial unique index makes
+  // a re-read a no-op, so "read every chapter" cannot be satisfied by
+  // reopening one book. Lazy-imported to keep supabase-js off the story
+  // route's eager graph, and fire-and-forget — a missed count must never
+  // interfere with opening a book.
+  useEffect(() => {
+    if (!activeChapterSlug) return
+    void import('@/features/passport/api/armoryEventsClient')
+      .then((m) => m.recordArmoryEvent({ type: 'chapter_read', targetId: activeChapterSlug }))
+      .catch(() => {})
+  }, [activeChapterSlug])
 
   const dropGroups = groupByDrop(chapters)
   const actCount = chapters.reduce((sum, c) => sum + c.acts.length, 0)

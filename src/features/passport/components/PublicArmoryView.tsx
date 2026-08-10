@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Flame, Medal, Search, Star, Trophy } from '@/shared/icons'
 import { GrainOverlay } from '@/shared/components/layout/GrainOverlay'
 import { RevealOnScroll } from '@/shared/components/motion/RevealOnScroll'
 import { Input, Select, SelectItem } from '@/shared/components/ui'
 import { cn } from '@/shared/lib/cn'
 import { ICON_SIZE } from '@/shared/lib/iconSize'
+import { recordArmoryView } from '../api/armoryEventsClient'
 import { useGamificationRules } from '../hooks/useGamificationRules'
 import { estimateForgeXpFromCounts } from '../lib/forgeXp'
 import { deriveArmoryRank } from '../lib/ranks'
@@ -47,11 +48,15 @@ const EMBER_LABEL = `${MICRO_CAPS} text-[color-mix(in_oklab,var(--color-highligh
  */
 export function PublicArmoryView({
   armory,
+  handle,
   images,
   names = {},
   meta = {},
 }: {
   armory: PublicArmory
+  /** Route param. Not on `PublicArmory` — the RPC projects the armory, not
+   *  the address it was reached at — but the view counter needs it. */
+  handle?: string
   images: Record<string, string | undefined>
   /** slug → product name (catalog-resolved for feats on non-public pieces). */
   names?: Record<string, string | undefined>
@@ -62,6 +67,15 @@ export function PublicArmoryView({
   const [category, setCategory] = useState('all')
   const [drop, setDrop] = useState('all')
   const rules = useGamificationRules()
+
+  // Count the visit for the ARMORY OWNER's Standard Bearer challenge. The RPC
+  // ignores self-views and dedupes to one per owner per day, so a refresh loop
+  // cannot inflate it. Runs once per handle, post-mount only (SSR has no
+  // viewer to attribute and would double-count every crawl).
+  useEffect(() => {
+    if (!handle) return
+    void recordArmoryView(handle)
+  }, [handle])
   // Rank from the true total (completion needs the catalog cross-reference we
   // don't expose publicly, so this never overstates — Warlord bonuses aside).
   // XP is estimated from the public aggregates: the RPC exposes piece and wear
