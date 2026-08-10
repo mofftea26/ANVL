@@ -124,6 +124,11 @@ export function ArmoryPanel() {
       {/* Forge progress — the live XP loop ----------------------------- */}
       <ForgeProgress forge={forge} milestone={milestone} />
 
+      {/* Hall of Honor sits directly under the XP bar: the three pieces the
+          owner chose to speak for them belong next to the number that says how
+          far they have come, not buried below the collection grid. */}
+      {owned.length > 0 ? <ArmoryHonor owned={owned} catalog={catalog} /> : null}
+
       {/* Standing (stacks full-width on phones so nothing clips) -------- */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <AccountBentoCard bg={accountCardBg('ember')} eyebrow="Rank" icon={<Medal size={17} />}>
@@ -234,8 +239,6 @@ export function ArmoryPanel() {
         </AccountBentoCard>
       ) : (
         <>
-          <ArmoryHonor owned={owned} catalog={catalog} />
-
           {/* Collection · Timeline · Challenges — bento cards → overlays. */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <AccountBentoCard bg={accountCardBg('carbon')} eyebrow="Collection">
@@ -319,15 +322,12 @@ export function ArmoryPanel() {
               />
             </AccountBentoCard>
 
-            {/* Rewards — banked perk + live XP, so the ladder has a visible
-                payoff long before the vault itself opens. */}
-            <ArmoryRewardsCard
-              rank={rank}
-              rules={rules}
-              totalXp={forge.total}
-              className="col-span-2 sm:col-span-1"
-            />
           </div>
+
+          {/* Rewards — full width beneath the grid. It is a locked vault, not
+              a peer of the three cards above it, so it gets its own band
+              rather than a third of a row. */}
+          <ArmoryRewardsCard rank={rank} rules={rules} totalXp={forge.total} />
 
           <div className="pt-1">
             {view === 'grid' ? <ArmoryGridView owned={owned} catalog={catalog} /> : null}
