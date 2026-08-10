@@ -213,7 +213,7 @@ export const TOAST_FORGE_TUNING: ForgeMotionTuning = {
  * the way around; fractional indices (e.g. `i + Math.random()`) jitter the
  * position along the perimeter without changing which edge it lands on.
  * The single source for what was three near-identical implementations
- * (`ModalForgeEffect.tsx`, `ToastForgeEffect.tsx`, `AltarModalForge.tsx`).
+ * (`ModalForgeEffect.tsx`, `ToastForgeEffect.tsx`, `AltarStrikeEmbers.tsx`).
  */
 export function walkRectPerimeter(
   index: number,

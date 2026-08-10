@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { FORGE_DURATION_MS } from '@/shared/lib/forge/emberForge'
-import { ALTAR_FORGE, ALTAR_MODAL, ALTAR_STRIKE } from '../altarForgeTiming'
+import { ALTAR_FORGE, ALTAR_STRIKE } from '../altarForgeTiming'
 
 /**
  * The clock is pure data, so these are the *invariants* of the choreography —
- * the relationships `AboutAltar` and `AboutOrbModal` both depend on but which
- * neither can enforce (they only read numbers). Retuning a beat is fine; a
- * change that breaks one of these is a visible bug in the hand-off.
+ * the relationships the strike timeline and the in-canvas disintegration both
+ * depend on but which neither can enforce (they only read numbers). Retuning a
+ * beat is fine; a change that breaks one of these is a visible bug in the
+ * strike → scroll hand-off.
  */
 describe('altarForgeTiming', () => {
   it('derives the impact beat from the windup and drop', () => {
@@ -28,22 +28,12 @@ describe('altarForgeTiming', () => {
     expect(ALTAR_FORGE.explodeDuration).toBeLessThan(ALTAR_FORGE.scatterDuration)
   })
 
-  it('runs the DOM swarm on the shared engine’s canonical duration', () => {
-    expect(ALTAR_FORGE.swarmDuration).toBeCloseTo(FORGE_DURATION_MS / 1000)
-  })
-
-  it('overlaps the 3D cross-fade with the DOM swarm rather than sequencing them', () => {
+  it('dissolves the shroud over a real window at the hand-off', () => {
+    // The dissolve overlaps the scroll-away move — zero would be a hard cut,
+    // and anything approaching the hand-off delay itself would leave embers
+    // hanging over the next chapter.
     expect(ALTAR_FORGE.emberFadeDuration).toBeGreaterThan(0)
-    expect(ALTAR_FORGE.emberFadeDuration).toBeLessThan(ALTAR_FORGE.swarmDuration)
-  })
-
-  it('never blurs the backdrop while the in-canvas embers are still alive', () => {
-    expect(ALTAR_MODAL.backdropDelay).toBeGreaterThanOrEqual(ALTAR_FORGE.emberFadeDuration)
-  })
-
-  it('materializes the panel inside the swarm’s pass, after the cross-fade', () => {
-    expect(ALTAR_MODAL.panelDelay).toBeGreaterThanOrEqual(ALTAR_FORGE.emberFadeDuration)
-    expect(ALTAR_MODAL.panelDelay).toBeLessThan(ALTAR_FORGE.swarmDuration)
+    expect(ALTAR_FORGE.emberFadeDuration).toBeLessThan(ALTAR_FORGE.handoffAfterImpact)
   })
 
   it('rings the hammer out through diminishing swings, coming to rest', () => {
@@ -56,11 +46,5 @@ describe('altarForgeTiming', () => {
     }
     // It has to end at rest, or the hammer never rejoins its idle sway.
     expect(swings[swings.length - 1].to).toBe(0)
-  })
-
-  it('orders the panel reveal: ignite → panel → content → stats', () => {
-    expect(ALTAR_MODAL.igniteDelay).toBeLessThanOrEqual(ALTAR_MODAL.panelDelay)
-    expect(ALTAR_MODAL.contentDelay).toBeGreaterThan(ALTAR_MODAL.panelDelay)
-    expect(ALTAR_MODAL.statsDelay).toBeGreaterThan(ALTAR_MODAL.contentDelay)
   })
 })

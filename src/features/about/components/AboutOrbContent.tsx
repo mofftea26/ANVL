@@ -10,21 +10,22 @@ import {
 } from './AboutOrbLayouts'
 
 /**
- * ONE orb content presentation shared by the desktop altar's strike modal and
- * the mobile page's stacked sections (finding 6 — the two surfaces previously
+ * ONE orb content presentation shared by the desktop scroll chapters and the
+ * static page's stacked sections (finding 6 — the two surfaces previously
  * duplicated slightly-divergent markup). Each orb carries a **layout preset**
  * (`orb.layout`): 'classic' is the original free-form render (every field
  * renders only when it carries content — unchanged below), while
  * 'text' / 'stats' / 'map' / 'timeline' compose designed arrangements
  * ({@link AboutOrbLayouts}). All presets keep the orb's own color as the
- * accent and reuse the altar modal's reveal/count-up markers, so the strike
- * choreography works for every layout.
+ * accent and carry the shared reveal/count-up markers
+ * (`data-orb-reveal` / `data-orb-stat-value`), so scroll choreography works
+ * for every layout.
  */
 
 interface AboutOrbHeroBandProps {
   orb: AboutResolvedOrb
   image: string
-  /** Adds the altar modal's staggered-reveal marker. */
+  /** Adds the staggered-reveal marker for the chapter GSAP pass. */
   reveal?: boolean
   className?: string
 }
@@ -38,7 +39,7 @@ interface AboutOrbHeroBandProps {
 export function AboutOrbHeroBand({ orb, image, reveal = false, className }: AboutOrbHeroBandProps) {
   return (
     <div
-      {...(reveal ? { 'data-modal-reveal': '' } : {})}
+      {...(reveal ? { 'data-orb-reveal': '' } : {})}
       className={cn('relative aspect-[16/8] w-full overflow-hidden', className)}
     >
       <AboutMediaFallback media={image} vignette={false} />
@@ -76,30 +77,30 @@ interface AboutOrbContentProps {
   /** `id` for the visible heading (aria-labelledby wiring stays caller-side). */
   headingId: string
   /**
-   * `modal` — the altar strike modal's larger scale; `section` — the mobile
-   * page's in-flow scale. Same structure, tuned clamps.
+   * `chapter` — the desktop scroll chapter's larger scale; `section` — the
+   * static page's in-flow scale. Same structure, tuned clamps.
    */
-  variant: 'modal' | 'section'
-  /** Adds `data-modal-reveal` / stat count-up markers for the altar GSAP pass. */
+  variant: 'chapter' | 'section'
+  /** Adds `data-orb-reveal` / stat count-up markers for the chapter GSAP pass. */
   reveal?: boolean
 }
 
 export function AboutOrbContent({ orb, headingId, variant, reveal = false }: AboutOrbContentProps) {
-  const modal = variant === 'modal'
-  const r = reveal ? { 'data-modal-reveal': '' } : {}
+  const wide = variant === 'chapter'
+  const r = reveal ? { 'data-orb-reveal': '' } : {}
 
   // Layout presets — 'classic' falls through to the original free-form render.
   if (orb.layout === 'text')
-    return <AboutOrbTextLayout orb={orb} headingId={headingId} modal={modal} r={r} reveal={reveal} />
+    return <AboutOrbTextLayout orb={orb} headingId={headingId} wide={wide} r={r} reveal={reveal} />
   if (orb.layout === 'stats')
     return (
-      <AboutOrbStatsLayout orb={orb} headingId={headingId} modal={modal} r={r} reveal={reveal} />
+      <AboutOrbStatsLayout orb={orb} headingId={headingId} wide={wide} r={r} reveal={reveal} />
     )
   if (orb.layout === 'map')
-    return <AboutOrbMapLayout orb={orb} headingId={headingId} modal={modal} r={r} reveal={reveal} />
+    return <AboutOrbMapLayout orb={orb} headingId={headingId} wide={wide} r={r} reveal={reveal} />
   if (orb.layout === 'timeline')
     return (
-      <AboutOrbTimelineLayout orb={orb} headingId={headingId} modal={modal} r={r} reveal={reveal} />
+      <AboutOrbTimelineLayout orb={orb} headingId={headingId} wide={wide} r={r} reveal={reveal} />
     )
 
   return (
@@ -108,7 +109,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
         {...r}
         className={cn(
           'anvl-display inline-flex items-center gap-2',
-          modal ? 'text-xs tracking-[0.32em]' : 'text-[11px] tracking-[0.28em]',
+          wide ? 'text-xs tracking-[0.32em]' : 'text-[11px] tracking-[0.28em]',
         )}
         style={{ color: orb.color }}
       >
@@ -124,7 +125,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
         {...r}
         className={cn(
           'anvl-heading mt-3 font-normal leading-[0.95] text-[var(--color-heading)]',
-          modal
+          wide
             ? 'max-w-md text-[clamp(1.75rem,3vw,2.75rem)]'
             : 'text-[clamp(1.6rem,5.5vw,2.4rem)]',
         )}
@@ -133,14 +134,14 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
       </h2>
 
       {orb.lines.length > 0 ? (
-        <div className={cn(modal ? 'mt-6 space-y-2.5' : 'mt-5 space-y-2')}>
+        <div className={cn(wide ? 'mt-6 space-y-2.5' : 'mt-5 space-y-2')}>
           {orb.lines.map((line, i) => (
             <p
               key={`${i}-${line}`}
               {...r}
               className={cn(
                 'anvl-heading font-normal text-[var(--color-heading)]/90',
-                modal
+                wide
                   ? 'leading-tight text-[clamp(1.15rem,1.8vw,1.6rem)]'
                   : 'leading-[1.1] text-[clamp(1.2rem,4.5vw,1.75rem)]',
               )}
@@ -156,7 +157,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
           {...r}
           className={cn(
             'leading-relaxed text-[var(--color-text-muted)]',
-            modal ? 'mt-5 max-w-lg text-base' : 'mt-4 text-sm md:text-base',
+            wide ? 'mt-5 max-w-lg text-base' : 'mt-4 text-sm md:text-base',
           )}
         >
           {orb.body}
@@ -168,7 +169,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
           {...r}
           className={cn(
             'border-l-2 pl-3 font-sans uppercase text-[var(--color-heading)]/80',
-            modal
+            wide
               ? 'mt-5 text-xs tracking-[0.22em]'
               : 'mt-4 text-[11px] tracking-[0.2em]',
           )}
@@ -179,7 +180,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
       ) : null}
 
       {orb.points.length > 0 ? (
-        <ul className={cn(modal ? 'mt-6 space-y-3' : 'mt-5 space-y-2.5')}>
+        <ul className={cn(wide ? 'mt-6 space-y-3' : 'mt-5 space-y-2.5')}>
           {orb.points.map((p) => (
             <li key={p.label} {...r} className="flex gap-3">
               <span
@@ -202,7 +203,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
         <div
           className={cn(
             'grid grid-cols-2 gap-x-6 sm:grid-cols-3',
-            modal ? 'mt-7 gap-y-7' : 'mt-6 gap-y-6',
+            wide ? 'mt-7 gap-y-7' : 'mt-6 gap-y-6',
           )}
         >
           {orb.stats.map((stat) => {
@@ -213,12 +214,12 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
               <div
                 key={stat.id}
                 {...r}
-                className={modal ? undefined : 'border-l border-[var(--color-line)] pl-4'}
+                className={wide ? undefined : 'border-l border-[var(--color-line)] pl-4'}
               >
                 <p className="anvl-heading font-normal leading-none text-[clamp(1.75rem,2.6vw,2.5rem)] text-[var(--color-heading)]">
                   {countUp ? (
                     <>
-                      <span data-modal-stat-value data-stat-target={numeric}>
+                      <span data-orb-stat-value data-stat-target={numeric}>
                         {stat.value}
                       </span>
                       <span style={{ color: orb.color }}>{stat.suffix}</span>
@@ -240,7 +241,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
       ) : null}
 
       {orb.primaryCta || orb.secondaryCta ? (
-        <div {...r} className={cn('flex flex-wrap gap-3', modal ? 'mt-8' : 'mt-7')}>
+        <div {...r} className={cn('flex flex-wrap gap-3', wide ? 'mt-8' : 'mt-7')}>
           {orb.primaryCta ? (
             <AboutCtaLink href={orb.primaryCta.href} variant="primary">
               {orb.primaryCta.label}
@@ -257,7 +258,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
       {orb.tagline ? (
         <p
           {...r}
-          className={cn('anvl-display text-xs tracking-[0.3em]', modal ? 'mt-8' : 'mt-7')}
+          className={cn('anvl-display text-xs tracking-[0.3em]', wide ? 'mt-8' : 'mt-7')}
           style={{ color: orb.color }}
         >
           {orb.tagline}

@@ -31,7 +31,7 @@ function makeOrb(overrides: Partial<AboutResolvedOrb> = {}): AboutResolvedOrb {
 
 function renderOrb(orb: AboutResolvedOrb, reveal = false) {
   return render(
-    <AboutOrbContent orb={orb} headingId="test-orb-title" variant="modal" reveal={reveal} />,
+    <AboutOrbContent orb={orb} headingId="test-orb-title" variant="chapter" reveal={reveal} />,
   )
 }
 
@@ -62,7 +62,7 @@ describe('AboutOrbContent — layout switch', () => {
     const { container } = renderOrb(makeOrb({ layout: 'stats' }), true)
     expect(container.querySelector('[data-orb-layout="stats"]')).not.toBeNull()
     expect(screen.getByText('Hours')).toBeInTheDocument()
-    const value = container.querySelector('[data-modal-stat-value]')
+    const value = container.querySelector('[data-orb-stat-value]')
     expect(value).not.toBeNull()
     expect(value?.getAttribute('data-stat-target')).toBe('500')
   })

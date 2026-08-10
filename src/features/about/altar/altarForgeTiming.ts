@@ -1,27 +1,14 @@
-import { FORGE_DURATION_MS } from '@/shared/lib/forge/emberForge'
-
 /**
  * THE FORGE ALTAR'S CHOREOGRAPHY CLOCK.
  *
  * Rule 5 of the particle-forge standard (`docs/animation-guidelines.md`): the
  * WebGL tree and the DOM tree never call each other — both schedule their own
- * GSAP against these exported constants. `AboutAltar` (the strike timeline,
- * the 3D disintegration, the DOM ember hand-off) and `AboutOrbModal` (backdrop,
- * panel, ignition, content stagger, stat counters) are the two consumers.
- * Before this module existed, `AboutOrbModal` hardcoded `1.6 / 1.68 / 1.7 /
- * 1.92 / 2.1` that had to be kept in sync by hand with `AboutAltar`'s tween
- * chain — change one number and the two trees silently drifted apart.
+ * GSAP against these exported constants. The strike timeline (hammer, DOM
+ * impact frames) and the in-canvas disintegration (`AltarStrikeEmbers`) are
+ * the consumers.
  *
- * TWO FRAMES OF REFERENCE, because the two trees start their timelines at
- * different moments:
- *
- * - {@link ALTAR_STRIKE} and {@link ALTAR_FORGE} are seconds on the **strike
- *   timeline** — `t = 0` is the click that chooses an orb.
- * - {@link ALTAR_MODAL} is seconds from the **hand-off beat**
- *   (`impact + ALTAR_FORGE.handoffAfterImpact`), which is the same instant the
- *   modal mounts and the DOM ember swarm launches. The modal's `useGSAP` runs
- *   on mount, so its delays are already expressed in this frame — no offset
- *   arithmetic at the call site.
+ * {@link ALTAR_STRIKE} and {@link ALTAR_FORGE} are seconds on the **strike
+ * timeline** — `t = 0` is the click that chooses an orb.
  *
  * THE SEQUENCE, end to end:
  *
@@ -30,16 +17,12 @@ import { FORGE_DURATION_MS } from '@/shared/lib/forge/emberForge'
  * 0.90  windup (decelerating backswing) → 0.15s held breath at the top
  * 1.50  the drop (expo.in — the head hangs, then whips)
  * 1.78  IMPACT — flash, shake, impact frames; the stone disintegrates and
- *       releases its embers into a hovering shroud (3D, AltarModalForge)
+ *       releases its embers into a hovering shroud (3D, AltarStrikeEmbers)
  * 2.38  the shroud is fully out; it hangs for a beat so it reads
- * 2.73  HAND-OFF — the modal mounts (invisible) and the DOM ember swarm
- *       launches from the orb's seat, out of the shroud's own band; the 3D
- *       shroud dissolves UNDER it (one swarm crossing canvas → DOM)
- * 3.08  the 3D shroud is gone; the backdrop may now blur (it would otherwise
- *       smear the live 3D embers — see AboutOrbModal's blur note)
- * 3.23  the panel materializes as the swarm's hot cores land and dissolve
+ * 2.73  HAND-OFF — the page answers the strike: the scroll pulls back up to
+ *       the struck orb's chapter while the 3D shroud dissolves under the move
+ * 3.08  the 3D shroud is gone
  * 3.28  the hammer's ring-out ends
- * 3.68  the DOM swarm's pass ends
  * ```
  */
 
@@ -109,56 +92,15 @@ export const ALTAR_FORGE = {
   /** How long the freed shroud hangs, fully out, before the hand-off. */
   shroudHold: SHROUD_HOLD,
   /**
-   * Impact → hand-off: the modal mounts and the DOM ember swarm launches.
-   * The shroud has fully released and been seen hovering by this beat.
+   * Impact → hand-off: the beat the page answers the strike (the scroll to
+   * the struck orb's chapter begins). The shroud has fully released and been
+   * seen hovering by this beat.
    */
   handoffAfterImpact: SCATTER_DURATION + SHROUD_HOLD,
   /**
-   * The 3D shroud's cross-fade (`state.emberFade`), starting AT the hand-off —
-   * deliberately shorter than {@link swarmDuration} and overlapping it, so the
-   * canvas embers are still alive while the DOM swarm streams in. Anything that
-   * reads as two effects in sequence is a bug.
-   *
-   * A true dissolve, not a hand-wave: the DOM swarm's launch ring is sized to
-   * this shroud (`deriveSwarmSpreadScale`), so the two ember populations occupy
-   * the SAME band at the hand-off and the 3D can decay from the first frame —
-   * paired with a near-linear ease, tracking the DOM embers' own alpha ramp.
-   * (It used to be longer and back-loaded to cover for a DOM ring that started
-   * ~3× further out than the shroud; that gap is gone.)
+   * The 3D shroud's dissolve (`state.emberFade`), starting AT the hand-off —
+   * near-linear so the embers decay while the scroll-away move is already in
+   * flight, never a hard cut before it.
    */
   emberFadeDuration: 0.35,
-  /**
-   * The DOM swarm's pass — the shared engine's canonical modal duration, so
-   * the altar's modal forges out of embers on exactly the same clock as every
-   * other dialog and toast in the app.
-   */
-  swarmDuration: FORGE_DURATION_MS / 1000,
-} as const
-
-const PANEL_DELAY = 0.5
-
-/**
- * The modal's own reveal — seconds from the hand-off beat (= its mount), so
- * these drop straight into `AboutOrbModal`'s GSAP `delay` fields.
- */
-export const ALTAR_MODAL = {
-  /**
-   * Held until the 3D shroud has fully crossfaded out: `backdrop-filter` keeps
-   * blurring the WebGL canvas beneath it, which would smear the live embers.
-   * (The DOM swarm's canvas composites ABOVE the modal, so it is unaffected.)
-   */
-  backdropDelay: ALTAR_FORGE.emberFadeDuration,
-  backdropDuration: 0.6,
-  /** The panel tilts up out of the ember plate as the swarm's cores land. */
-  panelDelay: PANEL_DELAY,
-  panelDuration: 0.6,
-  /** The edge ignition flashes a hair before the panel — the embers fusing in. */
-  igniteDelay: PANEL_DELAY - 0.02,
-  igniteDuration: 0.16,
-  igniteFadeDuration: 0.7,
-  contentDelay: PANEL_DELAY + 0.22,
-  contentDuration: 0.5,
-  contentStagger: 0.06,
-  statsDelay: PANEL_DELAY + 0.4,
-  statsDuration: 1.1,
 } as const

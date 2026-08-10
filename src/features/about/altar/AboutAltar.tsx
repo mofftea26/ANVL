@@ -1,19 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { gsap, useGSAP } from '@/shared/lib/gsap'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import { createDustDrive } from '@/shared/webgl/DustField'
 import { useCanvasTeardownMark } from '@/shared/webgl/canvasTeardownGuard'
-import { ForgeEmberCanvas } from '@/shared/components/ui/ForgeEmberCanvas'
 import type { AboutResolvedContent } from '../content/aboutContent.defaults'
-import { orbImage } from '../content/resolveAboutContent'
 import type { AboutPageAssets } from '../index'
 import { readAboutBrandColors } from '../webgl/aboutBrandColors'
 import { createAltarState } from './altarState'
 import { ALTAR_FORGE, ALTAR_STRIKE } from './altarForgeTiming'
-import { useAltarEmberHandoff } from './altarEmberHandoff'
 import { AltarScene } from './AltarScene'
-import { AboutOrbModal } from './AboutOrbModal'
 
 /** Shipped defaults so the altar works before any CMS upload. */
 const DEFAULT_ANVIL_GLB = '/about/anvil.glb'
@@ -21,50 +17,37 @@ const DEFAULT_HAMMER_GLB = '/about/hammer.glb'
 const DEFAULT_FORGE_BACKDROP = '/about/forge-backdrop.webp'
 
 /**
- * The ember swarm composites ABOVE the modal (z-[75]) while it forms it —
- * exactly as the shared `<Modal>`'s swarm (z-95) sits over its own panel
- * (z-[90]). Both stay inside the About root's `isolate` stacking context.
- */
-const FORGE_CANVAS_Z = 80
-
-/**
- * The Forge Altar — the desktop About experience. One non-scrollable 100svh
- * stage: the grabbable 3D anvil at centre under an aurora, the CMS-defined
- * orbs (each its own color) in slow orbit, the picker chips along the top.
- * Choosing an orb glides it onto the anvil, the hammer winds up and strikes —
- * the orb **disintegrates into embers** in-canvas, and at the hand-off beat
- * those embers cross into the DOM as the app's shared ember swarm (the SAME
- * canvas-2D forge that materializes every modal and every toast), tinted with
- * the struck orb's colour, which converges to FORM the panel. Closing
- * re-materializes the orb in orbit. GSAP owns every transition against the one
- * exported clock (`altarForgeTiming.ts`); the R3F scene reads the mutable
- * {@link AltarState} per frame. During a strike the DOM picker chips fade out —
- * DOM composites ABOVE the canvas, so the only way the hammer reads in front
- * of them is for them not to be there while it swings.
+ * The Forge Altar — the About page's interactive stage. The grabbable 3D
+ * anvil at centre under an aurora, the CMS-defined orbs (each its own color)
+ * in slow orbit, the picker chips along the top. Choosing an orb glides it
+ * onto the anvil, the hammer winds up and strikes — the orb **disintegrates
+ * into embers** in-canvas, and at the hand-off beat the page answers the
+ * strike through {@link onOrbStruck} (the scroll experience scrolls back up
+ * to that orb's chapter). The stage then releases: the shroud dissolves, the
+ * orb re-materializes in orbit, the ring wakes. GSAP owns every transition
+ * against the one exported clock (`altarForgeTiming.ts`); the R3F scene reads
+ * the mutable {@link AltarState} per frame. During a strike the DOM picker
+ * chips fade out — DOM composites ABOVE the canvas, so the only way the
+ * hammer reads in front of them is for them not to be there while it swings.
  */
 export default function AboutAltar({
   content,
   assets,
+  onOrbStruck,
 }: {
   content: AboutResolvedContent
   assets: AboutPageAssets
+  /** Fired at the strike's hand-off beat with the struck orb's index. */
+  onOrbStruck?: (index: number) => void
 }) {
   const root = useRef<HTMLDivElement | null>(null)
-  const canvasBox = useRef<HTMLDivElement | null>(null)
   const orbs = content.orbs
   const state = useMemo(() => createAltarState(orbs.length), [orbs.length])
   const driveRef = useRef(createDustDrive({ decayGlint: true }))
   const timelineRef = useRef<gsap.core.Timeline | null>(null)
   const colors = useMemo(() => readAboutBrandColors(), [])
   const reducedMotion = useReducedMotion()
-  const [openIndex, setOpenIndex] = useState<number | null>(null)
-  // The DOM half of the ember hand-off: armed at the hand-off beat, launched by
-  // the panel's own measure, retired when the pass lands or the modal closes.
-  const { swarm, armSwarm, handlePanelMeasure, swarmRect, retireSwarm, resetSwarm } =
-    useAltarEmberHandoff({ state, orbs, reducedMotion, canvasBox })
   useCanvasTeardownMark()
-
-  const openOrb = openIndex !== null ? (orbs[openIndex] ?? null) : null
 
   // Pointer → camera parallax + dust parting (one passive listener).
   useEffect(() => {
@@ -102,6 +85,34 @@ export default function AboutAltar({
       timelineRef.current?.kill()
     }
   }, [])
+
+  /** Resets the stage: the shroud retires, the orb re-materializes in orbit,
+   *  the ring wakes back up, the picker chips return. */
+  const release = useCallback(() => {
+    const index = state.activeIndex
+    if (index === -1) return
+    timelineRef.current?.kill()
+    const tl = gsap.timeline({
+      onComplete: () => {
+        state.activeIndex = -1
+      },
+    })
+    timelineRef.current = tl
+    // The orb is still disintegrated — snap it home invisibly, then let it
+    // re-materialize in its orbit slot as the ring wakes back up. scatterT: 0
+    // retires the ember pool instantly (its life gate), while explodeT eases
+    // back so the stone re-forms.
+    tl.set(state.focusT, { [index]: 0 }, 0)
+    tl.set(state, { scatterT: 0, hammerT: 0, emberFade: 0 }, 0)
+    tl.to(state, { ringDim: 0, orbitSpeed: 1, duration: 0.9, ease: 'power2.inOut' }, 0)
+    tl.to(state, { explodeT: 0, duration: 0.6, ease: 'power2.out' }, 0.25)
+    // The picker chips return as the hammer fades off the stage (cross-fade —
+    // by the time they're fully back the hammer is gone).
+    if (root.current) {
+      const q = gsap.utils.selector(root.current)
+      tl.to(q('[data-altar-picker]'), { autoAlpha: 1, duration: 0.6, ease: 'power2.out' }, 0.55)
+    }
+  }, [state])
 
   const strike = useCallback(
     (index: number) => {
@@ -224,22 +235,16 @@ export default function AboutAltar({
           swingAt += swing.duration
         }
       }
-      // THE HAND-OFF — one beat, three things, deliberately simultaneous so the
-      // embers read as ONE swarm crossing from the canvas into the DOM:
-      //  1. the modal mounts (invisible) and reports its natural rect;
-      //  2. the shared ember swarm launches out of the shroud's own band around
-      //     the orb's seat, tinted with the orb's colour, and converges on that
-      //     rect exactly the way it forms every other dialog and toast;
-      //  3. the in-canvas shroud dissolves UNDER it (shorter than the swarm's
-      //     pass, so both are alive together — never a hard cut). Near-linear
-      //     (`power1.in`) because the two populations now start in the SAME
-      //     band: the 3D should decay as the DOM embers' alpha ramps, rather
-      //     than holding bright (`power2.in`) to cover a spatial gap that the
-      //     matched launch ring removed.
+      // THE HAND-OFF — the page answers the strike: `onOrbStruck` fires (the
+      // scroll experience pulls the page back up to the struck orb's chapter)
+      // while the in-canvas shroud dissolves UNDER the move — near-linear
+      // (`power1.in`) so the embers decay as the journey starts, never a hard
+      // cut before it. Once the shroud is gone the stage releases itself: the
+      // strike's answer is a scroll, not a dialog, so nothing external ever
+      // closes it.
       tl.call(
         () => {
-          setOpenIndex(index)
-          armSwarm(index)
+          onOrbStruck?.(index)
         },
         [],
         handoffAt,
@@ -251,39 +256,10 @@ export default function AboutAltar({
           handoffAt,
         )
       }
+      tl.call(release, [], handoffAt + ALTAR_FORGE.emberFadeDuration + 0.15)
     },
-    [state, reducedMotion, armSwarm],
+    [state, reducedMotion, onOrbStruck, release],
   )
-
-  const release = useCallback(() => {
-    setOpenIndex(null)
-    // Closing mid-forge (or after it) retires the DOM swarm — nothing left to
-    // form once the panel is gone.
-    resetSwarm()
-    const index = state.activeIndex
-    if (index === -1) return
-    timelineRef.current?.kill()
-    const tl = gsap.timeline({
-      onComplete: () => {
-        state.activeIndex = -1
-      },
-    })
-    timelineRef.current = tl
-    // The orb is still disintegrated — snap it home invisibly, then let it
-    // re-materialize in its orbit slot as the ring wakes back up. scatterT: 0
-    // retires the ember pool instantly (its life gate), while explodeT eases
-    // back so the stone re-forms.
-    tl.set(state.focusT, { [index]: 0 }, 0)
-    tl.set(state, { scatterT: 0, hammerT: 0, emberFade: 0 }, 0)
-    tl.to(state, { ringDim: 0, orbitSpeed: 1, duration: 0.9, ease: 'power2.inOut' }, 0)
-    tl.to(state, { explodeT: 0, duration: 0.6, ease: 'power2.out' }, 0.25)
-    // The picker chips return as the hammer fades off the stage (cross-fade —
-    // by the time they're fully back the hammer is gone).
-    if (root.current) {
-      const q = gsap.utils.selector(root.current)
-      tl.to(q('[data-altar-picker]'), { autoAlpha: 1, duration: 0.6, ease: 'power2.out' }, 0.55)
-    }
-  }, [state, resetSwarm])
 
   // Stage entrance: the canvas breathes in from black, the chrome rises.
   useGSAP(
@@ -357,7 +333,7 @@ export default function AboutAltar({
         }}
       />
 
-      <div ref={canvasBox} data-altar-canvas className="absolute inset-0">
+      <div data-altar-canvas className="absolute inset-0">
         <Canvas
           camera={{ position: [0, 0.6, 6.4], fov: 38 }}
           gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
@@ -375,13 +351,12 @@ export default function AboutAltar({
         </Canvas>
       </div>
 
-      {/* Orb picker — top of the stage; also the keyboard/AT path. Sits below
-          the small AboutHeader pill (rendered by the parent). data-altar-picker:
-          the strike timeline fades this row out (autoAlpha, so it also stops
-          catching clicks) — it is DOM composited ABOVE the canvas, and the
-          raised hammer head swings through exactly this screen band, so
-          removing it during the strike is the only way the hammer can read
-          in front of the chips. */}
+      {/* Orb picker — top of the stage; also the keyboard/AT path.
+          data-altar-picker: the strike timeline fades this row out (autoAlpha,
+          so it also stops catching clicks) — it is DOM composited ABOVE the
+          canvas, and the raised hammer head swings through exactly this screen
+          band, so removing it during the strike is the only way the hammer can
+          read in front of the chips. */}
       <div
         data-altar-picker
         className="absolute inset-x-0 top-[calc(var(--anvl-header-h)+4.5rem)] z-10 flex flex-col items-center gap-3 px-6"
@@ -408,30 +383,6 @@ export default function AboutAltar({
         </div>
       </div>
 
-      <AboutOrbModal
-        orb={openOrb}
-        image={openOrb ? orbImage(openOrb, assets) : undefined}
-        onClose={release}
-        onMeasure={handlePanelMeasure}
-      />
-
-      {/* The app's shared ember forge — the same swarm that materializes every
-          modal and every toast, here tinted with the struck orb's colour and
-          launched from a ring sized to the in-canvas shroud it is taking over
-          from, centred on the orb's seat. Mounted by the panel's measure, so the
-          rect it forms is always known. Self-gates under reduced motion; we also
-          skip mounting it (defense in depth, mirroring the shared Modal). */}
-      {swarm && !reducedMotion ? (
-        <ForgeEmberCanvas
-          key={swarm.key}
-          getRect={swarmRect}
-          origin={swarm.origin}
-          spreadScale={swarm.spreadScale}
-          tint={swarm.tint}
-          zIndex={FORGE_CANVAS_Z}
-          onComplete={retireSwarm}
-        />
-      ) : null}
     </div>
   )
 }

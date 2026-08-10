@@ -1,11 +1,10 @@
 /**
  * Mutable GSAP ⇄ R3F bridge for the altar stage — the same zero-re-render
  * pattern as the landing pages' motion state: GSAP timelines (orb focus,
- * hammer strike, disintegration → ember hand-off) tween these numbers; the
- * scene's `useFrame` reads
- * them every frame — and writes {@link AltarState.seatNdc} back for the DOM
- * side. Held in a ref at the stage root and rebuilt if the orb count changes.
- * Every beat these are tweened on is a constant in `altarForgeTiming.ts`.
+ * hammer strike, disintegration) tween these numbers; the scene's `useFrame`
+ * reads them every frame. Held in a ref at the stage root and rebuilt if the
+ * orb count changes. Every beat these are tweened on is a constant in
+ * `altarForgeTiming.ts`.
  */
 export interface AltarState {
   /** 0..1 per orb: 0 = in orbit, 1 = seated on the anvil face. */
@@ -24,16 +23,10 @@ export interface AltarState {
    *  embers just let go into a hovering shroud, which then hands over to the
    *  DOM swarm at the hand-off beat). */
   scatterT: number
-  /** 0..1 — the 3D shroud's crossfade out at the hand-off beat, while the DOM
-   *  ember swarm (the shared canvas-2D forge every modal/toast uses) streams in
-   *  from the same screen point to form the panel. 1 = the pool is retired. */
+  /** 0..1 — the 3D shroud's dissolve at the hand-off beat, as the page
+   *  answers the strike by scrolling to the struck orb's chapter.
+   *  1 = the pool is retired. */
   emberFade: number
-  /** The orb seat projected to NDC (-1..1, y up) by the scene camera, plus the
-   *  ember shroud's outer radius as an NDC x-offset from it — written in-canvas
-   *  every frame, read by the DOM side at the hand-off to place the ember
-   *  swarm's origin AND size its launch ring in viewport pixels. The exact
-   *  inverse of the modal rect → NDC conversion the formation used to do. */
-  seatNdc: { x: number; y: number; radius: number }
   /** Impact flash intensity (point light + orb emissive spike), decays fast. */
   flash: number
   /** Camera shake amplitude, decays after impact. */
@@ -56,7 +49,6 @@ export function createAltarState(orbCount: number): AltarState {
     explodeT: 0,
     scatterT: 0,
     emberFade: 0,
-    seatNdc: { x: 0, y: 0, radius: 0 },
     flash: 0,
     shake: 0,
     pointerX: 0,
