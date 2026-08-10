@@ -88,6 +88,25 @@ export default function AboutScrollExperience({
   return (
     <AboutScrollMotionContext.Provider value={motion}>
       <div ref={root} data-about-scroll className="relative">
+        <AboutHeroSection hero={content.hero} image={assets.heroImage} />
+        {content.orbs.map((orb, index) => (
+          <AboutOrbSection key={orb.id} orb={orb} image={orbImage(orb, assets)} index={index} />
+        ))}
+        <AboutMarqueeSection text={content.marquee.text} />
+        <AboutAltarSection
+          orbs={content.orbs}
+          forgeBackdrop={assets.forgeBackdrop}
+          sectionRef={altarSectionRef}
+          onPick={strike}
+        />
+        {/* LAST child, deliberately: the gate mounts its canvas asynchronously
+            (matchMedia effect + the 550ms teardown gate), by which time GSAP
+            pinning has wrapped the sibling sections in `.pin-spacer` divs —
+            React inserting a NEW first child would then pass a reference node
+            that is no longer a child of this root and crash with
+            `insertBefore … NotFoundError`. As the last child it appends, which
+            needs no reference node. The canvas is `fixed -z-10`, so DOM order
+            carries no visual meaning here. */}
         <AboutScrollCanvasGate
           root={root}
           motion={motion}
@@ -103,17 +122,6 @@ export default function AboutScrollExperience({
             images: content.orbs.map((orb) => orbImage(orb, assets)),
             colors: content.orbs.map((orb) => orb.color),
           }}
-        />
-        <AboutHeroSection hero={content.hero} image={assets.heroImage} />
-        {content.orbs.map((orb, index) => (
-          <AboutOrbSection key={orb.id} orb={orb} image={orbImage(orb, assets)} index={index} />
-        ))}
-        <AboutMarqueeSection text={content.marquee.text} />
-        <AboutAltarSection
-          orbs={content.orbs}
-          forgeBackdrop={assets.forgeBackdrop}
-          sectionRef={altarSectionRef}
-          onPick={strike}
         />
       </div>
     </AboutScrollMotionContext.Provider>
