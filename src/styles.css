@@ -1643,6 +1643,17 @@ html[data-landing-entry='active'] body {
   transform: none;
 }
 
+/* The minimap rail — the active chapter's dot lights in its own orb colour
+   (each button carries `--rail-c`; `buildAboutRail` toggles `data-active`). */
+[data-about-root] [data-rail-dot][data-active] [data-rail-dot-mark] {
+  transform: scale(1.7);
+  background-color: var(--rail-c, var(--color-highlight-bright));
+  box-shadow: 0 0 10px var(--rail-c, var(--color-highlight));
+}
+[data-about-root] [data-rail-dot]:hover [data-rail-dot-mark] {
+  background-color: var(--rail-c, var(--color-highlight-bright));
+}
+
 /* Hero product forge — active-piece plate crossfade. The label remounts per
  * re-forge (React `key`), so a one-shot entry animation reads as a crossfade
  * timed to the particle morph. Reduced motion never reaches this layer (the

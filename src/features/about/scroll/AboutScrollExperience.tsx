@@ -16,6 +16,7 @@ import { AboutHeroSection } from './sections/AboutHeroSection'
 import { AboutOrbSection } from './sections/AboutOrbSection'
 import { AboutMarqueeSection } from './sections/AboutMarqueeSection'
 import { AboutAltarSection } from './sections/AboutAltarSection'
+import { AboutProgressRail } from './sections/AboutProgressRail'
 
 /**
  * The About film — desktop ≥1280px, no reduced motion. One continuous
@@ -93,12 +94,8 @@ export default function AboutScrollExperience({
           <AboutOrbSection key={orb.id} orb={orb} image={orbImage(orb, assets)} index={index} />
         ))}
         <AboutMarqueeSection text={content.marquee.text} />
-        <AboutAltarSection
-          orbs={content.orbs}
-          forgeBackdrop={assets.forgeBackdrop}
-          sectionRef={altarSectionRef}
-          onPick={strike}
-        />
+        <AboutAltarSection orbs={content.orbs} sectionRef={altarSectionRef} onPick={strike} />
+        <AboutProgressRail orbs={content.orbs} />
         {/* LAST child, deliberately: the gate mounts its canvas asynchronously
             (matchMedia effect + the 550ms teardown gate), by which time GSAP
             pinning has wrapped the sibling sections in `.pin-spacer` divs —

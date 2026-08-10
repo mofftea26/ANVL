@@ -4,17 +4,23 @@ import { pinTrigger } from './aboutMotionHelpers'
 import { ABOUT_CHAPTER_SPAN_VH, ABOUT_SCROLL } from './aboutScrollTiming'
 
 /**
- * The finale — two triggers on the altar section:
+ * The finale — three triggers on the altar section:
  *
  * - THE APPROACH: an unpinned scrub whose start line sits
  *   `prefetchLeadChapters` chapters below the viewport, ramping
  *   `altarApproach` 0→1 as the reader closes in. The altar stage mounts the
  *   moment this leaves zero, so its GLB Suspense load IS the prefetch and the
  *   load bar usually completes in a beat on arrival.
- * - THE PIN: the section holds full-screen while the stage breathes. While
- *   pinned, the experience root carries `data-altar-live="on"` — the CSS
- *   contract that flips the (Phase 4) shared canvas to `pointer-events: auto`
- *   so the anvil is grabbable exactly while its DOM shell is on stage.
+ * - THE LIVE WINDOW: from the section entering the viewport until the very
+ *   end of the page, the experience root carries `data-altar-live="on"` — the
+ *   CSS contract that flips the (pointer-transparent) shared canvas to
+ *   `pointer-events: auto`, so the orbs are clickable and the summoned anvil
+ *   grabbable the whole time the finale is on stage. Deliberately NOT tied to
+ *   the pin: the pin releases 60% before the page bottom, and a reader
+ *   resting at the very end would otherwise face a dead stage.
+ * - THE PIN (`id: about-altar-pin` — the minimap's scroll target): the
+ *   section holds full-screen while the stage breathes; writes
+ *   `altarPinned` for the canvas side.
  */
 export function buildAboutAltarPin(
   host: HTMLElement,
@@ -37,16 +43,27 @@ export function buildAboutAltarPin(
     },
   })
 
+  const live = ScrollTrigger.create({
+    trigger: scene,
+    start: 'top 85%',
+    end: 'max',
+    invalidateOnRefresh: true,
+    onToggle: (self) => {
+      if (self.isActive) host.setAttribute('data-altar-live', 'on')
+      else host.removeAttribute('data-altar-live')
+    },
+  })
+
   const vars = pinTrigger(scene, ABOUT_SCROLL.altarPinPct)
+  vars.id = 'about-altar-pin'
   vars.onToggle = (self) => {
     motion.altarPinned = self.isActive ? 1 : 0
-    if (self.isActive) host.setAttribute('data-altar-live', 'on')
-    else host.removeAttribute('data-altar-live')
   }
   const pin = ScrollTrigger.create(vars)
 
   return () => {
     approach.kill()
+    live.kill()
     pin.kill()
     host.removeAttribute('data-altar-live')
   }

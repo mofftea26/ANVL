@@ -59,6 +59,15 @@ describe('AboutScrollExperience — scene contract', () => {
     const altar = container.querySelector('[data-scene="altar"]')
     expect(altar).not.toBeNull()
     expect(altar?.id).toBe('about-altar')
+
+    // The minimap rail: prologue + one dot per orb + the altar finale, each
+    // naming the pin it targets (the builder + click handlers resolve these
+    // through ScrollTrigger.getById).
+    const dots = Array.from(container.querySelectorAll('[data-rail-dot]'))
+    expect(dots).toHaveLength(content.orbs.length + 2)
+    expect(dots[0]?.getAttribute('data-rail-target')).toBe('about-hero-pin')
+    expect(dots[1]?.getAttribute('data-rail-target')).toBe('about-orb-pin-0')
+    expect(dots[dots.length - 1]?.getAttribute('data-rail-target')).toBe('about-altar-pin')
   })
 
   it('keeps chapter markup carrying the reveal + stat markers the builder scrubs', async () => {

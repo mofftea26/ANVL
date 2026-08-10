@@ -12,12 +12,20 @@ const ANVIL_SIZE = 2.3
 const DRAG_RATE = 0.0085
 /** Inertia decay — spin momentum halves roughly every 0.3s after release. */
 const SPIN_DECAY = 2.4
+/** How far beneath the frame the unsummoned anvil rests, world units — deep
+ *  enough that the camera's frustum never clips its horns at rest. */
+const SUBMERGE_DEPTH = 2.8
+/** Drag only engages once the forge is essentially risen. */
+const GRABBABLE_FROM = 0.6
 
 /**
- * The anvil — the altar's centrepiece, and grabbable: drag it with the cursor
- * to spin it around (with momentum on release), proving the 3D. A normalized
- * GLB seated below screen centre with a barely-there breathing bob and a
- * subtle pointer-following tilt when idle; the strike shake rattles it.
+ * The anvil — the altar's centrepiece, summoned rather than parked:
+ * `state.forgeT` (the strike timeline's SUMMON/OUTRO beats) rises it from
+ * beneath the frame with a slow settling yaw, and sinks it away on release —
+ * the idle stage is a bare orb ring. While risen it is grabbable: drag to
+ * spin (with momentum on release), proving the 3D. A barely-there breathing
+ * bob and a subtle pointer-following tilt when idle; the strike shake
+ * rattles it.
  */
 export function AltarAnvil({ url, state }: { url: string; state: AltarState }) {
   const group = useRef<THREE.Group>(null)
@@ -75,6 +83,12 @@ export function AltarAnvil({ url, state }: { url: string; state: AltarState }) {
     if (!g) return
     const t = frame.clock.elapsedTime
 
+    // THE SUMMON: forgeT (GSAP-shaped on the strike timeline) rises the anvil
+    // from beneath the frame. Fully sunk, it neither renders nor raycasts.
+    const forge = state.forgeT
+    g.visible = forge > 0.015
+    if (!g.visible) return
+
     // Momentum after release.
     if (!dragging.current && Math.abs(spinVel.current) > 0.0001) {
       spinY.current += spinVel.current * delta
@@ -85,11 +99,14 @@ export function AltarAnvil({ url, state }: { url: string; state: AltarState }) {
     const shakeX = state.shake > 0.001 ? (Math.random() - 0.5) * state.shake * 0.05 : 0
     const shakeY = state.shake > 0.001 ? (Math.random() - 0.5) * state.shake * 0.035 : 0
     g.position.x = shakeX
-    g.position.y = baseY + breathe + shakeY
+    g.position.y = baseY + breathe + shakeY - (1 - forge) * SUBMERGE_DEPTH
 
-    // Drag owns the yaw; the idle pointer tilt stays as a faint garnish.
+    // Drag owns the yaw; the idle pointer tilt stays as a faint garnish. The
+    // rise carries a settling quarter-turn — the anvil arrives TURNING, and
+    // the same term plays backwards as the outro sinks it.
     const k = Math.min(1, delta * (dragging.current ? 10 : 3.2))
-    const targetY = spinY.current + state.pointerX * 0.05
+    const summonYaw = (1 - forge) * 0.85
+    const targetY = spinY.current + state.pointerX * 0.05 + summonYaw
     const targetX = state.pointerY * 0.03
     g.rotation.y += (targetY - g.rotation.y) * k
     g.rotation.x += (targetX - g.rotation.x) * k
@@ -99,9 +116,12 @@ export function AltarAnvil({ url, state }: { url: string; state: AltarState }) {
     <group ref={group} position={[0, baseY, 0]}>
       <group
         scale={scale}
-        onPointerOver={() => setHovered(true)}
+        onPointerOver={() => {
+          if (state.forgeT >= GRABBABLE_FROM) setHovered(true)
+        }}
         onPointerOut={() => setHovered(false)}
         onPointerDown={(e) => {
+          if (state.forgeT < GRABBABLE_FROM) return
           e.stopPropagation()
           dragging.current = true
           spinVel.current = 0

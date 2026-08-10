@@ -13,7 +13,9 @@
  * THE SEQUENCE, end to end:
  *
  * ```
- * 0.00  click — the orb glides to the anvil, the ring dims
+ * 0.00  click — THE SUMMON: the anvil rises from beneath the frame and the
+ *       hammer materializes into its cocked hover ({@link ALTAR_SUMMON}),
+ *       while the chosen orb glides toward the seat and the ring dims
  * 0.90  windup (decelerating backswing) → 0.15s held breath at the top
  * 1.50  the drop (expo.in — the head hangs, then whips)
  * 1.78  IMPACT — flash, shake, impact frames; the stone disintegrates and
@@ -22,9 +24,24 @@
  * 2.73  HAND-OFF — the page answers the strike: the scroll pulls back up to
  *       the struck orb's chapter while the 3D shroud dissolves under the move
  * 3.08  the 3D shroud is gone
- * 3.28  the hammer's ring-out ends
+ * 3.28  the hammer's ring-out ends; the release sinks the forge away (OUTRO)
  * ```
  */
+
+/**
+ * THE SUMMON / OUTRO — the forge's presence (`state.forgeT`). The stage
+ * idles as a bare orb ring; choosing an orb summons the forge and the
+ * release sinks it back into the dark.
+ */
+export const ALTAR_SUMMON = {
+  /** The anvil's rise from beneath the frame (heavy, decelerating arrival —
+   *  it must be fully seated well before the hammer's windup at 0.9). */
+  riseDuration: 0.85,
+  /** The forge-waking flash pulse that rides the rise. */
+  wakeFlash: 0.35,
+  /** The outro — the forge sinks away as the stage releases. */
+  sinkDuration: 0.7,
+} as const
 
 const WINDUP_AT = 0.9
 const WINDUP_DURATION = 0.45

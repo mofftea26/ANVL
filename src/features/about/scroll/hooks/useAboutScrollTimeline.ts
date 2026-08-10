@@ -9,6 +9,7 @@ import { buildAboutHero } from '../motion/buildAboutHero'
 import { buildAboutOrbChapter } from '../motion/buildAboutOrbChapter'
 import { buildAboutMarquee } from '../motion/buildAboutMarquee'
 import { buildAboutAltarPin } from '../motion/buildAboutAltarPin'
+import { buildAboutRail } from '../motion/buildAboutRail'
 
 /** The scroll offset that lands a chapter fully materialized: the pin's start
  *  plus the materialize beat's worth of its scrub room. */
@@ -70,6 +71,7 @@ export function useAboutScrollTimeline(
         })
         disposers.push(buildAboutMarquee(host, q, motion))
         disposers.push(buildAboutAltarPin(host, motion))
+        disposers.push(buildAboutRail(host))
 
         // Film-wide depth — the WebGL camera's one source of travel.
         const depth = ScrollTrigger.create({

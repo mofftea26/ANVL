@@ -1,24 +1,23 @@
 import type { RefObject } from 'react'
 import type { AboutResolvedOrb } from '../../content/aboutContent.defaults'
 
-/** Shipped default so the forge holds the frame before any CMS upload. */
-const DEFAULT_FORGE_BACKDROP = '/about/forge-backdrop.webp'
-
 /**
  * The finale's DOM shell. The 3D stage itself lives in the film's persistent
  * canvas (parked at the end of the camera path); this section provides
  * everything around it:
  *
- * - the forge backdrop at `-z-20` — BEHIND the fixed canvas (`-z-10`), so the
- *   aurora, dust, and anvil paint over it (the section creates no stacking
- *   context, so negative z-children resolve against the page root's
- *   `isolate`)
  * - the strike impact frames (`[data-strike-flash]` / `[data-strike-lines]`)
  *   the strike timeline snaps on and burns off
  * - the orb picker chips — the keyboard/AT path into the same strike
  *   ceremony, CSS-revealed once the stage loads (`data-altar-ready`, set by
  *   the load bar) and faded by the strike timeline (`[data-altar-picker]`)
  * - the load bar's portal slot (`#about-altar-load-slot`)
+ *
+ * NO backdrop imagery here, deliberately: pinning applies a transform, which
+ * makes the section its own stacking context — a negative-z child then paints
+ * INSIDE the section (i.e. over the fixed canvas) instead of behind it, and
+ * the 3D stage vanishes behind the picture. The void gradient, aurora, and
+ * dust carry the finale's atmosphere from the canvas instead.
  *
  * While `buildAboutAltarPin` holds this section pinned it flips
  * `data-altar-live` on the experience root — the CSS contract that turns the
@@ -27,12 +26,10 @@ const DEFAULT_FORGE_BACKDROP = '/about/forge-backdrop.webp'
  */
 export function AboutAltarSection({
   orbs,
-  forgeBackdrop,
   sectionRef,
   onPick,
 }: {
   orbs: AboutResolvedOrb[]
-  forgeBackdrop?: string
   sectionRef: RefObject<HTMLElement | null>
   onPick: (index: number) => void
 }) {
@@ -47,28 +44,6 @@ export function AboutAltarSection({
       <h2 id="about-altar-heading" className="sr-only">
         The Forge Altar
       </h2>
-
-      {/* The forge — painted BEHIND the fixed canvas (negative z resolves in
-          the root's isolate), so the 3D stage renders over it. */}
-      <div aria-hidden="true" className="absolute inset-0 -z-20">
-        <img
-          src={forgeBackdrop?.trim() || DEFAULT_FORGE_BACKDROP}
-          alt=""
-          width={2560}
-          height={1440}
-          loading="lazy"
-          decoding="async"
-          className="h-full w-full object-cover"
-          style={{ objectPosition: '50% 65%' }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse 70% 60% at 50% 58%, transparent 30%, color-mix(in srgb, var(--color-bg) 55%, transparent) 100%), linear-gradient(to bottom, color-mix(in srgb, var(--color-bg) 55%, transparent) 0%, transparent 30%, transparent 70%, var(--color-bg) 100%)',
-          }}
-        />
-      </div>
 
       {/* Impact frames — a white-hot flash + anime radial speed-lines centred
           on the anvil seat. Above the canvas, snapped on by the strike. */}

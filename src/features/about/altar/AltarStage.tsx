@@ -14,9 +14,6 @@ import { AltarStrikeEmbers } from './AltarStrikeEmbers'
 const DEFAULT_ANVIL_GLB = '/about/anvil.glb'
 const DEFAULT_HAMMER_GLB = '/about/hammer.glb'
 
-/** The stage's settle-in once its GLBs have landed, in seconds. */
-const INTRO_SECONDS = 1.8
-
 /** The impact flash — a point light over the anvil face spiking with the strike. */
 function StrikeFlash({ state, colors }: { state: AltarState; colors: AboutBrandColors }) {
   const light = useRef<THREE.PointLight>(null)
@@ -33,22 +30,6 @@ function StrikeFlash({ state, colors }: { state: AltarState; colors: AboutBrandC
       position={[0, ANVIL_FACE_Y + 0.5, 1.1]}
     />
   )
-}
-
-/** Rises the freshly-loaded stage into place — a quiet assembly, not a pop. */
-function StageIntro({ children }: { children: React.ReactNode }) {
-  const group = useRef<THREE.Group>(null)
-  const age = useRef(0)
-  useFrame((_frame, delta) => {
-    const g = group.current
-    if (!g) return
-    age.current = Math.min(INTRO_SECONDS, age.current + delta)
-    const t = age.current / INTRO_SECONDS
-    const ease = 1 - Math.pow(1 - t, 4)
-    g.scale.setScalar(0.94 + 0.06 * ease)
-    g.position.y = -0.22 * (1 - ease)
-  })
-  return <group ref={group}>{children}</group>
 }
 
 /**
@@ -118,12 +99,12 @@ export function AltarStage({
       />
       <StrikeFlash state={state} colors={colors} />
 
+      {/* The forge idles UNSEEN (forgeT = 0 keeps both hidden) — the stage
+          rests as a bare orb ring until a strike summons it. */}
       <Suspense fallback={null}>
-        <StageIntro>
-          <LoadedMark onLoaded={onLoaded} />
-          <AltarAnvil url={anvil} state={state} />
-          <AltarHammer url={hammer} state={state} />
-        </StageIntro>
+        <LoadedMark onLoaded={onLoaded} />
+        <AltarAnvil url={anvil} state={state} />
+        <AltarHammer url={hammer} state={state} />
       </Suspense>
 
       {orbs.map((orb, i) => (

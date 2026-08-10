@@ -2,19 +2,24 @@ import { useCallback, useEffect, useRef, type RefObject } from 'react'
 import { gsap } from '@/shared/lib/gsap'
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion'
 import type { AltarState } from './altarState'
-import { ALTAR_FORGE, ALTAR_STRIKE } from './altarForgeTiming'
+import { ALTAR_FORGE, ALTAR_STRIKE, ALTAR_SUMMON } from './altarForgeTiming'
 
 /**
  * The strike ceremony, extracted from the old standalone altar component so
  * the DOM shell (the film's altar section) and the in-canvas stage can share
  * it through the mutable {@link AltarState} alone.
  *
- * `strike(index)`: the chosen orb glides onto the anvil, the ring dims, the
- * hammer winds up and drops, the impact fires the flash/shake/DOM impact
- * frames, the stone disintegrates into its hovering ember shroud — and at
- * the hand-off beat `onOrbStruck` fires (the film scrolls back up to that
- * orb's chapter) while the shroud dissolves under the move. The stage then
- * releases itself. Every beat schedules against `altarForgeTiming`.
+ * `strike(index)`: THE SUMMON — the idle stage is a bare orb ring, and the
+ * click calls the forge up: the anvil rises from beneath the frame with a
+ * settling quarter-turn while the hammer materializes into its cocked hover
+ * and a wake-flash pulses the stage — as the chosen orb glides onto the
+ * rising anvil and the ring dims. Then the hammer winds up and drops, the
+ * impact fires the flash/shake/DOM impact frames, the stone disintegrates
+ * into its hovering ember shroud — and at the hand-off beat `onOrbStruck`
+ * fires (the film scrolls back up to that orb's chapter) while the shroud
+ * dissolves under the move. The stage then releases itself: the OUTRO sinks
+ * the forge back into the dark and the ring wakes. Every beat schedules
+ * against `altarForgeTiming`.
  *
  * DOM overlays (`[data-strike-flash]`, `[data-strike-lines]`,
  * `[data-altar-picker]`) are queried inside `root` — the altar section shell.
@@ -55,6 +60,9 @@ export function useAltarStrike({
     // back so the stone re-forms.
     tl.set(state.focusT, { [index]: 0 }, 0)
     tl.set(state, { scatterT: 0, hammerT: 0, emberFade: 0 }, 0)
+    // THE OUTRO — the forge sinks back into the dark; the stage returns to
+    // its idle bare-ring state.
+    tl.to(state, { forgeT: 0, duration: ALTAR_SUMMON.sinkDuration, ease: 'power3.in' }, 0)
     tl.to(state, { ringDim: 0, orbitSpeed: 1, duration: 0.9, ease: 'power2.inOut' }, 0)
     tl.to(state, { explodeT: 0, duration: 0.6, ease: 'power2.out' }, 0.25)
     // The picker chips return as the hammer fades off the stage (cross-fade —
@@ -94,7 +102,19 @@ export function useAltarStrike({
         tl.to(q('[data-altar-picker]'), { autoAlpha: 0, duration: 0.35, ease: 'power2.out' }, 0)
       }
 
-      // The chosen orb glides to the anvil while the ring dims and stills.
+      // THE SUMMON — the anvil rises from beneath the frame (heavy,
+      // decelerating arrival with its settling quarter-turn; the hammer's
+      // materialization chases forgeT on the read side) while a wake-flash
+      // pulses the stage awake. Fully seated well before the windup.
+      if (reducedMotion) {
+        tl.set(state, { forgeT: 1 }, 0)
+      } else {
+        tl.to(state, { forgeT: 1, duration: ALTAR_SUMMON.riseDuration, ease: 'power4.out' }, 0)
+        tl.to(state, { flash: ALTAR_SUMMON.wakeFlash, duration: 0.22, ease: 'power2.out' }, 0.08)
+        tl.to(state, { flash: 0, duration: 0.45, ease: 'power2.in' }, 0.3)
+      }
+
+      // The chosen orb glides to the rising anvil while the ring dims and stills.
       tl.to(
         state.focusT,
         { [index]: 1, duration: reducedMotion ? 0.7 : 1.15, ease: 'power2.inOut' },

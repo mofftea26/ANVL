@@ -13,6 +13,12 @@ export interface AltarState {
   activeIndex: number
   /** 0..1 — dims and slows the non-active orbs while one is focused. */
   ringDim: number
+  /** 0..1 — the forge's PRESENCE. The stage idles as a bare orb ring; a
+   *  strike summons the forge (the anvil rises from beneath the frame, the
+   *  hammer materializes into its cocked hover) and the release sinks it
+   *  away again. The strike/release timelines tween this against
+   *  `ALTAR_SUMMON`'s beats; the anvil and hammer read it every frame. */
+  forgeT: number
   /** Hammer swing progress: 0 = holstered/raised, 1 = impact. The strike
    *  timeline pushes it slightly negative for the windup. */
   hammerT: number
@@ -45,6 +51,7 @@ export function createAltarState(orbCount: number): AltarState {
     focusT: Array.from({ length: orbCount }, () => 0),
     activeIndex: -1,
     ringDim: 0,
+    forgeT: 0,
     hammerT: 0,
     explodeT: 0,
     scatterT: 0,
