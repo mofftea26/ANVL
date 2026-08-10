@@ -92,7 +92,7 @@ function HeroStep({ onNavigate }: StepProps) {
 
   return (
     <SetupStepBody
-      intro="The hero heads the mobile About page (the desktop Forge Altar carries no headline). Every blank field falls back to the designed default, shown as the placeholder."
+      intro="The hero is the About page's cold open — the desktop film's full-screen opening frame and the static page's opener alike. Every blank field falls back to the designed default, shown as the placeholder."
       status={{
         state: saved ? 'done' : 'todo',
         label: saved ? 'Custom hero copy saved' : 'Running on designed defaults',
@@ -206,7 +206,7 @@ function OrbsStep({ onNavigate }: StepProps) {
 
   return (
     <SetupStepBody
-      intro="Orbs are the About page's sections: each orbits the desktop Forge Altar and stacks as a section on mobile. Edit the essentials here — colors, points, stats, map pins, and milestones live in the full editor."
+      intro="Orbs are the About page's chapters: each is a full-screen scroll chapter in the desktop film, a section on the static page, and a stone on the Forge Altar finale (striking it scrolls back to its chapter). Edit the essentials here — colors, points, stats, map pins, and milestones live in the full editor."
       status={{
         state: orbCount > 0 ? 'done' : 'todo',
         label:
@@ -343,7 +343,7 @@ function OrbsStep({ onNavigate }: StepProps) {
           </FormField>
           <MediaLibrarySlotField
             label="Section image"
-            hint="Shown as the orb modal's hero band and the mobile section image."
+            hint="The chapter's full-screen faded backdrop on desktop and mobile alike."
             kind="image"
             mediaId={orb.mediaId}
             onMediaIdChange={(mediaId) => patchOrb({ mediaId })}
@@ -409,7 +409,7 @@ function AssetsStep({ onNavigate }: StepProps) {
 
   return (
     <SetupStepBody
-      intro="Assign the altar's anvil and hammer GLBs plus the page imagery. Anything left blank falls back to the bundled defaults; orb section images are picked per orb in the About editor instead."
+      intro="Assign the altar finale's anvil and hammer GLBs plus the page imagery. Anything left blank falls back to the bundled defaults; orb chapter images are picked per orb in the About editor instead."
       status={{
         state: assigned > 0 ? 'done' : 'todo',
         label:
@@ -448,7 +448,7 @@ function MarqueeStep({ onNavigate }: StepProps) {
 
   return (
     <SetupStepBody
-      intro="The marquee is the counter-scrolling type band — one line of oversized text. Shows on the tablet/mobile About page (the desktop Forge Altar has no marquee). Leave it blank to keep the designed default."
+      intro="The marquee is the counter-scrolling type band — one line of oversized text, the film's rhythm break before the altar finale (and a band on the static page). Leave it blank to keep the designed default."
       status={{
         state: saved ? 'done' : 'todo',
         label: saved ? 'Custom marquee saved' : 'Running on designed default',
@@ -498,7 +498,7 @@ export function AboutSetupWizard({ open, onClose }: { open: boolean; onClose: ()
         {
           key: 'orbs',
           title: 'Orbs',
-          blurb: 'The page’s sections — altar orbs on desktop.',
+          blurb: 'The page’s chapters — the film’s scenes.',
           preview: { route: '/about', target: { kind: 'content-field', id: 'about:orb-1' } },
           render: () => <OrbsStep onNavigate={onClose} />,
         },

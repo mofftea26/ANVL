@@ -23,13 +23,15 @@ import { AboutMarqueeFields } from './sections/AboutMarqueeFields'
 const ABOUT_KEY = 'about'
 
 /**
- * About content editor — the hero (mobile page), the **orbs** (each orb is a
- * section: it orbits the desktop Forge Altar and is struck open into a modal;
- * on mobile it renders as a stacked section — add/edit/remove freely), and the
- * marquee band. Every field is optional; blank falls back to the designed
- * default (shown as an input placeholder). Orb section images can be picked
- * per orb here; the anvil/hammer GLBs and page imagery are assigned on the
- * Assets page (`/admin/assets` → Page — About).
+ * About content editor — the hero (the film's cold open / the static page's
+ * opener), the **orbs** (each orb is a chapter: a full-screen scroll chapter
+ * in the desktop film, a full-screen section on the static page, and a stone
+ * orbiting the Forge Altar finale whose hammer strike scrolls back to its
+ * chapter — add/edit/remove freely), and the marquee band. Every field is
+ * optional; blank falls back to the designed default (shown as an input
+ * placeholder). Orb chapter images can be picked per orb here; the
+ * anvil/hammer GLBs and page imagery are assigned on the Assets page
+ * (`/admin/assets` → Page — About).
  */
 export function AboutEditor() {
   const setPageActions = useAdminPageActions()
@@ -117,8 +119,8 @@ export function AboutEditor() {
       </AdminRailPanel>
       <AdminRailPanel title="How orbs render" icon={<ListOrdered size={17} />}>
         <ol className="space-y-1.5 text-xs text-[var(--color-text-muted)]">
-          <li>Desktop — each orb orbits the 3D anvil; the hammer strike opens its modal.</li>
-          <li>Mobile — each orb is a stacked page section, in this order.</li>
+          <li>Desktop — each orb is a full-screen chapter of the scroll film, in this order; it also orbits the Forge Altar finale, where a hammer strike scrolls back to its chapter.</li>
+          <li>Mobile — each orb is a full-screen page section, in this order.</li>
           <li>An orb shows only the fields you fill (lines, body, points, stats, CTAs…).</li>
         </ol>
       </AdminRailPanel>
