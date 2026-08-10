@@ -171,22 +171,29 @@ export function WarBanner({
         />
       ) : null}
 
-      {/* Forged crossbar + finials — fixed; fabric pivots below this axis. */}
+      {/* Forged crossbar + finials — fixed; fabric pivots below this axis.
+          The bar is deliberately SLIM: at its original 10px it read as a
+          structural beam competing with the banner rather than the rod the
+          banner hangs from. Width stays at 112% so it still overhangs the
+          fabric on both sides — that overhang is what makes it read as a rod
+          at all, so only the height came down. */}
       <div
         aria-hidden="true"
-        className="absolute -top-1 left-1/2 z-20 h-2.5 w-[112%] -translate-x-1/2 rounded-full"
+        className="absolute -top-0.5 left-1/2 z-20 h-1.5 w-[112%] -translate-x-1/2 rounded-full"
         style={{
           background: FORGE_METAL,
           boxShadow:
-            '0 4px 14px -2px rgba(0,0,0,0.85), 0 1px 0 rgba(255,255,255,0.12) inset',
+            '0 3px 10px -2px rgba(0,0,0,0.85), 0 1px 0 rgba(255,255,255,0.12) inset',
         }}
       >
+        {/* Finials scale with the bar — left at 16px against a 6px rod they
+            looked like beads threaded onto a wire. */}
         <span
-          className="absolute -left-1.5 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full"
+          className="absolute -left-1 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full"
           style={{ background: FORGE_METAL }}
         />
         <span
-          className="absolute -right-1.5 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full"
+          className="absolute -right-1 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full"
           style={{ background: FORGE_METAL }}
         />
       </div>
