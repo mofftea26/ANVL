@@ -32,6 +32,7 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 | `strip-brand-logo-bg.mjs` | CLI utility to strip backgrounds from brand SVG/PNG exports |
 | `check-dynamic-import-entry.mjs` | Runs as part of `pnpm build`. Fails if any emitted chunk dynamically imports the ENTRY chunk — the signature of a silent Rolldown bug where `await import(...)` resolves to a namespace missing its bindings, yielding `undefined` at runtime. Has caught four shipped instances |
 | `compress-glb-textures.mjs` | Re-encodes embedded GLB textures (refuses on an alpha channel) |
+| `backfill-cms-image-sizes.mjs` | One-time cleanup of oversized images already in `cms-media`, for assets predating the upload-time encode. Downscales to 2048 px + WebP (`alphaQuality: 100` — the Oath silhouette gates on alpha), uploads to a **new** object path and re-points the `cms_media_assets` row. Safe because slots reference the media **id**, not the path; the original object is never deleted and a rollback manifest is written. Dry-run by default and needs no credentials (public bucket reads); `--apply` needs `SUPABASE_SERVICE_ROLE_KEY`, since both the bucket write and the row update are RLS-gated to CMS roles |
 
 ---
 
@@ -168,7 +169,7 @@ Slim CMS admin, split into subfolders. Every page renders inside the wide-screen
 | `landing-picker/` | Dashboard control to pick the active code-owned landing page (Supabase `landing_pages` ∩ registry) |
 | `landing-content/` | Landing Content editor (`/admin/content`): RHF form over The Oath's content schema, code defaults as placeholders (`sections/Oath*Fields`) |
 | `lib/` | Admin datetime helpers (`adminDateTime.ts`), local reset |
-| `media/` | Media library: upload zone, asset grid, picker, `useMediaAssetsQuery`, and `mediaUploadAdvice.ts` — **advisory only** size/format guidance shown per file in the naming modal. It never blocks an upload; it exists because CMS media is served as the RAW original (`publicCmsMediaUrl` builds an `/object/public/` URL, and Supabase image transformation is a Pro-plan feature this project does not have), so whatever is uploaded is exactly what every visitor downloads |
+| `media/` | Media library: upload zone, asset grid, picker, `useMediaAssetsQuery`, plus the two halves of upload weight control. `encodeUploadImage.ts` **re-encodes** every image upload before storage (2048 px cap, WebP q0.9; passes through SVG/GIF/AVIF and files under 150 KB, and returns the original on any failure) — this is what keeps weight down, because the read path serves the stored original (`publicCmsMediaUrl` builds an `/object/public/` URL; Supabase image transformation is a Pro-plan feature this project does not have). `mediaUploadAdvice.ts` is **advisory only** size/format guidance in the naming modal and never blocks an upload |
 | `site-theme/` | Theme editor (15-token palette) + WCAG contrast report + preview rail |
 | `site-font/` | Fonts editor + font families service |
 | `site-assets/` | Assets editor (media library + general/per-drop slot assignment) |

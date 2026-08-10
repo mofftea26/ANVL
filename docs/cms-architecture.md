@@ -83,11 +83,17 @@ Two things to keep in mind when touching this:
 - `bestForeground()` only inspects the **flat** accent. The primary button paints a gradient whose top is `mix(accent, white, .24)` (`--color-highlight-bright`), and that stop can fail while the flat colour passes — bone-light did, at 3.64:1 against 5.97:1. `themeContrast.test.ts` asserts **both** stops for that reason.
 - The 15 palette tokens are CMS-editable, so the shipped defaults are a floor, not a guarantee. The live published theme wins over them.
 
-## Upload advice (advisory, never blocking)
+## Upload encoding + advice
 
-The naming modal shows a per-file size/format note (`mediaUploadAdvice.ts`). It **never blocks an upload and never re-encodes anything** — an operator with a reason for a 12 MB hero still gets it.
+CMS media is served as the **stored original**: `publicCmsMediaUrl()` builds an `/object/public/` Storage URL, and Supabase image transformation is a **Pro-plan** feature this project does not have (verified: `/render/image/…` returns `403 FeatureNotEnabled`). There is no resizing layer on the read path, so whatever is *stored* is exactly what every visitor downloads.
 
-It exists because CMS media is served as the **raw original**: `publicCmsMediaUrl()` builds an `/object/public/` Storage URL, and Supabase image transformation is a **Pro-plan** feature this project does not have. There is no resizing layer anywhere, so whatever is uploaded is exactly what every visitor downloads, at full resolution. Before this, `MediaUploadZone` enforced only the bucket's 50 MB hard limit — a 9 MB PNG uploaded as silently as a 90 KB WebP.
+Because the read path cannot enforce a budget, the **write** path does. `encodeUploadImage()` (`features/admin/media/encodeUploadImage.ts`) re-encodes every image upload before anything derives a path, MIME or size from it — capped at **2048 px** on the longest edge, **WebP quality 0.9**. Both upload surfaces call it: the media library (`mediaAssets.service.ts`) and story media (`storyMedia.service.ts`).
+
+It is deliberately conservative, because it runs on assets an operator may not be able to re-source. It never returns a file larger than the original, never throws (any decode/encode failure uploads the original unchanged, so a browser without `createImageBitmap` or canvas WebP behaves exactly as before), and passes through **SVG** (vector), **GIF** (may be animated — canvas keeps only frame one), **AVIF** (already smaller than our output) and anything under 150 KB.
+
+**Alpha is load-bearing, so the target format is not negotiable.** The Oath hero samples real pixels to build its particle silhouette and gates on fully-opaque pixels (`shared/webgl/particleShapes.ts`). JPEG has no alpha — a JPEG cutout would flatten to a rectangle and the forge would emit a block of embers instead of a garment. Quality is set high for the same reason: lossy alpha frays the cutout edge, shifting which pixels pass that gate.
+
+Assets that predate this step are cleaned up by `scripts/backfill-cms-image-sizes.mjs` (see `docs/project-map.md`). Alongside the encode, the naming modal still shows a per-file size/format note (`mediaUploadAdvice.ts`) — advisory only, it never blocks an upload.
 
 Thresholds live in one module and are pinned by test, **including the silence**: a warning on every file is a warning on none. SVGs are exempt (size heuristics do not apply to vectors), `.glb` is matched by extension when the browser sends no MIME type, and the GLB note points at `scripts/compress-glb-textures.mjs` — because GLB weight is almost always embedded textures, not geometry.
 

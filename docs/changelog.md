@@ -1,3 +1,63 @@
+## 2026-08-08 — Launch content populated; false origin claims removed; gamification rebuilt on XP
+
+A scan of the live CMS ahead of launch found two separate problems. The first was visible: all four legal pages, the FAQ, the contact block, shipping and returns were publishing literal `"asdfasdf"` placeholder text to customers. The second was worse because it read as finished copy — the code defaults claimed the brand was based in **Beirut** and that garments were **"Lebanon-made — 100%"**. ANVL is designed in Zahle and manufactured abroad, so both were false.
+
+**A false country-of-origin claim is a legal exposure that dies the moment a customer reads the care label**, so it is replaced everywhere rather than softened — including two places no CMS editor would ever find: the cart page's trust line under the Checkout button, and the coordinates in the Oath hero overlay. The honest version is also the better story: *designed in Lebanon, built where the machinery lives.*
+
+**Content written and published:** the four legal pages; 14 FAQs ordered by conversion impact; shipping and returns (7-day window, store-credit-first under COD, free size exchange); the About page rebuilt to 8 orbs across 5 layout presets; a 3-chapter Drop 01 saga (15 acts) replacing the deleted originals; a care guide written from the real fabric specs; provisional S–XL size tables; PDP and passport copy for the two designed pieces. `site_seo` was `{}` and now carries global defaults, 5 page entries and technical config.
+
+`robotsIndex` is deliberately **false**: indexing a store selling placeholder products caches an impression that outlives the placeholders. It is a launch-day toggle, not an oversight.
+
+The MARROW Stringer is deliberately thin everywhere — it is not designed yet, and inventing detail for it is exactly how "sculpted panels" and "bonded seams" came to describe a *seamless* garment on the old landing page.
+
+### Gamification v2 — rank is driven by XP, not by purchases
+
+Ranks gated only on `min_registrations`. With a three-product catalogue that ladder is unclimbable past three claims, so progression died a week after launch. Rank now gates on earned Forge XP, so training, feats and reviews keep someone moving without buying anything else — which is also the behaviour worth rewarding.
+
+8 ranks / 24 levels / 51 tiered challenges / 7 badges, plus **`armory_events`**: one append-only log for every countable action, keyed to the owner and the item. One table rather than one-per-counter, because otherwise every new challenge idea costs a table, an RPC and a client read; here it costs an `event_type`. `passport_wear_log` (added the same day, empty, unreleased) was folded in and dropped rather than left as a second pattern to drift.
+
+**Three bugs found during the build, all of which would have shipped silently:**
+
+- **The ladder inverted.** An XP-only ladder carries almost no count thresholds, so a caller that skipped the XP gate found *every* level matching and returned the last one walked — a brand-new, zero-XP account derived as **Anvilborn III**, the top rank, which carries the free-piece reward. Neither possible default was safe (`= 0` demotes everyone to the floor; "undefined ignores the gate" promotes everyone to the top), so `earnedXp` is **required** — the compiler then names every call site instead of one of those inversions shipping. Pinned by a regression test.
+- **`storefront_profiles.user_id` does not exist** — the table is keyed on `id`. Two RPCs referenced it and would have raised at the first authenticated call. It survived an earlier check because that check only exercised the unauthenticated early-return, which never reaches those lines.
+- **A chunk dynamically imported the ENTRY chunk**, whose namespace does not re-export the target's bindings, so the destructure yields `undefined` and throws — *in production only*, since dev and vitest resolve the real module either way. Caught by `check-dynamic-import-entry.mjs`; pinned to an `armory-events` chunk. Fifth occurrence of that Rolldown failure in this repo.
+
+Streaks are computed server-side with gaps-and-islands over the event log, in **Asia/Beirut**: a late-evening session in Lebanon lands on the next UTC day and would silently split a run in two. Verified against seeded data — 5 consecutive days, a gap, then 3 returns **5**, not 8 and not 3.
+
+Shopify was updated to match: products renamed (FORGED / OATHBOUND / MARROW), descriptions rewritten — the compression tee previously advertised *"bonded seams"* on a seamless garment — XXL variants removed to bring every piece to S–XL, and colourways set. Handles were left untouched, which is what keeps `pdp_content`, `passport_content` and the story chapters attached.
+
+`pnpm typecheck` clean · 2,584 tests / 266 files · build green including the dynamic-import guard.
+
+---
+
+## 2026-08-07 — CMS uploads are now re-encoded; a Lighthouse sweep found 30 MB of raw PNGs behind About
+
+A Lighthouse sweep of 20 routes on the production build (running on `workerd`) put `/about` at **30.8 MB transferred on mobile**. Four CMS images accounted for all of it: 2752×1536 PNGs at 6.2–10.3 MB each. `/` carried another 4.5 MB across three cutouts, and the PDP was pulling a 6.3 MB *About* image through a mis-assigned slot.
+
+**Root cause was structural, not a bad upload.** CMS media is served as the stored original — `publicCmsMediaUrl()` builds an `/object/public/` URL, and Supabase image transformation is Pro-plan (confirmed live: `/render/image/…` → `403 FeatureNotEnabled`). With no transform on the read path and no encode on the write path, the bucket's 50 MB limit was the only ceiling. `mediaUploadAdvice.ts` warned about weight but, by design, never acted on it.
+
+**The write path now enforces what the read path cannot.** `encodeUploadImage()` re-encodes every image upload before anything derives a path, MIME or size from it — 2048 px longest edge, WebP q0.9 — wired into both upload surfaces (`mediaAssets.service.ts`, `storyMedia.service.ts`).
+
+It is built to be unable to make things worse, because it runs on assets an operator may not be able to re-source: it never returns a file larger than the original, never throws (a browser without `createImageBitmap` or canvas WebP uploads unchanged, exactly as before), and passes through SVG, GIF, AVIF and anything under 150 KB. The skip rules are split into a pure `shouldReencodeUpload()` so they are unit-testable — jsdom has no canvas, so the encode half cannot be.
+
+**Alpha decided the format.** The Oath hero samples real pixels and gates on fully-opaque ones (`shared/webgl/particleShapes.ts`). JPEG has no alpha, so a JPEG cutout would flatten to a rectangle and the forge would emit a block of embers instead of a garment — hence WebP, and hence quality set high enough that lossy alpha does not fray the edge the gate depends on.
+
+**`scripts/backfill-cms-image-sizes.mjs` cleans up what predates this.** It is safe for a specific structural reason: `cms_media_assets` maps id → `storage_path`, and every consumer (asset slots, `pdp_content`, `passport_content`, About orbs) references the **id**. Re-pointing the row's path therefore updates every consumer at once — no schema change, no slot re-linking, no code change. It writes to a **new** object path rather than overwriting, because uploads carry `cacheControl: 31536000` and an in-place overwrite would strand a year of stale CDN copies. Originals are never deleted; a rollback manifest is written.
+
+**Dry run against the four real About assets:**
+
+| | before | after |
+|---|---|---|
+| `about-creed-smoke` | 2752×1536 png, 7.64 MB | 2048×1143 webp, 108 KB (**−98.6%**) |
+| `about-materials` | 2752×1536 png, 10.27 MB | 2048×1143 webp, 558 KB (**−94.7%**) |
+| `about-construction` | 2752×1536 png, 6.71 MB | 2048×1143 webp, 134 KB (**−98.1%**) |
+| `about-testing` | 2752×1536 png, 6.21 MB | 2048×1143 webp, 72 KB (**−98.9%**) |
+| **total** | **30.82 MB** | **0.85 MB (−29.97 MB, −97.2%)** |
+
+**Not yet applied.** `--apply` needs `SUPABASE_SERVICE_ROLE_KEY` — both the bucket write and the row update are RLS-gated to CMS roles, and the anon publishable key holds neither. The key is not in `.env` or the environment, so the backfill is written and dry-run-verified but has not been run against production.
+
+Method note: the first Lighthouse pass ran against `vite preview`, which serves **uncompressed** — mobile FCP read ~13 s across every route and scores clustered at 55. Re-running behind a gzip proxy (emulating what Cloudflare does at the edge) moved FCP to ~4.5 s and the median mobile score to 64. The uncompressed numbers were an artifact of the harness, not the app; only the compressed pass is quoted anywhere. One run (`/privacy`) hit a transient 500 on every asset and scored a meaningless 99 — discarded and re-run rather than averaged in.
+
 ## 2026-08-07 — Tailwind scans comments too: a `Button.tsx` NOTE was emitting a broken CSS rule
 
 Clean `node_modules` reinstall + full `pnpm verify` (265 files / 2566 tests, typecheck and build clean) surfaced one build warning: `Found 1 warning while optimizing generated CSS … Unexpected token Delim('.')`. The generated stylesheet contained a rule whose selector was the *placeholder* arbitrary-value utility spelled with a literal ellipsis inside `var()`, which is not valid CSS.

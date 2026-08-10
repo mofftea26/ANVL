@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { CMS_MEDIA_BUCKET, publicCmsMediaUrl } from '@/features/cms/media/mediaUrl'
 import { coerceUploadFile, extensionFor } from './mediaMime'
+import { encodeUploadImage } from './encodeUploadImage'
 import type {
   CmsMediaAsset,
   MediaAssetMutationResult,
@@ -361,10 +362,15 @@ export async function uploadLibraryMediaFile(
     return { ok: false, error: 'Sign in to upload media to Supabase.' }
   }
 
-  const objectPath = formatCmsLibraryMediaObjectPath(file)
+  // Downscale + WebP BEFORE anything derives a path, mime or size from the
+  // file — everything below must describe the bytes we actually store. Returns
+  // the original untouched for vectors, animations and already-small assets.
+  const upload = await encodeUploadImage(file)
+
+  const objectPath = formatCmsLibraryMediaObjectPath(upload)
   // Re-wrapped so the Blob itself carries the resolved mime — supabase-js
   // ignores `contentType` for File bodies (multipart path); see mediaMime.ts.
-  const { body, contentType } = coerceUploadFile(file)
+  const { body, contentType } = coerceUploadFile(upload)
 
   const { error: uploadErr } = await client.storage
     .from(CMS_MEDIA_BUCKET)
@@ -381,13 +387,13 @@ export async function uploadLibraryMediaFile(
     return { ok: false, error: 'Could not resolve public media URL.' }
   }
 
-  const dims = await readImageDimensions(file)
+  const dims = await readImageDimensions(upload)
   const inserted = await insertMediaAssetRecord({
     client,
     storagePath: objectPath,
-    filename: file.name,
+    filename: upload.name,
     mime: contentType,
-    byteSize: file.size,
+    byteSize: upload.size,
     width: dims.width,
     height: dims.height,
   })
