@@ -146,6 +146,28 @@ authenticated (admin):
 
 **Never disable RLS on any table.** Orphaned drop-builder RPCs may exist in migration history (MIG-01) — the app does not call them.
 
+### `armory_events` — the one log behind every challenge counter
+
+Added 2026-08-08. Append-only; one row per countable action, carrying both the **owner** (`user_id`) and the **item** (`passport_id` + a denormalised `product_slug`, so per-product history survives a passport being deleted). Twelve `event_type` values cover claims, wears, feats, reviews, shares, chapter reads, armory views, honour pins, publishing an armory, and both directions of a transfer.
+
+One table rather than one per counter, deliberately: otherwise every new challenge idea costs a table, an RPC and a client read. Here it costs an `event_type`. `passport_wear_log` — created the same day, empty and unreleased — was folded in and dropped rather than left as a second logging pattern to drift from this one.
+
+**There is no INSERT policy, and that is the design.** `armory_viewed` records a row against the armory **owner** while the caller is a different person, usually anonymous — which no row-level INSERT policy can express safely. Every write therefore goes through a `SECURITY DEFINER` function, which keeps authorship rules in one auditable place:
+
+| Function | Notes |
+|---|---|
+| `record_armory_event(type, passport_id, target_id, metadata)` | Self-service. Verifies passport ownership server-side; refuses `armory_viewed`. |
+| `record_armory_view(handle)` | Anon-callable. Resolves handle → owner, ignores self-views, dedupes to one per owner per day. |
+| `get_armory_counters()` | All 15 derived counters in one call. |
+
+Emits are written **inside the RPCs that already do the work**, not from the client: `submit_product_review`, `set_passport_featured`, `set_armory_share` and `accept_passport_transfer`. Transfers are the case that proves the rule — a hand-over writes a row for *both* parties, and the browser performing the accept is only ever the receiver.
+
+Each emit is guarded against farming: only a **first** review counts (editing one review five times must not satisfy "review five pieces"), only a **pin** counts (not clearing a slot), only the **first** publish counts (toggling public/private cannot farm it). `accept_passport_transfer` also **deletes the piece's `wear_logged` rows**, matching the existing `wear_count` reset — a new owner must not inherit training days they did not do.
+
+**Streaks are computed in `Asia/Beirut`, not UTC.** A late-evening session in Lebanon lands on the next UTC day and would silently split a run in two. The daily and weekly streaks are gaps-and-islands queries (subtracting a dense row number from the date makes every consecutive run share one constant). They run server-side because the history grows without bound and three separate client reads would each rescan the same rows.
+
+> Watch the column name: `storefront_profiles` is keyed on **`id`**, not `user_id`. Two RPCs here shipped briefly with `user_id` and would have raised at the first authenticated call — it went unnoticed because the test only exercised the unauthenticated early-return.
+
 ### `publish_cms_settings(p_patch jsonb, p_media_index jsonb)` — the atomic CMS publish
 
 The admin publishes through **one** SECURITY DEFINER RPC, not two UPDATEs. Before it (F-19), `adminCmsRemoteSync` fired independent PostgREST UPDATEs at `cms_settings` and `storefront_publication` under `Promise.all` — and postgrest-js does **not** reject on a transport failure, it converts one into `{data:null,error}`. So `Promise.all` never rejected and never cancelled its sibling: a one-of-two failure always ran to completion as a **half-write**, permanently diverging the editor's source of truth from what SSR renders. It was also self-concealing, because hydration reads `cms_settings` only — reloading `/admin` could not reveal the split, and if `cms_settings` was the failed half, reloading silently replaced the operator's edit with the stale draft while the storefront kept serving the new value.
