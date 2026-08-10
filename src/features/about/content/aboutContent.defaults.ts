@@ -156,8 +156,13 @@ export const ABOUT_DEFAULT_CONTENT: AboutResolvedContent = {
       eyebrow: '01 · Materials',
       title: 'Chosen Under Scrutiny',
       subhead: '',
-      body: 'Heavy cotton, honest stretch, and compression that holds its shape — every fabric earns its place before it touches a pattern. We reject anything that feels premium standing still but folds under a heavy set.',
-      detail: '260 GSM cotton · seamless compression knit · four-way stretch',
+      // No fabric weight figure on the About page by product decision: the
+      // number belongs on the PDP and the passport, where a buyer is comparing
+      // specs. Here it reads as spec-sheet noise in the middle of the brand
+      // story, and it dates the copy the moment a future drop uses a different
+      // weight.
+      body: 'Heavy cotton, honest stretch, and compression that holds its shape — every fabric is engineered to the perfect GSM for a premium hand, substantial enough to hang like armour and never so heavy it fights the session. We reject anything that feels premium standing still but folds under a heavy set.',
+      detail: 'Engineered to the perfect GSM for a premium hand · seamless compression knit · four-way stretch',
       lines: [],
       points: [],
       stats: [],
