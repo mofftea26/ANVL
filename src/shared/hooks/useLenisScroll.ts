@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { setActiveLenis } from '@/shared/lib/lenisRegistry'
 import { useReducedMotion } from './useReducedMotion'
 
 const MD_UP = '(min-width: 768px)'
@@ -44,6 +45,7 @@ export function useLenisScroll(enabled: boolean) {
         wheelMultiplier: 0.9,
         touchMultiplier: 1.4,
       })
+      setActiveLenis(lenis)
 
       ScrollTrigger.scrollerProxy(document.documentElement, {
         scrollTop(value) {
@@ -79,6 +81,7 @@ export function useLenisScroll(enabled: boolean) {
       refresh()
 
       teardown = () => {
+        setActiveLenis(null)
         window.removeEventListener('load', refresh)
         ScrollTrigger.removeEventListener('refresh', onRefresh)
         lenis.off('scroll', onScroll)

@@ -283,8 +283,6 @@ export default function AboutAltar({
 
   return (
     <div ref={root} className="relative h-[100svh] w-full overflow-hidden">
-      <h1 className="sr-only">{content.hero.headline}</h1>
-
       {/* The forge — a photographic backdrop with an empty centre where the
           anvil sits. Painted behind the transparent WebGL canvas so the
           aurora (additive, no opaque fill) shimmers over it, not instead of
