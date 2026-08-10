@@ -244,7 +244,7 @@ export function ProductRevealSequence({
 
         <div className="relative mx-auto mt-8 md:mt-5 xl:mt-4">
           <ul
-            className="relative z-[1] mx-auto grid w-full grid-cols-2 max-md:justify-items-center max-md:gap-x-3 gap-x-5 gap-y-10 [perspective:1600px] md:flex md:flex-row md:items-start md:justify-center md:gap-20 xl:gap-20"
+            className="relative z-[1] mx-auto grid w-full grid-cols-2 max-md:justify-items-center max-md:gap-x-4 gap-x-6 gap-y-12 [perspective:1600px] md:flex md:flex-row md:items-start md:justify-center md:gap-24 xl:gap-28"
             onMouseLeave={() => setHoveredIndex(null)}
           >
             {resolved.map((product, i) => (
