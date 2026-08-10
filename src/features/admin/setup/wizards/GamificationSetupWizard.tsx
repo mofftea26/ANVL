@@ -200,6 +200,12 @@ function ChallengesStep({ rules, rulesError, refresh, onNavigate }: RulesStepPro
         description: '',
         metric,
         target: targetNum,
+        // Wizard-created challenges are standalone and Easy; the full editor
+        // is where difficulty, XP and tiering get set deliberately.
+        difficulty: 'easy',
+        xpReward: 50,
+        tierGroup: null,
+        tier: 1,
         sortOrder: challenges.length,
         isActive: true,
       })
@@ -420,9 +426,16 @@ function RankRow({
         name: name.trim(),
         description,
         emblemUrl,
+        // The wizard edits copy and emblem only; reward and threshold fields
+        // are carried through untouched so saving here never clears what the
+        // full editor at /admin/gamification set.
+        rewardTitle: rank.rewardTitle,
+        rewardDescription: rank.rewardDescription,
+        rewardStatus: rank.rewardStatus,
         levels: rank.levels.map((level) => ({
           level: level.level,
           unlockCopy: level.unlockCopy,
+          minXp: level.minXp,
           minRegistrations: level.minRegistrations,
           minFullDrops: level.minFullDrops,
         })),

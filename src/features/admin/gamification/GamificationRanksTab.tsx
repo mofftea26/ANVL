@@ -4,9 +4,14 @@ import { ChevronDown, ChevronUp, ImagePlus, Plus, Save, Trash2 } from '@/shared/
 import { AdminCard } from '@/features/admin/components/AdminCard'
 import { AdminConfirmDialog } from '@/features/admin/components/AdminConfirmDialog'
 import { AdminPromptDialog } from '@/features/admin/components/AdminPromptDialog'
+import { AdminFieldSelect } from '@/features/admin/components/AdminFieldSelect'
 import { MediaLibraryPickerModal } from '@/features/admin/media/MediaLibraryPickerModal'
 import { rankEmblemSrc } from '@/features/passport/lib/ranks'
-import type { GamificationRules } from '@/features/passport/schemas/gamification.schema'
+import {
+  RANK_REWARD_STATUSES,
+  type GamificationRules,
+  type RankRewardStatus,
+} from '@/features/passport/schemas/gamification.schema'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField } from '@/shared/components/ui/FormField'
 import { Input } from '@/shared/components/ui/Input'
@@ -27,11 +32,15 @@ function toDraft(rank: GamificationRules['ranks'][number]): RankDraft {
     name: rank.name,
     description: rank.description,
     emblemUrl: rank.emblemUrl,
+    rewardTitle: rank.rewardTitle,
+    rewardDescription: rank.rewardDescription,
+    rewardStatus: rank.rewardStatus,
     levels: [...rank.levels]
       .sort((a, b) => a.level - b.level)
       .map((l) => ({
         level: l.level,
         unlockCopy: l.unlockCopy,
+        minXp: l.minXp,
         minRegistrations: l.minRegistrations,
         minFullDrops: l.minFullDrops,
       })),
@@ -205,6 +214,45 @@ function RankCard({
                 }
               />
             </FormField>
+            <FormField
+              label="Reward"
+              hint="The perk this rank unlocks. Blank = no reward at this rank."
+              labelStyle="stacked"
+            >
+              <Input
+                density="compact"
+                value={draft.rewardTitle}
+                onChange={(e) => setDraft((prev) => ({ ...prev, rewardTitle: e.target.value }))}
+              />
+            </FormField>
+            <FormField label="Reward detail" labelStyle="stacked">
+              <Input
+                density="compact"
+                value={draft.rewardDescription}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, rewardDescription: e.target.value }))
+                }
+              />
+            </FormField>
+            {/* AdminFieldSelect renders its own label, so it is NOT wrapped in
+                a FormField — doing so would emit two labels for one control. */}
+            <AdminFieldSelect
+              label="Reward status"
+              hint="'Coming soon' shows the perk without promising it is redeemable yet."
+              value={draft.rewardStatus}
+              onChange={(value) =>
+                setDraft((prev) => ({ ...prev, rewardStatus: value as RankRewardStatus }))
+              }
+              options={RANK_REWARD_STATUSES.map((status) => ({
+                value: status,
+                label:
+                  status === 'none'
+                    ? 'No reward'
+                    : status === 'coming_soon'
+                      ? 'Coming soon'
+                      : 'Live',
+              }))}
+            />
           </div>
         </div>
 
@@ -222,6 +270,18 @@ function RankCard({
                   density="compact"
                   value={level.unlockCopy}
                   onChange={(e) => patchLevel(level.level, { unlockCopy: e.target.value })}
+                />
+              </FormField>
+              <FormField
+                label="Min Forge XP"
+                hint="The primary gate. Blank = not XP-gated."
+                labelStyle="stacked"
+              >
+                <Input
+                  density="compact"
+                  inputMode="numeric"
+                  value={level.minXp ?? ''}
+                  onChange={(e) => patchLevel(level.level, { minXp: intOrNull(e.target.value) })}
                 />
               </FormField>
               <FormField

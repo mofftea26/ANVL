@@ -4,7 +4,11 @@ import {
   DEFAULT_GAMIFICATION_RULES,
   GAMIFICATION_METRICS,
 } from '../schemas/gamification.schema'
-import { CHALLENGE_METRIC_ACCESSORS, evaluateChallenges } from '../lib/challenges'
+import {
+  CHALLENGE_METRIC_ACCESSORS,
+  UNSOURCED_METRICS,
+  evaluateChallenges,
+} from '../lib/challenges'
 import { computeForgeLevel, cumulativeXpForLevel } from '../lib/forgeXp'
 import { deriveArmoryRank, type DropCompletion } from '../lib/ranks'
 
@@ -79,22 +83,57 @@ describe('challenge metric vocabulary', () => {
     }
   })
 
+  const emptyCtx = {
+    registrations: 0,
+    totalWears: 0,
+    maxWears: 0,
+    featCount: 0,
+    fullDrops: 0,
+    honorPinned: 0,
+  }
+
   it('skips inactive challenges', () => {
     const rules = structuredClone(DEFAULT_GAMIFICATION_RULES)
+    // `curator` is standalone (no tierGroup), so deactivating it removes the
+    // row outright rather than promoting a sibling tier into its place.
     rules.challenges = rules.challenges.map((c) =>
-      c.key === 'loadout' ? { ...c, isActive: false } : c,
+      c.key === 'curator' ? { ...c, isActive: false } : c,
     )
-    const ctx = {
-      registrations: 3,
-      totalWears: 0,
-      maxWears: 0,
-      featCount: 0,
-      fullDrops: 0,
-      honorPinned: 0,
-    }
-    const ids = evaluateChallenges(ctx, rules).map((c) => c.id)
-    expect(ids).not.toContain('loadout')
+    const ids = evaluateChallenges(emptyCtx, rules).map((c) => c.id)
+    expect(ids).not.toContain('curator')
     expect(ids).toContain('first-strike')
+  })
+
+  /**
+   * A tiered family must occupy exactly ONE row, showing the tier being
+   * chased. Without this the quest log lists every threshold of the same goal
+   * and reads as padded.
+   */
+  it('collapses a tiered family to the tier currently being chased', () => {
+    const rules = DEFAULT_GAMIFICATION_RULES
+    const claimTiers = rules.challenges.filter((c) => c.tierGroup === 'forge-claims')
+    expect(claimTiers.length).toBeGreaterThan(1)
+
+    const atZero = evaluateChallenges(emptyCtx, rules)
+    const claimRows = atZero.filter((r) => claimTiers.some((t) => t.key === r.id))
+    expect(claimRows).toHaveLength(1)
+    expect(claimRows[0]!.id).toBe('first-strike')
+    expect(claimRows[0]!.tierCount).toBe(claimTiers.length)
+
+    // Past the first threshold, the SAME family advances to its next tier.
+    const advanced = evaluateChallenges({ ...emptyCtx, registrations: 3 }, rules)
+    const advancedRow = advanced.find((r) => claimTiers.some((t) => t.key === r.id))!
+    expect(advancedRow.id).not.toBe('first-strike')
+    expect(advancedRow.tier).toBeGreaterThan(1)
+  })
+
+  /** A metric with no counter behind it must not render a stuck-at-0% row. */
+  it('hides challenges whose metric has no source', () => {
+    const ids = evaluateChallenges(emptyCtx, DEFAULT_GAMIFICATION_RULES).map((c) => c.id)
+    const unsourced = DEFAULT_GAMIFICATION_RULES.challenges.filter((c) =>
+      UNSOURCED_METRICS.has(c.metric),
+    )
+    for (const c of unsourced) expect(ids).not.toContain(c.key)
   })
 })
 

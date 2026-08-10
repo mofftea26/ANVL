@@ -15,6 +15,7 @@ import {
   deriveArmoryBadges,
   deriveArmoryRank,
 } from '@/features/passport/lib/ranks'
+import { ArmoryRewardsCard } from '@/features/storefront-account/account/panels/armory/ArmoryRewardsCard'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
 import { cn } from '@/shared/lib/cn'
@@ -306,6 +307,15 @@ export function ArmoryPanel() {
                 className="focus-ring absolute inset-0 z-20 rounded-2xl"
               />
             </AccountBentoCard>
+
+            {/* Rewards — banked perk + live XP, so the ladder has a visible
+                payoff long before the vault itself opens. */}
+            <ArmoryRewardsCard
+              rank={rank}
+              rules={rules}
+              totalXp={forge.total}
+              className="col-span-2 sm:col-span-1"
+            />
           </div>
 
           <div className="pt-1">

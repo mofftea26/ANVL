@@ -3,6 +3,7 @@ import type { OwnedPassport } from '../schemas/passport.schema'
 import {
   DEFAULT_GAMIFICATION_RULES,
   type ChallengeCategory,
+  type ChallengeDifficulty,
   type GamificationMetric,
   type GamificationRules,
 } from '../schemas/gamification.schema'
@@ -153,6 +154,15 @@ export interface ChallengeProgress {
   target: number
   progress: number
   complete: boolean
+  difficulty: ChallengeDifficulty
+  /** XP awarded for the tier currently being chased. */
+  xpReward: number
+  /** 1-based position of the active tier within its family. */
+  tier: number
+  /** How many tiers the family has (1 for a standalone challenge). */
+  tierCount: number
+  /** True once every tier in the family is complete. */
+  familyComplete: boolean
 }
 
 export function buildChallengeContext(input: {
@@ -175,29 +185,71 @@ export function buildChallengeContext(input: {
  * Progress for every active challenge, incomplete first (nearest to done
  * leading), so the next goal is always at the top; finished ones settle to
  * the bottom.
+ *
+ * TIERED FAMILIES COLLAPSE TO ONE ENTRY. A family like Battle-Worn is five
+ * rows in the rules (25 / 100 / 365 / 1000 wears), but showing all five at
+ * once buries the quest log in variants of the same goal and makes the log
+ * look padded. Instead each family yields the LOWEST tier not yet finished —
+ * the one actually being chased — or its final tier once they are all done.
+ *
+ * Challenges whose metric has no counter behind it, or whose source the caller
+ * has not loaded, are dropped entirely: a row pinned at 0% forever reads as
+ * broken rather than aspirational (see `isMetricAvailable`).
  */
 export function evaluateChallenges(
   ctx: ChallengeContext,
   rules: GamificationRules = DEFAULT_GAMIFICATION_RULES,
 ): ChallengeProgress[] {
-  return [...rules.challenges]
-    .filter((def) => def.isActive)
+  const active = [...rules.challenges]
+    .filter((def) => def.isActive && isMetricAvailable(def.metric, ctx))
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((def) => {
-      const current = Math.min(CHALLENGE_METRIC_ACCESSORS[def.metric](ctx), def.target)
-      return {
-        id: def.key,
-        category: def.category,
-        title: def.title,
-        description: def.description,
-        current,
-        target: def.target,
-        progress: def.target > 0 ? current / def.target : 0,
-        complete: current >= def.target,
-      }
+
+  // Group by family. A null `tierGroup` is standalone, so it gets a unique
+  // bucket keyed by its own key — never merged with another standalone.
+  const families = new Map<string, typeof active>()
+  for (const def of active) {
+    const groupKey = def.tierGroup ?? `@solo:${def.key}`
+    const bucket = families.get(groupKey)
+    if (bucket) bucket.push(def)
+    else families.set(groupKey, [def])
+  }
+
+  const rows: ChallengeProgress[] = []
+  for (const bucket of families.values()) {
+    const tiers = [...bucket].sort((a, b) => a.tier - b.tier)
+    const withProgress = tiers.map((def) => ({
+      def,
+      raw: CHALLENGE_METRIC_ACCESSORS[def.metric](ctx),
+    }))
+
+    // The tier being chased: first one not yet met. If all are met, the family
+    // is finished and the last tier stands as its completed face.
+    const activeIndex = withProgress.findIndex((t) => t.raw < t.def.target)
+    const familyComplete = activeIndex === -1
+    const chosen = familyComplete
+      ? withProgress[withProgress.length - 1]!
+      : withProgress[activeIndex]!
+
+    const current = Math.min(chosen.raw, chosen.def.target)
+    rows.push({
+      id: chosen.def.key,
+      category: chosen.def.category,
+      title: chosen.def.title,
+      description: chosen.def.description,
+      current,
+      target: chosen.def.target,
+      progress: chosen.def.target > 0 ? current / chosen.def.target : 0,
+      complete: current >= chosen.def.target,
+      difficulty: chosen.def.difficulty,
+      xpReward: chosen.def.xpReward,
+      tier: chosen.def.tier,
+      tierCount: tiers.length,
+      familyComplete,
     })
-    .sort((a, b) => {
-      if (a.complete !== b.complete) return a.complete ? 1 : -1
-      return b.progress - a.progress
-    })
+  }
+
+  return rows.sort((a, b) => {
+    if (a.complete !== b.complete) return a.complete ? 1 : -1
+    return b.progress - a.progress
+  })
 }
