@@ -9,6 +9,7 @@ import {
 } from './motion/aboutMotionState'
 import { useAboutScrollTimeline } from './hooks/useAboutScrollTimeline'
 import { useAboutOrbScrollTo } from './hooks/useAboutOrbScrollTo'
+import { AboutScrollCanvasGate } from './webgl/AboutScrollCanvasGate'
 import { AboutHeroSection } from './sections/AboutHeroSection'
 import { AboutOrbSection } from './sections/AboutOrbSection'
 import { AboutMarqueeSection } from './sections/AboutMarqueeSection'
@@ -71,7 +72,7 @@ export default function AboutScrollExperience({
   return (
     <AboutScrollMotionContext.Provider value={motion}>
       <div ref={root} data-about-scroll className="relative">
-        {/* The WebGL depth canvas gate mounts here (fixed, -z-10). */}
+        <AboutScrollCanvasGate root={root} motion={motion} />
         <AboutHeroSection hero={content.hero} image={assets.heroImage} />
         {content.orbs.map((orb, index) => (
           <AboutOrbSection key={orb.id} orb={orb} image={orbImage(orb, assets)} index={index} />
