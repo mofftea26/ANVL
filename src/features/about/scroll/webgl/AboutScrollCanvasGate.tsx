@@ -3,6 +3,7 @@ import { isWebglAvailable } from '@/shared/webgl/isWebglAvailable'
 import { useCanvasMountGate, useCanvasTeardownMark } from '@/shared/webgl/canvasTeardownGuard'
 import { ABOUT_CINEMATIC_MQ } from '../../aboutBreakpoints'
 import type { AboutScrollMotion } from '../motion/aboutMotionState'
+import type { AboutAltarCanvasProps } from './AboutScrollCanvas'
 
 const AboutScrollCanvas = lazy(() => import('./AboutScrollCanvas'))
 
@@ -20,9 +21,11 @@ const AboutScrollCanvas = lazy(() => import('./AboutScrollCanvas'))
 export function AboutScrollCanvasGate({
   root,
   motion,
+  altar,
 }: {
   root: RefObject<HTMLElement | null>
   motion: AboutScrollMotion
+  altar: AboutAltarCanvasProps
 }) {
   const [active, setActive] = useState(false)
   const [instanceKey, setInstanceKey] = useState(0)
@@ -51,6 +54,7 @@ export function AboutScrollCanvasGate({
       <AboutScrollCanvas
         key={instanceKey}
         motion={motion}
+        altar={altar}
         onContextLost={() => setInstanceKey((k) => k + 1)}
       />
     </Suspense>

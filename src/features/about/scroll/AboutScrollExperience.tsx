@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef } from 'react'
 import type { AboutResolvedContent } from '../content/aboutContent.defaults'
 import { orbImage } from '../content/resolveAboutContent'
 import type { AboutPageAssets } from '../index'
+import { createAltarState } from '../altar/altarState'
+import { useAltarStrike } from '../altar/useAltarStrike'
 import {
   AboutScrollMotionContext,
   createAboutScrollMotion,
@@ -34,18 +36,28 @@ export default function AboutScrollExperience({
   assets: AboutPageAssets
 }) {
   const root = useRef<HTMLDivElement | null>(null)
+  const altarSectionRef = useRef<HTMLElement | null>(null)
   const motionRef = useRef<AboutScrollMotion | null>(null)
   if (motionRef.current === null || motionRef.current.chapterCount !== content.orbs.length) {
     motionRef.current = createAboutScrollMotion(content.orbs.length)
   }
   const motion = motionRef.current
   const orbIds = useMemo(() => content.orbs.map((orb) => orb.id), [content.orbs])
+  // The altar stage's own state — the journey carries the film, this carries
+  // the forge. One instance shared by the strike ceremony (DOM side) and the
+  // in-canvas stage.
+  const altarState = useMemo(() => createAltarState(content.orbs.length), [content.orbs.length])
 
   useAboutScrollTimeline(root, motion, orbIds)
   const scrollToChapter = useAboutOrbScrollTo()
+  const { strike } = useAltarStrike({
+    state: altarState,
+    root: altarSectionRef,
+    onOrbStruck: scrollToChapter,
+  })
 
-  // Pointer → depth-rig parallax (one passive listener; the altar keeps its
-  // own for the stage's camera drift).
+  // Pointer → depth-rig parallax + the stage's idle tilt (one passive
+  // listener feeding both mutable bridges).
   useEffect(() => {
     let lastX = 0
     let lastY = 0
@@ -58,27 +70,46 @@ export default function AboutScrollExperience({
         const dt = Math.max(8, now - lastT) / 1000
         motion.pointerVX = (nx - lastX) / dt
         motion.pointerVY = (ny - lastY) / dt
+        altarState.pointerVX = motion.pointerVX
+        altarState.pointerVY = motion.pointerVY
       }
       motion.pointerX = nx
       motion.pointerY = ny
+      altarState.pointerX = nx
+      altarState.pointerY = ny
       lastX = nx
       lastY = ny
       lastT = now
     }
     window.addEventListener('pointermove', onMove, { passive: true })
     return () => window.removeEventListener('pointermove', onMove)
-  }, [motion])
+  }, [motion, altarState])
 
   return (
     <AboutScrollMotionContext.Provider value={motion}>
       <div ref={root} data-about-scroll className="relative">
-        <AboutScrollCanvasGate root={root} motion={motion} />
+        <AboutScrollCanvasGate
+          root={root}
+          motion={motion}
+          altar={{
+            state: altarState,
+            orbs: content.orbs,
+            anvilUrl: assets.anvilModel,
+            hammerUrl: assets.hammerModel,
+            onSelect: strike,
+          }}
+        />
         <AboutHeroSection hero={content.hero} image={assets.heroImage} />
         {content.orbs.map((orb, index) => (
           <AboutOrbSection key={orb.id} orb={orb} image={orbImage(orb, assets)} index={index} />
         ))}
         <AboutMarqueeSection text={content.marquee.text} />
-        <AboutAltarSection content={content} assets={assets} onOrbStruck={scrollToChapter} />
+        <AboutAltarSection
+          orbs={content.orbs}
+          forgeBackdrop={assets.forgeBackdrop}
+          sectionRef={altarSectionRef}
+          onPick={strike}
+        />
       </div>
     </AboutScrollMotionContext.Provider>
   )

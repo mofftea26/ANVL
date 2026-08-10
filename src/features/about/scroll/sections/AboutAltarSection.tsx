@@ -1,86 +1,139 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
-import { isWebglAvailable } from '@/shared/webgl/isWebglAvailable'
-import type { AboutResolvedContent } from '../../content/aboutContent.defaults'
-import type { AboutPageAssets } from '../../index'
+import type { RefObject } from 'react'
+import type { AboutResolvedOrb } from '../../content/aboutContent.defaults'
 
-const AboutAltar = lazy(() => import('../../altar/AboutAltar'))
+/** Shipped default so the forge holds the frame before any CMS upload. */
+const DEFAULT_FORGE_BACKDROP = '/about/forge-backdrop.webp'
 
 /**
- * The finale — the interactive Forge Altar as the film's last section. The
- * experience gate already guarantees ≥1280px + no reduced motion, so the only
- * check left here is WebGL itself; without it the forge backdrop stands alone
- * as the closing frame. `buildAboutAltarPin` pins this section and ramps
- * `altarApproach` ahead of it (the mount that triggers the GLB prefetch).
+ * The finale's DOM shell. The 3D stage itself lives in the film's persistent
+ * canvas (parked at the end of the camera path); this section provides
+ * everything around it:
  *
- * A struck orb answers through `onOrbStruck` — the scroll pulls back up to
- * that orb's chapter.
+ * - the forge backdrop at `-z-20` — BEHIND the fixed canvas (`-z-10`), so the
+ *   aurora, dust, and anvil paint over it (the section creates no stacking
+ *   context, so negative z-children resolve against the page root's
+ *   `isolate`)
+ * - the strike impact frames (`[data-strike-flash]` / `[data-strike-lines]`)
+ *   the strike timeline snaps on and burns off
+ * - the orb picker chips — the keyboard/AT path into the same strike
+ *   ceremony, CSS-revealed once the stage loads (`data-altar-ready`, set by
+ *   the load bar) and faded by the strike timeline (`[data-altar-picker]`)
+ * - the load bar's portal slot (`#about-altar-load-slot`)
+ *
+ * While `buildAboutAltarPin` holds this section pinned it flips
+ * `data-altar-live` on the experience root — the CSS contract that turns the
+ * canvas pointer-live so the anvil is grabbable. Everything here except the
+ * chips is pointer-transparent so those events actually reach the canvas.
  */
 export function AboutAltarSection({
-  content,
-  assets,
-  onOrbStruck,
+  orbs,
+  forgeBackdrop,
+  sectionRef,
+  onPick,
 }: {
-  content: AboutResolvedContent
-  assets: AboutPageAssets
-  onOrbStruck: (index: number) => void
+  orbs: AboutResolvedOrb[]
+  forgeBackdrop?: string
+  sectionRef: RefObject<HTMLElement | null>
+  onPick: (index: number) => void
 }) {
-  const [webgl, setWebgl] = useState(false)
-  useEffect(() => {
-    setWebgl(isWebglAvailable())
-  }, [])
-
   return (
     <section
+      ref={sectionRef as RefObject<HTMLElement>}
       data-scene="altar"
       id="about-altar"
       aria-labelledby="about-altar-heading"
-      className="relative h-[100svh] overflow-hidden"
+      className="pointer-events-none relative h-[100svh] overflow-visible"
     >
       <h2 id="about-altar-heading" className="sr-only">
         The Forge Altar
       </h2>
-      {webgl ? (
-        <Suspense fallback={<AltarStandby backdrop={assets.forgeBackdrop} />}>
-          <AboutAltar content={content} assets={assets} onOrbStruck={onOrbStruck} />
-        </Suspense>
-      ) : (
-        <AltarStandby backdrop={assets.forgeBackdrop} />
-      )}
-    </section>
-  )
-}
 
-/** The stage before (or without) the 3D altar — the forge holds the frame. */
-function AltarStandby({ backdrop }: { backdrop?: string }) {
-  return (
-    <div aria-hidden="true" className="absolute inset-0">
-      {backdrop ? (
+      {/* The forge — painted BEHIND the fixed canvas (negative z resolves in
+          the root's isolate), so the 3D stage renders over it. */}
+      <div aria-hidden="true" className="absolute inset-0 -z-20">
         <img
-          src={backdrop}
+          src={forgeBackdrop?.trim() || DEFAULT_FORGE_BACKDROP}
           alt=""
           width={2560}
           height={1440}
           loading="lazy"
           decoding="async"
-          className="h-full w-full object-cover opacity-70"
+          className="h-full w-full object-cover"
           style={{ objectPosition: '50% 65%' }}
         />
-      ) : (
         <div
-          className="h-full w-full"
+          className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse 80% 60% at 50% 60%, var(--color-surface-elevated,#1D1F21) 0%, var(--color-bg,#0B0B0C) 75%)',
+              'radial-gradient(ellipse 70% 60% at 50% 58%, transparent 30%, color-mix(in srgb, var(--color-bg) 55%, transparent) 100%), linear-gradient(to bottom, color-mix(in srgb, var(--color-bg) 55%, transparent) 0%, transparent 30%, transparent 70%, var(--color-bg) 100%)',
           }}
         />
-      )}
+      </div>
+
+      {/* Impact frames — a white-hot flash + anime radial speed-lines centred
+          on the anvil seat. Above the canvas, snapped on by the strike. */}
       <div
-        className="absolute inset-0"
+        aria-hidden="true"
+        data-strike-flash
+        className="pointer-events-none absolute inset-0 z-20 opacity-0"
         style={{
           background:
-            'radial-gradient(ellipse 70% 60% at 50% 58%, transparent 30%, color-mix(in srgb, var(--color-bg) 55%, transparent) 100%), linear-gradient(to bottom, color-mix(in srgb, var(--color-bg) 55%, transparent) 0%, transparent 30%, transparent 70%, var(--color-bg) 100%)',
+            'radial-gradient(circle at 50% 62%, color-mix(in srgb, var(--color-highlight-bright) 80%, white) 0%, color-mix(in srgb, var(--color-highlight) 38%, transparent) 20%, transparent 55%)',
         }}
       />
-    </div>
+      <div
+        aria-hidden="true"
+        data-strike-lines
+        className="pointer-events-none absolute inset-0 z-20 opacity-0"
+        style={{
+          background:
+            'repeating-conic-gradient(from 0deg at 50% 62%, transparent 0deg 7deg, color-mix(in srgb, var(--color-highlight-bright) 55%, transparent) 7deg 8.4deg)',
+          maskImage:
+            'radial-gradient(circle at 50% 62%, transparent 13%, black 34%, transparent 60%)',
+          WebkitMaskImage:
+            'radial-gradient(circle at 50% 62%, transparent 13%, black 34%, transparent 60%)',
+        }}
+      />
+
+      {/* Orb picker — top of the stage; also the keyboard/AT path into the
+          strike ceremony. CSS-hidden until the stage loads (data-altar-ready),
+          faded during strikes by the timeline (data-altar-picker), and the one
+          pointer-live island in the section. */}
+      <div
+        data-altar-picker
+        className="absolute inset-x-0 top-[calc(var(--anvl-header-h)+4.5rem)] z-10 flex flex-col items-center gap-3 px-6"
+      >
+        <p
+          data-altar-fade
+          className="anvl-display text-[10px] tracking-[0.32em] text-[var(--color-heading)]/70"
+        >
+          Strike an orb — it carries you back to its chapter
+        </p>
+        <div data-altar-fade className="flex flex-wrap items-center justify-center gap-2">
+          {orbs.map((orb, i) => (
+            <button
+              key={orb.id}
+              type="button"
+              onClick={() => onPick(i)}
+              className="focus-ring anvl-display pointer-events-auto inline-flex items-center gap-2 rounded-full border border-[var(--color-line)] bg-[color-mix(in_srgb,var(--color-bg)_65%,transparent)] px-4 py-2.5 text-[10px] tracking-[0.24em] text-[var(--color-text-muted)] backdrop-blur-sm transition-colors hover:border-[var(--color-highlight)] hover:text-[var(--color-heading)]"
+            >
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ backgroundColor: orb.color, boxShadow: `0 0 6px ${orb.color}` }}
+              />
+              {orb.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* The forging bar's portal slot — the lazy WebGL chunk renders into it. */}
+      <div
+        id="about-altar-load-slot"
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-[12vh] z-10 flex justify-center"
+      />
+    </section>
   )
 }

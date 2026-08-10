@@ -1609,13 +1609,38 @@ html[data-landing-entry='active'] body {
   animation: about-marquee 42s linear infinite reverse;
 }
 
-/* Reduced motion: no marquee scroll — the mobile page is fully static and
-   CSS-visible; the desktop altar stage never mounts. */
+/* Reduced motion: no marquee scroll — the static page is fully CSS-visible;
+   the desktop film never mounts. */
 @media (prefers-reduced-motion: reduce) {
   [data-about-root] .about-marquee-forward,
   [data-about-root] .about-marquee-reverse {
     animation: none;
   }
+}
+
+/* The film's altar finale — the fixed depth canvas is pointer-transparent for
+   the whole journey, and turns pointer-live ONLY while the altar pin holds
+   the finale on stage (`buildAboutAltarPin` flips the attribute), so the
+   anvil is grabbable exactly when it is the scene. pointer-events inherits:
+   flipping the wrapper re-enables the canvas inside it. */
+[data-about-scroll][data-altar-live='on'] [data-about-canvas] {
+  pointer-events: auto;
+}
+
+/* Altar chrome (chips, their caption) stays hidden until the stage's GLBs
+   have landed — the load bar sets `data-altar-ready` on the section, and the
+   chrome rises in. The strike timeline's own autoAlpha fades then take over
+   (inline styles win over this base state). */
+[data-about-root] [data-altar-fade] {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-about-root] [data-altar-ready='on'] [data-altar-fade] {
+  opacity: 1;
+  transform: none;
 }
 
 /* Hero product forge — active-piece plate crossfade. The label remounts per

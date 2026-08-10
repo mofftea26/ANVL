@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
+import type { AltarState } from '../../altar/altarState'
 import type { AboutScrollMotion } from '../motion/aboutMotionState'
 import { ABOUT_DEPTH } from './aboutDepthPath'
 
@@ -13,9 +14,20 @@ import { ABOUT_DEPTH } from './aboutDepthPath'
  * where the journey is going, which at `scrollDepth = 1` is exactly the
  * altar stage's seat.
  *
- * Reads the mutable motion state only — zero React state in the loop.
+ * The hammer's impact rattles the lens: the altar state's `shake` (written by
+ * the strike timeline) adds the old altar rig's jitter, weighted by
+ * `altarApproach` so a strike can never shake a camera that is still
+ * chapters away.
+ *
+ * Reads the mutable motion/altar state only — zero React state in the loop.
  */
-export function AboutDepthRig({ motion }: { motion: AboutScrollMotion }) {
+export function AboutDepthRig({
+  motion,
+  altarState,
+}: {
+  motion: AboutScrollMotion
+  altarState: AltarState
+}) {
   const { camera } = useThree()
   const look = useRef(new THREE.Vector3())
 
@@ -25,10 +37,16 @@ export function AboutDepthRig({ motion }: { motion: AboutScrollMotion }) {
       ABOUT_DEPTH.cameraStartZ +
       (ABOUT_DEPTH.cameraEndZ - ABOUT_DEPTH.cameraStartZ) * motion.scrollDepth
 
+    const shake = altarState.shake * motion.altarApproach
+    const jitterX = shake > 0.001 ? (Math.random() - 0.5) * shake * 0.12 : 0
+    const jitterY = shake > 0.001 ? (Math.random() - 0.5) * shake * 0.09 : 0
+
     camera.position.z += (z - camera.position.z) * k
     camera.position.x += (motion.pointerX * ABOUT_DEPTH.parallaxX - camera.position.x) * k
+    camera.position.x += jitterX
     camera.position.y +=
       (ABOUT_DEPTH.cameraHeight + motion.pointerY * ABOUT_DEPTH.parallaxY - camera.position.y) * k
+    camera.position.y += jitterY
 
     look.current.set(0, ABOUT_DEPTH.lookHeight, camera.position.z - ABOUT_DEPTH.lookAhead)
     camera.lookAt(look.current)
