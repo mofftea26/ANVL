@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
 import { resolveAboutContent } from './content/resolveAboutContent'
 import { ABOUT_CINEMATIC_MQ } from './aboutBreakpoints'
-import { AboutMobilePage } from './mobile/AboutMobilePage'
+import { AboutStaticPage } from './static/AboutStaticPage'
 
 const AboutScrollExperience = lazy(() => import('./scroll/AboutScrollExperience'))
 
@@ -72,11 +72,11 @@ export function AboutExperience({
       />
 
       {cinematic ? (
-        <Suspense fallback={<AboutMobilePage content={content} assets={assets} />}>
+        <Suspense fallback={<AboutStaticPage content={content} assets={assets} />}>
           <AboutScrollExperience content={content} assets={assets} />
         </Suspense>
       ) : (
-        <AboutMobilePage content={content} assets={assets} />
+        <AboutStaticPage content={content} assets={assets} />
       )}
     </div>
   )
