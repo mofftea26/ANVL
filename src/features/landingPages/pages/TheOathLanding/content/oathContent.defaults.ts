@@ -110,46 +110,46 @@ export const OATH_DEFAULT_CONTENT: OathResolvedContent = {
       {
         id: 'oversized',
         index: '01',
-        title: 'The Oversized Tee',
+        title: 'Forged Oversized Tee',
         subtitle: 'Worn between the battles — presence before the first rep is struck.',
         line: 'Heavy streetwear weight, built for the walk in and the work after.',
         marker: 'Armour',
         tone: '#1a1c1f',
         bgUrl: '/landing/the-oath/product-bg-1.webp',
         hotspots: [
-          { id: 'weight', label: 'Heavyweight Cotton', description: '240 GSM brushed cotton — it hangs like armour and outlasts the season.', x: 38, y: 30 },
+          { id: 'weight', label: '260 GSM Pure Cotton', description: '100% cotton at 260 GSM — it hangs like armour and outlasts the season.', x: 38, y: 30 },
           { id: 'shoulder', label: 'Drop-Shoulder Cut', description: 'A dropped seam frames the delts and reads broad from across the floor.', x: 64, y: 44 },
-          { id: 'collar', label: 'Reinforced Collar', description: 'Double-stitched ribbed neck that holds its shape through every wash.', x: 50, y: 18 },
+          { id: 'branding', label: 'Raised Silicone Mark', description: '1 mm raised silicone branding — you feel the crest before you see it.', x: 50, y: 18 },
         ],
       },
       {
         id: 'stringer',
         index: '02',
-        title: 'The Stringer',
+        title: 'MARROW Stringer',
         subtitle: 'Bare for the iron — nothing left between you and the work.',
-        line: 'Old-school cut, built for range, heat, and the heaviest sets.',
+        line: 'Old-school cut with a spine down the back, built for range and heat.',
         marker: 'Bare',
         tone: '#202327',
         bgUrl: '/landing/the-oath/product-bg-2.webp',
         hotspots: [
           { id: 'armhole', label: 'Deep Armhole', description: 'A low-cut arm opens the lats and frees the shoulder through full range.', x: 36, y: 38 },
-          { id: 'cut', label: 'Old-School Cut', description: 'Tapered body that sits close to the chest and falls clean off the lats.', x: 58, y: 56 },
+          { id: 'spine', label: 'The Spine', description: 'A vertebral seam runs the length of the back — the bone worn on the outside.', x: 58, y: 56 },
           { id: 'knit', label: 'Breathable Knit', description: 'Open ribbed knit dumps heat fast under the hardest training.', x: 48, y: 24 },
         ],
       },
       {
         id: 'compression',
         index: '03',
-        title: 'The Compression Tee',
+        title: 'OATHBOUND Seamless Compression Tee',
         subtitle: 'A second skin, sworn to the muscle it covers.',
-        line: 'Dense compression and sculpted structure, built to move under pressure.',
+        line: 'Seamless compression and four-way stretch, built to move under pressure.',
         marker: 'Skin',
         tone: '#141619',
         bgUrl: '/landing/the-oath/product-bg-3.webp',
         hotspots: [
-          { id: 'seamless', label: 'Seamless Compression', description: 'Knit in one pass — graduated support mapped to the muscle that needs it.', x: 44, y: 30 },
-          { id: 'panels', label: 'Sculpted Panels', description: 'Engineered yoke and lat channels carve a sharper, wider V-taper.', x: 62, y: 48 },
-          { id: 'moisture', label: 'Moisture Channels', description: 'Ventilated zones wick sweat and hold the fabric off the skin.', x: 40, y: 66 },
+          { id: 'seamless', label: 'Seamless Knit', description: 'Knit in a single pass on seamless machinery — no side seams to dig in under load.', x: 44, y: 30 },
+          { id: 'stretch', label: 'Four-Way Stretch', description: 'Moves with the muscle in every direction, then returns to shape.', x: 62, y: 48 },
+          { id: 'branding', label: 'Raised Silicone Mark', description: '1 mm raised silicone branding, bonded flat so nothing catches under a bar.', x: 40, y: 66 },
         ],
       },
     ],
@@ -161,10 +161,11 @@ export const OATH_DEFAULT_CONTENT: OathResolvedContent = {
     viewAllHref: '/shop',
     taglines: {
       'the-oath-oversized-tee':
-        'Heavy streetwear weight. Built for presence before and after the work.',
-      'the-oath-stringer': 'Old-school cut. Built for range, heat, and hard training.',
+        '260 GSM pure cotton. Built for presence before and after the work.',
+      'the-oath-stringer':
+        'Old-school cut with a spine down the back. Built for range and heat.',
       'the-oath-compression-tee':
-        'Dense compression. Muscle-defining structure. Built to move under pressure.',
+        'Seamless knit. Four-way stretch. Built to move under pressure.',
     },
   },
   finale: {
@@ -188,20 +189,20 @@ export const OATH_BRAND_NAME = 'ANVL Athletics'
 export const OATH_PRODUCT_ROSTER: OathResolvedProductCopy[] = [
   {
     slug: 'the-oath-oversized-tee',
-    name: 'The Oath Oversized Tee',
+    name: 'Forged Oversized Tee',
     role: 'Oversized Tee',
     tone: '#1a1c1f',
   },
   {
     slug: 'the-oath-stringer',
-    name: 'The Oath Stringer',
+    name: 'MARROW Stringer',
     role: 'Old-school Stringer',
     tone: '#202327',
   },
   {
     slug: 'the-oath-compression-tee',
-    name: 'The Oath Compression Tee',
-    role: 'Compression Tee',
+    name: 'OATHBOUND Seamless Compression Tee',
+    role: 'Seamless Compression Tee',
     tone: '#141619',
   },
 ]

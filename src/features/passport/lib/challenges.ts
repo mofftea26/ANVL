@@ -3,6 +3,7 @@ import type { OwnedPassport } from '../schemas/passport.schema'
 import {
   DEFAULT_GAMIFICATION_RULES,
   type ChallengeCategory,
+  type ChallengeDifficulty,
   type GamificationMetric,
   type GamificationRules,
 } from '../schemas/gamification.schema'
@@ -22,6 +23,44 @@ export interface ChallengeContext {
   featCount: number
   fullDrops: number
   honorPinned: number
+  /* ---- v2 ---------------------------------------------------------------
+   * Everything below is OPTIONAL on purpose. Each needs a source the owner's
+   * passport rows cannot supply — the wear log, the reviews table, or a
+   * counter that does not exist yet. A caller that has not loaded a given
+   * source omits it, and the accessor reads 0, so the challenge simply sits
+   * at 0% instead of the whole log throwing.
+   *
+   * `resolveChallenges` filters out challenges whose source is absent (see
+   * UNSOURCED_METRICS), so an unloaded source shows nothing rather than a
+   * permanently-stuck row.
+   */
+  /** Longest run of consecutive days with a logged wear. */
+  streakDays?: number
+  /** Longest run of consecutive ISO weeks containing at least one wear. */
+  weeklyStreak?: number
+  /** Distinct calendar months containing at least one wear. */
+  distinctMonths?: number
+  /** Wears logged before 08:00 local time. */
+  earlyWears?: number
+  reviews?: number
+  publicFeats?: number
+  transfersOut?: number
+  transfersIn?: number
+  /** Whole days since the owner's first claim. */
+  tenureDays?: number
+  /** 1 when the armory is public with a minted handle, else 0. */
+  armoryPublic?: number
+  /** Most colourways owned of any single product. */
+  distinctColorways?: number
+  /** Most divisions owned within a single drop. */
+  divisionsOwned?: number
+  shares?: number
+  chaptersRead?: number
+}
+
+/** Reads an optional context number, treating absent as zero. */
+function opt(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
 export type { ChallengeCategory }
@@ -45,6 +84,66 @@ export const CHALLENGE_METRIC_ACCESSORS: Record<
   feat_count: (c) => c.featCount,
   full_drops: (c) => c.fullDrops,
   honor_pinned: (c) => c.honorPinned,
+  streak_days: (c) => opt(c.streakDays),
+  weekly_streak: (c) => opt(c.weeklyStreak),
+  distinct_months: (c) => opt(c.distinctMonths),
+  early_wears: (c) => opt(c.earlyWears),
+  reviews: (c) => opt(c.reviews),
+  public_feats: (c) => opt(c.publicFeats),
+  transfers_out: (c) => opt(c.transfersOut),
+  transfers_in: (c) => opt(c.transfersIn),
+  tenure_days: (c) => opt(c.tenureDays),
+  armory_public: (c) => opt(c.armoryPublic),
+  distinct_colorways: (c) => opt(c.distinctColorways),
+  divisions_owned: (c) => opt(c.divisionsOwned),
+  shares: (c) => opt(c.shares),
+  chapters_read: (c) => opt(c.chaptersRead),
+}
+
+/**
+ * Metrics whose source is not wired up yet. A challenge on one of these can
+ * never move off 0%, and a quest log full of permanently-empty rows reads as
+ * broken rather than aspirational — so `resolveChallenges` hides them.
+ *
+ * Delete an entry from this set the moment its counter ships; the challenges
+ * are already authored and will simply appear.
+ */
+export const UNSOURCED_METRICS: ReadonlySet<GamificationMetric> = new Set([
+  // Empty: every metric now has a counter behind it. `shares` and
+  // `chapters_read` were the last two, and both are recorded into
+  // `armory_events` as of the counter build.
+])
+
+/** Which context keys each metric depends on, for the "is it loaded" check. */
+const METRIC_CONTEXT_KEY: Partial<Record<GamificationMetric, keyof ChallengeContext>> = {
+  streak_days: 'streakDays',
+  weekly_streak: 'weeklyStreak',
+  distinct_months: 'distinctMonths',
+  early_wears: 'earlyWears',
+  reviews: 'reviews',
+  public_feats: 'publicFeats',
+  transfers_out: 'transfersOut',
+  transfers_in: 'transfersIn',
+  tenure_days: 'tenureDays',
+  armory_public: 'armoryPublic',
+  distinct_colorways: 'distinctColorways',
+  divisions_owned: 'divisionsOwned',
+  shares: 'shares',
+  chapters_read: 'chaptersRead',
+}
+
+/**
+ * Whether a challenge on this metric should be shown at all: its counter must
+ * exist, and the caller must actually have loaded the source.
+ */
+export function isMetricAvailable(
+  metric: GamificationMetric,
+  ctx: ChallengeContext,
+): boolean {
+  if (UNSOURCED_METRICS.has(metric)) return false
+  const key = METRIC_CONTEXT_KEY[metric]
+  if (!key) return true // one of the six original passport-derived metrics
+  return ctx[key] !== undefined
 }
 
 export interface ChallengeProgress {
@@ -56,14 +155,43 @@ export interface ChallengeProgress {
   target: number
   progress: number
   complete: boolean
+  difficulty: ChallengeDifficulty
+  /** XP awarded for the tier currently being chased. */
+  xpReward: number
+  /** 1-based position of the active tier within its family. */
+  tier: number
+  /** How many tiers the family has (1 for a standalone challenge). */
+  tierCount: number
+  /** True once every tier in the family is complete. */
+  familyComplete: boolean
 }
 
+/**
+ * The six passport-derived metrics, plus whatever server counters the caller
+ * has loaded.
+ *
+ * `counters` is optional: a surface that has not fetched them (or is rendering
+ * before they arrive) simply omits it, and the challenges depending on those
+ * metrics are hidden rather than shown stuck at zero.
+ *
+ * `divisionsOwned` is deliberately RECOMPUTED here rather than taken from the
+ * server. The RPC can only count distinct products, because the drop each
+ * product belongs to lives in the commerce catalogue rather than Postgres —
+ * and "own one of each division of a drop" needs that grouping. The client
+ * already holds the catalogue, so it can answer precisely.
+ */
 export function buildChallengeContext(input: {
   owned: readonly OwnedPassport[]
   featCount: number
   completion: readonly DropCompletion[]
+  counters?: Partial<ChallengeContext>
 }): ChallengeContext {
-  const { owned, featCount, completion } = input
+  const { owned, featCount, completion, counters } = input
+
+  // Most distinct products held within any ONE drop — `claimed` is already
+  // the distinct-product count for that drop.
+  const divisionsOwned = completion.reduce((max, d) => Math.max(max, d.claimed), 0)
+
   return {
     registrations: owned.length,
     totalWears: owned.reduce((sum, p) => sum + p.wearCount, 0),
@@ -71,6 +199,10 @@ export function buildChallengeContext(input: {
     featCount,
     fullDrops: completion.filter((d) => d.total > 0 && d.claimed >= d.total).length,
     honorPinned: owned.filter((p) => p.featuredSlot !== null).length,
+    ...counters,
+    // Recomputed AFTER the spread so the catalogue-aware number wins over the
+    // server's coarser distinct-product count.
+    ...(completion.length > 0 ? { divisionsOwned } : {}),
   }
 }
 
@@ -78,29 +210,71 @@ export function buildChallengeContext(input: {
  * Progress for every active challenge, incomplete first (nearest to done
  * leading), so the next goal is always at the top; finished ones settle to
  * the bottom.
+ *
+ * TIERED FAMILIES COLLAPSE TO ONE ENTRY. A family like Battle-Worn is five
+ * rows in the rules (25 / 100 / 365 / 1000 wears), but showing all five at
+ * once buries the quest log in variants of the same goal and makes the log
+ * look padded. Instead each family yields the LOWEST tier not yet finished —
+ * the one actually being chased — or its final tier once they are all done.
+ *
+ * Challenges whose metric has no counter behind it, or whose source the caller
+ * has not loaded, are dropped entirely: a row pinned at 0% forever reads as
+ * broken rather than aspirational (see `isMetricAvailable`).
  */
 export function evaluateChallenges(
   ctx: ChallengeContext,
   rules: GamificationRules = DEFAULT_GAMIFICATION_RULES,
 ): ChallengeProgress[] {
-  return [...rules.challenges]
-    .filter((def) => def.isActive)
+  const active = [...rules.challenges]
+    .filter((def) => def.isActive && isMetricAvailable(def.metric, ctx))
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((def) => {
-      const current = Math.min(CHALLENGE_METRIC_ACCESSORS[def.metric](ctx), def.target)
-      return {
-        id: def.key,
-        category: def.category,
-        title: def.title,
-        description: def.description,
-        current,
-        target: def.target,
-        progress: def.target > 0 ? current / def.target : 0,
-        complete: current >= def.target,
-      }
+
+  // Group by family. A null `tierGroup` is standalone, so it gets a unique
+  // bucket keyed by its own key — never merged with another standalone.
+  const families = new Map<string, typeof active>()
+  for (const def of active) {
+    const groupKey = def.tierGroup ?? `@solo:${def.key}`
+    const bucket = families.get(groupKey)
+    if (bucket) bucket.push(def)
+    else families.set(groupKey, [def])
+  }
+
+  const rows: ChallengeProgress[] = []
+  for (const bucket of families.values()) {
+    const tiers = [...bucket].sort((a, b) => a.tier - b.tier)
+    const withProgress = tiers.map((def) => ({
+      def,
+      raw: CHALLENGE_METRIC_ACCESSORS[def.metric](ctx),
+    }))
+
+    // The tier being chased: first one not yet met. If all are met, the family
+    // is finished and the last tier stands as its completed face.
+    const activeIndex = withProgress.findIndex((t) => t.raw < t.def.target)
+    const familyComplete = activeIndex === -1
+    const chosen = familyComplete
+      ? withProgress[withProgress.length - 1]!
+      : withProgress[activeIndex]!
+
+    const current = Math.min(chosen.raw, chosen.def.target)
+    rows.push({
+      id: chosen.def.key,
+      category: chosen.def.category,
+      title: chosen.def.title,
+      description: chosen.def.description,
+      current,
+      target: chosen.def.target,
+      progress: chosen.def.target > 0 ? current / chosen.def.target : 0,
+      complete: current >= chosen.def.target,
+      difficulty: chosen.def.difficulty,
+      xpReward: chosen.def.xpReward,
+      tier: chosen.def.tier,
+      tierCount: tiers.length,
+      familyComplete,
     })
-    .sort((a, b) => {
-      if (a.complete !== b.complete) return a.complete ? 1 : -1
-      return b.progress - a.progress
-    })
+  }
+
+  return rows.sort((a, b) => {
+    if (a.complete !== b.complete) return a.complete ? 1 : -1
+    return b.progress - a.progress
+  })
 }

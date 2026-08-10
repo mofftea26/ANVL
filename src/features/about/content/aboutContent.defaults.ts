@@ -100,7 +100,7 @@ export const ABOUT_DEFAULT_CONTENT: AboutResolvedContent = {
     eyebrow: 'The House of ANVL',
     headline: 'Forged Under Pressure',
     subhead:
-      'ANVL Athletics is built in Lebanon for lifters who keep the oath when no one is watching — heavy cotton, honest stretch, and a silhouette that survives the session.',
+      'ANVL Athletics is designed in Zahle, Lebanon, for lifters who keep the oath when no one is watching — heavy cotton, honest stretch, and a silhouette that survives the session.',
     primaryCta: { label: 'Shop Drop 01', href: '/shop' },
     secondaryCta: { label: 'Read the Story', href: '/story' },
     scrollCue: 'Enter the forge',
@@ -112,10 +112,10 @@ export const ABOUT_DEFAULT_CONTENT: AboutResolvedContent = {
       color: '#E7E4DF',
       layout: 'classic',
       eyebrow: 'The House of ANVL',
-      title: 'Forged in Beirut',
+      title: 'Designed in Lebanon',
       subhead: '',
-      body: 'ANVL Athletics is premium bodybuilding gymwear from Lebanon — built for lifters who keep the oath when no one is watching. Training comes first; the silhouette stays premium when the session ends. Every release is a promise to the lifter who shows up anyway.',
-      detail: 'Est. Beirut · Lebanon · Drop 01 — The Oath',
+      body: 'ANVL Athletics is premium bodybuilding gymwear designed in Zahle, Lebanon — built for lifters who keep the oath when no one is watching. Training comes first; the silhouette stays premium when the session ends. Every release is a promise to the lifter who shows up anyway.',
+      detail: 'Designed in Zahle · Lebanon · Drop 01 — The Oath',
       lines: [],
       points: [],
       stats: [],
@@ -156,8 +156,13 @@ export const ABOUT_DEFAULT_CONTENT: AboutResolvedContent = {
       eyebrow: '01 · Materials',
       title: 'Chosen Under Scrutiny',
       subhead: '',
-      body: 'Heavy cotton, honest stretch, and compression that holds its shape — every fabric earns its place before it touches a pattern. We reject anything that feels premium standing still but folds under a heavy set.',
-      detail: '440 GSM heavy cotton · four-way honest stretch',
+      // No fabric weight figure on the About page by product decision: the
+      // number belongs on the PDP and the passport, where a buyer is comparing
+      // specs. Here it reads as spec-sheet noise in the middle of the brand
+      // story, and it dates the copy the moment a future drop uses a different
+      // weight.
+      body: 'Heavy cotton, honest stretch, and compression that holds its shape — every fabric is engineered to the perfect GSM for a premium hand, substantial enough to hang like armour and never so heavy it fights the session. We reject anything that feels premium standing still but folds under a heavy set.',
+      detail: 'Engineered to the perfect GSM for a premium hand · seamless compression knit · four-way stretch',
       lines: [],
       points: [],
       stats: [],
@@ -193,11 +198,11 @@ export const ABOUT_DEFAULT_CONTENT: AboutResolvedContent = {
       label: 'Testing',
       color: '#A34A3F',
       layout: 'classic',
-      eyebrow: '03 · Testing',
-      title: 'Proven Under Pressure',
+      eyebrow: '03 · Made',
+      title: 'Built Where the Machines Live',
       subhead: '',
-      body: 'Before a single unit ships, every pattern is pulled, stretched, and stress-tested past what a training session will ever demand — because "forged under pressure" is a standard, not a slogan.',
-      detail: 'Pulled 3× past session load before a unit ships',
+      body: 'ANVL is drawn in Lebanon by people who have built product for some of the biggest names in performance apparel, then manufactured in specialist facilities running seamless knitting machines — the kind that produce a compression garment in a single pass, with no side seams to dig in under load. That equipment does not exist here. We would rather build the piece properly than build it nearby, and we will never tell you it was made somewhere it was not.',
+      detail: 'Designed in Lebanon · knit on seamless machinery abroad',
       lines: [],
       points: [],
       stats: [],
@@ -219,10 +224,10 @@ export const ABOUT_DEFAULT_CONTENT: AboutResolvedContent = {
       lines: [],
       points: [],
       stats: [
-        { id: 'hours', label: 'Hours of pattern testing per drop', value: '500', suffix: '+' },
-        { id: 'iterations', label: 'Fit iterations before approval', value: '3', suffix: 'x' },
-        { id: 'made', label: 'Lebanon-made', value: '100', suffix: '%' },
-        { id: 'origin', label: 'Origin city', value: 'Beirut', suffix: '' },
+        { id: 'origin', label: 'Designed in', value: 'Lebanon', suffix: '' },
+        { id: 'city', label: 'Home city', value: 'Zahle', suffix: '' },
+        { id: 'pieces', label: 'Pieces in Drop 01', value: '3', suffix: '' },
+        { id: 'iterations', label: 'Sampling rounds before production', value: '3', suffix: 'x' },
         { id: 'excuses', label: 'Excuses accepted', value: '0', suffix: '' },
       ],
       mapPins: [],
@@ -251,6 +256,6 @@ export const ABOUT_DEFAULT_CONTENT: AboutResolvedContent = {
     },
   ],
   marquee: {
-    text: 'Forged Under Pressure — Beirut — ANVL Athletics',
+    text: 'Forged Under Pressure — Zahle — ANVL Athletics',
   },
 }

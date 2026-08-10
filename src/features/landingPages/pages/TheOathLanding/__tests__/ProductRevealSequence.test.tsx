@@ -59,7 +59,7 @@ describe('ProductRevealSequence mobile layout', () => {
     )
     const grid = container.querySelector('[data-product-reveal] ul')
     expect(grid).not.toBeNull()
-    expect(grid!.className).toMatch(/\bmax-md:gap-x-3\b/)
+    expect(grid!.className).toMatch(/\bmax-md:gap-x-4\b/)
     expect(grid!.className).toMatch(/\bmax-md:justify-items-center\b/)
   })
 })
@@ -108,10 +108,10 @@ describe('ProductRevealSequence tablet layout', () => {
     )
     const grid = container.querySelector('[data-product-reveal] ul')
     expect(grid).not.toBeNull()
-    expect(grid!.className).toMatch(/\bgap-x-5\b/)
-    expect(grid!.className).toMatch(/\bgap-y-10\b/)
-    expect(grid!.className).toMatch(/\bmd:gap-20\b/)
-    expect(grid!.className).toMatch(/\bxl:gap-20\b/)
+    expect(grid!.className).toMatch(/\bgap-x-6\b/)
+    expect(grid!.className).toMatch(/\bgap-y-12\b/)
+    expect(grid!.className).toMatch(/\bmd:gap-24\b/)
+    expect(grid!.className).toMatch(/\bxl:gap-28\b/)
   })
 
   it('uses enlarged tablet banner sizing without changing mobile or desktop', () => {

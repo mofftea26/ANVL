@@ -80,6 +80,11 @@ export interface RunRoutePayload {
   /** The unshaped caption — the route carries the destination-shaped text. */
   caption: string
   url: string
+  /** Optional, counters only: the passport this share is about, when it is
+   *  about one. Absent for an armory-wide or feat share. */
+  passportId?: string | null
+  /** Optional, counters only: what was shared (a feat id, an armory handle). */
+  shareTargetId?: string | null
 }
 
 /** Injected so the runners can be tested without a DOM or a clipboard. */
@@ -165,6 +170,33 @@ export function runShareRoute(
   payload: RunRoutePayload,
   deps: ShareRouteDeps = DEFAULT_DEPS,
 ): Promise<string | null> {
+  // Record the share for the Armory's challenge counters. Deliberately NOT
+  // awaited and never able to reject: a share that failed to log is a missing
+  // number, while an await here would put a network round trip between the
+  // user's tap and `navigator.share`, and browsers drop the user activation
+  // over exactly that gap — the share sheet would simply stop opening.
+  void recordShareEvent(payload)
+
   if (route.kind === 'os-share-file') return runOsShareRoute(route, payload, deps)
   return Promise.resolve(runShareRouteSync(route, payload, deps))
+}
+
+/**
+ * Fire-and-forget share counter. Loaded lazily so the Supabase client never
+ * enters the share sheet's eager import graph (see the bundle invariant in
+ * CLAUDE.md — one static edge here would pull supabase-js onto first paint).
+ */
+function recordShareEvent(payload: RunRoutePayload): void {
+  if (typeof window === 'undefined') return
+  void import('@/features/passport/api/armoryEventsClient')
+    .then((m) =>
+      m.recordArmoryEvent({
+        type: 'share_sent',
+        passportId: payload.passportId ?? null,
+        targetId: payload.shareTargetId ?? null,
+      }),
+    )
+    .catch(() => {
+      /* counters are best-effort; never surface to the sharer */
+    })
 }

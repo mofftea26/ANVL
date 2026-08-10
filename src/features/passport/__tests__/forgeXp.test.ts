@@ -4,8 +4,10 @@ import {
   computeForgeXpBreakdown,
   cumulativeXpForLevel,
   nextForgeMilestone,
+  XP_PER_FEAT,
   XP_PER_FULL_DROP,
   XP_PER_REGISTRATION,
+  XP_PER_WEAR,
 } from '@/features/passport/lib/forgeXp'
 import type { DropCompletion } from '@/features/passport/lib/ranks'
 import type { OwnedPassport } from '@/features/passport/schemas/passport.schema'
@@ -36,11 +38,16 @@ describe('computeForgeXpBreakdown', () => {
       featCount: 2,
       completion,
     })
-    expect(b.registrations).toBe(2 * XP_PER_REGISTRATION) // 200
-    expect(b.wears).toBe((3 + 2) * 5) // 25
-    expect(b.feats).toBe(2 * 20) // 40
-    expect(b.fullDrops).toBe(XP_PER_FULL_DROP) // 200
-    expect(b.total).toBe(200 + 25 + 40 + 200)
+    // Expressed through the constants rather than literals: the XP economy is
+    // CMS-tunable, so hardcoding the numbers made this suite fail every time
+    // the rates were rebalanced without any behaviour actually regressing.
+    expect(b.registrations).toBe(2 * XP_PER_REGISTRATION)
+    expect(b.wears).toBe((3 + 2) * XP_PER_WEAR)
+    expect(b.feats).toBe(2 * XP_PER_FEAT)
+    expect(b.fullDrops).toBe(XP_PER_FULL_DROP)
+    expect(b.total).toBe(
+      2 * XP_PER_REGISTRATION + 5 * XP_PER_WEAR + 2 * XP_PER_FEAT + XP_PER_FULL_DROP,
+    )
   })
 })
 
@@ -62,13 +69,21 @@ describe('computeForgeLevel', () => {
   })
 
   it('places total XP into the right level with progress toward the next', () => {
-    // 2 registrations = 200 XP → past level 2 (150), short of level 3 (450).
     const forge = computeForgeLevel({ owned: [piece(0, 'a'), piece(0, 'b')], featCount: 0, completion: [] })
-    expect(forge.level).toBe(2)
-    expect(forge.xpIntoLevel).toBe(50) // 200 - 150
-    expect(forge.xpForLevel).toBe(300) // 450 - 150
-    expect(forge.xpToNext).toBe(250) // 450 - 200
-    expect(forge.progress).toBeCloseTo(50 / 300)
+    const total = 2 * XP_PER_REGISTRATION
+
+    // Derived from the curve rather than asserted as literals, so a rebalanced
+    // XP rate moves the expectation with it instead of failing the suite.
+    const base = cumulativeXpForLevel(forge.level)
+    const next = cumulativeXpForLevel(forge.level + 1)
+
+    expect(forge.total).toBe(total)
+    expect(base).toBeLessThanOrEqual(total)
+    expect(next).toBeGreaterThan(total)
+    expect(forge.xpIntoLevel).toBe(total - base)
+    expect(forge.xpForLevel).toBe(next - base)
+    expect(forge.xpToNext).toBe(next - total)
+    expect(forge.progress).toBeCloseTo((total - base) / (next - base))
   })
 })
 
@@ -83,11 +98,13 @@ describe('nextForgeMilestone', () => {
   })
 
   it('falls back to the next Forge Level when no rank change is near', () => {
-    // 10 registrations → Oathbound III (top of the count ladder without a full
-    // drop); +4 more won't change the title, so it points at the Forge Level.
-    const owned = Array.from({ length: 10 }, (_, i) => piece(0, `p${i}`))
+    // Sitting at the very top of the ladder: no number of extra pieces can
+    // change the rank title, so the milestone must fall through to Forge Level.
+    // Anvilborn III is XP-gated, and four more pieces cannot clear the gap to
+    // anything beyond it because there is nothing beyond it.
+    const owned = Array.from({ length: 400 }, (_, i) => piece(0, `p${i}`))
     const forge = computeForgeLevel({ owned, featCount: 0, completion: [] })
-    const milestone = nextForgeMilestone({ claimCount: 10, completion: [], forge })
+    const milestone = nextForgeMilestone({ claimCount: owned.length, completion: [], forge })
     expect(milestone.label).toMatch(/Forge Level/)
     expect(milestone.detail).toMatch(/XP to go/)
   })

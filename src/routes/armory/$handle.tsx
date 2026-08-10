@@ -59,7 +59,15 @@ export const Route = createFileRoute('/armory/$handle')({
 })
 
 function PublicArmoryRoute() {
-  const { armory, images, names, meta } = Route.useLoaderData()
+  const { armory, handle, images, names, meta } = Route.useLoaderData()
   if (!armory) return <PublicArmoryMissing />
-  return <PublicArmoryView armory={armory} images={images} names={names} meta={meta} />
+  return (
+    <PublicArmoryView
+      armory={armory}
+      handle={handle}
+      images={images}
+      names={names}
+      meta={meta}
+    />
+  )
 }

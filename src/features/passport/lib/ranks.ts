@@ -101,22 +101,46 @@ function completedDropCount(completion: readonly DropCompletion[]): number {
 /**
  * Declarative rank derivation: walk the ladder from the top — ranks by
  * `sortOrder` descending, levels III→I — and return the first level whose
- * non-null thresholds (AND-combined) all hold. The seed's Initiate I has no
- * thresholds, so there is always a match.
+ * non-null thresholds (AND-combined) all hold. The seed's floor level has no
+ * thresholds at all, so there is always a match.
+ *
+ * XP is the primary driver since gamification v2. A registration-gated ladder
+ * cannot be climbed past the size of the catalogue, so with a three-piece drop
+ * it stalls a week after launch; gating on earned XP means training, feats and
+ * reviews keep someone moving without buying anything else.
+ *
+ * `earnedXp` is REQUIRED, deliberately, and there is no default. Both possible
+ * defaults are actively dangerous with an XP-driven ladder:
+ *
+ *   `= 0`               every XP gate fails    -> everyone demoted to the floor
+ *   undefined = ignore  every XP gate passes   -> everyone promoted to the top
+ *
+ * The second is the worse failure and the non-obvious one: the v2 ladder is
+ * XP-only, so most levels carry no count thresholds at all. Skipping the XP
+ * check leaves nothing to evaluate, every level matches, and a brand-new
+ * account with zero pieces derives as the highest rank in the game — handing
+ * out the top reward to every visitor.
+ *
+ * Making the parameter required means the compiler names every call site that
+ * has to be taught about XP, instead of one of those two silent inversions
+ * shipping. Callers that only hold counts should use
+ * `estimateForgeXpFromCounts` rather than passing 0.
  */
 export function deriveArmoryRank(
   claimCount: number,
   completion: readonly DropCompletion[],
-  rules: GamificationRules = DEFAULT_GAMIFICATION_RULES,
+  rules: GamificationRules,
+  earnedXp: number,
 ): ArmoryRank {
   const fullDrops = completedDropCount(completion)
   const ranksDesc = [...rules.ranks].sort((a, b) => b.sortOrder - a.sortOrder)
   for (const rank of ranksDesc) {
     const levelsDesc = [...rank.levels].sort((a, b) => b.level - a.level)
     for (const level of levelsDesc) {
+      const xpOk = level.minXp === null || earnedXp >= level.minXp
       const regOk = level.minRegistrations === null || claimCount >= level.minRegistrations
       const dropOk = level.minFullDrops === null || fullDrops >= level.minFullDrops
-      if (regOk && dropOk) {
+      if (xpOk && regOk && dropOk) {
         return {
           key: rank.key,
           level: level.level,

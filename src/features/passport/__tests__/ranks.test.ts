@@ -5,6 +5,7 @@ import {
   deriveArmoryRank,
   hasFullDrop,
 } from '@/features/passport/lib/ranks'
+import { DEFAULT_GAMIFICATION_RULES } from '@/features/passport/schemas/gamification.schema'
 
 const catalog = [
   { slug: 'seamless-tee', dropName: 'The Oath' },
@@ -38,49 +39,82 @@ describe('computeDropCompletion', () => {
   })
 })
 
-describe('deriveArmoryRank — three levels per rank', () => {
-  it('walks the Initiate levels', () => {
-    expect(deriveArmoryRank(0, [])).toMatchObject({ key: 'initiate', level: 1, title: 'Initiate I' })
-    expect(deriveArmoryRank(1, [])).toMatchObject({ key: 'initiate', level: 2, title: 'Initiate II' })
-    expect(deriveArmoryRank(2, [])).toMatchObject({ key: 'initiate', level: 3, title: 'Initiate III' })
+describe('deriveArmoryRank — XP-gated ladder', () => {
+  const R = DEFAULT_GAMIFICATION_RULES
+
+  /** Rank at a given XP with no claims/completion, the common case here. */
+  const at = (xp: number) => deriveArmoryRank(0, [], R, xp)
+
+  it('walks the Unsworn and Initiate levels by XP', () => {
+    expect(at(0)).toMatchObject({ key: 'unsworn', level: 1, title: 'Unsworn I' })
+    expect(at(40)).toMatchObject({ key: 'unsworn', level: 2 })
+    expect(at(80)).toMatchObject({ key: 'unsworn', level: 3 })
+    // Initiate I also requires a claim, so XP alone is not enough.
+    expect(at(100)).toMatchObject({ key: 'unsworn', level: 3 })
+    expect(deriveArmoryRank(1, [], R, 100)).toMatchObject({ key: 'initiate', level: 1 })
+    expect(deriveArmoryRank(1, [], R, 360)).toMatchObject({ key: 'initiate', level: 2 })
+    expect(deriveArmoryRank(1, [], R, 555)).toMatchObject({ key: 'initiate', level: 3 })
   })
 
-  it('walks the Forged levels', () => {
-    expect(deriveArmoryRank(3, [])).toMatchObject({ key: 'forged', level: 1, title: 'Forged I' })
-    expect(deriveArmoryRank(4, [])).toMatchObject({ key: 'forged', level: 2 })
-    expect(deriveArmoryRank(5, [])).toMatchObject({ key: 'forged', level: 3 })
+  it('walks Forged, Oathsworn, Warden and Vanguard by XP alone', () => {
+    expect(at(750)).toMatchObject({ key: 'forged', level: 1, title: 'Forged I' })
+    expect(at(1625)).toMatchObject({ key: 'forged', level: 3 })
+    expect(at(2000)).toMatchObject({ key: 'oathbound', level: 1, title: 'Oathsworn I' })
+    expect(at(4500)).toMatchObject({ key: 'warden', level: 1 })
+    expect(at(9000)).toMatchObject({ key: 'vanguard', level: 1 })
+    expect(at(15300)).toMatchObject({ key: 'vanguard', level: 3 })
   })
 
-  it('walks the Oathbound levels', () => {
-    expect(deriveArmoryRank(6, [])).toMatchObject({ key: 'oathbound', level: 1 })
-    expect(deriveArmoryRank(8, [])).toMatchObject({ key: 'oathbound', level: 2 })
-    expect(deriveArmoryRank(10, [])).toMatchObject({ key: 'oathbound', level: 3, title: 'Oathbound III' })
-  })
-
-  it('a full drop promotes to Warlord and levels by depth', () => {
+  it('Warlord needs a completed drop as well as the XP', () => {
     expect(hasFullDrop(fullOath)).toBe(true)
-    expect(deriveArmoryRank(3, fullOath)).toMatchObject({ key: 'warlord', level: 1 })
-    expect(deriveArmoryRank(12, fullOath)).toMatchObject({ key: 'warlord', level: 2 })
+    // XP is there, the drop is not — so the ladder stops below Warlord.
+    expect(at(18000)).toMatchObject({ key: 'vanguard', level: 3 })
+    expect(deriveArmoryRank(3, fullOath, R, 18000)).toMatchObject({ key: 'warlord', level: 1 })
     expect(
-      deriveArmoryRank(20, [
-        { dropName: 'The Oath', claimed: 3, total: 3 },
-        { dropName: 'Drop 02', claimed: 4, total: 4 },
-      ]),
-    ).toMatchObject({ key: 'warlord', level: 3, title: 'Warlord III' })
+      deriveArmoryRank(
+        20,
+        [
+          { dropName: 'The Oath', claimed: 3, total: 3 },
+          { dropName: 'Drop 02', claimed: 4, total: 4 },
+        ],
+        R,
+        26800,
+      ),
+    ).toMatchObject({ key: 'warlord', level: 2 })
+  })
+
+  it('reaches Anvilborn only at the top of the curve', () => {
+    expect(at(39999)).not.toMatchObject({ key: 'anvilborn' })
+    expect(at(40000)).toMatchObject({ key: 'anvilborn', level: 1 })
+    expect(at(85000)).toMatchObject({ key: 'anvilborn', level: 3, title: 'Anvilborn III' })
+  })
+
+  /**
+   * REGRESSION. An XP-only ladder has almost no count thresholds left, so any
+   * caller that fails to gate on XP finds every level matching and returns the
+   * LAST one walked — the top rank. That shipped briefly during the v2 build
+   * and promoted a brand-new, zero-XP account straight to Anvilborn III, which
+   * carries the "one free piece" reward. The floor must hold at zero.
+   */
+  it('a zero-XP owner derives the FLOOR rank, never the top one', () => {
+    const floor = deriveArmoryRank(0, [], R, 0)
+    expect(floor.key).toBe('unsworn')
+    expect(floor.level).toBe(1)
+    expect(floor.key).not.toBe('anvilborn')
   })
 
   it('an empty drop never counts as complete', () => {
     expect(hasFullDrop([{ dropName: 'X', claimed: 0, total: 0 }])).toBe(false)
-    expect(deriveArmoryRank(0, [{ dropName: 'X', claimed: 0, total: 0 }])).toMatchObject({
-      key: 'initiate',
-    })
+    expect(
+      deriveArmoryRank(0, [{ dropName: 'X', claimed: 0, total: 0 }], R, 0),
+    ).toMatchObject({ key: 'unsworn' })
   })
 
-  it('every rank carries emblem artwork', () => {
-    expect(deriveArmoryRank(0, []).emblemSrc).toBe('/brand/ranks/initiate.png')
-    expect(deriveArmoryRank(3, []).emblemSrc).toBe('/brand/ranks/forged.png')
-    expect(deriveArmoryRank(6, []).emblemSrc).toBe('/brand/ranks/oathbound.png')
-    expect(deriveArmoryRank(3, fullOath).emblemSrc).toBe('/brand/ranks/warlord.png')
+  it('seeded ranks carry code-owned emblem artwork', () => {
+    expect(deriveArmoryRank(1, [], R, 100).emblemSrc).toBe('/brand/ranks/initiate.png')
+    expect(at(750).emblemSrc).toBe('/brand/ranks/forged.png')
+    expect(at(2000).emblemSrc).toBe('/brand/ranks/oathbound.png')
+    expect(deriveArmoryRank(3, fullOath, R, 18000).emblemSrc).toBe('/brand/ranks/warlord.png')
   })
 })
 

@@ -9,6 +9,18 @@
 @import "@fontsource/cinzel/600.css";
 @import "tailwindcss";
 
+/* Tailwind v4 auto-detects sources across the whole repo, skipping only
+   gitignored paths. Two tracked directories are not UI source and must not
+   feed class detection:
+     - dist-ui/ — committed build output (the package `types` entry). It holds
+       stale compiled copies of src, so it can resurrect deleted classes.
+     - docs/    — prose. Docs quote utilities as examples, and a quoted example
+       is indistinguishable from real usage to the scanner.
+   Both were emitting a dead, invalid `color: var(...)` rule from a *comment*
+   that spelled an arbitrary-value utility out literally. */
+@source not "../dist-ui";
+@source not "../docs";
+
 @theme {
   /* Type pair chosen to echo the angular, condensed, blade-like ANVL logo.
      Anton — heavy condensed industrial display (single weight, so `font-normal`

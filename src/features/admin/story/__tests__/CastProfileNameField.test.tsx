@@ -84,14 +84,17 @@ describe('CastProfileNameField', () => {
     await waitFor(() => expect(search).toHaveBeenCalledWith('jad'))
 
     const option = await screen.findByText('Jad Haddad')
-    // 6 registrations → Oathbound I in the seed ladder (claims-only snapshot).
-    expect(screen.getByText(/6 pieces registered · Oathbound I/)).toBeInTheDocument()
+    // The search RPC exposes only `claim_count`, so XP is estimated from
+    // registrations alone: 6 x 250 = 1500 XP, which lands in Forged II
+    // (1250..1624) on the v2 ladder. Under-stating is intended here — a real
+    // athlete's wears and feats would push them higher.
+    expect(screen.getByText(/6 pieces registered · Forged II/)).toBeInTheDocument()
 
     await user.pointer({ keys: '[MouseLeft]', target: option })
     await waitFor(() =>
       expect(onProfileSelect).toHaveBeenCalledWith({
         name: 'Jad Haddad',
-        rank: 'Oathbound I',
+        rank: 'Forged II',
         userId: 'u1',
         avatarUrl: 'https://cdn.example.com/jad.jpg',
         armoryHandle: 'jad',

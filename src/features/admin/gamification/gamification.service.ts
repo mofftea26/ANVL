@@ -4,9 +4,11 @@ import { fetchGamificationRules } from '@/features/passport/api/gamificationClie
 import type {
   ArmoryRankKey,
   ChallengeCategory,
+  ChallengeDifficulty,
   GamificationMetric,
   GamificationRules,
   GamificationXpSettings,
+  RankRewardStatus,
 } from '@/features/passport/schemas/gamification.schema'
 
 export type GamificationResult<T> = { ok: true; data: T } | { ok: false; error: string }
@@ -31,9 +33,15 @@ export interface RankDraft {
   name: string
   description: string
   emblemUrl: string | null
+  /** The perk this rank unlocks. Blank title = no reward at this rank. */
+  rewardTitle: string
+  rewardDescription: string
+  rewardStatus: RankRewardStatus
   levels: Array<{
     level: 1 | 2 | 3
     unlockCopy: string
+    /** Forge XP threshold — the primary gate since gamification v2. */
+    minXp: number | null
     minRegistrations: number | null
     minFullDrops: number | null
   }>
@@ -51,6 +59,9 @@ export async function saveRank(draft: RankDraft): Promise<GamificationResult<nul
       name: draft.name,
       description: draft.description,
       emblem_url: draft.emblemUrl,
+      reward_title: draft.rewardTitle,
+      reward_description: draft.rewardDescription,
+      reward_status: draft.rewardStatus,
     })
     .eq('key', draft.key)
   if (rankRes.error) return fail(rankRes.error, 'Could not save the rank.')
@@ -60,6 +71,7 @@ export async function saveRank(draft: RankDraft): Promise<GamificationResult<nul
       .from('gamification_rank_levels')
       .update({
         unlock_copy: level.unlockCopy,
+        min_xp: level.minXp,
         min_registrations: level.minRegistrations,
         min_full_drops: level.minFullDrops,
       })
@@ -132,6 +144,10 @@ export async function createRank(
       rank_key: key,
       level,
       unlock_copy: `Ascend to ${name} ${roman[level - 1]}`,
+      // No thresholds at all on a freshly created rank: an admin sets them
+      // next. Leaving min_xp null means the new rank is reachable immediately,
+      // which is the same permissive behaviour the count columns always had.
+      min_xp: null,
       min_registrations: null,
       min_full_drops: null,
     })),
@@ -190,6 +206,12 @@ export interface ChallengeDraft {
   description: string
   metric: GamificationMetric
   target: number
+  difficulty: ChallengeDifficulty
+  /** XP awarded on completion. Priced per challenge, not derived from band. */
+  xpReward: number
+  /** Shared key that collapses escalating targets into one UI card. */
+  tierGroup: string | null
+  tier: number
   sortOrder: number
   isActive: boolean
 }
@@ -207,6 +229,10 @@ export async function upsertChallenge(
       description: draft.description,
       metric: draft.metric,
       target: draft.target,
+      difficulty: draft.difficulty,
+      xp_reward: draft.xpReward,
+      tier_group: draft.tierGroup,
+      tier: draft.tier,
       sort_order: draft.sortOrder,
       is_active: draft.isActive,
     },

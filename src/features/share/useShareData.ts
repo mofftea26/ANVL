@@ -2,6 +2,7 @@ import { useArmoryCatalogQuery } from '@/features/passport/hooks/useArmoryCatalo
 import { useArmoryFeatsQuery, useArmoryShareQuery } from '@/features/passport/hooks/useArmory'
 import { useGamificationRules } from '@/features/passport/hooks/useGamificationRules'
 import { useOwnedPassportsQuery } from '@/features/passport/hooks/usePassport'
+import { estimateForgeXpFromCounts } from '@/features/passport/lib/forgeXp'
 import { computeDropCompletion, deriveArmoryRank } from '@/features/passport/lib/ranks'
 import type { ArmoryFeat } from '@/features/passport/schemas/passport.schema'
 import { useCustomerProfileQuery } from '@/features/storefront-account/publicAccount.core'
@@ -49,7 +50,22 @@ export function useShareData(): ShareData {
   }))
 
   const completion = computeDropCompletion(owned, catalog)
-  const rank = deriveArmoryRank(owned.length, completion, rules)
+  // Feats are not loaded on the share surface, so XP is estimated from the
+  // counts this hook does hold. It can only under-state, never over-state,
+  // which keeps a shared card from ever claiming a rank the owner lacks.
+  const rank = deriveArmoryRank(
+    owned.length,
+    completion,
+    rules,
+    estimateForgeXpFromCounts(
+      {
+        registrations: owned.length,
+        wears: owned.reduce((sum, p) => sum + p.wearCount, 0),
+        fullDrops: completion.filter((d) => d.total > 0 && d.claimed >= d.total).length,
+      },
+      rules.settings,
+    ),
+  )
 
   const share = shareQuery.data
   const url =

@@ -4,30 +4,23 @@ import {
   DEFAULT_GAMIFICATION_RULES,
   GAMIFICATION_METRICS,
 } from '../schemas/gamification.schema'
-import { CHALLENGE_METRIC_ACCESSORS, evaluateChallenges } from '../lib/challenges'
+import {
+  CHALLENGE_METRIC_ACCESSORS,
+  UNSOURCED_METRICS,
+  evaluateChallenges,
+} from '../lib/challenges'
 import { computeForgeLevel, cumulativeXpForLevel } from '../lib/forgeXp'
 import { deriveArmoryRank, type DropCompletion } from '../lib/ranks'
 
 /**
- * The historical hardcoded ladder, kept verbatim as the equivalence oracle:
- * the declarative resolver + DEFAULT_GAMIFICATION_RULES must reproduce it
- * exactly for every (claims, fullDrops) combination.
+ * Rank-derivation contract for the XP-driven ladder.
+ *
+ * This suite previously pinned the declarative resolver against a hardcoded
+ * copy of the ORIGINAL four-rank, registration-gated ladder. That oracle is
+ * deliberately gone: gamification v2 replaced it with an eight-rank XP ladder,
+ * so an equivalence test against the old shape would now be asserting that the
+ * feature was never built.
  */
-function legacyRank(claimCount: number, fullDrops: number): { key: string; level: number } {
-  if (fullDrops >= 2) return { key: 'warlord', level: 3 }
-  if (fullDrops >= 1 && claimCount >= 12) return { key: 'warlord', level: 2 }
-  if (fullDrops >= 1) return { key: 'warlord', level: 1 }
-  if (claimCount >= 10) return { key: 'oathbound', level: 3 }
-  if (claimCount >= 8) return { key: 'oathbound', level: 2 }
-  if (claimCount >= 6) return { key: 'oathbound', level: 1 }
-  if (claimCount >= 5) return { key: 'forged', level: 3 }
-  if (claimCount >= 4) return { key: 'forged', level: 2 }
-  if (claimCount >= 3) return { key: 'forged', level: 1 }
-  if (claimCount >= 2) return { key: 'initiate', level: 3 }
-  if (claimCount >= 1) return { key: 'initiate', level: 2 }
-  return { key: 'initiate', level: 1 }
-}
-
 function completionWithFullDrops(count: number): DropCompletion[] {
   return Array.from({ length: count }, (_, i) => ({
     dropName: `Drop ${i + 1}`,
@@ -36,37 +29,50 @@ function completionWithFullDrops(count: number): DropCompletion[] {
   }))
 }
 
-describe('declarative rank derivation ≡ legacy hardcoded ladder', () => {
-  it('matches for every claims × fullDrops combination', () => {
+describe('declarative rank derivation', () => {
+  const R = DEFAULT_GAMIFICATION_RULES
+
+  it('is monotonic: more XP never demotes you', () => {
+    let lastIndex = -1
+    for (let xp = 0; xp <= 90_000; xp += 250) {
+      const rank = deriveArmoryRank(0, [], R, xp)
+      const index = R.ranks.findIndex((r) => r.key === rank.key)
+      expect(index, `xp=${xp} derived ${rank.key}`).toBeGreaterThanOrEqual(lastIndex)
+      lastIndex = index
+    }
+  })
+
+  /**
+   * With zero XP, only levels carrying no XP gate can match — and the seed
+   * floor is the only one. Counts alone must never lift anyone off it, which
+   * is the property that broke when the XP gate was skippable.
+   */
+  it('holds the floor at zero XP for every claims × fullDrops combination', () => {
     for (let claims = 0; claims <= 15; claims += 1) {
       for (let fullDrops = 0; fullDrops <= 3; fullDrops += 1) {
-        const declarative = deriveArmoryRank(claims, completionWithFullDrops(fullDrops))
-        const legacy = legacyRank(claims, fullDrops)
-        expect(
-          { key: declarative.key, level: declarative.level },
-          `claims=${claims} fullDrops=${fullDrops}`,
-        ).toEqual(legacy)
+        const rank = deriveArmoryRank(claims, completionWithFullDrops(fullDrops), R, 0)
+        expect(rank.key, `claims=${claims} fullDrops=${fullDrops}`).toBe('unsworn')
       }
     }
   })
 
   it('keeps the code-owned emblem fallback', () => {
-    expect(deriveArmoryRank(0, []).emblemSrc).toBe('/brand/ranks/initiate.png')
+    expect(deriveArmoryRank(1, [], R, 100).emblemSrc).toBe('/brand/ranks/initiate.png')
   })
 
   it('honors a CMS emblem override', () => {
     const rules = structuredClone(DEFAULT_GAMIFICATION_RULES)
-    rules.ranks[0]!.emblemUrl = 'https://cdn.example/initiate-custom.png'
-    expect(deriveArmoryRank(0, [], rules).emblemSrc).toBe(
+    rules.ranks.find((r) => r.key === 'initiate')!.emblemUrl =
+      'https://cdn.example/initiate-custom.png'
+    expect(deriveArmoryRank(1, [], rules, 100).emblemSrc).toBe(
       'https://cdn.example/initiate-custom.png',
     )
   })
 
   it('respects edited thresholds', () => {
     const rules = structuredClone(DEFAULT_GAMIFICATION_RULES)
-    const forgedI = rules.ranks[1]!.levels[0]!
-    forgedI.minRegistrations = 2
-    expect(deriveArmoryRank(2, [], rules)).toMatchObject({ key: 'forged', level: 1 })
+    rules.ranks.find((r) => r.key === 'forged')!.levels[0]!.minXp = 200
+    expect(deriveArmoryRank(0, [], rules, 200)).toMatchObject({ key: 'forged', level: 1 })
   })
 })
 
@@ -77,22 +83,57 @@ describe('challenge metric vocabulary', () => {
     }
   })
 
+  const emptyCtx = {
+    registrations: 0,
+    totalWears: 0,
+    maxWears: 0,
+    featCount: 0,
+    fullDrops: 0,
+    honorPinned: 0,
+  }
+
   it('skips inactive challenges', () => {
     const rules = structuredClone(DEFAULT_GAMIFICATION_RULES)
+    // `curator` is standalone (no tierGroup), so deactivating it removes the
+    // row outright rather than promoting a sibling tier into its place.
     rules.challenges = rules.challenges.map((c) =>
-      c.key === 'loadout' ? { ...c, isActive: false } : c,
+      c.key === 'curator' ? { ...c, isActive: false } : c,
     )
-    const ctx = {
-      registrations: 3,
-      totalWears: 0,
-      maxWears: 0,
-      featCount: 0,
-      fullDrops: 0,
-      honorPinned: 0,
-    }
-    const ids = evaluateChallenges(ctx, rules).map((c) => c.id)
-    expect(ids).not.toContain('loadout')
+    const ids = evaluateChallenges(emptyCtx, rules).map((c) => c.id)
+    expect(ids).not.toContain('curator')
     expect(ids).toContain('first-strike')
+  })
+
+  /**
+   * A tiered family must occupy exactly ONE row, showing the tier being
+   * chased. Without this the quest log lists every threshold of the same goal
+   * and reads as padded.
+   */
+  it('collapses a tiered family to the tier currently being chased', () => {
+    const rules = DEFAULT_GAMIFICATION_RULES
+    const claimTiers = rules.challenges.filter((c) => c.tierGroup === 'forge-claims')
+    expect(claimTiers.length).toBeGreaterThan(1)
+
+    const atZero = evaluateChallenges(emptyCtx, rules)
+    const claimRows = atZero.filter((r) => claimTiers.some((t) => t.key === r.id))
+    expect(claimRows).toHaveLength(1)
+    expect(claimRows[0]!.id).toBe('first-strike')
+    expect(claimRows[0]!.tierCount).toBe(claimTiers.length)
+
+    // Past the first threshold, the SAME family advances to its next tier.
+    const advanced = evaluateChallenges({ ...emptyCtx, registrations: 3 }, rules)
+    const advancedRow = advanced.find((r) => claimTiers.some((t) => t.key === r.id))!
+    expect(advancedRow.id).not.toBe('first-strike')
+    expect(advancedRow.tier).toBeGreaterThan(1)
+  })
+
+  /** A metric with no counter behind it must not render a stuck-at-0% row. */
+  it('hides challenges whose metric has no source', () => {
+    const ids = evaluateChallenges(emptyCtx, DEFAULT_GAMIFICATION_RULES).map((c) => c.id)
+    const unsourced = DEFAULT_GAMIFICATION_RULES.challenges.filter((c) =>
+      UNSOURCED_METRICS.has(c.metric),
+    )
+    for (const c of unsourced) expect(ids).not.toContain(c.key)
   })
 })
 

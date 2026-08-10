@@ -80,6 +80,33 @@ export function computeForgeXpBreakdown(
   }
 }
 
+/**
+ * XP from raw counts, for callers that hold totals rather than the passport
+ * rows themselves — the public armory view (which sees another owner's
+ * aggregates, not their passports) and the admin cast-name preview.
+ *
+ * Exists so those callers never pass a placeholder into `deriveArmoryRank`.
+ * Passing 0 there would show every public armory at the floor rank; the whole
+ * point of making that parameter required is that there is no honest default,
+ * so this gives the count-only callers a real number instead.
+ */
+export function estimateForgeXpFromCounts(
+  counts: {
+    registrations: number
+    wears?: number
+    feats?: number
+    fullDrops?: number
+  },
+  settings: GamificationXpSettings = DEFAULT_XP,
+): number {
+  return (
+    counts.registrations * settings.xpPerRegistration +
+    (counts.wears ?? 0) * settings.xpPerWear +
+    (counts.feats ?? 0) * settings.xpPerFeat +
+    (counts.fullDrops ?? 0) * settings.xpPerFullDrop
+  )
+}
+
 export function computeForgeLevel(
   input: {
     owned: readonly OwnedPassport[]
@@ -130,11 +157,20 @@ export function nextForgeMilestone(
   rules: GamificationRules = DEFAULT_GAMIFICATION_RULES,
 ): NextMilestone {
   const { claimCount, completion, forge } = input
-  const currentRank = deriveArmoryRank(claimCount, completion, rules)
+  const currentRank = deriveArmoryRank(claimCount, completion, rules, forge.total)
 
   // Find the fewest extra registrations that would change the rank title.
+  // Each extra piece also earns XP, so the projection has to add that too —
+  // on an XP-gated ladder the registration alone usually is not what promotes
+  // you, and without the XP the loop would report "no rank up" forever.
+  const xpPerPiece = rules.settings.xpPerRegistration
   for (let extra = 1; extra <= 4; extra += 1) {
-    const nextRank = deriveArmoryRank(claimCount + extra, completion, rules)
+    const nextRank = deriveArmoryRank(
+      claimCount + extra,
+      completion,
+      rules,
+      forge.total + extra * xpPerPiece,
+    )
     if (nextRank.title !== currentRank.title) {
       return {
         label: nextRank.title,

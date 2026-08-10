@@ -15,6 +15,8 @@ import {
   deriveArmoryBadges,
   deriveArmoryRank,
 } from '@/features/passport/lib/ranks'
+import { useArmoryCounters } from '@/features/passport/hooks/useArmoryCounters'
+import { ArmoryRewardsCard } from '@/features/storefront-account/account/panels/armory/ArmoryRewardsCard'
 import { AccountBentoCard } from '@/features/storefront-account/account/AccountBentoCard'
 import { accountCardBg } from '@/features/storefront-account/account/accountCardBg'
 import { cn } from '@/shared/lib/cn'
@@ -51,15 +53,27 @@ export function ArmoryPanel() {
 
   const rules = useGamificationRules()
   const completion = computeDropCompletion(owned, catalog)
-  const rank = deriveArmoryRank(owned.length, completion, rules)
-  const badges = deriveArmoryBadges(owned.length, completion, rules)
+  // Forge XP first: the rank ladder is XP-gated, so the rank cannot be derived
+  // until the XP total exists.
   const forge = computeForgeLevel({ owned, featCount, completion }, rules.settings)
+  const rank = deriveArmoryRank(owned.length, completion, rules, forge.total)
+  const badges = deriveArmoryBadges(owned.length, completion, rules)
   const milestone = nextForgeMilestone(
     { claimCount: owned.length, completion, forge },
     rules,
   )
+  // Server counters (streaks, shares, chapter reads, tenure…). Only merged in
+  // once they have actually arrived — passing the placeholder zeroes early
+  // would make every one of those challenges render at 0% for a beat before
+  // snapping to the real value.
+  const countersQuery = useArmoryCounters(owned.length > 0)
   const challenges = evaluateChallenges(
-    buildChallengeContext({ owned, featCount, completion }),
+    buildChallengeContext({
+      owned,
+      featCount,
+      completion,
+      counters: countersQuery.isSuccess ? countersQuery.data : undefined,
+    }),
     rules,
   )
   const honorPinned = owned.filter((p) => p.featuredSlot !== null).length
@@ -109,6 +123,11 @@ export function ArmoryPanel() {
 
       {/* Forge progress — the live XP loop ----------------------------- */}
       <ForgeProgress forge={forge} milestone={milestone} />
+
+      {/* Hall of Honor sits directly under the XP bar: the three pieces the
+          owner chose to speak for them belong next to the number that says how
+          far they have come, not buried below the collection grid. */}
+      {owned.length > 0 ? <ArmoryHonor owned={owned} catalog={catalog} /> : null}
 
       {/* Standing (stacks full-width on phones so nothing clips) -------- */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -220,8 +239,6 @@ export function ArmoryPanel() {
         </AccountBentoCard>
       ) : (
         <>
-          <ArmoryHonor owned={owned} catalog={catalog} />
-
           {/* Collection · Timeline · Challenges — bento cards → overlays. */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <AccountBentoCard bg={accountCardBg('carbon')} eyebrow="Collection">
@@ -304,7 +321,13 @@ export function ArmoryPanel() {
                 className="focus-ring absolute inset-0 z-20 rounded-2xl"
               />
             </AccountBentoCard>
+
           </div>
+
+          {/* Rewards — full width beneath the grid. It is a locked vault, not
+              a peer of the three cards above it, so it gets its own band
+              rather than a third of a row. */}
+          <ArmoryRewardsCard rank={rank} rules={rules} totalXp={forge.total} />
 
           <div className="pt-1">
             {view === 'grid' ? <ArmoryGridView owned={owned} catalog={catalog} /> : null}

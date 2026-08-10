@@ -46,6 +46,13 @@ function blankChallenge(sortOrder: number): ChallengeDraft {
     description: '',
     metric: 'registrations',
     target: 1,
+    // A new challenge starts as a standalone Easy one. Tiering is opt-in:
+    // giving it a tierGroup by default would silently merge it into whichever
+    // family shared the name.
+    difficulty: 'easy',
+    xpReward: 50,
+    tierGroup: null,
+    tier: 1,
     sortOrder,
     isActive: true,
   }
