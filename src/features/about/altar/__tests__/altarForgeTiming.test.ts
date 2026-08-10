@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ALTAR_FORGE, ALTAR_STRIKE } from '../altarForgeTiming'
+import { ALTAR_FORGE, ALTAR_STRIKE, ALTAR_SUMMON } from '../altarForgeTiming'
 
 /**
  * The clock is pure data, so these are the *invariants* of the choreography —
@@ -16,6 +16,15 @@ describe('altarForgeTiming', () => {
     expect(ALTAR_STRIKE.impactAt).toBeCloseTo(ALTAR_STRIKE.dropAt + ALTAR_STRIKE.dropDuration)
     // Reduced motion gets one quick arc, so its impact lands earlier.
     expect(ALTAR_STRIKE.reducedMotionImpactAt).toBeLessThan(ALTAR_STRIKE.impactAt)
+  })
+
+  it('seats the summoned anvil before the hammer winds up', () => {
+    // The strike lands ON the anvil — a windup that starts while the anvil
+    // is still rising would swing at empty air.
+    expect(ALTAR_SUMMON.riseDuration).toBeLessThan(ALTAR_STRIKE.windupAt)
+    expect(ALTAR_SUMMON.sinkDuration).toBeGreaterThan(0)
+    expect(ALTAR_SUMMON.wakeFlash).toBeGreaterThan(0)
+    expect(ALTAR_SUMMON.wakeFlash).toBeLessThan(1)
   })
 
   it('hands off only once the shroud is fully released and has hung a beat', () => {
