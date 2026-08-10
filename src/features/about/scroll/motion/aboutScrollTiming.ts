@@ -33,6 +33,11 @@ export const ABOUT_SCROLL = {
 
   /** The strike-answer scroll back up to a chapter (Lenis eased). */
   scrollToDurationS: 1.6,
+
+  /** Boundary ember burst — morph + heat decay, per the particle-forge feel
+   *  targets (morphs ~1.6s power2.inOut, bursts ~1.4s power2.out). */
+  boundaryMorphS: 1.6,
+  boundaryBurstS: 1.4,
 } as const
 
 /**

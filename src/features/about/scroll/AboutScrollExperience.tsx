@@ -98,6 +98,11 @@ export default function AboutScrollExperience({
             hammerUrl: assets.hammerModel,
             onSelect: strike,
           }}
+          chapters={{
+            heroImage: assets.heroImage,
+            images: content.orbs.map((orb) => orbImage(orb, assets)),
+            colors: content.orbs.map((orb) => orb.color),
+          }}
         />
         <AboutHeroSection hero={content.hero} image={assets.heroImage} />
         {content.orbs.map((orb, index) => (

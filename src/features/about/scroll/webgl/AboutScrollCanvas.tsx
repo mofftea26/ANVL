@@ -10,6 +10,7 @@ import type { AboutScrollMotion } from '../motion/aboutMotionState'
 import { AboutDepthRig } from './AboutDepthRig'
 import { ABOUT_ALTAR_STAGE_Z, ABOUT_DEPTH } from './aboutDepthPath'
 import { AltarLoadProgress } from './AltarLoadProgress'
+import { EmberBoundaryField, type AboutBoundaryChapters } from './EmberBoundaryField'
 
 /** Everything the DOM side hands the canvas about the altar finale. */
 export interface AboutAltarCanvasProps {
@@ -105,10 +106,12 @@ function AltarStageGate({
 export default function AboutScrollCanvas({
   motion,
   altar,
+  chapters,
   onContextLost,
 }: {
   motion: AboutScrollMotion
   altar: AboutAltarCanvasProps
+  chapters: AboutBoundaryChapters
   /** Fires if the GPU/browser evicts this canvas's WebGL context so the
    *  gate can force a fresh remount instead of leaving a blank scene. */
   onContextLost?: () => void
@@ -147,6 +150,7 @@ export default function AboutScrollCanvas({
         <AltarAurora colors={colors} />
         <AboutDustDriver motion={motion} altarState={altar.state} drive={drive} />
         <DustField drive={drive} count={500} />
+        <EmberBoundaryField motion={motion} chapters={chapters} />
         <AltarStageGate
           motion={motion}
           altar={altar}
