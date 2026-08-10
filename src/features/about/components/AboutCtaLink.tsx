@@ -9,6 +9,12 @@ interface AboutCtaLinkProps {
   variant?: 'primary' | 'secondary'
   className?: string
   children: ReactNode
+  /**
+   * Orb accent (#RRGGBB). When set, the CTA is tinted to the orb it belongs
+   * to, so a button inside a modal reads as part of that section rather than
+   * as generic site chrome.
+   */
+  accent?: string
 }
 
 /**
@@ -17,9 +23,29 @@ interface AboutCtaLinkProps {
  * label/href — hrefs are sanitized via {@link SafeLink}; in-page hash targets
  * render a native anchor so the router does not intercept smooth-scroll jumps.
  */
-export function AboutCtaLink({ href, variant = 'primary', className, children }: AboutCtaLinkProps) {
+export function AboutCtaLink({
+  href,
+  variant = 'primary',
+  className,
+  children,
+  accent,
+}: AboutCtaLinkProps) {
   const classes = cn(buttonVariants({ variant, size: 'lg' }), 'group gap-2 no-underline', className)
   const isPrimary = variant === 'primary'
+
+  /**
+   * Tint via CSS custom properties rather than utility classes: the orb colour
+   * is arbitrary CMS hex, so there is no Tailwind class to reach for. The
+   * primary CTA takes the accent as its fill and forces near-black text (every
+   * orb tint is a mid-to-light industrial tone, so bone-on-accent would fail
+   * contrast); the secondary keeps its transparent fill and takes the accent
+   * on its border and label.
+   */
+  const accentStyle: React.CSSProperties | undefined = accent
+    ? isPrimary
+      ? { backgroundColor: accent, borderColor: accent, color: 'var(--anvl-black, #0B0B0C)' }
+      : { borderColor: accent, color: accent }
+    : undefined
   const content = (
     <span className="inline-flex items-center gap-2 whitespace-nowrap">
       {children}
@@ -35,13 +61,13 @@ export function AboutCtaLink({ href, variant = 'primary', className, children }:
 
   if (href.startsWith('#')) {
     return (
-      <a href={href} className={classes}>
+      <a href={href} className={classes} style={accentStyle}>
         {content}
       </a>
     )
   }
   return (
-    <SafeLink href={href} className={classes}>
+    <SafeLink href={href} className={classes} style={accentStyle}>
       {content}
     </SafeLink>
   )

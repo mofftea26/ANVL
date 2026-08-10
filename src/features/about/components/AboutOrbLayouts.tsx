@@ -65,13 +65,15 @@ function OrbFooter({ orb, modal, r }: Pick<LayoutProps, 'orb' | 'modal' | 'r'>) 
     <>
       {orb.primaryCta || orb.secondaryCta ? (
         <div {...r} className={cn('flex flex-wrap gap-3', modal ? 'mt-8' : 'mt-7')}>
+          {/* Tinted to the orb so a modal's buttons belong to that section
+              rather than reading as generic site chrome. */}
           {orb.primaryCta ? (
-            <AboutCtaLink href={orb.primaryCta.href} variant="primary">
+            <AboutCtaLink href={orb.primaryCta.href} variant="primary" accent={orb.color}>
               {orb.primaryCta.label}
             </AboutCtaLink>
           ) : null}
           {orb.secondaryCta ? (
-            <AboutCtaLink href={orb.secondaryCta.href} variant="secondary">
+            <AboutCtaLink href={orb.secondaryCta.href} variant="secondary" accent={orb.color}>
               {orb.secondaryCta.label}
             </AboutCtaLink>
           ) : null}
