@@ -62,7 +62,7 @@ export function buildAboutHero(
       start: 'top top',
       end: `+=${ABOUT_SCROLL.heroPinPct}%`,
       pin: true,
-      scrub: 1,
+      scrub: ABOUT_SCROLL.scrubSmoothing,
       anticipatePin: 1,
       invalidateOnRefresh: true,
       onUpdate: (self) => {

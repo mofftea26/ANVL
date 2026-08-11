@@ -10,14 +10,16 @@ import { splitUnits } from './splitUnits'
  * The pin scrubs three beats (fractions from `aboutScrollTiming`):
  *
  * - MATERIALIZE — the full-bleed backdrop condenses out of the depth (blur
- *   clears, scale settles from 1.1, the wash lifts) while the chapter copy
- *   forges in: the title's words mask-reveal, the `[data-orb-reveal]` blocks
- *   rise staggered, numeric stats count up with the scrub.
- * - HOLD — the chapter owns the frame; the backdrop drifts almost
- *   imperceptibly so it never freezes into a screenshot.
+ *   clears, scale settles from deep, a slight upward drift) while the whole
+ *   content frame ARRIVES dimensionally — a perspective tilt (rotationX)
+ *   easing flat as it rises — and the copy forges in: the title's words
+ *   mask-reveal, the `[data-orb-reveal]` blocks rise staggered, numeric
+ *   stats count up with the scrub.
+ * - HOLD — the chapter owns the frame; the backdrop and frame drift almost
+ *   imperceptibly so nothing ever freezes into a screenshot.
  * - DISSOLVE — the chapter releases PAST the camera: scale pushes on beyond
- *   1, blur returns, the copy lifts away. Scrolling feels like moving through
- *   the chapter, not past it.
+ *   1, blur returns, the frame tips away and the copy lifts out. Scrolling
+ *   feels like moving through the chapter, not past it.
  *
  * The trigger registers as `about-orb-pin-<index>` — the scroll-to lookup key
  * the altar's strike answer uses. Boundary crossings bump the motion state's
@@ -41,6 +43,7 @@ export function buildAboutOrbChapter(
   }
 
   const media = q('[data-chapter-media]')
+  const frame = q('[data-chapter-frame]')
   const reveals = q('[data-orb-reveal]')
   const ghost = q('[data-chapter-num]')
 
@@ -51,7 +54,7 @@ export function buildAboutOrbChapter(
       start: 'top top',
       end: `+=${ABOUT_SCROLL.chapterPinPct}%`,
       pin: true,
-      scrub: 1,
+      scrub: ABOUT_SCROLL.scrubSmoothing,
       anticipatePin: 1,
       invalidateOnRefresh: true,
       onUpdate: (self) => {
@@ -74,10 +77,41 @@ export function buildAboutOrbChapter(
   // — MATERIALIZE (0 → materializeEnd)
   tl.fromTo(
     media,
-    { opacity: 0, scale: 1.1, filter: 'blur(14px)' },
-    { opacity: 1, scale: 1, filter: 'blur(0px)', ease: 'power2.out', duration: materializeEnd },
+    { opacity: 0, scale: 1.18, yPercent: 4, filter: 'blur(18px)' },
+    {
+      opacity: 1,
+      scale: 1,
+      yPercent: 0,
+      filter: 'blur(0px)',
+      ease: 'power3.out',
+      duration: materializeEnd,
+    },
     0,
   )
+  // The whole content frame arrives DIMENSIONALLY — tipped back in
+  // perspective and below its seat, easing flat as it rises. This one
+  // transform is what reads as "the chapter turns to face you" rather than
+  // "a div faded in".
+  if (frame.length) {
+    tl.fromTo(
+      frame,
+      {
+        rotationX: 6,
+        yPercent: 4,
+        scale: 0.965,
+        transformPerspective: 1200,
+        transformOrigin: '50% 85%',
+      },
+      {
+        rotationX: 0,
+        yPercent: 0,
+        scale: 1,
+        ease: 'power3.out',
+        duration: materializeEnd,
+      },
+      0,
+    )
+  }
   if (titleUnits.length) {
     tl.fromTo(
       titleUnits,
@@ -108,10 +142,13 @@ export function buildAboutOrbChapter(
   if (ghost.length) {
     tl.fromTo(
       ghost,
-      { opacity: 0, xPercent: 6 },
-      { opacity: 0.5, xPercent: 0, ease: 'power2.out', duration: materializeEnd },
+      { opacity: 0 },
+      { opacity: 0.5, ease: 'power2.out', duration: materializeEnd },
       0,
     )
+    // The numeral travels the WHOLE pin on its own slow lane — foreground
+    // set-dressing moving against the backdrop is a constant depth cue.
+    tl.fromTo(ghost, { xPercent: 7 }, { xPercent: -7, ease: 'none', duration: 1 }, 0)
   }
 
   // Numeric stats count up with the scrub (and back down when scrubbed back).
@@ -134,15 +171,35 @@ export function buildAboutOrbChapter(
   }
 
   // — HOLD (materializeEnd → holdEnd): near-still drift, never a freeze.
-  tl.to(media, { scale: 1.035, ease: 'none', duration: holdEnd - materializeEnd }, materializeEnd)
+  const hold = holdEnd - materializeEnd
+  tl.to(media, { scale: 1.045, ease: 'none', duration: hold }, materializeEnd)
+  if (frame.length) {
+    tl.to(frame, { yPercent: -1.8, ease: 'none', duration: hold }, materializeEnd)
+  }
 
-  // — DISSOLVE (holdEnd → 1): release past the camera.
+  // — DISSOLVE (holdEnd → 1): release past the camera — the frame tips away
+  //   the opposite direction it arrived from, so the pass-through reads as
+  //   one continuous rotation the reader scrolled through.
   const dissolve = 1 - holdEnd
   tl.to(
     media,
-    { opacity: 0, scale: 1.16, filter: 'blur(10px)', ease: 'power2.in', duration: dissolve },
+    {
+      opacity: 0,
+      scale: 1.2,
+      yPercent: -3,
+      filter: 'blur(12px)',
+      ease: 'power2.in',
+      duration: dissolve,
+    },
     holdEnd,
   )
+  if (frame.length) {
+    tl.to(
+      frame,
+      { rotationX: -5, yPercent: -5, scale: 1.03, ease: 'power2.in', duration: dissolve },
+      holdEnd,
+    )
+  }
   if (reveals.length) {
     tl.to(reveals, { opacity: 0, y: -26, ease: 'power2.in', duration: dissolve * 0.8 }, holdEnd)
   }

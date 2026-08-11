@@ -24,8 +24,10 @@ export const ABOUT_DEPTH = {
   /** Pointer parallax reach — the altar rig's classic 0.45 / -0.28. */
   parallaxX: 0.45,
   parallaxY: -0.28,
-  /** Per-frame lerp rate toward targets (scrub-jitter smoothing). */
-  lerp: 3.2,
+  /** Per-frame lerp rate toward targets — deliberately soft: the camera
+   *  settles a beat AFTER the DOM scrub (which itself trails the wheel via
+   *  `scrubSmoothing`), layering the glide instead of moving as one sheet. */
+  lerp: 2.6,
 } as const
 
 /** Where the altar stage group parks: the end of the camera's journey. */

@@ -1,4 +1,5 @@
 import { gsap } from '@/shared/lib/gsap'
+import { ABOUT_SCROLL } from './aboutScrollTiming'
 
 export type Selector = (sel: string) => HTMLElement[]
 
@@ -21,7 +22,7 @@ export function pinTrigger(trigger: Element, endPct: number): ScrollTrigger.Vars
     start: 'top top',
     end: `+=${Math.round(endPct)}%`,
     pin: true,
-    scrub: 1,
+    scrub: ABOUT_SCROLL.scrubSmoothing,
     anticipatePin: 1,
     invalidateOnRefresh: true,
   }

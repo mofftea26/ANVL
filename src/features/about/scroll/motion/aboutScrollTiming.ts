@@ -20,6 +20,15 @@ export const ABOUT_SCROLL = {
   /** The altar finale's settle-in pin. */
   altarPinPct: 60,
 
+  /**
+   * ScrollTrigger `scrub` for every pinned timeline — the seconds the
+   * animation takes to CATCH UP to the scroll position. Higher = the film
+   * eases behind the wheel like a camera operator following action instead
+   * of tracking it 1:1; paired with the route's softer Lenis lerp this is
+   * most of the "immersive" feel.
+   */
+  scrubSmoothing: 1.6,
+
   /** Chapter beat fractions (0..1 of the chapter timeline). */
   materializeEnd: 0.3,
   holdEnd: 0.72,
