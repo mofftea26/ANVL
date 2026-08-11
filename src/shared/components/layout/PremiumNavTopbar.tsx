@@ -59,16 +59,37 @@ export function PremiumNavTopbar({
   // Cart + account avatar are round (per brand chrome); burger stays square.
   const iconChromeRound = cn(iconChrome, 'rounded-full')
 
-  const LogoMark: ReactNode = logoSrc?.trim() ? (
-    <img
-      src={logoSrc.trim()}
-      alt="ANVL"
-      className={cn(
-        'h-11 w-auto max-w-[200px] object-contain md:h-12',
-        !isSolid && 'brightness-0 invert opacity-95',
-      )}
-      fetchPriority="high"
-    />
+  const trimmedLogoSrc = logoSrc?.trim()
+  const LogoMark: ReactNode = trimmedLogoSrc ? (
+    <span className="relative inline-flex">
+      <img
+        src={trimmedLogoSrc}
+        alt="ANVL"
+        className={cn(
+          'h-11 w-auto max-w-[200px] object-contain md:h-12',
+          !isSolid && 'brightness-0 invert opacity-95',
+        )}
+        fetchPriority="high"
+      />
+      {/* Chapter-tinted chrome (About film only): a raster logo cannot take
+          CSS `color`, so a twin painted in the chapter accent — the logo's
+          own alpha as its mask — crossfades in over it. Inert everywhere
+          else (opacity 0 until :root carries data-about-chapter-tint). */}
+      <span
+        aria-hidden="true"
+        className="about-nav-brand-tint pointer-events-none absolute inset-0"
+        style={{
+          maskImage: `url(${trimmedLogoSrc})`,
+          WebkitMaskImage: `url(${trimmedLogoSrc})`,
+          maskSize: 'contain',
+          WebkitMaskSize: 'contain',
+          maskRepeat: 'no-repeat',
+          WebkitMaskRepeat: 'no-repeat',
+          maskPosition: 'center',
+          WebkitMaskPosition: 'center',
+        }}
+      />
+    </span>
   ) : (
     <AnvlLogoImage
       variant="wordmark"

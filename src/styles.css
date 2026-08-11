@@ -1672,10 +1672,27 @@ html[data-landing-entry='active'] body {
 /* CHAPTER-TINTED CHROME — About film only. `buildAboutRail` stamps the
    active chapter's orb colour into `--about-accent` on :root (plus this
    gate attribute); the topbar's wordmark and icon-control borders inherit
-   it and TRANSITION between chapters. Inert on every other route. */
-:root[data-about-chapter-tint] .about-nav-brand {
+   it and TRANSITION between chapters. Inert on every other route.
+   The `svg` leg is load-bearing: the inline wordmark carries its own
+   `text-[var(--color-heading)]` utility, so without the deeper selector the
+   link-level tint never reaches `currentColor`. */
+:root[data-about-chapter-tint] .about-nav-brand,
+:root[data-about-chapter-tint] .about-nav-brand svg {
   color: var(--about-accent, var(--color-heading));
   transition: color 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The raster-logo twin (see PremiumNavTopbar): painted in the accent through
+   the logo's own alpha mask, crossfaded in only while the film runs. */
+.about-nav-brand-tint {
+  opacity: 0;
+  background-color: var(--about-accent, transparent);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+:root[data-about-chapter-tint] .about-nav-brand-tint {
+  opacity: 1;
 }
 :root[data-about-chapter-tint] .about-nav-chrome {
   border-color: color-mix(in srgb, var(--about-accent, var(--color-line)) 55%, var(--color-line));

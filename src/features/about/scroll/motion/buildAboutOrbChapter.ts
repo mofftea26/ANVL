@@ -74,62 +74,91 @@ export function buildAboutOrbChapter(
     },
   })
 
-  // DIRECTION SCHEME — the WHOLE section (backdrop + content frame) travels
-  // one axis per chapter, and the exit CONTINUES that motion: what arrives
-  // from the left leaves to the right; what rises from the depth leaves PAST
-  // the lens (huge, soft); what lands from the front recedes back into the
-  // depth; diagonals cross corner-to-corner. Six schemes cycling by index,
-  // so consecutive chapters never repeat an axis — the film reads as
-  // movement through a space, never a page scrolling upward. The frame's
-  // depth legs ride real perspective z (`transformPerspective` is set once
-  // below); the media uses scale for the same read at full-bleed safety.
+  // DIRECTION SCHEME — the WHOLE section (backdrop + content frame) lives
+  // ONE continuous vector: the arrival, the hold's slow creep, and the exit
+  // are three legs of the same motion. What arrives from the left keeps
+  // creeping right through the hold and leaves out the right; what rises
+  // from the depth keeps approaching and leaves PAST the lens; the BLOOM
+  // is born at scale zero and never stops growing — it exits still
+  // swelling upward as it fades. Seven schemes cycling by index, so
+  // consecutive chapters never repeat an axis — the film reads as movement
+  // through a space, never a page scrolling upward. The frame's depth legs
+  // ride real perspective z (`transformPerspective` is set once below);
+  // the media uses scale for the same read at full-bleed safety. The hold
+  // legs tween FROM the seated pose and the outros continue from wherever
+  // the hold left off (`.to` chains), so continuity is structural.
   interface TravelScheme {
     mediaIn: gsap.TweenVars
+    mediaHold: gsap.TweenVars
     mediaOut: gsap.TweenVars
     frameIn: gsap.TweenVars
+    frameHold: gsap.TweenVars
     frameOut: gsap.TweenVars
   }
   const SCHEMES: TravelScheme[] = [
     {
-      // Swing in from the LEFT → carry on out the RIGHT.
+      // Swing in from the LEFT → creep right → carry on out the RIGHT.
       mediaIn: { xPercent: -14, scale: 1.14, filter: 'blur(14px)' },
+      mediaHold: { xPercent: 1.6, scale: 1.03 },
       mediaOut: { xPercent: 13, scale: 1.1, filter: 'blur(12px)' },
       frameIn: { xPercent: -26, rotationY: 16, scale: 0.96, transformOrigin: '10% 50%' },
+      frameHold: { xPercent: 2.5 },
       frameOut: { xPercent: 24, rotationY: -14, scale: 0.99, transformOrigin: '90% 50%' },
     },
     {
-      // Rise from the DEPTH (far and small) → leave PAST the lens.
+      // Rise from the DEPTH (far and small) → keep closing → leave PAST the lens.
       mediaIn: { scale: 0.74, filter: 'blur(16px)' },
+      mediaHold: { scale: 1.05 },
       mediaOut: { scale: 1.5, filter: 'blur(16px)' },
       frameIn: { z: -700, yPercent: 3 },
+      frameHold: { z: 70 },
       frameOut: { z: 460, yPercent: -2 },
     },
     {
-      // Swing in from the RIGHT → carry on out the LEFT.
+      // Swing in from the RIGHT → creep left → carry on out the LEFT.
       mediaIn: { xPercent: 14, scale: 1.14, filter: 'blur(14px)' },
+      mediaHold: { xPercent: -1.6, scale: 1.03 },
       mediaOut: { xPercent: -13, scale: 1.1, filter: 'blur(12px)' },
       frameIn: { xPercent: 26, rotationY: -16, scale: 0.96, transformOrigin: '90% 50%' },
+      frameHold: { xPercent: -2.5 },
       frameOut: { xPercent: -24, rotationY: 14, scale: 0.99, transformOrigin: '10% 50%' },
     },
     {
-      // Land from the FRONT (past the lens) → recede into the DEPTH.
+      // Land from the FRONT (past the lens) → keep receding → into the DEPTH.
       mediaIn: { scale: 1.42, filter: 'blur(20px)' },
+      mediaHold: { scale: 0.97 },
       mediaOut: { scale: 0.72, filter: 'blur(14px)' },
       frameIn: { z: 470, yPercent: -3 },
+      frameHold: { z: -90 },
       frameOut: { z: -640, yPercent: 2 },
     },
     {
-      // Diagonal: in from the BOTTOM-RIGHT → out the TOP-LEFT.
+      // THE BLOOM — born at scale ZERO, and it never stops growing: seats
+      // at full size, keeps swelling through the hold, exits still growing
+      // up and past as it fades.
+      mediaIn: { scale: 0.55, filter: 'blur(18px)' },
+      mediaHold: { scale: 1.06, yPercent: -1.5 },
+      mediaOut: { scale: 1.45, yPercent: -5, filter: 'blur(14px)' },
+      frameIn: { scale: 0, yPercent: 4, transformOrigin: '50% 60%' },
+      frameHold: { scale: 1.05, yPercent: -1.5 },
+      frameOut: { scale: 1.6, yPercent: -9 },
+    },
+    {
+      // Diagonal: in from the BOTTOM-RIGHT → drift on → out the TOP-LEFT.
       mediaIn: { xPercent: 10, yPercent: 8, scale: 1.16, filter: 'blur(14px)' },
+      mediaHold: { xPercent: -1.2, yPercent: -1, scale: 1.03 },
       mediaOut: { xPercent: -9, yPercent: -8, scale: 1.1, filter: 'blur(12px)' },
       frameIn: { xPercent: 18, yPercent: 14, rotationY: -10, rotationX: 5, scale: 0.97 },
+      frameHold: { xPercent: -2, yPercent: -1.6 },
       frameOut: { xPercent: -16, yPercent: -13, rotationY: 8, rotationX: -4, scale: 1.01 },
     },
     {
-      // Diagonal: in from the TOP-LEFT → out the BOTTOM-RIGHT.
+      // Diagonal: in from the TOP-LEFT → drift on → out the BOTTOM-RIGHT.
       mediaIn: { xPercent: -10, yPercent: -8, scale: 1.16, filter: 'blur(14px)' },
+      mediaHold: { xPercent: 1.2, yPercent: 1, scale: 1.03 },
       mediaOut: { xPercent: 9, yPercent: 8, scale: 1.1, filter: 'blur(12px)' },
       frameIn: { xPercent: -18, yPercent: -14, rotationY: 10, rotationX: -5, scale: 0.97 },
+      frameHold: { xPercent: 2, yPercent: 1.6 },
       frameOut: { xPercent: 16, yPercent: 13, rotationY: -8, rotationX: 4, scale: 1.01 },
     },
   ]
@@ -332,11 +361,13 @@ export function buildAboutOrbChapter(
     )
   }
 
-  // — HOLD (materializeEnd → holdEnd): near-still drift, never a freeze.
+  // — HOLD (materializeEnd → holdEnd): the scheme's slow creep — the same
+  //   vector as the arrival at a fraction of the speed, never a freeze. The
+  //   outro then continues from wherever the creep leaves off.
   const hold = holdEnd - materializeEnd
-  tl.to(media, { scale: 1.045, ease: 'none', duration: hold }, materializeEnd)
+  tl.to(media, { ...scheme.mediaHold, ease: 'none', duration: hold }, materializeEnd)
   if (frame.length) {
-    tl.to(frame, { yPercent: -1.8, ease: 'none', duration: hold }, materializeEnd)
+    tl.to(frame, { ...scheme.frameHold, ease: 'none', duration: hold }, materializeEnd)
   }
 
   // — DISSOLVE (holdEnd → 1): the exit CONTINUES the arrival's travel — the
