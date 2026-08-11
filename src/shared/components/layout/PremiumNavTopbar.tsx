@@ -48,8 +48,10 @@ export function PremiumNavTopbar({
 
   // Shared variant-aware chrome for the right-side icon controls so the cart and
   // burger read cleanly over both the transparent hero and the solid bar.
+  // `about-nav-chrome` is inert everywhere except the About film, where a
+  // root attribute tints these borders to the active chapter's orb colour.
   const iconChrome = cn(
-    'focus-ring relative inline-flex h-9 w-9 items-center justify-center rounded-md border backdrop-blur-sm transition-colors sm:h-11 sm:w-11',
+    'about-nav-chrome focus-ring relative inline-flex h-9 w-9 items-center justify-center rounded-md border backdrop-blur-sm transition-colors sm:h-11 sm:w-11',
     isSolid
       ? 'border-[var(--color-line)] bg-[var(--color-surface)]/80 text-[var(--color-text)]'
       : 'border-white/15 bg-white/5 text-[var(--color-heading)] hover:bg-white/10',
@@ -101,7 +103,7 @@ export function PremiumNavTopbar({
       <Container className="relative flex h-14 items-center gap-3 md:h-16">
         <Link
           to="/"
-          className="focus-ring inline-flex shrink-0 items-center text-[var(--color-heading)]"
+          className="about-nav-brand focus-ring inline-flex shrink-0 items-center text-[var(--color-heading)]"
         >
           {LogoMark}
         </Link>

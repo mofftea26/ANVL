@@ -73,6 +73,7 @@ export function AboutProgressRail({
             type="button"
             data-rail-dot
             data-rail-target={entry.triggerId}
+            data-rail-accent={entry.color}
             aria-label={`Go to ${entry.label}`}
             onClick={() => go(entry)}
             className="focus-ring group relative z-10 flex h-5 w-5 items-center justify-center rounded-full"

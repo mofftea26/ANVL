@@ -34,16 +34,23 @@ export function AboutCtaLink({
   const isPrimary = variant === 'primary'
 
   /**
-   * Tint via CSS custom properties rather than utility classes: the orb colour
-   * is arbitrary CMS hex, so there is no Tailwind class to reach for. The
-   * primary CTA takes the accent as its fill and forces near-black text (every
-   * orb tint is a mid-to-light industrial tone, so bone-on-accent would fail
-   * contrast); the secondary keeps its transparent fill and takes the accent
-   * on its border and label.
+   * Tint via inline styles rather than utility classes: the orb colour is
+   * arbitrary CMS hex, so there is no Tailwind class to reach for. The shared
+   * primary variant paints a background-image GRADIENT — `backgroundColor`
+   * alone loses to it silently (the champagne-button-with-purple-border bug),
+   * so the tint rebuilds the same top-lit gradient in the orb's colour. Text
+   * forces near-black (every orb tint is a mid-to-light industrial tone, so
+   * bone-on-accent would fail contrast); the secondary keeps its transparent
+   * fill and takes the accent on its border and label.
    */
   const accentStyle: React.CSSProperties | undefined = accent
     ? isPrimary
-      ? { backgroundColor: accent, borderColor: accent, color: 'var(--anvl-black, #0B0B0C)' }
+      ? {
+          backgroundImage: `linear-gradient(to bottom, color-mix(in oklab, ${accent} 82%, white), ${accent})`,
+          borderColor: `color-mix(in oklab, ${accent} 70%, white)`,
+          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 10px 26px -10px color-mix(in oklab, ${accent} 75%, transparent)`,
+          color: 'var(--anvl-black, #0B0B0C)',
+        }
       : { borderColor: accent, color: accent }
     : undefined
   const content = (

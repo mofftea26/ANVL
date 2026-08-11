@@ -1669,6 +1669,22 @@ html[data-landing-entry='active'] body {
   -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 74%, transparent 100%);
 }
 
+/* CHAPTER-TINTED CHROME — About film only. `buildAboutRail` stamps the
+   active chapter's orb colour into `--about-accent` on :root (plus this
+   gate attribute); the topbar's wordmark and icon-control borders inherit
+   it and TRANSITION between chapters. Inert on every other route. */
+:root[data-about-chapter-tint] .about-nav-brand {
+  color: var(--about-accent, var(--color-heading));
+  transition: color 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+:root[data-about-chapter-tint] .about-nav-chrome {
+  border-color: color-mix(in srgb, var(--about-accent, var(--color-line)) 55%, var(--color-line));
+  transition:
+    border-color 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
 /* The minimap rail — the active chapter's dot lights in its own orb colour
    (each button carries `--rail-c`; `buildAboutRail` toggles `data-active`). */
 [data-about-root] [data-rail-dot][data-active] [data-rail-dot-mark] {

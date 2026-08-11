@@ -10,21 +10,23 @@
  * {@link ALTAR_STRIKE} and {@link ALTAR_FORGE} are seconds on the **strike
  * timeline** — `t = 0` is the click that chooses an orb.
  *
- * THE SEQUENCE, end to end:
+ * THE SEQUENCE, end to end — deliberately TIGHT: every beat overlaps the
+ * next (the summon is still settling as the windup begins, the shroud
+ * barely hangs before the scroll answers), because a ceremony with pauses
+ * reads as loading, not drama:
  *
  * ```
  * 0.00  click — THE SUMMON: the anvil rises from beneath the frame and the
  *       hammer materializes into its cocked hover ({@link ALTAR_SUMMON}),
  *       while the chosen orb glides toward the seat and the ring dims
- * 0.90  windup (decelerating backswing) → 0.15s held breath at the top
- * 1.50  the drop (expo.in — the head hangs, then whips)
- * 1.78  IMPACT — flash, shake, impact frames; the stone disintegrates and
+ * 0.55  windup (decelerating backswing) → a 0.06s caught breath at the top
+ * 0.93  the drop (expo.in — the head hangs, then whips)
+ * 1.15  IMPACT — flash, shake, impact frames; the stone disintegrates and
  *       releases its embers into a hovering shroud (3D, AltarStrikeEmbers)
- * 2.38  the shroud is fully out; it hangs for a beat so it reads
- * 2.73  HAND-OFF — the page answers the strike: the scroll pulls back up to
+ * 1.65  the shroud is fully out
+ * 1.83  HAND-OFF — the page answers the strike: the scroll pulls back up to
  *       the struck orb's chapter while the 3D shroud dissolves under the move
- * 3.08  the 3D shroud is gone
- * 3.28  the hammer's ring-out ends; the release sinks the forge away (OUTRO)
+ * 2.18  the 3D shroud is gone; the release sinks the forge away (OUTRO)
  * ```
  */
 
@@ -35,21 +37,21 @@
  */
 export const ALTAR_SUMMON = {
   /** The anvil's rise from beneath the frame (heavy, decelerating arrival —
-   *  it must be fully seated well before the hammer's windup at 0.9). */
-  riseDuration: 0.85,
+   *  it must be fully seated before the hammer's windup begins). */
+  riseDuration: 0.5,
   /** The forge-waking flash pulse that rides the rise. */
   wakeFlash: 0.35,
   /** The outro — the forge sinks away as the stage releases. */
-  sinkDuration: 0.7,
+  sinkDuration: 0.55,
 } as const
 
-const WINDUP_AT = 0.9
-const WINDUP_DURATION = 0.45
-const WINDUP_PAUSE = 0.15
+const WINDUP_AT = 0.55
+const WINDUP_DURATION = 0.32
+const WINDUP_PAUSE = 0.06
 const DROP_AT = WINDUP_AT + WINDUP_DURATION + WINDUP_PAUSE
-const DROP_DURATION = 0.28
+const DROP_DURATION = 0.22
 const IMPACT_AT = DROP_AT + DROP_DURATION
-const HIT_STOP = 0.08
+const HIT_STOP = 0.07
 
 /**
  * The rebound after the hit-stop: a violent overshoot past the cocked rest,
@@ -91,11 +93,11 @@ export const ALTAR_STRIKE = {
   /** The rebound swing chain, played in order from `impact + hitStop`. */
   ringOut: RING_OUT,
   /** Reduced motion: one quick, gentle arc — the impact beat for the soft strike. */
-  reducedMotionImpactAt: 0.85,
+  reducedMotionImpactAt: 0.6,
 } as const
 
-const SCATTER_DURATION = 0.6
-const SHROUD_HOLD = 0.35
+const SCATTER_DURATION = 0.5
+const SHROUD_HOLD = 0.18
 
 /** The ember phases — seconds relative to {@link ALTAR_STRIKE.impactAt}. */
 export const ALTAR_FORGE = {

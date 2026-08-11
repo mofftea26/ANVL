@@ -7,8 +7,11 @@ import { gsap, ScrollTrigger } from '@/shared/lib/gsap'
  * each dot's named pin start (`data-rail-target` → `ScrollTrigger.getById`)
  * — pin starts, never element rects, because pinned sections' DOM positions
  * say nothing about where their pins own scroll. The active dot carries
- * `data-active` (CSS lights it in its orb colour) + `aria-current`. The rail
- * itself rises in once the film has built.
+ * `data-active` (CSS lights it in its orb colour) + `aria-current`, and the
+ * same beat stamps the chapter's colour into `--about-accent` on :root —
+ * the topbar's wordmark and control borders transition to it (the
+ * chapter-tinted chrome contract in styles.css). The rail itself rises in
+ * once the film has built.
  */
 export function buildAboutRail(host: HTMLElement): () => void {
   const rail = host.querySelector('[data-about-rail]') as HTMLElement | null
@@ -40,9 +43,13 @@ export function buildAboutRail(host: HTMLElement): () => void {
           if (i === index) dot.setAttribute('aria-current', 'true')
           else dot.removeAttribute('aria-current')
         })
+        const accent = dots[index]?.getAttribute('data-rail-accent')
+        if (accent) document.documentElement.style.setProperty('--about-accent', accent)
       }
     },
   })
+
+  document.documentElement.setAttribute('data-about-chapter-tint', 'on')
 
   const entrance = gsap.fromTo(
     rail,
@@ -53,5 +60,7 @@ export function buildAboutRail(host: HTMLElement): () => void {
   return () => {
     entrance.kill()
     trigger.kill()
+    document.documentElement.removeAttribute('data-about-chapter-tint')
+    document.documentElement.style.removeProperty('--about-accent')
   }
 }

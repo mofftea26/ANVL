@@ -74,84 +74,92 @@ export function buildAboutOrbChapter(
     },
   })
 
-  // DIRECTION SCHEME — consecutive chapters never arrive along the same
-  // axis: the cycle is swing-from-LEFT → rise-from-DEPTH → swing-from-RIGHT
-  // → land-from-the-FRONT (past the camera, settling back). This is what
-  // keeps the film reading as movement through a space rather than a page
-  // scrolling upward.
-  const scheme = (['left', 'depth', 'right', 'front'] as const)[index % 4]
-  const frameFrom: Record<typeof scheme, gsap.TweenVars> = {
-    left: {
-      xPercent: -9,
-      yPercent: 2,
-      rotationY: 14,
-      scale: 0.97,
-      transformPerspective: 1200,
-      transformOrigin: '12% 50%',
-    },
-    depth: {
-      rotationX: 7,
-      yPercent: 4,
-      scale: 0.94,
-      transformPerspective: 1200,
-      transformOrigin: '50% 85%',
-    },
-    right: {
-      xPercent: 9,
-      yPercent: 2,
-      rotationY: -14,
-      scale: 0.97,
-      transformPerspective: 1200,
-      transformOrigin: '88% 50%',
-    },
-    front: {
-      rotationX: -6,
-      yPercent: -3,
-      scale: 1.09,
-      transformPerspective: 1200,
-      transformOrigin: '50% 12%',
-    },
+  // DIRECTION SCHEME — the WHOLE section (backdrop + content frame) travels
+  // one axis per chapter, and the exit CONTINUES that motion: what arrives
+  // from the left leaves to the right; what rises from the depth leaves PAST
+  // the lens (huge, soft); what lands from the front recedes back into the
+  // depth; diagonals cross corner-to-corner. Six schemes cycling by index,
+  // so consecutive chapters never repeat an axis — the film reads as
+  // movement through a space, never a page scrolling upward. The frame's
+  // depth legs ride real perspective z (`transformPerspective` is set once
+  // below); the media uses scale for the same read at full-bleed safety.
+  interface TravelScheme {
+    mediaIn: gsap.TweenVars
+    mediaOut: gsap.TweenVars
+    frameIn: gsap.TweenVars
+    frameOut: gsap.TweenVars
   }
-  const frameOut: Record<typeof scheme, gsap.TweenVars> = {
-    left: { xPercent: 7, rotationY: -9, scale: 1.02 },
-    depth: { rotationX: -5, yPercent: -5, scale: 1.03 },
-    right: { xPercent: -7, rotationY: 9, scale: 1.02 },
-    front: { rotationX: 5, yPercent: 4, scale: 0.955 },
+  const SCHEMES: TravelScheme[] = [
+    {
+      // Swing in from the LEFT → carry on out the RIGHT.
+      mediaIn: { xPercent: -14, scale: 1.14, filter: 'blur(14px)' },
+      mediaOut: { xPercent: 13, scale: 1.1, filter: 'blur(12px)' },
+      frameIn: { xPercent: -26, rotationY: 16, scale: 0.96, transformOrigin: '10% 50%' },
+      frameOut: { xPercent: 24, rotationY: -14, scale: 0.99, transformOrigin: '90% 50%' },
+    },
+    {
+      // Rise from the DEPTH (far and small) → leave PAST the lens.
+      mediaIn: { scale: 0.74, filter: 'blur(16px)' },
+      mediaOut: { scale: 1.5, filter: 'blur(16px)' },
+      frameIn: { z: -700, yPercent: 3 },
+      frameOut: { z: 460, yPercent: -2 },
+    },
+    {
+      // Swing in from the RIGHT → carry on out the LEFT.
+      mediaIn: { xPercent: 14, scale: 1.14, filter: 'blur(14px)' },
+      mediaOut: { xPercent: -13, scale: 1.1, filter: 'blur(12px)' },
+      frameIn: { xPercent: 26, rotationY: -16, scale: 0.96, transformOrigin: '90% 50%' },
+      frameOut: { xPercent: -24, rotationY: 14, scale: 0.99, transformOrigin: '10% 50%' },
+    },
+    {
+      // Land from the FRONT (past the lens) → recede into the DEPTH.
+      mediaIn: { scale: 1.42, filter: 'blur(20px)' },
+      mediaOut: { scale: 0.72, filter: 'blur(14px)' },
+      frameIn: { z: 470, yPercent: -3 },
+      frameOut: { z: -640, yPercent: 2 },
+    },
+    {
+      // Diagonal: in from the BOTTOM-RIGHT → out the TOP-LEFT.
+      mediaIn: { xPercent: 10, yPercent: 8, scale: 1.16, filter: 'blur(14px)' },
+      mediaOut: { xPercent: -9, yPercent: -8, scale: 1.1, filter: 'blur(12px)' },
+      frameIn: { xPercent: 18, yPercent: 14, rotationY: -10, rotationX: 5, scale: 0.97 },
+      frameOut: { xPercent: -16, yPercent: -13, rotationY: 8, rotationX: -4, scale: 1.01 },
+    },
+    {
+      // Diagonal: in from the TOP-LEFT → out the BOTTOM-RIGHT.
+      mediaIn: { xPercent: -10, yPercent: -8, scale: 1.16, filter: 'blur(14px)' },
+      mediaOut: { xPercent: 9, yPercent: 8, scale: 1.1, filter: 'blur(12px)' },
+      frameIn: { xPercent: -18, yPercent: -14, rotationY: 10, rotationX: -5, scale: 0.97 },
+      frameOut: { xPercent: 16, yPercent: 13, rotationY: -8, rotationX: 4, scale: 1.01 },
+    },
+  ]
+  const scheme = SCHEMES[index % SCHEMES.length]
+  const NEUTRAL: gsap.TweenVars = {
+    xPercent: 0,
+    yPercent: 0,
+    z: 0,
+    rotationX: 0,
+    rotationY: 0,
+    scale: 1,
   }
-  const mediaFrom: Record<typeof scheme, gsap.TweenVars> = {
-    left: { scale: 1.18, xPercent: 3, filter: 'blur(18px)' },
-    depth: { scale: 1.18, yPercent: 4, filter: 'blur(18px)' },
-    right: { scale: 1.18, xPercent: -3, filter: 'blur(18px)' },
-    // From the front: the backdrop starts PAST the lens — huge and soft —
-    // and recedes into focus.
-    front: { scale: 1.3, yPercent: -3, filter: 'blur(22px)' },
-  }
+  if (frame.length) gsap.set(frame, { transformPerspective: 1400 })
 
   // — MATERIALIZE (0 → materializeEnd)
   tl.fromTo(
     media,
-    { opacity: 0, ...mediaFrom[scheme] },
+    { opacity: 0, ...scheme.mediaIn },
     {
       opacity: 1,
-      scale: 1,
-      xPercent: 0,
-      yPercent: 0,
+      ...NEUTRAL,
       filter: 'blur(0px)',
       ease: 'power3.out',
       duration: materializeEnd,
     },
     0,
   )
-  // The whole content frame arrives DIMENSIONALLY along its scheme's axis,
-  // easing flat as it seats. This one transform is what reads as "the
-  // chapter turns to face you" rather than "a div faded in".
   if (frame.length) {
-    tl.fromTo(frame, frameFrom[scheme], {
-      xPercent: 0,
-      yPercent: 0,
-      rotationX: 0,
-      rotationY: 0,
-      scale: 1,
+    tl.fromTo(frame, scheme.frameIn, {
+      ...NEUTRAL,
       ease: 'power3.out',
       duration: materializeEnd,
     }, 0)
@@ -331,29 +339,16 @@ export function buildAboutOrbChapter(
     tl.to(frame, { yPercent: -1.8, ease: 'none', duration: hold }, materializeEnd)
   }
 
-  // — DISSOLVE (holdEnd → 1): release past the camera — the frame tips away
-  //   the opposite direction it arrived from, so the pass-through reads as
-  //   one continuous rotation the reader scrolled through.
+  // — DISSOLVE (holdEnd → 1): the exit CONTINUES the arrival's travel — the
+  //   section passes the reader on its scheme's axis and is gone.
   const dissolve = 1 - holdEnd
   tl.to(
     media,
-    {
-      opacity: 0,
-      scale: 1.2,
-      yPercent: -3,
-      filter: 'blur(12px)',
-      ease: 'power2.in',
-      duration: dissolve,
-    },
+    { opacity: 0, ...scheme.mediaOut, ease: 'power2.in', duration: dissolve },
     holdEnd,
   )
   if (frame.length) {
-    // Exit continues the arrival's rotation — one continuous pass-through.
-    tl.to(
-      frame,
-      { ...frameOut[scheme], ease: 'power2.in', duration: dissolve },
-      holdEnd,
-    )
+    tl.to(frame, { ...scheme.frameOut, ease: 'power2.in', duration: dissolve }, holdEnd)
   }
   if (reveals.length) {
     tl.to(reveals, { opacity: 0, y: -26, ease: 'power2.in', duration: dissolve * 0.8 }, holdEnd)

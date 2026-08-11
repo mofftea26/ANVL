@@ -110,18 +110,19 @@ export function useAltarStrike({
         tl.set(state, { forgeT: 1 }, 0)
       } else {
         tl.to(state, { forgeT: 1, duration: ALTAR_SUMMON.riseDuration, ease: 'power4.out' }, 0)
-        tl.to(state, { flash: ALTAR_SUMMON.wakeFlash, duration: 0.22, ease: 'power2.out' }, 0.08)
-        tl.to(state, { flash: 0, duration: 0.45, ease: 'power2.in' }, 0.3)
+        tl.to(state, { flash: ALTAR_SUMMON.wakeFlash, duration: 0.18, ease: 'power2.out' }, 0.05)
+        tl.to(state, { flash: 0, duration: 0.35, ease: 'power2.in' }, 0.24)
       }
 
-      // The chosen orb glides to the rising anvil while the ring dims and stills.
+      // The chosen orb glides to the rising anvil while the ring dims and
+      // stills — seated a beat before the hammer's drop lands.
       tl.to(
         state.focusT,
-        { [index]: 1, duration: reducedMotion ? 0.7 : 1.15, ease: 'power2.inOut' },
+        { [index]: 1, duration: reducedMotion ? 0.5 : 0.85, ease: 'power2.inOut' },
         0,
       )
-      tl.to(state, { ringDim: 1, duration: 0.8, ease: 'power2.out' }, 0)
-      tl.to(state, { orbitSpeed: 0.1, duration: 1.0, ease: 'power2.out' }, 0)
+      tl.to(state, { ringDim: 1, duration: 0.6, ease: 'power2.out' }, 0)
+      tl.to(state, { orbitSpeed: 0.1, duration: 0.7, ease: 'power2.out' }, 0)
       if (reducedMotion) {
         // One calm arc onto the seat — no overshoot, no hit-stop, no ring-out.
         tl.to(state, { hammerT: 1, duration: 0.4, ease: 'power2.inOut' }, impactAt - 0.4)
