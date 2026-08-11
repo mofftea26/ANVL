@@ -41,7 +41,7 @@ function OrbSection({
       aria-labelledby={`${anchorId}-title`}
       {...previewTarget}
     >
-      <div aria-hidden="true" className="absolute inset-0">
+      <div aria-hidden="true" className="about-edge-fade absolute inset-0">
         {image ? (
           <img
             src={image}
@@ -118,7 +118,7 @@ export function AboutStaticPage({
         aria-labelledby="about-hero-heading"
         {...heroPreviewTarget}
       >
-        <div aria-hidden="true" className="absolute inset-0">
+        <div aria-hidden="true" className="about-edge-fade absolute inset-0">
           {assets.heroImage ? (
             <img
               src={assets.heroImage}

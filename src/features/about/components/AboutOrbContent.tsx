@@ -39,7 +39,7 @@ interface AboutOrbHeroBandProps {
 export function AboutOrbHeroBand({ orb, image, reveal = false, className }: AboutOrbHeroBandProps) {
   return (
     <div
-      {...(reveal ? { 'data-orb-reveal': '' } : {})}
+      {...(reveal ? { 'data-orb-reveal': 'band' } : {})}
       className={cn('relative aspect-[16/8] w-full overflow-hidden', className)}
     >
       <AboutMediaFallback media={image} vignette={false} />
@@ -87,26 +87,34 @@ interface AboutOrbContentProps {
 
 export function AboutOrbContent({ orb, headingId, variant, reveal = false }: AboutOrbContentProps) {
   const wide = variant === 'chapter'
-  const r = reveal ? { 'data-orb-reveal': '' } : {}
+  // Each element carries its ROLE as the marker's value — the chapter builder
+  // gives every role its own entrance (typewriter eyebrow, plate-reveal
+  // lines, popping stats…) instead of one uniform rise.
+  const mark = (role: string): Record<string, string> =>
+    reveal ? { 'data-orb-reveal': role } : {}
 
   // Layout presets — 'classic' falls through to the original free-form render.
   if (orb.layout === 'text')
-    return <AboutOrbTextLayout orb={orb} headingId={headingId} wide={wide} r={r} reveal={reveal} />
+    return (
+      <AboutOrbTextLayout orb={orb} headingId={headingId} wide={wide} mark={mark} reveal={reveal} />
+    )
   if (orb.layout === 'stats')
     return (
-      <AboutOrbStatsLayout orb={orb} headingId={headingId} wide={wide} r={r} reveal={reveal} />
+      <AboutOrbStatsLayout orb={orb} headingId={headingId} wide={wide} mark={mark} reveal={reveal} />
     )
   if (orb.layout === 'map')
-    return <AboutOrbMapLayout orb={orb} headingId={headingId} wide={wide} r={r} reveal={reveal} />
+    return (
+      <AboutOrbMapLayout orb={orb} headingId={headingId} wide={wide} mark={mark} reveal={reveal} />
+    )
   if (orb.layout === 'timeline')
     return (
-      <AboutOrbTimelineLayout orb={orb} headingId={headingId} wide={wide} r={r} reveal={reveal} />
+      <AboutOrbTimelineLayout orb={orb} headingId={headingId} wide={wide} mark={mark} reveal={reveal} />
     )
 
   return (
     <>
       <p
-        {...r}
+        {...mark('eyebrow')}
         className={cn(
           'anvl-display inline-flex items-center gap-2',
           wide ? 'text-xs tracking-[0.32em]' : 'text-[11px] tracking-[0.28em]',
@@ -122,7 +130,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
       </p>
       <h2
         id={headingId}
-        {...r}
+        {...mark('title')}
         className={cn(
           'anvl-heading mt-3 font-normal leading-[0.95] text-[var(--color-heading)]',
           wide
@@ -138,7 +146,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
           {orb.lines.map((line, i) => (
             <p
               key={`${i}-${line}`}
-              {...r}
+              {...mark('line')}
               className={cn(
                 'anvl-heading font-normal text-[var(--color-heading)]/90',
                 wide
@@ -154,7 +162,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
 
       {orb.body ? (
         <p
-          {...r}
+          {...mark('body')}
           className={cn(
             'leading-relaxed text-[var(--color-text-muted)]',
             wide ? 'mt-5 max-w-lg text-base' : 'mt-4 text-sm md:text-base',
@@ -166,7 +174,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
 
       {orb.detail ? (
         <p
-          {...r}
+          {...mark('detail')}
           className={cn(
             'border-l-2 pl-3 font-sans uppercase text-[var(--color-heading)]/80',
             wide
@@ -182,7 +190,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
       {orb.points.length > 0 ? (
         <ul className={cn(wide ? 'mt-6 space-y-3' : 'mt-5 space-y-2.5')}>
           {orb.points.map((p) => (
-            <li key={p.label} {...r} className="flex gap-3">
+            <li key={p.label} {...mark('point')} className="flex gap-3">
               <span
                 aria-hidden="true"
                 className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
@@ -213,7 +221,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
             return (
               <div
                 key={stat.id}
-                {...r}
+                {...mark('stat')}
                 className={wide ? undefined : 'border-l border-[var(--color-line)] pl-4'}
               >
                 <p className="anvl-heading font-normal leading-none text-[clamp(1.75rem,2.6vw,2.5rem)] text-[var(--color-heading)]">
@@ -241,14 +249,16 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
       ) : null}
 
       {orb.primaryCta || orb.secondaryCta ? (
-        <div {...r} className={cn('flex flex-wrap gap-3', wide ? 'mt-8' : 'mt-7')}>
+        <div {...mark('cta')} className={cn('flex flex-wrap gap-3', wide ? 'mt-8' : 'mt-7')}>
+          {/* Tinted to the orb — a chapter's buttons belong to that chapter,
+              never to generic site chrome (parity with the preset layouts). */}
           {orb.primaryCta ? (
-            <AboutCtaLink href={orb.primaryCta.href} variant="primary">
+            <AboutCtaLink href={orb.primaryCta.href} variant="primary" accent={orb.color}>
               {orb.primaryCta.label}
             </AboutCtaLink>
           ) : null}
           {orb.secondaryCta ? (
-            <AboutCtaLink href={orb.secondaryCta.href} variant="secondary">
+            <AboutCtaLink href={orb.secondaryCta.href} variant="secondary" accent={orb.color}>
               {orb.secondaryCta.label}
             </AboutCtaLink>
           ) : null}
@@ -257,7 +267,7 @@ export function AboutOrbContent({ orb, headingId, variant, reveal = false }: Abo
 
       {orb.tagline ? (
         <p
-          {...r}
+          {...mark('tagline')}
           className={cn('anvl-display text-xs tracking-[0.3em]', wide ? 'mt-8' : 'mt-7')}
           style={{ color: orb.color }}
         >

@@ -41,7 +41,11 @@ export function AboutOrbSection({
       className="relative h-[100svh] overflow-hidden"
       {...previewTarget}
     >
-      <div data-chapter-media aria-hidden="true" className="absolute inset-0 will-change-transform">
+      <div
+        data-chapter-media
+        aria-hidden="true"
+        className="about-edge-fade absolute inset-0 will-change-transform"
+      >
         {image ? (
           <img
             src={image}

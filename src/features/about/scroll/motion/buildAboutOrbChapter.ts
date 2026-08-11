@@ -74,13 +74,67 @@ export function buildAboutOrbChapter(
     },
   })
 
+  // DIRECTION SCHEME — consecutive chapters never arrive along the same
+  // axis: the cycle is swing-from-LEFT → rise-from-DEPTH → swing-from-RIGHT
+  // → land-from-the-FRONT (past the camera, settling back). This is what
+  // keeps the film reading as movement through a space rather than a page
+  // scrolling upward.
+  const scheme = (['left', 'depth', 'right', 'front'] as const)[index % 4]
+  const frameFrom: Record<typeof scheme, gsap.TweenVars> = {
+    left: {
+      xPercent: -9,
+      yPercent: 2,
+      rotationY: 14,
+      scale: 0.97,
+      transformPerspective: 1200,
+      transformOrigin: '12% 50%',
+    },
+    depth: {
+      rotationX: 7,
+      yPercent: 4,
+      scale: 0.94,
+      transformPerspective: 1200,
+      transformOrigin: '50% 85%',
+    },
+    right: {
+      xPercent: 9,
+      yPercent: 2,
+      rotationY: -14,
+      scale: 0.97,
+      transformPerspective: 1200,
+      transformOrigin: '88% 50%',
+    },
+    front: {
+      rotationX: -6,
+      yPercent: -3,
+      scale: 1.09,
+      transformPerspective: 1200,
+      transformOrigin: '50% 12%',
+    },
+  }
+  const frameOut: Record<typeof scheme, gsap.TweenVars> = {
+    left: { xPercent: 7, rotationY: -9, scale: 1.02 },
+    depth: { rotationX: -5, yPercent: -5, scale: 1.03 },
+    right: { xPercent: -7, rotationY: 9, scale: 1.02 },
+    front: { rotationX: 5, yPercent: 4, scale: 0.955 },
+  }
+  const mediaFrom: Record<typeof scheme, gsap.TweenVars> = {
+    left: { scale: 1.18, xPercent: 3, filter: 'blur(18px)' },
+    depth: { scale: 1.18, yPercent: 4, filter: 'blur(18px)' },
+    right: { scale: 1.18, xPercent: -3, filter: 'blur(18px)' },
+    // From the front: the backdrop starts PAST the lens — huge and soft —
+    // and recedes into focus.
+    front: { scale: 1.3, yPercent: -3, filter: 'blur(22px)' },
+  }
+
   // — MATERIALIZE (0 → materializeEnd)
   tl.fromTo(
     media,
-    { opacity: 0, scale: 1.18, yPercent: 4, filter: 'blur(18px)' },
+    { opacity: 0, ...mediaFrom[scheme] },
     {
       opacity: 1,
       scale: 1,
+      xPercent: 0,
       yPercent: 0,
       filter: 'blur(0px)',
       ease: 'power3.out',
@@ -88,29 +142,19 @@ export function buildAboutOrbChapter(
     },
     0,
   )
-  // The whole content frame arrives DIMENSIONALLY — tipped back in
-  // perspective and below its seat, easing flat as it rises. This one
-  // transform is what reads as "the chapter turns to face you" rather than
-  // "a div faded in".
+  // The whole content frame arrives DIMENSIONALLY along its scheme's axis,
+  // easing flat as it seats. This one transform is what reads as "the
+  // chapter turns to face you" rather than "a div faded in".
   if (frame.length) {
-    tl.fromTo(
-      frame,
-      {
-        rotationX: 6,
-        yPercent: 4,
-        scale: 0.965,
-        transformPerspective: 1200,
-        transformOrigin: '50% 85%',
-      },
-      {
-        rotationX: 0,
-        yPercent: 0,
-        scale: 1,
-        ease: 'power3.out',
-        duration: materializeEnd,
-      },
-      0,
-    )
+    tl.fromTo(frame, frameFrom[scheme], {
+      xPercent: 0,
+      yPercent: 0,
+      rotationX: 0,
+      rotationY: 0,
+      scale: 1,
+      ease: 'power3.out',
+      duration: materializeEnd,
+    }, 0)
   }
   if (titleUnits.length) {
     tl.fromTo(
@@ -125,18 +169,127 @@ export function buildAboutOrbChapter(
       materializeEnd * 0.15,
     )
   }
-  if (reveals.length) {
+  // THE REVEAL CASCADE — every element type earns its own entrance, staged
+  // one after another through the materialize window (fractions of M):
+  // typewriter eyebrow → masked title words → plate-reveal display lines →
+  // blur-clearing body → sliding detail/points → popping stats → CTAs →
+  // the tagline's tracking settle. Variety, not a uniform curtain-rise.
+  const role = (name: string) => q(`[data-orb-reveal="${name}"]`)
+  const M = materializeEnd
+  // Sliding elements enter from the copy column's OUTSIDE edge (sections
+  // alternate alignment per index), so the cascade always pushes inward.
+  const edge = index % 2 === 1 ? 26 : -26
+
+  const eyebrow = role('eyebrow')
+  if (eyebrow.length) {
+    // Typewriter: a chunky stepped clip wipe — text appears in keystrokes.
     tl.fromTo(
-      reveals,
-      { opacity: 0, y: 34 },
+      eyebrow,
+      { clipPath: 'inset(0% 100% 0% 0%)' },
+      { clipPath: 'inset(0% 0% 0% 0%)', ease: 'steps(14)', duration: M * 0.3 },
+      M * 0.06,
+    )
+  }
+  const lines = role('line')
+  if (lines.length) {
+    // Forged plates: each display line slides up out of its own clip seam.
+    tl.fromTo(
+      lines,
+      { yPercent: 90, clipPath: 'inset(0% 0% 100% 0%)', opacity: 1 },
+      {
+        yPercent: 0,
+        clipPath: 'inset(-8% 0% 0% 0%)',
+        ease: 'power4.out',
+        duration: M * 0.38,
+        stagger: M * 0.11,
+      },
+      M * 0.26,
+    )
+  }
+  const body = role('body')
+  if (body.length) {
+    tl.fromTo(
+      body,
+      { opacity: 0, y: 20, filter: 'blur(8px)' },
+      { opacity: 1, y: 0, filter: 'blur(0px)', ease: 'power2.out', duration: M * 0.3 },
+      M * 0.4,
+    )
+  }
+  const detail = role('detail')
+  if (detail.length) {
+    tl.fromTo(
+      detail,
+      { opacity: 0, x: edge * 0.7 },
+      { opacity: 1, x: 0, ease: 'power3.out', duration: M * 0.25 },
+      M * 0.52,
+    )
+  }
+  const points = role('point')
+  if (points.length) {
+    tl.fromTo(
+      points,
+      { opacity: 0, x: edge },
+      { opacity: 1, x: 0, ease: 'power3.out', duration: M * 0.3, stagger: M * 0.07 },
+      M * 0.46,
+    )
+  }
+  const stats = role('stat')
+  if (stats.length) {
+    // Stats POP — a back-eased scale so the numerals land with weight.
+    tl.fromTo(
+      stats,
+      { opacity: 0, scale: 0.82, y: 18 },
       {
         opacity: 1,
+        scale: 1,
         y: 0,
-        ease: 'power3.out',
-        duration: materializeEnd * 0.6,
-        stagger: (materializeEnd * 0.35) / Math.max(1, reveals.length),
+        ease: 'back.out(1.6)',
+        duration: M * 0.32,
+        stagger: M * 0.08,
       },
-      materializeEnd * 0.25,
+      M * 0.5,
+    )
+  }
+  const blocks = role('block')
+  if (blocks.length) {
+    tl.fromTo(
+      blocks,
+      { opacity: 0, scale: 0.96, y: 24 },
+      { opacity: 1, scale: 1, y: 0, ease: 'power3.out', duration: M * 0.35 },
+      M * 0.45,
+    )
+  }
+  const ctas = role('cta')
+  if (ctas.length) {
+    tl.fromTo(
+      ctas,
+      { opacity: 0, y: 16, scale: 0.94 },
+      { opacity: 1, y: 0, scale: 1, ease: 'back.out(1.4)', duration: M * 0.28 },
+      M * 0.66,
+    )
+  }
+  const tagline = role('tagline')
+  if (tagline.length) {
+    // The sign-off settles in from expanded tracking — a letterpress landing.
+    tl.fromTo(
+      tagline,
+      { opacity: 0, letterSpacing: '0.55em' },
+      { opacity: 1, letterSpacing: '0.3em', ease: 'power2.out', duration: M * 0.3 },
+      M * 0.72,
+    )
+  }
+  // Anything unroled (the static page's band, future markers) keeps the
+  // classic rise so nothing ever mounts invisible.
+  const generic = reveals.filter((el) => {
+    const value = el.getAttribute('data-orb-reveal') ?? ''
+    return value === '' || value === 'band'
+  })
+  if (generic.length) {
+    tl.fromTo(
+      generic,
+      { opacity: 0, y: 34 },
+      { opacity: 1, y: 0, ease: 'power3.out', duration: M * 0.45, stagger: M * 0.08 },
+      M * 0.3,
     )
   }
   if (ghost.length) {
@@ -151,7 +304,8 @@ export function buildAboutOrbChapter(
     tl.fromTo(ghost, { xPercent: 7 }, { xPercent: -7, ease: 'none', duration: 1 }, 0)
   }
 
-  // Numeric stats count up with the scrub (and back down when scrubbed back).
+  // Numeric stats count up with the scrub (and back down when scrubbed
+  // back), riding in with the stat blocks' pop.
   for (const stat of q('[data-orb-stat-value]')) {
     const target = Number(stat.getAttribute('data-stat-target'))
     if (!Number.isFinite(target)) continue
@@ -161,12 +315,12 @@ export function buildAboutOrbChapter(
       {
         v: target,
         ease: 'power1.out',
-        duration: materializeEnd * 0.8,
+        duration: materializeEnd * 0.45,
         onUpdate: () => {
           stat.textContent = String(Math.round(proxy.v))
         },
       },
-      materializeEnd * 0.3,
+      materializeEnd * 0.5,
     )
   }
 
@@ -194,9 +348,10 @@ export function buildAboutOrbChapter(
     holdEnd,
   )
   if (frame.length) {
+    // Exit continues the arrival's rotation — one continuous pass-through.
     tl.to(
       frame,
-      { rotationX: -5, yPercent: -5, scale: 1.03, ease: 'power2.in', duration: dissolve },
+      { ...frameOut[scheme], ease: 'power2.in', duration: dissolve },
       holdEnd,
     )
   }

@@ -1619,12 +1619,21 @@ html[data-landing-entry='active'] body {
 }
 
 /* The film's altar finale — the fixed depth canvas is pointer-transparent for
-   the whole journey, and turns pointer-live ONLY while the altar pin holds
-   the finale on stage (`buildAboutAltarPin` flips the attribute), so the
-   anvil is grabbable exactly when it is the scene. pointer-events inherits:
+   the whole journey, and turns pointer-live only while the finale is on
+   stage (`buildAboutAltarPin` flips the attribute), so the orbs are
+   clickable and the summoned anvil grabbable. pointer-events inherits:
    flipping the wrapper re-enables the canvas inside it. */
 [data-about-scroll][data-altar-live='on'] [data-about-canvas] {
   pointer-events: auto;
+}
+
+/* THE CLICK PATH. GSAP pinning wraps the altar section in a `.pin-spacer`
+   div that hit-testing lands on once the section itself opts out
+   (`pointer-events-none`) — the spacer swallowed every orb click before the
+   canvas below could see it. The spacer goes transparent too; the chips
+   inside re-opt-in with their own explicit `pointer-events-auto`. */
+[data-about-scroll] .pin-spacer:has([data-scene='altar']) {
+  pointer-events: none;
 }
 
 /* Altar chrome (chips, their caption) stays hidden until the stage's GLBs
@@ -1641,6 +1650,14 @@ html[data-landing-entry='active'] body {
 [data-about-root] [data-altar-ready='on'] [data-altar-fade] {
   opacity: 1;
   transform: none;
+}
+
+/* Every section's imagery dissolves into the void before its bottom edge —
+   no chapter ever ends on a hard media seam. Applied to the backdrop
+   WRAPPERS (image + washes together), film and static page alike. */
+[data-about-root] .about-edge-fade {
+  mask-image: linear-gradient(180deg, #000 0%, #000 74%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 74%, transparent 100%);
 }
 
 /* The minimap rail — the active chapter's dot lights in its own orb colour

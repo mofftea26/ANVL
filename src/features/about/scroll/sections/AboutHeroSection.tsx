@@ -24,7 +24,7 @@ export function AboutHeroSection({
       className="relative flex h-[100svh] items-center overflow-hidden"
       {...previewTarget}
     >
-      <div aria-hidden="true" className="absolute inset-0">
+      <div aria-hidden="true" className="about-edge-fade absolute inset-0">
         <div data-hero-backdrop className="absolute inset-0 will-change-transform">
           {image ? (
             <img

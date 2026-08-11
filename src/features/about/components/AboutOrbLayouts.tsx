@@ -21,17 +21,18 @@ interface LayoutProps {
   headingId: string
   /** true = desktop chapter scale, false = static section scale. */
   wide: boolean
-  /** Spread onto elements that join the chapter's staggered reveal. */
-  r: Partial<Record<'data-orb-reveal', string>>
+  /** Marks an element with its reveal ROLE — the chapter builder gives every
+   *  role its own entrance. Returns `{}` outside reveal mode. */
+  mark: (role: string) => Record<string, string>
   reveal: boolean
 }
 
 /** Shared eyebrow + title header — every preset opens with the orb identity. */
-function OrbHeader({ orb, headingId, wide, r }: Omit<LayoutProps, 'reveal'>) {
+function OrbHeader({ orb, headingId, wide, mark }: Omit<LayoutProps, 'reveal'>) {
   return (
     <>
       <p
-        {...r}
+        {...mark('eyebrow')}
         className={cn(
           'anvl-display inline-flex items-center gap-2',
           wide ? 'text-xs tracking-[0.32em]' : 'text-[11px] tracking-[0.28em]',
@@ -47,7 +48,7 @@ function OrbHeader({ orb, headingId, wide, r }: Omit<LayoutProps, 'reveal'>) {
       </p>
       <h2
         id={headingId}
-        {...r}
+        {...mark('title')}
         className={cn(
           'anvl-heading mt-3 font-normal leading-[0.95] text-[var(--color-heading)]',
           wide ? 'max-w-md text-[clamp(1.75rem,3vw,2.75rem)]' : 'text-[clamp(1.6rem,5.5vw,2.4rem)]',
@@ -60,11 +61,11 @@ function OrbHeader({ orb, headingId, wide, r }: Omit<LayoutProps, 'reveal'>) {
 }
 
 /** Shared CTA row + tagline tail (renders only when the orb carries them). */
-function OrbFooter({ orb, wide, r }: Pick<LayoutProps, 'orb' | 'wide' | 'r'>) {
+function OrbFooter({ orb, wide, mark }: Pick<LayoutProps, 'orb' | 'wide' | 'mark'>) {
   return (
     <>
       {orb.primaryCta || orb.secondaryCta ? (
-        <div {...r} className={cn('flex flex-wrap gap-3', wide ? 'mt-8' : 'mt-7')}>
+        <div {...mark('cta')} className={cn('flex flex-wrap gap-3', wide ? 'mt-8' : 'mt-7')}>
           {/* Tinted to the orb so a chapter's buttons belong to that section
               rather than reading as generic site chrome. */}
           {orb.primaryCta ? (
@@ -81,7 +82,7 @@ function OrbFooter({ orb, wide, r }: Pick<LayoutProps, 'orb' | 'wide' | 'r'>) {
       ) : null}
       {orb.tagline ? (
         <p
-          {...r}
+          {...mark('tagline')}
           className={cn('anvl-display text-xs tracking-[0.3em]', wide ? 'mt-8' : 'mt-7')}
           style={{ color: orb.color }}
         >
@@ -92,11 +93,11 @@ function OrbFooter({ orb, wide, r }: Pick<LayoutProps, 'orb' | 'wide' | 'r'>) {
   )
 }
 
-function OrbBody({ orb, wide, r }: Pick<LayoutProps, 'orb' | 'wide' | 'r'>) {
+function OrbBody({ orb, wide, mark }: Pick<LayoutProps, 'orb' | 'wide' | 'mark'>) {
   if (!orb.body) return null
   return (
     <p
-      {...r}
+      {...mark('body')}
       className={cn(
         'leading-relaxed text-[var(--color-text-muted)]',
         wide ? 'mt-5 max-w-lg text-base' : 'mt-4 text-sm md:text-base',
@@ -108,13 +109,13 @@ function OrbBody({ orb, wide, r }: Pick<LayoutProps, 'orb' | 'wide' | 'r'>) {
 }
 
 /** 'text' — clean editorial: header, lead subhead, body, spec detail line. */
-export function AboutOrbTextLayout({ orb, headingId, wide, r }: LayoutProps) {
+export function AboutOrbTextLayout({ orb, headingId, wide, mark }: LayoutProps) {
   return (
     <div data-orb-layout="text">
-      <OrbHeader orb={orb} headingId={headingId} wide={wide} r={r} />
+      <OrbHeader orb={orb} headingId={headingId} wide={wide} mark={mark} />
       {orb.subhead ? (
         <p
-          {...r}
+          {...mark('body')}
           className={cn(
             'font-medium leading-snug text-[var(--color-heading)]/90',
             wide ? 'mt-5 max-w-lg text-lg md:text-xl' : 'mt-4 text-base md:text-lg',
@@ -123,10 +124,10 @@ export function AboutOrbTextLayout({ orb, headingId, wide, r }: LayoutProps) {
           {orb.subhead}
         </p>
       ) : null}
-      <OrbBody orb={orb} wide={wide} r={r} />
+      <OrbBody orb={orb} wide={wide} mark={mark} />
       {orb.detail ? (
         <p
-          {...r}
+          {...mark('detail')}
           className={cn(
             'border-l-2 pl-3 font-sans uppercase text-[var(--color-heading)]/80',
             wide ? 'mt-5 text-xs tracking-[0.22em]' : 'mt-4 text-[11px] tracking-[0.2em]',
@@ -136,17 +137,17 @@ export function AboutOrbTextLayout({ orb, headingId, wide, r }: LayoutProps) {
           {orb.detail}
         </p>
       ) : null}
-      <OrbFooter orb={orb} wide={wide} r={r} />
+      <OrbFooter orb={orb} wide={wide} mark={mark} />
     </div>
   )
 }
 
 /** 'stats' — the stats array is the star: big forged numerals over an intro. */
-export function AboutOrbStatsLayout({ orb, headingId, wide, r, reveal }: LayoutProps) {
+export function AboutOrbStatsLayout({ orb, headingId, wide, mark, reveal }: LayoutProps) {
   return (
     <div data-orb-layout="stats">
-      <OrbHeader orb={orb} headingId={headingId} wide={wide} r={r} />
-      <OrbBody orb={orb} wide={wide} r={r} />
+      <OrbHeader orb={orb} headingId={headingId} wide={wide} mark={mark} />
+      <OrbBody orb={orb} wide={wide} mark={mark} />
       {orb.stats.length > 0 ? (
         <div
           className={cn(
@@ -160,7 +161,7 @@ export function AboutOrbStatsLayout({ orb, headingId, wide, r, reveal }: LayoutP
             return (
               <div
                 key={stat.id}
-                {...r}
+                {...mark('stat')}
                 className="border-t pt-3"
                 style={{ borderColor: `color-mix(in srgb, ${orb.color} 35%, var(--color-line))` }}
               >
@@ -194,20 +195,20 @@ export function AboutOrbStatsLayout({ orb, headingId, wide, r, reveal }: LayoutP
           })}
         </div>
       ) : null}
-      <OrbFooter orb={orb} wide={wide} r={r} />
+      <OrbFooter orb={orb} wide={wide} mark={mark} />
     </div>
   )
 }
 
 /** 'map' — the world map with the orb's percent-positioned, glowing pins. */
-export function AboutOrbMapLayout({ orb, headingId, wide, r }: LayoutProps) {
+export function AboutOrbMapLayout({ orb, headingId, wide, mark }: LayoutProps) {
   return (
     <div data-orb-layout="map">
-      <OrbHeader orb={orb} headingId={headingId} wide={wide} r={r} />
-      <OrbBody orb={orb} wide={wide} r={r} />
+      <OrbHeader orb={orb} headingId={headingId} wide={wide} mark={mark} />
+      <OrbBody orb={orb} wide={wide} mark={mark} />
       {orb.mapPins.length > 0 ? (
         <div
-          {...r}
+          {...mark('block')}
           data-about-map
           className={cn(
             'relative w-full overflow-hidden rounded-lg border border-[var(--color-line)] bg-[color-mix(in_srgb,var(--color-bg)_45%,transparent)]',
@@ -248,17 +249,17 @@ export function AboutOrbMapLayout({ orb, headingId, wide, r }: LayoutProps) {
           ))}
         </div>
       ) : null}
-      <OrbFooter orb={orb} wide={wide} r={r} />
+      <OrbFooter orb={orb} wide={wide} mark={mark} />
     </div>
   )
 }
 
 /** 'timeline' — vertical milestones down a connecting hairline. */
-export function AboutOrbTimelineLayout({ orb, headingId, wide, r }: LayoutProps) {
+export function AboutOrbTimelineLayout({ orb, headingId, wide, mark }: LayoutProps) {
   return (
     <div data-orb-layout="timeline">
-      <OrbHeader orb={orb} headingId={headingId} wide={wide} r={r} />
-      <OrbBody orb={orb} wide={wide} r={r} />
+      <OrbHeader orb={orb} headingId={headingId} wide={wide} mark={mark} />
+      <OrbBody orb={orb} wide={wide} mark={mark} />
       {orb.timeline.length > 0 ? (
         <ol
           data-about-timeline
@@ -266,7 +267,7 @@ export function AboutOrbTimelineLayout({ orb, headingId, wide, r }: LayoutProps)
           style={{ borderColor: `color-mix(in srgb, ${orb.color} 35%, var(--color-line))` }}
         >
           {orb.timeline.map((entry) => (
-            <li key={entry.id} {...r} className="relative">
+            <li key={entry.id} {...mark('point')} className="relative">
               {/* Milestone dot riding the connecting hairline. */}
               <span
                 aria-hidden="true"
@@ -301,7 +302,7 @@ export function AboutOrbTimelineLayout({ orb, headingId, wide, r }: LayoutProps)
           ))}
         </ol>
       ) : null}
-      <OrbFooter orb={orb} wide={wide} r={r} />
+      <OrbFooter orb={orb} wide={wide} mark={mark} />
     </div>
   )
 }

@@ -29,9 +29,11 @@ export const ABOUT_SCROLL = {
    */
   scrubSmoothing: 1.6,
 
-  /** Chapter beat fractions (0..1 of the chapter timeline). */
-  materializeEnd: 0.3,
-  holdEnd: 0.72,
+  /** Chapter beat fractions (0..1 of the chapter timeline). Materialize is
+   *  generous — the per-role reveal cascade (typewriter eyebrow → title →
+   *  plates → body → points/stats → CTAs → tagline) needs the room. */
+  materializeEnd: 0.36,
+  holdEnd: 0.75,
 
   /**
    * How many chapters ahead of the finale the altar stage mounts — its GLB
