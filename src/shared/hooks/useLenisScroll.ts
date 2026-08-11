@@ -1,7 +1,15 @@
 import { useEffect } from 'react'
+import { setActiveLenis } from '@/shared/lib/lenisRegistry'
 import { useReducedMotion } from './useReducedMotion'
 
 const MD_UP = '(min-width: 768px)'
+
+export interface LenisFeelOptions {
+  /** Per-frame interpolation toward the scroll target — LOWER is floatier
+   *  (longer glide). Site default 0.07; the About film rides softer. */
+  lerp?: number
+  wheelMultiplier?: number
+}
 
 /**
  * Drives Lenis from GSAP's ticker so every scroll-linked animation
@@ -10,8 +18,12 @@ const MD_UP = '(min-width: 768px)'
  * Lenis + GSAP are dynamically imported only on the client, at
  * `min-width: 768px`, and never when `prefers-reduced-motion` is set,
  * so phones and low-motion users avoid the extra bundle and work.
+ *
+ * `feel` lets a route soften the glide without changing every other page —
+ * pass a stable (module-const) object, not an inline literal, or the effect
+ * re-runs each render and rebuilds Lenis.
  */
-export function useLenisScroll(enabled: boolean) {
+export function useLenisScroll(enabled: boolean, feel?: LenisFeelOptions) {
   const reduced = useReducedMotion()
 
   useEffect(() => {
@@ -39,11 +51,12 @@ export function useLenisScroll(enabled: boolean) {
       if (cancelled || !mq.matches) return
 
       const lenis = new Lenis({
-        lerp: 0.07,
+        lerp: feel?.lerp ?? 0.07,
         smoothWheel: true,
-        wheelMultiplier: 0.9,
+        wheelMultiplier: feel?.wheelMultiplier ?? 0.9,
         touchMultiplier: 1.4,
       })
+      setActiveLenis(lenis)
 
       ScrollTrigger.scrollerProxy(document.documentElement, {
         scrollTop(value) {
@@ -79,6 +92,7 @@ export function useLenisScroll(enabled: boolean) {
       refresh()
 
       teardown = () => {
+        setActiveLenis(null)
         window.removeEventListener('load', refresh)
         ScrollTrigger.removeEventListener('refresh', onRefresh)
         lenis.off('scroll', onScroll)
@@ -112,5 +126,7 @@ export function useLenisScroll(enabled: boolean) {
       mq.removeEventListener('change', onMq)
       teardown?.()
     }
-  }, [enabled, reduced])
+    // Primitive deps, not the `feel` object — an inline literal would
+    // otherwise rebuild Lenis every render.
+  }, [enabled, reduced, feel?.lerp, feel?.wheelMultiplier])
 }

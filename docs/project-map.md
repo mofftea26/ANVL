@@ -103,7 +103,7 @@ Complete annotated map of the ANVL Athletics codebase. Update this file when fol
 | `checkout/index.tsx` | `/checkout` | Checkout form |
 | `checkout/success.tsx` | `/checkout/success` | Order confirmation |
 | `story.tsx` | `/story` | Story saga (chapter shelf + deep-linkable book overlay) |
-| `about.tsx` | `/about` | About page — renders `<AboutExperience>` (desktop Forge Altar / mobile normal page) |
+| `about.tsx` | `/about` | About page — renders `<AboutExperience>` (desktop scrollytelling film with the Forge Altar finale / static page below the gate) |
 | `p/$token.tsx` | `/p/:token` | Product passport — claim flow / owner dossier / public authenticity view (noindex); also serves the admin live-preview host |
 | `armory/$handle.tsx` | `/armory/:handle` | Public read-only Armory view for an owner's shared handle (`get_public_armory`) |
 | `size-guide.tsx` | `/size-guide` | Size guide |
@@ -245,35 +245,39 @@ Pre-launch reveal page — replaces every public route while `coming_soon.enable
 
 #### `about/`
 
-The About page: a desktop non-scrollable 3D "Forge Altar" (grabbable anvil + orbiting content orbs + hammer-strike modals) and a normal scrolling mobile page — both CMS-driven from the same content model. **Not** registered in `landingPages/registry.ts` — About is a fixed page, not a swappable drop.
+The About page: a desktop **scrollytelling film** (pinned full-screen chapters over a fixed WebGL depth canvas, ending at the interactive Forge Altar finale whose hammer strikes scroll back to a chapter) and a static full-screen-section page for everything below the cinematic gate — both CMS-driven from the same content model. **Not** registered in `landingPages/registry.ts` — About is a fixed page, not a swappable drop.
 
 | File / Folder | Purpose |
 |---|---|
-| `index.tsx` | `AboutExperience` — chooses desktop altar vs. mobile page (`useAboutViewMode`) |
-| `aboutBreakpoints.ts` | The altar/mobile breakpoint contract (mirrors `oathBreakpoints.ts`) |
+| `index.tsx` | `AboutExperience` — SSR/static page first, the lazy film swaps in under `ABOUT_CINEMATIC_MQ` |
+| `aboutBreakpoints.ts` | The cinematic/static breakpoint contract (mirrors `oathBreakpoints.ts`) |
 | `content/aboutContent.schema.ts` | Zod schema for hero + marquee + the free-form **orbs** array (label/color/copy/lines/points/stats/CTAs/`mediaId`) |
 | `content/aboutContent.defaults.ts` | Designed default copy for every field |
 | `content/resolveAboutContent.ts` | CMS blob → render model, code defaults fill every gap |
-| `hooks/useAboutViewMode.ts` | Resolves desktop-altar vs. mobile-page at the current viewport |
-| `components/AboutHeader.tsx`, `AboutMarquee.tsx`, `AboutCtaLink.tsx`, `AboutMediaFallback.tsx` | Shared chrome between the desktop altar and mobile page |
-| `components/AboutOrbContent.tsx`, `AboutOrbLayouts.tsx` | Renders one orb's content — reused inside altar hammer-strike modals and stacked mobile sections |
+| `components/AboutMarquee.tsx`, `AboutCtaLink.tsx`, `AboutMediaFallback.tsx` | Shared chrome between the film and the static page |
+| `components/AboutOrbContent.tsx`, `AboutOrbLayouts.tsx` | Renders one orb's content — `chapter` (film) and `section` (static) variants |
 | `components/aboutWorldMap.ts` | World-origin map data reused by an orb type |
-| `altar/AboutAltar.tsx` | Desktop composition root — mounts the WebGL stage + orb ring + modal layer |
-| `altar/AltarScene.tsx` | `@react-three/fiber` canvas: anvil, aurora backdrop, orbiting orbs |
+| `scroll/AboutScrollExperience.tsx` | The film's root — sections in flow, motion/altar state bridges, canvas gate |
+| `scroll/sections/` | `AboutHeroSection` (cold open), `AboutOrbSection` (one chapter per orb), `AboutMarqueeSection` (ribbon), `AboutAltarSection` (the finale's DOM shell: backdrop behind the canvas, impact frames, chips, load-bar slot) |
+| `scroll/hooks/useAboutScrollTimeline.ts` | ONE `gsap.matchMedia` composing the chapter builders; hash deep links land inside the film |
+| `scroll/hooks/useAboutOrbScrollTo.ts` | The strike answer — Lenis-eased scroll to `about-orb-pin-N`'s start |
+| `scroll/motion/` | `aboutMotionState` (DOM⇄WebGL bridge), `aboutScrollTiming` (the choreography clock), `aboutMotionHelpers`, `splitUnits`, `buildAboutHero/OrbChapter/Marquee/AltarPin` |
+| `scroll/webgl/` | `AboutScrollCanvasGate` (lazy `vendor-three` gate), `AboutScrollCanvas` (the ONE fixed canvas), `AboutDepthRig` + `aboutDepthPath` (scroll = dolly), `EmberBoundaryField` + `emberBoundaryShaders` (chapter-boundary ember dissolve), `AltarLoadProgress` (the forging bar) |
+| `altar/AltarStage.tsx` | The finale as an in-canvas group at the path's end — lights, GLB Suspense (= the prefetch), orb ring |
+| `altar/useAltarStrike.ts` | The strike ceremony hook — hand-off beat fires `onOrbStruck` (scroll-to-chapter) |
 | `altar/AltarAnvil.tsx`, `AltarHammer.tsx` | The grabbable 3D anvil + hammer GLB meshes (assets assigned on `/admin/assets`) |
 | `altar/AltarAurora.tsx` | Aurora backdrop shader mesh (`shaders/aurora.ts`) |
 | `altar/AltarOrb.tsx` | One orbiting content orb (per-color) |
-| `altar/AboutOrbModal.tsx`, `AltarModalForge.tsx` | Hammer-strike explosion → modal reveal for the struck orb's content |
+| `altar/AltarStrikeEmbers.tsx` | The struck orb's in-canvas ember disintegration (dissolves at the scroll hand-off) |
 | `altar/altarState.ts` | Altar interaction/motion state bridge |
 | `altar/altarOrbs.ts` | Orb layout/ring math |
-| `altar/altarEmberHandoff.ts` | Hands the strike-burst embers off to the shared `lib/forge/emberForge.ts` engine |
-| `altar/altarForgeTiming.ts` | Choreography-clock constants for the strike → modal sequence |
+| `altar/altarForgeTiming.ts` | Choreography-clock constants for the strike → scroll hand-off |
 | `altar/useFittedGltf.ts` | Loads + scales/centers a GLB to fit its target bounds |
 | `altar/shaders/aurora.ts`, `shaders/palantir.ts` | GLSL shader sources for the aurora backdrop + orb surface |
-| `altar/__tests__/` | Ember hand-off + forge-timing unit tests |
-| `mobile/AboutMobilePage.tsx` | Normal scrolling mobile page — orbs render as stacked sections |
-| `webgl/aboutBrandColors.ts` | Reads the shared theme token vars for the altar's WebGL materials |
-| `__tests__/` | Orb content + content-resolver tests |
+| `altar/__tests__/` | Forge-timing unit tests |
+| `static/AboutStaticPage.tsx` | The static page — full-screen faded-backdrop chapters, IntersectionObserver reveals only |
+| `webgl/aboutBrandColors.ts` | Reads the shared theme token vars for the About WebGL materials |
+| `scroll/__tests__/`, `__tests__/` | Timing-clock + scene-contract + orb content + content-resolver tests |
 
 #### `marketing/`
 

@@ -7,9 +7,9 @@ import { AURORA_FRAGMENT, AURORA_VERTEX } from './shaders/aurora'
 /**
  * The aurora — a large shader plane behind the anvil, breathing slow bands of
  * ember/bone/steel light. Transparent + additive so it reads as a magical
- * shimmer *over* the forge backdrop photo (`AboutAltar`'s background layer),
- * never occluding it. Theme-driven via the brand color uniforms; time is the
- * only per-frame write.
+ * shimmer *over* the forge backdrop photo (the altar section's `-z-20`
+ * layer), never occluding it. Theme-driven via the brand color uniforms;
+ * time is the only per-frame write.
  */
 export function AltarAurora({ colors }: { colors: AboutBrandColors }) {
   const material = useRef<THREE.ShaderMaterial | null>(null)

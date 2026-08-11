@@ -1609,13 +1609,128 @@ html[data-landing-entry='active'] body {
   animation: about-marquee 42s linear infinite reverse;
 }
 
-/* Reduced motion: no marquee scroll — the mobile page is fully static and
-   CSS-visible; the desktop altar stage never mounts. */
+/* Reduced motion: no marquee scroll — the static page is fully CSS-visible;
+   the desktop film never mounts. */
 @media (prefers-reduced-motion: reduce) {
   [data-about-root] .about-marquee-forward,
   [data-about-root] .about-marquee-reverse {
     animation: none;
   }
+}
+
+/* THE CLICK PATH into the finale's WebGL. Three rules, all load-bearing:
+
+   1. The canvas idles at -z-10 — BEHIND the page's wrapper divs, which are
+      pointer-events:auto and cover every point, so no hit can ever fall
+      through to a negative-z layer. While the finale is live the canvas
+      RISES to z-index 5 and takes pointer events — clicks land on the
+      WebGL itself. (It stays visually transparent, so the marquee behind
+      the approach is unaffected.)
+   2. The altar section's own chrome (chips, impact frames, load bar) must
+      ride ABOVE the risen canvas: the section takes z-index 30 (it is
+      position:relative, and pinning's transform makes it a stacking
+      context).
+   3. GSAP's pin-spacer around the section would otherwise swallow the
+      clicks the pointer-transparent section lets through — it goes
+      transparent too; the chips re-opt-in with their explicit
+      `pointer-events-auto`. */
+[data-about-scroll][data-altar-live='on'] [data-about-canvas] {
+  pointer-events: auto;
+  z-index: 5;
+}
+[data-about-scroll][data-altar-live='on'] [data-scene='altar'] {
+  z-index: 30;
+}
+[data-about-scroll] .pin-spacer:has([data-scene='altar']) {
+  pointer-events: none;
+}
+
+/* Altar chrome (chips, their caption) stays hidden until the stage's GLBs
+   have landed — the load bar sets `data-altar-ready` on the section, and the
+   chrome rises in. The strike timeline's own autoAlpha fades then take over
+   (inline styles win over this base state). */
+[data-about-root] [data-altar-fade] {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-about-root] [data-altar-ready='on'] [data-altar-fade] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Every section's imagery dissolves into the void before its bottom edge —
+   no chapter ever ends on a hard media seam. Applied to the backdrop
+   WRAPPERS (image + washes together), film and static page alike. */
+[data-about-root] .about-edge-fade {
+  mask-image: linear-gradient(180deg, #000 0%, #000 74%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 74%, transparent 100%);
+}
+
+/* CHAPTER-TINTED CHROME — About film only. `buildAboutRail` stamps the
+   active chapter's orb colour into `--about-accent` on :root (plus this
+   gate attribute); the topbar's wordmark and icon-control borders inherit
+   it and TRANSITION between chapters. Inert on every other route.
+   The `svg` leg is load-bearing: the inline wordmark carries its own
+   `text-[var(--color-heading)]` utility, so without the deeper selector the
+   link-level tint never reaches `currentColor`. */
+:root[data-about-chapter-tint] .about-nav-brand,
+:root[data-about-chapter-tint] .about-nav-brand svg {
+  color: var(--about-accent, var(--color-heading));
+  transition: color 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The raster-logo twin (see PremiumNavTopbar): painted in the accent through
+   the logo's own alpha mask, crossfaded in only while the film runs. */
+.about-nav-brand-tint {
+  opacity: 0;
+  background-color: var(--about-accent, transparent);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+:root[data-about-chapter-tint] .about-nav-brand-tint {
+  opacity: 1;
+}
+:root[data-about-chapter-tint] .about-nav-chrome {
+  border-color: color-mix(in srgb, var(--about-accent, var(--color-line)) 55%, var(--color-line));
+  /* The glyphs inside (Phosphor icons, avatar initials) run on currentColor,
+     so tinting `color` sweeps the icons with the same beat as the borders. */
+  color: var(--about-accent, var(--color-heading));
+  transition:
+    border-color 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.2s ease;
+}
+
+/* Primary nav links (+ the Armory link) join the sweep; hover lifts back to
+   the heading colour quickly so the affordance survives the tint. */
+:root[data-about-chapter-tint] .about-nav-link {
+  color: var(--about-accent, var(--color-heading));
+  transition: color 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+:root[data-about-chapter-tint] .about-nav-link:hover {
+  color: var(--color-heading);
+  transition-duration: 0.2s;
+}
+
+/* The cart count pip trades the fixed brand accent for the chapter's. */
+:root[data-about-chapter-tint] .about-nav-badge {
+  background-color: var(--about-accent, var(--color-accent));
+  transition: background-color 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The minimap rail — the active chapter's dot lights in its own orb colour
+   (each button carries `--rail-c`; `buildAboutRail` toggles `data-active`). */
+[data-about-root] [data-rail-dot][data-active] [data-rail-dot-mark] {
+  transform: scale(1.7);
+  background-color: var(--rail-c, var(--color-highlight-bright));
+  box-shadow: 0 0 10px var(--rail-c, var(--color-highlight));
+}
+[data-about-root] [data-rail-dot]:hover [data-rail-dot-mark] {
+  background-color: var(--rail-c, var(--color-highlight-bright));
 }
 
 /* Hero product forge — active-piece plate crossfade. The label remounts per

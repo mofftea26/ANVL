@@ -44,6 +44,7 @@ const config = defineConfig(({ isSsrBuild }) => ({
             /[\\/]src[\\/]shared[\\/]webgl[\\/]/,
             /[\\/]src[\\/]features[\\/]comingSoon[\\/]scene[\\/]/,
             /[\\/]src[\\/]features[\\/]about[\\/]altar[\\/]/,
+            /[\\/]src[\\/]features[\\/]about[\\/]scroll[\\/]webgl[\\/]/,
             /[\\/]src[\\/]features[\\/]story[\\/]components[\\/]/,
             /[\\/]TheOathLanding[\\/]webgl[\\/]/,
           ],

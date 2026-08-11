@@ -111,7 +111,11 @@ export function AltarHammer({ url, state }: { url: string; state: AltarState }) 
     const t = frame.clock.elapsedTime
     const k = Math.min(1, delta * 6)
 
-    const visibleTarget = state.activeIndex >= 0 ? 1 : 0
+    // Presence follows the forge summon: the hammer materializes as the
+    // anvil rises (state.forgeT) and dissolves with the outro — it descends
+    // into its cocked hover while fading in, so the arrival reads as the
+    // weapon settling into the smith's grip rather than a fade toggle.
+    const visibleTarget = state.forgeT
     fade.current += (visibleTarget - fade.current) * k
     g.visible = fade.current > 0.02
     g.traverse((o) => {
@@ -150,7 +154,7 @@ export function AltarHammer({ url, state }: { url: string; state: AltarState }) 
 
     g.rotation.z = RAISED_ANGLE * (1 - state.hammerT) + swayZ
     g.rotation.x = swayX + lean.current
-    g.position.y = PIVOT.y + bobY
+    g.position.y = PIVOT.y + bobY + (1 - fade.current) * 1.1
   })
 
   return (

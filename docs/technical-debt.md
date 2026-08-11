@@ -36,7 +36,6 @@ Phase 0 quick fixes (GLB-01/02, SEC-21, SEC-22, MAINT-30, CLEAN-01) and a same-d
 
 | ID | Area | Description |
 |---|---|---|
-| — | About search deep-link | A search hit on an About orb navigates to `/about#about-orb-<id>` and forces the normal scrolling page (`viewMode='normal'`) even on altar-capable devices, since the desktop 3D Forge Altar has no per-orb modal deep-link yet. Wiring the altar's own hammer-strike modal to open directly from a search result is a follow-up. |
 | — | Story cast search results | `story-cast` results land on the chapter's cover open (`/story?chapter=<slug>`), not a specific book page — the roster is always the book's final spread, so this is "close enough" rather than a precise deep link. |
 | — | Admin CMS search | Out of scope for the storefront global search shipped 2026-07-06. `src/features/search/lib/matchEngine.ts` is written index-agnostic (`SearchDocument[]` in, `SearchResult[]` out, no `runtimeClients`/CMS knowledge) so an admin variant can reuse it later with its own document set (settings/fields inside `/admin`). |
 

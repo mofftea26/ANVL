@@ -51,9 +51,14 @@ export const Route = createFileRoute('/about')({
   component: AboutPage,
 })
 
+/** The film rides a floatier glide than the site default (0.07) — a longer
+ *  settle after every wheel tick is most of what "cinematic scroll" feels
+ *  like. Module-const so the Lenis effect never rebuilds. */
+const ABOUT_LENIS_FEEL = { lerp: 0.052, wheelMultiplier: 0.95 }
+
 function AboutPage() {
   const { assets, landingContent, mediaIndex } = Route.useLoaderData()
-  useLenisScroll(true)
+  useLenisScroll(true, ABOUT_LENIS_FEEL)
 
   // Admin live-preview iframe: unsaved About edits override published data.
   const previewDraft = usePreviewDraft()

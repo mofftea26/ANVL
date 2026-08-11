@@ -58,9 +58,10 @@ function pinPercent(raw: string | undefined): number {
 }
 
 /**
- * The orbs editor — each orb is one About section: an orbiting orb on the
- * desktop Forge Altar (struck open into a modal) and a stacked section on
- * mobile. Edited ONE ORB AT A TIME behind a sideways-scrolling chip row (the
+ * The orbs editor — each orb is one About chapter: a full-screen scroll
+ * chapter in the desktop film (and a stone orbiting the Forge Altar finale,
+ * whose strike scrolls back to that chapter) plus a full-screen section on
+ * the static page. Edited ONE ORB AT A TIME behind a sideways-scrolling chip row (the
  * Oath tenets pattern): RHF keeps the unrendered orbs' values because
  * shouldUnregister is off, so switching never loses unsaved edits. Each orb
  * carries a **layout preset**; the fieldset shows only that preset's fields.
@@ -192,7 +193,7 @@ export function AboutOrbsFields({
   return (
     <ContentSection
       title="The Orbs — Sections"
-      hint="Each orb orbits the altar on desktop (struck open into its modal) and renders as a section on mobile. Pick a layout preset per orb; blank fields use the designed defaults shown as placeholders."
+      hint="Each orb is a full-screen chapter of the desktop scroll film (and a stone on the Forge Altar finale — striking it scrolls back to that chapter) plus a section on the static page. Pick a layout preset per orb; blank fields use the designed defaults shown as placeholders."
     >
       {/* Orb picker — one orb at a time keeps the section usable. The chips
           also carry the inspector anchors + per-orb hover (contract above). */}
@@ -419,7 +420,7 @@ export function AboutOrbsFields({
             <div className="mt-4">
               <MediaLibrarySlotField
                 label="Section image"
-                hint="Hero band in the orb modal and the mobile section image."
+                hint="The chapter's full-screen faded backdrop on desktop and mobile alike."
                 kind="image"
                 mediaId={orb?.mediaId ?? ''}
                 onMediaIdChange={(mediaId) =>
@@ -705,8 +706,9 @@ export function AboutOrbsFields({
           setRemoveIndex(null)
         }}
       >
-        Delete orb {String((removeIndex ?? 0) + 1).padStart(2, '0')} from the About page? It
-        disappears from the altar and the mobile sections. Save content to publish the change.
+        Delete orb {String((removeIndex ?? 0) + 1).padStart(2, '0')} from the About page? Its
+        chapter leaves the film, the static page, and the altar ring. Save content to publish
+        the change.
       </AdminConfirmDialog>
     </ContentSection>
   )

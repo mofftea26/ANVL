@@ -246,9 +246,11 @@ function StorefrontLayout() {
             <Outlet />
           </AppErrorBoundary>
         </main>
-        {/* Passports (/p/*) are a focused artifact surface — no footer. */}
+        {/* Passports (/p/*) are a focused artifact surface — no footer.
+            (/about keeps it too: the film's canvas fades out once the altar
+            pin completes, so the stage never slides under the footer.) */}
         {showChrome && !pathname.startsWith('/p/') ? (
-          <div className={cn('relative z-10', pathname === '/about' ? 'xl:hidden' : undefined)}>
+          <div className="relative z-10">
             <SiteFooter navigation={navigation} />
           </div>
         ) : null}

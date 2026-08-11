@@ -48,8 +48,10 @@ export function PremiumNavTopbar({
 
   // Shared variant-aware chrome for the right-side icon controls so the cart and
   // burger read cleanly over both the transparent hero and the solid bar.
+  // `about-nav-chrome` is inert everywhere except the About film, where a
+  // root attribute tints these borders to the active chapter's orb colour.
   const iconChrome = cn(
-    'focus-ring relative inline-flex h-9 w-9 items-center justify-center rounded-md border backdrop-blur-sm transition-colors sm:h-11 sm:w-11',
+    'about-nav-chrome focus-ring relative inline-flex h-9 w-9 items-center justify-center rounded-md border backdrop-blur-sm transition-colors sm:h-11 sm:w-11',
     isSolid
       ? 'border-[var(--color-line)] bg-[var(--color-surface)]/80 text-[var(--color-text)]'
       : 'border-white/15 bg-white/5 text-[var(--color-heading)] hover:bg-white/10',
@@ -57,16 +59,37 @@ export function PremiumNavTopbar({
   // Cart + account avatar are round (per brand chrome); burger stays square.
   const iconChromeRound = cn(iconChrome, 'rounded-full')
 
-  const LogoMark: ReactNode = logoSrc?.trim() ? (
-    <img
-      src={logoSrc.trim()}
-      alt="ANVL"
-      className={cn(
-        'h-11 w-auto max-w-[200px] object-contain md:h-12',
-        !isSolid && 'brightness-0 invert opacity-95',
-      )}
-      fetchPriority="high"
-    />
+  const trimmedLogoSrc = logoSrc?.trim()
+  const LogoMark: ReactNode = trimmedLogoSrc ? (
+    <span className="relative inline-flex">
+      <img
+        src={trimmedLogoSrc}
+        alt="ANVL"
+        className={cn(
+          'h-11 w-auto max-w-[200px] object-contain md:h-12',
+          !isSolid && 'brightness-0 invert opacity-95',
+        )}
+        fetchPriority="high"
+      />
+      {/* Chapter-tinted chrome (About film only): a raster logo cannot take
+          CSS `color`, so a twin painted in the chapter accent — the logo's
+          own alpha as its mask — crossfades in over it. Inert everywhere
+          else (opacity 0 until :root carries data-about-chapter-tint). */}
+      <span
+        aria-hidden="true"
+        className="about-nav-brand-tint pointer-events-none absolute inset-0"
+        style={{
+          maskImage: `url(${trimmedLogoSrc})`,
+          WebkitMaskImage: `url(${trimmedLogoSrc})`,
+          maskSize: 'contain',
+          WebkitMaskSize: 'contain',
+          maskRepeat: 'no-repeat',
+          WebkitMaskRepeat: 'no-repeat',
+          maskPosition: 'center',
+          WebkitMaskPosition: 'center',
+        }}
+      />
+    </span>
   ) : (
     <AnvlLogoImage
       variant="wordmark"
@@ -101,7 +124,7 @@ export function PremiumNavTopbar({
       <Container className="relative flex h-14 items-center gap-3 md:h-16">
         <Link
           to="/"
-          className="focus-ring inline-flex shrink-0 items-center text-[var(--color-heading)]"
+          className="about-nav-brand focus-ring inline-flex shrink-0 items-center text-[var(--color-heading)]"
         >
           {LogoMark}
         </Link>
@@ -114,7 +137,7 @@ export function PremiumNavTopbar({
               key={item.id ?? item.href}
               href={item.href}
               className={cn(
-                'anvl-micro focus-ring text-xs no-underline transition-colors',
+                'about-nav-link anvl-micro focus-ring text-xs no-underline transition-colors',
                 isSolid
                   ? 'text-[var(--color-text-muted)] hover:text-[var(--color-heading)]'
                   : 'text-[var(--color-heading)]/75 hover:text-[var(--color-heading)]',
@@ -129,7 +152,7 @@ export function PremiumNavTopbar({
               to="/account"
               search={{ tab: 'armory' }}
               className={cn(
-                'anvl-micro focus-ring text-xs no-underline transition-colors',
+                'about-nav-link anvl-micro focus-ring text-xs no-underline transition-colors',
                 isSolid
                   ? 'text-[var(--color-highlight-bright)] hover:text-[var(--color-heading)]'
                   : 'text-[var(--color-highlight-bright)] hover:text-[var(--color-heading)]',
@@ -151,7 +174,7 @@ export function PremiumNavTopbar({
             >
               <ShoppingBag size={ICON_SIZE.md} aria-hidden="true" />
               {quantity > 0 ? (
-                <span className="absolute -right-1 -top-1 min-w-[1.125rem] rounded-full bg-[var(--color-accent)] px-1.5 text-center text-[10px] font-medium text-[var(--color-bg)]">
+                <span className="about-nav-badge absolute -right-1 -top-1 min-w-[1.125rem] rounded-full bg-[var(--color-accent)] px-1.5 text-center text-[10px] font-medium text-[var(--color-bg)]">
                   {quantity}
                 </span>
               ) : null}

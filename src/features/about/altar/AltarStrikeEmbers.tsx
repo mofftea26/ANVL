@@ -14,20 +14,6 @@ const PARTICLE_COUNT = 2400
 /** The seated (shrunken) orb's radius — the embers are born ON this sphere. */
 const SPHERE_R = ORB_RADIUS * ORB_SEAT_SCALE * 1.1
 /**
- * How far a fully-released ember eases out along its surface normal, in world
- * units: the `0.45 + aSeed * 0.85` reach in `FORGE_VERTEX`'s `hover`, at
- * `aSeed = 1`. **Keep in sync with that expression.**
- */
-const SHROUD_REACH = 0.45 + 0.85
-/**
- * The shroud's OUTER radius around the seat once the release completes (born on
- * the sphere, then eased out). Exported because the DOM hand-off needs it: the
- * shared ember swarm launches from a ring this wide (projected to screen pixels
- * through the same camera) instead of the engine's much wider default, so the
- * DOM embers appear exactly where these embers are as the two cross-fade.
- */
-export const SHROUD_OUTER_RADIUS = SPHERE_R + SHROUD_REACH
-/**
  * Paints after the orbs (ORB_RENDER_ORDER = 1) so the glowing shroud is never
  * dimmed by a passing stone, and before the hammer (10) — the hammer stays
  * the top actor even through the disintegration. depthTest is off (the shroud
@@ -169,27 +155,21 @@ function buildForgeGeometry(): THREE.BufferGeometry {
  * hands its matter over 1:1) and `state.scatterT` releases them, per-seed
  * staggered, into a hovering shroud off the surface.
  *
- * THE POOL STOPS THERE. It does **not** form the modal any more: at the
- * hand-off beat (`ALTAR_FORGE.handoffAfterImpact`) `state.emberFade`
- * cross-fades this shroud out while the DOM ember swarm — the SAME canvas-2D
- * forge that materializes every `<Modal>` and every toast in the app, tinted
- * with the struck orb's colour — streams in from the same screen point and
- * forms the panel (`AboutAltar` mounts `<ForgeEmberCanvas>`; the seat is
- * projected to screen pixels through `state.seatNdc`). The two overlap by
- * design, so it reads as one continuous swarm crossing canvas → DOM.
+ * THE POOL STOPS THERE. At the hand-off beat
+ * (`ALTAR_FORGE.handoffAfterImpact`) `state.emberFade` dissolves the shroud
+ * while the page answers the strike — the scroll pulls back up to the struck
+ * orb's chapter, so the embers read as the orb releasing its matter into the
+ * journey rather than into a dialog.
  *
- * THE SHROUD CARRIES THE STRUCK ORB'S COLOUR. It used to stay on the site's own
- * steel→ember→white-hot tokens on purpose ("never a per-orb neon"), leaving the
- * orb's colour to the DOM half — but the two populations overlap in the same
- * band for 350ms, so that read as the swarm changing hue mid-flight. The three
- * shader stops now come from the same `resolveForgeRamp(tint)` the DOM engine
- * uses, off `state.activeIndex`'s orb, which keeps the near-white hot stop (a
+ * THE SHROUD CARRIES THE STRUCK ORB'S COLOUR. The three shader stops come from
+ * the same `resolveForgeRamp(tint)` the DOM ember engine uses, off
+ * `state.activeIndex`'s orb, which keeps the near-white hot stop (a
  * tinted-toward-white core) so it still reads as forged metal rather than flat
  * neon. Untinted orbs fall back to the site ramp, exactly as an untinted modal
- * or toast does. Idle frames render nothing; reduced motion renders the pool not
- * at all (the modal simply fades in).
+ * or toast does. Idle frames render nothing; reduced motion renders the pool
+ * not at all.
  */
-export function AltarModalForge({
+export function AltarStrikeEmbers({
   state,
   orbs,
 }: {

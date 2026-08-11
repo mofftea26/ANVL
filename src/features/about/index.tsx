@@ -1,34 +1,31 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import type { MediaIndexEntry } from '@/features/cms/media/mediaIndex.types'
-import { isWebglAvailable } from '@/shared/webgl/isWebglAvailable'
 import { resolveAboutContent } from './content/resolveAboutContent'
-import { ABOUT_ALTAR_MQ } from './aboutBreakpoints'
-import { useAboutViewMode } from './hooks/useAboutViewMode'
-import { AboutHeader } from './components/AboutHeader'
-import { AboutMobilePage } from './mobile/AboutMobilePage'
+import { ABOUT_CINEMATIC_MQ } from './aboutBreakpoints'
+import { AboutStaticPage } from './static/AboutStaticPage'
 
-const AboutAltar = lazy(() => import('./altar/AboutAltar'))
+const AboutScrollExperience = lazy(() => import('./scroll/AboutScrollExperience'))
 
 export type AboutPageAssets = Record<string, string | undefined>
 
 /**
- * The About page — two experiences behind one CMS contract:
+ * The About page — one story, two renditions behind one CMS contract:
  *
- * - **The Forge Altar** (desktop ≥1280px, no reduced motion, WebGL): a
- *   non-scrollable 100svh stage — 3D anvil under an aurora, six content orbs
- *   in orbit; picking one summons the hammer, and the strike forges open a
- *   modal with that section's content. GSAP + three.js drive everything.
- * - **The normal page** (mobile/tablet, reduced motion, no WebGL, and SSR):
- *   a clean scrolling About page with the same CMS content and imagery.
+ * - **The film** (desktop ≥1280px, no reduced motion): a continuous
+ *   scrollytelling journey — hero cold open, one full-screen chapter per orb,
+ *   the marquee ribbon, and the interactive Forge Altar finale whose strikes
+ *   scroll the film back to a chapter.
+ * - **The static page** (mobile/tablet, reduced motion, and SSR): a clean
+ *   scrolling About page with the same CMS content and imagery — no pins, no
+ *   WebGL.
  *
- * SSR + the first client paint always render the normal page (full content in
- * the DOM for SEO/AT); the altar swaps in after hydration when its gate
- * passes and fades in from the void. On altar-capable devices a small header
- * (`AboutHeader`) carries a view switch so a reader can move between the two
- * at will — their choice is remembered for next time
- * (`useAboutViewMode`). Copy is CMS-editable (`/admin/about`), imagery + the
- * anvil/hammer GLBs CMS-assigned (`/admin/assets` → Page — About); every
- * field falls back to a designed code default.
+ * SSR + the first client paint always render the static page (full content in
+ * the DOM for SEO/AT); the film swaps in after hydration when its gate
+ * passes. WebGL availability is deliberately not part of this gate — the DOM
+ * film stands alone, and only the canvas layers check for WebGL themselves.
+ * Copy is CMS-editable (`/admin/about`), imagery + the anvil/hammer GLBs
+ * CMS-assigned (`/admin/assets` → Page — About); every field falls back to a
+ * designed code default.
  */
 export function AboutExperience({
   landingContent,
@@ -43,26 +40,15 @@ export function AboutExperience({
     () => resolveAboutContent(landingContent, { mediaIndex }),
     [landingContent, mediaIndex],
   )
-  const [capable, setCapable] = useState(false)
-  const [viewMode, setViewMode] = useAboutViewMode(capable)
+  const [cinematic, setCinematic] = useState(false)
 
   useEffect(() => {
-    const media = window.matchMedia(ABOUT_ALTAR_MQ)
-    const update = () => setCapable(media.matches && isWebglAvailable())
+    const media = window.matchMedia(ABOUT_CINEMATIC_MQ)
+    const update = () => setCinematic(media.matches)
     update()
     media.addEventListener('change', update)
     return () => media.removeEventListener('change', update)
   }, [])
-
-  // A search deep link to a specific orb (`#about-orb-<id>`) only has an
-  // anchor in the normal scrolling page — the altar has no per-orb modal
-  // deep-link yet (technical-debt). Force the normal page once so the anchor
-  // is reachable instead of inert behind the altar.
-  useEffect(() => {
-    if (window.location.hash.startsWith('#about-orb-')) setViewMode('normal')
-  }, [setViewMode])
-
-  const showAltar = capable && viewMode === 'altar'
 
   return (
     <div data-about-root className="relative isolate min-h-full">
@@ -85,14 +71,12 @@ export function AboutExperience({
         }}
       />
 
-      {capable ? <AboutHeader mode={viewMode} onChange={setViewMode} /> : null}
-
-      {showAltar ? (
-        <Suspense fallback={<div className="h-[100svh] w-full" aria-hidden="true" />}>
-          <AboutAltar content={content} assets={assets} />
+      {cinematic ? (
+        <Suspense fallback={<AboutStaticPage content={content} assets={assets} />}>
+          <AboutScrollExperience content={content} assets={assets} />
         </Suspense>
       ) : (
-        <AboutMobilePage content={content} assets={assets} />
+        <AboutStaticPage content={content} assets={assets} />
       )}
     </div>
   )

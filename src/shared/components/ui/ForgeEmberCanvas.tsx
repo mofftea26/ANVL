@@ -22,8 +22,7 @@ import {
  * owns the canvas element, DPR scaling, the rAF loop, and teardown. One
  * mounted instance is one swarm converging on one rect for `durationMs`,
  * then it's done — `ModalForgeEffect` and `ToastForgeEffect` are thin
- * wrappers over this, and `AboutAltar` (Task 3) mounts it directly for the
- * altar handoff.
+ * wrappers over this.
  *
  * Deliberately canvas-2D, not three.js — see the header comment in
  * `emberForge.ts` for the rationale (this lives in the shared UI chunk both
