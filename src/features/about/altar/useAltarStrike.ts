@@ -118,7 +118,7 @@ export function useAltarStrike({
       // stills — seated a beat before the hammer's drop lands.
       tl.to(
         state.focusT,
-        { [index]: 1, duration: reducedMotion ? 0.5 : 0.85, ease: 'power2.inOut' },
+        { [index]: 1, duration: reducedMotion ? 0.42 : 0.7, ease: 'power2.inOut' },
         0,
       )
       tl.to(state, { ringDim: 1, duration: 0.6, ease: 'power2.out' }, 0)

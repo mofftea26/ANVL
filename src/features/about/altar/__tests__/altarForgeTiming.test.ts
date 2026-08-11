@@ -18,10 +18,12 @@ describe('altarForgeTiming', () => {
     expect(ALTAR_STRIKE.reducedMotionImpactAt).toBeLessThan(ALTAR_STRIKE.impactAt)
   })
 
-  it('seats the summoned anvil before the hammer winds up', () => {
-    // The strike lands ON the anvil — a windup that starts while the anvil
-    // is still rising would swing at empty air.
-    expect(ALTAR_SUMMON.riseDuration).toBeLessThan(ALTAR_STRIKE.windupAt)
+  it('seats the summoned anvil before the drop begins', () => {
+    // The strike lands ON the anvil. The windup may overlap the rise (the
+    // hammer coiling while the anvil climbs reads as one gesture), but a
+    // DROP that starts while the anvil is still rising would land on empty
+    // air — the seat must precede the drop, not the windup.
+    expect(ALTAR_SUMMON.riseDuration).toBeLessThan(ALTAR_STRIKE.dropAt)
     expect(ALTAR_SUMMON.sinkDuration).toBeGreaterThan(0)
     expect(ALTAR_SUMMON.wakeFlash).toBeGreaterThan(0)
     expect(ALTAR_SUMMON.wakeFlash).toBeLessThan(1)
