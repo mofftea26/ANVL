@@ -109,10 +109,12 @@ export function GlobalSearchBar({
 
   const input = (
     <div ref={wrapperRef} data-native-cursor className="relative min-w-0">
+      {/* `about-nav-chrome` joins both the glyph and the input to the About
+          film's chapter-tint sweep (inert on every other route). */}
       <Search
         size={ICON_SIZE.sm}
         aria-hidden={true}
-        className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
+        className="about-nav-chrome pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
       />
       <input
         ref={isDrawer ? undefined : inputRef}
@@ -130,7 +132,7 @@ export function GlobalSearchBar({
         placeholder="Search ANVL…"
         autoComplete="off"
         className={cn(
-          'focus-ring h-10 w-full rounded-full border border-[var(--color-line)] bg-[var(--color-surface)]/80 pl-9 pr-4 text-sm text-[var(--color-heading)] placeholder:text-[var(--color-text-muted)]',
+          'about-nav-chrome focus-ring h-10 w-full rounded-full border border-[var(--color-line)] bg-[var(--color-surface)]/80 pl-9 pr-4 text-sm text-[var(--color-heading)] placeholder:text-[var(--color-text-muted)]',
           isDrawer && 'h-11 text-base',
         )}
       />

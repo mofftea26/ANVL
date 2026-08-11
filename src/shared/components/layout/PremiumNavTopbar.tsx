@@ -137,7 +137,7 @@ export function PremiumNavTopbar({
               key={item.id ?? item.href}
               href={item.href}
               className={cn(
-                'anvl-micro focus-ring text-xs no-underline transition-colors',
+                'about-nav-link anvl-micro focus-ring text-xs no-underline transition-colors',
                 isSolid
                   ? 'text-[var(--color-text-muted)] hover:text-[var(--color-heading)]'
                   : 'text-[var(--color-heading)]/75 hover:text-[var(--color-heading)]',
@@ -152,7 +152,7 @@ export function PremiumNavTopbar({
               to="/account"
               search={{ tab: 'armory' }}
               className={cn(
-                'anvl-micro focus-ring text-xs no-underline transition-colors',
+                'about-nav-link anvl-micro focus-ring text-xs no-underline transition-colors',
                 isSolid
                   ? 'text-[var(--color-highlight-bright)] hover:text-[var(--color-heading)]'
                   : 'text-[var(--color-highlight-bright)] hover:text-[var(--color-heading)]',
@@ -174,7 +174,7 @@ export function PremiumNavTopbar({
             >
               <ShoppingBag size={ICON_SIZE.md} aria-hidden="true" />
               {quantity > 0 ? (
-                <span className="absolute -right-1 -top-1 min-w-[1.125rem] rounded-full bg-[var(--color-accent)] px-1.5 text-center text-[10px] font-medium text-[var(--color-bg)]">
+                <span className="about-nav-badge absolute -right-1 -top-1 min-w-[1.125rem] rounded-full bg-[var(--color-accent)] px-1.5 text-center text-[10px] font-medium text-[var(--color-bg)]">
                   {quantity}
                 </span>
               ) : null}
